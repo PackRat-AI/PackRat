@@ -4,7 +4,8 @@
   "version": "2.0.0",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "server"
   ],
   "scripts": {
     "clean:all": "bun run --cwd apps/* clean && bun run --cwd packages/* clean",

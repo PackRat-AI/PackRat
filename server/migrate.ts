@@ -12,7 +12,7 @@ async function runMigrations() {
 
   console.log("Running migrations...");
 
-  await migrate(db, { migrationsFolder: "./drizzle" });
+  await migrate(db, { migrationsFolder: `${__dirname}/drizzle` });
 
   console.log("Migrations completed successfully!");
   process.exit(0);

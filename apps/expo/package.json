@@ -72,7 +72,6 @@
     "jotai": "^2.12.2",
     "lodash.debounce": "^4.0.8",
     "nativewind": "^4.1.23",
-    "nativewindui": "git@github.com:PackRat-AI/nativewindui.git#main",
     "radash": "^12.1.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
