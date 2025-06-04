@@ -1,0 +1,61 @@
+name: Database Migrations
+
+on:
+  push:
+    branches:
+      - v2
+      - develop
+    paths:
+      - 'server/drizzle/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (dev or prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+      confirm:
+        description: 'Type "yes" to confirm migration'
+        required: true
+        default: 'no'
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    # Only proceed if confirmation is given for manual runs
+    if: github.event_name != 'workflow_dispatch' || inputs.confirm == 'yes'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Determine target environment
+        id: env
+        run: |
+          # For workflow_dispatch, use the input value
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "TARGET_ENV=${{ inputs.environment }}" >> $GITHUB_ENV
+          # For push events, determine from branch
+          elif [[ "$GITHUB_REF" == "refs/heads/v2" ]]; then
+            echo "TARGET_ENV=prod" >> $GITHUB_ENV
+          else
+            echo "TARGET_ENV=dev" >> $GITHUB_ENV
+          fi
+
+          echo "Targeting $TARGET_ENV environment"
+
+      - name: Run migrations
+        env:
+          NEON_DATABASE_URL: ${{ env.TARGET_ENV == 'prod' && secrets.NEON_PROD_DATABASE_URL || secrets.NEON_DEV_DATABASE_URL }}
+        run: bun run server/migrate.ts
