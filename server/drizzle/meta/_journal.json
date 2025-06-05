@@ -71,6 +71,13 @@
       "when": 1748606532533,
       "tag": "0009_illegal_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1749137269431,
+      "tag": "0010_serious_odin",
+      "breakpoints": true
     }
   ]
 }
