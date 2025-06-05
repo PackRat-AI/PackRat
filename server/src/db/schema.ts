@@ -346,6 +346,9 @@ export type NewCatalogItem = InferInsertModel<typeof catalogItems>;
 export type PackItem = InferSelectModel<typeof packItems>;
 export type NewPackItem = InferInsertModel<typeof packItems>;
 
+export type ReportedContent = InferSelectModel<typeof reportedContent>;
+export type NewReportedContent = InferInsertModel<typeof reportedContent>;
+
 export type PackTemplate = InferSelectModel<typeof packTemplates>;
 export type NewPackTemplate = InferInsertModel<typeof packTemplates>;
 
