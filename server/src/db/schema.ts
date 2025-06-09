@@ -19,6 +19,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  role: text('role').default('USER'), // 'USER', 'ADMIN'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
