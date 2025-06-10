@@ -35,18 +35,21 @@ packTemplateRoutes.put("/:templateId", async (c) => {
   const templateId = c.req.param("templateId");
   const data = await c.req.json();
 
+  const updateData: Record<string, any> = {};
+  if ('name' in data) updateData.name = data.name;
+  if ('description' in data) updateData.description = data.description;
+  if ('category' in data) updateData.category = data.category;
+  if ('image' in data) updateData.image = data.image;
+  if ('tags' in data) updateData.tags = data.tags;
+  if ('isFeatured' in data && auth.role === 'ADMIN')
+    updateData.isFeatured = data.isFeatured;
+  if ('deleted' in data) updateData.deleted = data.deleted;
+  if ('localUpdatedAt' in data)
+    updateData.localUpdatedAt = new Date(data.localUpdatedAt);
+
   await db
     .update(packTemplates)
-    .set({
-      name: data.name,
-      description: data.description,
-      category: data.category,
-      image: data.image,
-      tags: data.tags,
-      deleted: data.deleted,
-      localUpdatedAt: new Date(data.localUpdatedAt),
-      updatedAt: new Date(),
-    })
+    .set(updateData)
     .where(
       and(
         eq(packTemplates.id, templateId),
