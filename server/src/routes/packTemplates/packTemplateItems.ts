@@ -4,34 +4,74 @@ import {
   authenticateRequest,
   unauthorizedResponse,
 } from "@/utils/api-middleware";
-import { and, eq } from "drizzle-orm";
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
+import { and, eq, or } from "drizzle-orm";
+import { z } from "zod";
 
-const packTemplateItemsRoutes = new Hono();
+const packTemplateItemsRoutes = new OpenAPIHono();
 
 // Get all items for a template
-packTemplateItemsRoutes.get("/:templateId/items", async (c) => {
+const getItemsRoute = createRoute({
+  method: "get",
+  path: "/{templateId}/items",
+  request: { params: z.object({ templateId: z.string() }) },
+  responses: { 200: { description: "Get all items for a template" } },
+});
+
+packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) return unauthorizedResponse();
 
   const db = createDb(c);
   const templateId = c.req.param("templateId");
 
-  const items = await db.query.packTemplateItems.findMany({
-    where: eq(packTemplateItems.packTemplateId, templateId),
-  });
+  const items = await db.select()
+    .from(packTemplateItems)
+    .leftJoin(
+      packTemplates,
+      eq(packTemplates.id, packTemplateItems.packTemplateId)
+    ).where(
+      and(
+        eq(packTemplateItems.packTemplateId, templateId),
+        or(
+          eq(packTemplateItems.userId, auth.userId), // user can access items of their own templates
+          eq(packTemplates.isAppTemplate, true) // or items of app templates
+        )
+      )
+    );
 
   return c.json(items);
 });
 
 // Add item to template
-packTemplateItemsRoutes.post("/:templateId/items", async (c) => {
+const addItemRoute = createRoute({
+  method: "post",
+  path: "/{templateId}/items",
+  request: {
+    params: z.object({ templateId: z.string() }),
+    body: {
+      content: { "application/json": { schema: z.any() } },
+    },
+  },
+  responses: { 201: { description: "Add item to template" } },
+});
+
+packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) return unauthorizedResponse();
 
   const db = createDb(c);
   const templateId = c.req.param("templateId");
   const data = await c.req.json();
+
+  const packTemplate = await db.query.packTemplates.findFirst({
+    where: eq(packTemplates.id, templateId),
+  });
+
+  if (!packTemplate) return c.json({ error: 'Template not found' }, 404);
+  if (packTemplate.isAppTemplate && auth.role !== 'ADMIN') {
+    return c.json({ error: 'Not allowed' }, 403);
+  }
 
   const [newItem] = await db
     .insert(packTemplateItems)
@@ -42,7 +82,7 @@ packTemplateItemsRoutes.post("/:templateId/items", async (c) => {
       description: data.description,
       weight: data.weight,
       weightUnit: data.weightUnit,
-      quantity: data.quantity,
+      quantity: data.quantity || 1,
       category: data.category,
       consumable: data.consumable,
       worn: data.worn,
@@ -62,7 +102,19 @@ packTemplateItemsRoutes.post("/:templateId/items", async (c) => {
 });
 
 // Update a template item
-packTemplateItemsRoutes.patch("/items/:itemId", async (c) => {
+const updateItemRoute = createRoute({
+  method: "patch",
+  path: "/items/{itemId}",
+  request: {
+    params: z.object({ itemId: z.string() }),
+    body: {
+      content: { "application/json": { schema: z.any() } },
+    },
+  },
+  responses: { 200: { description: "Update a template item" } },
+});
+
+packTemplateItemsRoutes.openapi(updateItemRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) return unauthorizedResponse();
 
@@ -70,21 +122,48 @@ packTemplateItemsRoutes.patch("/items/:itemId", async (c) => {
   const itemId = c.req.param("itemId");
   const data = await c.req.json();
 
+  const item = await db.query.packTemplateItems.findFirst({
+    where: and(
+      eq(packTemplateItems.id, itemId),
+    ),
+    with: {
+      template: true, // include the template to check permissions
+    },
+  });
+
+  if (!item) return c.json({ error: "Item not found" }, 404);
+  if (item.template.isAppTemplate && auth.role !== "ADMIN") {
+    return c.json({ error: "Not allowed" }, 403);
+  }
+
+  const updateData: Partial<typeof packTemplateItems.$inferInsert> = {};
+  if ('name' in data) updateData.name = data.name;
+  if ("description" in data) updateData.description = data.description;
+  if ("weight" in data) updateData.weight = data.weight;
+  if ("weightUnit" in data) updateData.weightUnit = data.weightUnit;
+  if ("quantity" in data) updateData.quantity = data.quantity;
+  if ("category" in data) updateData.category = data.category;
+  if ("consumable" in data) updateData.consumable = data.consumable;
+  if ("worn" in data) updateData.worn = data.worn;
+  if ("image" in data) updateData.image = data.image;
+  if ("notes" in data) updateData.notes = data.notes;
+  if ("deleted" in data) updateData.deleted = data.deleted;
+
   const [updatedItem] = await db
     .update(packTemplateItems)
     .set({
-      ...data,
+      ...updateData,
       updatedAt: new Date(),
     })
     .where(
-      and(
+      item.template.isAppTemplate && auth.role === "ADMIN" 
+      ? eq(packTemplateItems.id, itemId) // any admin can update app template item
+      : and(
         eq(packTemplateItems.id, itemId),
         eq(packTemplateItems.userId, auth.userId),
       ),
     )
     .returning();
-
-  if (!updatedItem) return c.json({ error: "Item not found" }, 404);
 
   return c.json(updatedItem);
 });

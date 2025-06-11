@@ -182,9 +182,9 @@ export const packTemplates = pgTable("pack_templates", {
   userId: integer("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
-  isPublic: boolean("is_public").default(true),
   image: text("image"),
   tags: jsonb("tags").$type<string[]>(),
+  isAppTemplate: boolean("is_app_template").default(false),
   deleted: boolean("deleted").default(false),
 
   localCreatedAt: timestamp("local_created_at").notNull(),
@@ -215,9 +215,6 @@ export const packTemplateItems = pgTable("pack_template_items", {
     .references(() => users.id)
     .notNull(),
   deleted: boolean("deleted").default(false),
-
-  localCreatedAt: timestamp("local_created_at").notNull(),
-  localUpdatedAt: timestamp("local_updated_at").notNull(),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
