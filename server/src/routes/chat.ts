@@ -209,7 +209,7 @@ chatRoutes.get('/reports', async (c) => {
   const db = createDb(c);
 
   // Check if user is admin
-  const isAdmin = await checkIfUserIsAdmin(auth.userId, c);
+  const isAdmin = auth.role === 'ADMIN';
   if (!isAdmin) {
     return c.json({ error: 'Unauthorized' }, 403);
   }
@@ -239,7 +239,7 @@ chatRoutes.patch('/reports/:id', async (c) => {
   const db = createDb(c);
 
   // Check if user is admin
-  const isAdmin = await checkIfUserIsAdmin(auth.userId, c);
+  const isAdmin = auth.role === 'ADMIN';
   if (!isAdmin) {
     return c.json({ error: 'Unauthorized' }, 403);
   }
@@ -264,24 +264,5 @@ chatRoutes.patch('/reports/:id', async (c) => {
     return c.json({ error: 'Failed to update reported content' }, 500);
   }
 });
-
-// Helper function to check if a user is an admin
-async function checkIfUserIsAdmin(userId: number, c: any) {
-  const db = createDb(c);
-
-  try {
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-      columns: {
-        role: true,
-      },
-    });
-
-    return user?.role === 'ADMIN';
-  } catch (error) {
-    console.error('Error checking admin status:', error);
-    return false;
-  }
-}
 
 export { chatRoutes };

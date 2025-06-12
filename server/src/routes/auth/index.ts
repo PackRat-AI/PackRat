@@ -89,6 +89,7 @@ authRoutes.openapi(loginRoute, async (c) => {
     const accessToken = await generateJWT({
       payload: {
         userId: user[0].id,
+        role: user[0].role,
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
       },
       c,
@@ -104,6 +105,7 @@ authRoutes.openapi(loginRoute, async (c) => {
         firstName: user[0].firstName,
         lastName: user[0].lastName,
         emailVerified: user[0].emailVerified,
+        role: user[0].role,
       },
     });
   } catch (error) {
@@ -258,7 +260,10 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     });
 
     // Generate JWT token
-    const accessToken = await generateJWT({ payload: { userId }, c });
+    const accessToken = await generateJWT({
+      payload: { userId, role: user[0].role },
+      c,
+    });
 
     return c.json({
       success: true,
@@ -573,12 +578,6 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     });
 
-    // Generate new access token
-    const accessToken = await generateJWT({
-      payload: { userId: token.userId },
-      c,
-    });
-
     // Get user info
     const user = await db
       .select({
@@ -587,10 +586,17 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
         firstName: users.firstName,
         lastName: users.lastName,
         emailVerified: users.emailVerified,
+        role: users.role,
       })
       .from(users)
       .where(eq(users.id, token.userId))
       .limit(1);
+
+    // Generate new access token
+    const accessToken = await generateJWT({
+      payload: { userId: token.userId, role: user[0].role },
+      c,
+    });
 
     return c.json({
       success: true,
@@ -682,6 +688,7 @@ authRoutes.openapi(meRoute, async (c) => {
   }
 });
 
+// TODO use openapit
 authRoutes.delete('/', async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
