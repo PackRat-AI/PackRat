@@ -688,8 +688,13 @@ authRoutes.openapi(meRoute, async (c) => {
   }
 });
 
-// TODO use openapit
-authRoutes.delete('/', async (c) => {
+// Delete account route
+const deleteAccountRoute = createRoute({
+  method: 'delete',
+  path: '/',
+  responses: { 200: { description: 'Delete account' } },
+});
+authRoutes.openapi(deleteAccountRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
     return unauthorizedResponse();
