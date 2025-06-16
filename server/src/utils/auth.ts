@@ -39,7 +39,13 @@ export async function generateJWT({
   c: Context;
 }): Promise<string> {
   const { JWT_SECRET } = env<Env>(c);
-  return await sign(payload, JWT_SECRET);
+  return await sign(
+    {
+      ...payload,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
+    },
+    JWT_SECRET
+  );
 }
 
 // Verify a JWT token

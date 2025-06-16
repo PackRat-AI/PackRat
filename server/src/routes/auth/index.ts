@@ -25,6 +25,9 @@ import {
 } from '@/utils/email';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { OAuth2Client } from 'google-auth-library';
+import { env } from 'hono/adapter';
+import { Env } from '@/types/env';
 
 const authRoutes = new OpenAPIHono();
 
@@ -90,7 +93,6 @@ authRoutes.openapi(loginRoute, async (c) => {
       payload: {
         userId: user[0].id,
         role: user[0].role,
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
       },
       c,
     });
@@ -261,7 +263,10 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
 
     // Generate JWT token
     const accessToken = await generateJWT({
-      payload: { userId, role: user[0].role },
+      payload: {
+        userId,
+        role: user[0].role,
+      },
       c,
     });
 
@@ -594,7 +599,10 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
 
     // Generate new access token
     const accessToken = await generateJWT({
-      payload: { userId: token.userId, role: user[0].role },
+      payload: {
+        userId: token.userId,
+        role: user[0].role,
+      },
       c,
     });
 
@@ -722,5 +730,154 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
 
   return c.json({ success: true });
 });
+
+const googleRoute = createRoute({
+  method: 'post',
+  path: '/google',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            idToken: z.string(),
+          }),
+        },
+      },
+    },
+  },
+  responses: { 200: { description: 'Google authentication' } },
+});
+
+authRoutes.openapi(googleRoute, async (c) => {
+  try {
+    const { GOOGLE_CLIENT_ID } = env<Env>(c);
+    const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+    const { idToken } = await c.req.json();
+
+    if (!idToken) {
+      return Response.json({ error: 'ID token is required' }, { status: 400 });
+    }
+
+    const db = createDb(c);
+
+    // Verify Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email || !payload.sub) {
+      return Response.json({ error: 'Invalid Google token' }, { status: 400 });
+    }
+
+    // Check if user exists with this Google ID
+    const existingProvider = await db
+      .select()
+      .from(authProviders)
+      .where(
+        and(
+          eq(authProviders.provider, 'google'),
+          eq(authProviders.providerId, payload.sub)
+        )
+      )
+      .limit(1);
+
+    let userId: number;
+    let isNewUser = false;
+
+    if (existingProvider.length > 0) {
+      // User exists, get user ID
+      userId = existingProvider[0].userId;
+    } else {
+      // Check if user exists with this email
+      const existingUser = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, payload.email!))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        // User exists with this email, link Google account
+        userId = existingUser[0].id;
+
+        await db.insert(authProviders).values({
+          userId,
+          provider: 'google',
+          providerId: payload.sub,
+        });
+      } else {
+        // Create new user
+        const [newUser] = await db
+          .insert(users)
+          .values({
+            email: payload.email!,
+            firstName: payload.given_name,
+            lastName: payload.family_name,
+            emailVerified: payload.email_verified || false,
+          })
+          .returning({ id: users.id });
+
+        userId = newUser.id;
+        isNewUser = true;
+
+        // Link Google account
+        await db.insert(authProviders).values({
+          userId,
+          provider: 'google',
+          providerId: payload.sub,
+        });
+      }
+    }
+
+    // Get user info
+    const user = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        emailVerified: users.emailVerified,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    // Generate refresh token
+    const refreshToken = generateRefreshToken();
+
+    // Store refresh token
+    await db.insert(refreshTokens).values({
+      userId,
+      token: refreshToken,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    });
+
+    // Generate JWT (access token)
+    const accessToken = await generateJWT({
+      payload: { userId, role: user[0].role },
+      c,
+    });
+
+    return Response.json({
+      success: true,
+      accessToken,
+      refreshToken,
+      user: user[0],
+      isNewUser,
+    });
+  } catch (error) {
+    console.error('Google authentication error:', error);
+    return Response.json(
+      { error: 'An error occurred during Google authentication' },
+      { status: 500 }
+    );
+  }
+});
+
+
 
 export { authRoutes };

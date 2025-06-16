@@ -1,12 +1,13 @@
 name = "packrat-api"
 main = "src/index.ts"
-compatibility_date = "2024-04-01"
+compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 keep_vars = true
 
 [vars]
 NEON_DATABASE_URL = "postgres://user:pass@localhost/db"
 JWT_SECRET = "secret"
+GOOGLE_CLIENT_ID="some-client-id"
 OPENAI_API_KEY = "key"
 EMAIL_PROVIDER = "resend"
 RESEND_API_KEY = "key"
