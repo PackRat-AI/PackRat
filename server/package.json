@@ -22,6 +22,7 @@
     "bcryptjs": "^3.0.2",
     "drizzle-kit": "^0.30.6",
     "drizzle-orm": "^0.41.0",
+    "google-auth-library": "^10.1.0",
     "hono": "^4.7.5",
     "hono-openapi": "^0.4.6",
     "nodemailer": "^6.10.0",
