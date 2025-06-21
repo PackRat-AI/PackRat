@@ -1,5 +1,5 @@
-import { Env } from '@/types/env';
-import { Context } from 'hono';
+import type { Env } from '@/types/env';
+import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 
 type WeatherData = {
@@ -10,10 +10,7 @@ type WeatherData = {
   windSpeed: number;
 };
 
-export async function getWeatherData(
-  location: string,
-  c: Context
-): Promise<WeatherData> {
+export async function getWeatherData(location: string, c: Context): Promise<WeatherData> {
   try {
     const { OPENWEATHER_KEY } = env<Env>(c);
     const response = await fetch(

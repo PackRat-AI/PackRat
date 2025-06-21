@@ -1,23 +1,23 @@
+import { useForm } from '@tanstack/react-form';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
-import { Image, Platform, View, Alert } from 'react-native';
+import { Alert, Image, Platform, View } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardController,
   KeyboardStickyView,
 } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 
+import { Icon } from '@roninoss/icons';
+import { AlertAnchor } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
+import { Checkbox } from 'nativewindui/Checkbox';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
-import { Icon } from '@roninoss/icons';
-import { Checkbox } from 'nativewindui/Checkbox';
-import { AlertAnchor } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
 import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
 
 const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
@@ -163,7 +163,8 @@ export default function CredentialsScreen() {
         bounces={false}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="ios:pt-12 pt-20">
+        contentContainerClassName="ios:pt-12 pt-20"
+      >
         <View className="ios:px-12 flex-1 px-8">
           <View className="items-center pb-1">
             <Image
@@ -360,11 +361,12 @@ export default function CredentialsScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || isLoading}
-                  onPress={() => form.handleSubmit()}>
+                  onPress={() => form.handleSubmit()}
+                >
                   <Text>{isLoading ? 'Loading...' : 'Submit'}</Text>
                 </Button>
               )}
@@ -373,7 +375,7 @@ export default function CredentialsScreen() {
         ) : (
           <View className="flex-row justify-end py-4 pl-6 pr-8">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || isLoading}
                   onPress={() => {
@@ -383,7 +385,8 @@ export default function CredentialsScreen() {
                     }
                     KeyboardController.dismiss();
                     form.handleSubmit();
-                  }}>
+                  }}
+                >
                   <Text className="text-sm">
                     {isLoading
                       ? 'Loading...'

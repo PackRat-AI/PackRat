@@ -1,78 +1,78 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Backpack, Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
-import GradientText from "@/components/ui/gradient-text"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { cn } from "@/lib/utils"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
+import GradientText from '@/components/ui/gradient-text';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { siteConfig } from '@/config/site';
+import { cn } from '@/lib/utils';
+import { Backpack, Menu, X } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function MainNav() {
-  const [activeSection, setActiveSection] = useState<string>("")
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState<string>('');
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Handle scroll events to update active section and navbar style
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
+      setIsScrolled(window.scrollY > 10);
 
       // Find the current active section based on scroll position
-      const sections = siteConfig.mainNav.map((item) => item.href.substring(1))
+      const sections = siteConfig.mainNav.map((item) => item.href.substring(1));
 
       // Get all section elements
-      const sectionElements = sections.map((id) => document.getElementById(id)).filter(Boolean)
+      const sectionElements = sections.map((id) => document.getElementById(id)).filter(Boolean);
 
       // Find the section that is currently in view
       const currentSection = sectionElements.find((element) => {
-        if (!element) return false
-        const rect = element.getBoundingClientRect()
-        return rect.top <= 100 && rect.bottom >= 100
-      })
+        if (!element) return false;
+        const rect = element.getBoundingClientRect();
+        return rect.top <= 100 && rect.bottom >= 100;
+      });
 
       if (currentSection) {
-        setActiveSection(`#${currentSection.id}`)
+        setActiveSection(`#${currentSection.id}`);
       } else if (window.scrollY < 100) {
-        setActiveSection("") // At the top of the page
+        setActiveSection(''); // At the top of the page
       }
-    }
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    handleScroll() // Initialize on mount
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initialize on mount
 
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Handle smooth scrolling when clicking on navigation links
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault()
-    const targetId = href.substring(1)
-    const element = document.getElementById(targetId)
+    e.preventDefault();
+    const targetId = href.substring(1);
+    const element = document.getElementById(targetId);
 
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
-      setActiveSection(href)
-      setIsOpen(false) // Close mobile menu after clicking
+      element.scrollIntoView({ behavior: 'smooth' });
+      setActiveSection(href);
+      setIsOpen(false); // Close mobile menu after clicking
     }
-  }
+  };
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 w-full transition-all duration-300",
-        isScrolled ? "bg-background/80 shadow-sm backdrop-blur-md py-2" : "bg-transparent py-4",
+        'sticky top-0 z-40 w-full transition-all duration-300',
+        isScrolled ? 'bg-background/80 shadow-sm backdrop-blur-md py-2' : 'bg-transparent py-4'
       )}
     >
       <div className="container flex items-center justify-between px-4 md:px-8 lg:px-12">
         <Link href="/" className="flex items-center gap-2 z-10">
           <div className="relative">
             <Backpack className="h-8 w-8 text-primary" />
-            <div className="absolute -inset-1.5 rounded-full blur-lg opacity-30 -z-10 bg-primary"></div>
+            <div className="absolute -inset-1.5 rounded-full blur-lg opacity-30 -z-10 bg-primary" />
           </div>
           <GradientText className="text-xl font-bold">{siteConfig.name}</GradientText>
         </Link>
@@ -85,8 +85,8 @@ export default function MainNav() {
               href={item.href}
               onClick={(e) => scrollToSection(e, item.href)}
               className={cn(
-                "text-sm font-medium tracking-wide transition-colors hover:text-primary",
-                activeSection === item.href && "text-primary font-semibold",
+                'text-sm font-medium tracking-wide transition-colors hover:text-primary',
+                activeSection === item.href && 'text-primary font-semibold'
               )}
             >
               {item.title}
@@ -98,7 +98,10 @@ export default function MainNav() {
           <ThemeToggle />
 
           <Button asChild className="hidden md:inline-flex" variant="default">
-            <Link href={siteConfig.cta.primary.href} onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}>
+            <Link
+              href={siteConfig.cta.primary.href}
+              onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
+            >
               {siteConfig.cta.primary.text}
             </Link>
           </Button>
@@ -131,8 +134,8 @@ export default function MainNav() {
                       href={item.href}
                       onClick={(e) => scrollToSection(e, item.href)}
                       className={cn(
-                        "text-lg font-medium py-2 border-b border-border/20 transition-colors hover:text-primary",
-                        activeSection === item.href && "text-primary font-semibold",
+                        'text-lg font-medium py-2 border-b border-border/20 transition-colors hover:text-primary',
+                        activeSection === item.href && 'text-primary font-semibold'
                       )}
                     >
                       {item.title}
@@ -156,5 +159,5 @@ export default function MainNav() {
         </div>
       </div>
     </header>
-  )
+  );
 }

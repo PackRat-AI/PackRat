@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { View, ScrollView, Pressable, ActivityIndicator, SafeAreaView } from 'react-native'; // 👈 import ActivityIndicator
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, View } from 'react-native'; // 👈 import ActivityIndicator
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
 import { PackItemCard } from '~/features/packs/components/PackItemCard';
 import { useUserPackItems } from '~/features/packs/hooks/useUserPackItems';
-import { cn } from '~/lib/cn';
 import type { PackItem } from '~/features/packs/types';
+import { cn } from '~/lib/cn';
 
 function CategorySection({ category, items }: { category: string; items: PackItem[] }) {
   return (
@@ -57,12 +57,12 @@ export default function GearInventoryScreen() {
           <View className="flex-row overflow-hidden rounded-lg bg-card">
             <Pressable
               className={cn('px-3 py-1.5', viewMode === 'all' ? 'bg-primary' : 'bg-transparent')}
-              onPress={() => setViewMode('all')}>
+              onPress={() => setViewMode('all')}
+            >
               <Text
                 variant="subhead"
-                className={
-                  viewMode === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'
-                }>
+                className={viewMode === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
+              >
                 All
               </Text>
             </Pressable>
@@ -71,12 +71,14 @@ export default function GearInventoryScreen() {
                 'px-3 py-1.5',
                 viewMode === 'category' ? 'bg-primary' : 'bg-transparent'
               )}
-              onPress={() => setViewMode('category')}>
+              onPress={() => setViewMode('category')}
+            >
               <Text
                 variant="subhead"
                 className={
                   viewMode === 'category' ? 'text-primary-foreground' : 'text-muted-foreground'
-                }>
+                }
+              >
                 By Category
               </Text>
             </Pressable>

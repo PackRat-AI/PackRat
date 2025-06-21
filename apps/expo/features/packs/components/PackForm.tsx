@@ -1,6 +1,11 @@
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useRouter } from 'expo-router';
+import { Button } from 'nativewindui/Button';
+import { DropdownMenu } from 'nativewindui/DropdownMenu';
+import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { TextField } from 'nativewindui/TextField';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,14 +16,9 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { TextField } from 'nativewindui/TextField';
-import { useCreatePack, useUpdatePack } from '../hooks';
 import { useColorScheme } from '~/lib/useColorScheme';
+import { useCreatePack, useUpdatePack } from '../hooks';
 import type { Pack, PackCategory } from '../types';
-import { Button } from 'nativewindui/Button';
 // Define Zod schema
 const packFormSchema = z.object({
   name: z.string().min(1, 'Pack name is required'),
@@ -91,12 +91,14 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1">
+      className="flex-1"
+    >
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
             ios={{ title: 'Pack Details' }}
-            footnote="Enter the basic information about your pack">
+            footnote="Enter the basic information about your pack"
+          >
             <form.Field name="name">
               {(field) => (
                 <FormItem>
@@ -149,7 +151,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     )}
                     onItemPress={(item) => {
                       field.handleChange(item.actionKey as PackCategory);
-                    }}>
+                    }}
+                  >
                     <Button className="my-2 w-full" variant="plain">
                       <View className="w-full flex-row items-center justify-between capitalize">
                         <Text>{field.state.value || 'Select Category'}</Text>
@@ -164,7 +167,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
 
           <FormSection
             ios={{ title: 'Visibility' }}
-            footnote="Public packs can be viewed by other users">
+            footnote="Public packs can be viewed by other users"
+          >
             <form.Field name="isPublic">
               {(field) => (
                 <FormItem>
@@ -195,7 +199,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
             <Pressable
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${!canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'}`}>
+              className={`mt-6 rounded-lg px-4 py-3.5 ${!canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'}`}
+            >
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting
                   ? isEditingExistingPack

@@ -3,12 +3,12 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as React from 'react';
 import {
-  type TextStyle,
-  type ViewStyle,
+  Dimensions,
   Platform,
   Pressable,
+  type TextStyle,
   View,
-  Dimensions,
+  type ViewStyle,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -26,17 +26,17 @@ import Animated, {
 
 import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
 import { Button } from 'nativewindui/Button';
+import { Checkbox } from 'nativewindui/Checkbox';
 import { ContextMenu } from 'nativewindui/ContextMenu';
 import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { Checkbox } from 'nativewindui/Checkbox';
 import { DropdownMenu } from 'nativewindui/DropdownMenu';
 import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { List, ListItem, ListRenderItemInfo } from 'nativewindui/List';
+import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { Toolbar } from 'nativewindui/Toolbar';
-import { useColorScheme } from '~/lib/useColorScheme';
 import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export default function ConversationsIosScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();
@@ -146,7 +146,8 @@ function LeftView({
         variant="plain"
         size="md"
         className="ios:px-0 px-2 py-1"
-        onPress={() => setIsSelecting(false)}>
+        onPress={() => setIsSelecting(false)}
+      >
         <Text className="text-primary font-normal">Done</Text>
       </Button>
     );
@@ -183,14 +184,16 @@ const SEARCH_BAR = {
     <View className={cn('flex-1', Platform.OS === 'ios' && 'bg-card dark:bg-background')}>
       <Animated.View
         entering={FadeIn.delay(150)}
-        className="ios:pt-4 border-border flex-row border-b px-4 pb-4">
+        className="ios:pt-4 border-border flex-row border-b px-4 pb-4"
+      >
         <View className="items-center gap-2 py-2">
           <Avatar alt="avatar" className="h-12 w-12">
             <AvatarFallback>
               <View className="opacity-90 dark:opacity-80">
                 <Text
                   className="dark:ios:text-white dark:text-background leading-6 text-white"
-                  variant="title3">
+                  variant="title3"
+                >
                   GM
                 </Text>
               </View>
@@ -267,7 +270,8 @@ function MessageRow({
       <ContextMenu
         items={CONTEXT_MENU_ITEMS}
         iosRenderPreview={renderIosContextMenuPreview(info)}
-        materialAlign="center">
+        materialAlign="center"
+      >
         <ListItem
           {...info}
           subTitleNumberOfLines={2}
@@ -302,7 +306,8 @@ function MessageRow({
                     {info.item.contact ? (
                       <Text
                         className="dark:ios:text-white dark:text-background leading-6 text-white"
-                        variant="title3">
+                        variant="title3"
+                      >
                         {getInitials(info.item.title)}
                       </Text>
                     ) : (
@@ -323,13 +328,9 @@ function MessageRow({
           titleStyle={TEXT_STYLE}
           titleClassName="font-medium text-lg"
           subTitleClassName="pt-0.5"
-          rightView={
-            <>
-              <View className="pr-3">
-                {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
-              </View>
-            </>
-          }
+          rightView=<View className="pr-3">
+            {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
+          </View>
         />
       </ContextMenu>
       <View style={TIMESTAMP_CONTAINER_STYLE} className="absolute right-8 top-1.5">
@@ -575,7 +576,8 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
             <Pressable
               style={ACTION_BUTTON_STYLE}
               onPress={onStatusActionPress}
-              className="absolute bottom-0 right-0 top-0 items-center justify-center">
+              className="absolute bottom-0 right-0 top-0 items-center justify-center"
+            >
               <Icon
                 ios={{ name: isUnread ? 'checkmark.message.fill' : 'message.badge.fill' }}
                 materialIcon={{
@@ -593,7 +595,8 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
             <Pressable
               style={ACTION_BUTTON_STYLE}
               onPress={onDeleteActionPress}
-              className="absolute bottom-0 right-0 top-0 items-center justify-center">
+              className="absolute bottom-0 right-0 top-0 items-center justify-center"
+            >
               <Icon name="trash-can" size={24} color="white" />
             </Pressable>
           </Animated.View>
@@ -602,7 +605,8 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
           <Pressable
             style={ACTION_BUTTON_STYLE}
             onPress={onNotificationActionPress}
-            className="absolute bottom-0 left-0 top-0 items-center justify-center">
+            className="absolute bottom-0 left-0 top-0 items-center justify-center"
+          >
             <Icon
               ios={{ name: 'bell.slash.fill' }}
               materialIcon={{ type: 'MaterialCommunityIcons', name: 'bell-cancel' }}

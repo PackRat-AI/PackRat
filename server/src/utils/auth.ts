@@ -1,14 +1,14 @@
-import { Env } from "@/types/env";
-import * as bcrypt from "bcryptjs";
-import { Context } from "hono";
-import { env } from "hono/adapter";
-import { sign, verify } from "hono/jwt";
-import { JWTPayload } from "hono/utils/jwt/types";
-import { randomBytes } from "node:crypto";
+import { randomBytes } from 'node:crypto';
+import type { Env } from '@/types/env';
+import * as bcrypt from 'bcryptjs';
+import type { Context } from 'hono';
+import { env } from 'hono/adapter';
+import { sign, verify } from 'hono/jwt';
+import type { JWTPayload } from 'hono/utils/jwt/types';
 
 // Generate a random token
 export function generateToken(length = 32): string {
-  return randomBytes(length).toString("hex");
+  return randomBytes(length).toString('hex');
 }
 
 // Hash a password using bcrypt
@@ -18,16 +18,13 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 // Verify a password against a hash
-export async function verifyPassword(
-  password: string,
-  hash: string
-): Promise<boolean> {
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return await bcrypt.compare(password, hash);
 }
 
 // Generate a refresh token
 export function generateRefreshToken(): string {
-  return randomBytes(40).toString("hex");
+  return randomBytes(40).toString('hex');
 }
 
 // Generate a JWT token{
@@ -53,14 +50,14 @@ export async function verifyJWT({
   try {
     const { JWT_SECRET } = env<Env>(c);
     return await verify(token, JWT_SECRET);
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
 
 // Generate a random numeric verification code
 export function generateVerificationCode(length = 6): string {
-  return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
+  return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('');
 }
 
 // Validate password strength
@@ -71,28 +68,28 @@ export function validatePassword(password: string): {
   if (password.length < 8) {
     return {
       valid: false,
-      message: "Password must be at least 8 characters long",
+      message: 'Password must be at least 8 characters long',
     };
   }
 
   if (!/[A-Z]/.test(password)) {
     return {
       valid: false,
-      message: "Password must contain at least one uppercase letter",
+      message: 'Password must contain at least one uppercase letter',
     };
   }
 
   if (!/[a-z]/.test(password)) {
     return {
       valid: false,
-      message: "Password must contain at least one lowercase letter",
+      message: 'Password must contain at least one lowercase letter',
     };
   }
 
   if (!/[0-9]/.test(password)) {
     return {
       valid: false,
-      message: "Password must contain at least one number",
+      message: 'Password must contain at least one number',
     };
   }
 

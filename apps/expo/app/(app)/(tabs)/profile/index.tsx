@@ -1,6 +1,9 @@
 import { Stack, useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
 
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { Alert } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
 import { Button } from 'nativewindui/Button';
 import {
@@ -11,16 +14,13 @@ import {
   ListSectionHeader,
 } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
+import { useRef } from 'react';
+import { withAuthWall } from '~/features/auth/hocs';
 import { useAuth } from '~/features/auth/hooks/useAuth';
 import { useUser } from '~/features/auth/hooks/useUser';
-import { withAuthWall } from '~/features/auth/hocs';
-import { ProfileAuthWall } from '~/features/profile/components';
-import { Alert } from 'nativewindui/Alert';
-import { useRef } from 'react';
-import { AlertRef } from 'nativewindui/Alert/types';
 import { packItemsSyncState, packsSyncState } from '~/features/packs/store';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { ProfileAuthWall } from '~/features/profile/components';
+import { cn } from '~/lib/cn';
 
 const SCREEN_OPTIONS = {
   title: 'Profile',
@@ -119,7 +119,8 @@ function ListHeaderComponent() {
             className={cn(
               'font-medium text-white dark:text-background',
               Platform.OS === 'ios' && 'dark:text-foreground'
-            )}>
+            )}
+          >
             {initials}
           </Text>
         </AvatarFallback>
@@ -154,7 +155,8 @@ function ListFooterComponent() {
         }}
         size="lg"
         variant={Platform.select({ ios: 'primary', default: 'secondary' })}
-        className="border-border bg-card">
+        className="border-border bg-card"
+      >
         {isLoading ? (
           <ActivityIndicator className="text-destructive" />
         ) : (

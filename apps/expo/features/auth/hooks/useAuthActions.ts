@@ -1,14 +1,14 @@
-import { useAtomValue, useSetAtom } from 'jotai';
-import { Href, router } from 'expo-router';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { type Href, router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { tokenAtom, refreshTokenAtom, isLoadingAtom, redirectToAtom } from '../atoms/authAtoms';
-import { packItemsSyncState, packsSyncState } from '~/features/packs/store';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { isAuthed, userStore, userSyncState } from '~/features/auth/store';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import { packItemsSyncState, packsSyncState } from '~/features/packs/store';
 import { packWeigthHistorySyncState } from '~/features/packs/store/packWeightHistory';
 import axiosInstance from '~/lib/api/client';
+import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import { isLoadingAtom, redirectToAtom, refreshTokenAtom, tokenAtom } from '../atoms/authAtoms';
 
 function redirect(route: string) {
   try {
@@ -83,7 +83,7 @@ export function useAuthActions() {
       await GoogleSignin.hasPlayServices();
 
       // Sign in with Google
-      const userInfo = await GoogleSignin.signIn();
+      const _userInfo = await GoogleSignin.signIn();
 
       // Get the ID token
       const { idToken } = await GoogleSignin.getTokens();

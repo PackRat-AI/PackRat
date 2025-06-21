@@ -1,8 +1,8 @@
 'use client';
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
 import { Button } from 'nativewindui/Button';
+import { Text, View } from 'react-native';
 import { useColorScheme } from '~/lib/useColorScheme';
 
 type NotFoundScreenProps = {
@@ -43,7 +43,8 @@ export function NotFoundScreen({
         <Button
           onPress={handleBackPress}
           variant="primary"
-          className="h-12 flex-row items-center gap-2">
+          className="h-12 flex-row items-center gap-2"
+        >
           <Icon name="chevron-left" size={18} color={colors.foreground} />
           <Text className="font-medium">{backButtonLabel}</Text>
         </Button>

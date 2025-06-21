@@ -2,8 +2,8 @@
 
 import { Icon } from '@roninoss/icons';
 import { Link } from 'expo-router';
-import { Pressable, View, Text, FlatList } from 'react-native';
-import { useState, useRef, useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
@@ -14,23 +14,23 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from 'nativewindui/List';
+import { featureFlags } from '~/config';
+import { AIChatTile } from '~/features/ai/components/AIChatTile';
+import { PackTemplatesTile } from '~/features/pack-templates/components/PackTemplatesTile';
+import { CurrentPackTile } from '~/features/packs/components/CurrentPackTile';
+import { GearInventoryTile } from '~/features/packs/components/GearInventoryTile';
+import { PackCategoriesTile } from '~/features/packs/components/PackCategoriesTile';
+import { PackStatsTile } from '~/features/packs/components/PackStatsTile';
+import { RecentPacksTile } from '~/features/packs/components/RecentPacksTile';
+import { SharedPacksTile } from '~/features/packs/components/SharedPacksTile';
+import { ShoppingListTile } from '~/features/packs/components/ShoppingListTile';
+import { WeightAnalysisTile } from '~/features/packs/components/WeightAnalysisTile';
+import { TrailConditionsTile } from '~/features/trips/components/TrailConditionsTile';
+import { UpcomingTripsTile } from '~/features/trips/components/UpcomingTripsTile';
+import { WeatherAlertsTile } from '~/features/weather/components/WeatherAlertsTile';
+import { WeatherTile } from '~/features/weather/components/WeatherTile';
 import { cn } from '~/lib/cn';
 import { useColorScheme } from '~/lib/useColorScheme';
-import { WeatherTile } from '~/features/weather/components/WeatherTile';
-import { CurrentPackTile } from '~/features/packs/components/CurrentPackTile';
-import { RecentPacksTile } from '~/features/packs/components/RecentPacksTile';
-import { AIChatTile } from '~/features/ai/components/AIChatTile';
-import { PackStatsTile } from '~/features/packs/components/PackStatsTile';
-import { WeightAnalysisTile } from '~/features/packs/components/WeightAnalysisTile';
-import { PackCategoriesTile } from '~/features/packs/components/PackCategoriesTile';
-import { UpcomingTripsTile } from '~/features/trips/components/UpcomingTripsTile';
-import { TrailConditionsTile } from '~/features/trips/components/TrailConditionsTile';
-import { WeatherAlertsTile } from '~/features/weather/components/WeatherAlertsTile';
-import { GearInventoryTile } from '~/features/packs/components/GearInventoryTile';
-import { SharedPacksTile } from '~/features/packs/components/SharedPacksTile';
-import { PackTemplatesTile } from '~/features/pack-templates/components/PackTemplatesTile';
-import { ShoppingListTile } from '~/features/packs/components/ShoppingListTile';
-import { featureFlags } from '~/config';
 
 // Define tile metadata for search functionality
 const tileMetadata = {
@@ -186,7 +186,8 @@ export default function DashboardScreen() {
                       onPress={() => {
                         setSearchValue('');
                         searchBarRef.current?.clearText();
-                      }}>
+                      }}
+                    >
                       <Component />
                     </Pressable>
                   );

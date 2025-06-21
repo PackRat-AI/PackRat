@@ -1,4 +1,4 @@
-import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { Platform, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,12 @@ import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { Button } from 'nativewindui/Button';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { List, ListDataItem, ListRenderItemInfo, ListSectionHeader } from 'nativewindui/List';
+import {
+  List,
+  type ListDataItem,
+  type ListRenderItemInfo,
+  ListSectionHeader,
+} from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { cn } from '~/lib/cn';
 import { useColorScheme } from '~/lib/useColorScheme';
@@ -39,7 +44,8 @@ export default function SettingsAndroidStyleScreen() {
                 className={cn(
                   'flex-1',
                   Platform.OS === 'ios' && 'bg-background dark:bg-background'
-                )}>
+                )}
+              >
                 <Animated.View entering={FadeInUp.delay(150)}>
                   <SearchContent />
                 </Animated.View>
@@ -92,7 +98,8 @@ function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>
       size="lg"
       variant="plain"
       className="ios:gap-3 ios:px-6 justify-start px-8 py-5"
-      onPress={() => console.log('onPress')}>
+      onPress={() => console.log('onPress')}
+    >
       {info.item.leftView}
       <View className="flex-1">
         <Text className="pl-4 text-xl font-normal">{info.item.title}</Text>

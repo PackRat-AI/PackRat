@@ -3,9 +3,9 @@ import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
-import * as React from 'react';
+import type * as React from 'react';
 import { useState } from 'react';
-import { Linking, useWindowDimensions, View } from 'react-native';
+import { Linking, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '~/components/Card';
 
@@ -22,7 +22,7 @@ cssInterop(FlashList, {
 });
 
 export default function Screen() {
-  const [hasSeenConsent, setHasSeenConsent] = useState(false);
+  const [hasSeenConsent, _setHasSeenConsent] = useState(false);
 
   const searchValue = useHeaderSearchBar({ hideWhenScrolling: COMPONENTS.length === 0 });
   // const [searchValue, setSearchValue] = useState('');
@@ -78,7 +78,8 @@ function ListEmptyComponent() {
         <Text
           onPress={() => Linking.openURL('https://nativewindui.com')}
           variant="subhead"
-          className="text-primary">
+          className="text-primary"
+        >
           NativeWindUI
         </Text>
         {' website.'}

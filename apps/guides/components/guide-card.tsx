@@ -1,9 +1,9 @@
-import Link from "next/link"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { format } from "date-fns"
-import { Clock, Calendar, MountainSnow } from "lucide-react"
-import type { Post } from "@/lib/types"
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import type { Post } from '@/lib/types';
+import { format } from 'date-fns';
+import { Calendar, Clock, MountainSnow } from 'lucide-react';
+import Link from 'next/link';
 
 export default function GuideCard({ post }: { post: Post }) {
   return (
@@ -31,11 +31,11 @@ export default function GuideCard({ post }: { post: Post }) {
         <CardFooter className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            <time dateTime={post.date}>{format(new Date(post.date), "MMM d, yyyy")}</time>
+            <time dateTime={post.date}>{format(new Date(post.date), 'MMM d, yyyy')}</time>
           </div>
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span>{post.readingTime || "5 min read"}</span>
+            <span>{post.readingTime || '5 min read'}</span>
           </div>
           {post.difficulty && (
             <div className="flex items-center gap-1">
@@ -46,6 +46,5 @@ export default function GuideCard({ post }: { post: Post }) {
         </CardFooter>
       </Card>
     </Link>
-  )
+  );
 }
-

@@ -1,13 +1,13 @@
-import { isArray } from 'radash';
-import { Image, Pressable, Text, View } from 'react-native';
-import type { Pack } from '../types';
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { WeightBadge } from '~/components/initial/WeightBadge';
 import { Icon } from '@roninoss/icons';
 import { Alert } from 'nativewindui/Alert';
 import { Button } from 'nativewindui/Button';
+import { isArray } from 'radash';
+import { Image, Pressable, Text, View } from 'react-native';
+import { CategoryBadge } from '~/components/initial/CategoryBadge';
+import { WeightBadge } from '~/components/initial/WeightBadge';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { useDeletePack, usePackDetails } from '../hooks';
+import type { Pack } from '../types';
 
 type PackCardProps = {
   packId: string;
@@ -15,7 +15,7 @@ type PackCardProps = {
 };
 
 export function PackCard({ packId, onPress }: PackCardProps) {
-  const pack = usePackDetails(packId)
+  const pack = usePackDetails(packId);
   const deletePack = useDeletePack();
   const { colors } = useColorScheme();
 
@@ -26,7 +26,8 @@ export function PackCard({ packId, onPress }: PackCardProps) {
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
-      onPress={() => onPress(pack)}>
+      onPress={() => onPress(pack)}
+    >
       {pack.image && (
         <Image source={{ uri: pack.image }} className="h-40 w-full" resizeMode="cover" />
       )}
@@ -80,7 +81,8 @@ export function PackCard({ packId, onPress }: PackCardProps) {
                   deletePack(pack.id);
                 },
               },
-            ]}>
+            ]}
+          >
             <Button variant="plain" size="icon">
               <Icon name="trash-can" size={21} color={colors.grey2} />
             </Button>

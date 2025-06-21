@@ -1,9 +1,9 @@
-import { Env } from "@/types/env";
-import { Context } from "hono";
-import { env } from "hono/adapter";
-import { Resend } from "resend";
+import type { Env } from '@/types/env';
+import type { Context } from 'hono';
+import { env } from 'hono/adapter';
+import { Resend } from 'resend';
 
-type EmailProvider = "nodemailer" | "resend";
+type EmailProvider = 'nodemailer' | 'resend';
 
 // Send an email using the configured provider
 export async function sendEmail({
@@ -18,7 +18,7 @@ export async function sendEmail({
   c: Context;
 }): Promise<void> {
   const { EMAIL_PROVIDER, RESEND_API_KEY, EMAIL_FROM } = env<Env>(c);
-  const provider = (EMAIL_PROVIDER as EmailProvider) || "nodemailer";
+  const provider = (EMAIL_PROVIDER as EmailProvider) || 'nodemailer';
   const resendClient = new Resend(RESEND_API_KEY);
 
   const options = {
@@ -29,12 +29,11 @@ export async function sendEmail({
   };
 
   switch (provider) {
-    case "resend":
+    case 'resend':
       await resendClient.emails.send(options);
       break;
-    case "nodemailer":
     default:
-      throw new Error("Nodemailer is not supported in Cloudflare Workers");
+      throw new Error('Nodemailer is not supported in Cloudflare Workers');
   }
 }
 
@@ -63,7 +62,7 @@ export async function sendVerificationCodeEmail({
     </div>
   `;
 
-  await sendEmail({ to, subject: "Verify Your PackRat Account", html, c });
+  await sendEmail({ to, subject: 'Verify Your PackRat Account', html, c });
 }
 
 // Send a password reset email
@@ -91,5 +90,5 @@ export async function sendPasswordResetEmail({
     </div>
   `;
 
-  await sendEmail({ to, subject: "Reset Your PackRat Password", html, c });
+  await sendEmail({ to, subject: 'Reset Your PackRat Password', html, c });
 }

@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import Storage from 'expo-sqlite/kv-store';
+import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
+  ActivityIndicator,
+  Alert,
   Button,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
-  Alert,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
-import Storage from 'expo-sqlite/kv-store';
 
 export default function SQLiteKVDebug() {
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +57,7 @@ export default function SQLiteKVDebug() {
         } else {
           parsedValue = newValue;
         }
-      } catch (e) {
+      } catch (_e) {
         parsedValue = newValue;
       }
 
@@ -87,7 +87,7 @@ export default function SQLiteKVDebug() {
         } else {
           parsedValue = editMode.value;
         }
-      } catch (e) {
+      } catch (_e) {
         parsedValue = editMode.value;
       }
 

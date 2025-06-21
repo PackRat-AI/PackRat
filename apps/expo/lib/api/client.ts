@@ -4,9 +4,9 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from 'axios';
-import { store } from '~/atoms/store';
-import { tokenAtom, refreshTokenAtom } from '~/features/auth/atoms/authAtoms';
 import * as SecureStore from 'expo-secure-store';
+import { store } from '~/atoms/store';
+import { refreshTokenAtom, tokenAtom } from '~/features/auth/atoms/authAtoms';
 
 // Define base API URL based on environment
 export const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -116,12 +116,11 @@ axiosInstance.interceptors.response.use(
 
           // Retry original request
           return axios(originalRequest);
-        } else {
-          // Refresh failed, logout user
-          // You could dispatch a logout action here
-          processQueue(new Error('Token refresh failed'));
-          return Promise.reject(error);
         }
+        // Refresh failed, logout user
+        // You could dispatch a logout action here
+        processQueue(new Error('Token refresh failed'));
+        return Promise.reject(error);
       } catch (refreshError) {
         // Refresh failed, logout user
         // You could dispatch a logout action here

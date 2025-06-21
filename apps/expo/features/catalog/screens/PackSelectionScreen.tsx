@@ -1,24 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  View,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  SafeAreaView,
-  Image,
-  Animated,
-} from 'react-native';
 import { Icon } from '@roninoss/icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from 'nativewindui/Button';
-import { useCatalogItemDetails } from '../hooks';
-import type { Pack } from '~/types';
 import { SearchInput } from 'nativewindui/SearchInput';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  FlatList,
+  Image,
+  SafeAreaView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { usePacks } from '~/features/packs';
+import { useColorScheme } from '~/lib/useColorScheme';
+import type { Pack } from '~/types';
+import { useCatalogItemDetails } from '../hooks';
 
 export function PackSelectionScreen() {
   const router = useRouter();
@@ -132,7 +132,8 @@ export function PackSelectionScreen() {
                   <TouchableOpacity
                     className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm"
                     onPress={() => handlePackSelect(item.id)}
-                    activeOpacity={0.7}>
+                    activeOpacity={0.7}
+                  >
                     <View className="p-4 py-8">
                       <View className="flex-row items-center justify-between">
                         <View className="flex-1 gap-4">

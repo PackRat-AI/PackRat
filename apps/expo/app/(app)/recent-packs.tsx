@@ -1,5 +1,5 @@
 import { Icon } from '@roninoss/icons';
-import { View, ScrollView, Image } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';

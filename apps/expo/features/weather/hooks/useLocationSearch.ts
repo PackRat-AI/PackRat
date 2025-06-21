@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  searchLocations,
-  getWeatherData,
   formatWeatherData,
+  getWeatherData,
+  searchLocations,
   searchLocationsByCoordinates,
 } from '~/features/weather/lib/weatherService';
 import type { LocationSearchResult, WeatherLocation } from '../types';
@@ -83,10 +83,9 @@ export function useLocationSearch() {
 
         addLocation(newLocation);
         return true;
-      } else {
-        setError('Failed to get weather data for this location');
-        return false;
       }
+      setError('Failed to get weather data for this location');
+      return false;
     } catch (err) {
       console.error('Error adding location:', err);
       setError('Failed to add location. Please try again.');

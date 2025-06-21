@@ -1,17 +1,14 @@
-import { getWeatherData } from "@/services/getWeatherData";
-import { Env } from "@/types/env";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@/utils/api-middleware";
-import { getItemDetails, getPackDetails } from "@/utils/DbUtils";
-import { createOpenAI } from "@ai-sdk/openai";
-import { streamText } from "ai";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { env } from "hono/adapter";
-import { reportedContent } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { createDb } from '@/db';
+import { reportedContent } from '@/db/schema';
+import { getWeatherData } from '@/services/getWeatherData';
+import type { Env } from '@/types/env';
+import { getItemDetails, getPackDetails } from '@/utils/DbUtils';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { createOpenAI } from '@ai-sdk/openai';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { streamText } from 'ai';
+import { eq } from 'drizzle-orm';
+import { env } from 'hono/adapter';
 
 const chatRoutes = new OpenAPIHono();
 
@@ -41,8 +38,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
   }
 
   try {
-    const { messages, contextType, itemId, packId, userId, location } =
-      await c.req.json();
+    const { messages, contextType, itemId, packId, userId, location } = await c.req.json();
 
     // Only get weather data if location is defined
     const weatherData = location ? await getWeatherData(location, c) : null;
@@ -159,15 +155,12 @@ chatRoutes.openapi(chatRoute, async (c) => {
     return result.toDataStreamResponse();
   } catch (error) {
     console.error('AI Chat API error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Failed to process AI chat request' }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to process AI chat request' }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 });
 
@@ -180,8 +173,7 @@ chatRoutes.post('/reports', async (c) => {
   const db = createDb(c);
 
   try {
-    const { messageId, userQuery, aiResponse, reason, userComment } =
-      await c.req.json();
+    const { messageId, userQuery, aiResponse, reason, userComment } = await c.req.json();
 
     // Insert the reported content into the database
     await db.insert(reportedContent).values({

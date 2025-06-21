@@ -2,11 +2,7 @@
   "name": "packrat-monorepo",
   "private": true,
   "version": "2.0.0",
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "server"
-  ],
+  "workspaces": ["apps/*", "packages/*", "server"],
   "scripts": {
     "clean:all": "bun run --cwd apps/* clean && bun run --cwd packages/* clean",
     "clean": "bun run clean:all && bunx rimraf node_modules",
@@ -15,9 +11,16 @@
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
-    "server": "cd server && bun dev"
+    "server": "cd server && bun dev",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write ."
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@manypkg/cli": "^0.23.0",
     "@types/bun": "latest",
     "rimraf": "^5.0.5",

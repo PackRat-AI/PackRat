@@ -1,4 +1,4 @@
-import { CatalogItem } from '~/types';
+import type { CatalogItem } from '~/types';
 
 // --- Catalog Items ---
 export const mockCatalogItems: CatalogItem[] = [

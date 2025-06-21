@@ -1,154 +1,160 @@
-"use client"
+'use client';
 
-import { Stack, router, useLocalSearchParams } from "expo-router"
-import * as React from "react"
-import { Image, Platform, View, Alert } from "react-native"
-import { KeyboardAwareScrollView, KeyboardController, KeyboardStickyView } from "react-native-keyboard-controller"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { useForm } from "@tanstack/react-form"
-import { z } from "zod"
+import { useForm } from '@tanstack/react-form';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import * as React from 'react';
+import { Alert, Image, Platform, View } from 'react-native';
+import {
+  KeyboardAwareScrollView,
+  KeyboardController,
+  KeyboardStickyView,
+} from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { z } from 'zod';
 
+import { Icon } from '@roninoss/icons';
+import { AlertAnchor } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
+import { Checkbox } from 'nativewindui/Checkbox';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
-import { Icon } from "@roninoss/icons"
-import { Checkbox } from 'nativewindui/Checkbox';
-import { AlertAnchor } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
 
 const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
 // Enhanced password validation schema
 const passwordSchema = z
   .string()
-  .min(8, "Password must be at least 8 characters")
+  .min(8, 'Password must be at least 8 characters')
   .refine((password) => /[A-Z]/.test(password), {
-    message: "Password must contain at least one uppercase letter",
+    message: 'Password must contain at least one uppercase letter',
   })
   .refine((password) => /[a-z]/.test(password), {
-    message: "Password must contain at least one lowercase letter",
+    message: 'Password must contain at least one lowercase letter',
   })
   .refine((password) => /[0-9]/.test(password), {
-    message: "Password must contain at least one number",
+    message: 'Password must contain at least one number',
   })
   .refine((password) => /[^A-Za-z0-9]/.test(password), {
-    message: "Password must contain at least one special character",
-  })
+    message: 'Password must contain at least one special character',
+  });
 
 // Define Zod schema for password reset validation
 const resetPasswordFormSchema = z
   .object({
     password: passwordSchema,
-    confirmPassword: z.string().min(1, "Please confirm your password"),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  })
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 // Type inference
-type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>
+type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>;
 
 // Password strength checker function
 const getPasswordStrength = (password: string) => {
-  let strength = 0
+  let strength = 0;
   if (password.length >= 8) {
-    strength++
+    strength++;
   }
   if (/[A-Z]/.test(password)) {
-    strength++
+    strength++;
   }
   if (/[a-z]/.test(password)) {
-    strength++
+    strength++;
   }
   if (/[0-9]/.test(password)) {
-    strength++
+    strength++;
   }
   if (/[^A-Za-z0-9]/.test(password)) {
-    strength++
+    strength++;
   }
 
-  let label = "Very Weak"
-  let color = "bg-red-500"
+  let label = 'Very Weak';
+  let color = 'bg-red-500';
 
   if (strength === 1) {
-    label = "Weak"
-    color = "bg-red-500"
+    label = 'Weak';
+    color = 'bg-red-500';
   } else if (strength === 2) {
-    label = "Fair"
-    color = "bg-orange-500"
+    label = 'Fair';
+    color = 'bg-orange-500';
   } else if (strength === 3) {
-    label = "Good"
-    color = "bg-yellow-500"
+    label = 'Good';
+    color = 'bg-yellow-500';
   } else if (strength === 4) {
-    label = "Strong"
-    color = "bg-green-500"
+    label = 'Strong';
+    color = 'bg-green-500';
   } else if (strength === 5) {
-    label = "Very Strong"
-    color = "bg-green-700"
+    label = 'Very Strong';
+    color = 'bg-green-700';
   }
 
-  return { strength, label, color }
-}
+  return { strength, label, color };
+};
 
 export default function ResetPasswordScreen() {
-  const insets = useSafeAreaInsets()
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [passwordVisible, setPasswordVisible] = React.useState(false)
-  const [focusedTextField, setFocusedTextField] = React.useState<"password" | "confirm-password" | null>(null)
-  const alertRef = React.useRef<AlertRef>(null)
+  const insets = useSafeAreaInsets();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [passwordVisible, setPasswordVisible] = React.useState(false);
+  const [focusedTextField, setFocusedTextField] = React.useState<
+    'password' | 'confirm-password' | null
+  >(null);
+  const alertRef = React.useRef<AlertRef>(null);
 
   // Get data from previous screen
   const params = useLocalSearchParams<{
-    email: string
-    code: string
-  }>()
+    email: string;
+    code: string;
+  }>();
 
   const form = useForm({
     defaultValues: {
-      password: "",
-      confirmPassword: "",
+      password: '',
+      confirmPassword: '',
     },
     validators: {
       onChange: resetPasswordFormSchema,
     },
     onSubmit: async ({ value }) => {
       try {
-        setIsLoading(true)
+        setIsLoading(true);
 
         // Call the API to reset the password
-        const response = await fetch("/api/auth/reset-password", {
-          method: "POST",
+        const response = await fetch('/api/auth/reset-password', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             email: params.email,
             code: params.code,
             newPassword: value.password,
           }),
-        })
+        });
 
         if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.error || "Failed to reset password")
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to reset password');
         }
 
         // Show success message and navigate to login
-        Alert.alert("Success", "Your password has been reset successfully", [
+        Alert.alert('Success', 'Your password has been reset successfully', [
           {
-            text: "Login",
-            onPress: () => router.replace("/auth"),
+            text: 'Login',
+            onPress: () => router.replace('/auth'),
           },
-        ])
+        ]);
       } catch (error) {
-        Alert.alert("Error", error instanceof Error ? error.message : "Failed to reset password")
+        Alert.alert('Error', error instanceof Error ? error.message : 'Failed to reset password');
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     },
-  })
+  });
 
   return (
     <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
@@ -163,7 +169,8 @@ export default function ResetPasswordScreen() {
         bounces={false}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="ios:pt-12 pt-20">
+        contentContainerClassName="ios:pt-12 pt-20"
+      >
         <View className="ios:px-12 flex-1 px-8">
           <View className="items-center pb-1">
             <Image
@@ -334,11 +341,12 @@ export default function ResetPasswordScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || isLoading}
-                  onPress={() => form.handleSubmit()}>
+                  onPress={() => form.handleSubmit()}
+                >
                   <Text>{isLoading ? 'Resetting...' : 'Reset Password'}</Text>
                 </Button>
               )}
@@ -347,7 +355,7 @@ export default function ResetPasswordScreen() {
         ) : (
           <View className="flex-row justify-end py-4 pl-6 pr-8">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || isLoading}
                   onPress={() => {
@@ -357,7 +365,8 @@ export default function ResetPasswordScreen() {
                     }
                     KeyboardController.dismiss();
                     form.handleSubmit();
-                  }}>
+                  }}
+                >
                   <Text className="text-sm">
                     {isLoading
                       ? 'Resetting...'
@@ -375,4 +384,3 @@ export default function ResetPasswordScreen() {
     </View>
   );
 }
-

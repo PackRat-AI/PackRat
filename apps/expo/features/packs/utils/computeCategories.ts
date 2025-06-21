@@ -1,7 +1,7 @@
 import { userStore } from '~/features/auth/store';
-import { convertToGrams } from './convertToGrams';
+import type { Pack } from '../types';
 import { convertFromGrams } from './convertFromGrams';
-import { Pack } from '../types';
+import { convertToGrams } from './convertToGrams';
 
 export function computeCategorySummaries(pack: Pack) {
   const items = pack.items;

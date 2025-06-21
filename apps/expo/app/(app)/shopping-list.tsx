@@ -2,7 +2,7 @@
 
 import { Icon } from '@roninoss/icons';
 import { useState } from 'react';
-import { View, ScrollView, Pressable } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
@@ -107,7 +107,8 @@ function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
       className={cn(
         'mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm',
         item.purchased && 'opacity-60'
-      )}>
+      )}
+    >
       <View className="p-4">
         <View className="flex-row items-start justify-between">
           <View className="flex-1">
@@ -165,12 +166,14 @@ export default function ShoppingListScreen() {
                   'px-3 py-1.5',
                   filter === 'pending' ? 'bg-primary' : 'bg-transparent'
                 )}
-                onPress={() => setFilter('pending')}>
+                onPress={() => setFilter('pending')}
+              >
                 <Text
                   variant="subhead"
                   className={
                     filter === 'pending' ? 'text-primary-foreground' : 'text-muted-foreground'
-                  }>
+                  }
+                >
                   To Buy
                 </Text>
               </Pressable>
@@ -179,23 +182,25 @@ export default function ShoppingListScreen() {
                   'px-3 py-1.5',
                   filter === 'purchased' ? 'bg-primary' : 'bg-transparent'
                 )}
-                onPress={() => setFilter('purchased')}>
+                onPress={() => setFilter('purchased')}
+              >
                 <Text
                   variant="subhead"
                   className={
                     filter === 'purchased' ? 'text-primary-foreground' : 'text-muted-foreground'
-                  }>
+                  }
+                >
                   Purchased
                 </Text>
               </Pressable>
               <Pressable
                 className={cn('px-3 py-1.5', filter === 'all' ? 'bg-primary' : 'bg-transparent')}
-                onPress={() => setFilter('all')}>
+                onPress={() => setFilter('all')}
+              >
                 <Text
                   variant="subhead"
-                  className={
-                    filter === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'
-                  }>
+                  className={filter === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
+                >
                   All
                 </Text>
               </Pressable>

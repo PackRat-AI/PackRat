@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
+import { usePackDetails } from '~/features/packs';
 import { PackForm } from '~/features/packs/components/PackForm';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
-import { usePackDetails } from '~/features/packs';
 
 export function EditPackScreen() {
   const { id } = useLocalSearchParams();

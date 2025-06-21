@@ -1,7 +1,7 @@
-import { packItemsStore, packsStore } from '~/features/packs/store';
 import { useCallback } from 'react';
-import type { PackItem } from '../types';
+import { packItemsStore, packsStore } from '~/features/packs/store';
 import { recordPackWeight } from '../store/packWeightHistory';
+import type { PackItem } from '../types';
 
 export function useUpdatePackItem() {
   const updatePackItem = useCallback((item: PackItem) => {

@@ -1,8 +1,8 @@
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { userItemsRoutes } from "./items";
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { userItemsRoutes } from './items';
 
 const userRoutes = new OpenAPIHono();
 
-userRoutes.route("/", userItemsRoutes);
+userRoutes.route('/', userItemsRoutes);
 
 export { userRoutes };

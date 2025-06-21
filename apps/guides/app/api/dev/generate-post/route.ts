@@ -1,10 +1,10 @@
-import { generatePost } from "@/scripts/generate-content";
-import { NextResponse } from "next/server";
+import { generatePost } from '@/scripts/generate-content';
+import { NextResponse } from 'next/server';
 
-export const dynamic = "force-static";
+export const dynamic = 'force-static';
 
 // Ensure this only works in development
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 export async function POST(request: Request) {
   // Block in production
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: "This endpoint is only available in development mode",
+        error: 'This endpoint is only available in development mode',
       },
       { status: 403 }
     );
@@ -23,10 +23,7 @@ export async function POST(request: Request) {
 
     // Validate request
     if (!requestData.title) {
-      return NextResponse.json(
-        { success: false, error: "Title is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Title is required' }, { status: 400 });
     }
 
     if (
@@ -35,7 +32,7 @@ export async function POST(request: Request) {
       requestData.categories.length === 0
     ) {
       return NextResponse.json(
-        { success: false, error: "At least one category is required" },
+        { success: false, error: 'At least one category is required' },
         { status: 400 }
       );
     }
@@ -44,12 +41,12 @@ export async function POST(request: Request) {
     const filePath = await generatePost(requestData);
 
     if (!filePath) {
-      throw new Error("Failed to generate post");
+      throw new Error('Failed to generate post');
     }
 
     // Read the generated file to return its content
-    const fs = require("fs");
-    const content = fs.readFileSync(filePath, "utf8");
+    const fs = require('node:fs');
+    const content = fs.readFileSync(filePath, 'utf8');
 
     return NextResponse.json({
       success: true,
@@ -57,12 +54,11 @@ export async function POST(request: Request) {
       content,
     });
   } catch (error) {
-    console.error("Error generating post:", error);
+    console.error('Error generating post:', error);
     return NextResponse.json(
       {
         success: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
         details: error instanceof Error ? error.stack : undefined,
       },
       { status: 500 }

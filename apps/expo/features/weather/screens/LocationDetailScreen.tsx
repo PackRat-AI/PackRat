@@ -1,24 +1,24 @@
+import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Icon } from '@roninoss/icons';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  View,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
+  ScrollView,
   StatusBar,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useActionSheet } from '@expo/react-native-action-sheet';
 
 import { Text } from 'nativewindui/Text';
+import { getWeatherBackgroundColors } from '~/features/weather/lib/weatherService';
 import { cn } from '~/lib/cn';
 import { useColorScheme } from '~/lib/useColorScheme';
-import { useLocations, useActiveLocation, useLocationRefresh } from '../hooks';
-import { getWeatherBackgroundColors } from '~/features/weather/lib/weatherService';
 import { WeatherIcon } from '../components';
+import { useActiveLocation, useLocationRefresh, useLocations } from '../hooks';
 
 export default function LocationDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -68,7 +68,8 @@ export default function LocationDetailScreen() {
         <Text>Location not found</Text>
         <TouchableOpacity
           className="mt-4 rounded-full bg-primary px-4 py-2"
-          onPress={() => router.back()}>
+          onPress={() => router.back()}
+        >
           <Text className="text-white">Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -157,7 +158,7 @@ export default function LocationDetailScreen() {
   };
 
   // Determine if we should use light or dark status bar based on gradient colors
-  const isDarkGradient =
+  const _isDarkGradient =
     gradientColors[0].toLowerCase().startsWith('#4') ||
     gradientColors[0].toLowerCase().startsWith('#3') ||
     gradientColors[0].toLowerCase().startsWith('#2') ||
@@ -173,7 +174,8 @@ export default function LocationDetailScreen() {
         {/* Fixed header buttons */}
         <View
           style={{ paddingTop: insets.top + 10 }}
-          className="absolute left-0 right-0 top-0 z-10 flex-row items-center justify-between px-4">
+          className="absolute left-0 right-0 top-0 z-10 flex-row items-center justify-between px-4"
+        >
           <TouchableOpacity onPress={() => router.back()}>
             <View className="rounded-full bg-white/20 p-2">
               <Icon name="arrow-left" color="white" size={20} />
@@ -187,7 +189,8 @@ export default function LocationDetailScreen() {
 
         <ScrollView
           contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingTop: insets.top + 50 }}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           <View className="px-4">
             {error ? (
               <View className="items-center justify-center py-20">
@@ -195,7 +198,8 @@ export default function LocationDetailScreen() {
                 <Text className="mt-4 text-white">{error}</Text>
                 <TouchableOpacity
                   className="mt-4 rounded-full bg-white/20 px-4 py-2"
-                  onPress={handleRefresh}>
+                  onPress={handleRefresh}
+                >
                   <Text className="text-white">Try Again</Text>
                 </TouchableOpacity>
               </View>
@@ -223,7 +227,8 @@ export default function LocationDetailScreen() {
                   {!location.isActive && (
                     <TouchableOpacity
                       className="mt-4 rounded-full bg-white/20 px-4 py-2"
-                      onPress={setAsActive}>
+                      onPress={setAsActive}
+                    >
                       <Text className="text-white">Set as Active Location</Text>
                     </TouchableOpacity>
                   )}
@@ -232,7 +237,8 @@ export default function LocationDetailScreen() {
                   <TouchableOpacity
                     className="mt-4 flex-row items-center rounded-full bg-white/20 px-4 py-2"
                     onPress={handleRefresh}
-                    disabled={isRefreshing}>
+                    disabled={isRefreshing}
+                  >
                     <Icon name="restart" color="white" size={20} className="mr-2" />
                     <Text className="text-white">{isRefreshing ? 'Refreshing...' : 'Refresh'}</Text>
                   </TouchableOpacity>
@@ -277,7 +283,8 @@ export default function LocationDetailScreen() {
                           'flex-row items-center justify-between py-3',
                           index !== (location.dailyForecast?.length || 0) - 1 &&
                             'border-b border-white/10'
-                        )}>
+                        )}
+                      >
                         <Text className="min-w-[40px] text-white">{day.day}</Text>
                         <Icon name={day.icon} color="white" size={24} />
                         <View className="flex-1 flex-row items-center px-4">

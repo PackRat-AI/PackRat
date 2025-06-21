@@ -1,15 +1,9 @@
-import {
-  S3Client,
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@/utils/api-middleware";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { Env } from "@/types/env";
-import { env } from "hono/adapter";
+import type { Env } from '@/types/env';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { env } from 'hono/adapter';
 
 const uploadRoutes = new OpenAPIHono();
 
@@ -31,12 +25,8 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
   }
 
   try {
-    const {
-      R2_ACCESS_KEY_ID,
-      R2_SECRET_ACCESS_KEY,
-      CLOUDFLARE_ACCOUNT_ID,
-      R2_BUCKET_NAME,
-    } = env<Env>(c);
+    const { R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, CLOUDFLARE_ACCOUNT_ID, R2_BUCKET_NAME } =
+      env<Env>(c);
     const { fileName, contentType } = c.req.query();
 
     if (!fileName || !contentType) {
@@ -75,8 +65,8 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
       url: presignedUrl,
     });
   } catch (error) {
-    console.error("Error generating presigned URL:", error);
-    return c.json({ error: "Failed to generate upload URL" }, 500);
+    console.error('Error generating presigned URL:', error);
+    return c.json({ error: 'Failed to generate upload URL' }, 500);
   }
 });
 

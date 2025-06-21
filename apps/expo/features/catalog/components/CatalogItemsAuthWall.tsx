@@ -1,9 +1,9 @@
 import { Icon } from '@roninoss/icons';
 import { usePathname, useRouter } from 'expo-router';
-import { SafeAreaView, View } from 'react-native';
 import { Button } from 'nativewindui/Button';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
+import { SafeAreaView, View } from 'react-native';
 
 export function CatalogItemsAuthWall() {
   const router = useRouter();
@@ -31,7 +31,8 @@ export function CatalogItemsAuthWall() {
           onPress={() => router.push({ pathname: '/auth', params: { redirectTo: currentRoute } })}
           size="lg"
           variant="primary"
-          className="mb-4 w-full">
+          className="mb-4 w-full"
+        >
           <Text className="font-medium">Sign In</Text>
         </Button>
       </View>

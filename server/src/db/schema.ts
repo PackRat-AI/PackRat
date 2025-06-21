@@ -1,15 +1,15 @@
-import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
+import { type InferInsertModel, type InferSelectModel, relations } from 'drizzle-orm';
 import {
-  pgTable,
-  serial,
-  text,
   boolean,
-  timestamp,
   integer,
   jsonb,
-  varchar,
+  pgTable,
   real,
-} from "drizzle-orm/pg-core";
+  serial,
+  text,
+  timestamp,
+  varchar,
+} from 'drizzle-orm/pg-core';
 
 // User table
 export const users = pgTable('users', {
@@ -103,27 +103,29 @@ export const catalogItems = pgTable('catalog_items', {
   currency: text('currency'),
   condition: text('condition'),
   techs: jsonb('techs').$type<Record<string, string>>(),
-  links: jsonb('links').$type<
-    Array<{
-      id: string;
-      title: string;
-      url: string;
-      type: string;
-    }>
-  >(),
-  reviews: jsonb('reviews').$type<
-    Array<{
-      id: string;
-      userId: string;
-      userName: string;
-      userAvatar: string;
-      rating: number;
-      text: string;
-      date: string;
-      helpful: number;
-      verified: boolean;
-    }>
-  >(),
+  links:
+    jsonb('links').$type<
+      Array<{
+        id: string;
+        title: string;
+        url: string;
+        type: string;
+      }>
+    >(),
+  reviews:
+    jsonb('reviews').$type<
+      Array<{
+        id: string;
+        userId: string;
+        userName: string;
+        userAvatar: string;
+        rating: number;
+        text: string;
+        date: string;
+        helpful: number;
+        verified: boolean;
+      }>
+    >(),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -196,15 +198,12 @@ export const catalogItemsRelations = relations(catalogItems, ({ many }) => ({
   packItems: many(packItems),
 }));
 
-export const packWeightHistoryRelations = relations(
-  packWeightHistory,
-  ({ one }) => ({
-    pack: one(packs, {
-      fields: [packWeightHistory.packId],
-      references: [packs.id],
-    }),
-  })
-);
+export const packWeightHistoryRelations = relations(packWeightHistory, ({ one }) => ({
+  pack: one(packs, {
+    fields: [packWeightHistory.packId],
+    references: [packs.id],
+  }),
+}));
 
 // Reported content table
 export const reportedContent = pgTable('reported_content', {
@@ -223,19 +222,16 @@ export const reportedContent = pgTable('reported_content', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-export const reportedContentRelations = relations(
-  reportedContent,
-  ({ one }) => ({
-    user: one(users, {
-      fields: [reportedContent.userId],
-      references: [users.id],
-    }),
-    reviewer: one(users, {
-      fields: [reportedContent.reviewedBy],
-      references: [users.id],
-    }),
-  })
-);
+export const reportedContentRelations = relations(reportedContent, ({ one }) => ({
+  user: one(users, {
+    fields: [reportedContent.userId],
+    references: [users.id],
+  }),
+  reviewer: one(users, {
+    fields: [reportedContent.reviewedBy],
+    references: [users.id],
+  }),
+}));
 
 // Infer models from tables
 export type User = InferSelectModel<typeof users>;

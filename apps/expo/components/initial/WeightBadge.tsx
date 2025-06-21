@@ -16,7 +16,6 @@ export function WeightBadge({ weight, unit = 'g', type = 'item' }: WeightBadgePr
         return 'bg-blue-100 text-blue-800';
       case 'total':
         return 'bg-purple-100 text-purple-800';
-      case 'item':
       default:
         return 'bg-gray-100 text-gray-800';
     }

@@ -1,19 +1,19 @@
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
-import { router, Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import * as React from 'react';
 import {
   Dimensions,
   Image,
-  NativeSyntheticEvent,
+  type NativeSyntheticEvent,
   Platform,
   Pressable,
   TextInput,
-  TextInputContentSizeChangeEventData,
-  TextStyle,
+  type TextInputContentSizeChangeEventData,
+  type TextStyle,
   View,
-  ViewStyle,
+  type ViewStyle,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
@@ -24,7 +24,7 @@ import {
 import Animated, {
   clamp,
   interpolate,
-  SharedValue,
+  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -34,7 +34,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
 import { Button } from 'nativewindui/Button';
 import { ContextMenu } from 'nativewindui/ContextMenu';
-import { ContextMenuRef } from 'nativewindui/ContextMenu/types';
+import type { ContextMenuRef } from 'nativewindui/ContextMenu/types';
 import { createContextItem } from 'nativewindui/ContextMenu/utils';
 import { Text } from 'nativewindui/Text';
 import { cn } from '~/lib/cn';
@@ -149,7 +149,8 @@ export default function ChatIos() {
               backgroundColor: isDarkColorScheme ? colors.background : colors.card,
             },
           ]}
-          behavior="padding">
+          behavior="padding"
+        >
           <FlashList
             inverted
             estimatedItemSize={70}
@@ -215,7 +216,8 @@ function Header() {
           {
             paddingTop: insets.top,
           },
-        ]}>
+        ]}
+      >
         <View className="flex-row items-center justify-between px-4 pb-2">
           <View className="flex-row items-center">
             <Button variant="plain" size="icon" className="ios:justify-start" onPress={router.back}>
@@ -233,7 +235,8 @@ function Header() {
                 <View className="opacity-90 dark:opacity-80">
                   <Text
                     className="dark:ios:text-white dark:text-background leading-6 text-white"
-                    variant="title3">
+                    variant="title3"
+                  >
                     {MOCK_CONVERSATION_INFO.initials}
                   </Text>
                 </View>
@@ -258,16 +261,19 @@ function Header() {
       style={{
         paddingTop: insets.top,
         height: HEADER_HEIGHT + insets.top,
-      }}>
+      }}
+    >
       <View
         style={{ height: HEADER_HEIGHT }}
-        className="flex-row items-center justify-between gap-2 px-3 pb-2">
+        className="flex-row items-center justify-between gap-2 px-3 pb-2"
+      >
         <View className="flex-row items-center">
           <Button
             variant="plain"
             size="icon"
             className="ios:justify-start opacity-70"
-            onPress={router.back}>
+            onPress={router.back}
+          >
             <Icon
               color={colors.foreground}
               name={Platform.select({ ios: 'chevron-left', default: 'arrow-left' })}
@@ -278,7 +284,8 @@ function Header() {
           <Button
             variant="plain"
             androidRootClassName="rounded-md"
-            className="ios:px-0 min-h-10 flex-row items-center justify-start gap-3 rounded-md px-0">
+            className="ios:px-0 min-h-10 flex-row items-center justify-start gap-3 rounded-md px-0"
+          >
             <View className="flex-1 flex-row items-center">
               <Text className="pb-0.5 text-lg font-normal" numberOfLines={1}>
                 {MOCK_CONVERSATION_INFO.name}
@@ -361,12 +368,14 @@ function ChatBubble({
         className={cn(
           'bg-card flex-row gap-1 rounded-full p-0.5',
           Platform.OS === 'ios' && 'ios:bg-card/60 ios:dark:bg-border/70'
-        )}>
+        )}
+      >
         <Button
           size="icon"
           variant={item.reactions.love?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
-          className="ios:rounded-full rounded-full">
+          className="ios:rounded-full rounded-full"
+        >
           <Icon
             name="heart"
             size={24}
@@ -377,7 +386,8 @@ function ChatBubble({
           size="icon"
           variant={item.reactions.like?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
-          className="ios:rounded-full rounded-full">
+          className="ios:rounded-full rounded-full"
+        >
           <Icon
             ios={{ name: 'hand.thumbsup.fill' }}
             materialIcon={{
@@ -392,7 +402,8 @@ function ChatBubble({
           size="icon"
           variant={item.reactions.dislike?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
-          className="ios:rounded-full rounded-full">
+          className="ios:rounded-full rounded-full"
+        >
           <Icon
             ios={{ name: 'hand.thumbsdown.fill' }}
             materialIcon={{
@@ -407,7 +418,8 @@ function ChatBubble({
           size="icon"
           variant={item.reactions.exclamation?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
-          className="ios:rounded-full rounded-full">
+          className="ios:rounded-full rounded-full"
+        >
           <Icon
             name="exclamation"
             size={24}
@@ -418,7 +430,8 @@ function ChatBubble({
           size="icon"
           variant={item.reactions.question?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
-          className="ios:rounded-full rounded-full">
+          className="ios:rounded-full rounded-full"
+        >
           <Icon
             ios={{ name: 'questionmark' }}
             materialIcon={{
@@ -451,11 +464,13 @@ function ChatBubble({
         'justify-center px-2 pb-3.5',
         isSameNextSender ? 'pb-1' : 'pb-3.5',
         item.sender === ME ? 'items-end pl-16' : 'items-start pr-16'
-      )}>
+      )}
+    >
       <Animated.View style={item.sender === ME ? rootStyle : undefined}>
         {item.attachments.length > 0 ? (
           <View
-            className={cn('flex-row items-center gap-4', item.sender === ME && 'flex-row-reverse')}>
+            className={cn('flex-row items-center gap-4', item.sender === ME && 'flex-row-reverse')}
+          >
             <View>
               <ContextMenu
                 ref={contextMenuRef}
@@ -463,7 +478,8 @@ function ChatBubble({
                 auxiliaryPreviewPosition={auxiliaryPreviewPosition}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
                 items={CONTEXT_MENU_ITEMS}
-                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}>
+                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
+              >
                 <Pressable>
                   <Image
                     source={{ uri: item.attachments[0].url }}
@@ -477,7 +493,8 @@ function ChatBubble({
                   className={cn(
                     'bg-card dark:bg-background absolute -top-3 rounded-full p-px',
                     item.sender === ME ? '-left-5' : '-right-5'
-                  )}>
+                  )}
+                >
                   <View className="bg-primary rounded-full p-1">
                     <Icon
                       ios={{ name: 'hand.thumbsup.fill' }}
@@ -512,7 +529,8 @@ function ChatBubble({
               size="icon"
               variant="secondary"
               className="ios:rounded-full ios:border-border ios:h-10 ios:w-10 border-border h-8 w-8 rounded-full"
-              androidRootClassName="rounded-full">
+              androidRootClassName="rounded-full"
+            >
               <Icon
                 name="arrow-down"
                 ios={{ name: 'arrow.down.square', renderingMode: 'hierarchical' }}
@@ -527,7 +545,8 @@ function ChatBubble({
               className={cn(
                 'absolute bottom-0 items-center justify-center',
                 item.sender === ME ? '-right-2.5' : '-left-2 '
-              )}>
+              )}
+            >
               {Platform.OS === 'ios' && (
                 <>
                   <View
@@ -562,7 +581,8 @@ function ChatBubble({
                 items={CONTEXT_MENU_ITEMS}
                 style={{ borderRadius: 20 }}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
-                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}>
+                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
+              >
                 <Pressable>
                   <View
                     style={BORDER_CURVE}
@@ -570,7 +590,8 @@ function ChatBubble({
                       'bg-background dark:bg-muted-foreground rounded-2xl px-3 py-1.5',
                       Platform.OS === 'ios' && 'dark:bg-muted',
                       item.sender === ME && 'bg-primary dark:bg-primary'
-                    )}>
+                    )}
+                  >
                     <Text className={cn(item.sender === ME && 'text-white')}>{item.text}</Text>
                   </View>
                 </Pressable>
@@ -580,7 +601,8 @@ function ChatBubble({
                   className={cn(
                     'bg-card dark:bg-background absolute -top-3 rounded-full p-px',
                     item.sender === ME ? '-left-5' : '-right-5'
-                  )}>
+                  )}
+                >
                   <View className="bg-primary rounded-full p-1">
                     <Icon
                       ios={{ name: 'hand.thumbsup.fill' }}
@@ -697,7 +719,8 @@ function Composer({
           }),
           paddingBottom: insets.bottom,
         },
-      ]}>
+      ]}
+    >
       <View className="flex-row items-end gap-2 px-4 py-2">
         <Button size="icon" className="bg-muted/30 ios:rounded-full mb-0.5 h-8 w-8 rounded-full">
           <Icon name="plus" size={18} color={colors.foreground} />
@@ -717,14 +740,16 @@ function Composer({
             <Button
               onPress={sendMessage}
               size="icon"
-              className="ios:rounded-full h-7 w-7 rounded-full">
+              className="ios:rounded-full h-7 w-7 rounded-full"
+            >
               <Icon name="arrow-up" size={18} color="white" />
             </Button>
           ) : (
             <Button
               size="icon"
               variant="plain"
-              className="ios:rounded-full h-7 w-7 rounded-full opacity-40">
+              className="ios:rounded-full h-7 w-7 rounded-full opacity-40"
+            >
               <Icon name="microphone" size={20} color={colors.foreground} />
             </Button>
           )}

@@ -1,7 +1,7 @@
-import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { Icon } from '@roninoss/icons';
-import type { CatalogItem } from '~/types';
+import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useColorScheme } from '~/lib/useColorScheme';
+import type { CatalogItem } from '~/types';
 
 type CatalogItemCardProps = {
   item: CatalogItem;
@@ -13,7 +13,8 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm">
+      className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm"
+    >
       <View className="flex-row">
         <Image
           source={{

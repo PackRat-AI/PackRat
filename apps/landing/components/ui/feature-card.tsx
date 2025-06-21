@@ -1,22 +1,28 @@
-import { LucideIcon } from "@/lib/icons"
-import { cn } from "@/lib/utils"
+import { LucideIcon } from '@/lib/icons';
+import { cn } from '@/lib/utils';
 
 interface FeatureCardProps {
-  title: string
-  description: string
-  icon: string
-  color: string
-  className?: string
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  className?: string;
 }
 
-export default function FeatureCard({ title, description, icon, color, className }: FeatureCardProps) {
-  const Icon = LucideIcon(icon)
+export default function FeatureCard({
+  title,
+  description,
+  icon,
+  color,
+  className,
+}: FeatureCardProps) {
+  const Icon = LucideIcon(icon);
 
   return (
     <div
       className={cn(
-        "group relative h-full overflow-hidden rounded-2xl bg-card p-8 shadow-lg transition-all duration-300 hover:shadow-xl",
-        className,
+        'group relative h-full overflow-hidden rounded-2xl bg-card p-8 shadow-lg transition-all duration-300 hover:shadow-xl',
+        className
       )}
     >
       <div className="flex flex-col h-full">
@@ -30,7 +36,10 @@ export default function FeatureCard({ title, description, icon, color, className
         <h3 className="mb-3 text-xl font-bold text-foreground">{title}</h3>
         <p className="text-muted-foreground flex-grow">{description}</p>
 
-        <div className="mt-6 inline-flex items-center text-sm font-medium transition-colors" style={{ color: color }}>
+        <div
+          className="mt-6 inline-flex items-center text-sm font-medium transition-colors"
+          style={{ color: color }}
+        >
           <span>Learn more</span>
           <svg
             className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
@@ -52,14 +61,14 @@ export default function FeatureCard({ title, description, icon, color, className
         className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         style={{
           background: `linear-gradient(135deg, ${color}10, ${color}05)`,
-          boxShadow: `inset 0 0 20px rgba(255, 255, 255, 0.5)`,
+          boxShadow: 'inset 0 0 20px rgba(255, 255, 255, 0.5)',
         }}
-      ></div>
+      />
 
       <div
         className="absolute -bottom-1 -right-1 h-20 w-20 rounded-full blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-300"
         style={{ background: color }}
-      ></div>
+      />
     </div>
-  )
+  );
 }

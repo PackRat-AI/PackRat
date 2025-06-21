@@ -1,11 +1,11 @@
 import { Icon } from '@roninoss/icons';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { Platform, ScrollView, View } from 'react-native';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 import { Alert } from 'nativewindui/Alert';
-import { AlertRef } from 'nativewindui/Alert/types';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
+import React from 'react';
+import { Platform, ScrollView, View } from 'react-native';
 
 import { Text } from 'nativewindui/Text';
 import { useAuth } from '~/features/auth/hooks/useAuth';
@@ -54,7 +54,7 @@ export default function ModalScreen() {
                       if (text === 'DELETE') {
                         try {
                           await deleteAccount(); // redirection is handled in the hook
-                        } catch (error) {
+                        } catch (_error) {
                           setTimeout(() => {
                             alertRef.current?.alert({
                               title: 'Error',
@@ -87,7 +87,8 @@ export default function ModalScreen() {
                 ],
               })
             }
-            className="flex-row items-center justify-between p-2">
+            className="flex-row items-center justify-between p-2"
+          >
             <View className="flex-row items-center gap-3">
               {isLoading ? (
                 <ActivityIndicator size={24} color={colors.destructive} />

@@ -1,11 +1,8 @@
-import { createDb } from "@/db";
-import { catalogItems } from "@/db/schema";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@/utils/api-middleware";
-import { eq } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createDb } from '@/db';
+import { catalogItems } from '@/db/schema';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 
 const catalogListRoutes = new OpenAPIHono();
 
@@ -27,7 +24,7 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
     }
 
     const db = createDb(c);
-    const id = c.req.query("id");
+    const id = c.req.query('id');
 
     if (id) {
       // Get a specific catalog item
@@ -36,18 +33,17 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
       });
 
       if (!item) {
-        return c.json({ error: "Catalog item not found" }, { status: 404 });
+        return c.json({ error: 'Catalog item not found' }, { status: 404 });
       }
 
       return c.json(item);
-    } else {
-      // Get all catalog items
-      const items = await db.query.catalogItems.findMany();
-      return c.json(items);
     }
+    // Get all catalog items
+    const items = await db.query.catalogItems.findMany();
+    return c.json(items);
   } catch (error) {
-    console.error("Error fetching catalog items:", error);
-    return c.json({ error: "Failed to fetch catalog items" }, { status: 500 });
+    console.error('Error fetching catalog items:', error);
+    return c.json({ error: 'Failed to fetch catalog items' }, { status: 500 });
   }
 });
 
@@ -113,8 +109,8 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
 
     return c.json(newItem);
   } catch (error) {
-    console.error("Error creating catalog item:", error);
-    return c.json({ error: "Failed to create catalog item" }, { status: 500 });
+    console.error('Error creating catalog item:', error);
+    return c.json({ error: 'Failed to create catalog item' }, { status: 500 });
   }
 });
 

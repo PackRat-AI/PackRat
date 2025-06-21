@@ -1,6 +1,6 @@
 import { Icon } from '@roninoss/icons';
 import { useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
@@ -113,7 +113,8 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
       {members.map((member, index) => (
         <Avatar
           key={member.id}
-          className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}>
+          className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}
+        >
           <AvatarImage source={{ uri: member.avatar }} />
           <AvatarFallback>
             <Text>{member.name.substring(0, 1)}</Text>
@@ -278,7 +279,8 @@ export default function UpcomingTripsScreen() {
                   <Text
                     key={index}
                     variant="footnote"
-                    className="mt-1 text-amber-600 dark:text-amber-400">
+                    className="mt-1 text-amber-600 dark:text-amber-400"
+                  >
                     • {alert}
                   </Text>
                 ))}
@@ -313,7 +315,8 @@ export default function UpcomingTripsScreen() {
                           checklistItem.completed
                             ? 'border-primary bg-primary'
                             : 'border-muted-foreground'
-                        )}>
+                        )}
+                      >
                         {checklistItem.completed && <Icon name="check" size={12} color="white" />}
                       </View>
                     </View>

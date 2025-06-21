@@ -1,16 +1,16 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, View, Image, SafeAreaView, Platform } from 'react-native';
 import { Icon } from '@roninoss/icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from 'nativewindui/Button';
-import { Chip } from '~/components/initial/Chip';
+import { Text } from 'nativewindui/Text';
+import { Image, Platform, SafeAreaView, ScrollView, View } from 'react-native';
 import { ItemLinks } from '~/components/catalog/ItemLinks';
 import { ItemReviews } from '~/components/catalog/ItemReviews';
-import { useCatalogItemDetails } from '../hooks';
-import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
-import { ErrorScreen } from '../../../screens/ErrorScreen';
-import { NotFoundScreen } from '../../../screens/NotFoundScreen';
-import { Text } from 'nativewindui/Text';
+import { Chip } from '~/components/initial/Chip';
 import { useColorScheme } from '~/lib/useColorScheme';
+import { ErrorScreen } from '../../../screens/ErrorScreen';
+import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
+import { NotFoundScreen } from '../../../screens/NotFoundScreen';
+import { useCatalogItemDetails } from '../hooks';
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();

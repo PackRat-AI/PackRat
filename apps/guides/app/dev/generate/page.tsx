@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,48 +9,48 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Toaster } from "@/components/ui/toaster";
-import { toast } from "@/components/ui/use-toast";
-import { FileText, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useState } from "react";
+} from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Toaster } from '@/components/ui/toaster';
+import { toast } from '@/components/ui/use-toast';
+import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 // This ensures the page only works in development
-const isDevelopment = process.env.NODE_ENV === "development";
+const _isDevelopment = process.env.NODE_ENV === 'development';
 
 // Types
 type ContentCategory =
-  | "gear-essentials"
-  | "pack-strategy"
-  | "weight-management"
-  | "trip-planning"
-  | "seasonal-guides"
-  | "activity-specific"
-  | "destination-guides"
-  | "maintenance"
-  | "emergency-prep"
-  | "family-adventures"
-  | "budget-options"
-  | "sustainability"
-  | "tech-outdoors"
-  | "food-nutrition"
-  | "beginner-resources";
+  | 'gear-essentials'
+  | 'pack-strategy'
+  | 'weight-management'
+  | 'trip-planning'
+  | 'seasonal-guides'
+  | 'activity-specific'
+  | 'destination-guides'
+  | 'maintenance'
+  | 'emergency-prep'
+  | 'family-adventures'
+  | 'budget-options'
+  | 'sustainability'
+  | 'tech-outdoors'
+  | 'food-nutrition'
+  | 'beginner-resources';
 
-type DifficultyLevel = "Beginner" | "Intermediate" | "Advanced" | "All Levels";
+type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
 
 interface ContentRequest {
   title: string;
@@ -63,42 +63,35 @@ interface ContentRequest {
 
 // Category display names
 const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
-  "gear-essentials": "Gear Essentials",
-  "pack-strategy": "Pack Strategy",
-  "weight-management": "Weight Management",
-  "trip-planning": "Trip Planning",
-  "seasonal-guides": "Seasonal Guides",
-  "activity-specific": "Activity-Specific",
-  "destination-guides": "Destination Guides",
-  maintenance: "Maintenance",
-  "emergency-prep": "Emergency Prep",
-  "family-adventures": "Family Adventures",
-  "budget-options": "Budget Options",
-  sustainability: "Sustainability",
-  "tech-outdoors": "Tech Outdoors",
-  "food-nutrition": "Food & Nutrition",
-  "beginner-resources": "Beginner Resources",
+  'gear-essentials': 'Gear Essentials',
+  'pack-strategy': 'Pack Strategy',
+  'weight-management': 'Weight Management',
+  'trip-planning': 'Trip Planning',
+  'seasonal-guides': 'Seasonal Guides',
+  'activity-specific': 'Activity-Specific',
+  'destination-guides': 'Destination Guides',
+  maintenance: 'Maintenance',
+  'emergency-prep': 'Emergency Prep',
+  'family-adventures': 'Family Adventures',
+  'budget-options': 'Budget Options',
+  sustainability: 'Sustainability',
+  'tech-outdoors': 'Tech Outdoors',
+  'food-nutrition': 'Food & Nutrition',
+  'beginner-resources': 'Beginner Resources',
 };
 
-const difficulties: DifficultyLevel[] = [
-  "Beginner",
-  "Intermediate",
-  "Advanced",
-  "All Levels",
-];
+const difficulties: DifficultyLevel[] = ['Beginner', 'Intermediate', 'Advanced', 'All Levels'];
 
 export default function GeneratePage() {
   // State for single post generation
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedCategories, setSelectedCategories] = useState<
-    ContentCategory[]
-  >([]);
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>("All Levels");
-  const [author, setAuthor] = useState("");
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<ContentCategory[]>([]);
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>('All Levels');
+  const [author, setAuthor] = useState('');
   const [generateFull, setGenerateFull] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState("");
+  const [generatedContent, setGeneratedContent] = useState('');
 
   // State for batch generation
   const [batchCount, setBatchCount] = useState(5);
@@ -109,18 +102,14 @@ export default function GeneratePage() {
   // Handle category toggle for single post
   const handleCategoryToggle = (category: ContentCategory) => {
     setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
     );
   };
 
   // Handle category toggle for batch generation
   const handleBatchCategoryToggle = (category: ContentCategory) => {
     setBatchCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
     );
   };
 
@@ -128,30 +117,30 @@ export default function GeneratePage() {
   const generateSinglePost = async () => {
     if (!title) {
       toast({
-        title: "Title Required",
-        description: "Please enter a title for your post",
-        variant: "destructive",
+        title: 'Title Required',
+        description: 'Please enter a title for your post',
+        variant: 'destructive',
       });
       return;
     }
 
     if (selectedCategories.length === 0) {
       toast({
-        title: "Categories Required",
-        description: "Please select at least one category",
-        variant: "destructive",
+        title: 'Categories Required',
+        description: 'Please select at least one category',
+        variant: 'destructive',
       });
       return;
     }
 
     setGenerating(true);
-    setGeneratedContent("");
+    setGeneratedContent('');
 
     try {
-      const response = await fetch("/api/dev/generate-post", {
-        method: "POST",
+      const response = await fetch('/api/dev/generate-post', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           title,
@@ -164,7 +153,7 @@ export default function GeneratePage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate post");
+        throw new Error('Failed to generate post');
       }
 
       const data = await response.json();
@@ -172,19 +161,18 @@ export default function GeneratePage() {
       if (data.success) {
         setGeneratedContent(data.content);
         toast({
-          title: "Post Generated",
+          title: 'Post Generated',
           description: `Successfully created: ${data.filePath}`,
         });
       } else {
-        throw new Error(data.error || "Unknown error");
+        throw new Error(data.error || 'Unknown error');
       }
     } catch (error) {
-      console.error("Error generating post:", error);
+      console.error('Error generating post:', error);
       toast({
-        title: "Generation Failed",
-        description:
-          error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
+        title: 'Generation Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
       });
     } finally {
       setGenerating(false);
@@ -197,10 +185,10 @@ export default function GeneratePage() {
     setGeneratedFiles([]);
 
     try {
-      const response = await fetch("/api/dev/generate-batch", {
-        method: "POST",
+      const response = await fetch('/api/dev/generate-batch', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           count: batchCount,
@@ -209,7 +197,7 @@ export default function GeneratePage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate posts");
+        throw new Error('Failed to generate posts');
       }
 
       const data = await response.json();
@@ -217,19 +205,18 @@ export default function GeneratePage() {
       if (data.success) {
         setGeneratedFiles(data.filePaths);
         toast({
-          title: "Batch Generation Complete",
+          title: 'Batch Generation Complete',
           description: `Successfully created ${data.filePaths.length} posts`,
         });
       } else {
-        throw new Error(data.error || "Unknown error");
+        throw new Error(data.error || 'Unknown error');
       }
     } catch (error) {
-      console.error("Error generating batch:", error);
+      console.error('Error generating batch:', error);
       toast({
-        title: "Batch Generation Failed",
-        description:
-          error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
+        title: 'Batch Generation Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
       });
     } finally {
       setBatchGenerating(false);
@@ -238,12 +225,12 @@ export default function GeneratePage() {
 
   // Clear form
   const clearForm = () => {
-    setTitle("");
-    setDescription("");
+    setTitle('');
+    setDescription('');
     setSelectedCategories([]);
-    setDifficulty("All Levels");
-    setAuthor("");
-    setGeneratedContent("");
+    setDifficulty('All Levels');
+    setAuthor('');
+    setGeneratedContent('');
   };
 
   return (
@@ -268,9 +255,7 @@ export default function GeneratePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Post Details</CardTitle>
-                <CardDescription>
-                  Enter the details for your new blog post
-                </CardDescription>
+                <CardDescription>Enter the details for your new blog post</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -297,27 +282,18 @@ export default function GeneratePage() {
                 <div className="space-y-2">
                   <Label>Categories (select at least one)</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
-                    {Object.entries(CATEGORY_DISPLAY_NAMES).map(
-                      ([key, name]) => (
-                        <div key={key} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`category-${key}`}
-                            checked={selectedCategories.includes(
-                              key as ContentCategory
-                            )}
-                            onCheckedChange={() =>
-                              handleCategoryToggle(key as ContentCategory)
-                            }
-                          />
-                          <Label
-                            htmlFor={`category-${key}`}
-                            className="text-sm"
-                          >
-                            {name}
-                          </Label>
-                        </div>
-                      )
-                    )}
+                    {Object.entries(CATEGORY_DISPLAY_NAMES).map(([key, name]) => (
+                      <div key={key} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`category-${key}`}
+                          checked={selectedCategories.includes(key as ContentCategory)}
+                          onCheckedChange={() => handleCategoryToggle(key as ContentCategory)}
+                        />
+                        <Label htmlFor={`category-${key}`} className="text-sm">
+                          {name}
+                        </Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -325,9 +301,7 @@ export default function GeneratePage() {
                   <Label htmlFor="difficulty">Difficulty</Label>
                   <Select
                     value={difficulty}
-                    onValueChange={(value) =>
-                      setDifficulty(value as DifficultyLevel)
-                    }
+                    onValueChange={(value) => setDifficulty(value as DifficultyLevel)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select difficulty" />
@@ -385,17 +359,13 @@ export default function GeneratePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Generated Content</CardTitle>
-                <CardDescription>
-                  Preview of the generated MDX content
-                </CardDescription>
+                <CardDescription>Preview of the generated MDX content</CardDescription>
               </CardHeader>
               <CardContent>
                 {generating ? (
                   <div className="flex flex-col items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                    <p className="text-muted-foreground">
-                      Generating content...
-                    </p>
+                    <p className="text-muted-foreground">Generating content...</p>
                   </div>
                 ) : generatedContent ? (
                   <div className="relative">
@@ -409,8 +379,7 @@ export default function GeneratePage() {
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">
-                      Fill out the form and click "Generate Post" to create
-                      content
+                      Fill out the form and click "Generate Post" to create content
                     </p>
                   </div>
                 )}
@@ -423,16 +392,12 @@ export default function GeneratePage() {
           <Card>
             <CardHeader>
               <CardTitle>Batch Generation</CardTitle>
-              <CardDescription>
-                Generate multiple blog posts at once
-              </CardDescription>
+              <CardDescription>Generate multiple blog posts at once</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <Label htmlFor="batch-count">
-                    Number of Posts: {batchCount}
-                  </Label>
+                  <Label htmlFor="batch-count">Number of Posts: {batchCount}</Label>
                 </div>
                 <Slider
                   id="batch-count"
@@ -454,14 +419,10 @@ export default function GeneratePage() {
                     <Badge
                       key={key}
                       variant={
-                        batchCategories.includes(key as ContentCategory)
-                          ? "default"
-                          : "outline"
+                        batchCategories.includes(key as ContentCategory) ? 'default' : 'outline'
                       }
                       className="cursor-pointer"
-                      onClick={() =>
-                        handleBatchCategoryToggle(key as ContentCategory)
-                      }
+                      onClick={() => handleBatchCategoryToggle(key as ContentCategory)}
                     >
                       {name}
                     </Badge>
@@ -481,14 +442,12 @@ export default function GeneratePage() {
 
               {generatedFiles.length > 0 && (
                 <div className="border rounded-md p-4">
-                  <h3 className="font-medium mb-2">
-                    Generated Files ({generatedFiles.length})
-                  </h3>
+                  <h3 className="font-medium mb-2">Generated Files ({generatedFiles.length})</h3>
                   <div className="max-h-40 overflow-y-auto">
                     <ul className="text-sm space-y-1 text-muted-foreground">
                       {generatedFiles.map((file, index) => (
                         <li key={index} className="truncate">
-                          • {file.split("/").pop()}
+                          • {file.split('/').pop()}
                         </li>
                       ))}
                     </ul>
@@ -497,11 +456,7 @@ export default function GeneratePage() {
               )}
             </CardContent>
             <CardFooter>
-              <Button
-                onClick={generateBatchPosts}
-                disabled={batchGenerating}
-                className="w-full"
-              >
+              <Button onClick={generateBatchPosts} disabled={batchGenerating} className="w-full">
                 {batchGenerating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,6 +1,8 @@
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,14 +13,12 @@ import {
   View,
 } from 'react-native';
 import { searchValueAtom } from '~/atoms/itemListAtoms';
+import { withAuthWall } from '~/features/auth/hocs';
 import { CatalogItemCard } from '~/features/catalog/components/CatalogItemCard';
 import { useHeaderSearchBar } from '~/lib/useHeaderSearchBar';
+import { CatalogItemsAuthWall } from '../components';
 import { useCatalogItems } from '../hooks';
 import type { CatalogItem } from '../types';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
-import { withAuthWall } from '~/features/auth/hocs';
-import { CatalogItemsAuthWall } from '../components';
 
 type FilterOption = {
   label: string;
@@ -55,7 +55,7 @@ function CatalogItemsScreen() {
 
   const filteredItems = catalogItems
     ? catalogItems.filter((item) => {
-        const matchesSearch =
+        const _matchesSearch =
           item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
           item.description?.toLowerCase().includes(searchValue.toLowerCase()) ||
           item.brand?.toLowerCase().includes(searchValue.toLowerCase()); // TODO: resolve bug here that cause matchesSearch to be false after navigating back from details screen
@@ -72,9 +72,11 @@ function CatalogItemsScreen() {
     <TouchableOpacity
       key={value}
       onPress={() => setActiveFilter(value)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}>
+      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}
+    >
       <Text
-        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}>
+        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}
+      >
         {label}
       </Text>
     </TouchableOpacity>

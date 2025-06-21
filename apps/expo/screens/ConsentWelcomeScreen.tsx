@@ -20,7 +20,8 @@ export function WelcomeConsentScreen() {
           </Text>
           <Text
             variant="largeTitle"
-            className="ios:text-left ios:font-black text-center font-bold text-primary">
+            className="ios:text-left ios:font-black text-center font-bold text-primary"
+          >
             Application
           </Text>
         </View>

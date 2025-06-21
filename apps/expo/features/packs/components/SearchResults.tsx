@@ -1,5 +1,5 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
 import { Icon } from '@roninoss/icons';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import type { Pack } from '../types';
 
 type SearchResultsProps = {
@@ -20,7 +20,8 @@ export function SearchResults({ results, searchValue, onResultPress }: SearchRes
           renderItem={({ item }) => (
             <Pressable
               onPress={() => onResultPress(item)}
-              className="flex-row items-center border-b border-border px-4 py-3 active:bg-muted">
+              className="flex-row items-center border-b border-border px-4 py-3 active:bg-muted"
+            >
               <View className="mr-3 rounded-full bg-muted p-2">
                 <Icon name="backpack" size={16} color="text-muted-foreground" />
               </View>

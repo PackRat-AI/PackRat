@@ -1,17 +1,17 @@
+import { Icon } from '@roninoss/icons';
+import { nanoid } from 'nanoid/non-secure';
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
-import { Icon } from '@roninoss/icons';
-import { useCreatePackItem } from '../hooks';
 import { cn } from '~/lib/cn';
-import type { CatalogItem } from '~/types';
-import { Button } from 'nativewindui/Button';
 import { useColorScheme } from '~/lib/useColorScheme';
-import { Text } from 'nativewindui/Text';
-import type { PackItemInput } from '../types';
-import { nanoid } from 'nanoid/non-secure';
 import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 import { getImageExtension } from '~/lib/utils/imageUtils';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import type { CatalogItem } from '~/types';
+import { useCreatePackItem } from '../hooks';
+import type { PackItemInput } from '../types';
 
 interface ItemSuggestionCardProps {
   packId: string;
@@ -67,7 +67,8 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
       className={cn(
         'mr-2 flex-col justify-between rounded-lg border border-border p-3',
         'w-40 bg-card'
-      )}>
+      )}
+    >
       <View>
         <Text className="mb-1 font-medium text-foreground" numberOfLines={1}>
           {item.name}

@@ -3,7 +3,7 @@ import { forwardRef } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
 export const HeaderButton = forwardRef<typeof Pressable, { onPress?: () => void }>(
-  ({ onPress }, ref) => {
+  ({ onPress }, _ref) => {
     return (
       <Pressable onPress={onPress}>
         {({ pressed }) => (

@@ -1,7 +1,7 @@
-import type React from 'react';
-import { useState, useEffect } from 'react';
-import { Image, type ImageProps, ActivityIndicator, View, StyleSheet } from 'react-native';
 import { Text } from 'nativewindui/Text';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, type ImageProps, StyleSheet, View } from 'react-native';
 import { useUser } from '~/features/auth/hooks/useUser';
 import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 
@@ -59,7 +59,8 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     return (
       <View
         className={`items-center justify-center bg-muted px-2 ${className}`}
-        style={[{ backgroundColor: placeholderColor }]}>
+        style={[{ backgroundColor: placeholderColor }]}
+      >
         <ActivityIndicator size="small" color="#999" />
       </View>
     );

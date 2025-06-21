@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { getAllCategories } from "@/lib/categories";
-import { footerConfig, siteConfig } from "@/lib/config";
-import { useQuery } from "@tanstack/react-query";
-import { Backpack, Facebook, Github, Instagram, Twitter } from "lucide-react";
-import Link from "next/link";
+import { getAllCategories } from '@/lib/categories';
+import { footerConfig, siteConfig } from '@/lib/config';
+import { useQuery } from '@tanstack/react-query';
+import { Backpack, Facebook, Github, Instagram, Twitter } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Footer() {
   // Fetch categories using TanStack Query
   const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
+    queryKey: ['categories'],
     queryFn: getAllCategories,
   });
 
@@ -21,9 +21,7 @@ export default function Footer() {
             <Backpack className="h-5 w-5 text-apple-blue" />
             <span className="text-lg font-semibold">{siteConfig.name}</span>
           </Link>
-          <p className="mt-4 text-sm text-muted-foreground">
-            {siteConfig.description}
-          </p>
+          <p className="mt-4 text-sm text-muted-foreground">{siteConfig.description}</p>
           <div className="mt-6 flex space-x-5">
             <Link
               href={siteConfig.links.twitter}

@@ -1,8 +1,8 @@
 import { Icon } from '@roninoss/icons';
-import { Href, useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { type Href, useRouter } from 'expo-router';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
+import { View } from 'react-native';
 import { isAuthed } from '~/features/auth/store';
 import { cn } from '~/lib/cn';
 import { useColorScheme } from '~/lib/useColorScheme';

@@ -1,24 +1,24 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { useEffect, useState, useRef } from 'react';
+import debounce from 'lodash.debounce';
+import { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  TouchableOpacity,
   ActivityIndicator,
+  Alert,
   FlatList,
   Keyboard,
-  Alert,
-  Platform,
   Linking,
+  Platform,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import debounce from 'lodash.debounce';
-import * as Location from 'expo-location';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from 'nativewindui/Text';
 import { SearchInput } from 'nativewindui/SearchInput';
+import { Text } from 'nativewindui/Text';
 import { cn } from '~/lib/cn';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { useLocationSearch } from '../hooks';
@@ -269,7 +269,8 @@ export default function LocationSearchScreen() {
           {/* View Details Button */}
           <TouchableOpacity
             className="bg-primary/10 mr-2 rounded-full px-3 py-1.5"
-            onPress={() => handleViewLocationDetails(item)}>
+            onPress={() => handleViewLocationDetails(item)}
+          >
             <Text className="text-sm font-medium text-primary">View</Text>
           </TouchableOpacity>
 
@@ -277,7 +278,8 @@ export default function LocationSearchScreen() {
           <TouchableOpacity
             className="rounded-full bg-primary px-3 py-1.5"
             onPress={() => handleAddLocation(item)}
-            disabled={isAdding && addingLocationId === item.id}>
+            disabled={isAdding && addingLocationId === item.id}
+          >
             {isAdding && addingLocationId === item.id ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
@@ -298,7 +300,8 @@ export default function LocationSearchScreen() {
           <Text className="mt-4 text-center text-destructive">{error}</Text>
           <TouchableOpacity
             className="mt-6 rounded-full bg-primary px-4 py-2"
-            onPress={() => (query.length > 0 ? debouncedSearch(query) : handleUseDeviceLocation())}>
+            onPress={() => (query.length > 0 ? debouncedSearch(query) : handleUseDeviceLocation())}
+          >
             <Text className="text-white">Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -328,7 +331,8 @@ export default function LocationSearchScreen() {
             locationPermissionDenied ? 'bg-destructive/10' : 'bg-primary/10'
           )}
           onPress={handleUseDeviceLocation}
-          disabled={isGettingLocation}>
+          disabled={isGettingLocation}
+        >
           {isGettingLocation ? (
             <>
               <ActivityIndicator size="small" color={colors.primary} />
@@ -355,7 +359,8 @@ export default function LocationSearchScreen() {
                 <TouchableOpacity
                   key={index}
                   className="border-border/30 flex-row items-center gap-3 border-b py-3"
-                  onPress={() => handlePopularCitySearch(search)}>
+                  onPress={() => handlePopularCitySearch(search)}
+                >
                   <Icon name="clock-outline" size={20} color={colors.grey2} />
                   <Text className="text-foreground">{search}</Text>
                 </TouchableOpacity>
@@ -370,7 +375,8 @@ export default function LocationSearchScreen() {
             <TouchableOpacity
               key={index}
               className="border-border/30 flex-row items-center gap-3 border-b py-3"
-              onPress={() => handlePopularCitySearch(city.name)}>
+              onPress={() => handlePopularCitySearch(city.name)}
+            >
               <Icon name="map-marker-outline" size={20} color={colors.grey2} />
               <View>
                 <Text className="text-foreground">{city.name}</Text>
@@ -411,7 +417,8 @@ export default function LocationSearchScreen() {
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(200)}
-          className="flex-1 items-center justify-center">
+          className="flex-1 items-center justify-center"
+        >
           <ActivityIndicator size="large" color={colors.primary} />
           <Text className="mt-4 text-muted-foreground">Searching for locations...</Text>
         </Animated.View>

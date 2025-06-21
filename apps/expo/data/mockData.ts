@@ -1,4 +1,4 @@
-import { Pack, PackItem, User } from '~/types';
+import type { Pack, PackItem, User } from '~/types';
 import { mockCatalogItems } from './mockCatalog';
 
 // --- Users ---

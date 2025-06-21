@@ -1,5 +1,10 @@
+import { Icon } from '@roninoss/icons';
 import { usePathname, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { useAtom } from 'jotai';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
+import { useCallback, useRef } from 'react';
 import {
   FlatList,
   Pressable,
@@ -9,19 +14,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Icon } from '@roninoss/icons';
-import { Link } from 'expo-router';
-import { activeFilterAtom, searchValueAtom } from '~/features/packs/packListAtoms';
-import { PackCard } from '~/features/packs/components/PackCard';
-import { usePacks } from '~/features/packs/hooks/usePacks';
 import { useAuth } from '~/features/auth/hooks/useAuth';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { PackCard } from '~/features/packs/components/PackCard';
+import { SearchResults } from '~/features/packs/components/SearchResults';
+import SyncBanner from '~/features/packs/components/SyncBanner';
+import { usePacks } from '~/features/packs/hooks/usePacks';
+import { activeFilterAtom, searchValueAtom } from '~/features/packs/packListAtoms';
 import { useColorScheme } from '~/lib/useColorScheme';
 import type { Pack, PackCategory } from '../types';
-import SyncBanner from '~/features/packs/components/SyncBanner';
-import { useCallback, useRef } from 'react';
-import { SearchResults } from '~/features/packs/components/SearchResults';
-import { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
 
 type FilterOption = {
   label: string;
@@ -56,7 +56,7 @@ export function PackListScreen() {
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useAtom(activeFilterAtom);
   const { isAuthenticated } = useAuth();
-  const route = usePathname();
+  const _route = usePathname();
 
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
 
@@ -85,9 +85,11 @@ export function PackListScreen() {
     <TouchableOpacity
       key={value}
       onPress={() => setActiveFilter(value)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}>
+      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}
+    >
       <Text
-        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}>
+        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}
+      >
         {label}
       </Text>
     </TouchableOpacity>
@@ -169,7 +171,8 @@ export function PackListScreen() {
             </Text>
             <TouchableOpacity
               className="rounded-lg bg-primary px-4 py-2"
-              onPress={handleCreatePack}>
+              onPress={handleCreatePack}
+            >
               <Text className="font-medium text-primary-foreground">Create New Pack</Text>
             </TouchableOpacity>
           </View>

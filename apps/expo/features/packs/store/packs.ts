@@ -1,11 +1,11 @@
 import { observable, syncState } from '@legendapp/state';
-import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
-import { syncObservable } from '@legendapp/state/sync';
-import Storage from 'expo-sqlite/kv-store';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
-import { Pack, PackInStore } from '../types';
+import { syncObservable } from '@legendapp/state/sync';
+import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import Storage from 'expo-sqlite/kv-store';
 import { isAuthed } from '~/features/auth/store';
+import axiosInstance, { handleApiError } from '~/lib/api/client';
+import { Pack, type PackInStore } from '../types';
 
 const listPacks = async () => {
   try {

@@ -1,11 +1,11 @@
 'use client';
 
+import { useForm } from '@tanstack/react-form';
 import { Stack, router } from 'expo-router';
 import * as React from 'react';
-import { Image, Platform, View, Alert } from 'react-native';
+import { Alert, Image, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 
 import { AlertAnchor } from 'nativewindui/Alert';
@@ -73,7 +73,8 @@ export default function ForgotPasswordScreen() {
         bounces={false}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="ios:pt-12 pt-20">
+        contentContainerClassName="ios:pt-12 pt-20"
+      >
         <View className="ios:px-12 flex-1 px-8">
           <View className="items-center pb-1">
             <Image
@@ -125,11 +126,12 @@ export default function ForgotPasswordScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   onPress={() => form.handleSubmit()}
-                  disabled={!canSubmit || isLoading}>
+                  disabled={!canSubmit || isLoading}
+                >
                   <Text>{isLoading ? 'Sending...' : 'Send Code'}</Text>
                 </Button>
               )}
@@ -142,11 +144,12 @@ export default function ForgotPasswordScreen() {
               className="px-2"
               onPress={() => {
                 router.replace('/auth/(create-account)');
-              }}>
+              }}
+            >
               <Text className="text-sm text-primary">Create Account</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
                   <Text className="text-sm">{isLoading ? 'Sending...' : 'Send Code'}</Text>
                 </Button>

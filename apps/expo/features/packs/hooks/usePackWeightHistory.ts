@@ -45,7 +45,7 @@ const getMonthlyWeightAverages = (data: any[]) => {
     return {
       year,
       month: monthNames[monthIndex],
-      average_weight: parseFloat((totalWeight / count).toFixed(2)),
+      average_weight: Number.parseFloat((totalWeight / count).toFixed(2)),
     };
   });
 

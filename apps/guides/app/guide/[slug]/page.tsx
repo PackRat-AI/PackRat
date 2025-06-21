@@ -1,16 +1,11 @@
-import GuideCard from "@/components/guide-card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  getAllPosts,
-  getMdxContent,
-  getPostBySlug,
-  getRelatedPosts,
-} from "@/lib/mdx-static";
-import { format } from "date-fns";
-import { ArrowLeft, Calendar, Clock, MountainSnow, User } from "lucide-react";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+import GuideCard from '@/components/guide-card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { getAllPosts, getMdxContent, getPostBySlug, getRelatedPosts } from '@/lib/mdx-static';
+import { format } from 'date-fns';
+import { ArrowLeft, Calendar, Clock, MountainSnow, User } from 'lucide-react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 export async function generateStaticParams() {
   const posts = getAllPosts();
@@ -30,7 +25,7 @@ export async function generateMetadata({
 
   if (!post) {
     return {
-      title: "Guide Not Found",
+      title: 'Guide Not Found',
     };
   }
 
@@ -63,7 +58,7 @@ export default async function GuidePage({
     <div>
       {/* Guide Header - Apple style */}
       <div className="relative py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-background"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white dark:from-blue-950/20 dark:to-background" />
         <div className="container relative">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             {post.categories?.map((category) => (
@@ -84,17 +79,15 @@ export default async function GuidePage({
           <div className="mt-6 flex flex-wrap items-center gap-5 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1.5">
               <User className="h-4 w-4" />
-              <span>{post.author || "PackRat Team"}</span>
+              <span>{post.author || 'PackRat Team'}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              <time dateTime={post.date}>
-                {format(new Date(post.date), "MMMM d, yyyy")}
-              </time>
+              <time dateTime={post.date}>{format(new Date(post.date), 'MMMM d, yyyy')}</time>
             </div>
             <div className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
-              <span>{post.readingTime || "5 min read"}</span>
+              <span>{post.readingTime || '5 min read'}</span>
             </div>
             {post.difficulty && (
               <div className="flex items-center gap-1.5">
@@ -122,9 +115,7 @@ export default async function GuidePage({
 
           {relatedPosts.length > 0 && (
             <div className="mt-16">
-              <h2 className="mb-8 text-2xl font-semibold text-center">
-                Related Guides
-              </h2>
+              <h2 className="mb-8 text-2xl font-semibold text-center">Related Guides</h2>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedPosts.map((post) => (
                   <GuideCard key={post.slug} post={post} />

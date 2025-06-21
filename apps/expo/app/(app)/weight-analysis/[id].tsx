@@ -1,6 +1,6 @@
 'use client';
 import { useLocalSearchParams } from 'expo-router';
-import { View, ScrollView, SafeAreaView } from 'react-native';
+import { SafeAreaView, ScrollView, View } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
@@ -50,7 +50,8 @@ export default function WeightAnalysisScreen() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
-        removeClippedSubviews={false}>
+        removeClippedSubviews={false}
+      >
         <View className="grid grid-cols-2 gap-3 p-4">
           <WeightCard title="Base Weight" weight={`${data.baseWeight} g`} className="col-span-1" />
           <WeightCard
@@ -101,7 +102,8 @@ export default function WeightAnalysisScreen() {
                   className={cn(
                     'flex-row items-center justify-between p-4',
                     itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : ''
-                  )}>
+                  )}
+                >
                   <View>
                     <Text>{item.name}</Text>
                     {item.notes && (

@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
@@ -70,7 +70,8 @@ export default function PackStatsScreen() {
                 ) : (
                   <Text
                     variant="largeTitle"
-                    className="mx-auto mt-2 self-center text-center text-muted-foreground">
+                    className="mx-auto mt-2 self-center text-center text-muted-foreground"
+                  >
                     N/A
                   </Text>
                 )}

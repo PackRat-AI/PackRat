@@ -1,8 +1,13 @@
+import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useRouter } from 'expo-router';
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { SegmentedControl } from 'nativewindui/SegmentedControl';
+import { TextField } from 'nativewindui/TextField';
+import { useRef, useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,18 +17,13 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
 } from 'react-native';
 import { z } from 'zod';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { SegmentedControl } from 'nativewindui/SegmentedControl';
-import { TextField } from 'nativewindui/TextField';
+import { useColorScheme } from '~/lib/useColorScheme';
+import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import type { WeightUnit } from '~/types';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
-import { useColorScheme } from '~/lib/useColorScheme';
-import type { WeightUnit } from '~/types';
-import { useState, useRef } from 'react';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 
 // Define Zod schema
 const itemFormSchema = z.object({
@@ -191,12 +191,14 @@ export const CreatePackItemForm = ({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1">
+      className="flex-1"
+    >
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
             ios={{ title: 'Item Details' }}
-            footnote="Enter the basic information about your item">
+            footnote="Enter the basic information about your item"
+          >
             <form.Field name="name">
               {(field) => (
                 <FormItem>
@@ -364,7 +366,7 @@ export const CreatePackItemForm = ({
 
           <FormSection ios={{ title: 'Image' }} footnote="Add an image of your item (optional)">
             <form.Field name="image">
-              {(field) => (
+              {(_field) => (
                 <FormItem>
                   {displayImage ? (
                     <View className="relative">
@@ -375,14 +377,16 @@ export const CreatePackItemForm = ({
                       />
                       <TouchableOpacity
                         className="absolute right-2 top-2 rounded-full bg-black bg-opacity-50 p-1"
-                        onPress={handleRemoveImage}>
+                        onPress={handleRemoveImage}
+                      >
                         <Icon name="close" size={20} color="#ffffff" />
                       </TouchableOpacity>
                     </View>
                   ) : (
                     <TouchableOpacity
                       className="h-48 items-center justify-center rounded-lg border border-dashed border-input bg-background p-4"
-                      onPress={handleAddImage}>
+                      onPress={handleAddImage}
+                    >
                       <Icon name="camera" size={32} color={colors.foreground} />
                       <Text className="mt-2 text-muted-foreground">Tap to add an image</Text>
                     </TouchableOpacity>
@@ -423,7 +427,8 @@ export const CreatePackItemForm = ({
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${
                 !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-              }`}>
+              }`}
+            >
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting ? 'Saving...' : isEditing ? 'Update Item' : 'Add Item'}
               </Text>

@@ -1,8 +1,8 @@
-import { siteConfig } from "@/config/site"
-import { LucideIcon } from "@/lib/icons"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBackground from "@/components/ui/gradient-background"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
+import GradientBackground from '@/components/ui/gradient-background';
+import GradientBorderCard from '@/components/ui/gradient-border-card';
+import GradientText from '@/components/ui/gradient-text';
+import { siteConfig } from '@/config/site';
+import { LucideIcon } from '@/lib/icons';
 
 export default function IntegrationSection() {
   return (
@@ -29,7 +29,7 @@ export default function IntegrationSection() {
 
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {siteConfig.integrations.items.map((integration) => {
-            const Icon = LucideIcon(integration.icon)
+            const Icon = LucideIcon(integration.icon);
 
             return (
               <GradientBorderCard
@@ -50,8 +50,12 @@ export default function IntegrationSection() {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-base md:text-lg font-bold text-foreground">{integration.name}</h3>
-                    <p className="text-xs md:text-sm text-muted-foreground">{integration.description}</p>
+                    <h3 className="text-base md:text-lg font-bold text-foreground">
+                      {integration.name}
+                    </h3>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      {integration.description}
+                    </p>
                   </div>
                 </div>
 
@@ -70,7 +74,7 @@ export default function IntegrationSection() {
                   ))}
                 </div>
               </GradientBorderCard>
-            )
+            );
           })}
         </div>
 
@@ -84,5 +88,5 @@ export default function IntegrationSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

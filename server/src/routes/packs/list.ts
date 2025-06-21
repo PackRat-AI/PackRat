@@ -1,12 +1,9 @@
-import { createDb } from "@/db";
-import { packs, packWeightHistory } from '@/db/schema';
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from '@/utils/api-middleware';
+import { createDb } from '@/db';
+import { packWeightHistory, packs } from '@/db/schema';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
 import { computePacksWeights } from '@/utils/compute-pack';
-import { eq } from 'drizzle-orm';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 
 const packsListRoutes = new OpenAPIHono();
 

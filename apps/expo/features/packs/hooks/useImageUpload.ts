@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import axiosInstance from '~/lib/api/client';
 import { nanoid } from 'nanoid/non-secure';
+import { useState } from 'react';
+import axiosInstance from '~/lib/api/client';
 import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 
 export type SelectedImage = {
@@ -77,7 +77,7 @@ export function useImageUpload() {
   };
 
   // Function to get a presigned URL for uploading
-  const getPresignedUrl = async (
+  const _getPresignedUrl = async (
     fileName: string,
     contentType: string
   ): Promise<{ url: string; publicUrl: string; objectKey: string }> => {

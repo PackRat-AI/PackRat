@@ -1,13 +1,13 @@
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
-import { Image, View } from 'react-native';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
+import { Image, View } from 'react-native';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { useCurrentPack } from '../hooks';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const _LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
 export function CurrentPackTile() {
   const currentPack = useCurrentPack();

@@ -1,4 +1,4 @@
-import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { Image, Pressable, Text, View } from 'react-native';
 import { CategoryBadge } from '~/components/initial/CategoryBadge';
 import { WeightBadge } from '~/components/initial/WeightBadge';
@@ -32,7 +32,8 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
-      onPress={() => onPress(item)}>
+      onPress={() => onPress(item)}
+    >
       <View className="flex-row">
         {item.image ? (
           <Image source={{ uri: item.image }} className="h-24 w-24" resizeMode="cover" />
@@ -53,7 +54,8 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
               className={cn(
                 'rounded-full px-2 py-0.5',
                 isPackItem(item) ? 'bg-primary/20' : 'bg-secondary/20'
-              )}>
+              )}
+            >
               <Text className="text-xs text-primary">
                 {isPackItem(item) ? 'Pack Item' : 'Catalog Item'}
               </Text>

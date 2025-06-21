@@ -1,11 +1,8 @@
-import { createDb } from "@/db";
-import { catalogItems } from "@/db/schema";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@/utils/api-middleware";
-import { eq } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createDb } from '@/db';
+import { catalogItems } from '@/db/schema';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 
 const catalogItemRoutes = new OpenAPIHono();
 
@@ -28,20 +25,20 @@ catalogItemRoutes.openapi(getItemRoute, async (c) => {
     }
 
     const db = createDb(c);
-    const itemId = Number(c.req.param("id"));
+    const itemId = Number(c.req.param('id'));
 
     const item = await db.query.catalogItems.findFirst({
       where: eq(catalogItems.id, itemId),
     });
 
     if (!item) {
-      return c.json({ error: "Catalog item not found" }, 404);
+      return c.json({ error: 'Catalog item not found' }, 404);
     }
 
     return c.json(item);
   } catch (error) {
-    console.error("Error fetching catalog item:", error);
-    return c.json({ error: "Failed to fetch catalog item" }, 500);
+    console.error('Error fetching catalog item:', error);
+    return c.json({ error: 'Failed to fetch catalog item' }, 500);
   }
 });
 
@@ -67,7 +64,7 @@ catalogItemRoutes.openapi(updateItemRoute, async (c) => {
     }
 
     const db = createDb(c);
-    const itemId = Number(c.req.param("id"));
+    const itemId = Number(c.req.param('id'));
     const data = await c.req.json();
 
     // Check if the catalog item exists
@@ -76,7 +73,7 @@ catalogItemRoutes.openapi(updateItemRoute, async (c) => {
     });
 
     if (!existingItem) {
-      return c.json({ error: "Catalog item not found" }, 404);
+      return c.json({ error: 'Catalog item not found' }, 404);
     }
 
     // Update the catalog item
@@ -114,8 +111,8 @@ catalogItemRoutes.openapi(updateItemRoute, async (c) => {
 
     return c.json(updatedItem);
   } catch (error) {
-    console.error("Error updating catalog item:", error);
-    return c.json({ error: "Failed to update catalog item" }, 500);
+    console.error('Error updating catalog item:', error);
+    return c.json({ error: 'Failed to update catalog item' }, 500);
   }
 });
 
@@ -136,7 +133,7 @@ catalogItemRoutes.openapi(deleteItemRoute, async (c) => {
     }
 
     const db = createDb(c);
-    const itemId = Number(c.req.param("id"));
+    const itemId = Number(c.req.param('id'));
 
     // Check if the catalog item exists
     const existingItem = await db.query.catalogItems.findFirst({
@@ -144,7 +141,7 @@ catalogItemRoutes.openapi(deleteItemRoute, async (c) => {
     });
 
     if (!existingItem) {
-      return c.json({ error: "Catalog item not found" }, 404);
+      return c.json({ error: 'Catalog item not found' }, 404);
     }
 
     // Delete the catalog item
@@ -152,8 +149,8 @@ catalogItemRoutes.openapi(deleteItemRoute, async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    console.error("Error deleting catalog item:", error);
-    return c.json({ error: "Failed to delete catalog item" }, 500);
+    console.error('Error deleting catalog item:', error);
+    return c.json({ error: 'Failed to delete catalog item' }, 500);
   }
 });
 

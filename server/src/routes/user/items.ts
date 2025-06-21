@@ -1,11 +1,8 @@
-import { createDb } from "@/db";
-import { packItems } from "@/db/schema";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@/utils/api-middleware";
-import { eq } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createDb } from '@/db';
+import { packItems } from '@/db/schema';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 
 const userItemsRoutes = new OpenAPIHono();
 
@@ -35,7 +32,7 @@ userItemsRoutes.openapi(userItemsGetRoute, async (c) => {
     return c.json(items);
   } catch (error) {
     console.error("Error fetching user's pack items:", error);
-    return c.json({ error: "Failed to fetch pack items" }, 500);
+    return c.json({ error: 'Failed to fetch pack items' }, 500);
   }
 });
 

@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
-import { useState, useEffect } from 'react';
-import { View, ScrollView, SafeAreaView } from 'react-native';
+import { useEffect, useState } from 'react';
+import { SafeAreaView, ScrollView, View } from 'react-native';
 
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
@@ -60,7 +60,8 @@ function CategoryItem({ category, index }: { category: any; index: number }) {
       className={cn(
         'flex-row items-center justify-between p-4',
         index > 0 ? 'border-border/25 dark:border-border/80 border-t' : ''
-      )}>
+      )}
+    >
       <View>
         <Text>{category.name}</Text>
         <Text variant="footnote" className="text-muted-foreground">
@@ -70,7 +71,8 @@ function CategoryItem({ category, index }: { category: any; index: number }) {
       </View>
       <View
         className="h-6 w-6 items-center justify-center rounded-full"
-        style={{ backgroundColor: colors.grey4 }}>
+        style={{ backgroundColor: colors.grey4 }}
+      >
         <Text variant="caption2" style={{ color: colors.grey }}>
           {category.items}
         </Text>
@@ -85,7 +87,8 @@ function ItemRow({ item, index }: { item: any; index: number }) {
       className={cn(
         'flex-row items-center justify-between p-4',
         index > 0 ? 'border-border/25 dark:border-border/80 border-t' : ''
-      )}>
+      )}
+    >
       <View>
         <Text>{item.name}</Text>
         <Text variant="footnote" className="text-muted-foreground">
@@ -127,7 +130,8 @@ export default function CurrentPackScreen() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
-        removeClippedSubviews={false}>
+        removeClippedSubviews={false}
+      >
         <View className="flex-row items-center p-4">
           <Avatar className="mr-4 h-16 w-16" alt="">
             <AvatarImage source={{ uri: pack.image }} />

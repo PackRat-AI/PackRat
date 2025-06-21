@@ -1,9 +1,9 @@
 import { Icon } from '@roninoss/icons';
 import 'expo-dev-client';
 import { Stack, useRouter } from 'expo-router';
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 import { Pressable, View } from 'react-native';
 import { AiChatHeader } from '~/components/ai-chatHeader';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 
 import { ThemeToggle } from '~/components/ThemeToggle';
 import { useAuthInit } from '~/features/auth/hooks/useAuthInit';

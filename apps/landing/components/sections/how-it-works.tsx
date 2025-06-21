@@ -1,19 +1,22 @@
-import { siteConfig } from "@/config/site"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
-import { LucideIcon } from "@/lib/icons"
+import GradientBorderCard from '@/components/ui/gradient-border-card';
+import GradientText from '@/components/ui/gradient-text';
+import { siteConfig } from '@/config/site';
+import { LucideIcon } from '@/lib/icons';
 
 export default function HowItWorksSection() {
   // Icons for each step
-  const stepIcons = ["Download", "Map", "Backpack"]
+  const stepIcons = ['Download', 'Map', 'Backpack'];
 
   return (
-    <section id="how-it-works" className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted">
+    <section
+      id="how-it-works"
+      className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted"
+    >
       {/* Background patterns */}
       <div className="absolute inset-0 overflow-hidden opacity-5 -z-10">
         <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-foreground/20 to-transparent blur-3xl"></div>
-          <div className="h-full w-full bg-[radial-gradient(#000000_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]"></div>
+          <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-bl from-foreground/20 to-transparent blur-3xl" />
+          <div className="h-full w-full bg-[radial-gradient(#000000_1px,transparent_1px)] dark:bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]" />
         </div>
       </div>
 
@@ -43,7 +46,7 @@ export default function HowItWorksSection() {
 
           <div className="grid gap-8 md:gap-12 lg:gap-16 lg:grid-cols-3">
             {siteConfig.howItWorks.steps.map((step, index) => {
-              const Icon = LucideIcon(stepIcons[index])
+              const Icon = LucideIcon(stepIcons[index]);
 
               return (
                 <div key={step.number} className="relative flex flex-col items-center text-center">
@@ -67,16 +70,20 @@ export default function HowItWorksSection() {
                           <Icon className="h-6 w-6 md:h-8 md:w-8 text-orange-500" />
                         </div>
                       )}
-                      <h3 className="text-lg md:text-xl font-bold text-foreground mb-2 md:mb-3">{step.title}</h3>
-                      <p className="text-sm md:text-base text-muted-foreground">{step.description}</p>
+                      <h3 className="text-lg md:text-xl font-bold text-foreground mb-2 md:mb-3">
+                        {step.title}
+                      </h3>
+                      <p className="text-sm md:text-base text-muted-foreground">
+                        {step.description}
+                      </p>
                     </div>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

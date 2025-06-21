@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { isAuthed } from '../store';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function useAuthInit() {
   const [isLoading, setIsLoading] = useState(true);
@@ -39,7 +39,8 @@ export function useAuthInit() {
           if (accessToken) isAuthed.set(true);
           setIsLoading(false);
           return;
-        } else if(hasSkippedLogin === 'true'){
+        }
+        if (hasSkippedLogin === 'true') {
           // User has skipped login before, redirect to packs screen
           setIsLoading(false);
           router.replace('/packs');

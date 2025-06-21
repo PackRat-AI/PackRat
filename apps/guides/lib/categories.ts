@@ -1,4 +1,4 @@
-import { getAllPosts } from "./mdx-static";
+import { getAllPosts } from './mdx-static';
 
 export function getAllCategories(): string[] {
   const posts = getAllPosts();

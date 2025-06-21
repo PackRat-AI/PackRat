@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { View, Image, TouchableOpacity } from 'react-native';
 import { Icon } from '@roninoss/icons';
-import type { ItemReview } from '~/types';
 import { Text } from 'nativewindui/Text';
+import { useState } from 'react';
+import { Image, TouchableOpacity, View } from 'react-native';
 import { useColorScheme } from '~/lib/useColorScheme';
+import type { ItemReview } from '~/types';
 
 type ItemReviewsProps = {
   reviews: ItemReview[];
@@ -85,7 +85,8 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
             <View className="mt-2">
               <Text
                 className="text-foreground"
-                numberOfLines={shouldTruncate && !isExpanded ? 3 : undefined}>
+                numberOfLines={shouldTruncate && !isExpanded ? 3 : undefined}
+              >
                 {review.text}
               </Text>
 

@@ -1,13 +1,13 @@
 import type { LocationSearchResult } from '~/features/weather/types';
-import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 import axiosInstance, { handleApiError } from '~/lib/api/client';
+import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**
  * Search for locations by name
  */
 export async function searchLocations(query: string): Promise<LocationSearchResult[]> {
   try {
-    const response = await axiosInstance.get(`/api/weather/search`, {
+    const response = await axiosInstance.get('/api/weather/search', {
       params: { q: query },
     });
 
@@ -27,7 +27,7 @@ export async function searchLocationsByCoordinates(
   longitude: number
 ): Promise<LocationSearchResult[]> {
   try {
-    const response = await axiosInstance.get(`/api/weather/search-by-coordinates`, {
+    const response = await axiosInstance.get('/api/weather/search-by-coordinates', {
       params: {
         lat: latitude.toFixed(6),
         lon: longitude.toFixed(6),
@@ -47,7 +47,7 @@ export async function searchLocationsByCoordinates(
  */
 export async function getWeatherData(latitude: number, longitude: number) {
   try {
-    const response = await axiosInstance.get(`/api/weather/forecast`, {
+    const response = await axiosInstance.get('/api/weather/forecast', {
       params: {
         lat: latitude.toFixed(6),
         lon: longitude.toFixed(6),
@@ -115,7 +115,7 @@ export function formatWeatherData(data: any) {
 
   // Format alerts if any
   let alertText = null;
-  if (alerts && alerts.alert && alerts.alert.length > 0) {
+  if (alerts?.alert && alerts.alert.length > 0) {
     alertText = alerts.alert[0].headline || 'Weather Alert';
   }
 

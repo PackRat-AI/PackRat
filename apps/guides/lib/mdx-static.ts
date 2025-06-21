@@ -1,6 +1,6 @@
 // This is a browser-compatible version of your MDX utilities
-import { postContent, posts } from "./content";
-import type { Post } from "./types";
+import { postContent, posts } from './content';
+import type { Post } from './types';
 
 export function getAllPosts(): Post[] {
   return posts;
@@ -26,23 +26,20 @@ export function getRelatedPosts(post: Post, count = 3): Post[] {
   // Sort by number of matching categories
   relatedByCategory.sort((a, b) => {
     const aMatches =
-      a.categories?.filter((category) => post.categories?.includes(category))
-        .length || 0;
+      a.categories?.filter((category) => post.categories?.includes(category)).length || 0;
     const bMatches =
-      b.categories?.filter((category) => post.categories?.includes(category))
-        .length || 0;
+      b.categories?.filter((category) => post.categories?.includes(category)).length || 0;
     return bMatches - aMatches;
   });
 
   // Return the top related posts, or recent posts if not enough related
   if (relatedByCategory.length >= count) {
     return relatedByCategory.slice(0, count);
-  } else {
-    // Fill remaining slots with recent posts
-    const recentPosts = otherPosts
-      .filter((p) => !relatedByCategory.includes(p))
-      .slice(0, count - relatedByCategory.length);
-
-    return [...relatedByCategory, ...recentPosts];
   }
+  // Fill remaining slots with recent posts
+  const recentPosts = otherPosts
+    .filter((p) => !relatedByCategory.includes(p))
+    .slice(0, count - relatedByCategory.length);
+
+  return [...relatedByCategory, ...recentPosts];
 }

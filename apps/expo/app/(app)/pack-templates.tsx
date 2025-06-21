@@ -1,5 +1,5 @@
 import { Icon } from '@roninoss/icons';
-import { View, ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { colors } from 'react-native-keyboard-controller/lib/typescript/components/KeyboardToolbar/colors';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
@@ -49,7 +49,7 @@ const PACK_TEMPLATES = [
 function TemplateTags({ tags }: { tags: string[] }) {
   return (
     <View className="mt-2 flex-row flex-wrap">
-      {tags.map((tag, index) => (
+      {tags.map((tag, _index) => (
         <View key={tag} className="mb-1 mr-1 rounded-full bg-muted px-2 py-0.5 dark:bg-gray-50/10">
           <Text variant="caption2" className="text-muted-foreground">
             {tag}

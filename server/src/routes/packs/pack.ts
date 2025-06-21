@@ -1,13 +1,10 @@
-import { createDb } from "@/db";
-import { packs, packWeightHistory, type PackWithItems } from '@/db/schema';
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from '@/utils/api-middleware';
-import { computePackWeights } from '@/utils/compute-pack';
+import { createDb } from '@/db';
+import { type PackWithItems, packWeightHistory, packs } from '@/db/schema';
 import { getCatalogItems, getPackDetails } from '@/utils/DbUtils';
-import { and, eq } from 'drizzle-orm';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { computePackWeights } from '@/utils/compute-pack';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { and, eq } from 'drizzle-orm';
 
 const packRoutes = new OpenAPIHono();
 
@@ -70,7 +67,7 @@ packRoutes.openapi(updatePackRoute, async (c) => {
   try {
     const packId = c.req.param('packId');
     const data = await c.req.json();
-    
+
     // Create update object with only the provided fields
     const updateData: Record<string, any> = {};
     if ('name' in data) updateData.name = data.name;
@@ -90,13 +87,12 @@ packRoutes.openapi(updatePackRoute, async (c) => {
       .set(updateData)
       .where(and(eq(packs.id, packId), eq(packs.userId, auth.userId)));
 
-    const updatedPack: PackWithItems | undefined =
-      await db.query.packs.findFirst({
-        where: and(eq(packs.id, packId), eq(packs.userId, auth.userId)),
-        with: {
-          items: true,
-        },
-      });
+    const updatedPack: PackWithItems | undefined = await db.query.packs.findFirst({
+      where: and(eq(packs.id, packId), eq(packs.userId, auth.userId)),
+      with: {
+        items: true,
+      },
+    });
 
     if (!updatedPack) {
       return c.json({ error: 'Pack not found' }, 404);
@@ -168,13 +164,9 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     // This avoids the AI complexity that's causing issues
 
     // Get existing categories and items in the pack
-    const existingCategories = new Set(
-      pack.items.map((item) => item.category || 'Uncategorized')
-    );
+    const existingCategories = new Set(pack.items.map((item) => item.category || 'Uncategorized'));
 
-    const existingItemNames = new Set(
-      pack.items.map((item) => item.name.toLowerCase())
-    );
+    const existingItemNames = new Set(pack.items.map((item) => item.name.toLowerCase()));
 
     // Simple suggestion algorithm:
     // 1. Suggest items from categories not in the pack
@@ -244,6 +236,5 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
     return c.json({ error: 'Failed to create weight history entry' }, 500);
   }
 });
-
 
 export { packRoutes };

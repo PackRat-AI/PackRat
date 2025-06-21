@@ -3,7 +3,7 @@ import { Icon } from '@roninoss/icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as React from 'react';
-import { type ViewStyle, Dimensions, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Dimensions, Platform, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   clamp,
@@ -24,7 +24,7 @@ import { ContextMenu } from 'nativewindui/ContextMenu';
 import { createContextItem } from 'nativewindui/ContextMenu/utils';
 import { DropdownMenu } from 'nativewindui/DropdownMenu';
 import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { List, ListItem, ListRenderItemInfo } from 'nativewindui/List';
+import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { Toolbar, ToolbarCTA } from 'nativewindui/Toolbar';
 import { cn } from '~/lib/cn';
@@ -76,7 +76,8 @@ export default function ConversationsAndroidScreen() {
       {Platform.OS === 'ios' ? (
         <Animated.View
           entering={FadeIn.duration(500)}
-          className="bg-card/70 dark:bg-background/70 absolute bottom-0 left-0 right-0">
+          className="bg-card/70 dark:bg-background/70 absolute bottom-0 left-0 right-0"
+        >
           <Toolbar
             leftView={<View className="flex-1" />}
             rightView={<ToolbarCTA className="h-8 w-8" icon={{ name: 'pencil-box-outline' }} />}
@@ -134,7 +135,8 @@ function LeftView() {
       <Button
         variant="plain"
         size={Platform.select({ ios: 'md', default: 'icon' })}
-        className="ios:px-0">
+        className="ios:px-0"
+      >
         <Icon
           ios={{ name: 'line.3.horizontal' }}
           materialIcon={{ name: 'menu', type: 'MaterialCommunityIcons' }}
@@ -174,7 +176,8 @@ function SearchBarContent() {
           horizontal
           contentContainerClassName="gap-4 px-4"
           keyboardShouldPersistTaps="handled"
-          showsHorizontalScrollIndicator={false}>
+          showsHorizontalScrollIndicator={false}
+        >
           <Pressable className="border-foreground/20 aspect-square w-28 items-center justify-center rounded-lg border">
             <Icon color={colors.foreground} size={24} name="star-outline" />
             <Text variant="footnote">Starred</Text>
@@ -277,7 +280,8 @@ function MessageRow({
               <View className="items-end pr-4">
                 <Text
                   variant="footnote"
-                  className={cn('text-muted-foreground', info.item.unread && 'font-medium')}>
+                  className={cn('text-muted-foreground', info.item.unread && 'font-medium')}
+                >
                   3:08PM
                 </Text>
                 <View className="w-[22px] justify-center pl-1 pt-2 ">
@@ -302,7 +306,8 @@ function IosContextMenu({ children }: { children: React.ReactNode }) {
       items={[
         createContextItem({ actionKey: 'archive', title: 'Archive' }),
         createContextItem({ actionKey: 'delete', title: 'Delete', destructive: true }),
-      ]}>
+      ]}
+    >
       {children}
     </ContextMenu>
   );
@@ -352,7 +357,8 @@ function SelectMessagesHeader({
             default: MATERIAL_HEADER_HEIGHT + insets.top,
           }),
         }}
-        className="bg-card absolute left-0 right-0 top-0 justify-end px-3 pb-4 shadow-md">
+        className="bg-card absolute left-0 right-0 top-0 justify-end px-3 pb-4 shadow-md"
+      >
         <View className="flex-row items-center justify-between gap-4">
           <Button size="icon" variant="plain" onPress={clearSelectedMessages}>
             <Icon name="close" size={24} color={colors.primary} />
@@ -516,7 +522,8 @@ function Swipeable({ children }: { children: React.ReactNode }) {
           <Animated.View style={leftIconStyle}>
             <View
               style={ACTION_BUTTON_STYLE}
-              className="absolute bottom-0 right-0 top-0 items-center justify-center">
+              className="absolute bottom-0 right-0 top-0 items-center justify-center"
+            >
               <Icon name="archive-arrow-up-outline" size={24} color="white" />
             </View>
           </Animated.View>
@@ -525,7 +532,8 @@ function Swipeable({ children }: { children: React.ReactNode }) {
           <Animated.View style={rightIconStyle}>
             <View
               style={ACTION_BUTTON_STYLE}
-              className="absolute bottom-0 right-0 top-0 items-center justify-center">
+              className="absolute bottom-0 right-0 top-0 items-center justify-center"
+            >
               <Icon name="archive-arrow-up-outline" size={24} color="white" />
             </View>
           </Animated.View>

@@ -1,13 +1,13 @@
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { Alert } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { Alert } from 'nativewindui/Alert';
 import { useRef } from 'react';
-import { AlertRef } from 'nativewindui/Alert/types';
+import { View } from 'react-native';
 import { featureFlags } from '~/config';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export function UpcomingTripsTile() {
   const router = useRouter();

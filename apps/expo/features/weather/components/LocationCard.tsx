@@ -1,5 +1,5 @@
-import { Pressable, View } from 'react-native';
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Pressable, View } from 'react-native';
 
 import { Text } from 'nativewindui/Text';
 import { cn } from '~/lib/cn';
@@ -75,7 +75,8 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
             'border-border/10 mb-4 overflow-hidden rounded-2xl border',
             pressed ? 'opacity-80' : 'opacity-100'
           )}
-          style={{ backgroundColor: getCardColor(location, colors) }}>
+          style={{ backgroundColor: getCardColor(location, colors) }}
+        >
           <View className="flex-row items-center justify-between p-4">
             <View className="flex-1">
               <View className="flex-row items-center">
@@ -109,7 +110,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
   );
 }
 
-function getCardColor(location: WeatherLocation, colors: any) {
+function getCardColor(location: WeatherLocation, _colors: any) {
   // Color based on condition and time
   const conditions: Record<string, string> = {
     clear: '#4287f5',

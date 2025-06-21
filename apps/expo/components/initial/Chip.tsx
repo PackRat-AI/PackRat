@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Text, View } from 'react-native';
 import { cn } from '~/lib/cn';
 
@@ -30,7 +30,8 @@ export function Chip({
         variant === 'worn' && 'bg-emerald-100',
         variant === 'consumable' && 'bg-amber-100',
         className
-      )}>
+      )}
+    >
       <Text
         className={cn(
           'text-xs',
@@ -41,7 +42,8 @@ export function Chip({
           variant === 'worn' && 'text-emerald-600',
           variant === 'consumable' && 'text-amber-600',
           textClassName
-        )}>
+        )}
+      >
         {prefix ? `${prefix}${children}` : children}
       </Text>
     </View>

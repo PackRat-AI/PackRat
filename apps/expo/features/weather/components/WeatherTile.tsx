@@ -2,11 +2,11 @@ import { Icon } from '@roninoss/icons';
 import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
+import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { useColorScheme } from '~/lib/useColorScheme';
 import { useActiveLocation } from '../hooks';
 import { WeatherIcon } from './WeatherIcon';
-import { ListItem } from 'nativewindui/List';
 
 export function WeatherTile() {
   const { activeLocation } = useActiveLocation();

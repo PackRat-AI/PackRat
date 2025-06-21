@@ -1,6 +1,6 @@
-import { View, Text, Pressable } from 'react-native';
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
+import { Pressable, Text, View } from 'react-native';
 import { useColorScheme } from '~/lib/useColorScheme';
 
 export default function SyncBanner() {
@@ -12,7 +12,8 @@ export default function SyncBanner() {
   return (
     <Pressable
       onPress={handlePress}
-      className="mx-4 my-2 flex-row items-center justify-between rounded-xl bg-blue-50 p-3">
+      className="mx-4 my-2 flex-row items-center justify-between rounded-xl bg-blue-50 p-3"
+    >
       <View className="flex-row items-center gap-2">
         <Icon name="cloud-outline" size={20} color={colors.primary} />
         <Text className="font-medium text-blue-800">Sync your packs across devices</Text>

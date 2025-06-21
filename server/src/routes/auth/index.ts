@@ -1,15 +1,6 @@
-import { createDb } from "@/db";
-import {
-  authProviders,
-  oneTimePasswords,
-  packs,
-  refreshTokens,
-  users,
-} from '@/db/schema';
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from '@/utils/api-middleware';
+import { createDb } from '@/db';
+import { authProviders, oneTimePasswords, packs, refreshTokens, users } from '@/db/schema';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
 import {
   generateJWT,
   generateRefreshToken,
@@ -19,12 +10,9 @@ import {
   validatePassword,
   verifyPassword,
 } from '@/utils/auth';
-import {
-  sendPasswordResetEmail,
-  sendVerificationCodeEmail,
-} from '@/utils/email';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@/utils/email';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { and, eq, gt, isNull } from 'drizzle-orm';
 
 const authRoutes = new OpenAPIHono();
 
@@ -47,21 +35,14 @@ authRoutes.openapi(loginRoute, async (c) => {
     }
 
     // Find user
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1);
+    const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
     if (user.length === 0) {
       return c.json({ error: 'Invalid email or password' }, 401);
     }
 
     // Verify password
-    const isPasswordValid = await verifyPassword(
-      password,
-      user[0].passwordHash!
-    );
+    const isPasswordValid = await verifyPassword(password, user[0].passwordHash!);
 
     if (!isPasswordValid) {
       return c.json({ error: 'Invalid email or password' }, 401);
@@ -69,10 +50,7 @@ authRoutes.openapi(loginRoute, async (c) => {
 
     // Check if email is verified
     if (!user[0].emailVerified) {
-      return c.json(
-        { error: 'Please verify your email before logging in' },
-        403
-      );
+      return c.json({ error: 'Please verify your email before logging in' }, 403);
     }
 
     // Generate refresh token
@@ -179,8 +157,7 @@ authRoutes.openapi(registerRoute, async (c) => {
 
     return c.json({
       success: true,
-      message:
-        'User registered successfully. Please check your email for your verification code.',
+      message: 'User registered successfully. Please check your email for your verification code.',
       userId: newUser.id,
     });
   } catch (error) {
@@ -207,11 +184,7 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     }
 
     // Find the user by email
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1);
+    const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
     if (user.length === 0) {
       return c.json({ error: 'User not found' }, 404);
@@ -237,15 +210,10 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     }
 
     // Update user as verified
-    await db
-      .update(users)
-      .set({ emailVerified: true })
-      .where(eq(users.id, userId));
+    await db.update(users).set({ emailVerified: true }).where(eq(users.id, userId));
 
     // Delete the verification code
-    await db
-      .delete(oneTimePasswords)
-      .where(eq(oneTimePasswords.userId, userId));
+    await db.delete(oneTimePasswords).where(eq(oneTimePasswords.userId, userId));
 
     // Generate refresh token
     const refreshToken = generateRefreshToken();
@@ -275,10 +243,7 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     });
   } catch (error) {
     console.error('Email verification error:', error);
-    return c.json(
-      { error: 'An error occurred during email verification' },
-      500
-    );
+    return c.json({ error: 'An error occurred during email verification' }, 500);
   }
 });
 
@@ -301,11 +266,7 @@ authRoutes.openapi(resendVerificationRoute, async (c) => {
     const db = createDb(c);
 
     // Find the user by email
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1);
+    const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
     if (user.length === 0) {
       return Response.json({ error: 'User not found' }, { status: 404 });
@@ -315,16 +276,11 @@ authRoutes.openapi(resendVerificationRoute, async (c) => {
 
     // Check if user is already verified
     if (user[0].emailVerified) {
-      return Response.json(
-        { error: 'Email is already verified' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'Email is already verified' }, { status: 400 });
     }
 
     // Delete any existing verification codes
-    await db
-      .delete(oneTimePasswords)
-      .where(eq(oneTimePasswords.userId, userId));
+    await db.delete(oneTimePasswords).where(eq(oneTimePasswords.userId, userId));
 
     // Generate new verification code
     const code = generateVerificationCode(5);
@@ -371,18 +327,13 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
     }
 
     // Find user
-    const user = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1);
+    const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
     // Always return success even if user doesn't exist (security best practice)
     if (user.length === 0) {
       return Response.json({
         success: true,
-        message:
-          'If your email is registered, you will receive a verification code',
+        message: 'If your email is registered, you will receive a verification code',
       });
     }
 
@@ -390,9 +341,7 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
     const code = generateVerificationCode(5);
 
     // Delete any existing codes for this user
-    await db
-      .delete(oneTimePasswords)
-      .where(eq(oneTimePasswords.userId, user[0].id));
+    await db.delete(oneTimePasswords).where(eq(oneTimePasswords.userId, user[0].id));
 
     // Store code in database
     await db.insert(oneTimePasswords).values({
@@ -406,8 +355,7 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
 
     return Response.json({
       success: true,
-      message:
-        'If your email is registered, you will receive a verification code',
+      message: 'If your email is registered, you will receive a verification code',
     });
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -439,10 +387,7 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
     // Validate password
     const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.valid) {
-      return Response.json(
-        { error: passwordValidation.message },
-        { status: 400 }
-      );
+      return Response.json({ error: passwordValidation.message }, { status: 400 });
     }
 
     // Find user by email
@@ -462,27 +407,16 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
     const codeRecord = await db
       .select()
       .from(oneTimePasswords)
-      .where(
-        and(
-          eq(oneTimePasswords.userId, user.id),
-          eq(oneTimePasswords.code, code)
-        )
-      )
+      .where(and(eq(oneTimePasswords.userId, user.id), eq(oneTimePasswords.code, code)))
       .limit(1);
 
     if (codeRecord.length === 0) {
-      return Response.json(
-        { error: 'Invalid verification code' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'Invalid verification code' }, { status: 400 });
     }
 
     // Check if code is expired
     if (new Date() > codeRecord[0].expiresAt) {
-      return Response.json(
-        { error: 'Verification code has expired' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'Verification code has expired' }, { status: 400 });
     }
 
     // Hash new password
@@ -492,9 +426,7 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
     await db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
 
     // Delete the used verification code
-    await db
-      .delete(oneTimePasswords)
-      .where(eq(oneTimePasswords.id, codeRecord[0].id));
+    await db.delete(oneTimePasswords).where(eq(oneTimePasswords.id, codeRecord[0].id));
 
     return Response.json({
       success: true,
@@ -502,10 +434,7 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
     });
   } catch (error) {
     console.error('Reset password error:', error);
-    return Response.json(
-      { error: 'An error occurred during password reset' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'An error occurred during password reset' }, { status: 500 });
   }
 });
 
@@ -535,12 +464,7 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
         expiresAt: refreshTokens.expiresAt,
       })
       .from(refreshTokens)
-      .where(
-        and(
-          eq(refreshTokens.token, refreshToken),
-          isNull(refreshTokens.revokedAt)
-        )
-      )
+      .where(and(eq(refreshTokens.token, refreshToken), isNull(refreshTokens.revokedAt)))
       .limit(1);
 
     if (tokenRecord.length === 0) {

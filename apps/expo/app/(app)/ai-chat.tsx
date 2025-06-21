@@ -2,8 +2,11 @@ import { useChat } from '@ai-sdk/react';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { fetch as expoFetch } from 'expo/fetch';
+import { useAtomValue } from 'jotai';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
 import * as React from 'react';
 import {
   Dimensions,
@@ -13,9 +16,9 @@ import {
   TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
-  type ViewStyle,
   TouchableOpacity,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
@@ -32,16 +35,13 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
+import { tokenAtom } from '~/features/auth/atoms/authAtoms';
 import { LocationSelector } from '~/features/weather/components/LocationSelector';
+import { useActiveLocation } from '~/features/weather/hooks';
 import { cn } from '~/lib/cn';
 import { useColorScheme } from '~/lib/useColorScheme';
-import { formatAIResponse } from '~/utils/format-ai-response';
 import { getContextualGreeting, getContextualSuggestions } from '~/utils/chatContextHelpers';
-import { useAtomValue } from 'jotai';
-import { tokenAtom } from '~/features/auth/atoms/authAtoms';
-import { useActiveLocation } from '~/features/weather/hooks';
+import { formatAIResponse } from '~/utils/format-ai-response';
 
 const USER = 'User';
 const AI = 'PackRat AI';
@@ -68,7 +68,7 @@ type Message = {
   content: string;
 };
 
-const HEADER_POSITION_STYLE: ViewStyle = {
+const _HEADER_POSITION_STYLE: ViewStyle = {
   position: 'absolute',
   zIndex: 50,
   top: 0,
@@ -100,7 +100,7 @@ export default function AIChat() {
   };
 
   // Get contextual information
-  const contextName =
+  const _contextName =
     context.contextType === 'item'
       ? context.itemName
       : context.contextType === 'pack'
@@ -241,7 +241,8 @@ export default function AIChat() {
             ROOT_STYLE,
             { backgroundColor: isDarkColorScheme ? colors.background : colors.card },
           ]}
-          behavior="padding">
+          behavior="padding"
+        >
           <FlashList
             // inverted
             ref={listRef}
@@ -262,7 +263,8 @@ export default function AIChat() {
                         <TouchableOpacity
                           key={index}
                           onPress={() => handleSuggestionPress(suggestion)}
-                          className="mb-2 rounded-full border border-border bg-card px-3 py-2">
+                          className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                        >
                           <Text className="text-sm text-foreground">{suggestion}</Text>
                         </TouchableOpacity>
                       ))}
@@ -312,9 +314,9 @@ export default function AIChat() {
           }}
           isLoading={isLoading}
           placeholder={
-            context.contextType == 'general'
+            context.contextType === 'general'
               ? 'Ask anything outdoors'
-              : `Ask about this ${context.contextType == 'item' ? 'item' : 'pack'}...`
+              : `Ask about this ${context.contextType === 'item' ? 'item' : 'pack'}...`
           }
         />
       </KeyboardStickyView>
@@ -372,14 +374,16 @@ function ChatBubble({
         'justify-center px-2 pb-3.5',
         isSameNextSender ? 'pb-1' : 'pb-3.5',
         isAI ? 'items-start pr-16' : 'items-end pl-16'
-      )}>
+      )}
+    >
       <Animated.View style={!isAI ? rootStyle : undefined}>
         <View>
           <View
             className={cn(
               'absolute bottom-0 items-center justify-center',
               isAI ? '-left-2 ' : '-right-2.5'
-            )}>
+            )}
+          >
             {Platform.OS === 'ios' && (
               <>
                 <View
@@ -415,7 +419,8 @@ function ChatBubble({
                   'rounded-2xl bg-background px-3 py-1.5 dark:bg-muted-foreground',
                   Platform.OS === 'ios' && 'dark:bg-muted',
                   !isAI && 'bg-primary dark:bg-primary'
-                )}>
+                )}
+              >
                 <Text className={cn(!isAI && 'text-white')}>
                   {isAI ? formatAIResponse(item.text) : item.text}
                 </Text>
@@ -483,7 +488,8 @@ function Composer({
           }),
           paddingBottom: insets.bottom,
         },
-      ]}>
+      ]}
+    >
       <View className="flex-row items-end gap-2 px-4 py-2">
         <TextInput
           placeholder={placeholder}
@@ -505,14 +511,16 @@ function Composer({
             <Button
               onPress={handleSubmit}
               size="icon"
-              className="ios:rounded-full h-7 w-7 rounded-full">
+              className="ios:rounded-full h-7 w-7 rounded-full"
+            >
               <Icon name="arrow-up" size={18} color="white" />
             </Button>
           ) : (
             <Button
               size="icon"
               variant="plain"
-              className="ios:rounded-full h-7 w-7 rounded-full opacity-40">
+              className="ios:rounded-full h-7 w-7 rounded-full opacity-40"
+            >
               <Icon name="arrow-up" size={20} color={colors.foreground} />
             </Button>
           )}
