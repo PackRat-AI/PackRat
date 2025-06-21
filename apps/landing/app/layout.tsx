@@ -70,7 +70,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <MainNav />
-          {children}
+          {children as any}
           <SiteFooter />
         </ThemeProvider>
       </body>
