@@ -4,9 +4,9 @@ import { View, ScrollView, SafeAreaView } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { userStore } from '~/features/auth/store';
-import { usePackWeightAnalysis } from '~/features/packs/hooks/usePackWeightAnalysis';
-import { cn } from '~/lib/cn';
+import { userStore } from 'expo-app/features/auth/store';
+import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
+import { cn } from 'expo-app/lib/cn';
 
 function WeightCard({
   title,

@@ -3,9 +3,9 @@ import { View, ScrollView, Image } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { useRecentPacks } from '~/features/packs/hooks/useRecentPacks';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { getRelativeTime } from '~/lib/utils/getRelativeTime';
+import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 
 function RecentPackCard({ pack }: { pack: any }) {
   const { colors } = useColorScheme();

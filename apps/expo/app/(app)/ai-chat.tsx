@@ -34,14 +34,14 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { LocationSelector } from '~/features/weather/components/LocationSelector';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { formatAIResponse } from '~/utils/format-ai-response';
-import { getContextualGreeting, getContextualSuggestions } from '~/utils/chatContextHelpers';
+import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { formatAIResponse } from 'expo-app/utils/format-ai-response';
+import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { useAtomValue } from 'jotai';
-import { tokenAtom } from '~/features/auth/atoms/authAtoms';
-import { useActiveLocation } from '~/features/weather/hooks';
+import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { useActiveLocation } from 'expo-app/features/weather/hooks';
 
 const USER = 'User';
 const AI = 'PackRat AI';

@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { View, Image, TouchableOpacity } from 'react-native';
 import { Icon } from '@roninoss/icons';
-import type { ItemReview } from '~/types';
+import type { ItemReview } from 'expo-app/types';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 type ItemReviewsProps = {
   reviews: ItemReview[];

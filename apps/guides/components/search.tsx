@@ -1,8 +1,8 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { getAllPosts } from "@/lib/mdx-static";
-import type { Post } from "@/lib/types";
+import { Input } from "guides-app/components/ui/input";
+import { getAllPosts } from "guides-app/lib/mdx-static";
+import type { Post } from "guides-app/lib/types";
 import { useQuery } from "@tanstack/react-query";
 import { SearchIcon, X } from "lucide-react";
 import Link from "next/link";

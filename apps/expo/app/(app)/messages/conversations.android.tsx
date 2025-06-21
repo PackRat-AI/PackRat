@@ -27,8 +27,8 @@ import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
 import { List, ListItem, ListRenderItemInfo } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { Toolbar, ToolbarCTA } from 'nativewindui/Toolbar';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 export default function ConversationsAndroidScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();

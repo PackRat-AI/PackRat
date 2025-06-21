@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "guides-app/components/ui/badge"
 
 export default function CategoryFilter({ categories }: { categories: string[] }) {
   const router = useRouter()

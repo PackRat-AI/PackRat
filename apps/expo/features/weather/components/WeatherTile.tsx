@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useActiveLocation } from '../hooks';
 import { WeatherIcon } from './WeatherIcon';
 import { ListItem } from 'nativewindui/List';

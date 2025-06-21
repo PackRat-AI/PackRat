@@ -1,9 +1,9 @@
-import { siteConfig } from "@/config/site"
+import { siteConfig } from "landing-app/config/site"
 import { QuoteIcon } from "lucide-react"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBackground from "@/components/ui/gradient-background"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import GradientText from "landing-app/components/ui/gradient-text"
+import GradientBackground from "landing-app/components/ui/gradient-background"
+import GradientBorderCard from "landing-app/components/ui/gradient-border-card"
+import { Avatar, AvatarFallback } from "landing-app/components/ui/avatar"
 
 export default function TestimonialsSection() {
   return (

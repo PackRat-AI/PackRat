@@ -1,4 +1,4 @@
-import { authMiddleware } from "@/middleware";
+import { authMiddleware } from "@packrat/api/middleware";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { authRoutes } from "./auth";
 import { catalogRoutes } from "./catalog";

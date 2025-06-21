@@ -1,5 +1,5 @@
-import { routes } from "@/routes";
-import { Env } from "@/types/env";
+import { routes } from "@packrat/api/routes";
+import { Env } from "@packrat/api/types/env";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 import { cors } from "hono/cors";

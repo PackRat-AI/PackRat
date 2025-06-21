@@ -7,14 +7,14 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Linking, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card } from '~/components/Card';
+import { Card } from 'expo-app/components/Card';
 
 import { Button } from 'nativewindui/Button';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { ThemeToggle } from '~/components/ThemeToggle';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { useHeaderSearchBar } from '~/lib/useHeaderSearchBar';
+import { ThemeToggle } from 'expo-app/components/ThemeToggle';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useHeaderSearchBar } from 'expo-app/lib/useHeaderSearchBar';
 
 cssInterop(FlashList, {
   className: 'style',

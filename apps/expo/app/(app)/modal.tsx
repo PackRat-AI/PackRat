@@ -8,8 +8,8 @@ import { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 
 import { Text } from 'nativewindui/Text';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 export default function ModalScreen() {
   const { colorScheme, colors } = useColorScheme();

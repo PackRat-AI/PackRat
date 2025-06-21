@@ -1,4 +1,4 @@
-import { CatalogItem } from '~/types';
+import { CatalogItem } from 'expo-app/types';
 
 // --- Catalog Items ---
 export const mockCatalogItems: CatalogItem[] = [

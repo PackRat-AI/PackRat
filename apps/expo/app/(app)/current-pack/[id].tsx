@@ -6,12 +6,12 @@ import { View, ScrollView, SafeAreaView } from 'react-native';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { userStore } from '~/features/auth/store';
-import { usePackDetails } from '~/features/packs/hooks/usePackDetails';
-import { computeCategorySummaries } from '~/features/packs/utils';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { getRelativeTime } from '~/lib/utils/getRelativeTime';
+import { userStore } from 'expo-app/features/auth/store';
+import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
+import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 
 function WeightCard({
   title,

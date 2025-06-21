@@ -4,7 +4,7 @@ import { SearchBarProps } from 'react-native-screens';
 
 import { useColorScheme } from './useColorScheme';
 
-import { COLORS } from '~/theme/colors';
+import { COLORS } from 'expo-app/theme/colors';
 
 export function useHeaderSearchBar(props: SearchBarProps = {}) {
   const { colorScheme, colors } = useColorScheme();

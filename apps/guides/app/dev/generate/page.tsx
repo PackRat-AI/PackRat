@@ -1,7 +1,7 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "guides-app/components/ui/badge";
+import { Button } from "guides-app/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,23 +9,23 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "guides-app/components/ui/card";
+import { Checkbox } from "guides-app/components/ui/checkbox";
+import { Input } from "guides-app/components/ui/input";
+import { Label } from "guides-app/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Toaster } from "@/components/ui/toaster";
-import { toast } from "@/components/ui/use-toast";
+} from "guides-app/components/ui/select";
+import { Slider } from "guides-app/components/ui/slider";
+import { Switch } from "guides-app/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "guides-app/components/ui/tabs";
+import { Textarea } from "guides-app/components/ui/textarea";
+import { Toaster } from "guides-app/components/ui/toaster";
+import { toast } from "guides-app/components/ui/use-toast";
 import { FileText, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 

@@ -1,12 +1,12 @@
-import GuideCard from "@/components/guide-card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import GuideCard from "guides-app/components/guide-card";
+import { Badge } from "guides-app/components/ui/badge";
+import { Button } from "guides-app/components/ui/button";
 import {
   getAllPosts,
   getMdxContent,
   getPostBySlug,
   getRelatedPosts,
-} from "@/lib/mdx-static";
+} from "guides-app/lib/mdx-static";
 import { format } from "date-fns";
 import { ArrowLeft, Calendar, Clock, MountainSnow, User } from "lucide-react";
 import Link from "next/link";

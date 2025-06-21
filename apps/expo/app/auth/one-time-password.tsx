@@ -23,11 +23,11 @@ import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { Route } from 'expo-router';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 const COUNTDOWN_SECONDS_TO_RESEND_CODE = 60;
 const NUM_OF_CODE_CHARACTERS = 5;

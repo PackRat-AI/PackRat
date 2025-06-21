@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { cn } from '~/lib/cn';
+import { cn } from 'expo-app/lib/cn';
 
 export type ChipVariant = 'default' | 'primary' | 'secondary' | 'outline' | 'worn' | 'consumable';
 

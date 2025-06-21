@@ -9,13 +9,13 @@ import { AlertAnchor } from 'nativewindui/Alert';
 import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useLocalSearchParams } from 'expo-router';
-import { featureFlags } from '~/config';
+import { featureFlags } from 'expo-app/config';
 import { useSetAtom } from 'jotai';
-import { redirectToAtom } from '~/features/auth/atoms/authAtoms';
+import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 const GOOGLE_SOURCE = {
   uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',

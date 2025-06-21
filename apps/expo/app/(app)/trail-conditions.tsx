@@ -3,7 +3,7 @@ import { View, ScrollView } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
+import { cn } from 'expo-app/lib/cn';
 
 // Mock data for trail conditions
 const TRAIL_CONDITIONS = [

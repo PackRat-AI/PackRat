@@ -1,9 +1,9 @@
-import { createDb } from "@/db";
-import { catalogItems } from "@/db/schema";
+import { createDb } from "@packrat/api/db";
+import { catalogItems } from "@packrat/api/db/schema";
 import {
   authenticateRequest,
   unauthorizedResponse,
-} from "@/utils/api-middleware";
+} from "@packrat/api/utils/api-middleware";
 import { eq } from "drizzle-orm";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 

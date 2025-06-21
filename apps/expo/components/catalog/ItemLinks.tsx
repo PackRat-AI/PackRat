@@ -1,8 +1,8 @@
 import { View, TouchableOpacity, Linking } from 'react-native';
 import { Icon } from '@roninoss/icons';
-import type { ItemLink } from '~/types';
+import type { ItemLink } from 'expo-app/types';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 type ItemLinksProps = {
   links: ItemLink[];

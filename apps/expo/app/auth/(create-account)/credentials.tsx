@@ -18,9 +18,9 @@ import { Icon } from '@roninoss/icons';
 import { Checkbox } from 'nativewindui/Checkbox';
 import { AlertAnchor } from 'nativewindui/Alert';
 import type { AlertRef } from 'nativewindui/Alert/types';
-import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Enhanced password validation schema
 const passwordSchema = z

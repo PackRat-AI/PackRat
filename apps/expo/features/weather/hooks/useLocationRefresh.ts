@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocations } from './useLocations';
-import { getWeatherData, formatWeatherData } from '~/features/weather/lib/weatherService';
+import { getWeatherData, formatWeatherData } from 'expo-app/features/weather/lib/weatherService';
 
 export function useLocationRefresh() {
   const [isRefreshing, setIsRefreshing] = useState(false);

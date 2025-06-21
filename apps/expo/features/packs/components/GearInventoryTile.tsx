@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Alert } from 'nativewindui/Alert';
 import { useRef } from 'react';
 import { type AlertRef } from 'nativewindui/Alert/types';

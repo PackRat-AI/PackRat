@@ -1,11 +1,11 @@
 import type React from "react"
 import "./globals.css"
 import { Mona_Sans as FontSans } from "next/font/google"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import { ThemeProvider } from "@/components/theme-provider"
-import { QueryProvider } from "@/components/providers/query-provider"
-import { cn } from "@/lib/utils"
+import Header from "guides-app/components/header"
+import Footer from "guides-app/components/footer"
+import { ThemeProvider } from "guides-app/components/theme-provider"
+import { QueryProvider } from "guides-app/components/providers/query-provider"
+import { cn } from "guides-app/lib/utils"
 
 const fontSans = FontSans({
   subsets: ["latin"],

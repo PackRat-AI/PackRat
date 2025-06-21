@@ -5,11 +5,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { getAllCategories } from "@/lib/categories";
-import { navigationConfig, siteConfig } from "@/lib/config";
-import { cn } from "@/lib/utils";
+} from "guides-app/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTrigger } from "guides-app/components/ui/sheet";
+import { getAllCategories } from "guides-app/lib/categories";
+import { navigationConfig, siteConfig } from "guides-app/lib/config";
+import { cn } from "guides-app/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Backpack, ChevronDown } from "lucide-react";
 import Link from "next/link";

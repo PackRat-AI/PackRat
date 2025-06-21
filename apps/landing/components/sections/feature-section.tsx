@@ -1,10 +1,10 @@
-import { siteConfig } from "@/config/site"
-import DeviceMockup from "@/components/ui/device-mockup"
-import GradientText from "@/components/ui/gradient-text"
-import FeatureCard from "@/components/ui/feature-card"
+import { siteConfig } from "landing-app/config/site"
+import DeviceMockup from "landing-app/components/ui/device-mockup"
+import GradientText from "landing-app/components/ui/gradient-text"
+import FeatureCard from "landing-app/components/ui/feature-card"
 import { Check } from "lucide-react"
-import GradientBackground from "@/components/ui/gradient-background"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
+import GradientBackground from "landing-app/components/ui/gradient-background"
+import GradientBorderCard from "landing-app/components/ui/gradient-border-card"
 
 export default function FeatureSection() {
   return (

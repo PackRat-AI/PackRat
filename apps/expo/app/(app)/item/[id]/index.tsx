@@ -1,4 +1,4 @@
-import { ItemDetailScreen } from '~/features/packs/screens/PackItemDetailScreen';
+import { ItemDetailScreen } from 'expo-app/features/packs/screens/PackItemDetailScreen';
 
 export default function ItemDetailRoute() {
   return <ItemDetailScreen />;

@@ -5,11 +5,11 @@ import { Pressable, Text, View } from 'react-native';
 import { Alert } from 'nativewindui/Alert';
 import { Button } from 'nativewindui/Button';
 import { useDeletePackItem } from '../hooks';
-import { CachedImage } from '~/features/packs/components/CachedImage';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import type { PackItem } from '../types';
 
 type PackItemCardProps = {

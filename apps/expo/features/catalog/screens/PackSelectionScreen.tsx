@@ -14,11 +14,11 @@ import {
 import { Icon } from '@roninoss/icons';
 import { Button } from 'nativewindui/Button';
 import { useCatalogItemDetails } from '../hooks';
-import type { Pack } from '~/types';
+import type { Pack } from 'expo-app/types';
 import { SearchInput } from 'nativewindui/SearchInput';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { usePacks } from '~/features/packs';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { usePacks } from 'expo-app/features/packs';
 
 export function PackSelectionScreen() {
   const router = useRouter();

@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import type { PackCategory } from '~/types';
+import type { PackCategory } from 'expo-app/types';
 
 type CategoryBadgeProps = {
   category: PackCategory | string;

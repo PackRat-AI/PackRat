@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { usePackDetails } from './usePackDetails';
 import { computeCategorySummaries, convertFromGrams, convertToGrams } from '../utils';
-import { userStore } from '~/features/auth/store';
+import { userStore } from 'expo-app/features/auth/store';
 
 export const getPackWeightAnalysis = async (packId: string): Promise<any> => {
   try {

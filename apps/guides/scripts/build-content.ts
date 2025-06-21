@@ -2,7 +2,7 @@
 // It processes your MDX files and outputs JSON that can be imported
 // in your static site
 
-import { Post } from "@/lib/types";
+import { Post } from "guides-app/lib/types";
 
 import fs from "fs";
 import matter from "gray-matter";

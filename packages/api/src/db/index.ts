@@ -1,5 +1,5 @@
-import * as schema from "@/db/schema";
-import { Env } from "@/types/env";
+import * as schema from "@packrat/api/db/schema";
+import { Env } from "@packrat/api/types/env";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { Context } from "hono";

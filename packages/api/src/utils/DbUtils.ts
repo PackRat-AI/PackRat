@@ -1,5 +1,5 @@
-import { createDb } from "@/db";
-import { catalogItems, packItems, packs, users } from "@/db/schema";
+import { createDb } from "@packrat/api/db";
+import { catalogItems, packItems, packs, users } from "@packrat/api/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { Context } from "hono";
 

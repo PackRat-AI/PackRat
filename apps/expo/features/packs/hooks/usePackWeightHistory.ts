@@ -1,7 +1,7 @@
 import { use$ } from '@legendapp/state/react';
 import { useQuery } from '@tanstack/react-query';
 
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { packsStore } from '../store';
 import { packWeigthHistoryStore } from '../store/packWeightHistory';
 

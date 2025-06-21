@@ -6,7 +6,7 @@ import type React from 'react';
 import type { ErrorInfo } from 'react';
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { Pressable, Text, View } from 'react-native';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 type ErrorBoundaryProps = {
   children: React.ReactNode;

@@ -1,7 +1,7 @@
 "use client";
 
-import { getAllCategories } from "@/lib/categories";
-import { footerConfig, siteConfig } from "@/lib/config";
+import { getAllCategories } from "guides-app/lib/categories";
+import { footerConfig, siteConfig } from "guides-app/lib/config";
 import { useQuery } from "@tanstack/react-query";
 import { Backpack, Facebook, Github, Instagram, Twitter } from "lucide-react";
 import Link from "next/link";

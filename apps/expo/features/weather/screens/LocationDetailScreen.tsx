@@ -14,10 +14,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useLocations, useActiveLocation, useLocationRefresh } from '../hooks';
-import { getWeatherBackgroundColors } from '~/features/weather/lib/weatherService';
+import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
 import { WeatherIcon } from '../components';
 
 export default function LocationDetailScreen() {

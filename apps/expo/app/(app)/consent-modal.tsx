@@ -1,5 +1,5 @@
-import { useColorScheme } from '~/lib/useColorScheme';
-import { WelcomeConsentScreen } from '~/screens/ConsentWelcomeScreen';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { WelcomeConsentScreen } from 'expo-app/screens/ConsentWelcomeScreen';
 
 export default function ModalScreen() {
   const { colors, colorScheme } = useColorScheme();

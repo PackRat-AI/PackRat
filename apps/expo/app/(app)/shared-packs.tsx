@@ -3,7 +3,7 @@ import { View, ScrollView } from 'react-native';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
+import { cn } from 'expo-app/lib/cn';
 
 // Mock data for shared packs
 const SHARED_PACKS = [

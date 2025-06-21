@@ -13,14 +13,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useLocations } from '../hooks';
 import {
   getWeatherData,
   formatWeatherData,
   getWeatherBackgroundColors,
-} from '~/features/weather/lib/weatherService';
+} from 'expo-app/features/weather/lib/weatherService';
 import type { WeatherLocation } from '../types';
 import { WeatherIcon } from '../components';
 

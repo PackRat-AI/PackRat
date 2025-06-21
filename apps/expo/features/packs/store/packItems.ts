@@ -1,14 +1,14 @@
 import { observable, syncState } from '@legendapp/state';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { syncObservable } from '@legendapp/state/sync';
 import Storage from 'expo-sqlite/kv-store';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { Pack, PackItem } from '../types';
-import { isAuthed } from '~/features/auth/store';
+import { isAuthed } from 'expo-app/features/auth/store';
 import * as FileSystem from 'expo-file-system';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
-import { userStore } from '~/features/auth/store';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { userStore } from 'expo-app/features/auth/store';
 
 // Function to get a presigned URL for uploading
 const getPresignedUrl = async (

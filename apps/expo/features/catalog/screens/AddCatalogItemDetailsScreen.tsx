@@ -18,10 +18,10 @@ import {
 import { Icon } from '@roninoss/icons';
 import { Button } from 'nativewindui/Button';
 import { useCatalogItemDetails } from '../hooks';
-import type { WeightUnit } from '~/types';
-import { useColorScheme } from '~/lib/useColorScheme';
+import type { WeightUnit } from 'expo-app/types';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Text } from 'nativewindui/Text';
-import { useCreatePackItem, usePackDetails } from '~/features/packs';
+import { useCreatePackItem, usePackDetails } from 'expo-app/features/packs';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();

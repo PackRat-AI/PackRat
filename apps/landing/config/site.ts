@@ -1,4 +1,4 @@
-import type { NavItem, Feature, Step, Testimonial, FaqItem, SocialLink, Integration } from "@/types/site"
+import type { NavItem, Feature, Step, Testimonial, FaqItem, SocialLink, Integration } from "landing-app/types/site"
 
 export const siteConfig = {
   name: "PackRat",

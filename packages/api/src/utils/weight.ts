@@ -1,4 +1,4 @@
-import type { PackItem, WeightUnit } from "@/types";
+import type { PackItem, WeightUnit } from "@packrat/api/types";
 
 // Convert weight between units
 export const convertWeight = (

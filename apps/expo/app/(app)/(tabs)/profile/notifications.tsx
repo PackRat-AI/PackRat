@@ -7,7 +7,7 @@ import { Button } from 'nativewindui/Button';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { Toggle } from 'nativewindui/Toggle';
-import { cn } from '~/lib/cn';
+import { cn } from 'expo-app/lib/cn';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();

@@ -1,10 +1,10 @@
-import { createDb } from "@/db";
-import { packs, packWeightHistory } from '@/db/schema';
+import { createDb } from "@packrat/api/db";
+import { packs, packWeightHistory } from '@packrat/api/db/schema';
 import {
   authenticateRequest,
   unauthorizedResponse,
-} from '@/utils/api-middleware';
-import { computePacksWeights } from '@/utils/compute-pack';
+} from '@packrat/api/utils/api-middleware';
+import { computePacksWeights } from '@packrat/api/utils/compute-pack';
 import { eq } from 'drizzle-orm';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 

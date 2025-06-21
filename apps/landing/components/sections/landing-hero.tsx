@@ -3,12 +3,12 @@
 import type React from "react"
 import Link from "next/link"
 import { Download, ChevronRight, ArrowRight, Star } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
-import DeviceMockup from "@/components/ui/device-mockup"
-import GlassCard from "@/components/ui/glass-card"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBackground from "@/components/ui/gradient-background"
+import { Button } from "landing-app/components/ui/button"
+import { siteConfig } from "landing-app/config/site"
+import DeviceMockup from "landing-app/components/ui/device-mockup"
+import GlassCard from "landing-app/components/ui/glass-card"
+import GradientText from "landing-app/components/ui/gradient-text"
+import GradientBackground from "landing-app/components/ui/gradient-background"
 import { motion } from "framer-motion"
 
 export default function LandingHero() {

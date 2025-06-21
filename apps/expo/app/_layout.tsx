@@ -4,9 +4,9 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
-import { useColorScheme, useInitialAndroidBarSync } from '~/lib/useColorScheme';
-import { Providers } from '~/providers';
-import { NAV_THEME } from '~/theme';
+import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/useColorScheme';
+import { Providers } from 'expo-app/providers';
+import { NAV_THEME } from 'expo-app/theme';
 
 export {
   // Catch any errors thrown by the Layout component.

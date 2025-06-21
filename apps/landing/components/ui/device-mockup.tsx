@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { cn } from "@/lib/utils"
+import { cn } from "landing-app/lib/utils"
 import { useTheme } from "next-themes"
 
 interface DeviceMockupProps {

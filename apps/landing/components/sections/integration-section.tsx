@@ -1,8 +1,8 @@
-import { siteConfig } from "@/config/site"
-import { LucideIcon } from "@/lib/icons"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBackground from "@/components/ui/gradient-background"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
+import { siteConfig } from "landing-app/config/site"
+import { LucideIcon } from "landing-app/lib/icons"
+import GradientText from "landing-app/components/ui/gradient-text"
+import GradientBackground from "landing-app/components/ui/gradient-background"
+import GradientBorderCard from "landing-app/components/ui/gradient-border-card"
 
 export default function IntegrationSection() {
   return (

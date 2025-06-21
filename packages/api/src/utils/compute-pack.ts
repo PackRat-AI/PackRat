@@ -1,5 +1,5 @@
-import { type PackWithItems } from '@/db/schema';
-import type { WeightUnit } from '@/types';
+import { type PackWithItems } from '@packrat/api/db/schema';
+import type { WeightUnit } from '@packrat/api/types';
 
 // Convert weights to a standard unit (grams) for calculations
 const convertToGrams = (weight: number, unit: WeightUnit): number => {

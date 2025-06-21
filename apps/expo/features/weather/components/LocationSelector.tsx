@@ -5,8 +5,8 @@ import { BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
 
 import { Text } from 'nativewindui/Text';
 import { Sheet, useSheetRef } from 'nativewindui/Sheet';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { cn } from '~/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
 import { useLocations } from '../hooks';
 import { useActiveLocation } from '../hooks';
 
