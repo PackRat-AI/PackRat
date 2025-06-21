@@ -1,22 +1,26 @@
 import { createDb } from "@/db";
 import { catalogItems } from "@/db/schema";
+import { generateEmbedding } from "@/services/embeddingService";
+import { Env } from "@/types/env";
 import {
   authenticateRequest,
   unauthorizedResponse,
 } from "@/utils/api-middleware";
-import { eq } from "drizzle-orm";
+import { getEmbeddingText } from "@/utils/embeddingHelper";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { eq } from "drizzle-orm";
+import { env } from "hono/adapter";
 
 const catalogItemRoutes = new OpenAPIHono();
 
 // Get catalog item by ID
 const getItemRoute = createRoute({
-  method: 'get',
-  path: '/{id}',
+  method: "get",
+  path: "/{id}",
   request: {
     params: z.object({ id: z.string() }),
   },
-  responses: { 200: { description: 'Get catalog item' } },
+  responses: { 200: { description: "Get catalog item" } },
 });
 
 catalogItemRoutes.openapi(getItemRoute, async (c) => {
@@ -47,15 +51,15 @@ catalogItemRoutes.openapi(getItemRoute, async (c) => {
 
 // Update catalog item
 const updateItemRoute = createRoute({
-  method: 'put',
-  path: '/{id}',
+  method: "put",
+  path: "/{id}",
   request: {
     params: z.object({ id: z.string() }),
     body: {
-      content: { 'application/json': { schema: z.any() } },
+      content: { "application/json": { schema: z.any() } },
     },
   },
-  responses: { 200: { description: 'Update catalog item' } },
+  responses: { 200: { description: "Update catalog item" } },
 });
 
 catalogItemRoutes.openapi(updateItemRoute, async (c) => {
@@ -69,8 +73,12 @@ catalogItemRoutes.openapi(updateItemRoute, async (c) => {
     const db = createDb(c);
     const itemId = Number(c.req.param("id"));
     const data = await c.req.json();
+    const { OPENAI_API_KEY } = env<Env>(c);
 
-    // Check if the catalog item exists
+    if (!OPENAI_API_KEY) {
+      return c.json({ error: "OpenAI API key not configured" }, 500);
+    }
+
     const existingItem = await db.query.catalogItems.findFirst({
       where: eq(catalogItems.id, itemId),
     });
@@ -79,36 +87,28 @@ catalogItemRoutes.openapi(updateItemRoute, async (c) => {
       return c.json({ error: "Catalog item not found" }, 404);
     }
 
+    // Only generate a new embedding if the text has changed
+    let embedding: number[] | undefined = undefined;
+    const newEmbeddingText = getEmbeddingText(data, existingItem);
+    const oldEmbeddingText = getEmbeddingText(existingItem);
+
+    if (newEmbeddingText !== oldEmbeddingText) {
+      embedding = await generateEmbedding({
+        openAiApiKey: OPENAI_API_KEY,
+        value: newEmbeddingText,
+      });
+    }
+
+    const updateData: Partial<typeof catalogItems.$inferInsert> = { ...data };
+    if (embedding) {
+      updateData.embedding = embedding;
+    }
+    updateData.updatedAt = new Date();
+
     // Update the catalog item
     const [updatedItem] = await db
       .update(catalogItems)
-      .set({
-        name: data.name,
-        description: data.description,
-        defaultWeight: data.defaultWeight,
-        defaultWeightUnit: data.defaultWeightUnit,
-        category: data.category,
-        image: data.image,
-        brand: data.brand,
-        model: data.model,
-        url: data.url,
-        ratingValue: data.ratingValue,
-        productUrl: data.productUrl,
-        color: data.color,
-        size: data.size,
-        sku: data.sku,
-        price: data.price,
-        availability: data.availability,
-        seller: data.seller,
-        productSku: data.productSku,
-        material: data.material,
-        currency: data.currency,
-        condition: data.condition,
-        techs: data.techs,
-        links: data.links,
-        reviews: data.reviews,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(catalogItems.id, itemId))
       .returning();
 
@@ -121,10 +121,10 @@ catalogItemRoutes.openapi(updateItemRoute, async (c) => {
 
 // Delete catalog item
 const deleteItemRoute = createRoute({
-  method: 'delete',
-  path: '/{id}',
+  method: "delete",
+  path: "/{id}",
   request: { params: z.object({ id: z.string() }) },
-  responses: { 200: { description: 'Delete catalog item' } },
+  responses: { 200: { description: "Delete catalog item" } },
 });
 
 catalogItemRoutes.openapi(deleteItemRoute, async (c) => {

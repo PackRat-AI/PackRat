@@ -1,24 +1,25 @@
 import { createDb } from "@/db";
-import { packItems, packs, packWeightHistory } from "@/db/schema";
+import { packItems, packs } from "@/db/schema";
+import { generateEmbedding } from "@/services/embeddingService";
 import { Env } from "@/types/env";
 import {
   authenticateRequest,
   unauthorizedResponse,
 } from "@/utils/api-middleware";
-import { convertToGrams } from "@/utils/weight";
+import { getEmbeddingText } from "@/utils/embeddingHelper";
 import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, eq } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { env } from "hono/adapter";
 
 const packItemsRoutes = new OpenAPIHono();
 
 // Get all items for a pack
 const getItemsRoute = createRoute({
-  method: 'get',
-  path: '/{packId}/items',
+  method: "get",
+  path: "/{packId}/items",
   request: { params: z.object({ packId: z.string() }) },
-  responses: { 200: { description: 'Get pack items' } },
+  responses: { 200: { description: "Get pack items" } },
 });
 
 packItemsRoutes.openapi(getItemsRoute, async (c) => {
@@ -46,10 +47,10 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
 
 // Get pack item by ID
 const getItemRoute = createRoute({
-  method: 'get',
-  path: '/items/{itemId}',
+  method: "get",
+  path: "/items/{itemId}",
   request: { params: z.object({ itemId: z.string() }) },
-  responses: { 200: { description: 'Get pack item' } },
+  responses: { 200: { description: "Get pack item" } },
 });
 
 packItemsRoutes.openapi(getItemRoute, async (c) => {
@@ -68,7 +69,7 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
     const item = await db.query.packItems.findFirst({
       where: and(
         eq(packItems.id, itemId),
-        eq(packItems.userId, Number(userId)),
+        eq(packItems.userId, Number(userId))
       ),
       with: {
         catalogItem: true,
@@ -88,13 +89,13 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
 
 // Add an item to a pack
 const addItemRoute = createRoute({
-  method: 'post',
-  path: '/{packId}/items',
+  method: "post",
+  path: "/{packId}/items",
   request: {
     params: z.object({ packId: z.string() }),
-    body: { content: { 'application/json': { schema: z.any() } } },
+    body: { content: { "application/json": { schema: z.any() } } },
   },
-  responses: { 200: { description: 'Add item to pack' } },
+  responses: { 200: { description: "Add item to pack" } },
 });
 
 packItemsRoutes.openapi(addItemRoute, async (c) => {
@@ -107,6 +108,11 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
   try {
     const packId = c.req.param("packId");
     const data = await c.req.json();
+    const { OPENAI_API_KEY } = env<Env>(c);
+
+    if (!OPENAI_API_KEY) {
+      return c.json({ error: "OpenAI API key not configured" }, 500);
+    }
 
     if (!packId) {
       return c.json({ error: "Pack ID is required" }, 400);
@@ -115,6 +121,13 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
     if (!data.id) {
       return c.json({ error: "Item ID is required" }, 400);
     }
+
+    // Generate embedding
+    const embeddingText = getEmbeddingText(data);
+    const embedding = await generateEmbedding({
+      openAiApiKey: OPENAI_API_KEY,
+      value: embeddingText,
+    });
 
     const [newItem] = await db
       .insert(packItems)
@@ -133,6 +146,7 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
         image: data.image,
         notes: data.notes,
         userId: auth.userId,
+        embedding: embedding,
       })
       .returning();
 
@@ -150,13 +164,13 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
 
 // Update a pack item
 const updateItemRoute = createRoute({
-  method: 'patch',
-  path: '/items/{itemId}',
+  method: "patch",
+  path: "/items/{itemId}",
   request: {
     params: z.object({ itemId: z.string() }),
-    body: { content: { 'application/json': { schema: z.any() } } },
+    body: { content: { "application/json": { schema: z.any() } } },
   },
-  responses: { 200: { description: 'Update pack item' } },
+  responses: { 200: { description: "Update pack item" } },
 });
 
 packItemsRoutes.openapi(updateItemRoute, async (c) => {
@@ -170,9 +184,25 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
   try {
     const itemId = c.req.param("itemId");
     const data = await c.req.json();
+    const { OPENAI_API_KEY } = env<Env>(c);
+
+    if (!OPENAI_API_KEY) {
+      return c.json({ error: "OpenAI API key not configured" }, 500);
+    }
+
+    const existingItem = await db.query.packItems.findFirst({
+      where: and(eq(packItems.id, itemId), eq(packItems.userId, auth.userId)),
+    });
+
+    if (!existingItem) {
+      return c.json({ error: "Pack item not found" }, 404);
+    }
+
+    // Only generate a new embedding if the text has changed
+    const newEmbeddingText = getEmbeddingText(data, existingItem);
+    const oldEmbeddingText = getEmbeddingText(existingItem);
 
     const updateData: Partial<typeof packItems.$inferInsert> = {};
-
     if ("name" in data) updateData.name = data.name;
     if ("description" in data) updateData.description = data.description;
     if ("weight" in data) updateData.weight = data.weight;
@@ -185,6 +215,13 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
     if ("notes" in data) updateData.notes = data.notes;
     if ("deleted" in data) updateData.deleted = data.deleted;
 
+    if (newEmbeddingText !== oldEmbeddingText) {
+      updateData.embedding = await generateEmbedding({
+        openAiApiKey: OPENAI_API_KEY,
+        value: newEmbeddingText,
+      });
+    }
+
     updateData.updatedAt = new Date();
 
     // Delete old image from R2 if we are changing image
@@ -193,7 +230,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
         const item = await db.query.packItems.findFirst({
           where: and(
             eq(packItems.id, itemId),
-            eq(packItems.userId, auth.userId),
+            eq(packItems.userId, auth.userId)
           ),
         });
         if (!item) {
@@ -247,10 +284,55 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
       .set({ updatedAt: new Date() })
       .where(eq(packs.id, updatedItem.packId));
 
-    return c.json(updatedItem);
+    return c.json(updatedItem[0]);
   } catch (error) {
     console.error("Error updating pack item:", error);
     return c.json({ error: "Failed to update pack item" }, 500);
+  }
+});
+
+// Delete a pack item
+const deleteItemRoute = createRoute({
+  method: "delete",
+  path: "/items/{itemId}",
+  request: {
+    params: z.object({ itemId: z.string() }),
+  },
+  responses: { 200: { description: "Delete pack item" } },
+});
+
+packItemsRoutes.openapi(deleteItemRoute, async (c) => {
+  const auth = await authenticateRequest(c);
+  if (!auth) {
+    return unauthorizedResponse();
+  }
+
+  const db = createDb(c);
+
+  try {
+    const itemId = c.req.param("itemId");
+
+    const item = await db.query.packItems.findFirst({
+      where: and(eq(packItems.id, itemId), eq(packItems.userId, auth.userId)),
+    });
+
+    if (!item) {
+      return c.json({ error: "Pack item not found" }, 404);
+    }
+
+    const packId = item.packId;
+
+    await db.delete(packItems).where(eq(packItems.id, itemId));
+
+    await db
+      .update(packs)
+      .set({ updatedAt: new Date() })
+      .where(eq(packs.id, packId));
+
+    return c.json({ success: true, itemId: itemId });
+  } catch (error) {
+    console.error("Error deleting pack item:", error);
+    return c.json({ error: "Failed to delete pack item" }, 500);
   }
 });
 
