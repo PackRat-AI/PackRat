@@ -1,1 +1,1 @@
-export * from './ProfileAuthWall';
+export * from "./ProfileAuthWall";

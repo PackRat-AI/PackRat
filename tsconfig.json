@@ -1,12 +1,12 @@
 {
-  "compilerOptions": {
-    "strictNullChecks": true,
-    "noUncheckedIndexedAccess": true,
-    "paths": {
-      "app/*": ["./packages/app/*"],
-      "@packrat/api/*": ["./packages/api/*"],
-      "@packrat/ui/*": ["./packages/ui/*"]
-    }
-  },
-  "extends": "expo/tsconfig.base"
+	"compilerOptions": {
+		"strictNullChecks": true,
+		"noUncheckedIndexedAccess": true,
+		"paths": {
+			"app/*": ["./packages/app/*"],
+			"@packrat/api/*": ["./packages/api/*"],
+			"@packrat/ui/*": ["./packages/ui/*"]
+		}
+	},
+	"extends": "expo/tsconfig.base"
 }

@@ -7,9 +7,9 @@ import { env } from "hono/adapter";
 
 // Create SQL client with Neon
 export const createDb = (c: Context) => {
-  const { NEON_DATABASE_URL } = env<Env>(c);
+	const { NEON_DATABASE_URL } = env<Env>(c);
 
-  const sql = neon(NEON_DATABASE_URL);
+	const sql = neon(NEON_DATABASE_URL);
 
-  return drizzle(sql, { schema });
+	return drizzle(sql, { schema });
 };

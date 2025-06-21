@@ -1,2 +1,2 @@
-export * from './CatalogItemCard';
-export * from './CatalogItemsAuthWall';
+export * from "./CatalogItemCard";
+export * from "./CatalogItemsAuthWall";

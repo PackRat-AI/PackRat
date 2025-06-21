@@ -7,18 +7,18 @@ import * as ws from "ws";
 neonConfig.webSocketConstructor = ws;
 
 async function runMigrations() {
-  const sql = neon(process.env.NEON_DATABASE_URL!);
-  const db = drizzle(sql);
+	const sql = neon(process.env.NEON_DATABASE_URL!);
+	const db = drizzle(sql);
 
-  console.log("Running migrations...");
+	console.log("Running migrations...");
 
-  await migrate(db, { migrationsFolder: `${__dirname}/drizzle` });
+	await migrate(db, { migrationsFolder: `${__dirname}/drizzle` });
 
-  console.log("Migrations completed successfully!");
-  process.exit(0);
+	console.log("Migrations completed successfully!");
+	process.exit(0);
 }
 
 runMigrations().catch((err) => {
-  console.error("Migration failed:", err);
-  process.exit(1);
+	console.error("Migration failed:", err);
+	process.exit(1);
 });

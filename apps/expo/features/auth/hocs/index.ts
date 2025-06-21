@@ -1,1 +1,1 @@
-export * from './withAuthWall';
+export * from "./withAuthWall";

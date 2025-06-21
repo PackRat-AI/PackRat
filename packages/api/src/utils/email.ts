@@ -7,48 +7,48 @@ type EmailProvider = "nodemailer" | "resend";
 
 // Send an email using the configured provider
 export async function sendEmail({
-  to,
-  subject,
-  html,
-  c,
+	to,
+	subject,
+	html,
+	c,
 }: {
-  to: string;
-  subject: string;
-  html: string;
-  c: Context;
+	to: string;
+	subject: string;
+	html: string;
+	c: Context;
 }): Promise<void> {
-  const { EMAIL_PROVIDER, RESEND_API_KEY, EMAIL_FROM } = env<Env>(c);
-  const provider = (EMAIL_PROVIDER as EmailProvider) || "nodemailer";
-  const resendClient = new Resend(RESEND_API_KEY);
+	const { EMAIL_PROVIDER, RESEND_API_KEY, EMAIL_FROM } = env<Env>(c);
+	const provider = (EMAIL_PROVIDER as EmailProvider) || "nodemailer";
+	const resendClient = new Resend(RESEND_API_KEY);
 
-  const options = {
-    from: `PackRat <${EMAIL_FROM}>`,
-    to,
-    subject,
-    html,
-  };
+	const options = {
+		from: `PackRat <${EMAIL_FROM}>`,
+		to,
+		subject,
+		html,
+	};
 
-  switch (provider) {
-    case "resend":
-      await resendClient.emails.send(options);
-      break;
-    case "nodemailer":
-    default:
-      throw new Error("Nodemailer is not supported in Cloudflare Workers");
-  }
+	switch (provider) {
+		case "resend":
+			await resendClient.emails.send(options);
+			break;
+		case "nodemailer":
+		default:
+			throw new Error("Nodemailer is not supported in Cloudflare Workers");
+	}
 }
 
 // Send a verification code email
 export async function sendVerificationCodeEmail({
-  to,
-  code,
-  c,
+	to,
+	code,
+	c,
 }: {
-  to: string;
-  code: string;
-  c: Context;
+	to: string;
+	code: string;
+	c: Context;
 }): Promise<void> {
-  const html = `
+	const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Verify Your Email Address</h2>
       <p>Thank you for signing up for PackRat! Please verify your email address by entering the code below:</p>
@@ -63,20 +63,20 @@ export async function sendVerificationCodeEmail({
     </div>
   `;
 
-  await sendEmail({ to, subject: "Verify Your PackRat Account", html, c });
+	await sendEmail({ to, subject: "Verify Your PackRat Account", html, c });
 }
 
 // Send a password reset email
 export async function sendPasswordResetEmail({
-  to,
-  code,
-  c,
+	to,
+	code,
+	c,
 }: {
-  to: string;
-  code: string;
-  c: Context;
+	to: string;
+	code: string;
+	c: Context;
 }): Promise<void> {
-  const html = `
+	const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Reset Your Password</h2>
       <p>You requested to reset your password for your PackRat account. Enter the code below to set a new password:</p>
@@ -91,5 +91,5 @@ export async function sendPasswordResetEmail({
     </div>
   `;
 
-  await sendEmail({ to, subject: "Reset Your PackRat Password", html, c });
+	await sendEmail({ to, subject: "Reset Your PackRat Password", html, c });
 }

@@ -1,5 +1,5 @@
-import { PackDetailScreen } from '~/features/packs/screens/PackDetailScreen';
+import { PackDetailScreen } from "~/features/packs/screens/PackDetailScreen";
 
 export default function PackDetailScreenRoute() {
-  return <PackDetailScreen />;
+	return <PackDetailScreen />;
 }
