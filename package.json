@@ -11,10 +11,12 @@
     "clean": "bun run clean:all && bunx rimraf node_modules",
     "check:deps": "manypkg check",
     "fix:deps": "bun manypkg fix",
+    "check-types": "tsc --noEmit",
+    "check-types-watch": "tsc --noEmit --watch",
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
-    "api": "cd packages/api && bun dev"
+    "server": "bun run --cwd packages/api dev"
   },
   "devDependencies": {
     "@manypkg/cli": "^0.23.0",
