@@ -4,8 +4,7 @@
   "version": "2.0.0",
   "workspaces": [
     "apps/*",
-    "packages/*",
-    "server"
+    "packages/*"
   ],
   "scripts": {
     "clean:all": "bun run --cwd apps/* clean && bun run --cwd packages/* clean",
@@ -15,7 +14,7 @@
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
-    "server": "cd server && bun dev"
+    "server": "cd packages/api && bun dev"
   },
   "devDependencies": {
     "@manypkg/cli": "^0.23.0",
