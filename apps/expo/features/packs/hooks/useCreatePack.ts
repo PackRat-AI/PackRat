@@ -1,7 +1,7 @@
-import { packsStore } from "~/features/packs/store";
-import { useCallback } from "react";
-import type { PackInput, PackInStore } from "../types";
-import { nanoid } from "nanoid/non-secure";
+import { packsStore } from '~/features/packs/store';
+import { useCallback } from 'react';
+import type { PackInput, PackInStore } from '../types';
+import { nanoid } from 'nanoid/non-secure';
 
 // Hook to create a pack
 export function useCreatePack() {

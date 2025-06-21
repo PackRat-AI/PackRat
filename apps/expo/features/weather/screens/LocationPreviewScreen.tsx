@@ -1,6 +1,6 @@
-import { Icon } from "@roninoss/icons";
-import { useLocalSearchParams, router, Stack } from "expo-router";
-import { useEffect, useState } from "react";
+import { Icon } from '@roninoss/icons';
+import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -8,21 +8,21 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { useLocations } from "../hooks";
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { useLocations } from '../hooks';
 import {
   getWeatherData,
   formatWeatherData,
   getWeatherBackgroundColors,
-} from "~/features/weather/lib/weatherService";
-import type { WeatherLocation } from "../types";
-import { WeatherIcon } from "../components";
+} from '~/features/weather/lib/weatherService';
+import type { WeatherLocation } from '../types';
+import { WeatherIcon } from '../components';
 
 export default function LocationPreviewScreen() {
   const params = useLocalSearchParams();
@@ -33,7 +33,7 @@ export default function LocationPreviewScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherLocation | null>(null);
-  const [gradientColors, setGradientColors] = useState(["#4c669f", "#3b5998", "#192f6a"]);
+  const [gradientColors, setGradientColors] = useState(['#4c669f', '#3b5998', '#192f6a']);
 
   // Extract location data from params
   const latitude = Number.parseFloat(params.lat as string);
@@ -64,11 +64,11 @@ export default function LocationPreviewScreen() {
           setGradientColors(getWeatherBackgroundColors(weatherCode, isNight));
         }
       } else {
-        setError("Failed to load weather data");
+        setError('Failed to load weather data');
       }
     } catch (err) {
-      console.error("Error loading weather data:", err);
-      setError("An error occurred while loading weather data");
+      console.error('Error loading weather data:', err);
+      setError('An error occurred while loading weather data');
     } finally {
       setIsLoading(false);
     }
@@ -82,19 +82,19 @@ export default function LocationPreviewScreen() {
     try {
       addLocation(weatherData);
 
-      Alert.alert("Location Saved", `${weatherData.name} has been added to your saved locations.`, [
+      Alert.alert('Location Saved', `${weatherData.name} has been added to your saved locations.`, [
         {
-          text: "View All Locations",
-          onPress: () => router.replace("/weather"),
+          text: 'View All Locations',
+          onPress: () => router.replace('/weather'),
         },
         {
-          text: "OK",
+          text: 'OK',
           onPress: () => router.back(),
         },
       ]);
     } catch (err) {
-      console.error("Error saving location:", err);
-      Alert.alert("Error", "Failed to save location. Please try again.");
+      console.error('Error saving location:', err);
+      Alert.alert('Error', 'Failed to save location. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -102,10 +102,10 @@ export default function LocationPreviewScreen() {
 
   // Determine if we should use light or dark status bar based on gradient colors
   const isDarkGradient =
-    gradientColors[0].toLowerCase().startsWith("#4") ||
-    gradientColors[0].toLowerCase().startsWith("#3") ||
-    gradientColors[0].toLowerCase().startsWith("#2") ||
-    gradientColors[0].toLowerCase().startsWith("#1");
+    gradientColors[0].toLowerCase().startsWith('#4') ||
+    gradientColors[0].toLowerCase().startsWith('#3') ||
+    gradientColors[0].toLowerCase().startsWith('#2') ||
+    gradientColors[0].toLowerCase().startsWith('#1');
 
   return (
     <View className="flex-1">
@@ -187,7 +187,7 @@ export default function LocationPreviewScreen() {
                     disabled={isLoading}
                   >
                     <Icon name="restart" color="white" size={20} />
-                    <Text className="text-white">{isLoading ? "Refreshing..." : "Refresh"}</Text>
+                    <Text className="text-white">{isLoading ? 'Refreshing...' : 'Refresh'}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -197,7 +197,7 @@ export default function LocationPreviewScreen() {
                     {weatherData.hourlyForecast ? (
                       weatherData.hourlyForecast.map((hour, index) => (
                         <View key={index} className="mr-4 min-w-[50px] items-center">
-                          <Text className="text-white">{index === 0 ? "Now" : hour.time}</Text>
+                          <Text className="text-white">{index === 0 ? 'Now' : hour.time}</Text>
                           <WeatherIcon
                             code={hour.weatherCode}
                             isDay={hour.isDay}
@@ -221,7 +221,7 @@ export default function LocationPreviewScreen() {
                   <Text className="mb-2 font-medium text-white">
                     {weatherData.dailyForecast
                       ? `${weatherData.dailyForecast.length}-DAY`
-                      : "DAILY"}{" "}
+                      : 'DAILY'}{' '}
                     FORECAST
                   </Text>
                   {weatherData.dailyForecast ? (
@@ -229,9 +229,9 @@ export default function LocationPreviewScreen() {
                       <View
                         key={index}
                         className={cn(
-                          "flex-row items-center justify-between py-3",
+                          'flex-row items-center justify-between py-3',
                           index !== (weatherData.dailyForecast?.length || 0) - 1 &&
-                            "border-b border-white/10",
+                            'border-b border-white/10',
                         )}
                       >
                         <Text className="min-w-[40px] text-white">{day.day}</Text>
@@ -271,28 +271,28 @@ export default function LocationPreviewScreen() {
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Humidity</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.humidity || "62"}%
+                        {weatherData.details?.humidity || '62'}%
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Visibility</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.visibility || "10"} mi
+                        {weatherData.details?.visibility || '10'} mi
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">UV Index</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.uvIndex || "6"}{" "}
+                        {weatherData.details?.uvIndex || '6'}{' '}
                         {weatherData.details?.uvIndex && weatherData.details.uvIndex > 5
-                          ? "(High)"
-                          : ""}
+                          ? '(High)'
+                          : ''}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Wind</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.windSpeed || "5"} mph
+                        {weatherData.details?.windSpeed || '5'} mph
                       </Text>
                     </View>
                   </View>

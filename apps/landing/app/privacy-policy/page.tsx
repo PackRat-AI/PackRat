@@ -1,8 +1,8 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 export const metadata = {
-  title: "Privacy Policy | PackRat",
-  description: "Our privacy policy explains how we collect, use, and protect your information.",
+  title: 'Privacy Policy | PackRat',
+  description: 'Our privacy policy explains how we collect, use, and protect your information.',
 };
 
 export default function PrivacyPolicyPage() {
@@ -107,10 +107,10 @@ export default function PrivacyPolicyPage() {
             "Contact Information" section.
           </p>
           <p className="mt-2">
-            To delete your account and associated data, please visit our{" "}
+            To delete your account and associated data, please visit our{' '}
             <Link href="/account-deletion" className="text-primary font-medium hover:underline">
               Account Deletion page
-            </Link>{" "}
+            </Link>{' '}
             for step-by-step instructions.
           </p>
         </section>
@@ -174,7 +174,7 @@ export default function PrivacyPolicyPage() {
             contact us at:
           </p>
           <p>
-            Email:{" "}
+            Email:{' '}
             <Link href="mailto:privacy@packratai.com" className="text-primary hover:underline">
               privacy@packratai.com
             </Link>

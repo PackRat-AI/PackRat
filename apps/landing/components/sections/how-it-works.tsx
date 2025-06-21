@@ -1,11 +1,11 @@
-import { siteConfig } from "@/config/site";
-import GradientText from "@/components/ui/gradient-text";
-import GradientBorderCard from "@/components/ui/gradient-border-card";
-import { LucideIcon } from "@/lib/icons";
+import { siteConfig } from '@/config/site';
+import GradientText from '@/components/ui/gradient-text';
+import GradientBorderCard from '@/components/ui/gradient-border-card';
+import { LucideIcon } from '@/lib/icons';
 
 export default function HowItWorksSection() {
   // Icons for each step
-  const stepIcons = ["Download", "Map", "Backpack"];
+  const stepIcons = ['Download', 'Map', 'Backpack'];
 
   return (
     <section

@@ -1,14 +1,14 @@
-import { observable, syncState } from "@legendapp/state";
-import { syncedCrud } from "@legendapp/state/sync-plugins/crud";
-import axiosInstance, { handleApiError } from "~/lib/api/client";
-import { syncObservable } from "@legendapp/state/sync";
-import Storage from "expo-sqlite/kv-store";
-import { observablePersistSqlite } from "@legendapp/state/persist-plugins/expo-sqlite";
-import { Pack, PackItem } from "../types";
-import { isAuthed } from "~/features/auth/store";
-import * as FileSystem from "expo-file-system";
-import ImageCacheManager from "~/lib/utils/ImageCacheManager";
-import { userStore } from "~/features/auth/store";
+import { observable, syncState } from '@legendapp/state';
+import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import axiosInstance, { handleApiError } from '~/lib/api/client';
+import { syncObservable } from '@legendapp/state/sync';
+import Storage from 'expo-sqlite/kv-store';
+import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
+import { Pack, PackItem } from '../types';
+import { isAuthed } from '~/features/auth/store';
+import * as FileSystem from 'expo-file-system';
+import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import { userStore } from '~/features/auth/store';
 
 // Function to get a presigned URL for uploading
 const getPresignedUrl = async (
@@ -25,16 +25,16 @@ const getPresignedUrl = async (
       objectKey: response.data.objectKey,
     };
   } catch (err) {
-    console.error("Error getting presigned URL:", err);
-    throw new Error("Failed to get upload URL");
+    console.error('Error getting presigned URL:', err);
+    throw new Error('Failed to get upload URL');
   }
 };
 
 // Upload the image to R2
 const uploadImage = async (fileName: string): Promise<void> => {
   try {
-    const fileExtension = fileName.split(".").pop()?.toLowerCase() || "jpg";
-    const type = `image/${fileExtension === "jpg" ? "jpeg" : fileExtension}`;
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+    const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
     const remoteFileName = `${userStore.id.peek()}-${fileName}`;
     // Get presigned URL
     const { url: presignedUrl } = await getPresignedUrl(remoteFileName, type);
@@ -44,10 +44,10 @@ const uploadImage = async (fileName: string): Promise<void> => {
       presignedUrl,
       `${ImageCacheManager.cacheDirectory}${fileName}`,
       {
-        httpMethod: "PUT",
+        httpMethod: 'PUT',
         uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
         headers: {
-          "Content-Type": type,
+          'Content-Type': type,
         },
       },
     );
@@ -56,14 +56,14 @@ const uploadImage = async (fileName: string): Promise<void> => {
       throw new Error(`Upload failed with status: ${uploadResult.status}`);
     }
   } catch (err) {
-    console.error("Error uploading image:", err);
+    console.error('Error uploading image:', err);
     throw err;
   }
 };
 
 const listAllPackItems = async () => {
   try {
-    const res = await axiosInstance.get<Pack[]>("/api/packs");
+    const res = await axiosInstance.get<Pack[]>('/api/packs');
     const items = res.data.flatMap((pack: Pack) => pack.items);
     return items;
   } catch (error) {
@@ -104,27 +104,27 @@ export const packItemsStore = observable<Record<string, PackItem>>({});
 syncObservable(
   packItemsStore,
   syncedCrud({
-    fieldUpdatedAt: "updatedAt",
-    fieldCreatedAt: "createdAt",
-    fieldDeleted: "deleted",
+    fieldUpdatedAt: 'updatedAt',
+    fieldCreatedAt: 'createdAt',
+    fieldDeleted: 'deleted',
     updatePartial: true,
-    mode: "merge",
+    mode: 'merge',
     persist: {
       plugin: observablePersistSqlite(Storage),
       retrySync: true,
-      name: "packItems",
+      name: 'packItems',
     },
     waitFor: isAuthed,
     waitForSet: isAuthed,
     retry: {
       infinite: true, // Keep retrying until it saves
-      backoff: "exponential",
+      backoff: 'exponential',
       maxDelay: 30000,
     },
     list: listAllPackItems,
     create: createPackItem,
     update: updatePackItem,
-    changesSince: "last-sync",
+    changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
       const intervalId = setInterval(() => {
         refresh();

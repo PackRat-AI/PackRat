@@ -1,9 +1,9 @@
-import { siteConfig } from "@/config/site";
-import { QuoteIcon } from "lucide-react";
-import GradientText from "@/components/ui/gradient-text";
-import GradientBackground from "@/components/ui/gradient-background";
-import GradientBorderCard from "@/components/ui/gradient-border-card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { siteConfig } from '@/config/site';
+import { QuoteIcon } from 'lucide-react';
+import GradientText from '@/components/ui/gradient-text';
+import GradientBackground from '@/components/ui/gradient-background';
+import GradientBorderCard from '@/components/ui/gradient-border-card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function TestimonialsSection() {
   return (
@@ -59,7 +59,7 @@ export default function TestimonialsSection() {
                   <svg
                     key={i}
                     className={`w-4 h-4 md:w-5 md:h-5 ${
-                      i < testimonial.rating ? "text-amber-400" : "text-gray-300 dark:text-gray-600"
+                      i < testimonial.rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'
                     }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"

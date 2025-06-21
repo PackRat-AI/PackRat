@@ -1,8 +1,8 @@
-import { packItemsStore, packsStore } from "~/features/packs/store";
-import { useCallback } from "react";
-import type { PackItem, PackItemInput } from "../types";
-import { nanoid } from "nanoid/non-secure";
-import { recordPackWeight } from "../store/packWeightHistory";
+import { packItemsStore, packsStore } from '~/features/packs/store';
+import { useCallback } from 'react';
+import type { PackItem, PackItemInput } from '../types';
+import { nanoid } from 'nanoid/non-secure';
+import { recordPackWeight } from '../store/packWeightHistory';
 
 export function useCreatePackItem() {
   const createPackItem = useCallback(

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import type React from "react";
+import type React from 'react';
 
-import { useState, useRef, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { useTheme } from "next-themes";
+import { useState, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 
 interface GradientBorderCardProps {
   children: React.ReactNode;
@@ -58,7 +58,7 @@ export default function GradientBorderCard({
 
   return (
     <div
-      className={cn("relative rounded-xl p-[1px] transition-all duration-300", containerClassName)}
+      className={cn('relative rounded-xl p-[1px] transition-all duration-300', containerClassName)}
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
@@ -67,9 +67,9 @@ export default function GradientBorderCard({
       {/* Gradient border */}
       <div
         className={cn(
-          "absolute inset-0 rounded-xl opacity-70 transition-opacity duration-300",
-          isHovered ? "opacity-100" : "opacity-70",
-          gradientClassName || "bg-gradient-to-r from-primary via-secondary to-primary",
+          'absolute inset-0 rounded-xl opacity-70 transition-opacity duration-300',
+          isHovered ? 'opacity-100' : 'opacity-70',
+          gradientClassName || 'bg-gradient-to-r from-primary via-secondary to-primary',
         )}
         style={
           {
@@ -77,9 +77,9 @@ export default function GradientBorderCard({
               ? `radial-gradient(circle at ${position.x}% ${position.y}%, var(--gradient-start), var(--gradient-end))`
               : undefined,
             opacity: interactive ? opacity : undefined,
-            "--gradient-start":
-              theme === "dark" ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)",
-            "--gradient-end": "transparent",
+            '--gradient-start':
+              theme === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)',
+            '--gradient-end': 'transparent',
           } as React.CSSProperties
         }
       />
@@ -87,8 +87,8 @@ export default function GradientBorderCard({
       {/* Card content */}
       <div
         className={cn(
-          "relative z-10 rounded-[10px] bg-card p-6 transition-all duration-300",
-          isHovered && interactive ? "bg-opacity-95" : "bg-opacity-100",
+          'relative z-10 rounded-[10px] bg-card p-6 transition-all duration-300',
+          isHovered && interactive ? 'bg-opacity-95' : 'bg-opacity-100',
           className,
         )}
       >

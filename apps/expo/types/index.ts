@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // --- User Schema ---
 export const UserSchema = z.object({
@@ -6,7 +6,7 @@ export const UserSchema = z.object({
   name: z.string(),
   email: z.string().email(),
   avatar: z.string().url(),
-  experience: z.enum(["beginner", "intermediate", "expert"]),
+  experience: z.enum(['beginner', 'intermediate', 'expert']),
   joinedAt: z.string().datetime(),
   bio: z.string().optional(),
 });
@@ -15,38 +15,38 @@ export type User = z.infer<typeof UserSchema>;
 
 // --- Pack Category Enum ---
 export const PackCategorySchema = z.enum([
-  "hiking",
-  "backpacking",
-  "camping",
-  "climbing",
-  "winter",
-  "desert",
-  "custom",
-  "water sports",
-  "skiing",
+  'hiking',
+  'backpacking',
+  'camping',
+  'climbing',
+  'winter',
+  'desert',
+  'custom',
+  'water sports',
+  'skiing',
 ]);
 
 export type PackCategory = z.infer<typeof PackCategorySchema>;
 
 // --- Item Category Enum ---
 export const ItemCategorySchema = z.enum([
-  "clothing",
-  "shelter",
-  "sleep",
-  "kitchen",
-  "water",
-  "electronics",
-  "first-aid",
-  "navigation",
-  "tools",
-  "consumables",
-  "miscellaneous",
+  'clothing',
+  'shelter',
+  'sleep',
+  'kitchen',
+  'water',
+  'electronics',
+  'first-aid',
+  'navigation',
+  'tools',
+  'consumables',
+  'miscellaneous',
 ]);
 
 export type ItemCategory = z.infer<typeof ItemCategorySchema>;
 
 // --- Weight Unit Enum ---
-export const WeightUnitSchema = z.enum(["g", "oz", "kg", "lb"]);
+export const WeightUnitSchema = z.enum(['g', 'oz', 'kg', 'lb']);
 
 export type WeightUnit = z.infer<typeof WeightUnitSchema>;
 
@@ -54,7 +54,7 @@ export type ItemLink = {
   id: string;
   title: string;
   url: string;
-  type: "official" | "review" | "guide" | "purchase" | "other";
+  type: 'official' | 'review' | 'guide' | 'purchase' | 'other';
 };
 
 export type ItemReview = {

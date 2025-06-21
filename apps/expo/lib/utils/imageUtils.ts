@@ -2,7 +2,7 @@
  * Utility to infer image extensions from URLs or fetch them when not available
  */
 
-import { getDomainSpecificExtension } from "./domain-specific-extensions";
+import { getDomainSpecificExtension } from './domain-specific-extensions';
 
 /**
  * Attempts to infer the image extension from a URL
@@ -44,24 +44,24 @@ export const fetchImageExtension = async (url: string): Promise<string | null> =
     try {
       // Try HEAD request first with timeout
       const response = await fetch(url, {
-        method: "HEAD",
+        method: 'HEAD',
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        const contentType = response.headers.get("content-type");
+        const contentType = response.headers.get('content-type');
         if (contentType) {
           // Map content type to extension
           const contentTypeMap: Record<string, string> = {
-            "image/jpeg": "jpg",
-            "image/jpg": "jpg",
-            "image/png": "png",
-            "image/gif": "gif",
-            "image/webp": "webp",
-            "image/avif": "avif",
-            "image/svg+xml": "svg",
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/png': 'png',
+            'image/gif': 'gif',
+            'image/webp': 'webp',
+            'image/avif': 'avif',
+            'image/svg+xml': 'svg',
           };
 
           return contentTypeMap[contentType] || null;
@@ -69,7 +69,7 @@ export const fetchImageExtension = async (url: string): Promise<string | null> =
       }
     } catch (headError) {
       // HEAD request failed or timed out, we'll try a small GET request next
-      console.log("HEAD request failed, trying GET with range:", headError);
+      console.log('HEAD request failed, trying GET with range:', headError);
     } finally {
       clearTimeout(timeoutId);
     }
@@ -81,30 +81,30 @@ export const fetchImageExtension = async (url: string): Promise<string | null> =
     try {
       // Request just the first 1024 bytes to check headers
       const rangeResponse = await fetch(url, {
-        headers: { Range: "bytes=0-1023" },
+        headers: { Range: 'bytes=0-1023' },
         signal: rangeController.signal,
       });
 
       clearTimeout(rangeTimeoutId);
 
       if (rangeResponse.ok || rangeResponse.status === 206) {
-        const contentType = rangeResponse.headers.get("content-type");
+        const contentType = rangeResponse.headers.get('content-type');
         if (contentType) {
           const contentTypeMap: Record<string, string> = {
-            "image/jpeg": "jpg",
-            "image/jpg": "jpg",
-            "image/png": "png",
-            "image/gif": "gif",
-            "image/webp": "webp",
-            "image/avif": "avif",
-            "image/svg+xml": "svg",
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/png': 'png',
+            'image/gif': 'gif',
+            'image/webp': 'webp',
+            'image/avif': 'avif',
+            'image/svg+xml': 'svg',
           };
 
           return contentTypeMap[contentType] || null;
         }
       }
     } catch (rangeError) {
-      console.log("Range GET request failed:", rangeError);
+      console.log('Range GET request failed:', rangeError);
     } finally {
       clearTimeout(rangeTimeoutId);
     }
@@ -112,7 +112,7 @@ export const fetchImageExtension = async (url: string): Promise<string | null> =
     // All requests failed and we couldn't determine the extension
     return null;
   } catch (error) {
-    console.error("Error fetching image extension:", error);
+    console.error('Error fetching image extension:', error);
     return null;
   }
 };
@@ -123,7 +123,7 @@ export const fetchImageExtension = async (url: string): Promise<string | null> =
  * @param defaultExt The default extension to use if we can't determine one
  * @returns A promise resolving to the extension
  */
-export const getImageExtension = async (url: string, defaultExt = "jpg"): Promise<string> => {
+export const getImageExtension = async (url: string, defaultExt = 'jpg'): Promise<string> => {
   // First check if URL already has an extension
   const inferredExt = inferImageExtension(url);
   if (inferredExt) return inferredExt;
@@ -143,7 +143,7 @@ export const getImageExtension = async (url: string, defaultExt = "jpg"): Promis
       return fetchedExt;
     }
   } catch (error) {
-    console.warn("Error in getImageUrlWithExtension:", error);
+    console.warn('Error in getImageUrlWithExtension:', error);
   }
 
   // Fall back to default extension

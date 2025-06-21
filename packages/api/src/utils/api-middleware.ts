@@ -1,14 +1,14 @@
-import { Context } from "hono";
-import { verifyJWT } from "./auth";
+import { Context } from 'hono';
+import { verifyJWT } from './auth';
 
 export async function authenticateRequest(c: Context): Promise<{ userId: number } | null> {
-  const authHeader = c.req.header("Authorization");
+  const authHeader = c.req.header('Authorization');
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(' ')[1];
 
   if (!token) {
     return null;
@@ -24,5 +24,5 @@ export async function authenticateRequest(c: Context): Promise<{ userId: number 
 }
 
 export function unauthorizedResponse() {
-  return Response.json({ error: "Unauthorized" }, { status: 401 });
+  return Response.json({ error: 'Unauthorized' }, { status: 401 });
 }

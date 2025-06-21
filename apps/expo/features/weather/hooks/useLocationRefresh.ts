@@ -1,13 +1,13 @@
-import { useState } from "react";
-import { useLocations } from "./useLocations";
-import { getWeatherData, formatWeatherData } from "~/features/weather/lib/weatherService";
+import { useState } from 'react';
+import { useLocations } from './useLocations';
+import { getWeatherData, formatWeatherData } from '~/features/weather/lib/weatherService';
 
 export function useLocationRefresh() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { locationsState, updateLocation } = useLocations();
 
   const refreshLocation = async (locationId: string) => {
-    if (isRefreshing || locationsState.state !== "hasData") return false;
+    if (isRefreshing || locationsState.state !== 'hasData') return false;
 
     const location = locationsState.data.find((loc) => loc.id === locationId);
     if (!location) return false;
@@ -17,7 +17,7 @@ export function useLocationRefresh() {
     try {
       const weatherData = await getWeatherData(location.lat, location.lon);
 
-      console.log("weatherData", JSON.stringify(weatherData));
+      console.log('weatherData', JSON.stringify(weatherData));
 
       if (weatherData) {
         const formattedData = formatWeatherData(weatherData);
@@ -38,7 +38,7 @@ export function useLocationRefresh() {
       }
       return false;
     } catch (err) {
-      console.error("Error refreshing location:", err);
+      console.error('Error refreshing location:', err);
       return false;
     } finally {
       setIsRefreshing(false);
@@ -46,7 +46,7 @@ export function useLocationRefresh() {
   };
 
   const refreshAllLocations = async () => {
-    if (isRefreshing || locationsState.state !== "hasData") return;
+    if (isRefreshing || locationsState.state !== 'hasData') return;
 
     const locations = locationsState.data;
     if (locations.length === 0) return;

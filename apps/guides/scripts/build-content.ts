@@ -2,32 +2,32 @@
 // It processes your MDX files and outputs JSON that can be imported
 // in your static site
 
-import { Post } from "@/lib/types";
+import { Post } from '@/lib/types';
 
-import fs from "fs";
-import matter from "gray-matter";
-import path from "path";
-import remarkHtml from "remark-html";
-import markdown from "remark-parse";
-import { unified } from "unified";
+import fs from 'fs';
+import matter from 'gray-matter';
+import path from 'path';
+import remarkHtml from 'remark-html';
+import markdown from 'remark-parse';
+import { unified } from 'unified';
 
-const postsDirectory = path.join(process.cwd(), "content/posts");
-const outputFile = path.join(process.cwd(), "lib/content.ts");
+const postsDirectory = path.join(process.cwd(), 'content/posts');
+const outputFile = path.join(process.cwd(), 'lib/content.ts');
 
 async function buildContent() {
-  console.log("Building content...");
+  console.log('Building content...');
 
   // Get all posts
   const filenames = fs.readdirSync(postsDirectory);
   const posts = filenames
-    .filter((filename: string) => filename.endsWith(".mdx"))
+    .filter((filename: string) => filename.endsWith('.mdx'))
     .map((filename: string) => {
       const filePath = path.join(postsDirectory, filename);
-      const fileContents = fs.readFileSync(filePath, "utf8");
+      const fileContents = fs.readFileSync(filePath, 'utf8');
       const { data, content } = matter(fileContents);
 
       return {
-        slug: filename.replace(/\.mdx$/, ""),
+        slug: filename.replace(/\.mdx$/, ''),
         title: data.title,
         description: data.description,
         date: data.date,

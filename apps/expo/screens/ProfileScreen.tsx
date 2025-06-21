@@ -1,9 +1,9 @@
-import { Icon } from "@roninoss/icons";
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
-import { PackCard } from "~/components/initial/PackCard";
-import { UserAvatar } from "~/components/initial/UserAvatar";
-import { usePacks } from "~/hooks/usePacks";
-import { currentUser } from "../data/mockData";
+import { Icon } from '@roninoss/icons';
+import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { PackCard } from '~/components/initial/PackCard';
+import { UserAvatar } from '~/components/initial/UserAvatar';
+import { usePacks } from '~/hooks/usePacks';
+import { currentUser } from '../data/mockData';
 
 export function ProfileScreen() {
   const { data: packs } = usePacks();
@@ -11,22 +11,22 @@ export function ProfileScreen() {
 
   const handlePackPress = (pack: any) => {
     // In a real app, you would navigate to the pack details screen
-    console.log("Navigate to pack details:", pack.id);
+    console.log('Navigate to pack details:', pack.id);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="flex-row items-center border-b border-gray-200 bg-white px-4 py-3">
-        <TouchableOpacity onPress={() => console.log("Go back")} className="mr-3">
+        <TouchableOpacity onPress={() => console.log('Go back')} className="mr-3">
           <Icon name="chevron-left" size={24} color="#374151" />
         </TouchableOpacity>
         <Text className="flex-1 text-xl font-semibold text-gray-900">Profile</Text>

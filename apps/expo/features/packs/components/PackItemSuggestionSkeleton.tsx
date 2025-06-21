@@ -1,5 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { Icon } from "@roninoss/icons";
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { Icon } from '@roninoss/icons';
 
 export function PackItemSuggestionSkeleton({ hideSuggestions }: { hideSuggestions: () => void }) {
   return (

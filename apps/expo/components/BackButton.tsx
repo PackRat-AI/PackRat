@@ -1,5 +1,5 @@
-import { Feather } from "@expo/vector-icons";
-import { Text, View, StyleSheet } from "react-native";
+import { Feather } from '@expo/vector-icons';
+import { Text, View, StyleSheet } from 'react-native';
 
 export const BackButton = ({ onPress }: { onPress: () => void }) => {
   return (
@@ -13,11 +13,11 @@ export const BackButton = ({ onPress }: { onPress: () => void }) => {
 };
 const styles = StyleSheet.create({
   backButton: {
-    flexDirection: "row",
+    flexDirection: 'row',
     paddingLeft: 20,
   },
   backButtonText: {
-    color: "#007AFF",
+    color: '#007AFF',
     marginLeft: 4,
   },
 });

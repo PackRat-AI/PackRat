@@ -1,24 +1,24 @@
-import { Link, Route } from "expo-router";
-import * as React from "react";
-import { Image, Platform, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Link, Route } from 'expo-router';
+import * as React from 'react';
+import { Image, Platform, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { AlertAnchor } from "nativewindui/Alert";
-import type { AlertRef } from "nativewindui/Alert/types";
-import { Button } from "nativewindui/Button";
-import { Text } from "nativewindui/Text";
-import { useAuthActions } from "~/features/auth/hooks/useAuthActions";
-import { useLocalSearchParams } from "expo-router";
-import { featureFlags } from "~/config";
-import { useSetAtom } from "jotai";
-import { redirectToAtom } from "~/features/auth/atoms/authAtoms";
+import { AlertAnchor } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
+import { useLocalSearchParams } from 'expo-router';
+import { featureFlags } from '~/config';
+import { useSetAtom } from 'jotai';
+import { redirectToAtom } from '~/features/auth/atoms/authAtoms';
 
-const LOGO_SOURCE = require("~/assets/packrat-app-icon-gradient.png");
+const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
 const GOOGLE_SOURCE = {
-  uri: "https://www.pngall.com/wp-content/uploads/13/Google-Logo.png",
+  uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',
 };
 
 type RouteParams = {
@@ -31,13 +31,13 @@ export default function AuthIndexScreen() {
   const { signInWithGoogle, signInWithApple } = useAuthActions();
   const alertRef = React.useRef<AlertRef>(null);
   const {
-    redirectTo = "/",
+    redirectTo = '/',
     showSignInCopy,
     showSkipLoginBtn,
   } = useLocalSearchParams<RouteParams>();
   const handleSkipLogin = async () => {
-    await AsyncStorage.setItem("skipped_login", "true");
-    router.replace("/packs");
+    await AsyncStorage.setItem('skipped_login', 'true');
+    router.replace('/packs');
   };
 
   const setRedirectTo = useSetAtom(redirectToAtom);
@@ -58,7 +58,7 @@ export default function AuthIndexScreen() {
             />
           </View>
           <View className="ios:pb-5 ios:pt-2 pb-2">
-            {showSignInCopy === "true" ? (
+            {showSignInCopy === 'true' ? (
               <Text className="ios:font-extrabold text-center text-3xl font-medium">
                 Login Required
               </Text>
@@ -79,7 +79,7 @@ export default function AuthIndexScreen() {
             )}
           </View>
           <Link href="/auth/(create-account)" asChild>
-            <Button size={Platform.select({ ios: "lg", default: "md" })}>
+            <Button size={Platform.select({ ios: 'lg', default: 'md' })}>
               <Text>Sign up free</Text>
             </Button>
           </Link>
@@ -88,7 +88,7 @@ export default function AuthIndexScreen() {
               <Button
                 variant="secondary"
                 className="ios:border-foreground/60"
-                size={Platform.select({ ios: "lg", default: "md" })}
+                size={Platform.select({ ios: 'lg', default: 'md' })}
                 onPress={signInWithGoogle}
               >
                 <Image
@@ -98,11 +98,11 @@ export default function AuthIndexScreen() {
                 />
                 <Text className="ios:text-foreground">Continue with Google</Text>
               </Button>
-              {Platform.OS === "ios" && (
+              {Platform.OS === 'ios' && (
                 <Button
                   variant="secondary"
                   className="ios:border-foreground/60"
-                  size={Platform.select({ ios: "lg", default: "md" })}
+                  size={Platform.select({ ios: 'lg', default: 'md' })}
                   onPress={signInWithApple}
                 >
                   <Text className="ios:text-foreground absolute left-4 text-[22px]"></Text>
@@ -111,19 +111,19 @@ export default function AuthIndexScreen() {
               )}
             </>
           )}
-          <Link href={"/auth/(login)"} asChild>
+          <Link href={'/auth/(login)'} asChild>
             <Button
-              variant={showSkipLoginBtn === "true" ? "tonal" : "plain"}
-              size={Platform.select({ ios: "lg", default: "md" })}
+              variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
+              size={Platform.select({ ios: 'lg', default: 'md' })}
             >
               <Text className="text-primary">Log in</Text>
             </Button>
           </Link>
 
-          {showSkipLoginBtn === "true" && (
+          {showSkipLoginBtn === 'true' && (
             <Button
               variant="plain"
-              size={Platform.select({ ios: "lg", default: "md" })}
+              size={Platform.select({ ios: 'lg', default: 'md' })}
               onPress={handleSkipLogin}
               className="mt-2"
             >

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -9,48 +9,48 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import { Toaster } from "@/components/ui/toaster";
-import { toast } from "@/components/ui/use-toast";
-import { FileText, Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useState } from "react";
+} from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Toaster } from '@/components/ui/toaster';
+import { toast } from '@/components/ui/use-toast';
+import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 // This ensures the page only works in development
-const isDevelopment = process.env.NODE_ENV === "development";
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 // Types
 type ContentCategory =
-  | "gear-essentials"
-  | "pack-strategy"
-  | "weight-management"
-  | "trip-planning"
-  | "seasonal-guides"
-  | "activity-specific"
-  | "destination-guides"
-  | "maintenance"
-  | "emergency-prep"
-  | "family-adventures"
-  | "budget-options"
-  | "sustainability"
-  | "tech-outdoors"
-  | "food-nutrition"
-  | "beginner-resources";
+  | 'gear-essentials'
+  | 'pack-strategy'
+  | 'weight-management'
+  | 'trip-planning'
+  | 'seasonal-guides'
+  | 'activity-specific'
+  | 'destination-guides'
+  | 'maintenance'
+  | 'emergency-prep'
+  | 'family-adventures'
+  | 'budget-options'
+  | 'sustainability'
+  | 'tech-outdoors'
+  | 'food-nutrition'
+  | 'beginner-resources';
 
-type DifficultyLevel = "Beginner" | "Intermediate" | "Advanced" | "All Levels";
+type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
 
 interface ContentRequest {
   title: string;
@@ -63,35 +63,35 @@ interface ContentRequest {
 
 // Category display names
 const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
-  "gear-essentials": "Gear Essentials",
-  "pack-strategy": "Pack Strategy",
-  "weight-management": "Weight Management",
-  "trip-planning": "Trip Planning",
-  "seasonal-guides": "Seasonal Guides",
-  "activity-specific": "Activity-Specific",
-  "destination-guides": "Destination Guides",
-  maintenance: "Maintenance",
-  "emergency-prep": "Emergency Prep",
-  "family-adventures": "Family Adventures",
-  "budget-options": "Budget Options",
-  sustainability: "Sustainability",
-  "tech-outdoors": "Tech Outdoors",
-  "food-nutrition": "Food & Nutrition",
-  "beginner-resources": "Beginner Resources",
+  'gear-essentials': 'Gear Essentials',
+  'pack-strategy': 'Pack Strategy',
+  'weight-management': 'Weight Management',
+  'trip-planning': 'Trip Planning',
+  'seasonal-guides': 'Seasonal Guides',
+  'activity-specific': 'Activity-Specific',
+  'destination-guides': 'Destination Guides',
+  maintenance: 'Maintenance',
+  'emergency-prep': 'Emergency Prep',
+  'family-adventures': 'Family Adventures',
+  'budget-options': 'Budget Options',
+  sustainability: 'Sustainability',
+  'tech-outdoors': 'Tech Outdoors',
+  'food-nutrition': 'Food & Nutrition',
+  'beginner-resources': 'Beginner Resources',
 };
 
-const difficulties: DifficultyLevel[] = ["Beginner", "Intermediate", "Advanced", "All Levels"];
+const difficulties: DifficultyLevel[] = ['Beginner', 'Intermediate', 'Advanced', 'All Levels'];
 
 export default function GeneratePage() {
   // State for single post generation
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<ContentCategory[]>([]);
-  const [difficulty, setDifficulty] = useState<DifficultyLevel>("All Levels");
-  const [author, setAuthor] = useState("");
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>('All Levels');
+  const [author, setAuthor] = useState('');
   const [generateFull, setGenerateFull] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState("");
+  const [generatedContent, setGeneratedContent] = useState('');
 
   // State for batch generation
   const [batchCount, setBatchCount] = useState(5);
@@ -117,30 +117,30 @@ export default function GeneratePage() {
   const generateSinglePost = async () => {
     if (!title) {
       toast({
-        title: "Title Required",
-        description: "Please enter a title for your post",
-        variant: "destructive",
+        title: 'Title Required',
+        description: 'Please enter a title for your post',
+        variant: 'destructive',
       });
       return;
     }
 
     if (selectedCategories.length === 0) {
       toast({
-        title: "Categories Required",
-        description: "Please select at least one category",
-        variant: "destructive",
+        title: 'Categories Required',
+        description: 'Please select at least one category',
+        variant: 'destructive',
       });
       return;
     }
 
     setGenerating(true);
-    setGeneratedContent("");
+    setGeneratedContent('');
 
     try {
-      const response = await fetch("/api/dev/generate-post", {
-        method: "POST",
+      const response = await fetch('/api/dev/generate-post', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           title,
@@ -153,7 +153,7 @@ export default function GeneratePage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate post");
+        throw new Error('Failed to generate post');
       }
 
       const data = await response.json();
@@ -161,18 +161,18 @@ export default function GeneratePage() {
       if (data.success) {
         setGeneratedContent(data.content);
         toast({
-          title: "Post Generated",
+          title: 'Post Generated',
           description: `Successfully created: ${data.filePath}`,
         });
       } else {
-        throw new Error(data.error || "Unknown error");
+        throw new Error(data.error || 'Unknown error');
       }
     } catch (error) {
-      console.error("Error generating post:", error);
+      console.error('Error generating post:', error);
       toast({
-        title: "Generation Failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
+        title: 'Generation Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
       });
     } finally {
       setGenerating(false);
@@ -185,10 +185,10 @@ export default function GeneratePage() {
     setGeneratedFiles([]);
 
     try {
-      const response = await fetch("/api/dev/generate-batch", {
-        method: "POST",
+      const response = await fetch('/api/dev/generate-batch', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           count: batchCount,
@@ -197,7 +197,7 @@ export default function GeneratePage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate posts");
+        throw new Error('Failed to generate posts');
       }
 
       const data = await response.json();
@@ -205,18 +205,18 @@ export default function GeneratePage() {
       if (data.success) {
         setGeneratedFiles(data.filePaths);
         toast({
-          title: "Batch Generation Complete",
+          title: 'Batch Generation Complete',
           description: `Successfully created ${data.filePaths.length} posts`,
         });
       } else {
-        throw new Error(data.error || "Unknown error");
+        throw new Error(data.error || 'Unknown error');
       }
     } catch (error) {
-      console.error("Error generating batch:", error);
+      console.error('Error generating batch:', error);
       toast({
-        title: "Batch Generation Failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
+        title: 'Batch Generation Failed',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        variant: 'destructive',
       });
     } finally {
       setBatchGenerating(false);
@@ -225,12 +225,12 @@ export default function GeneratePage() {
 
   // Clear form
   const clearForm = () => {
-    setTitle("");
-    setDescription("");
+    setTitle('');
+    setDescription('');
     setSelectedCategories([]);
-    setDifficulty("All Levels");
-    setAuthor("");
-    setGeneratedContent("");
+    setDifficulty('All Levels');
+    setAuthor('');
+    setGeneratedContent('');
   };
 
   return (
@@ -419,7 +419,7 @@ export default function GeneratePage() {
                     <Badge
                       key={key}
                       variant={
-                        batchCategories.includes(key as ContentCategory) ? "default" : "outline"
+                        batchCategories.includes(key as ContentCategory) ? 'default' : 'outline'
                       }
                       className="cursor-pointer"
                       onClick={() => handleBatchCategoryToggle(key as ContentCategory)}
@@ -447,7 +447,7 @@ export default function GeneratePage() {
                     <ul className="text-sm space-y-1 text-muted-foreground">
                       {generatedFiles.map((file, index) => (
                         <li key={index} className="truncate">
-                          • {file.split("/").pop()}
+                          • {file.split('/').pop()}
                         </li>
                       ))}
                     </ul>

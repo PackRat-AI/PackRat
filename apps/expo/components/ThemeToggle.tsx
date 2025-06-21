@@ -1,10 +1,10 @@
-import { Icon } from "@roninoss/icons";
-import { Pressable, View } from "react-native";
-import Animated, { LayoutAnimationConfig, ZoomInRotate } from "react-native-reanimated";
+import { Icon } from '@roninoss/icons';
+import { Pressable, View } from 'react-native';
+import Animated, { LayoutAnimationConfig, ZoomInRotate } from 'react-native-reanimated';
 
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { COLORS } from "~/theme/colors";
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { COLORS } from '~/theme/colors';
 
 export function ThemeToggle() {
   const { colorScheme, toggleColorScheme } = useColorScheme();
@@ -16,14 +16,14 @@ export function ThemeToggle() {
         entering={ZoomInRotate}
       >
         <Pressable onPress={toggleColorScheme} className="opacity-80">
-          {colorScheme === "dark"
+          {colorScheme === 'dark'
             ? ({ pressed }) => (
-                <View className={cn("px-0.5", pressed && "opacity-50")}>
+                <View className={cn('px-0.5', pressed && 'opacity-50')}>
                   <Icon namingScheme="sfSymbol" name="moon.stars" color={COLORS.white} />
                 </View>
               )
             : ({ pressed }) => (
-                <View className={cn("px-0.5", pressed && "opacity-50")}>
+                <View className={cn('px-0.5', pressed && 'opacity-50')}>
                   <Icon namingScheme="sfSymbol" name="sun.min" color={COLORS.black} />
                 </View>
               )}

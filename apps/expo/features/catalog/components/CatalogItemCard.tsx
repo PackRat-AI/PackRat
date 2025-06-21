@@ -1,7 +1,7 @@
-import { Image, Platform, Text, TouchableOpacity, View } from "react-native";
-import { Icon } from "@roninoss/icons";
-import type { CatalogItem } from "~/types";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { Icon } from '@roninoss/icons';
+import type { CatalogItem } from '~/types';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 type CatalogItemCardProps = {
   item: CatalogItem;
@@ -19,12 +19,12 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
         <Image
           source={{
             uri: item.image,
-            ...(Platform.OS === "android"
+            ...(Platform.OS === 'android'
               ? {
                   headers: {
-                    "User-Agent":
-                      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
-                    Accept: "image/webp,image/apng,image/*,*/*;q=0.8",
+                    'User-Agent':
+                      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+                    Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
                   },
                 }
               : {}),
@@ -61,7 +61,7 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
               <View className="flex-row items-center">
                 <Icon name="backpack" size={14} color={colors.grey} />
                 <Text className="ml-1 text-xs text-muted-foreground">
-                  used in {item.usageCount} {item.usageCount === 1 ? "pack" : "packs"}
+                  used in {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
                 </Text>
               </View>
             )}

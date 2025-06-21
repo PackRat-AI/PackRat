@@ -1,7 +1,7 @@
-import { Icon } from "@roninoss/icons";
-import * as Haptics from "expo-haptics";
-import { router } from "expo-router";
-import * as React from "react";
+import { Icon } from '@roninoss/icons';
+import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
+import * as React from 'react';
 import {
   type TextStyle,
   type ViewStyle,
@@ -9,8 +9,8 @@ import {
   Pressable,
   View,
   Dimensions,
-} from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+} from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   clamp,
   FadeIn,
@@ -22,21 +22,21 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
-} from "react-native-reanimated";
+} from 'react-native-reanimated';
 
-import { Avatar, AvatarFallback } from "nativewindui/Avatar";
-import { Button } from "nativewindui/Button";
-import { ContextMenu } from "nativewindui/ContextMenu";
-import { createContextItem } from "nativewindui/ContextMenu/utils";
-import { Checkbox } from "nativewindui/Checkbox";
-import { DropdownMenu } from "nativewindui/DropdownMenu";
-import { createDropdownItem } from "nativewindui/DropdownMenu/utils";
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { List, ListItem, ListRenderItemInfo } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { Toolbar } from "nativewindui/Toolbar";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { cn } from "~/lib/cn";
+import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
+import { ContextMenu } from 'nativewindui/ContextMenu';
+import { createContextItem } from 'nativewindui/ContextMenu/utils';
+import { Checkbox } from 'nativewindui/Checkbox';
+import { DropdownMenu } from 'nativewindui/DropdownMenu';
+import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { List, ListItem, ListRenderItemInfo } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { Toolbar } from 'nativewindui/Toolbar';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from '~/lib/cn';
 
 export default function ConversationsIosScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();
@@ -107,40 +107,40 @@ function LeftView({
   const dropdownItems = React.useMemo(() => {
     return [
       createDropdownItem({
-        actionKey: "go-home",
-        title: "Go Home",
-        icon: { name: "home" },
+        actionKey: 'go-home',
+        title: 'Go Home',
+        icon: { name: 'home' },
       }),
       createDropdownItem({
-        actionKey: "select-messages",
-        title: "Select messages",
-        icon: { name: "checkmark.circle", namingScheme: "sfSymbol" },
+        actionKey: 'select-messages',
+        title: 'Select messages',
+        icon: { name: 'checkmark.circle', namingScheme: 'sfSymbol' },
       }),
       createDropdownItem({
-        actionKey: "toggle-theme",
-        title: "Toggle Theme",
+        actionKey: 'toggle-theme',
+        title: 'Toggle Theme',
         icon: {
-          name: isDarkColorScheme ? "moon.stars" : "sun.min",
-          namingScheme: "sfSymbol",
+          name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
+          namingScheme: 'sfSymbol',
         },
       }),
     ];
   }, [isDarkColorScheme]);
 
   function onItemPress({ actionKey }: { actionKey: string }) {
-    if (actionKey === "go-home") {
-      router.push("../");
+    if (actionKey === 'go-home') {
+      router.push('../');
       return;
     }
-    if (actionKey === "toggle-theme") {
+    if (actionKey === 'toggle-theme') {
       toggleColorScheme();
       return;
     }
-    if (actionKey === "select-messages") {
+    if (actionKey === 'select-messages') {
       setIsSelecting(true);
       return;
     }
-    console.log("NOT IMPLEMENTED");
+    console.log('NOT IMPLEMENTED');
   }
 
   if (isSelecting) {
@@ -187,7 +187,7 @@ function RightView() {
 const SEARCH_BAR = {
   iosHideWhenScrolling: true,
   content: (
-    <View className={cn("flex-1", Platform.OS === "ios" && "bg-card dark:bg-background")}>
+    <View className={cn('flex-1', Platform.OS === 'ios' && 'bg-card dark:bg-background')}>
       <Animated.View
         entering={FadeIn.delay(150)}
         className="ios:pt-4 border-border flex-row border-b px-4 pb-4"
@@ -214,14 +214,14 @@ const SEARCH_BAR = {
 
 const CONTEXT_MENU_ITEMS = [
   createContextItem({
-    actionKey: "hide-alerts",
-    title: "Hide Alerts",
-    icon: { name: "bell-outline" },
+    actionKey: 'hide-alerts',
+    title: 'Hide Alerts',
+    icon: { name: 'bell-outline' },
   }),
   createContextItem({
-    actionKey: "delete",
-    title: "Delete",
-    icon: { name: "trash-can-outline", color: "red" },
+    actionKey: 'delete',
+    title: 'Delete',
+    icon: { name: 'trash-can-outline', color: 'red' },
     destructive: true,
   }),
 ];
@@ -260,7 +260,7 @@ function MessageRow({
       setSelectedMessages([...selectedMessages, info.item.id]);
       return;
     }
-    router.push("/messages-ios/chat-ios");
+    router.push('/messages-ios/chat-ios');
   }
 
   function onCheckedChange(isChecked: boolean) {
@@ -284,12 +284,12 @@ function MessageRow({
           onLongPress={noop} // Prevent onPress from firing when long pressing with quick release
           onPress={onListItemPress}
           className={cn(
-            "h-[88px]",
-            selectedMessages.includes(info.item.id) && "bg-muted/15",
+            'h-[88px]',
+            selectedMessages.includes(info.item.id) && 'bg-muted/15',
             selectedMessages.includes(info.item.id) &&
-              Platform.OS === "ios" &&
-              "dark:bg-muted/50 bg-muted/20",
-            info.index === 0 && "ios:border-t-0 border-border/25 dark:border-border/80 border-t",
+              Platform.OS === 'ios' &&
+              'dark:bg-muted/50 bg-muted/20',
+            info.index === 0 && 'ios:border-t-0 border-border/25 dark:border-border/80 border-t',
           )}
           leftView={
             <View className="flex-1 flex-row items-center px-3 py-3 pl-2">
@@ -321,7 +321,7 @@ function MessageRow({
                         size={36}
                         name="person"
                         color={Platform.select({
-                          ios: "white",
+                          ios: 'white',
                           default: colors.background,
                         })}
                       />
@@ -365,7 +365,7 @@ const renderIosContextMenuPreview = (info: { item: (typeof ITEMS)[number] }) => 
           </Text>
         </View>
         <View className="pr-10">
-          <View style={{ borderCurve: "circular" }} className="bg-card rounded-2xl p-3">
+          <View style={{ borderCurve: 'circular' }} className="bg-card rounded-2xl p-3">
             <Text>{info.item.subTitle}</Text>
           </View>
         </View>
@@ -384,7 +384,7 @@ function getInitials(name: string): string {
   return firstInitial + lastInitial;
 }
 
-const dimensions = Dimensions.get("window");
+const dimensions = Dimensions.get('window');
 
 const BUTTON_WIDTH = 75;
 
@@ -413,28 +413,28 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
   });
   const statusActionStyle = useAnimatedStyle(() => {
     return {
-      position: "absolute",
+      position: 'absolute',
       flex: 1,
-      height: "100%",
+      height: '100%',
       width: interpolate(translateX.value, [0, dimensions.width], [0, dimensions.width]),
     };
   });
   const trashActionStyle = useAnimatedStyle(() => {
     return {
-      position: "absolute",
+      position: 'absolute',
       right: 0,
       flex: 1,
-      height: "100%",
+      height: '100%',
       width: interpolate(-translateX.value, [0, dimensions.width], [0, dimensions.width]),
     };
   });
   const notificationActionStyle = useAnimatedStyle(() => {
     return {
-      overflow: "hidden",
-      position: "absolute",
+      overflow: 'hidden',
+      position: 'absolute',
       left: interpolate(-translateX.value, [0, dimensions.width], [dimensions.width, 0]),
       flex: 1,
-      height: "100%",
+      height: '100%',
       width:
         previousTranslateX.value > translateX.value
           ? interpolate(
@@ -451,8 +451,8 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
   });
   const statusIconStyle = useAnimatedStyle(() => {
     return {
-      overflow: "hidden",
-      position: "absolute",
+      overflow: 'hidden',
+      position: 'absolute',
       left: interpolate(
         translateX.value,
         [0, BUTTON_WIDTH, BUTTON_WIDTH * 2, BUTTON_WIDTH * 3, dimensions.width],
@@ -460,14 +460,14 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
       ),
 
       flex: 1,
-      height: "100%",
+      height: '100%',
       width: BUTTON_WIDTH,
     };
   });
   const trashIconStyle = useAnimatedStyle(() => {
     return {
-      overflow: "hidden",
-      position: "absolute",
+      overflow: 'hidden',
+      position: 'absolute',
       right:
         previousTranslateX.value > translateX.value
           ? interpolate(
@@ -481,25 +481,25 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
               [-BUTTON_WIDTH, 0, dimensions.width - BUTTON_WIDTH],
             ),
       flex: 1,
-      height: "100%",
+      height: '100%',
       width: BUTTON_WIDTH,
     };
   });
 
   function onToggleMarkAsRead() {
-    console.log("onToggleMarkAsRead");
+    console.log('onToggleMarkAsRead');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
   function onDelete() {
-    console.log("onDelete");
+    console.log('onDelete');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
   function onToggleNotifications() {
-    console.log("onToggleNotifications");
+    console.log('onToggleNotifications');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
   const pan = Gesture.Pan()
-    .manualActivation(Platform.OS !== "ios")
+    .manualActivation(Platform.OS !== 'ios')
     .onBegin((evt) => {
       initialTouchLocation.value = { x: evt.x, y: evt.y };
     })
@@ -590,11 +590,11 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
             >
               <Icon
                 ios={{
-                  name: isUnread ? "checkmark.message.fill" : "message.badge.fill",
+                  name: isUnread ? 'checkmark.message.fill' : 'message.badge.fill',
                 }}
                 materialIcon={{
-                  type: "MaterialCommunityIcons",
-                  name: isUnread ? "read" : "email-mark-as-unread",
+                  type: 'MaterialCommunityIcons',
+                  name: isUnread ? 'read' : 'email-mark-as-unread',
                 }}
                 size={24}
                 color="white"
@@ -620,10 +620,10 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
             className="absolute bottom-0 left-0 top-0 items-center justify-center"
           >
             <Icon
-              ios={{ name: "bell.slash.fill" }}
+              ios={{ name: 'bell.slash.fill' }}
               materialIcon={{
-                type: "MaterialCommunityIcons",
-                name: "bell-cancel",
+                type: 'MaterialCommunityIcons',
+                name: 'bell-cancel',
               }}
               size={24}
               color="white"
@@ -647,7 +647,7 @@ function SelectingToolbar({ hasSelectedAMessage }: { hasSelectedAMessage: boolea
         }
         rightView={
           <Button size="sm" variant="plain" disabled={!hasSelectedAMessage}>
-            <Text className={cn(!hasSelectedAMessage ? "text-muted-foreground" : "text-primary")}>
+            <Text className={cn(!hasSelectedAMessage ? 'text-muted-foreground' : 'text-primary')}>
               Delete
             </Text>
           </Button>
@@ -661,107 +661,107 @@ function noop() {}
 
 const ITEMS = [
   {
-    id: "1",
+    id: '1',
     contact: true,
     unread: true,
-    title: "Alice Johnson",
+    title: 'Alice Johnson',
     subTitle:
-      "Hi team, please find the latest updates on the project. We have completed the initial phase and are moving into the testing stage.",
-    timestamp: "8:32 AM",
+      'Hi team, please find the latest updates on the project. We have completed the initial phase and are moving into the testing stage.',
+    timestamp: '8:32 AM',
   },
   {
-    id: "2",
+    id: '2',
     contact: true,
     unread: true,
-    title: "Bob Smith",
+    title: 'Bob Smith',
     subTitle:
-      "Reminder: We have a team meeting scheduled for tomorrow at 10 AM. Please make sure to bring your reports.",
-    timestamp: "Yesterday",
+      'Reminder: We have a team meeting scheduled for tomorrow at 10 AM. Please make sure to bring your reports.',
+    timestamp: 'Yesterday',
   },
   {
-    id: "3",
+    id: '3',
     contact: false,
     unread: false,
-    title: "(555) 123-4567",
+    title: '(555) 123-4567',
     subTitle:
-      "You have a missed call from this number. Please call back at your earliest convenience.",
-    timestamp: "Saturday",
+      'You have a missed call from this number. Please call back at your earliest convenience.',
+    timestamp: 'Saturday',
   },
   {
-    id: "4",
+    id: '4',
     contact: true,
     unread: false,
-    title: "Catherine Davis",
+    title: 'Catherine Davis',
     subTitle:
-      "Hi, please find attached the invoice for the services provided last month. Let me know if you need any further information.",
-    timestamp: "Last Tuesday",
+      'Hi, please find attached the invoice for the services provided last month. Let me know if you need any further information.',
+    timestamp: 'Last Tuesday',
   },
   {
-    id: "5",
+    id: '5',
     contact: true,
     unread: true,
-    title: "Daniel Brown",
+    title: 'Daniel Brown',
     subTitle: "Hey, are you free for lunch this Thursday? Let's catch up!",
-    timestamp: "10:15 AM",
+    timestamp: '10:15 AM',
   },
   {
-    id: "6",
+    id: '6',
     contact: false,
     unread: false,
-    title: "(555) 987-6543",
+    title: '(555) 987-6543',
     subTitle:
-      "Your service appointment is scheduled for June 29th. Please be available during the time slot.",
-    timestamp: "2024-06-29",
+      'Your service appointment is scheduled for June 29th. Please be available during the time slot.',
+    timestamp: '2024-06-29',
   },
   {
-    id: "7",
+    id: '7',
     contact: true,
     unread: false,
-    title: "Evelyn Clark",
-    subTitle: "Wishing you a very happy birthday! Have a great year ahead.",
-    timestamp: "2024-06-29",
+    title: 'Evelyn Clark',
+    subTitle: 'Wishing you a very happy birthday! Have a great year ahead.',
+    timestamp: '2024-06-29',
   },
   {
-    id: "8",
+    id: '8',
     contact: false,
     unread: false,
-    title: "(555) 321-7654",
+    title: '(555) 321-7654',
     subTitle: "Don't forget to submit your timesheet by the end of the day.",
-    timestamp: "2024-06-29",
+    timestamp: '2024-06-29',
   },
   {
-    id: "9",
+    id: '9',
     contact: true,
     unread: false,
-    title: "Fiona Wilson",
-    subTitle: "Attached is the weekly report for your review. Please provide your feedback.",
-    timestamp: "2024-06-29",
+    title: 'Fiona Wilson',
+    subTitle: 'Attached is the weekly report for your review. Please provide your feedback.',
+    timestamp: '2024-06-29',
   },
   {
-    id: "10",
+    id: '10',
     contact: true,
     unread: false,
-    title: "George Martinez",
+    title: 'George Martinez',
     subTitle:
-      "Hi all, we are planning a team outing next weekend. Please confirm your availability.",
-    timestamp: "2024-06-29",
+      'Hi all, we are planning a team outing next weekend. Please confirm your availability.',
+    timestamp: '2024-06-29',
   },
   {
-    id: "11",
+    id: '11',
     contact: false,
     unread: false,
-    title: "(555) 654-3210",
+    title: '(555) 654-3210',
     subTitle:
-      "Congratulations! You are eligible for a special promotion. Contact us to learn more.",
-    timestamp: "2024-06-29",
+      'Congratulations! You are eligible for a special promotion. Contact us to learn more.',
+    timestamp: '2024-06-29',
   },
   {
-    id: "12",
+    id: '12',
     contact: true,
     unread: false,
-    title: "Hannah Lee",
+    title: 'Hannah Lee',
     subTitle:
-      "Hi, your contract is up for renewal. Please review the attached document and let us know if you have any questions.",
-    timestamp: "2024-06-29",
+      'Hi, your contract is up for renewal. Please review the attached document and let us know if you have any questions.',
+    timestamp: '2024-06-29',
   },
 ];

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   View,
   FlatList,
@@ -10,15 +10,15 @@ import {
   SafeAreaView,
   Image,
   Animated,
-} from "react-native";
-import { Icon } from "@roninoss/icons";
-import { Button } from "nativewindui/Button";
-import { useCatalogItemDetails } from "../hooks";
-import type { Pack } from "~/types";
-import { SearchInput } from "nativewindui/SearchInput";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { usePacks } from "~/features/packs";
+} from 'react-native';
+import { Icon } from '@roninoss/icons';
+import { Button } from 'nativewindui/Button';
+import { useCatalogItemDetails } from '../hooks';
+import type { Pack } from '~/types';
+import { SearchInput } from 'nativewindui/SearchInput';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { usePacks } from '~/features/packs';
 
 export function PackSelectionScreen() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export function PackSelectionScreen() {
   const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
     catalogItemId as string,
   );
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [filteredPacks, setFilteredPacks] = useState<Pack[]>([]);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const { colors } = useColorScheme();
@@ -42,7 +42,7 @@ export function PackSelectionScreen() {
 
   useEffect(() => {
     if (packs) {
-      if (searchQuery.trim() === "") {
+      if (searchQuery.trim() === '') {
         setFilteredPacks(packs);
       } else {
         const query = searchQuery.toLowerCase();
@@ -60,13 +60,13 @@ export function PackSelectionScreen() {
 
   const handlePackSelect = (packId: string) => {
     router.push({
-      pathname: "/catalog/add-to-pack/details",
+      pathname: '/catalog/add-to-pack/details',
       params: { catalogItemId, packId },
     });
   };
 
   const handleCreatePack = () => {
-    router.push("/pack/new");
+    router.push('/pack/new');
   };
 
   if (isLoading || isLoadingItem) {
@@ -144,7 +144,7 @@ export function PackSelectionScreen() {
                             <View className="mr-3 flex-row items-center">
                               <Icon name="basket-outline" size={14} color={colors.grey2} />
                               <Text variant="caption2" className="ml-1">
-                                {item.items.length} {item.items.length === 1 ? "item" : "items"}
+                                {item.items.length} {item.items.length === 1 ? 'item' : 'items'}
                               </Text>
                             </View>
                             <View className="mr-3 flex-row items-center">

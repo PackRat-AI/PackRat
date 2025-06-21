@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,14 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import Storage from "expo-sqlite/kv-store";
+} from 'react-native';
+import Storage from 'expo-sqlite/kv-store';
 
 export default function SQLiteKVDebug() {
   const [isLoading, setIsLoading] = useState(true);
   const [entries, setEntries] = useState<Array<{ key: string; value: any }>>([]);
-  const [newKey, setNewKey] = useState("");
-  const [newValue, setNewValue] = useState("");
+  const [newKey, setNewKey] = useState('');
+  const [newValue, setNewValue] = useState('');
   const [editMode, setEditMode] = useState<{
     key: string;
     value: string;
@@ -34,8 +34,8 @@ export default function SQLiteKVDebug() {
       );
       setEntries(loadedEntries);
     } catch (error) {
-      console.error("Error loading entries:", error);
-      Alert.alert("Error", "Failed to load entries from storage");
+      console.error('Error loading entries:', error);
+      Alert.alert('Error', 'Failed to load entries from storage');
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +44,7 @@ export default function SQLiteKVDebug() {
   // Add a new entry to the KV store
   const addEntry = async () => {
     if (!newKey.trim()) {
-      Alert.alert("Error", "Key cannot be empty");
+      Alert.alert('Error', 'Key cannot be empty');
       return;
     }
 
@@ -53,8 +53,8 @@ export default function SQLiteKVDebug() {
       try {
         // Try to parse as JSON if it looks like an object or array
         if (
-          (newValue.startsWith("{") && newValue.endsWith("}")) ||
-          (newValue.startsWith("[") && newValue.endsWith("]"))
+          (newValue.startsWith('{') && newValue.endsWith('}')) ||
+          (newValue.startsWith('[') && newValue.endsWith(']'))
         ) {
           parsedValue = JSON.parse(newValue);
         } else {
@@ -65,12 +65,12 @@ export default function SQLiteKVDebug() {
       }
 
       await Storage.setItem(newKey, parsedValue);
-      setNewKey("");
-      setNewValue("");
+      setNewKey('');
+      setNewValue('');
       loadEntries();
     } catch (error) {
-      console.error("Error adding entry:", error);
-      Alert.alert("Error", "Failed to add entry to storage");
+      console.error('Error adding entry:', error);
+      Alert.alert('Error', 'Failed to add entry to storage');
     }
   };
 
@@ -83,8 +83,8 @@ export default function SQLiteKVDebug() {
       try {
         // Try to parse as JSON if it looks like an object or array
         if (
-          (editMode.value.startsWith("{") && editMode.value.endsWith("}")) ||
-          (editMode.value.startsWith("[") && editMode.value.endsWith("]"))
+          (editMode.value.startsWith('{') && editMode.value.endsWith('}')) ||
+          (editMode.value.startsWith('[') && editMode.value.endsWith(']'))
         ) {
           parsedValue = JSON.parse(editMode.value);
         } else {
@@ -98,8 +98,8 @@ export default function SQLiteKVDebug() {
       setEditMode(null);
       loadEntries();
     } catch (error) {
-      console.error("Error updating entry:", error);
-      Alert.alert("Error", "Failed to update entry in storage");
+      console.error('Error updating entry:', error);
+      Alert.alert('Error', 'Failed to update entry in storage');
     }
   };
 
@@ -109,29 +109,29 @@ export default function SQLiteKVDebug() {
       await Storage.removeItem(key); // Changed from deleteItem to removeItem
       loadEntries();
     } catch (error) {
-      console.error("Error deleting entry:", error);
-      Alert.alert("Error", "Failed to delete entry from storage");
+      console.error('Error deleting entry:', error);
+      Alert.alert('Error', 'Failed to delete entry from storage');
     }
   };
 
   // Clear all entries from the KV store
   const clearAllEntries = async () => {
     Alert.alert(
-      "Clear All Data",
-      "Are you sure you want to delete all entries? This cannot be undone.",
+      'Clear All Data',
+      'Are you sure you want to delete all entries? This cannot be undone.',
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Clear All",
-          style: "destructive",
+          text: 'Clear All',
+          style: 'destructive',
           onPress: async () => {
             try {
               const allKeys = await Storage.getAllKeys();
               await Promise.all(allKeys.map((key) => Storage.removeItem(key))); // Changed from deleteItem to removeItem
               loadEntries();
             } catch (error) {
-              console.error("Error clearing entries:", error);
-              Alert.alert("Error", "Failed to clear all entries from storage");
+              console.error('Error clearing entries:', error);
+              Alert.alert('Error', 'Failed to clear all entries from storage');
             }
           },
         },
@@ -144,7 +144,7 @@ export default function SQLiteKVDebug() {
     if (value === null || value === undefined) {
       return String(value);
     }
-    if (typeof value === "object") {
+    if (typeof value === 'object') {
       return JSON.stringify(value, null, 2);
     }
     return String(value);
@@ -237,102 +237,102 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 16,
-    textAlign: "center",
+    textAlign: 'center',
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 8,
   },
   addSection: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
   editSection: {
-    backgroundColor: "#fffde7",
+    backgroundColor: '#fffde7',
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
     elevation: 3,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
   },
   entriesSection: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: 'white',
     padding: 16,
     borderRadius: 8,
     marginBottom: 16,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
   headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   entriesList: {
     flex: 1,
   },
   entryCard: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: '#f9f9f9',
     padding: 12,
     borderRadius: 6,
     marginBottom: 8,
     borderLeftWidth: 4,
-    borderLeftColor: "#2196F3",
+    borderLeftColor: '#2196F3',
   },
   entryKey: {
-    fontWeight: "bold",
+    fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 4,
   },
   entryValue: {
-    fontFamily: "monospace",
-    backgroundColor: "#f0f0f0",
+    fontFamily: 'monospace',
+    backgroundColor: '#f0f0f0',
     padding: 8,
     borderRadius: 4,
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: '#ddd',
     borderRadius: 4,
     padding: 8,
     marginBottom: 8,
   },
   valueInput: {
     minHeight: 80,
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
   },
   buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   emptyText: {
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: 20,
-    color: "#666",
-    fontStyle: "italic",
+    color: '#666',
+    fontStyle: 'italic',
   },
   clearSection: {
     marginTop: 8,

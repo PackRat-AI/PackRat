@@ -1,4 +1,4 @@
-import { Stack } from "expo-router";
+import { Stack } from 'expo-router';
 
 export default function LocationsLayout() {
   return (
@@ -12,9 +12,9 @@ export default function LocationsLayout() {
       <Stack.Screen
         name="search"
         options={{
-          title: "Add Location",
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          title: 'Add Location',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen

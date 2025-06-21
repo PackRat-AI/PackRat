@@ -1,10 +1,10 @@
-import { useChat } from "@ai-sdk/react";
-import { Icon } from "@roninoss/icons";
-import { FlashList } from "@shopify/flash-list";
-import { BlurView } from "expo-blur";
-import { router, Stack, useLocalSearchParams } from "expo-router";
-import { fetch as expoFetch } from "expo/fetch";
-import * as React from "react";
+import { useChat } from '@ai-sdk/react';
+import { Icon } from '@roninoss/icons';
+import { FlashList } from '@shopify/flash-list';
+import { BlurView } from 'expo-blur';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { fetch as expoFetch } from 'expo/fetch';
+import * as React from 'react';
 import {
   Dimensions,
   type NativeSyntheticEvent,
@@ -16,13 +16,13 @@ import {
   type ViewStyle,
   TouchableOpacity,
   View,
-} from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+} from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
   KeyboardAvoidingView,
   KeyboardStickyView,
   useReanimatedKeyboardAnimation,
-} from "react-native-keyboard-controller";
+} from 'react-native-keyboard-controller';
 import Animated, {
   clamp,
   interpolate,
@@ -30,23 +30,23 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button } from "nativewindui/Button";
-import { Text } from "nativewindui/Text";
-import { LocationSelector } from "~/features/weather/components/LocationSelector";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { formatAIResponse } from "~/utils/format-ai-response";
-import { getContextualGreeting, getContextualSuggestions } from "~/utils/chatContextHelpers";
-import { useAtomValue } from "jotai";
-import { tokenAtom } from "~/features/auth/atoms/authAtoms";
-import { useActiveLocation } from "~/features/weather/hooks";
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { LocationSelector } from '~/features/weather/components/LocationSelector';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { formatAIResponse } from '~/utils/format-ai-response';
+import { getContextualGreeting, getContextualSuggestions } from '~/utils/chatContextHelpers';
+import { useAtomValue } from 'jotai';
+import { tokenAtom } from '~/features/auth/atoms/authAtoms';
+import { useActiveLocation } from '~/features/weather/hooks';
 
-const USER = "User";
-const AI = "PackRat AI";
+const USER = 'User';
+const AI = 'PackRat AI';
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
-const dimensions = Dimensions.get("window");
+const dimensions = Dimensions.get('window');
 
 const ROOT_STYLE: ViewStyle = {
   flex: 1,
@@ -64,12 +64,12 @@ const SPRING_CONFIG = {
 
 type Message = {
   id: string;
-  role: "user" | "assistant";
+  role: 'user' | 'assistant';
   content: string;
 };
 
 const HEADER_POSITION_STYLE: ViewStyle = {
-  position: "absolute",
+  position: 'absolute',
   zIndex: 50,
   top: 0,
   left: 0,
@@ -95,15 +95,15 @@ export default function AIChat() {
     itemName: params.itemName as string,
     packId: params.packId as string,
     packName: params.packName as string,
-    contextType: (params.contextType as "item" | "pack" | "general") || "general",
+    contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
     location: activeLocation ? activeLocation.name : undefined,
   };
 
   // Get contextual information
   const contextName =
-    context.contextType === "item"
+    context.contextType === 'item'
       ? context.itemName
-      : context.contextType === "pack"
+      : context.contextType === 'pack'
         ? context.packName
         : undefined;
 
@@ -112,7 +112,7 @@ export default function AIChat() {
   const { messages, error, handleInputChange, input, setInput, handleSubmit, isLoading } = useChat({
     fetch: expoFetch as unknown as typeof globalThis.fetch,
     api: `${process.env.EXPO_PUBLIC_API_URL}/api/chat`,
-    onError: (error: Error) => console.log(error, "ERROR"),
+    onError: (error: Error) => console.log(error, 'ERROR'),
     body: {
       contextType: context.contextType,
       itemId: context.itemId,
@@ -124,8 +124,8 @@ export default function AIChat() {
     },
     initialMessages: [
       {
-        id: "1",
-        role: "assistant",
+        id: '1',
+        role: 'assistant',
         content: getContextualGreeting(context),
       },
     ],
@@ -206,23 +206,23 @@ export default function AIChat() {
       const now = new Date();
       return {
         id: message.id,
-        sender: message.role === "user" ? USER : AI,
+        sender: message.role === 'user' ? USER : AI,
         text: message.content,
-        date: now.toISOString().split("T")[0],
-        time: now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
+        date: now.toISOString().split('T')[0],
+        time: now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
         }),
         reactions: {},
         attachments: [],
       };
     });
     // Add a date separator at the beginning.
-    const today = new Date().toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+    const today = new Date().toLocaleDateString('en-US', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
     });
 
     return [today, ...formattedMessages];
@@ -284,12 +284,12 @@ export default function AIChat() {
             }}
             data={chatMessages}
             renderItem={({ item, index }) => {
-              if (typeof item === "string") {
+              if (typeof item === 'string') {
                 return <DateSeparator date={item} />;
               }
               const nextMessage = chatMessages[index - 1];
               const isSameNextSender =
-                typeof nextMessage !== "string" ? nextMessage?.sender === item.sender : false;
+                typeof nextMessage !== 'string' ? nextMessage?.sender === item.sender : false;
               return (
                 <ChatBubble
                   isSameNextSender={isSameNextSender}
@@ -319,9 +319,9 @@ export default function AIChat() {
           }}
           isLoading={isLoading}
           placeholder={
-            context.contextType == "general"
-              ? "Ask anything outdoors"
-              : `Ask about this ${context.contextType == "item" ? "item" : "pack"}...`
+            context.contextType == 'general'
+              ? 'Ask anything outdoors'
+              : `Ask about this ${context.contextType == 'item' ? 'item' : 'pack'}...`
           }
         />
       </KeyboardStickyView>
@@ -340,7 +340,7 @@ function DateSeparator({ date }: { date: string }) {
 }
 
 const BORDER_CURVE: ViewStyle = {
-  borderCurve: "continuous",
+  borderCurve: 'continuous',
 };
 
 function ChatBubble({
@@ -366,7 +366,7 @@ function ChatBubble({
   }));
   const dateStyle = useAnimatedStyle(() => ({
     width: 75,
-    position: "absolute",
+    position: 'absolute',
     right: 0,
     paddingLeft: 8,
     transform: [{ translateX: interpolate(translateX.value, [-75, 0], [0, 75]) }],
@@ -376,41 +376,41 @@ function ChatBubble({
   return (
     <View
       className={cn(
-        "justify-center px-2 pb-3.5",
-        isSameNextSender ? "pb-1" : "pb-3.5",
-        isAI ? "items-start pr-16" : "items-end pl-16",
+        'justify-center px-2 pb-3.5',
+        isSameNextSender ? 'pb-1' : 'pb-3.5',
+        isAI ? 'items-start pr-16' : 'items-end pl-16',
       )}
     >
       <Animated.View style={!isAI ? rootStyle : undefined}>
         <View>
           <View
             className={cn(
-              "absolute bottom-0 items-center justify-center",
-              isAI ? "-left-2 " : "-right-2.5",
+              'absolute bottom-0 items-center justify-center',
+              isAI ? '-left-2 ' : '-right-2.5',
             )}
           >
-            {Platform.OS === "ios" && (
+            {Platform.OS === 'ios' && (
               <>
                 <View
                   className={cn(
-                    "h-5 w-5 rounded-full",
+                    'h-5 w-5 rounded-full',
                     !isAI
-                      ? "bg-primary"
-                      : Platform.OS === "ios"
-                        ? "bg-background dark:bg-muted"
-                        : "bg-background dark:bg-muted-foreground",
+                      ? 'bg-primary'
+                      : Platform.OS === 'ios'
+                        ? 'bg-background dark:bg-muted'
+                        : 'bg-background dark:bg-muted-foreground',
                   )}
                 />
                 <View
                   className={cn(
-                    "absolute h-5 w-5 rounded-full bg-card dark:bg-background",
-                    !isAI ? "-right-2" : "right-2",
+                    'absolute h-5 w-5 rounded-full bg-card dark:bg-background',
+                    !isAI ? '-right-2' : 'right-2',
                   )}
                 />
                 <View
                   className={cn(
-                    "absolute h-5 w-5 -translate-y-1 rounded-full bg-card dark:bg-background",
-                    !isAI ? "-right-2" : "right-2",
+                    'absolute h-5 w-5 -translate-y-1 rounded-full bg-card dark:bg-background',
+                    !isAI ? '-right-2' : 'right-2',
                   )}
                 />
               </>
@@ -421,12 +421,12 @@ function ChatBubble({
               <View
                 style={BORDER_CURVE}
                 className={cn(
-                  "rounded-2xl bg-background px-3 py-1.5 dark:bg-muted-foreground",
-                  Platform.OS === "ios" && "dark:bg-muted",
-                  !isAI && "bg-primary dark:bg-primary",
+                  'rounded-2xl bg-background px-3 py-1.5 dark:bg-muted-foreground',
+                  Platform.OS === 'ios' && 'dark:bg-muted',
+                  !isAI && 'bg-primary dark:bg-primary',
                 )}
               >
-                <Text className={cn(!isAI && "text-white")}>
+                <Text className={cn(!isAI && 'text-white')}>
                   {isAI ? formatAIResponse(item.text) : item.text}
                 </Text>
               </View>
@@ -444,7 +444,7 @@ function ChatBubble({
 }
 
 const COMPOSER_STYLE: ViewStyle = {
-  position: "absolute",
+  position: 'absolute',
   zIndex: 50,
   bottom: 0,
   left: 0,
@@ -452,7 +452,7 @@ const COMPOSER_STYLE: ViewStyle = {
 };
 
 const TEXT_INPUT_STYLE: TextStyle = {
-  borderCurve: "continuous",
+  borderCurve: 'continuous',
   maxHeight: 300,
 };
 
@@ -488,7 +488,7 @@ function Composer({
         COMPOSER_STYLE,
         {
           backgroundColor: Platform.select({
-            ios: isDarkColorScheme ? "#00000080" : "#ffffff80",
+            ios: isDarkColorScheme ? '#00000080' : '#ffffff80',
             default: isDarkColorScheme ? colors.background : colors.card,
           }),
           paddingBottom: insets.bottom,

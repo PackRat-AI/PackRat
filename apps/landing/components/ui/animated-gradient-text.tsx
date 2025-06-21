@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import type React from "react";
+import type React from 'react';
 
-import { useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 
 interface AnimatedGradientTextProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ interface AnimatedGradientTextProps {
 export default function AnimatedGradientText({
   children,
   className,
-  colors = ["#0F766E", "#14B8A6", "#F97316", "#FB923C"],
+  colors = ['#0F766E', '#14B8A6', '#F97316', '#FB923C'],
   duration = 8,
   animate = true,
 }: AnimatedGradientTextProps) {
@@ -42,14 +42,14 @@ export default function AnimatedGradientText({
     element.style.backgroundSize = `${colors.length * 100}% 100%`;
 
     // Create the animation
-    element.animate([{ backgroundPosition: "0% 0%" }, { backgroundPosition: "100% 0%" }], {
+    element.animate([{ backgroundPosition: '0% 0%' }, { backgroundPosition: '100% 0%' }], {
       duration: duration * 1000,
       iterations: Number.POSITIVE_INFINITY,
     });
   }, [animate, colors, duration]);
 
   return (
-    <span ref={textRef} className={cn("bg-clip-text text-transparent inline-block", className)}>
+    <span ref={textRef} className={cn('bg-clip-text text-transparent inline-block', className)}>
       {children}
     </span>
   );

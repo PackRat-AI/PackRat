@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { Input } from "@/components/ui/input";
-import { getAllPosts } from "@/lib/mdx-static";
-import type { Post } from "@/lib/types";
-import { useQuery } from "@tanstack/react-query";
-import { SearchIcon, X } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { Input } from '@/components/ui/input';
+import { getAllPosts } from '@/lib/mdx-static';
+import type { Post } from '@/lib/types';
+import { useQuery } from '@tanstack/react-query';
+import { SearchIcon, X } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function Search() {
   const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -21,7 +21,7 @@ export function Search() {
 
   // Fetch posts using TanStack Query
   const { data: posts = [] } = useQuery({
-    queryKey: ["posts"],
+    queryKey: ['posts'],
     queryFn: getAllPosts,
   });
 
@@ -33,9 +33,9 @@ export function Search() {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -59,7 +59,7 @@ export function Search() {
     const searchResults = posts.filter((post) => {
       const searchContent = `${post.title} ${
         post.description
-      } ${post.categories?.join(" ")}`.toLowerCase();
+      } ${post.categories?.join(' ')}`.toLowerCase();
       return searchContent.includes(query.toLowerCase());
     });
 

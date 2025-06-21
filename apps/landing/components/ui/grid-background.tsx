@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import { siteConfig } from "@/config/site";
+import { useEffect, useRef } from 'react';
+import { siteConfig } from '@/config/site';
 
 export default function GridBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -10,7 +10,7 @@ export default function GridBackground() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -79,10 +79,10 @@ export default function GridBackground() {
     };
 
     resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener('resize', resizeCanvas);
     };
   }, []);
 

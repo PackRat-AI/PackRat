@@ -1,8 +1,8 @@
-import { useLocalSearchParams, router } from "expo-router";
-import { SafeAreaView, ScrollView, Text, View } from "react-native";
-import { Chip } from "~/components/initial/Chip";
-import { WeightBadge } from "~/components/initial/WeightBadge";
-import { Icon } from "@roninoss/icons";
+import { useLocalSearchParams, router } from 'expo-router';
+import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Chip } from '~/components/initial/Chip';
+import { WeightBadge } from '~/components/initial/WeightBadge';
+import { Icon } from '@roninoss/icons';
 
 import {
   calculateTotalWeight,
@@ -13,12 +13,12 @@ import {
   isPackItem,
   isWorn,
   shouldShowQuantity,
-} from "~/lib/utils/itemCalculations";
-import { NotFoundScreen } from "../../../screens/NotFoundScreen";
-import { Button } from "nativewindui/Button";
-import { usePackItem } from "../hooks";
-import { isAuthed } from "~/features/auth/store";
-import { CachedImage } from "~/features/packs/components/CachedImage";
+} from '~/lib/utils/itemCalculations';
+import { NotFoundScreen } from '../../../screens/NotFoundScreen';
+import { Button } from 'nativewindui/Button';
+import { usePackItem } from '../hooks';
+import { isAuthed } from '~/features/auth/store';
+import { CachedImage } from '~/features/packs/components/CachedImage';
 
 export function ItemDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -50,26 +50,26 @@ export function ItemDetailScreen() {
   const navigateToChat = () => {
     if (!isAuthed.peek()) {
       return router.push({
-        pathname: "/auth",
+        pathname: '/auth',
         params: {
           redirectTo: JSON.stringify({
-            pathname: "/ai-chat",
+            pathname: '/ai-chat',
             params: {
               itemId: item.id,
               itemName: item.name,
-              contextType: "item",
+              contextType: 'item',
             },
           }),
-          showSignInCopy: "true",
+          showSignInCopy: 'true',
         },
       });
     }
     router.push({
-      pathname: "/ai-chat",
+      pathname: '/ai-chat',
       params: {
         itemId: item.id,
         itemName: item.name,
-        contextType: "item",
+        contextType: 'item',
       },
     });
   };

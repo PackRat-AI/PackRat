@@ -1,5 +1,5 @@
-import { Icon } from "@roninoss/icons";
-import { getWeatherIconName, getWeatherIconByCondition } from "../lib/weatherIcons";
+import { Icon } from '@roninoss/icons';
+import { getWeatherIconName, getWeatherIconByCondition } from '../lib/weatherIcons';
 
 type WeatherIconProps = {
   // Either provide a condition code or text
@@ -16,7 +16,7 @@ export function WeatherIcon({
   condition,
   isDay = 1,
   size = 24,
-  color = "white",
+  color = 'white',
   className,
 }: WeatherIconProps) {
   // Determine which icon to use
@@ -30,7 +30,7 @@ export function WeatherIcon({
     iconName = getWeatherIconByCondition(condition, isDay);
   } else {
     // Default fallback
-    iconName = isDay ? "weather-sunny" : "weather-night";
+    iconName = isDay ? 'weather-sunny' : 'weather-night';
   }
 
   return <Icon name={iconName} size={size} color={color} className={className} />;

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const clientEnvSchema = z.object({
   API_URL: z.string(),

@@ -1,77 +1,77 @@
-"use client";
+'use client';
 
-import { Icon } from "@roninoss/icons";
-import { useState } from "react";
-import { View, ScrollView, Pressable } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { useState } from 'react';
+import { View, ScrollView, Pressable } from 'react-native';
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 // Mock data for shopping list
 const SHOPPING_LIST = [
   {
-    id: "1",
-    name: "Ultralight Rain Pants",
-    priority: "High",
-    estimatedCost: "$89",
-    notes: "Need for upcoming trip, looking at Outdoor Research Helium",
-    category: "Clothing",
+    id: '1',
+    name: 'Ultralight Rain Pants',
+    priority: 'High',
+    estimatedCost: '$89',
+    notes: 'Need for upcoming trip, looking at Outdoor Research Helium',
+    category: 'Clothing',
     purchased: false,
   },
   {
-    id: "2",
-    name: "Titanium Stakes (6)",
-    priority: "Medium",
-    estimatedCost: "$24",
-    notes: "Replace bent aluminum stakes",
-    category: "Shelter",
+    id: '2',
+    name: 'Titanium Stakes (6)',
+    priority: 'Medium',
+    estimatedCost: '$24',
+    notes: 'Replace bent aluminum stakes',
+    category: 'Shelter',
     purchased: false,
   },
   {
-    id: "3",
-    name: "Fuel Canister",
-    priority: "High",
-    estimatedCost: "$8",
-    notes: "Need for next weekend trip",
-    category: "Cooking",
+    id: '3',
+    name: 'Fuel Canister',
+    priority: 'High',
+    estimatedCost: '$8',
+    notes: 'Need for next weekend trip',
+    category: 'Cooking',
     purchased: false,
   },
   {
-    id: "4",
-    name: "Merino Wool Socks",
-    priority: "Medium",
-    estimatedCost: "$18",
-    notes: "Darn Tough preferred",
-    category: "Clothing",
+    id: '4',
+    name: 'Merino Wool Socks',
+    priority: 'Medium',
+    estimatedCost: '$18',
+    notes: 'Darn Tough preferred',
+    category: 'Clothing',
     purchased: false,
   },
   {
-    id: "5",
-    name: "Trekking Pole Tip Protectors",
-    priority: "Low",
-    estimatedCost: "$6",
-    notes: "For travel and storage",
-    category: "Accessories",
+    id: '5',
+    name: 'Trekking Pole Tip Protectors',
+    priority: 'Low',
+    estimatedCost: '$6',
+    notes: 'For travel and storage',
+    category: 'Accessories',
     purchased: false,
   },
   {
-    id: "6",
-    name: "Backpack Rain Cover",
-    priority: "Medium",
-    estimatedCost: "$35",
-    notes: "Size medium for 50L pack",
-    category: "Accessories",
+    id: '6',
+    name: 'Backpack Rain Cover',
+    priority: 'Medium',
+    estimatedCost: '$35',
+    notes: 'Size medium for 50L pack',
+    category: 'Accessories',
     purchased: true,
   },
   {
-    id: "7",
-    name: "Rechargeable Headlamp",
-    priority: "High",
-    estimatedCost: "$45",
-    notes: "Black Diamond or Petzl",
-    category: "Electronics",
+    id: '7',
+    name: 'Rechargeable Headlamp',
+    priority: 'High',
+    estimatedCost: '$45',
+    notes: 'Black Diamond or Petzl',
+    category: 'Electronics',
     purchased: true,
   },
 ];
@@ -79,19 +79,19 @@ const SHOPPING_LIST = [
 function PriorityBadge({ priority }: { priority: string }) {
   const getColor = () => {
     switch (priority) {
-      case "High":
-        return "bg-red-500";
-      case "Medium":
-        return "bg-amber-500";
-      case "Low":
-        return "bg-green-500";
+      case 'High':
+        return 'bg-red-500';
+      case 'Medium':
+        return 'bg-amber-500';
+      case 'Low':
+        return 'bg-green-500';
       default:
-        return "bg-gray-500";
+        return 'bg-gray-500';
     }
   };
 
   return (
-    <View className={cn("rounded-full px-2 py-1", getColor())}>
+    <View className={cn('rounded-full px-2 py-1', getColor())}>
       <Text variant="caption2" className="font-medium text-white">
         {priority}
       </Text>
@@ -105,8 +105,8 @@ function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
   return (
     <View
       className={cn(
-        "mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm",
-        item.purchased && "opacity-60",
+        'mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm',
+        item.purchased && 'opacity-60',
       )}
     >
       <View className="p-4">
@@ -142,12 +142,12 @@ function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
 }
 
 export default function ShoppingListScreen() {
-  const [filter, setFilter] = useState<"all" | "pending" | "purchased">("pending");
+  const [filter, setFilter] = useState<'all' | 'pending' | 'purchased'>('pending');
 
   const filteredItems = SHOPPING_LIST.filter((item) => {
-    if (filter === "all") return true;
-    if (filter === "pending") return !item.purchased;
-    if (filter === "purchased") return item.purchased;
+    if (filter === 'all') return true;
+    if (filter === 'pending') return !item.purchased;
+    if (filter === 'purchased') return item.purchased;
     return true;
   });
 
@@ -163,15 +163,15 @@ export default function ShoppingListScreen() {
             <View className="flex-row overflow-hidden rounded-lg bg-card">
               <Pressable
                 className={cn(
-                  "px-3 py-1.5",
-                  filter === "pending" ? "bg-primary" : "bg-transparent",
+                  'px-3 py-1.5',
+                  filter === 'pending' ? 'bg-primary' : 'bg-transparent',
                 )}
-                onPress={() => setFilter("pending")}
+                onPress={() => setFilter('pending')}
               >
                 <Text
                   variant="subhead"
                   className={
-                    filter === "pending" ? "text-primary-foreground" : "text-muted-foreground"
+                    filter === 'pending' ? 'text-primary-foreground' : 'text-muted-foreground'
                   }
                 >
                   To Buy
@@ -179,27 +179,27 @@ export default function ShoppingListScreen() {
               </Pressable>
               <Pressable
                 className={cn(
-                  "px-3 py-1.5",
-                  filter === "purchased" ? "bg-primary" : "bg-transparent",
+                  'px-3 py-1.5',
+                  filter === 'purchased' ? 'bg-primary' : 'bg-transparent',
                 )}
-                onPress={() => setFilter("purchased")}
+                onPress={() => setFilter('purchased')}
               >
                 <Text
                   variant="subhead"
                   className={
-                    filter === "purchased" ? "text-primary-foreground" : "text-muted-foreground"
+                    filter === 'purchased' ? 'text-primary-foreground' : 'text-muted-foreground'
                   }
                 >
                   Purchased
                 </Text>
               </Pressable>
               <Pressable
-                className={cn("px-3 py-1.5", filter === "all" ? "bg-primary" : "bg-transparent")}
-                onPress={() => setFilter("all")}
+                className={cn('px-3 py-1.5', filter === 'all' ? 'bg-primary' : 'bg-transparent')}
+                onPress={() => setFilter('all')}
               >
                 <Text
                   variant="subhead"
-                  className={filter === "all" ? "text-primary-foreground" : "text-muted-foreground"}
+                  className={filter === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
                 >
                   All
                 </Text>

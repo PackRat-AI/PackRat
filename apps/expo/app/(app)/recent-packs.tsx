@@ -1,11 +1,11 @@
-import { Icon } from "@roninoss/icons";
-import { View, ScrollView, Image } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { View, ScrollView, Image } from 'react-native';
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { useRecentPacks } from "~/features/packs/hooks/useRecentPacks";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { getRelativeTime } from "~/lib/utils/getRelativeTime";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { useRecentPacks } from '~/features/packs/hooks/useRecentPacks';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { getRelativeTime } from '~/lib/utils/getRelativeTime';
 
 function RecentPackCard({ pack }: { pack: any }) {
   const { colors } = useColorScheme();

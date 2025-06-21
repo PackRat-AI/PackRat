@@ -1,8 +1,8 @@
-import { Icon } from "@roninoss/icons";
-import { FlashList } from "@shopify/flash-list";
-import { BlurView } from "expo-blur";
-import { router, Stack } from "expo-router";
-import * as React from "react";
+import { Icon } from '@roninoss/icons';
+import { FlashList } from '@shopify/flash-list';
+import { BlurView } from 'expo-blur';
+import { router, Stack } from 'expo-router';
+import * as React from 'react';
 import {
   Dimensions,
   Image,
@@ -14,13 +14,13 @@ import {
   TextStyle,
   View,
   ViewStyle,
-} from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+} from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
   KeyboardAvoidingView,
   KeyboardStickyView,
   useReanimatedKeyboardAnimation,
-} from "react-native-keyboard-controller";
+} from 'react-native-keyboard-controller';
 import Animated, {
   clamp,
   interpolate,
@@ -28,23 +28,23 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar, AvatarFallback } from "nativewindui/Avatar";
-import { Button } from "nativewindui/Button";
-import { ContextMenu } from "nativewindui/ContextMenu";
-import { ContextMenuRef } from "nativewindui/ContextMenu/types";
-import { createContextItem } from "nativewindui/ContextMenu/utils";
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
+import { ContextMenu } from 'nativewindui/ContextMenu';
+import { ContextMenuRef } from 'nativewindui/ContextMenu/types';
+import { createContextItem } from 'nativewindui/ContextMenu/utils';
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
 
-const ME = "Alice";
+const ME = 'Alice';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 
-const dimensions = Dimensions.get("window");
+const dimensions = Dimensions.get('window');
 
 const ROOT_STYLE: ViewStyle = {
   flex: 1,
@@ -164,13 +164,13 @@ export default function ChatIos() {
             }}
             data={messages}
             renderItem={({ item, index }) => {
-              if (typeof item === "string") {
+              if (typeof item === 'string') {
                 return <DateSeparator date={item} />;
               }
 
               const nextMessage = messages[index - 1];
               const isSameNextSender =
-                typeof nextMessage !== "string" ? nextMessage?.sender === item.sender : false;
+                typeof nextMessage !== 'string' ? nextMessage?.sender === item.sender : false;
 
               return (
                 <ChatBubble
@@ -195,7 +195,7 @@ function header() {
 }
 
 const HEADER_POSITION_STYLE: ViewStyle = {
-  position: "absolute",
+  position: 'absolute',
   zIndex: 50,
   top: 0,
   left: 0,
@@ -203,14 +203,14 @@ const HEADER_POSITION_STYLE: ViewStyle = {
 };
 
 const MOCK_CONVERSATION_INFO = {
-  name: "George Martinez",
-  initials: "GM",
+  name: 'George Martinez',
+  initials: 'GM',
 };
 
 function Header() {
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
-  if (Platform.OS === "ios") {
+  if (Platform.OS === 'ios') {
     return (
       <BlurView
         intensity={100}
@@ -280,8 +280,8 @@ function Header() {
             <Icon
               color={colors.foreground}
               name={Platform.select({
-                ios: "chevron-left",
-                default: "arrow-left",
+                ios: 'chevron-left',
+                default: 'arrow-left',
               })}
             />
           </Button>
@@ -319,24 +319,24 @@ function DateSeparator({ date }: { date: string }) {
 
 // Add as class when possible: https://github.com/marklawlor/nativewind/issues/522
 const BORDER_CURVE: ViewStyle = {
-  borderCurve: "continuous",
+  borderCurve: 'continuous',
 };
 
 const CONTEXT_MENU_ITEMS = [
   createContextItem({
-    actionKey: "reply",
-    title: "Reply",
-    icon: { name: "arrow-left-bold-outline" },
+    actionKey: 'reply',
+    title: 'Reply',
+    icon: { name: 'arrow-left-bold-outline' },
   }),
   createContextItem({
-    actionKey: "sticker",
-    title: "Sticker",
-    icon: { name: "plus-box-outline" },
+    actionKey: 'sticker',
+    title: 'Sticker',
+    icon: { name: 'plus-box-outline' },
   }),
   createContextItem({
-    actionKey: "copy",
-    title: "Copy",
-    icon: { name: "clipboard-outline" },
+    actionKey: 'copy',
+    title: 'Copy',
+    icon: { name: 'clipboard-outline' },
   }),
 ];
 
@@ -361,7 +361,7 @@ function ChatBubble({
   const dateStyle = useAnimatedStyle(() => {
     return {
       width: 75,
-      position: "absolute",
+      position: 'absolute',
       right: 0,
       paddingLeft: 8,
       transform: [{ translateX: interpolate(translateX.value, [-75, 0], [0, 75]) }],
@@ -376,80 +376,80 @@ function ChatBubble({
     return (
       <View
         className={cn(
-          "bg-card flex-row gap-1 rounded-full p-0.5",
-          Platform.OS === "ios" && "ios:bg-card/60 ios:dark:bg-border/70",
+          'bg-card flex-row gap-1 rounded-full p-0.5',
+          Platform.OS === 'ios' && 'ios:bg-card/60 ios:dark:bg-border/70',
         )}
       >
         <Button
           size="icon"
-          variant={item.reactions.love?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.love?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
           className="ios:rounded-full rounded-full"
         >
           <Icon
             name="heart"
             size={24}
-            color={item.reactions.love?.includes(ME) ? "white" : colors.grey}
+            color={item.reactions.love?.includes(ME) ? 'white' : colors.grey}
           />
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.like?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.like?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
           className="ios:rounded-full rounded-full"
         >
           <Icon
-            ios={{ name: "hand.thumbsup.fill" }}
+            ios={{ name: 'hand.thumbsup.fill' }}
             materialIcon={{
-              type: "MaterialCommunityIcons",
-              name: "thumb-up",
+              type: 'MaterialCommunityIcons',
+              name: 'thumb-up',
             }}
             size={24}
-            color={item.reactions.like?.includes(ME) ? "white" : colors.grey}
+            color={item.reactions.like?.includes(ME) ? 'white' : colors.grey}
           />
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.dislike?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.dislike?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
           className="ios:rounded-full rounded-full"
         >
           <Icon
-            ios={{ name: "hand.thumbsdown.fill" }}
+            ios={{ name: 'hand.thumbsdown.fill' }}
             materialIcon={{
-              type: "MaterialCommunityIcons",
-              name: "thumb-down",
+              type: 'MaterialCommunityIcons',
+              name: 'thumb-down',
             }}
             size={24}
-            color={item.reactions.dislike?.includes(ME) ? "white" : colors.grey}
+            color={item.reactions.dislike?.includes(ME) ? 'white' : colors.grey}
           />
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.exclamation?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.exclamation?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
           className="ios:rounded-full rounded-full"
         >
           <Icon
             name="exclamation"
             size={24}
-            color={item.reactions.exclamation?.includes(ME) ? "white" : colors.grey}
+            color={item.reactions.exclamation?.includes(ME) ? 'white' : colors.grey}
           />
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.question?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.question?.includes(ME) ? 'primary' : 'plain'}
           onPress={closeContextMenu}
           className="ios:rounded-full rounded-full"
         >
           <Icon
-            ios={{ name: "questionmark" }}
+            ios={{ name: 'questionmark' }}
             materialIcon={{
-              type: "MaterialCommunityIcons",
-              name: "comment-question-outline",
+              type: 'MaterialCommunityIcons',
+              name: 'comment-question-outline',
             }}
             size={24}
-            color={item.reactions.question?.includes(ME) ? "white" : colors.grey}
+            color={item.reactions.question?.includes(ME) ? 'white' : colors.grey}
           />
         </Button>
       </View>
@@ -461,25 +461,25 @@ function ChatBubble({
 
     return item.sender === ME
       ? textIsLessThan25
-        ? "end"
-        : "start"
+        ? 'end'
+        : 'start'
       : textIsLessThan25
-        ? "start"
-        : "end";
+        ? 'start'
+        : 'end';
   }, [item.text, item.sender]);
 
   return (
     <View
       className={cn(
-        "justify-center px-2 pb-3.5",
-        isSameNextSender ? "pb-1" : "pb-3.5",
-        item.sender === ME ? "items-end pl-16" : "items-start pr-16",
+        'justify-center px-2 pb-3.5',
+        isSameNextSender ? 'pb-1' : 'pb-3.5',
+        item.sender === ME ? 'items-end pl-16' : 'items-start pr-16',
       )}
     >
       <Animated.View style={item.sender === ME ? rootStyle : undefined}>
         {item.attachments.length > 0 ? (
           <View
-            className={cn("flex-row items-center gap-4", item.sender === ME && "flex-row-reverse")}
+            className={cn('flex-row items-center gap-4', item.sender === ME && 'flex-row-reverse')}
           >
             <View>
               <ContextMenu
@@ -493,7 +493,7 @@ function ChatBubble({
                 <Pressable>
                   <Image
                     source={{ uri: item.attachments[0].url }}
-                    style={{ width: 200, height: 200, resizeMode: "cover" }}
+                    style={{ width: 200, height: 200, resizeMode: 'cover' }}
                     borderRadius={12}
                   />
                 </Pressable>
@@ -501,32 +501,32 @@ function ChatBubble({
               {item.reactions.like?.includes(ME) && (
                 <View
                   className={cn(
-                    "bg-card dark:bg-background absolute -top-3 rounded-full p-px",
-                    item.sender === ME ? "-left-5" : "-right-5",
+                    'bg-card dark:bg-background absolute -top-3 rounded-full p-px',
+                    item.sender === ME ? '-left-5' : '-right-5',
                   )}
                 >
                   <View className="bg-primary rounded-full p-1">
                     <Icon
-                      ios={{ name: "hand.thumbsup.fill" }}
+                      ios={{ name: 'hand.thumbsup.fill' }}
                       materialIcon={{
-                        type: "MaterialCommunityIcons",
-                        name: "thumb-up",
+                        type: 'MaterialCommunityIcons',
+                        name: 'thumb-up',
                       }}
                       size={18}
                       color="white"
                     />
-                    {Platform.OS === "ios" && (
+                    {Platform.OS === 'ios' && (
                       <>
                         <View
                           className={cn(
-                            "bg-primary absolute bottom-0 h-2 w-2 rounded-full",
-                            item.sender === ME ? "left-0" : "right-0",
+                            'bg-primary absolute bottom-0 h-2 w-2 rounded-full',
+                            item.sender === ME ? 'left-0' : 'right-0',
                           )}
                         />
                         <View
                           className={cn(
-                            "bg-primary absolute -bottom-1 h-1 w-1 rounded-full",
-                            item.sender === ME ? "-left-1" : "-right-1",
+                            'bg-primary absolute -bottom-1 h-1 w-1 rounded-full',
+                            item.sender === ME ? '-left-1' : '-right-1',
                           )}
                         />
                       </>
@@ -544,8 +544,8 @@ function ChatBubble({
               <Icon
                 name="arrow-down"
                 ios={{
-                  name: "arrow.down.square",
-                  renderingMode: "hierarchical",
+                  name: 'arrow.down.square',
+                  renderingMode: 'hierarchical',
                 }}
                 color={colors.primary}
                 size={Platform.select({ ios: 27, default: 21 })}
@@ -556,32 +556,32 @@ function ChatBubble({
           <View>
             <View
               className={cn(
-                "absolute bottom-0 items-center justify-center",
-                item.sender === ME ? "-right-2.5" : "-left-2 ",
+                'absolute bottom-0 items-center justify-center',
+                item.sender === ME ? '-right-2.5' : '-left-2 ',
               )}
             >
-              {Platform.OS === "ios" && (
+              {Platform.OS === 'ios' && (
                 <>
                   <View
                     className={cn(
-                      "h-5 w-5 rounded-full",
+                      'h-5 w-5 rounded-full',
                       item.sender === ME
-                        ? "bg-primary"
-                        : Platform.OS === "ios"
-                          ? "bg-background dark:bg-muted"
-                          : "bg-background dark:bg-muted-foreground",
+                        ? 'bg-primary'
+                        : Platform.OS === 'ios'
+                          ? 'bg-background dark:bg-muted'
+                          : 'bg-background dark:bg-muted-foreground',
                     )}
                   />
                   <View
                     className={cn(
-                      "bg-card dark:bg-background absolute h-5 w-5 rounded-full",
-                      item.sender === ME ? "-right-2" : "right-2",
+                      'bg-card dark:bg-background absolute h-5 w-5 rounded-full',
+                      item.sender === ME ? '-right-2' : 'right-2',
                     )}
                   />
                   <View
                     className={cn(
-                      "bg-card dark:bg-background absolute  h-5 w-5  -translate-y-1 rounded-full",
-                      item.sender === ME ? "-right-2" : "right-2",
+                      'bg-card dark:bg-background absolute  h-5 w-5  -translate-y-1 rounded-full',
+                      item.sender === ME ? '-right-2' : 'right-2',
                     )}
                   />
                 </>
@@ -600,44 +600,44 @@ function ChatBubble({
                   <View
                     style={BORDER_CURVE}
                     className={cn(
-                      "bg-background dark:bg-muted-foreground rounded-2xl px-3 py-1.5",
-                      Platform.OS === "ios" && "dark:bg-muted",
-                      item.sender === ME && "bg-primary dark:bg-primary",
+                      'bg-background dark:bg-muted-foreground rounded-2xl px-3 py-1.5',
+                      Platform.OS === 'ios' && 'dark:bg-muted',
+                      item.sender === ME && 'bg-primary dark:bg-primary',
                     )}
                   >
-                    <Text className={cn(item.sender === ME && "text-white")}>{item.text}</Text>
+                    <Text className={cn(item.sender === ME && 'text-white')}>{item.text}</Text>
                   </View>
                 </Pressable>
               </ContextMenu>
               {item.reactions.like?.includes(ME) && (
                 <View
                   className={cn(
-                    "bg-card dark:bg-background absolute -top-3 rounded-full p-px",
-                    item.sender === ME ? "-left-5" : "-right-5",
+                    'bg-card dark:bg-background absolute -top-3 rounded-full p-px',
+                    item.sender === ME ? '-left-5' : '-right-5',
                   )}
                 >
                   <View className="bg-primary rounded-full p-1">
                     <Icon
-                      ios={{ name: "hand.thumbsup.fill" }}
+                      ios={{ name: 'hand.thumbsup.fill' }}
                       materialIcon={{
-                        type: "MaterialCommunityIcons",
-                        name: "thumb-up",
+                        type: 'MaterialCommunityIcons',
+                        name: 'thumb-up',
                       }}
                       size={18}
                       color="white"
                     />
-                    {Platform.OS === "ios" && (
+                    {Platform.OS === 'ios' && (
                       <>
                         <View
                           className={cn(
-                            "bg-primary absolute bottom-0 h-2 w-2 rounded-full",
-                            item.sender === ME ? "left-0" : "right-0",
+                            'bg-primary absolute bottom-0 h-2 w-2 rounded-full',
+                            item.sender === ME ? 'left-0' : 'right-0',
                           )}
                         />
                         <View
                           className={cn(
-                            "bg-primary absolute -bottom-1 h-1 w-1 rounded-full",
-                            item.sender === ME ? "-left-1" : "-right-1",
+                            'bg-primary absolute -bottom-1 h-1 w-1 rounded-full',
+                            item.sender === ME ? '-left-1' : '-right-1',
                           )}
                         />
                       </>
@@ -651,7 +651,7 @@ function ChatBubble({
         {item.sender === ME && !!item.isRead && (
           <View className="items-end pt-0.5">
             <Text variant="caption2" className="text-muted-foreground font-medium">
-              Read{" "}
+              Read{' '}
               <Text variant="caption2" className="text-muted-foreground font-normal">
                 Yesterday
               </Text>
@@ -670,7 +670,7 @@ function ChatBubble({
 }
 
 const COMPOSER_STYLE: ViewStyle = {
-  position: "absolute",
+  position: 'absolute',
   zIndex: 50,
   bottom: 0,
   left: 0,
@@ -678,7 +678,7 @@ const COMPOSER_STYLE: ViewStyle = {
 };
 
 const TEXT_INPUT_STYLE: TextStyle = {
-  borderCurve: "continuous",
+  borderCurve: 'continuous',
   maxHeight: 300,
 };
 
@@ -691,7 +691,7 @@ function Composer({
 }) {
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
-  const [message, setMessage] = React.useState("");
+  const [message, setMessage] = React.useState('');
 
   function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
     textInputHeight.value = Math.max(
@@ -709,15 +709,15 @@ function Composer({
         readBy: [],
         sender: ME,
         text: message,
-        date: new Date().toISOString().split("T")[0],
-        time: new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
         }),
       },
       ...prev,
     ]);
-    setMessage("");
+    setMessage('');
   }
 
   return (
@@ -727,7 +727,7 @@ function Composer({
         COMPOSER_STYLE,
         {
           backgroundColor: Platform.select({
-            ios: isDarkColorScheme ? "#00000080" : "#ffffff80",
+            ios: isDarkColorScheme ? '#00000080' : '#ffffff80',
             default: isDarkColorScheme ? colors.background : colors.card,
           }),
           paddingBottom: insets.bottom,
@@ -791,176 +791,176 @@ type MockMessage = {
 
 const MOCK_MESSAGES: (string | MockMessage)[] = [
   {
-    id: "36",
-    sender: "Bob",
-    text: "Hope you get some rest soon!",
-    date: "2024-07-13",
-    time: "10:08 AM",
+    id: '36',
+    sender: 'Bob',
+    text: 'Hope you get some rest soon!',
+    date: '2024-07-13',
+    time: '10:08 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "35",
-    sender: "Alice",
-    text: "Just yesterday. Still a bit jet-lagged.",
-    date: "2024-07-13",
-    time: "10:07 AM",
+    id: '35',
+    sender: 'Alice',
+    text: 'Just yesterday. Still a bit jet-lagged.',
+    date: '2024-07-13',
+    time: '10:07 AM',
     reactions: {},
     isRead: true,
     attachments: [],
   },
   {
-    id: "34",
-    sender: "Bob",
-    text: "When did you get back?",
-    date: "2024-07-13",
-    time: "10:06 AM",
+    id: '34',
+    sender: 'Bob',
+    text: 'When did you get back?',
+    date: '2024-07-13',
+    time: '10:06 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "33",
-    sender: "Alice",
-    text: "Yes, it was a great trip.",
-    date: "2024-07-13",
-    time: "10:05 AM",
+    id: '33',
+    sender: 'Alice',
+    text: 'Yes, it was a great trip.',
+    date: '2024-07-13',
+    time: '10:05 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "32",
-    sender: "Bob",
-    text: "That looks amazing!",
-    date: "2024-07-13",
-    time: "10:04 AM",
+    id: '32',
+    sender: 'Bob',
+    text: 'That looks amazing!',
+    date: '2024-07-13',
+    time: '10:04 AM',
     reactions: {
-      like: ["Alice"],
+      like: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "31",
-    sender: "Alice",
-    text: "",
-    date: "2024-07-13",
-    time: "10:03 AM",
+    id: '31',
+    sender: 'Alice',
+    text: '',
+    date: '2024-07-13',
+    time: '10:03 AM',
     reactions: {
-      like: ["Alice"],
+      like: ['Alice'],
     },
     attachments: [
       {
-        type: "image",
-        url: "https://loremflickr.com/640/360",
+        type: 'image',
+        url: 'https://loremflickr.com/640/360',
       },
     ],
   },
   {
-    id: "30",
-    sender: "Alice",
-    text: "Here is a picture of the sunset from my vacation!",
-    date: "2024-07-13",
-    time: "10:02 AM",
+    id: '30',
+    sender: 'Alice',
+    text: 'Here is a picture of the sunset from my vacation!',
+    date: '2024-07-13',
+    time: '10:02 AM',
     reactions: {
       love: [],
     },
     attachments: [
       {
-        type: "image",
-        url: "https://placebear.com/640/360",
+        type: 'image',
+        url: 'https://placebear.com/640/360',
       },
     ],
   },
   {
-    id: "29",
-    sender: "Bob",
-    text: "I am good, thanks! How about you?",
-    date: "2024-07-13",
-    time: "10:01 AM",
+    id: '29',
+    sender: 'Bob',
+    text: 'I am good, thanks! How about you?',
+    date: '2024-07-13',
+    time: '10:01 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "28",
-    sender: "Alice",
-    text: "Hey, how are you?",
-    date: "2024-07-13",
-    time: "10:00 AM",
+    id: '28',
+    sender: 'Alice',
+    text: 'Hey, how are you?',
+    date: '2024-07-13',
+    time: '10:00 AM',
     reactions: {
       like: [],
     },
     attachments: [],
   },
-  "Mon, 13 Jul 2024 10:00 AM",
+  'Mon, 13 Jul 2024 10:00 AM',
 
   {
-    id: "27",
-    sender: "Bob",
-    text: "Hope you get some rest soon!",
-    date: "2024-07-12",
-    time: "10:08 AM",
+    id: '27',
+    sender: 'Bob',
+    text: 'Hope you get some rest soon!',
+    date: '2024-07-12',
+    time: '10:08 AM',
     reactions: {
-      like: ["Alice"],
+      like: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "26",
-    sender: "Alice",
-    text: "Just yesterday. Still a bit jet-lagged.",
-    date: "2024-07-12T10:07:00Z",
-    time: "10:07 AM",
+    id: '26',
+    sender: 'Alice',
+    text: 'Just yesterday. Still a bit jet-lagged.',
+    date: '2024-07-12T10:07:00Z',
+    time: '10:07 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "25",
-    sender: "Bob",
-    text: "When did you get back?",
-    date: "2024-07-12T10:06:00Z",
-    time: "10:06 AM",
+    id: '25',
+    sender: 'Bob',
+    text: 'When did you get back?',
+    date: '2024-07-12T10:06:00Z',
+    time: '10:06 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "24",
-    sender: "Alice",
-    text: "Yes, it was a great trip.",
-    date: "2024-07-12T10:05:00Z",
-    time: "10:05 AM",
+    id: '24',
+    sender: 'Alice',
+    text: 'Yes, it was a great trip.',
+    date: '2024-07-12T10:05:00Z',
+    time: '10:05 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "23",
-    sender: "Bob",
-    text: "That looks amazing!",
-    date: "2024-07-12T10:04:00Z",
-    time: "10:04 AM",
+    id: '23',
+    sender: 'Bob',
+    text: 'That looks amazing!',
+    date: '2024-07-12T10:04:00Z',
+    time: '10:04 AM',
     reactions: {
-      like: ["Alice"],
+      like: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "22",
-    sender: "Alice",
-    text: "",
-    date: "2024-07-12T10:03:00Z",
-    time: "10:03 AM",
+    id: '22',
+    sender: 'Alice',
+    text: '',
+    date: '2024-07-12T10:03:00Z',
+    time: '10:03 AM',
     reactions: {},
     attachments: [
       {
-        type: "image",
-        url: "https://loremflickr.com/640/360",
+        type: 'image',
+        url: 'https://loremflickr.com/640/360',
       },
     ],
   },
   {
-    id: "21",
-    sender: "Alice",
-    text: "Here is a picture of the sunset from my vacation!",
-    date: "2024-07-12T10:02:00Z",
-    time: "10:02 AM",
+    id: '21',
+    sender: 'Alice',
+    text: 'Here is a picture of the sunset from my vacation!',
+    date: '2024-07-12T10:02:00Z',
+    time: '10:02 AM',
     reactions: {
       like: [],
       love: [],
@@ -970,131 +970,131 @@ const MOCK_MESSAGES: (string | MockMessage)[] = [
     },
     attachments: [
       {
-        type: "image",
-        url: "https://placebear.com/640/360",
+        type: 'image',
+        url: 'https://placebear.com/640/360',
       },
     ],
   },
   {
-    id: "20",
-    sender: "Bob",
-    text: "I am good, thanks! How about you?",
-    date: "2024-07-12T10:01:00Z",
-    time: "10:01 AM",
+    id: '20',
+    sender: 'Bob',
+    text: 'I am good, thanks! How about you?',
+    date: '2024-07-12T10:01:00Z',
+    time: '10:01 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "19",
-    sender: "Alice",
-    text: "Hey, how are you?",
-    date: "2024-07-12T10:00:00Z",
-    time: "10:00 AM",
+    id: '19',
+    sender: 'Alice',
+    text: 'Hey, how are you?',
+    date: '2024-07-12T10:00:00Z',
+    time: '10:00 AM',
     reactions: {
-      like: ["Bob"],
+      like: ['Bob'],
     },
     attachments: [],
   },
-  "Sun, 12 Jul 2024 10:00 AM",
+  'Sun, 12 Jul 2024 10:00 AM',
 
   {
-    id: "18",
-    sender: "Bob",
-    text: "Hope you get some rest soon!",
-    date: "2024-07-11T10:08:00Z",
-    time: "10:08 AM",
+    id: '18',
+    sender: 'Bob',
+    text: 'Hope you get some rest soon!',
+    date: '2024-07-11T10:08:00Z',
+    time: '10:08 AM',
     reactions: {
-      like: ["Alice"],
+      like: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "17",
-    sender: "Alice",
-    text: "Just yesterday. Still a bit jet-lagged.",
-    date: "2024-07-11T10:07:00Z",
-    time: "10:07 AM",
+    id: '17',
+    sender: 'Alice',
+    text: 'Just yesterday. Still a bit jet-lagged.',
+    date: '2024-07-11T10:07:00Z',
+    time: '10:07 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "16",
-    sender: "Bob",
-    text: "When did you get back?",
-    date: "2024-07-11T10:06:00Z",
-    time: "10:06 AM",
+    id: '16',
+    sender: 'Bob',
+    text: 'When did you get back?',
+    date: '2024-07-11T10:06:00Z',
+    time: '10:06 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "15",
-    sender: "Alice",
-    text: "Yes, it was a great trip.",
-    date: "2024-07-11T10:05:00Z",
-    time: "10:05 AM",
+    id: '15',
+    sender: 'Alice',
+    text: 'Yes, it was a great trip.',
+    date: '2024-07-11T10:05:00Z',
+    time: '10:05 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "14",
-    sender: "Bob",
-    text: "That looks amazing!",
-    date: "2024-07-11T10:04:00Z",
-    time: "10:04 AM",
+    id: '14',
+    sender: 'Bob',
+    text: 'That looks amazing!',
+    date: '2024-07-11T10:04:00Z',
+    time: '10:04 AM',
     reactions: {
-      like: ["Alice"],
+      like: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "13",
-    sender: "Alice",
-    text: "",
-    date: "2024-07-11T10:03:00Z",
-    time: "10:03 AM",
+    id: '13',
+    sender: 'Alice',
+    text: '',
+    date: '2024-07-11T10:03:00Z',
+    time: '10:03 AM',
     reactions: {},
     attachments: [
       {
-        type: "image",
-        url: "https://loremflickr.com/640/360",
+        type: 'image',
+        url: 'https://loremflickr.com/640/360',
       },
     ],
   },
   {
-    id: "12",
-    sender: "Alice",
-    text: "Here is a picture of the sunset from my vacation!",
-    date: "2024-07-11T10:02:00Z",
-    time: "10:02 AM",
+    id: '12',
+    sender: 'Alice',
+    text: 'Here is a picture of the sunset from my vacation!',
+    date: '2024-07-11T10:02:00Z',
+    time: '10:02 AM',
     reactions: {
       love: [],
     },
     attachments: [
       {
-        type: "image",
-        url: "https://placebear.com/640/360",
+        type: 'image',
+        url: 'https://placebear.com/640/360',
       },
     ],
   },
   {
-    id: "11",
-    sender: "Bob",
-    text: "I am good, thanks! How about you?",
-    date: "2024-07-11T10:01:00Z",
-    time: "10:01 AM",
+    id: '11',
+    sender: 'Bob',
+    text: 'I am good, thanks! How about you?',
+    date: '2024-07-11T10:01:00Z',
+    time: '10:01 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "10",
-    sender: "Alice",
-    text: "Hey, how are you?",
-    date: "2024-07-11T10:00:00Z",
-    time: "10:00 AM",
+    id: '10',
+    sender: 'Alice',
+    text: 'Hey, how are you?',
+    date: '2024-07-11T10:00:00Z',
+    time: '10:00 AM',
     reactions: {
-      like: ["Bob"],
+      like: ['Bob'],
     },
     attachments: [],
   },
-  "Sat, 11 Jul 2024 10:00 AM",
+  'Sat, 11 Jul 2024 10:00 AM',
 ];

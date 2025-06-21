@@ -1,9 +1,9 @@
-import { Icon } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { View } from "react-native";
-import { ListItem } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Icon } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { ListItem } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export function PackTemplatesTile() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export function PackTemplatesTile() {
     //   alertRef.current?.show();
     //   return;
     // }
-    router.push("/pack-templates");
+    router.push('/pack-templates');
   };
 
   const packTemplateCount = 10;
@@ -36,7 +36,7 @@ export function PackTemplatesTile() {
         </View>
       }
       item={{
-        title: "Pack Templates",
+        title: 'Pack Templates',
       }}
       onPress={handlePress}
       target="Cell"

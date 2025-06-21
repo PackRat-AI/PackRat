@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { Stack, router } from "expo-router";
-import * as React from "react";
-import { Image, Platform, View, Alert } from "react-native";
-import { KeyboardAwareScrollView, KeyboardStickyView } from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useForm } from "@tanstack/react-form";
-import { z } from "zod";
+import { Stack, router } from 'expo-router';
+import * as React from 'react';
+import { Image, Platform, View, Alert } from 'react-native';
+import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useForm } from '@tanstack/react-form';
+import { z } from 'zod';
 
-import { AlertAnchor } from "nativewindui/Alert";
-import type { AlertRef } from "nativewindui/Alert/types";
-import { Button } from "nativewindui/Button";
-import { Form, FormItem, FormSection } from "nativewindui/Form";
-import { Text } from "nativewindui/Text";
-import { TextField } from "nativewindui/TextField";
-import { useAuthActions } from "~/features/auth/hooks/useAuthActions";
+import { AlertAnchor } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
+import { Button } from 'nativewindui/Button';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { Text } from 'nativewindui/Text';
+import { TextField } from 'nativewindui/TextField';
+import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
 
-const LOGO_SOURCE = require("~/assets/packrat-app-icon-gradient.png");
+const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for email validation
 const emailSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email('Please enter a valid email address'),
 });
 
 type EmailFormValues = z.infer<typeof emailSchema>;
@@ -33,7 +33,7 @@ export default function ForgotPasswordScreen() {
 
   const form = useForm({
     defaultValues: {
-      email: "",
+      email: '',
     },
     validators: {
       onChange: emailSchema,
@@ -46,13 +46,13 @@ export default function ForgotPasswordScreen() {
 
         // Navigate to verification code screen with email
         router.push({
-          pathname: "/auth/one-time-password",
-          params: { email: value.email, mode: "reset-password" },
+          pathname: '/auth/one-time-password',
+          params: { email: value.email, mode: 'reset-password' },
         });
       } catch (error) {
         Alert.alert(
-          "Error",
-          error instanceof Error ? error.message : "Failed to send verification code",
+          'Error',
+          error instanceof Error ? error.message : 'Failed to send verification code',
         );
       } finally {
         setIsLoading(false);
@@ -64,7 +64,7 @@ export default function ForgotPasswordScreen() {
     <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
       <Stack.Screen
         options={{
-          title: "Forgot Password",
+          title: 'Forgot Password',
           headerShadowVisible: false,
         }}
       />
@@ -85,10 +85,10 @@ export default function ForgotPasswordScreen() {
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
               {Platform.select({
                 ios: "What's your email?",
-                default: "Forgot password",
+                default: 'Forgot password',
               })}
             </Text>
-            {Platform.OS !== "ios" && (
+            {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">
                 What's your email?
               </Text>
@@ -106,12 +106,12 @@ export default function ForgotPasswordScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: "Email",
-                          default: "",
+                          ios: 'Email',
+                          default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: "Email",
+                          default: 'Email',
                         })}
                         onSubmitEditing={() => form.handleSubmit()}
                         submitBehavior="submit"
@@ -132,7 +132,7 @@ export default function ForgotPasswordScreen() {
         </View>
       </KeyboardAwareScrollView>
       <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
-        {Platform.OS === "ios" ? (
+        {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
@@ -141,7 +141,7 @@ export default function ForgotPasswordScreen() {
                   onPress={() => form.handleSubmit()}
                   disabled={!canSubmit || isLoading}
                 >
-                  <Text>{isLoading ? "Sending..." : "Send Code"}</Text>
+                  <Text>{isLoading ? 'Sending...' : 'Send Code'}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -152,7 +152,7 @@ export default function ForgotPasswordScreen() {
               variant="plain"
               className="px-2"
               onPress={() => {
-                router.replace("/auth/(create-account)");
+                router.replace('/auth/(create-account)');
               }}
             >
               <Text className="text-sm text-primary">Create Account</Text>
@@ -160,7 +160,7 @@ export default function ForgotPasswordScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
                 <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
-                  <Text className="text-sm">{isLoading ? "Sending..." : "Send Code"}</Text>
+                  <Text className="text-sm">{isLoading ? 'Sending...' : 'Send Code'}</Text>
                 </Button>
               )}
             </form.Subscribe>

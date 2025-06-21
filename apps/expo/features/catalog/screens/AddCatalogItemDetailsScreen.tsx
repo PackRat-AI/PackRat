@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   View,
   ScrollView,
@@ -14,14 +14,14 @@ import {
   Image,
   TouchableOpacity,
   Animated,
-} from "react-native";
-import { Icon } from "@roninoss/icons";
-import { Button } from "nativewindui/Button";
-import { useCatalogItemDetails } from "../hooks";
-import type { WeightUnit } from "~/types";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { Text } from "nativewindui/Text";
-import { useCreatePackItem, usePackDetails } from "~/features/packs";
+} from 'react-native';
+import { Icon } from '@roninoss/icons';
+import { Button } from 'nativewindui/Button';
+import { useCatalogItemDetails } from '../hooks';
+import type { WeightUnit } from '~/types';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { Text } from 'nativewindui/Text';
+import { useCreatePackItem, usePackDetails } from '~/features/packs';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();
@@ -34,8 +34,8 @@ export function AddCatalogItemDetailsScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   // Form state
-  const [quantity, setQuantity] = useState("1");
-  const [notes, setNotes] = useState("");
+  const [quantity, setQuantity] = useState('1');
+  const [notes, setNotes] = useState('');
   const [isConsumable, setIsConsumable] = useState(false);
   const [isWorn, setIsWorn] = useState(false);
 
@@ -52,8 +52,8 @@ export function AddCatalogItemDetailsScreen() {
   // Reset form when catalog item changes
   useEffect(() => {
     if (catalogItem) {
-      setQuantity("1");
-      setNotes("");
+      setQuantity('1');
+      setNotes('');
       setIsConsumable(false);
       setIsWorn(false);
     }
@@ -83,7 +83,7 @@ export function AddCatalogItemDetailsScreen() {
         onSuccess: () => {
           // Navigate back to the catalog item detail screen
           router.dismissTo({
-            pathname: "/catalog/[id]",
+            pathname: '/catalog/[id]',
             params: { id: catalogItemId },
           });
         },
@@ -112,7 +112,7 @@ export function AddCatalogItemDetailsScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-background"
     >
       <SafeAreaView className="flex-1">
@@ -146,7 +146,7 @@ export function AddCatalogItemDetailsScreen() {
                   <View className="mt-1 flex-row items-center">
                     <Icon name="basket-outline" size={14} color={colors.grey} />
                     <Text className="ml-1 text-xs text-muted-foreground">
-                      {pack.items.length} {pack.items.length === 1 ? "item" : "items"}
+                      {pack.items.length} {pack.items.length === 1 ? 'item' : 'items'}
                     </Text>
                     <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
                     <Text className="text-xs capitalize text-muted-foreground">
@@ -158,7 +158,7 @@ export function AddCatalogItemDetailsScreen() {
                   variant="secondary"
                   onPress={() =>
                     router.push({
-                      pathname: "/catalog/add-to-pack",
+                      pathname: '/catalog/add-to-pack',
                       params: { catalogItemId },
                     })
                   }

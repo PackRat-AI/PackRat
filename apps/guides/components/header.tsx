@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { getAllCategories } from "@/lib/categories";
-import { navigationConfig, siteConfig } from "@/lib/config";
-import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { Backpack, ChevronDown } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Search } from "./search";
-import { ThemeToggle } from "./theme-toggle";
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { getAllCategories } from '@/lib/categories';
+import { navigationConfig, siteConfig } from '@/lib/config';
+import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { Backpack, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { Search } from './search';
+import { ThemeToggle } from './theme-toggle';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
 
   // Fetch categories using TanStack Query
   const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
+    queryKey: ['categories'],
     queryFn: getAllCategories,
   });
 
@@ -32,8 +32,8 @@ export default function Header() {
       setScrolled(window.scrollY > 10);
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Get main nav items from config
@@ -47,8 +47,8 @@ export default function Header() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300",
-        scrolled ? "bg-background/80 backdrop-blur-xl border-b" : "bg-background",
+        'sticky top-0 z-50 w-full transition-all duration-300',
+        scrolled ? 'bg-background/80 backdrop-blur-xl border-b' : 'bg-background',
       )}
     >
       <div className="container flex h-16 items-center">

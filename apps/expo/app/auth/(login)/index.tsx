@@ -1,27 +1,27 @@
-import { Link, Stack, router, useLocalSearchParams } from "expo-router";
-import * as React from "react";
-import { Image, Platform, View, Alert } from "react-native";
+import { Link, Stack, router, useLocalSearchParams } from 'expo-router';
+import * as React from 'react';
+import { Image, Platform, View, Alert } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardController,
   KeyboardStickyView,
-} from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useForm } from "@tanstack/react-form";
-import { z } from "zod";
+} from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useForm } from '@tanstack/react-form';
+import { z } from 'zod';
 
-import { Button } from "nativewindui/Button";
-import { Form, FormItem, FormSection } from "nativewindui/Form";
-import { Text } from "nativewindui/Text";
-import { TextField } from "nativewindui/TextField";
-import { useAuth } from "~/features/auth/hooks/useAuth";
+import { Button } from 'nativewindui/Button';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { Text } from 'nativewindui/Text';
+import { TextField } from 'nativewindui/TextField';
+import { useAuth } from '~/features/auth/hooks/useAuth';
 
-const LOGO_SOURCE = require("~/assets/packrat-app-icon-gradient.png");
+const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for login validation
 const loginFormSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 // Type inference
@@ -31,13 +31,13 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [focusedTextField, setFocusedTextField] = React.useState<"email" | "password" | null>(null);
+  const [focusedTextField, setFocusedTextField] = React.useState<'email' | 'password' | null>(null);
   const { redirectTo } = useLocalSearchParams<{ redirectTo: string }>();
 
   const form = useForm({
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
     validators: {
       onChange: loginFormSchema,
@@ -50,8 +50,8 @@ export default function LoginScreen() {
       } catch (error) {
         setIsLoading(false);
         Alert.alert(
-          "Login Failed",
-          error instanceof Error ? error.message : "Invalid email or password",
+          'Login Failed',
+          error instanceof Error ? error.message : 'Invalid email or password',
         );
       }
     },
@@ -64,7 +64,7 @@ export default function LoginScreen() {
     <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
       <Stack.Screen
         options={{
-          title: "Log in",
+          title: 'Log in',
           headerShadowVisible: false,
           headerLeft() {
             return (
@@ -92,9 +92,9 @@ export default function LoginScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: "Welcome back!", default: "Log in" })}
+              {Platform.select({ ios: 'Welcome back!', default: 'Log in' })}
             </Text>
-            {Platform.OS !== "ios" && (
+            {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">Welcome back!</Text>
             )}
           </View>
@@ -106,17 +106,17 @@ export default function LoginScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: "Email",
-                          default: "",
+                          ios: 'Email',
+                          default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: "Email",
+                          default: 'Email',
                         })}
-                        onSubmitEditing={() => KeyboardController.setFocusTo("next")}
+                        onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
                         autoFocus
-                        onFocus={() => setFocusedTextField("email")}
+                        onFocus={() => setFocusedTextField('email')}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -136,14 +136,14 @@ export default function LoginScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: "Password",
-                          default: "",
+                          ios: 'Password',
+                          default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: "Password",
+                          default: 'Password',
                         })}
-                        onFocus={() => setFocusedTextField("password")}
+                        onFocus={() => setFocusedTextField('password')}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -180,7 +180,7 @@ export default function LoginScreen() {
           }),
         }}
       >
-        {Platform.OS === "ios" ? (
+        {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
@@ -189,7 +189,7 @@ export default function LoginScreen() {
                   disabled={!canSubmit || loading}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{loading ? "Logging in..." : "Continue"}</Text>
+                  <Text>{loading ? 'Logging in...' : 'Continue'}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -200,7 +200,7 @@ export default function LoginScreen() {
               variant="plain"
               className="px-2"
               onPress={() => {
-                router.replace("/auth/(create-account)");
+                router.replace('/auth/(create-account)');
               }}
             >
               <Text className="px-0.5 text-sm text-primary">Create Account</Text>
@@ -210,8 +210,8 @@ export default function LoginScreen() {
                 <Button
                   disabled={!canSubmit || loading}
                   onPress={() => {
-                    if (focusedTextField === "email") {
-                      KeyboardController.setFocusTo("next");
+                    if (focusedTextField === 'email') {
+                      KeyboardController.setFocusTo('next');
                       return;
                     }
                     KeyboardController.dismiss();
@@ -219,7 +219,7 @@ export default function LoginScreen() {
                   }}
                 >
                   <Text className="text-sm">
-                    {loading ? "Logging in..." : focusedTextField === "email" ? "Next" : "Submit"}
+                    {loading ? 'Logging in...' : focusedTextField === 'email' ? 'Next' : 'Submit'}
                   </Text>
                 </Button>
               )}
@@ -227,12 +227,12 @@ export default function LoginScreen() {
           </View>
         )}
       </KeyboardStickyView>
-      {Platform.OS === "ios" && (
+      {Platform.OS === 'ios' && (
         <Button
           variant="plain"
           onPress={() => {
             router.replace({
-              pathname: "/auth/(create-account)",
+              pathname: '/auth/(create-account)',
               params: { redirectTo },
             });
           }}

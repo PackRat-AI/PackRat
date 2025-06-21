@@ -1,10 +1,10 @@
-import { siteConfig } from "@/config/site";
-import DeviceMockup from "@/components/ui/device-mockup";
-import GradientText from "@/components/ui/gradient-text";
-import FeatureCard from "@/components/ui/feature-card";
-import { Check } from "lucide-react";
-import GradientBackground from "@/components/ui/gradient-background";
-import GradientBorderCard from "@/components/ui/gradient-border-card";
+import { siteConfig } from '@/config/site';
+import DeviceMockup from '@/components/ui/device-mockup';
+import GradientText from '@/components/ui/gradient-text';
+import FeatureCard from '@/components/ui/feature-card';
+import { Check } from 'lucide-react';
+import GradientBackground from '@/components/ui/gradient-background';
+import GradientBorderCard from '@/components/ui/gradient-border-card';
 
 export default function FeatureSection() {
   return (

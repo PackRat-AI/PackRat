@@ -1,10 +1,10 @@
-import { Pack, WeightUnit } from "../types";
-import { convertFromGrams } from "./convertFromGrams";
-import { convertToGrams } from "./convertToGrams";
+import { Pack, WeightUnit } from '../types';
+import { convertFromGrams } from './convertFromGrams';
+import { convertToGrams } from './convertToGrams';
 
 export const computePackWeights = (
-  pack: Omit<Pack, "baseWeight" | "totalWeight">,
-  preferredUnit: WeightUnit = "g",
+  pack: Omit<Pack, 'baseWeight' | 'totalWeight'>,
+  preferredUnit: WeightUnit = 'g',
 ): Pack => {
   // Initialize weights
   let baseWeightGrams = 0;

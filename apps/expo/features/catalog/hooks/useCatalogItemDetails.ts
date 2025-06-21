@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import type { CatalogItem } from "../types";
-import axiosInstance, { handleApiError } from "~/lib/api/client";
+import { useQuery } from '@tanstack/react-query';
+import type { CatalogItem } from '../types';
+import axiosInstance, { handleApiError } from '~/lib/api/client';
 
 // API function
 export const getCatalogItem = async (id: string): Promise<CatalogItem> => {
@@ -16,7 +16,7 @@ export const getCatalogItem = async (id: string): Promise<CatalogItem> => {
 // Hook
 export function useCatalogItemDetails(id: string) {
   return useQuery({
-    queryKey: ["catalogItem", id],
+    queryKey: ['catalogItem', id],
     queryFn: () => getCatalogItem(id),
     enabled: !!id,
   });

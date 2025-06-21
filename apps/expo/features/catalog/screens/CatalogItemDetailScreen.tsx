@@ -1,16 +1,16 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { ScrollView, View, Image, SafeAreaView, Platform } from "react-native";
-import { Icon } from "@roninoss/icons";
-import { Button } from "nativewindui/Button";
-import { Chip } from "~/components/initial/Chip";
-import { ItemLinks } from "~/components/catalog/ItemLinks";
-import { ItemReviews } from "~/components/catalog/ItemReviews";
-import { useCatalogItemDetails } from "../hooks";
-import { LoadingSpinnerScreen } from "../../../screens/LoadingSpinnerScreen";
-import { ErrorScreen } from "../../../screens/ErrorScreen";
-import { NotFoundScreen } from "../../../screens/NotFoundScreen";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ScrollView, View, Image, SafeAreaView, Platform } from 'react-native';
+import { Icon } from '@roninoss/icons';
+import { Button } from 'nativewindui/Button';
+import { Chip } from '~/components/initial/Chip';
+import { ItemLinks } from '~/components/catalog/ItemLinks';
+import { ItemReviews } from '~/components/catalog/ItemReviews';
+import { useCatalogItemDetails } from '../hooks';
+import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
+import { ErrorScreen } from '../../../screens/ErrorScreen';
+import { NotFoundScreen } from '../../../screens/NotFoundScreen';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export function CatalogItemDetailScreen() {
 
   const handleAddToPack = () => {
     router.push({
-      pathname: "/catalog/add-to-pack",
+      pathname: '/catalog/add-to-pack',
       params: { catalogItemId: item?.id },
     });
   };
@@ -54,12 +54,12 @@ export function CatalogItemDetailScreen() {
         <Image
           source={{
             uri: item.image,
-            ...(Platform.OS === "android"
+            ...(Platform.OS === 'android'
               ? {
                   headers: {
-                    "User-Agent":
-                      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
-                    Accept: "image/webp,image/apng,image/*,*/*;q=0.8",
+                    'User-Agent':
+                      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+                    Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
                   },
                 }
               : {}),
@@ -124,7 +124,7 @@ export function CatalogItemDetailScreen() {
               <View className="mb-2">
                 <Text className="text-xs uppercase text-muted-foreground">USED IN</Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.usageCount} {item.usageCount === 1 ? "pack" : "packs"}
+                  {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
                 </Chip>
               </View>
             )}
@@ -133,9 +133,9 @@ export function CatalogItemDetailScreen() {
           {item.availability && (
             <View className="mb-4 flex-row items-center">
               <Icon
-                name={item.availability === "In Stock" ? "check-circle-outline" : "exclamation"}
+                name={item.availability === 'In Stock' ? 'check-circle-outline' : 'exclamation'}
                 size={16}
-                color={item.availability === "In Stock" ? colors.green : colors.yellow}
+                color={item.availability === 'In Stock' ? colors.green : colors.yellow}
               />
               <Text className="ml-1 text-sm text-foreground">{item.availability}</Text>
             </View>

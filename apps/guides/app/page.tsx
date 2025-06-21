@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import CategoryFilter from "@/components/category-filter";
-import FeaturedGuides from "@/components/featured-guides";
-import GuideCard from "@/components/guide-card";
-import { Button } from "@/components/ui/button";
-import { getAllCategories } from "@/lib/categories";
-import { featuresConfig } from "@/lib/config";
-import { getAllPosts } from "@/lib/mdx-static";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import CategoryFilter from '@/components/category-filter';
+import FeaturedGuides from '@/components/featured-guides';
+import GuideCard from '@/components/guide-card';
+import { Button } from '@/components/ui/button';
+import { getAllCategories } from '@/lib/categories';
+import { featuresConfig } from '@/lib/config';
+import { getAllPosts } from '@/lib/mdx-static';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 function HomeContent() {
   const searchParams = useSearchParams();
-  const category = searchParams.get("category");
-  const search = searchParams.get("search");
+  const category = searchParams.get('category');
+  const search = searchParams.get('search');
 
   const allPosts = getAllPosts();
   const categories = getAllCategories();
@@ -29,7 +29,7 @@ function HomeContent() {
     filteredPosts = allPosts.filter((post) => {
       const searchContent = `${post.title} ${
         post.description
-      } ${post.categories?.join(" ")}`.toLowerCase();
+      } ${post.categories?.join(' ')}`.toLowerCase();
       return searchContent.includes(searchQuery);
     });
   }
@@ -38,7 +38,7 @@ function HomeContent() {
   const featuredGuides = allPosts.slice(0, 3);
 
   // Determine the page title based on search params
-  let pageTitle = "All Guides";
+  let pageTitle = 'All Guides';
   if (search) {
     pageTitle = `Search Results for "${search}"`;
   } else if (category) {

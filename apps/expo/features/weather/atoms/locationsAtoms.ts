@@ -1,11 +1,11 @@
-import { atom } from "jotai";
-import { atomWithStorage, loadable } from "jotai/utils";
-import { asyncStorage } from "~/utils/storage";
-import type { WeatherLocation } from "../types";
+import { atom } from 'jotai';
+import { atomWithStorage, loadable } from 'jotai/utils';
+import { asyncStorage } from '~/utils/storage';
+import type { WeatherLocation } from '../types';
 
 // Create a base atom for locations
 export const baseLocationsAtom = atomWithStorage<WeatherLocation[]>(
-  "locations",
+  'locations',
   [], // Start with an empty array, no hardcoded location
   asyncStorage,
 );
@@ -19,7 +19,7 @@ export const activeLocationAtom = atom(
     const locationsResult = get(locationsAtom);
 
     // Handle the loadable states
-    if (locationsResult.state === "hasData") {
+    if (locationsResult.state === 'hasData') {
       const locations = locationsResult.data;
       return locations.find((location) => location.isActive) || locations[0] || null;
     }
@@ -30,7 +30,7 @@ export const activeLocationAtom = atom(
   (get, set, newActiveId: string) => {
     const locationsResult = get(locationsAtom);
 
-    if (locationsResult.state === "hasData") {
+    if (locationsResult.state === 'hasData') {
       const locations = locationsResult.data;
       const updatedLocations = locations.map((location) => ({
         ...location,
@@ -42,4 +42,4 @@ export const activeLocationAtom = atom(
 );
 
 // Create a search filter atom
-export const searchQueryAtom = atom("");
+export const searchQueryAtom = atom('');

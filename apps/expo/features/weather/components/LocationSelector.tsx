@@ -1,14 +1,14 @@
-import { Icon } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { TouchableOpacity, View, Pressable, Alert, ScrollView } from "react-native";
-import { BottomSheetScrollView, BottomSheetView } from "@gorhom/bottom-sheet";
+import { Icon } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { TouchableOpacity, View, Pressable, Alert, ScrollView } from 'react-native';
+import { BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
 
-import { Text } from "nativewindui/Text";
-import { Sheet, useSheetRef } from "nativewindui/Sheet";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { cn } from "~/lib/cn";
-import { useLocations } from "../hooks";
-import { useActiveLocation } from "../hooks";
+import { Text } from 'nativewindui/Text';
+import { Sheet, useSheetRef } from 'nativewindui/Sheet';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from '~/lib/cn';
+import { useLocations } from '../hooks';
+import { useActiveLocation } from '../hooks';
 
 export function LocationSelector() {
   const { colors } = useColorScheme();
@@ -18,14 +18,14 @@ export function LocationSelector() {
   const bottomSheetRef = useSheetRef();
 
   // Get the locations array safely
-  const locations = locationsState.state === "hasData" ? locationsState.data : [];
+  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
 
   // Handle the case when no locations are saved
   if (!activeLocation) {
     return (
       <View className="px-4 py-2">
         <TouchableOpacity
-          onPress={() => router.push("/weather")}
+          onPress={() => router.push('/weather')}
           className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2"
         >
           <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
@@ -48,9 +48,9 @@ export function LocationSelector() {
     const location = locations.find((loc) => loc.id === locationId);
     if (location) {
       Alert.alert(
-        "Location Set",
+        'Location Set',
         `${location.name} is now your active location.`,
-        [{ text: "OK" }],
+        [{ text: 'OK' }],
         {
           cancelable: true,
         },
@@ -62,7 +62,7 @@ export function LocationSelector() {
     bottomSheetRef.current?.close();
     // Add a small delay to avoid UI conflicts
     setTimeout(() => {
-      router.push("/weather");
+      router.push('/weather');
     }, 300);
   };
 
@@ -82,7 +82,7 @@ export function LocationSelector() {
 
       <Sheet
         ref={bottomSheetRef}
-        snapPoints={["40%"]}
+        snapPoints={['40%']}
         index={-1}
         enableDynamicSizing={false}
         enablePanDownToClose
@@ -102,23 +102,23 @@ export function LocationSelector() {
                   key={location.id}
                   onPress={() => handleSelectLocation(location.id)}
                   className={cn(
-                    "my-2 flex-row items-center rounded-lg p-3",
-                    location.id === activeLocation.id ? "bg-primary/10" : "bg-muted/50",
+                    'my-2 flex-row items-center rounded-lg p-3',
+                    location.id === activeLocation.id ? 'bg-primary/10' : 'bg-muted/50',
                   )}
                   style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}
                 >
                   <View
                     className={cn(
-                      "mr-3 h-8 w-8 items-center justify-center rounded-full",
-                      location.id === activeLocation.id ? "bg-primary" : "bg-muted",
+                      'mr-3 h-8 w-8 items-center justify-center rounded-full',
+                      location.id === activeLocation.id ? 'bg-primary' : 'bg-muted',
                     )}
                   >
                     <Icon
                       name={
-                        location.id === activeLocation.id ? "check" : "map-marker-radius-outline"
+                        location.id === activeLocation.id ? 'check' : 'map-marker-radius-outline'
                       }
                       size={18}
-                      color={location.id === activeLocation.id ? "white" : colors.grey3}
+                      color={location.id === activeLocation.id ? 'white' : colors.grey3}
                     />
                   </View>
                   <View className="flex-1">

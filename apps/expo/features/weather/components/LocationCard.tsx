@@ -1,10 +1,10 @@
-import { Pressable, View } from "react-native";
-import { useActionSheet } from "@expo/react-native-action-sheet";
+import { Pressable, View } from 'react-native';
+import { useActionSheet } from '@expo/react-native-action-sheet';
 
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import type { WeatherLocation } from "../types";
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import type { WeatherLocation } from '../types';
 
 interface LocationCardProps {
   location: WeatherLocation;
@@ -19,13 +19,13 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
 
   const handleLongPress = () => {
     const options = location.isActive
-      ? ["View Details", "Remove", "Cancel"]
-      : ["View Details", "Set as Active", "Remove", "Cancel"];
+      ? ['View Details', 'Remove', 'Cancel']
+      : ['View Details', 'Set as Active', 'Remove', 'Cancel'];
 
     const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = options.indexOf("Remove");
+    const destructiveButtonIndex = options.indexOf('Remove');
     const viewDetailsIndex = 0;
-    const setActiveIndex = options.indexOf("Set as Active");
+    const setActiveIndex = options.indexOf('Set as Active');
 
     showActionSheetWithOptions(
       {
@@ -35,14 +35,14 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
         title: location.name,
         message: `${location.temperature}° - ${location.condition}`,
         containerStyle: {
-          backgroundColor: colorScheme === "dark" ? colors.card : "white",
+          backgroundColor: colorScheme === 'dark' ? colors.card : 'white',
         },
         textStyle: {
           color: colors.foreground,
         },
         titleTextStyle: {
           color: colors.foreground,
-          fontWeight: "600",
+          fontWeight: '600',
         },
         messageTextStyle: {
           color: colors.grey2,
@@ -72,8 +72,8 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
       {({ pressed }) => (
         <View
           className={cn(
-            "border-border/10 mb-4 overflow-hidden rounded-2xl border",
-            pressed ? "opacity-80" : "opacity-100",
+            'border-border/10 mb-4 overflow-hidden rounded-2xl border',
+            pressed ? 'opacity-80' : 'opacity-100',
           )}
           style={{ backgroundColor: getCardColor(location, colors) }}
         >
@@ -113,22 +113,22 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
 function getCardColor(location: WeatherLocation, colors: any) {
   // Color based on condition and time
   const conditions: Record<string, string> = {
-    clear: "#4287f5",
-    sunny: "#4287f5",
-    cloud: "#7a7a7a",
-    rain: "#5d6273",
-    snow: "#a3b8cc",
-    thunder: "#525580",
-    storm: "#525580",
-    wind: "#5d8aa8",
-    fog: "#7a7a7a",
-    mist: "#7a7a7a",
-    haze: "#7a7a7a",
+    clear: '#4287f5',
+    sunny: '#4287f5',
+    cloud: '#7a7a7a',
+    rain: '#5d6273',
+    snow: '#a3b8cc',
+    thunder: '#525580',
+    storm: '#525580',
+    wind: '#5d8aa8',
+    fog: '#7a7a7a',
+    mist: '#7a7a7a',
+    haze: '#7a7a7a',
   };
 
   // Extract base condition from the full condition text
   const conditionLower = location.condition.toLowerCase();
-  let baseColor = "#4287f5"; // Default blue
+  let baseColor = '#4287f5'; // Default blue
 
   for (const [key, color] of Object.entries(conditions)) {
     if (conditionLower.includes(key)) {

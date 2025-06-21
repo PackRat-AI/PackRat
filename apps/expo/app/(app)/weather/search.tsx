@@ -1,4 +1,4 @@
-import { LocationSearchScreen } from "~/features/weather/screens";
+import { LocationSearchScreen } from '~/features/weather/screens';
 
 export default function LocationSearchIndexScreen() {
   return <LocationSearchScreen />;

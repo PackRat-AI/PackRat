@@ -1,16 +1,16 @@
-import { Icon } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { Pressable, Text, View } from 'react-native';
 
-import { Alert } from "nativewindui/Alert";
-import { Button } from "nativewindui/Button";
-import { useDeletePackItem } from "../hooks";
-import { CachedImage } from "~/features/packs/components/CachedImage";
+import { Alert } from 'nativewindui/Alert';
+import { Button } from 'nativewindui/Button';
+import { useDeletePackItem } from '../hooks';
+import { CachedImage } from '~/features/packs/components/CachedImage';
 
-import { WeightBadge } from "~/components/initial/WeightBadge";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import type { PackItem } from "../types";
+import { WeightBadge } from '~/components/initial/WeightBadge';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import type { PackItem } from '../types';
 
 type PackItemCardProps = {
   item: PackItem;
@@ -56,14 +56,14 @@ export function PackItemCard({ item, onPress }: PackItemCardProps) {
             )}
 
             {item.consumable && (
-              <View className={cn("rounded-full px-2 py-0.5", "bg-amber-100")}>
-                <Text className={cn("text-xs", "text-amber-600")}>Consumable</Text>
+              <View className={cn('rounded-full px-2 py-0.5', 'bg-amber-100')}>
+                <Text className={cn('text-xs', 'text-amber-600')}>Consumable</Text>
               </View>
             )}
 
             {item.worn && (
-              <View className={cn("rounded-full px-2 py-0.5", "bg-emerald-100")}>
-                <Text className={cn("text-xs", "text-emerald-600")}>Worn</Text>
+              <View className={cn('rounded-full px-2 py-0.5', 'bg-emerald-100')}>
+                <Text className={cn('text-xs', 'text-emerald-600')}>Worn</Text>
               </View>
             )}
           </View>
@@ -73,11 +73,11 @@ export function PackItemCard({ item, onPress }: PackItemCardProps) {
               message="Are you sure you want to delete this item?"
               buttons={[
                 {
-                  text: "Cancel",
-                  style: "cancel",
+                  text: 'Cancel',
+                  style: 'cancel',
                 },
                 {
-                  text: "OK",
+                  text: 'OK',
                   onPress: () => {
                     deleteItem(item.id);
                   },
@@ -93,7 +93,7 @@ export function PackItemCard({ item, onPress }: PackItemCardProps) {
               size="icon"
               onPress={() =>
                 router.push({
-                  pathname: "/item/[id]/edit",
+                  pathname: '/item/[id]/edit',
                   params: { id: item.id, packId: item.packId },
                 })
               }

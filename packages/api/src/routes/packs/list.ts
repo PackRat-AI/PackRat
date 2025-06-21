@@ -1,17 +1,17 @@
-import { createDb } from "@/db";
-import { packs, packWeightHistory } from "@/db/schema";
-import { authenticateRequest, unauthorizedResponse } from "@/utils/api-middleware";
-import { computePacksWeights } from "@/utils/compute-pack";
-import { eq } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createDb } from '@/db';
+import { packs, packWeightHistory } from '@/db/schema';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { computePacksWeights } from '@/utils/compute-pack';
+import { eq } from 'drizzle-orm';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 
 const packsListRoutes = new OpenAPIHono();
 
 // Get all packs for the user
 const listGetRoute = createRoute({
-  method: "get",
-  path: "/",
-  responses: { 200: { description: "Get user packs" } },
+  method: 'get',
+  path: '/',
+  responses: { 200: { description: 'Get user packs' } },
 });
 
 packsListRoutes.openapi(listGetRoute, async (c) => {
@@ -32,17 +32,17 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
     const packsWithWeights = computePacksWeights(userPacks);
     return c.json(packsWithWeights);
   } catch (error) {
-    console.error("Error fetching packs:", error);
-    return c.json({ error: "Failed to fetch packs" }, 500);
+    console.error('Error fetching packs:', error);
+    return c.json({ error: 'Failed to fetch packs' }, 500);
   }
 });
 
 // Create a new pack
 const listPostRoute = createRoute({
-  method: "post",
-  path: "/",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Create pack" } },
+  method: 'post',
+  path: '/',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Create pack' } },
 });
 
 packsListRoutes.openapi(listPostRoute, async (c) => {
@@ -57,7 +57,7 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
 
     // Ensure the client provides an ID
     if (!data.id) {
-      return c.json({ error: "Pack ID is required" }, 400);
+      return c.json({ error: 'Pack ID is required' }, 400);
     }
 
     const [newPack] = await db
@@ -79,15 +79,15 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
     const packWithWeights = computePacksWeights([{ ...newPack, items: [] }])[0];
     return c.json(packWithWeights);
   } catch (error) {
-    console.error("Error creating pack:", error);
-    return c.json({ error: "Failed to create pack" }, 500);
+    console.error('Error creating pack:', error);
+    return c.json({ error: 'Failed to create pack' }, 500);
   }
 });
 
 const weightHistoryRoute = createRoute({
-  method: "get",
-  path: "/weight-history",
-  responses: { 200: { description: "Get weight history" } },
+  method: 'get',
+  path: '/weight-history',
+  responses: { 200: { description: 'Get weight history' } },
 });
 
 packsListRoutes.openapi(weightHistoryRoute, async (c) => {
@@ -104,8 +104,8 @@ packsListRoutes.openapi(weightHistoryRoute, async (c) => {
 
     return c.json(userPackWeightHistories);
   } catch (error) {
-    console.error("Error fetching weight histories:", error);
-    return c.json({ error: "Failed to fetch weight histories" }, 500);
+    console.error('Error fetching weight histories:', error);
+    return c.json({ error: 'Failed to fetch weight histories' }, 500);
   }
 });
 

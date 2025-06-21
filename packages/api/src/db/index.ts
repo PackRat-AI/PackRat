@@ -1,9 +1,9 @@
-import * as schema from "@/db/schema";
-import { Env } from "@/types/env";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { Context } from "hono";
-import { env } from "hono/adapter";
+import * as schema from '@/db/schema';
+import { Env } from '@/types/env';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { Context } from 'hono';
+import { env } from 'hono/adapter';
 
 // Create SQL client with Neon
 export const createDb = (c: Context) => {

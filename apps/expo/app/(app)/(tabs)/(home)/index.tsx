@@ -1,94 +1,94 @@
-"use client";
+'use client';
 
-import { Icon } from "@roninoss/icons";
-import { Link } from "expo-router";
-import { Pressable, View, Text, FlatList } from "react-native";
-import { useState, useRef, useMemo } from "react";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { Icon } from '@roninoss/icons';
+import { Link } from 'expo-router';
+import { Pressable, View, Text, FlatList } from 'react-native';
+import { useState, useRef, useMemo } from 'react';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import type { LargeTitleSearchBarRef } from "nativewindui/LargeTitleHeader/types";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
 import {
   ESTIMATED_ITEM_HEIGHT,
   List,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from "nativewindui/List";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { WeatherTile } from "~/features/weather/components/WeatherTile";
-import { CurrentPackTile } from "~/features/packs/components/CurrentPackTile";
-import { RecentPacksTile } from "~/features/packs/components/RecentPacksTile";
-import { AIChatTile } from "~/features/ai/components/AIChatTile";
-import { PackStatsTile } from "~/features/packs/components/PackStatsTile";
-import { WeightAnalysisTile } from "~/features/packs/components/WeightAnalysisTile";
-import { PackCategoriesTile } from "~/features/packs/components/PackCategoriesTile";
-import { UpcomingTripsTile } from "~/features/trips/components/UpcomingTripsTile";
-import { TrailConditionsTile } from "~/features/trips/components/TrailConditionsTile";
-import { WeatherAlertsTile } from "~/features/weather/components/WeatherAlertsTile";
-import { GearInventoryTile } from "~/features/packs/components/GearInventoryTile";
-import { SharedPacksTile } from "~/features/packs/components/SharedPacksTile";
-import { PackTemplatesTile } from "~/features/pack-templates/components/PackTemplatesTile";
-import { ShoppingListTile } from "~/features/packs/components/ShoppingListTile";
-import { featureFlags } from "~/config";
+} from 'nativewindui/List';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { WeatherTile } from '~/features/weather/components/WeatherTile';
+import { CurrentPackTile } from '~/features/packs/components/CurrentPackTile';
+import { RecentPacksTile } from '~/features/packs/components/RecentPacksTile';
+import { AIChatTile } from '~/features/ai/components/AIChatTile';
+import { PackStatsTile } from '~/features/packs/components/PackStatsTile';
+import { WeightAnalysisTile } from '~/features/packs/components/WeightAnalysisTile';
+import { PackCategoriesTile } from '~/features/packs/components/PackCategoriesTile';
+import { UpcomingTripsTile } from '~/features/trips/components/UpcomingTripsTile';
+import { TrailConditionsTile } from '~/features/trips/components/TrailConditionsTile';
+import { WeatherAlertsTile } from '~/features/weather/components/WeatherAlertsTile';
+import { GearInventoryTile } from '~/features/packs/components/GearInventoryTile';
+import { SharedPacksTile } from '~/features/packs/components/SharedPacksTile';
+import { PackTemplatesTile } from '~/features/pack-templates/components/PackTemplatesTile';
+import { ShoppingListTile } from '~/features/packs/components/ShoppingListTile';
+import { featureFlags } from '~/config';
 
 // Define tile metadata for search functionality
 const tileMetadata = {
-  "current-pack": {
-    title: "Current Pack",
-    keywords: ["active", "current", "pack"],
+  'current-pack': {
+    title: 'Current Pack',
+    keywords: ['active', 'current', 'pack'],
   },
-  "recent-packs": {
-    title: "Recent Packs",
-    keywords: ["recent", "packs", "history"],
+  'recent-packs': {
+    title: 'Recent Packs',
+    keywords: ['recent', 'packs', 'history'],
   },
-  "ask-packrat-ai": {
-    title: "Ask PackRat AI",
-    keywords: ["ai", "chat", "assistant", "help"],
+  'ask-packrat-ai': {
+    title: 'Ask PackRat AI',
+    keywords: ['ai', 'chat', 'assistant', 'help'],
   },
-  "pack-stats": {
-    title: "Pack Statistics",
-    keywords: ["stats", "statistics", "analytics"],
+  'pack-stats': {
+    title: 'Pack Statistics',
+    keywords: ['stats', 'statistics', 'analytics'],
   },
-  "weight-analysis": {
-    title: "Weight Analysis",
-    keywords: ["weight", "analysis", "heavy", "light"],
+  'weight-analysis': {
+    title: 'Weight Analysis',
+    keywords: ['weight', 'analysis', 'heavy', 'light'],
   },
-  "pack-categories": {
-    title: "Pack Categories",
-    keywords: ["categories", "organize", "group"],
+  'pack-categories': {
+    title: 'Pack Categories',
+    keywords: ['categories', 'organize', 'group'],
   },
-  "upcoming-trips": {
-    title: "Upcoming Trips",
-    keywords: ["trips", "upcoming", "planned", "schedule"],
+  'upcoming-trips': {
+    title: 'Upcoming Trips',
+    keywords: ['trips', 'upcoming', 'planned', 'schedule'],
   },
-  "trail-conditions": {
-    title: "Trail Conditions",
-    keywords: ["trail", "conditions", "terrain", "path"],
+  'trail-conditions': {
+    title: 'Trail Conditions',
+    keywords: ['trail', 'conditions', 'terrain', 'path'],
   },
   weather: {
-    title: "Weather",
-    keywords: ["weather", "forecast", "temperature", "conditions"],
+    title: 'Weather',
+    keywords: ['weather', 'forecast', 'temperature', 'conditions'],
   },
-  "weather-alerts": {
-    title: "Weather Alerts",
-    keywords: ["weather", "alerts", "warnings", "emergency"],
+  'weather-alerts': {
+    title: 'Weather Alerts',
+    keywords: ['weather', 'alerts', 'warnings', 'emergency'],
   },
-  "gear-inventory": {
-    title: "Gear Inventory",
-    keywords: ["gear", "inventory", "equipment", "items"],
+  'gear-inventory': {
+    title: 'Gear Inventory',
+    keywords: ['gear', 'inventory', 'equipment', 'items'],
   },
-  "shopping-list": {
-    title: "Shopping List",
-    keywords: ["shopping", "list", "buy", "purchase"],
+  'shopping-list': {
+    title: 'Shopping List',
+    keywords: ['shopping', 'list', 'buy', 'purchase'],
   },
-  "shared-packs": {
-    title: "Shared Packs",
-    keywords: ["shared", "packs", "collaborate", "friends"],
+  'shared-packs': {
+    title: 'Shared Packs',
+    keywords: ['shared', 'packs', 'collaborate', 'friends'],
   },
-  "pack-templates": {
-    title: "Pack Templates",
-    keywords: ["templates", "preset", "pattern"],
+  'pack-templates': {
+    title: 'Pack Templates',
+    keywords: ['templates', 'preset', 'pattern'],
   },
 };
 
@@ -98,7 +98,7 @@ function SettingsIcon() {
     <Link href="/modal" asChild>
       <Pressable className="opacity-80">
         {({ pressed }) => (
-          <View className={cn(pressed ? "opacity-50" : "opacity-90")}>
+          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
             <Icon name="cog-outline" color={colors.foreground} />
           </View>
         )}
@@ -110,7 +110,7 @@ function SettingsIcon() {
 function DemoIcon() {
   const { colors } = useColorScheme();
 
-  if (process.env.NODE_ENV !== "development") {
+  if (process.env.NODE_ENV !== 'development') {
     return null;
   }
 
@@ -118,7 +118,7 @@ function DemoIcon() {
     <Link href="/demo" asChild>
       <Pressable className="opacity-80">
         {({ pressed }) => (
-          <View className={cn(pressed ? "opacity-50" : "opacity-90")}>
+          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
             <Icon name="tag-outline" color={colors.foreground} />
           </View>
         )}
@@ -128,36 +128,36 @@ function DemoIcon() {
 }
 
 export default function DashboardScreen() {
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState('');
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
 
   const dashboardLayout = useRef([
-    { id: "current-pack", component: CurrentPackTile },
-    { id: "recent-packs", component: RecentPacksTile },
-    "gap 1",
-    { id: "ask-packrat-ai", component: AIChatTile },
-    "gap 1.5",
-    { id: "pack-stats", component: PackStatsTile },
-    { id: "weight-analysis", component: WeightAnalysisTile },
-    { id: "pack-categories", component: PackCategoriesTile },
+    { id: 'current-pack', component: CurrentPackTile },
+    { id: 'recent-packs', component: RecentPacksTile },
+    'gap 1',
+    { id: 'ask-packrat-ai', component: AIChatTile },
+    'gap 1.5',
+    { id: 'pack-stats', component: PackStatsTile },
+    { id: 'weight-analysis', component: WeightAnalysisTile },
+    { id: 'pack-categories', component: PackCategoriesTile },
     ...(featureFlags.enableTrips
       ? [
-          "gap 2",
-          { id: "upcoming-trips", component: UpcomingTripsTile },
-          { id: "trail-conditions", component: TrailConditionsTile },
+          'gap 2',
+          { id: 'upcoming-trips', component: UpcomingTripsTile },
+          { id: 'trail-conditions', component: TrailConditionsTile },
         ]
       : []),
-    "gap 2.5",
-    { id: "weather", component: WeatherTile },
-    ...(featureFlags.enableTrips ? [{ id: "weather-alerts", component: WeatherAlertsTile }] : []),
-    "gap 3",
-    { id: "gear-inventory", component: GearInventoryTile },
+    'gap 2.5',
+    { id: 'weather', component: WeatherTile },
+    ...(featureFlags.enableTrips ? [{ id: 'weather-alerts', component: WeatherAlertsTile }] : []),
+    'gap 3',
+    { id: 'gear-inventory', component: GearInventoryTile },
     ...(featureFlags.enableShoppingList
-      ? [{ id: "shopping-list", component: ShoppingListTile }]
+      ? [{ id: 'shopping-list', component: ShoppingListTile }]
       : []),
-    ...(featureFlags.enableSharedPacks ? [{ id: "shared-packs", component: SharedPacksTile }] : []),
+    ...(featureFlags.enableSharedPacks ? [{ id: 'shared-packs', component: SharedPacksTile }] : []),
     ...(featureFlags.enablePackTemplates
-      ? [{ id: "pack-templates", component: PackTemplatesTile }]
+      ? [{ id: 'pack-templates', component: PackTemplatesTile }]
       : []),
   ]).current;
 
@@ -170,7 +170,7 @@ export default function DashboardScreen() {
     const searchLower = searchValue.toLowerCase();
 
     return dashboardLayout.filter((item) => {
-      if (typeof item === "object" && item.id) {
+      if (typeof item === 'object' && item.id) {
         const metadata = tileMetadata[item.id];
         if (metadata) {
           // Check if title or any keywords match
@@ -194,21 +194,21 @@ export default function DashboardScreen() {
           onChangeText(text) {
             setSearchValue(text);
           },
-          placeholder: "Search...",
+          placeholder: 'Search...',
           content: searchValue ? (
             <FlatList
               data={filteredTiles}
               keyExtractor={keyExtractor}
               className="space-y-4 px-4"
               renderItem={({ item }) => {
-                if (typeof item === "object" && item.component) {
+                if (typeof item === 'object' && item.component) {
                   const Component = item.component;
                   return (
                     <Pressable
                       key={item.id}
                       className="py-2"
                       onPress={() => {
-                        setSearchValue("");
+                        setSearchValue('');
                         searchBarRef.current?.clearText();
                       }}
                     >
@@ -221,7 +221,7 @@ export default function DashboardScreen() {
               ListHeaderComponent={() =>
                 filteredTiles.length > 0 ? (
                   <Text className="px-4 py-2 text-sm text-muted-foreground">
-                    {filteredTiles.length} {filteredTiles.length === 1 ? "result" : "results"}
+                    {filteredTiles.length} {filteredTiles.length === 1 ? 'result' : 'results'}
                   </Text>
                 ) : null
               }
@@ -272,7 +272,7 @@ export default function DashboardScreen() {
 function renderDashboardItem(info: ListRenderItemInfo<any>) {
   const item = info.item;
 
-  if (typeof item === "string") {
+  if (typeof item === 'string') {
     return <ListSectionHeader {...info} />;
   }
 
@@ -281,7 +281,7 @@ function renderDashboardItem(info: ListRenderItemInfo<any>) {
 }
 
 function keyExtractor(item: any) {
-  if (typeof item === "string") {
+  if (typeof item === 'string') {
     return item;
   }
   return item.id;

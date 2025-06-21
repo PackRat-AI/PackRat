@@ -1,12 +1,12 @@
-"use client";
-import { useLocalSearchParams } from "expo-router";
-import { View, ScrollView, SafeAreaView } from "react-native";
+'use client';
+import { useLocalSearchParams } from 'expo-router';
+import { View, ScrollView, SafeAreaView } from 'react-native';
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { userStore } from "~/features/auth/store";
-import { usePackWeightAnalysis } from "~/features/packs/hooks/usePackWeightAnalysis";
-import { cn } from "~/lib/cn";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { userStore } from '~/features/auth/store';
+import { usePackWeightAnalysis } from '~/features/packs/hooks/usePackWeightAnalysis';
+import { cn } from '~/lib/cn';
 
 function WeightCard({
   title,
@@ -20,7 +20,7 @@ function WeightCard({
   className?: string;
 }) {
   return (
-    <View className={cn("rounded-lg bg-card p-4", className)}>
+    <View className={cn('rounded-lg bg-card p-4', className)}>
       <Text variant="subhead" className="text-muted-foreground">
         {title}
       </Text>
@@ -42,7 +42,7 @@ export default function WeightAnalysisScreen() {
 
   const { data, items } = usePackWeightAnalysis(packId as string);
 
-  const preferredWeightUnit = userStore.preferredWeightUnit.peek() ?? "g";
+  const preferredWeightUnit = userStore.preferredWeightUnit.peek() ?? 'g';
 
   return (
     <SafeAreaView className="flex-1">
@@ -100,8 +100,8 @@ export default function WeightAnalysisScreen() {
                 <View
                   key={`${categoryIndex}-${itemIndex}`}
                   className={cn(
-                    "flex-row items-center justify-between p-4",
-                    itemIndex > 0 ? "border-border/25 dark:border-border/80 border-t" : "",
+                    'flex-row items-center justify-between p-4',
+                    itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
                   )}
                 >
                   <View>

@@ -1,8 +1,8 @@
-import { useState } from "react";
-import * as ImagePicker from "expo-image-picker";
-import axiosInstance from "~/lib/api/client";
-import { nanoid } from "nanoid/non-secure";
-import ImageCacheManager from "~/lib/utils/ImageCacheManager";
+import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import axiosInstance from '~/lib/api/client';
+import { nanoid } from 'nanoid/non-secure';
+import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 
 export type SelectedImage = {
   uri: string;
@@ -18,7 +18,7 @@ export function useImageUpload() {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        throw new Error("Permission to access media library was denied");
+        throw new Error('Permission to access media library was denied');
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -33,15 +33,15 @@ export function useImageUpload() {
         const uri = asset.uri;
 
         // Extract file info
-        const uriParts = uri.split("/");
+        const uriParts = uri.split('/');
         const fileName = uriParts[uriParts.length - 1];
-        const fileExtension = fileName.split(".").pop()?.toLowerCase() || "jpg";
-        const type = `image/${fileExtension === "jpg" ? "jpeg" : fileExtension}`;
+        const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+        const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
 
         setSelectedImage({ uri, fileName, type });
       }
     } catch (err) {
-      console.error("Error picking image:", err);
+      console.error('Error picking image:', err);
       throw err;
     }
   };
@@ -51,7 +51,7 @@ export function useImageUpload() {
     try {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
       if (!permissionResult.granted) {
-        throw new Error("Permission to access camera was denied");
+        throw new Error('Permission to access camera was denied');
       }
 
       const result = await ImagePicker.launchCameraAsync({
@@ -66,12 +66,12 @@ export function useImageUpload() {
 
         // Create file info
         const fileName = `camera_${Date.now()}.jpg`;
-        const type = "image/jpeg";
+        const type = 'image/jpeg';
 
         setSelectedImage({ uri, fileName, type });
       }
     } catch (err) {
-      console.error("Error taking photo:", err);
+      console.error('Error taking photo:', err);
       throw err;
     }
   };
@@ -91,8 +91,8 @@ export function useImageUpload() {
         objectKey: response.data.objectKey,
       };
     } catch (err) {
-      console.error("Error getting presigned URL:", err);
-      throw new Error("Failed to get upload URL");
+      console.error('Error getting presigned URL:', err);
+      throw new Error('Failed to get upload URL');
     }
   };
 
@@ -107,14 +107,14 @@ export function useImageUpload() {
     const imageUri = selectedImage?.uri;
 
     // Get file extension from the original uri or default to jpg
-    const extension = selectedImage.fileName.split(".").pop()?.toLowerCase() || "jpg";
+    const extension = selectedImage.fileName.split('.').pop()?.toLowerCase() || 'jpg';
     const fileName = `${nanoid()}.${extension}`;
 
     try {
       ImageCacheManager.cacheLocalTempImage(imageUri, fileName);
       return fileName;
     } catch (err) {
-      console.error("Error saving image locally:", err);
+      console.error('Error saving image locally:', err);
       return null;
     }
   };

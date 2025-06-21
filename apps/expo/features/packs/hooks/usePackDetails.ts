@@ -1,6 +1,6 @@
-import { use$ } from "@legendapp/state/react";
-import { getPackItems, packsStore } from "~/features/packs/store";
-import { computePackWeights } from "../utils/computePackWeights";
+import { use$ } from '@legendapp/state/react';
+import { getPackItems, packsStore } from '~/features/packs/store';
+import { computePackWeights } from '../utils/computePackWeights';
 
 // Hook to get a single pack
 export function usePackDetails(id: string) {

@@ -1,22 +1,22 @@
-import { Icon, MaterialIconName } from "@roninoss/icons";
-import { Platform, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Platform, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AdaptiveSearchHeader } from "nativewindui/AdaptiveSearchHeader";
-import { Avatar, AvatarFallback, AvatarImage } from "nativewindui/Avatar";
-import { Button } from "nativewindui/Button";
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { List, ListDataItem, ListRenderItemInfo, ListSectionHeader } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
+import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { List, ListDataItem, ListRenderItemInfo, ListSectionHeader } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export default function SettingsAndroidStyleScreen() {
   const insets = useSafeAreaInsets();
   return (
     <>
-      {Platform.OS === "ios" && (
+      {Platform.OS === 'ios' && (
         <LargeTitleHeader
           title="Settings"
           rightView={() => {
@@ -24,7 +24,7 @@ export default function SettingsAndroidStyleScreen() {
               <Avatar alt="NativeWindUI's avatar" className="h-8 w-8">
                 <AvatarImage
                   source={{
-                    uri: "https://pbs.twimg.com/profile_images/1782428433898708992/1voyv4_A_400x400.jpg",
+                    uri: 'https://pbs.twimg.com/profile_images/1782428433898708992/1voyv4_A_400x400.jpg',
                   }}
                 />
                 <AvatarFallback>
@@ -37,8 +37,8 @@ export default function SettingsAndroidStyleScreen() {
             content: (
               <View
                 className={cn(
-                  "flex-1",
-                  Platform.OS === "ios" && "bg-background dark:bg-background",
+                  'flex-1',
+                  Platform.OS === 'ios' && 'bg-background dark:bg-background',
                 )}
               >
                 <Animated.View entering={FadeInUp.delay(150)}>
@@ -70,22 +70,22 @@ export default function SettingsAndroidStyleScreen() {
 }
 
 function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>) {
-  if (info.item === "material-top-header") {
+  if (info.item === 'material-top-header') {
     return <MaterialTopHeader />;
   }
-  if (info.item === "material-search-header") {
+  if (info.item === 'material-search-header') {
     return (
       <AdaptiveSearchHeader
         materialUseSafeAreaTop={false}
         searchBar={{
-          placeholder: "Search Settings",
+          placeholder: 'Search Settings',
           content: <SearchContent />,
         }}
       />
     );
   }
 
-  if (typeof info.item === "string") {
+  if (typeof info.item === 'string') {
     return <ListSectionHeader {...info} />;
   }
   return (
@@ -93,7 +93,7 @@ function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>
       size="lg"
       variant="plain"
       className="ios:gap-3 ios:px-6 justify-start px-8 py-5"
-      onPress={() => console.log("onPress")}
+      onPress={() => console.log('onPress')}
     >
       {info.item.leftView}
       <View className="flex-1">
@@ -126,7 +126,7 @@ function MaterialTopHeader() {
         <Avatar alt="Your Name's avatar" className="h-12 w-12">
           <AvatarImage
             source={{
-              uri: "https://pbs.twimg.com/profile_images/1782428433898708992/1voyv4_A_400x400.jpg",
+              uri: 'https://pbs.twimg.com/profile_images/1782428433898708992/1voyv4_A_400x400.jpg',
             }}
           />
           <AvatarFallback>
@@ -152,7 +152,7 @@ function SearchContent() {
 }
 
 function keyExtractor(item: (Omit<ListDataItem, string> & { id: string }) | string) {
-  return typeof item === "string" ? item : item.id;
+  return typeof item === 'string' ? item : item.id;
 }
 
 type MockData =
@@ -169,75 +169,75 @@ type MockData =
 const DATA: MockData[] = [
   ...Platform.select({
     ios: [],
-    default: ["material-top-header", "material-search-header"],
+    default: ['material-top-header', 'material-search-header'],
   }),
   {
-    id: "4",
-    title: "Wi-Fi",
+    id: '4',
+    title: 'Wi-Fi',
     rightText: "NU's iPhone",
     leftView: <IconView name="wifi" />,
-    subTitle: "Network & Security",
+    subTitle: 'Network & Security',
   },
   {
-    id: "5",
-    title: "Play Station",
+    id: '5',
+    title: 'Play Station',
     leftView: <IconView name="sony-playstation" />,
-    subTitle: "Connected Devices",
+    subTitle: 'Connected Devices',
   },
   {
-    id: "6",
-    title: "Gift Cards",
+    id: '6',
+    title: 'Gift Cards',
     leftView: <IconView name="card-giftcard" />,
-    subTitle: "Redeem & Balance",
+    subTitle: 'Redeem & Balance',
   },
 
   {
-    id: "7",
-    title: "Locations",
+    id: '7',
+    title: 'Locations',
     leftView: <IconView name="map-outline" />,
-    subTitle: "Privacy & Security",
+    subTitle: 'Privacy & Security',
   },
   {
-    id: "8",
-    title: "Notifications",
+    id: '8',
+    title: 'Notifications',
     leftView: <IconView name="bell-outline" />,
-    subTitle: "Alerts & Sounds",
+    subTitle: 'Alerts & Sounds',
   },
   {
-    id: "9",
-    title: "Focus",
+    id: '9',
+    title: 'Focus',
     leftView: <IconView name="weather-night" />,
-    subTitle: "Do Not Disturb & Focus",
+    subTitle: 'Do Not Disturb & Focus',
   },
   {
-    id: "10",
-    title: "Screen Time",
+    id: '10',
+    title: 'Screen Time',
     leftView: <IconView name="timer-outline" />,
-    subTitle: "App Limits & Content & Privacy Restrictions",
+    subTitle: 'App Limits & Content & Privacy Restrictions',
   },
 
   {
-    id: "11",
-    title: "General",
+    id: '11',
+    title: 'General',
     leftView: <IconView name="cog-outline" />,
-    subTitle: "Language & Region, Profiles, Device Management",
+    subTitle: 'Language & Region, Profiles, Device Management',
   },
   {
-    id: "12",
-    title: "Game Center",
+    id: '12',
+    title: 'Game Center',
     leftView: <IconView name="controller-classic-outline" />,
-    subTitle: "Google Play Settings",
+    subTitle: 'Google Play Settings',
   },
   {
-    id: "13",
-    title: "Accessibility",
+    id: '13',
+    title: 'Accessibility',
     leftView: <IconView name="accessibility" />,
-    subTitle: "Vision, Hearing, Physical & Motor Skills, Learning & Literacy",
+    subTitle: 'Vision, Hearing, Physical & Motor Skills, Learning & Literacy',
   },
   {
-    id: "14",
-    title: "Artificial Intelligence",
+    id: '14',
+    title: 'Artificial Intelligence',
     leftView: <IconView name="star-four-points" />,
-    subTitle: "Search, QuickType, Handoff, Spotlight Suggestions",
+    subTitle: 'Search, QuickType, Handoff, Spotlight Suggestions',
   },
 ];

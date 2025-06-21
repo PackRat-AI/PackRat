@@ -1,4 +1,4 @@
-import type { PackItem, WeightUnit } from "~/types";
+import type { PackItem, WeightUnit } from '~/types';
 
 // Convert weight between units
 export const convertWeight = (weight: number, from: WeightUnit, to: WeightUnit): number => {
@@ -6,15 +6,15 @@ export const convertWeight = (weight: number, from: WeightUnit, to: WeightUnit):
 
   // Convert to grams first
   let grams = weight;
-  if (from === "oz") grams = weight * 28.35;
-  if (from === "lb") grams = weight * 453.59;
-  if (from === "kg") grams = weight * 1000;
+  if (from === 'oz') grams = weight * 28.35;
+  if (from === 'lb') grams = weight * 453.59;
+  if (from === 'kg') grams = weight * 1000;
 
   // Convert from grams to target unit
-  if (to === "g") return Math.round(grams);
-  if (to === "oz") return Math.round((grams / 28.35) * 100) / 100;
-  if (to === "lb") return Math.round((grams / 453.59) * 100) / 100;
-  if (to === "kg") return Math.round((grams / 1000) * 100) / 100;
+  if (to === 'g') return Math.round(grams);
+  if (to === 'oz') return Math.round((grams / 28.35) * 100) / 100;
+  if (to === 'lb') return Math.round((grams / 453.59) * 100) / 100;
+  if (to === 'kg') return Math.round((grams / 1000) * 100) / 100;
 
   return weight;
 };
@@ -25,7 +25,7 @@ export const formatWeight = (weight: number, unit: WeightUnit): string => {
 };
 
 // Calculate base weight (non-consumable, non-worn items)
-export const calculateBaseWeight = (items: PackItem[], unit: WeightUnit = "g"): number => {
+export const calculateBaseWeight = (items: PackItem[], unit: WeightUnit = 'g'): number => {
   return items
     .filter((item) => !item.consumable && !item.worn)
     .reduce((total, item) => {
@@ -35,7 +35,7 @@ export const calculateBaseWeight = (items: PackItem[], unit: WeightUnit = "g"): 
 };
 
 // Calculate total weight
-export const calculateTotalWeight = (items: PackItem[], unit: WeightUnit = "g"): number => {
+export const calculateTotalWeight = (items: PackItem[], unit: WeightUnit = 'g'): number => {
   return items.reduce((total, item) => {
     const weightInTargetUnit = convertWeight(item.weight * item.quantity, item.weightUnit, unit);
     return total + weightInTargetUnit;

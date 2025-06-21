@@ -1,5 +1,5 @@
-import type React from "react";
-import { cn } from "@/lib/utils";
+import type React from 'react';
+import { cn } from '@/lib/utils';
 
 interface GradientTextProps {
   children: React.ReactNode;
@@ -11,9 +11,9 @@ export default function GradientText({ children, className, gradient }: Gradient
   return (
     <span
       className={cn(
-        "bg-clip-text text-transparent",
+        'bg-clip-text text-transparent',
         gradient ||
-          "bg-gradient-to-r from-primary to-primary/70 dark:from-primary dark:to-primary/70",
+          'bg-gradient-to-r from-primary to-primary/70 dark:from-primary dark:to-primary/70',
         className,
       )}
     >

@@ -1,29 +1,29 @@
-import { Icon } from "@roninoss/icons";
-import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
-import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 
-import { useDeletePack, usePackDetails } from "../hooks";
+import { useDeletePack, usePackDetails } from '../hooks';
 
-import { CategoryBadge } from "~/components/initial/CategoryBadge";
-import { Chip } from "~/components/initial/Chip";
-import { WeightBadge } from "~/components/initial/WeightBadge";
-import { Alert } from "nativewindui/Alert";
-import { Button } from "nativewindui/Button";
-import { Text } from "nativewindui/Text";
-import { isAuthed } from "~/features/auth/store";
-import { PackItemCard } from "~/features/packs/components/PackItemCard";
-import { PackItemSuggestions } from "~/features/packs/components/PackItemSuggestions";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { NotFoundScreen } from "~/screens/NotFoundScreen";
-import type { PackItem } from "~/types";
+import { CategoryBadge } from '~/components/initial/CategoryBadge';
+import { Chip } from '~/components/initial/Chip';
+import { WeightBadge } from '~/components/initial/WeightBadge';
+import { Alert } from 'nativewindui/Alert';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { isAuthed } from '~/features/auth/store';
+import { PackItemCard } from '~/features/packs/components/PackItemCard';
+import { PackItemSuggestions } from '~/features/packs/components/PackItemSuggestions';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { NotFoundScreen } from '~/screens/NotFoundScreen';
+import type { PackItem } from '~/types';
 
 export function PackDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState('all');
 
   const pack = usePackDetails(id as string);
   useFocusEffect(
@@ -46,11 +46,11 @@ export function PackDetailScreen() {
     if (!pack?.items) return [];
 
     switch (activeTab) {
-      case "worn":
+      case 'worn':
         return pack.items.filter((item) => item.worn);
-      case "consumable":
+      case 'consumable':
         return pack.items.filter((item) => item.consumable);
-      case "all":
+      case 'all':
       default:
         return pack.items;
     }
@@ -59,11 +59,11 @@ export function PackDetailScreen() {
   const filteredItems = getFilteredItems();
 
   const getTabStyle = (tab: string) => {
-    return cn("flex-1 items-center py-4", activeTab === tab ? "border-b-2 border-primary" : "");
+    return cn('flex-1 items-center py-4', activeTab === tab ? 'border-b-2 border-primary' : '');
   };
 
   const getTabTextStyle = (tab: string) => {
-    return cn(activeTab === tab ? "text-primary" : "text-muted-foreground");
+    return cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
   };
 
   if (!pack) {
@@ -130,11 +130,11 @@ export function PackDetailScreen() {
               message="Are you sure you want to delete this pack? This action cannot be undone."
               buttons={[
                 {
-                  text: "Cancel",
-                  style: "cancel",
+                  text: 'Cancel',
+                  style: 'cancel',
                 },
                 {
-                  text: "OK",
+                  text: 'OK',
                   onPress: () => {
                     deletePack(pack.id);
                     if (router.canGoBack()) {
@@ -158,27 +158,27 @@ export function PackDetailScreen() {
               onPress={() => {
                 if (!isAuthed.peek()) {
                   return router.push({
-                    pathname: "/auth",
+                    pathname: '/auth',
                     params: {
                       redirectTo: JSON.stringify({
-                        pathname: "/ai-chat",
+                        pathname: '/ai-chat',
                         params: {
                           packId: id,
                           packName: pack.name,
-                          contextType: "pack",
+                          contextType: 'pack',
                         },
                       }),
-                      showSignInCopy: "true",
+                      showSignInCopy: 'true',
                     },
                   });
                 }
 
                 router.push({
-                  pathname: "/ai-chat",
+                  pathname: '/ai-chat',
                   params: {
                     packId: id,
                     packName: pack.name,
-                    contextType: "pack",
+                    contextType: 'pack',
                   },
                 });
               }}
@@ -189,19 +189,19 @@ export function PackDetailScreen() {
           </View>
 
           <View className="flex-row border-b border-border">
-            <TouchableOpacity className={getTabStyle("all")} onPress={() => setActiveTab("all")}>
-              <Text className={getTabTextStyle("all")}>All Items</Text>
+            <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+              <Text className={getTabTextStyle('all')}>All Items</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity className={getTabStyle("worn")} onPress={() => setActiveTab("worn")}>
-              <Text className={getTabTextStyle("worn")}>Worn</Text>
+            <TouchableOpacity className={getTabStyle('worn')} onPress={() => setActiveTab('worn')}>
+              <Text className={getTabTextStyle('worn')}>Worn</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className={getTabStyle("consumable")}
-              onPress={() => setActiveTab("consumable")}
+              className={getTabStyle('consumable')}
+              onPress={() => setActiveTab('consumable')}
             >
-              <Text className={getTabTextStyle("consumable")}>Consumable</Text>
+              <Text className={getTabTextStyle('consumable')}>Consumable</Text>
             </TouchableOpacity>
           </View>
           {filteredItems.length > 0 ? (
@@ -230,7 +230,7 @@ export function PackDetailScreen() {
             className="m-4"
             onPress={() =>
               router.push({
-                pathname: "/item/new",
+                pathname: '/item/new',
                 params: { packId: pack.id },
               })
             }

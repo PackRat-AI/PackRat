@@ -1,11 +1,11 @@
-import { View } from "react-native";
-import { Stack, usePathname, useRouter } from "expo-router";
-import { Button } from "nativewindui/Button";
-import { Text } from "nativewindui/Text";
-import { Icon } from "@roninoss/icons";
+import { View } from 'react-native';
+import { Stack, usePathname, useRouter } from 'expo-router';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { Icon } from '@roninoss/icons';
 
 const SCREEN_OPTIONS = {
-  title: "Profile",
+  title: 'Profile',
   headerShown: false,
 } as const;
 
@@ -56,7 +56,7 @@ export function ProfileAuthWall() {
         <Button
           onPress={() =>
             router.push({
-              pathname: "/auth",
+              pathname: '/auth',
               params: { redirectTo: currentRoute },
             })
           }

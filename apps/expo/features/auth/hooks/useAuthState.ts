@@ -1,8 +1,8 @@
-import { use$ } from "@legendapp/state/react";
-import { isAuthed } from "../store";
-import { useAtomValue } from "jotai";
-import { isLoadingAtom } from "../atoms/authAtoms";
-import { useUser } from "./useUser";
+import { use$ } from '@legendapp/state/react';
+import { isAuthed } from '../store';
+import { useAtomValue } from 'jotai';
+import { isLoadingAtom } from '../atoms/authAtoms';
+import { useUser } from './useUser';
 
 export function useAuthState() {
   const user = useUser();

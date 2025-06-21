@@ -1,12 +1,12 @@
-import { Icon } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { View } from "react-native";
-import { Avatar, AvatarFallback, AvatarImage } from "nativewindui/Avatar";
-import { ListItem } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { cn } from "~/lib/cn";
-import { useRecentPacks } from "../hooks/useRecentPacks";
+import { Icon } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
+import { ListItem } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from '~/lib/cn';
+import { useRecentPacks } from '../hooks/useRecentPacks';
 
 export function RecentPacksTile() {
   const recentPacks = useRecentPacks();
@@ -14,14 +14,14 @@ export function RecentPacksTile() {
   const router = useRouter();
 
   const fallbackImage =
-    "https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=400&auto=format&fit=crop";
+    'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=400&auto=format&fit=crop';
 
   const handlePress = () => {
-    router.push("/recent-packs");
+    router.push('/recent-packs');
   };
   return (
     <ListItem
-      className={"ios:pl-0 pl-2"}
+      className={'ios:pl-0 pl-2'}
       titleClassName="text-lg"
       leftView={
         <View className="flex-row px-3">
@@ -30,12 +30,12 @@ export function RecentPacksTile() {
             return (
               <Avatar
                 key={index}
-                alt={`${pack?.name ?? ""} avatar`}
-                className={cn("h-6 w-6", index > 0 && "-ml-2")}
+                alt={`${pack?.name ?? ''} avatar`}
+                className={cn('h-6 w-6', index > 0 && '-ml-2')}
               >
                 <AvatarImage source={{ uri: img }} />
                 <AvatarFallback>
-                  <Text>{pack?.name.slice(0, 2).toUpperCase() ?? "NA"}</Text>
+                  <Text>{pack?.name.slice(0, 2).toUpperCase() ?? 'NA'}</Text>
                 </AvatarFallback>
               </Avatar>
             );
@@ -53,7 +53,7 @@ export function RecentPacksTile() {
         </View>
       }
       item={{
-        title: "Recent Packs",
+        title: 'Recent Packs',
       }}
       onPress={handlePress}
       target="Cell"

@@ -1,15 +1,15 @@
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { Icon, IconProps } from "@roninoss/icons";
-import { Tabs } from "expo-router";
-import * as React from "react";
-import { Platform, Pressable, PressableProps, StyleProp, View, ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useDerivedValue, withTiming } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Icon, IconProps } from '@roninoss/icons';
+import { Tabs } from 'expo-router';
+import * as React from 'react';
+import { Platform, Pressable, PressableProps, StyleProp, View, ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge } from "nativewindui/Badge";
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Badge } from 'nativewindui/Badge';
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export default function TabLayout() {
   const { colors } = useColorScheme();
@@ -28,7 +28,7 @@ export default function TabLayout() {
         <Tabs.Screen name="profile" options={PROFILE_OPTIONS} />
         <Tabs.Screen
           name="sqlite-debug"
-          options={process.env.NODE_ENV === "development" ? {} : { href: null }}
+          options={process.env.NODE_ENV === 'development' ? {} : { href: null }}
         />
       </Tabs>
     </>
@@ -36,28 +36,28 @@ export default function TabLayout() {
 }
 
 const INDEX_OPTIONS = {
-  title: "Dashboard",
+  title: 'Dashboard',
   tabBarIcon(props) {
     return <Icon name="home" {...props} size={27} />;
   },
 } as const;
 
 const PACK_LIST_OPTIONS = {
-  title: "My Packs",
+  title: 'My Packs',
   tabBarIcon(props) {
     return <Icon name="backpack" {...props} size={27} />;
   },
 } as const;
 
 const ITEMS_CATALOG_OPTIONS = {
-  title: "Catalog",
+  title: 'Catalog',
   tabBarIcon(props) {
     return <Icon name="clipboard-list" {...props} size={27} />;
   },
 } as const;
 
 const PROFILE_OPTIONS = {
-  title: "Profile",
+  title: 'Profile',
   tabBarIcon(props) {
     return <Icon name="account-circle" {...props} size={27} />;
   },
@@ -69,10 +69,10 @@ const TAB_BAR = Platform.select({
 });
 
 const TAB_ICON = {
-  "(home)": "home",
-  packs: "backpack",
-  catalog: "clipboard-list",
-  profile: "account-circle",
+  '(home)': 'home',
+  packs: 'backpack',
+  catalog: 'clipboard-list',
+  profile: 'account-circle',
 } as const;
 
 function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -98,7 +98,7 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
         const onPress = () => {
           const event = navigation.emit({
-            type: "tabPress",
+            type: 'tabPress',
             target: route.key,
             canPreventDefault: true,
           });
@@ -110,7 +110,7 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
         const onLongPress = () => {
           navigation.emit({
-            type: "tabLongPress",
+            type: 'tabLongPress',
             target: route.key,
           });
         };
@@ -128,12 +128,12 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             isFocused={isFocused}
             badge={options.tabBarBadge}
             label={
-              typeof label === "function"
+              typeof label === 'function'
                 ? label({
                     focused: isFocused,
                     color: isFocused ? colors.foreground : colors.grey2,
-                    children: options.title ?? route.name ?? "",
-                    position: options.tabBarLabelPosition ?? "below-icon",
+                    children: options.title ?? route.name ?? '',
+                    position: options.tabBarLabelPosition ?? 'below-icon',
                   })
                 : label
             }
@@ -147,7 +147,7 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
 function MaterialTabItem({
   isFocused,
-  name = "star",
+  name = 'star',
   badge,
   className,
   label,
@@ -155,16 +155,16 @@ function MaterialTabItem({
   ...pressableProps
 }: {
   isFocused: boolean;
-  name: IconProps<"material">["name"];
+  name: IconProps<'material'>['name'];
   label: string | React.ReactNode;
   tabBarItemStyle?: StyleProp<ViewStyle>;
   badge?: number | string;
-} & Omit<PressableProps, "children">) {
+} & Omit<PressableProps, 'children'>) {
   const { colors } = useColorScheme();
   const isFocusedDerived = useDerivedValue(() => isFocused);
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      position: "absolute",
+      position: 'absolute',
       transform: [
         {
           scaleX: withTiming(isFocusedDerived.value ? 1 : 0, { duration: 200 }),
@@ -180,7 +180,7 @@ function MaterialTabItem({
   });
   return (
     <Pressable
-      className={cn("flex-1 items-center", className)}
+      className={cn('flex-1 items-center', className)}
       {...pressableProps}
       style={tabBarItemStyle}
     >
@@ -196,7 +196,7 @@ function MaterialTabItem({
           {!!badge && <Badge>{badge}</Badge>}
         </View>
       </View>
-      <Text variant="caption2" className={cn("pt-1", !isFocused && "text-muted-foreground")}>
+      <Text variant="caption2" className={cn('pt-1', !isFocused && 'text-muted-foreground')}>
         {label}
       </Text>
     </Pressable>

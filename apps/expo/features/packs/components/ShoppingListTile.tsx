@@ -1,15 +1,15 @@
-import { Icon } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { View } from "react-native";
-import { ListItem } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Icon } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { ListItem } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export function ShoppingListTile() {
   const router = useRouter();
 
   const handlePress = () => {
-    router.push("/shopping-list");
+    router.push('/shopping-list');
   };
 
   const shoppingList = 10;
@@ -36,7 +36,7 @@ export function ShoppingListTile() {
         </View>
       }
       item={{
-        title: "Shopping List",
+        title: 'Shopping List',
       }}
       onPress={handlePress}
       target="Cell"

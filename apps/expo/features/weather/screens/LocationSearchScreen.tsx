@@ -1,6 +1,6 @@
-import { Icon } from "@roninoss/icons";
-import { router } from "expo-router";
-import { useEffect, useState, useRef } from "react";
+import { Icon } from '@roninoss/icons';
+import { router } from 'expo-router';
+import { useEffect, useState, useRef } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -10,27 +10,27 @@ import {
   Alert,
   Platform,
   Linking,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import debounce from "lodash.debounce";
-import * as Location from "expo-location";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import debounce from 'lodash.debounce';
+import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { Text } from "nativewindui/Text";
-import { SearchInput } from "nativewindui/SearchInput";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { useLocationSearch } from "../hooks";
-import type { LocationSearchResult } from "../types";
+import { Text } from 'nativewindui/Text';
+import { SearchInput } from 'nativewindui/SearchInput';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { useLocationSearch } from '../hooks';
+import type { LocationSearchResult } from '../types';
 
 // Key for storing recent searches in AsyncStorage
-const RECENT_SEARCHES_KEY = "packrat_recent_location_searches";
+const RECENT_SEARCHES_KEY = 'packrat_recent_location_searches';
 
 export default function LocationSearchScreen() {
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
   const searchInputRef = useRef<any>(null);
@@ -56,7 +56,7 @@ export default function LocationSearchScreen() {
           setRecentSearches(JSON.parse(storedSearches));
         }
       } catch (err) {
-        console.error("Error loading recent searches:", err);
+        console.error('Error loading recent searches:', err);
       }
     };
 
@@ -84,7 +84,7 @@ export default function LocationSearchScreen() {
       setRecentSearches(updatedSearches);
       await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
     } catch (err) {
-      console.error("Error saving recent search:", err);
+      console.error('Error saving recent search:', err);
     }
   };
 
@@ -114,17 +114,17 @@ export default function LocationSearchScreen() {
 
         // Show success message
         Alert.alert(
-          "Location Added",
+          'Location Added',
           `${location.name} has been added to your locations.`,
           [
             {
-              text: "View All Locations",
+              text: 'View All Locations',
               onPress: () => router.back(),
             },
             {
-              text: "Add Another",
+              text: 'Add Another',
               onPress: () => {
-                setQuery("");
+                setQuery('');
                 searchInputRef.current?.focus();
               },
             },
@@ -132,11 +132,11 @@ export default function LocationSearchScreen() {
           { cancelable: false },
         );
       } else {
-        Alert.alert("Error", "Failed to add location. Please try again.");
+        Alert.alert('Error', 'Failed to add location. Please try again.');
       }
     } catch (err) {
-      console.error("Error adding location:", err);
-      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      console.error('Error adding location:', err);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setIsAdding(false);
       setAddingLocationId(null);
@@ -149,12 +149,12 @@ export default function LocationSearchScreen() {
 
     // Navigate to preview screen with location coordinates
     router.push({
-      pathname: "/weather/preview",
+      pathname: '/weather/preview',
       params: {
         lat: location.lat.toString(),
         lon: location.lon.toString(),
         name: location.name,
-        region: location.region || "",
+        region: location.region || '',
         country: location.country,
       },
     });
@@ -177,18 +177,18 @@ export default function LocationSearchScreen() {
       // Request location permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
 
-      if (status !== "granted") {
+      if (status !== 'granted') {
         setLocationPermissionDenied(true);
         Alert.alert(
-          "Permission Denied",
-          "We need location permissions to get your current location.",
+          'Permission Denied',
+          'We need location permissions to get your current location.',
           [
-            { text: "Cancel", style: "cancel" },
+            { text: 'Cancel', style: 'cancel' },
             {
-              text: "Open Settings",
+              text: 'Open Settings',
               onPress: () => {
-                if (Platform.OS === "ios") {
-                  Linking.openURL("app-settings:");
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
                 } else {
                   Linking.openSettings();
                 }
@@ -206,7 +206,7 @@ export default function LocationSearchScreen() {
 
       // Set a timeout for location retrieval
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Location request timed out")), 15000),
+        setTimeout(() => reject(new Error('Location request timed out')), 15000),
       );
 
       // Race between location retrieval and timeout
@@ -219,22 +219,22 @@ export default function LocationSearchScreen() {
       await searchByCoordinates(location.coords.latitude, location.coords.longitude);
 
       // Clear search query since we're showing results based on coordinates
-      setQuery("");
+      setQuery('');
     } catch (err) {
-      console.error("Error getting location:", err);
+      console.error('Error getting location:', err);
 
       // Provide more specific error messages
-      if (err.message === "Location request timed out") {
+      if (err.message === 'Location request timed out') {
         Alert.alert(
-          "Location Timeout",
-          "Unable to get your location in time. Please try again or search manually.",
-          [{ text: "OK" }],
+          'Location Timeout',
+          'Unable to get your location in time. Please try again or search manually.',
+          [{ text: 'OK' }],
         );
       } else {
         Alert.alert(
-          "Location Error",
-          "Unable to get your current location. Please try again or search manually.",
-          [{ text: "OK" }],
+          'Location Error',
+          'Unable to get your current location. Please try again or search manually.',
+          [{ text: 'OK' }],
         );
       }
     } finally {
@@ -244,13 +244,13 @@ export default function LocationSearchScreen() {
 
   // Popular cities list
   const POPULAR_CITIES = [
-    { name: "New York", country: "United States" },
-    { name: "London", country: "United Kingdom" },
-    { name: "Tokyo", country: "Japan" },
-    { name: "Paris", country: "France" },
-    { name: "Sydney", country: "Australia" },
-    { name: "Berlin", country: "Germany" },
-    { name: "Toronto", country: "Canada" },
+    { name: 'New York', country: 'United States' },
+    { name: 'London', country: 'United Kingdom' },
+    { name: 'Tokyo', country: 'Japan' },
+    { name: 'Paris', country: 'France' },
+    { name: 'Sydney', country: 'Australia' },
+    { name: 'Berlin', country: 'Germany' },
+    { name: 'Toronto', country: 'Canada' },
   ];
 
   // Render a search result item
@@ -260,7 +260,7 @@ export default function LocationSearchScreen() {
         <View className="flex-1">
           <Text className="font-medium">{item.name}</Text>
           <Text className="text-sm text-muted-foreground">
-            {item.region ? `${item.region}, ` : ""}
+            {item.region ? `${item.region}, ` : ''}
             {item.country}
           </Text>
         </View>
@@ -327,8 +327,8 @@ export default function LocationSearchScreen() {
         {/* Current Location Button */}
         <TouchableOpacity
           className={cn(
-            "mb-6 flex-row items-center justify-center gap-2 rounded-lg p-3",
-            locationPermissionDenied ? "bg-destructive/10" : "bg-primary/10",
+            'mb-6 flex-row items-center justify-center gap-2 rounded-lg p-3',
+            locationPermissionDenied ? 'bg-destructive/10' : 'bg-primary/10',
           )}
           onPress={handleUseDeviceLocation}
           disabled={isGettingLocation}

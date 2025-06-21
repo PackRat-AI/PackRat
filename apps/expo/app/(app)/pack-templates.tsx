@@ -1,48 +1,48 @@
-import { Icon } from "@roninoss/icons";
-import { View, ScrollView } from "react-native";
-import { colors } from "react-native-keyboard-controller/lib/typescript/components/KeyboardToolbar/colors";
+import { Icon } from '@roninoss/icons';
+import { View, ScrollView } from 'react-native';
+import { colors } from 'react-native-keyboard-controller/lib/typescript/components/KeyboardToolbar/colors';
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 // Mock data for pack templates
 const PACK_TEMPLATES = [
   {
-    id: "1",
-    name: "Ultralight 3-Season",
-    description: "Minimalist setup for fair weather hiking",
+    id: '1',
+    name: 'Ultralight 3-Season',
+    description: 'Minimalist setup for fair weather hiking',
     itemCount: 32,
-    totalWeight: "7.8 lbs",
-    lastUsed: "2 weeks ago",
-    tags: ["Ultralight", "3-Season", "Solo"],
+    totalWeight: '7.8 lbs',
+    lastUsed: '2 weeks ago',
+    tags: ['Ultralight', '3-Season', 'Solo'],
   },
   {
-    id: "2",
-    name: "Winter Camping",
-    description: "Cold weather gear with extra insulation",
+    id: '2',
+    name: 'Winter Camping',
+    description: 'Cold weather gear with extra insulation',
     itemCount: 45,
-    totalWeight: "15.2 lbs",
-    lastUsed: "3 months ago",
-    tags: ["Winter", "4-Season", "Cold Weather"],
+    totalWeight: '15.2 lbs',
+    lastUsed: '3 months ago',
+    tags: ['Winter', '4-Season', 'Cold Weather'],
   },
   {
-    id: "3",
-    name: "Weekend Trip",
-    description: "Balanced setup for 2-3 day hikes",
+    id: '3',
+    name: 'Weekend Trip',
+    description: 'Balanced setup for 2-3 day hikes',
     itemCount: 38,
-    totalWeight: "10.5 lbs",
-    lastUsed: "1 month ago",
-    tags: ["Weekend", "Lightweight", "Versatile"],
+    totalWeight: '10.5 lbs',
+    lastUsed: '1 month ago',
+    tags: ['Weekend', 'Lightweight', 'Versatile'],
   },
   {
-    id: "4",
-    name: "Desert Hiking",
-    description: "Optimized for hot, dry conditions",
+    id: '4',
+    name: 'Desert Hiking',
+    description: 'Optimized for hot, dry conditions',
     itemCount: 35,
-    totalWeight: "9.2 lbs",
-    lastUsed: "6 months ago",
-    tags: ["Desert", "Hot Weather", "Water Management"],
+    totalWeight: '9.2 lbs',
+    lastUsed: '6 months ago',
+    tags: ['Desert', 'Hot Weather', 'Water Management'],
   },
 ];
 

@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { Icon } from "@roninoss/icons";
-import { router } from "expo-router";
-import type React from "react";
-import type { ErrorInfo } from "react";
-import { ErrorBoundary as ReactErrorBoundary } from "react-error-boundary";
-import { Pressable, Text, View } from "react-native";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Icon } from '@roninoss/icons';
+import { router } from 'expo-router';
+import type React from 'react';
+import type { ErrorInfo } from 'react';
+import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
+import { Pressable, Text, View } from 'react-native';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 type ErrorBoundaryProps = {
   children: React.ReactNode;
@@ -46,7 +46,7 @@ const DefaultFallback = ({ resetErrorBoundary }: { resetErrorBoundary: () => voi
           </Pressable>
 
           <Pressable
-            onPress={() => router.replace("/")}
+            onPress={() => router.replace('/')}
             className="w-full items-center justify-center rounded-lg border border-border py-3.5"
             style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
           >
@@ -61,8 +61,8 @@ const DefaultFallback = ({ resetErrorBoundary }: { resetErrorBoundary: () => voi
 export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBoundaryProps) {
   const handleError = (error: Error, info: { componentStack: string }) => {
     // Log the error to your preferred logging service
-    console.error("Error caught by ErrorBoundary:", error);
-    console.error("Component stack:", info.componentStack);
+    console.error('Error caught by ErrorBoundary:', error);
+    console.error('Component stack:', info.componentStack);
 
     // Call the custom error handler if provided
     if (onError) {
@@ -75,7 +75,7 @@ export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBou
       FallbackComponent={fallback ? () => <>{fallback}</> : DefaultFallback}
       onReset={onReset}
       onError={(error: Error, info: ErrorInfo) =>
-        handleError(error, { componentStack: info.componentStack || "" })
+        handleError(error, { componentStack: info.componentStack || '' })
       }
     >
       {children}

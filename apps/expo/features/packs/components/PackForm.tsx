@@ -1,6 +1,6 @@
-import { Icon } from "@roninoss/icons";
-import { useForm } from "@tanstack/react-form";
-import { useRouter } from "expo-router";
+import { Icon } from '@roninoss/icons';
+import { useForm } from '@tanstack/react-form';
+import { useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,30 +9,30 @@ import {
   Switch,
   Text,
   View,
-} from "react-native";
-import { z } from "zod";
-import { DropdownMenu } from "nativewindui/DropdownMenu";
-import { createDropdownItem } from "nativewindui/DropdownMenu/utils";
-import { Form, FormItem, FormSection } from "nativewindui/Form";
-import { TextField } from "nativewindui/TextField";
-import { useCreatePack, useUpdatePack } from "../hooks";
-import { useColorScheme } from "~/lib/useColorScheme";
-import type { Pack, PackCategory } from "../types";
-import { Button } from "nativewindui/Button";
+} from 'react-native';
+import { z } from 'zod';
+import { DropdownMenu } from 'nativewindui/DropdownMenu';
+import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { TextField } from 'nativewindui/TextField';
+import { useCreatePack, useUpdatePack } from '../hooks';
+import { useColorScheme } from '~/lib/useColorScheme';
+import type { Pack, PackCategory } from '../types';
+import { Button } from 'nativewindui/Button';
 // Define Zod schema
 const packFormSchema = z.object({
-  name: z.string().min(1, "Pack name is required"),
+  name: z.string().min(1, 'Pack name is required'),
   description: z.string(),
   category: z.enum([
-    "hiking",
-    "backpacking",
-    "camping",
-    "climbing",
-    "winter",
-    "desert",
-    "custom",
-    "water sports",
-    "skiing",
+    'hiking',
+    'backpacking',
+    'camping',
+    'climbing',
+    'winter',
+    'desert',
+    'custom',
+    'water sports',
+    'skiing',
   ]),
   isPublic: z.boolean(),
   tags: z.array(z.string()),
@@ -43,15 +43,15 @@ type PackFormValues = z.infer<typeof packFormSchema>;
 
 // Categories with icons and labels
 const CATEGORIES = [
-  { value: "hiking", label: "Hiking" },
-  { value: "backpacking", label: "Backpacking" },
-  { value: "camping", label: "Camping" },
-  { value: "climbing", label: "Climbing" },
-  { value: "winter", label: "Winter" },
-  { value: "desert", label: "Desert" },
-  { value: "custom", label: "Custom" },
-  { value: "water sports", label: "Water Sports" },
-  { value: "skiing", label: "Skiing" },
+  { value: 'hiking', label: 'Hiking' },
+  { value: 'backpacking', label: 'Backpacking' },
+  { value: 'camping', label: 'Camping' },
+  { value: 'climbing', label: 'Climbing' },
+  { value: 'winter', label: 'Winter' },
+  { value: 'desert', label: 'Desert' },
+  { value: 'custom', label: 'Custom' },
+  { value: 'water sports', label: 'Water Sports' },
+  { value: 'skiing', label: 'Skiing' },
 ];
 
 export const PackForm = ({ pack }: { pack?: Pack }) => {
@@ -63,11 +63,11 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
 
   const form = useForm({
     defaultValues: {
-      name: pack?.name || "",
-      description: pack?.description || "",
-      category: pack?.category || "hiking",
+      name: pack?.name || '',
+      description: pack?.description || '',
+      category: pack?.category || 'hiking',
       isPublic: pack?.isPublic || false,
-      tags: pack?.tags || ["hiking"],
+      tags: pack?.tags || ['hiking'],
     },
     validators: {
       onChange: packFormSchema,
@@ -90,13 +90,13 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
     >
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
-            ios={{ title: "Pack Details" }}
+            ios={{ title: 'Pack Details' }}
             footnote="Enter the basic information about your pack"
           >
             <form.Field name="name">
@@ -107,7 +107,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors.map((err: any) => err.message).join(", ")}
+                    errorMessage={field.state.meta.errors.map((err: any) => err.message).join(', ')}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="folder" size={16} color={colors.grey3} />
@@ -155,7 +155,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                   >
                     <Button className="my-2 w-full" variant="plain">
                       <View className="w-full flex-row items-center justify-between capitalize">
-                        <Text>{field.state.value || "Select Category"}</Text>
+                        <Text>{field.state.value || 'Select Category'}</Text>
                         <Icon name="chevron-down" size={16} color={colors.grey3} />
                       </View>
                     </Button>
@@ -166,7 +166,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
           </FormSection>
 
           <FormSection
-            ios={{ title: "Visibility" }}
+            ios={{ title: 'Visibility' }}
             footnote="Public packs can be viewed by other users"
           >
             <form.Field name="isPublic">
@@ -185,8 +185,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                       value={field.state.value}
                       onValueChange={field.handleChange}
                       trackColor={{
-                        false: "hsl(var(--muted))",
-                        true: "hsl(var(--primary))",
+                        false: 'hsl(var(--muted))',
+                        true: 'hsl(var(--primary))',
                       }}
                       ios_backgroundColor="hsl(var(--muted))"
                     />
@@ -202,16 +202,16 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
             <Pressable
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${!canSubmit || isSubmitting ? "bg-primary/70" : "bg-primary"}`}
+              className={`mt-6 rounded-lg px-4 py-3.5 ${!canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'}`}
             >
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting
                   ? isEditingExistingPack
-                    ? "Updating..."
-                    : "Creating..."
+                    ? 'Updating...'
+                    : 'Creating...'
                   : isEditingExistingPack
-                    ? "Update Pack"
-                    : "Create Pack"}
+                    ? 'Update Pack'
+                    : 'Create Pack'}
                 {/* TODO use activity indicator */}
               </Text>
             </Pressable>

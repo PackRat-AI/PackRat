@@ -1,8 +1,8 @@
-import { Icon, MaterialIconName } from "@roninoss/icons";
-import { Image, Pressable, Text, View } from "react-native";
-import { CategoryBadge } from "~/components/initial/CategoryBadge";
-import { WeightBadge } from "~/components/initial/WeightBadge";
-import { cn } from "~/lib/cn";
+import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Image, Pressable, Text, View } from 'react-native';
+import { CategoryBadge } from '~/components/initial/CategoryBadge';
+import { WeightBadge } from '~/components/initial/WeightBadge';
+import { cn } from '~/lib/cn';
 import {
   calculateTotalWeight,
   getQuantity,
@@ -10,8 +10,8 @@ import {
   isPackItem,
   isWorn,
   shouldShowQuantity,
-} from "~/lib/utils/itemCalculations";
-import type { CatalogItem, PackItem } from "~/types";
+} from '~/lib/utils/itemCalculations';
+import type { CatalogItem, PackItem } from '~/types';
 
 type ItemCardProps = {
   item: CatalogItem | PackItem;
@@ -52,12 +52,12 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
             <Text className="text-base font-semibold text-foreground">{item.name}</Text>
             <View
               className={cn(
-                "rounded-full px-2 py-0.5",
-                isPackItem(item) ? "bg-primary/20" : "bg-secondary/20",
+                'rounded-full px-2 py-0.5',
+                isPackItem(item) ? 'bg-primary/20' : 'bg-secondary/20',
               )}
             >
               <Text className="text-xs text-primary">
-                {isPackItem(item) ? "Pack Item" : "Catalog Item"}
+                {isPackItem(item) ? 'Pack Item' : 'Catalog Item'}
               </Text>
             </View>
           </View>
@@ -89,27 +89,27 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
 // Helper function to get icon based on category
 function getCategoryIcon(category: string): MaterialIconName {
   switch (category) {
-    case "clothing":
-      return "account-voice";
-    case "shelter":
-      return "home";
-    case "sleep":
-      return "sleep";
-    case "kitchen":
-      return "silverware-fork-knife";
-    case "water":
-      return "water";
-    case "electronics":
-      return "cellphone";
-    case "first-aid":
-      return "bandage";
-    case "navigation":
-      return "map";
-    case "tools":
-      return "wrench";
-    case "consumables":
-      return "apple";
+    case 'clothing':
+      return 'account-voice';
+    case 'shelter':
+      return 'home';
+    case 'sleep':
+      return 'sleep';
+    case 'kitchen':
+      return 'silverware-fork-knife';
+    case 'water':
+      return 'water';
+    case 'electronics':
+      return 'cellphone';
+    case 'first-aid':
+      return 'bandage';
+    case 'navigation':
+      return 'map';
+    case 'tools':
+      return 'wrench';
+    case 'consumables':
+      return 'apple';
     default:
-      return "square-outline";
+      return 'square-outline';
   }
 }

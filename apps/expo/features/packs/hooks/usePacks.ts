@@ -1,5 +1,5 @@
-import { use$ } from "@legendapp/state/react";
-import { packsStore } from "~/features/packs/store";
+import { use$ } from '@legendapp/state/react';
+import { packsStore } from '~/features/packs/store';
 
 export function usePacks() {
   const packs = use$(() => {

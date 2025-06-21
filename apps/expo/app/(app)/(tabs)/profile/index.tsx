@@ -1,34 +1,34 @@
-import { Stack, useRouter } from "expo-router";
-import { Platform, View } from "react-native";
+import { Stack, useRouter } from 'expo-router';
+import { Platform, View } from 'react-native';
 
-import { Avatar, AvatarFallback } from "nativewindui/Avatar";
-import { Button } from "nativewindui/Button";
+import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
 import {
   ESTIMATED_ITEM_HEIGHT,
   List,
   ListItem,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useAuth } from "~/features/auth/hooks/useAuth";
-import { useUser } from "~/features/auth/hooks/useUser";
-import { withAuthWall } from "~/features/auth/hocs";
-import { ProfileAuthWall } from "~/features/profile/components";
-import { Alert } from "nativewindui/Alert";
-import { useRef } from "react";
-import { AlertRef } from "nativewindui/Alert/types";
-import { packItemsSyncState, packsSyncState } from "~/features/packs/store";
-import { ActivityIndicator } from "nativewindui/ActivityIndicator";
+} from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useAuth } from '~/features/auth/hooks/useAuth';
+import { useUser } from '~/features/auth/hooks/useUser';
+import { withAuthWall } from '~/features/auth/hocs';
+import { ProfileAuthWall } from '~/features/profile/components';
+import { Alert } from 'nativewindui/Alert';
+import { useRef } from 'react';
+import { AlertRef } from 'nativewindui/Alert/types';
+import { packItemsSyncState, packsSyncState } from '~/features/packs/store';
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 
 const SCREEN_OPTIONS = {
-  title: "Profile",
+  title: 'Profile',
   headerShown: false,
 } as const;
 
 const ESTIMATED_ITEM_SIZE =
-  ESTIMATED_ITEM_HEIGHT[Platform.OS === "ios" ? "titleOnly" : "withSubTitle"];
+  ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
 
 function Profile() {
   const user = useUser();
@@ -37,22 +37,22 @@ function Profile() {
   const displayName =
     user?.firstName && user?.lastName
       ? `${user.firstName} ${user.lastName}`
-      : user?.email?.split("@")[0] || "User";
+      : user?.email?.split('@')[0] || 'User';
 
-  const email = user?.email || "";
+  const email = user?.email || '';
 
   // Create data array with user information
   const DATA: DataItem[] = [
-    ...(Platform.OS !== "ios" ? ["Account Information"] : []),
+    ...(Platform.OS !== 'ios' ? ['Account Information'] : []),
     {
-      id: "name",
-      title: "Name",
-      ...(Platform.OS === "ios" ? { value: displayName } : { subTitle: displayName }),
+      id: 'name',
+      title: 'Name',
+      ...(Platform.OS === 'ios' ? { value: displayName } : { subTitle: displayName }),
     },
     {
-      id: "email",
-      title: "Email",
-      ...(Platform.OS === "ios" ? { value: email } : { subTitle: email }),
+      id: 'email',
+      title: 'Email',
+      ...(Platform.OS === 'ios' ? { value: email } : { subTitle: email }),
     },
   ];
 
@@ -63,7 +63,7 @@ function Profile() {
       <List
         variant="insets"
         data={DATA}
-        sectionHeaderAsGap={Platform.OS === "ios"}
+        sectionHeaderAsGap={Platform.OS === 'ios'}
         estimatedItemSize={ESTIMATED_ITEM_SIZE}
         renderItem={renderItem}
         ListHeaderComponent={<ListHeaderComponent />}
@@ -80,7 +80,7 @@ function renderItem(info: ListRenderItemInfo<DataItem>) {
 }
 
 function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
-  if (typeof info.item === "string") {
+  if (typeof info.item === 'string') {
     return <ListSectionHeader {...info} />;
   }
   return (
@@ -101,14 +101,14 @@ function ListHeaderComponent() {
   const initials =
     user?.firstName && user?.lastName
       ? `${user.firstName[0]}${user.lastName[0]}`
-      : user?.email?.substring(0, 2).toUpperCase() || "U";
+      : user?.email?.substring(0, 2).toUpperCase() || 'U';
 
   const displayName =
     user?.firstName && user?.lastName
       ? `${user.firstName} ${user.lastName}`
-      : user?.email?.split("@")[0] || "User";
+      : user?.email?.split('@')[0] || 'User';
 
-  const username = user?.email || "";
+  const username = user?.email || '';
 
   return (
     <View className="ios:pb-8 items-center pb-4 pt-8">
@@ -117,8 +117,8 @@ function ListHeaderComponent() {
           <Text
             variant="largeTitle"
             className={cn(
-              "font-medium text-white dark:text-background",
-              Platform.OS === "ios" && "dark:text-foreground",
+              'font-medium text-white dark:text-background',
+              Platform.OS === 'ios' && 'dark:text-foreground',
             )}
           >
             {initials}
@@ -154,7 +154,7 @@ function ListFooterComponent() {
           signOut();
         }}
         size="lg"
-        variant={Platform.select({ ios: "primary", default: "secondary" })}
+        variant={Platform.select({ ios: 'primary', default: 'secondary' })}
         className="border-border bg-card"
       >
         {isLoading ? (
@@ -166,16 +166,16 @@ function ListFooterComponent() {
       <Alert
         title="Sync in progress"
         message="Some data is still syncing. You may lose them if you proceed to log out."
-        materialIcon={{ name: "repeat" }}
+        materialIcon={{ name: 'repeat' }}
         materialWidth={370}
         buttons={[
           {
-            text: "Cancel",
-            style: "cancel",
+            text: 'Cancel',
+            style: 'cancel',
           },
           {
-            text: "Log out",
-            style: "destructive",
+            text: 'Log out',
+            style: 'destructive',
             onPress: () => {
               signOut();
             },

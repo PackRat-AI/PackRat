@@ -1,18 +1,18 @@
-import { Icon } from "@roninoss/icons";
-import "expo-dev-client";
-import { Stack, useRouter } from "expo-router";
-import { Pressable, View } from "react-native";
-import { AiChatHeader } from "~/components/ai-chatHeader";
-import { ActivityIndicator } from "nativewindui/ActivityIndicator";
+import { Icon } from '@roninoss/icons';
+import 'expo-dev-client';
+import { Stack, useRouter } from 'expo-router';
+import { Pressable, View } from 'react-native';
+import { AiChatHeader } from '~/components/ai-chatHeader';
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 
-import { ThemeToggle } from "~/components/ThemeToggle";
-import { useAuthInit } from "~/features/auth/hooks/useAuthInit";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { ThemeToggle } from '~/components/ThemeToggle';
+import { useAuthInit } from '~/features/auth/hooks/useAuthInit';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
-} from "expo-router";
+} from 'expo-router';
 
 export default function AppLayout() {
   const isLoading = useAuthInit();
@@ -48,96 +48,96 @@ export default function AppLayout() {
         name="current-pack"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="recent-packs"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="pack-stats/[id]"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="weight-analysis"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="pack-categories/[id]"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="upcoming-trips"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="weather-alerts"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="trail-conditions"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="gear-inventory"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="shopping-list"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="shared-packs"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
       <Stack.Screen
         name="pack-templates"
         options={{
           headerShown: false,
-          presentation: "modal",
-          animation: "slide_from_bottom",
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
         }}
       />
     </Stack>
@@ -145,54 +145,54 @@ export default function AppLayout() {
 }
 
 const SCREEN_OPTIONS = {
-  animation: "ios_from_right", // for android
+  animation: 'ios_from_right', // for android
 } as const;
 
 const TABS_OPTIONS = {
-  title: "",
+  title: '',
   headerShown: false,
 } as const;
 
 // MODALS
 const MODAL_OPTIONS = {
-  presentation: "modal",
-  animation: "fade_from_bottom", // for android
-  title: "Settings",
+  presentation: 'modal',
+  animation: 'fade_from_bottom', // for android
+  title: 'Settings',
   headerRight: () => <ThemeToggle />,
 } as const;
 
 const CONSENT_MODAL_OPTIONS = {
-  presentation: "modal",
-  animation: "fade_from_bottom", // for android
+  presentation: 'modal',
+  animation: 'fade_from_bottom', // for android
 } as const;
 
 const PACK_NEW_OPTIONS = {
-  title: "Create New Pack",
-  presentation: "modal",
-  animation: "fade_from_bottom", // for android
+  title: 'Create New Pack',
+  presentation: 'modal',
+  animation: 'fade_from_bottom', // for android
 } as const;
 
 const ITEM_NEW_OPTIONS = {
-  title: "Create New Item",
-  presentation: "modal",
-  animation: "fade_from_bottom", // for android
+  title: 'Create New Item',
+  presentation: 'modal',
+  animation: 'fade_from_bottom', // for android
 } as const;
 
 const AI_CHAT_OPTIONS = {
-  title: "AI Chat",
+  title: 'AI Chat',
   header: () => <AiChatHeader />,
-  animation: "fade_from_bottom", // for android
+  animation: 'fade_from_bottom', // for android
 } as const;
 
 const PACK_SELECTION_OPTIONS = {
-  title: "Select Pack",
-  presentation: "modal",
-  animation: "fade_from_bottom", // for android
+  title: 'Select Pack',
+  presentation: 'modal',
+  animation: 'fade_from_bottom', // for android
 } as const;
 
 const ITEM_DETAILS_OPTIONS = {
-  title: "Item Details",
-  animation: "fade_from_bottom", // for android
+  title: 'Item Details',
+  animation: 'fade_from_bottom', // for android
 } as const;
 
 // DETAIL SCREENS
@@ -206,7 +206,7 @@ function getPackDetailOptions({
   };
 }) {
   return {
-    title: "Pack Details",
+    title: 'Pack Details',
     headerRight: () => {
       const { colors } = useColorScheme();
       const router = useRouter();
@@ -214,10 +214,10 @@ function getPackDetailOptions({
 
       return (
         <View className="flex-row items-center gap-2">
-          <Pressable onPress={() => router.push({ pathname: "/pack/[id]/edit", params: { id } })}>
+          <Pressable onPress={() => router.push({ pathname: '/pack/[id]/edit', params: { id } })}>
             <Icon name="pencil-box-outline" color={colors.foreground} />
           </Pressable>
-          <Pressable onPress={() => router.push({ pathname: "/item/new", params: { packId: id } })}>
+          <Pressable onPress={() => router.push({ pathname: '/item/new', params: { packId: id } })}>
             <Icon name="plus" color={colors.foreground} />
           </Pressable>
         </View>
@@ -227,22 +227,22 @@ function getPackDetailOptions({
 }
 
 const PACK_EDIT_OPTIONS = {
-  title: "Edit Pack",
+  title: 'Edit Pack',
 } as const;
 
 const ITEM_DETAIL_OPTIONS = {
-  title: "Item Details",
+  title: 'Item Details',
 } as const;
 
 const ITEM_EDIT_OPTIONS = {
-  title: "Edit Item",
+  title: 'Edit Item',
 } as const;
 
 const CATALOG_LIST_OPTIONS = {
-  title: "Gear Catalog",
+  title: 'Gear Catalog',
   headerLargeTitle: true,
 } as const;
 
 const CATALOG_ITEM_DETAIL_OPTIONS = {
-  title: "Catalog Item",
+  title: 'Catalog Item',
 } as const;

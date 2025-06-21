@@ -1,7 +1,7 @@
-import { CreatePackItemForm } from "~/features/packs/screens/CreatePackItemForm";
-import { NotFoundScreen } from "../../../screens/NotFoundScreen";
-import { useLocalSearchParams } from "expo-router";
-import { usePackItem } from "../hooks";
+import { CreatePackItemForm } from '~/features/packs/screens/CreatePackItemForm';
+import { NotFoundScreen } from '../../../screens/NotFoundScreen';
+import { useLocalSearchParams } from 'expo-router';
+import { usePackItem } from '../hooks';
 
 export function EditPackItemScreen() {
   const { id, packId } = useLocalSearchParams();

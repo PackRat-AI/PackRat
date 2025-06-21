@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { View, ScrollView, Pressable, ActivityIndicator, SafeAreaView } from "react-native"; // 👈 import ActivityIndicator
+import { useState } from 'react';
+import { View, ScrollView, Pressable, ActivityIndicator, SafeAreaView } from 'react-native'; // 👈 import ActivityIndicator
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { PackItemCard } from "~/features/packs/components/PackItemCard";
-import { useUserPackItems } from "~/features/packs/hooks/useUserPackItems";
-import { cn } from "~/lib/cn";
-import type { PackItem } from "~/features/packs/types";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { PackItemCard } from '~/features/packs/components/PackItemCard';
+import { useUserPackItems } from '~/features/packs/hooks/useUserPackItems';
+import { cn } from '~/lib/cn';
+import type { PackItem } from '~/features/packs/types';
 
 function CategorySection({ category, items }: { category: string; items: PackItem[] }) {
   return (
@@ -26,13 +26,13 @@ function CategorySection({ category, items }: { category: string; items: PackIte
 }
 
 export default function GearInventoryScreen() {
-  const [viewMode, setViewMode] = useState<"all" | "category">("all");
+  const [viewMode, setViewMode] = useState<'all' | 'category'>('all');
   const items = useUserPackItems();
 
   const groupByCategory = (items: PackItem[]) => {
     return items.reduce(
       (acc, item) => {
-        const category = item.category || "Other";
+        const category = item.category || 'Other';
 
         if (!acc[category]) {
           acc[category] = [];
@@ -56,27 +56,27 @@ export default function GearInventoryScreen() {
           </Text>
           <View className="flex-row overflow-hidden rounded-lg bg-card">
             <Pressable
-              className={cn("px-3 py-1.5", viewMode === "all" ? "bg-primary" : "bg-transparent")}
-              onPress={() => setViewMode("all")}
+              className={cn('px-3 py-1.5', viewMode === 'all' ? 'bg-primary' : 'bg-transparent')}
+              onPress={() => setViewMode('all')}
             >
               <Text
                 variant="subhead"
-                className={viewMode === "all" ? "text-primary-foreground" : "text-muted-foreground"}
+                className={viewMode === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
               >
                 All
               </Text>
             </Pressable>
             <Pressable
               className={cn(
-                "px-3 py-1.5",
-                viewMode === "category" ? "bg-primary" : "bg-transparent",
+                'px-3 py-1.5',
+                viewMode === 'category' ? 'bg-primary' : 'bg-transparent',
               )}
-              onPress={() => setViewMode("category")}
+              onPress={() => setViewMode('category')}
             >
               <Text
                 variant="subhead"
                 className={
-                  viewMode === "category" ? "text-primary-foreground" : "text-muted-foreground"
+                  viewMode === 'category' ? 'text-primary-foreground' : 'text-muted-foreground'
                 }
               >
                 By Category
@@ -85,7 +85,7 @@ export default function GearInventoryScreen() {
           </View>
         </View>
 
-        {viewMode === "all" ? (
+        {viewMode === 'all' ? (
           <View className=" flex-1 pb-20">
             {items.map((item) => (
               <PackItemCard key={item.id} item={item} onPress={() => {}} />

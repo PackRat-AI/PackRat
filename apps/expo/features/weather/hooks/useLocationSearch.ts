@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   searchLocations,
   getWeatherData,
   formatWeatherData,
   searchLocationsByCoordinates,
-} from "~/features/weather/lib/weatherService";
-import type { LocationSearchResult, WeatherLocation } from "../types";
-import { useLocations } from "./useLocations";
+} from '~/features/weather/lib/weatherService';
+import type { LocationSearchResult, WeatherLocation } from '../types';
+import { useLocations } from './useLocations';
 
 export function useLocationSearch() {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,8 +27,8 @@ export function useLocationSearch() {
       const searchResults = await searchLocations(query);
       setResults(searchResults);
     } catch (err) {
-      console.error("Error searching locations:", err);
-      setError("Failed to search locations. Please try again.");
+      console.error('Error searching locations:', err);
+      setError('Failed to search locations. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -42,13 +42,13 @@ export function useLocationSearch() {
       const searchResults = await searchLocationsByCoordinates(latitude, longitude);
 
       if (searchResults.length === 0) {
-        setError("No locations found near your current position. Please try searching manually.");
+        setError('No locations found near your current position. Please try searching manually.');
       } else {
         setResults(searchResults);
       }
     } catch (err) {
-      console.error("Error searching locations by coordinates:", err);
-      setError("Failed to find locations near you. Please try again or search manually.");
+      console.error('Error searching locations by coordinates:', err);
+      setError('Failed to find locations near you. Please try again or search manually.');
     } finally {
       setIsLoading(false);
     }
@@ -84,12 +84,12 @@ export function useLocationSearch() {
         addLocation(newLocation);
         return true;
       } else {
-        setError("Failed to get weather data for this location");
+        setError('Failed to get weather data for this location');
         return false;
       }
     } catch (err) {
-      console.error("Error adding location:", err);
-      setError("Failed to add location. Please try again.");
+      console.error('Error adding location:', err);
+      setError('Failed to add location. Please try again.');
       return false;
     } finally {
       setIsLoading(false);

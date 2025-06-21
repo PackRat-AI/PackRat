@@ -1,4 +1,4 @@
-export type WeightUnit = "g" | "kg" | "oz" | "lb";
+export type WeightUnit = 'g' | 'kg' | 'oz' | 'lb';
 
 export interface PackItem {
   id: string;
@@ -35,15 +35,15 @@ export interface PackItemInput {
 }
 
 export type PackCategory =
-  | "hiking"
-  | "backpacking"
-  | "camping"
-  | "climbing"
-  | "winter"
-  | "desert"
-  | "water sports"
-  | "skiing"
-  | "custom";
+  | 'hiking'
+  | 'backpacking'
+  | 'camping'
+  | 'climbing'
+  | 'winter'
+  | 'desert'
+  | 'water sports'
+  | 'skiing'
+  | 'custom';
 
 export type Weight = {
   value: number;
@@ -76,11 +76,11 @@ export interface Pack {
   updatedAt?: string;
 }
 
-export type PackInStore = Omit<Pack, "items" | "baseWeight" | "totalWeight">;
+export type PackInStore = Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>;
 
 export type PackInput = Omit<
   PackInStore,
-  "id" | "userId" | "deleted" | "createdAt" | "updatedAt" | "localCreatedAt" | "localUpdatedAt"
+  'id' | 'userId' | 'deleted' | 'createdAt' | 'updatedAt' | 'localCreatedAt' | 'localUpdatedAt'
 >;
 
 export interface PackWeightHistoryEntry {

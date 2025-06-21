@@ -1,5 +1,5 @@
-import * as FileSystem from "expo-file-system";
-import { IMAGES_DIR } from "../constants";
+import * as FileSystem from 'expo-file-system';
+import { IMAGES_DIR } from '../constants';
 
 export class ImageCacheManager {
   private static instance: ImageCacheManager;
@@ -51,9 +51,9 @@ export class ImageCacheManager {
     if (!fileInfo.exists) {
       const downloadOptions = {
         headers: {
-          "User-Agent":
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
-          Accept: "image/webp,image/apng,image/*,*/*;q=0.8",
+          'User-Agent':
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+          Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
         },
       };
       const downloadResult = await FileSystem.downloadAsync(remoteUrl, localUri, downloadOptions);

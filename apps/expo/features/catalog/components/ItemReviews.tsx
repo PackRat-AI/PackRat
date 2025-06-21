@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { View, Image, TouchableOpacity } from "react-native";
-import { Icon } from "@roninoss/icons";
-import type { ItemReview } from "~/types";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { useState } from 'react';
+import { View, Image, TouchableOpacity } from 'react-native';
+import { Icon } from '@roninoss/icons';
+import type { ItemReview } from '~/types';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 type ItemReviewsProps = {
   reviews: ItemReview[];
@@ -26,10 +26,10 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
   };
 
@@ -73,7 +73,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Icon
                       key={star}
-                      name={star <= review.rating ? "star" : "star-outline"}
+                      name={star <= review.rating ? 'star' : 'star-outline'}
                       size={14}
                       color={colors.yellow}
                     />
@@ -93,7 +93,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
               {shouldTruncate && (
                 <TouchableOpacity className="mt-1" onPress={() => toggleReviewExpansion(review.id)}>
                   <Text className="text-sm text-primary">
-                    {isExpanded ? "Show less" : "Read more"}
+                    {isExpanded ? 'Show less' : 'Read more'}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -103,7 +103,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
               <View className="mt-2 flex-row items-center">
                 <Icon name="heart" size={14} color={colors.grey} />
                 <Text className="ml-1 text-xs text-muted-foreground">
-                  {review.helpful} {review.helpful === 1 ? "person" : "people"} found this helpful
+                  {review.helpful} {review.helpful === 1 ? 'person' : 'people'} found this helpful
                 </Text>
               </View>
             )}

@@ -1,9 +1,9 @@
-import { use$ } from "@legendapp/state/react";
-import { useQuery } from "@tanstack/react-query";
+import { use$ } from '@legendapp/state/react';
+import { useQuery } from '@tanstack/react-query';
 
-import axiosInstance, { handleApiError } from "~/lib/api/client";
-import { packsStore } from "../store";
-import { packWeigthHistoryStore } from "../store/packWeightHistory";
+import axiosInstance, { handleApiError } from '~/lib/api/client';
+import { packsStore } from '../store';
+import { packWeigthHistoryStore } from '../store/packWeightHistory';
 
 export type PackMonthlyAverage = {
   month: string;
@@ -13,18 +13,18 @@ export type PackMonthlyAverage = {
 // Helper: Compute monthly average weights from history
 const getMonthlyWeightAverages = (data: any[]) => {
   const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   const monthData: Record<string, { totalWeight: number; count: number }> = {};
@@ -41,7 +41,7 @@ const getMonthlyWeightAverages = (data: any[]) => {
   });
 
   const monthlyAverages = Object.entries(monthData).map(([key, { totalWeight, count }]) => {
-    const [year, monthIndex] = key.split("-").map(Number);
+    const [year, monthIndex] = key.split('-').map(Number);
     return {
       year,
       month: monthNames[monthIndex],

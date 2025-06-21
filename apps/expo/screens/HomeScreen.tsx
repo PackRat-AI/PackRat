@@ -1,10 +1,10 @@
-import { useAtomValue } from "jotai";
-import { FlatList, SafeAreaView, Text, View } from "react-native";
-import { authAtom } from "~/atoms/authAtoms";
-import { PackCard } from "~/components/initial/PackCard";
-import { UserAvatar } from "~/components/initial/UserAvatar";
-import { usePacks } from "~/hooks/usePacks";
-import type { Pack } from "~/types";
+import { useAtomValue } from 'jotai';
+import { FlatList, SafeAreaView, Text, View } from 'react-native';
+import { authAtom } from '~/atoms/authAtoms';
+import { PackCard } from '~/components/initial/PackCard';
+import { UserAvatar } from '~/components/initial/UserAvatar';
+import { usePacks } from '~/hooks/usePacks';
+import type { Pack } from '~/types';
 
 export function HomeScreen() {
   const user = useAtomValue(authAtom);
@@ -12,7 +12,7 @@ export function HomeScreen() {
 
   const handlePackPress = (pack: Pack) => {
     // In a real app, you would navigate to the pack details screen
-    console.log("Navigate to pack details:", pack.id);
+    console.log('Navigate to pack details:', pack.id);
   };
 
   if (isLoading) {

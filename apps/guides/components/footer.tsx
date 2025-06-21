@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { getAllCategories } from "@/lib/categories";
-import { footerConfig, siteConfig } from "@/lib/config";
-import { useQuery } from "@tanstack/react-query";
-import { Backpack, Facebook, Github, Instagram, Twitter } from "lucide-react";
-import Link from "next/link";
+import { getAllCategories } from '@/lib/categories';
+import { footerConfig, siteConfig } from '@/lib/config';
+import { useQuery } from '@tanstack/react-query';
+import { Backpack, Facebook, Github, Instagram, Twitter } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Footer() {
   // Fetch categories using TanStack Query
   const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
+    queryKey: ['categories'],
     queryFn: getAllCategories,
   });
 

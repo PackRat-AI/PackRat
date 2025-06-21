@@ -1,12 +1,12 @@
-import { Icon } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { View } from "react-native";
-import { ListItem } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { Alert } from "nativewindui/Alert";
-import { useRef } from "react";
-import { type AlertRef } from "nativewindui/Alert/types";
+import { Icon } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { ListItem } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { Alert } from 'nativewindui/Alert';
+import { useRef } from 'react';
+import { type AlertRef } from 'nativewindui/Alert/types';
 
 export function WeatherAlertsTile() {
   const router = useRouter();
@@ -17,7 +17,7 @@ export function WeatherAlertsTile() {
     //   alertRef.current?.show();
     //   return;
     // }
-    router.push("/weather-alerts");
+    router.push('/weather-alerts');
   };
 
   const weatherAlertCount = 10;
@@ -41,7 +41,7 @@ export function WeatherAlertsTile() {
           </View>
         }
         item={{
-          title: "Weather Alerts",
+          title: 'Weather Alerts',
         }}
         onPress={handlePress}
         target="Cell"
@@ -50,12 +50,12 @@ export function WeatherAlertsTile() {
       <Alert
         title="No Trips Yet"
         message="Create a trip see weather alerts for your destination."
-        materialIcon={{ name: "information-outline" }}
+        materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: "Got it",
-            style: "default",
+            text: 'Got it',
+            style: 'default',
           },
         ]}
         ref={alertRef}

@@ -1,5 +1,5 @@
-import { usePathname, useRouter } from "expo-router";
-import { useAtom } from "jotai";
+import { usePathname, useRouter } from 'expo-router';
+import { useAtom } from 'jotai';
 import {
   FlatList,
   Pressable,
@@ -8,35 +8,35 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import { Icon } from "@roninoss/icons";
-import { Link } from "expo-router";
-import { activeFilterAtom, searchValueAtom } from "~/features/packs/packListAtoms";
-import { PackCard } from "~/features/packs/components/PackCard";
-import { usePacks } from "~/features/packs/hooks/usePacks";
-import { useAuth } from "~/features/auth/hooks/useAuth";
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { useColorScheme } from "~/lib/useColorScheme";
-import type { Pack, PackCategory } from "../types";
-import SyncBanner from "~/features/packs/components/SyncBanner";
-import { useCallback, useRef } from "react";
-import { SearchResults } from "~/features/packs/components/SearchResults";
-import { LargeTitleSearchBarRef } from "nativewindui/LargeTitleHeader/types";
+} from 'react-native';
+import { Icon } from '@roninoss/icons';
+import { Link } from 'expo-router';
+import { activeFilterAtom, searchValueAtom } from '~/features/packs/packListAtoms';
+import { PackCard } from '~/features/packs/components/PackCard';
+import { usePacks } from '~/features/packs/hooks/usePacks';
+import { useAuth } from '~/features/auth/hooks/useAuth';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { useColorScheme } from '~/lib/useColorScheme';
+import type { Pack, PackCategory } from '../types';
+import SyncBanner from '~/features/packs/components/SyncBanner';
+import { useCallback, useRef } from 'react';
+import { SearchResults } from '~/features/packs/components/SearchResults';
+import { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
 
 type FilterOption = {
   label: string;
-  value: PackCategory | "all";
+  value: PackCategory | 'all';
 };
 
 const filterOptions: FilterOption[] = [
-  { label: "All", value: "all" },
-  { label: "Hiking", value: "hiking" },
-  { label: "Backpacking", value: "backpacking" },
-  { label: "Camping", value: "camping" },
-  { label: "Climbing", value: "climbing" },
-  { label: "Winter", value: "winter" },
-  { label: "Desert", value: "desert" },
-  { label: "Custom", value: "custom" },
+  { label: 'All', value: 'all' },
+  { label: 'Hiking', value: 'hiking' },
+  { label: 'Backpacking', value: 'backpacking' },
+  { label: 'Camping', value: 'camping' },
+  { label: 'Climbing', value: 'climbing' },
+  { label: 'Winter', value: 'winter' },
+  { label: 'Desert', value: 'desert' },
+  { label: 'Custom', value: 'custom' },
 ];
 
 function CreatePackIconButton() {
@@ -61,19 +61,19 @@ export function PackListScreen() {
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
 
   const handlePackPress = useCallback(
-    (pack: Omit<Pack, "items" | "baseWeight" | "totalWeight">) => {
-      router.push({ pathname: "/pack/[id]", params: { id: pack.id } });
+    (pack: Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>) => {
+      router.push({ pathname: '/pack/[id]', params: { id: pack.id } });
     },
     [router],
   );
 
   const handleCreatePack = () => {
     // Navigate to create pack screen
-    router.push({ pathname: "/pack/new" });
+    router.push({ pathname: '/pack/new' });
   };
 
   const filteredPacks =
-    activeFilter === "all"
+    activeFilter === 'all'
       ? packs?.filter((pack) => pack.name.toLowerCase().includes(searchValue.toLowerCase()))
       : packs?.filter(
           (pack) =>
@@ -85,10 +85,10 @@ export function PackListScreen() {
     <TouchableOpacity
       key={value}
       onPress={() => setActiveFilter(value)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? "bg-primary" : "bg-card"}`}
+      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}
     >
       <Text
-        className={`text-sm font-medium ${activeFilter === value ? "text-primary-foreground" : "text-foreground"}`}
+        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}
       >
         {label}
       </Text>
@@ -96,7 +96,7 @@ export function PackListScreen() {
   );
 
   const handleSearchResultPress = useCallback(
-    (pack: Omit<Pack, "items" | "baseWeight" | "totalWeight">) => {
+    (pack: Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>) => {
       // setSearchValue('');
       // searchBarRef.current?.clearText();
       // router.replace('/packs');
@@ -153,7 +153,7 @@ export function PackListScreen() {
             </View>
             <View className="px-4 pb-0 pt-2">
               <Text className="text-muted-foreground">
-                {filteredPacks?.length} {filteredPacks?.length === 1 ? "pack" : "packs"}
+                {filteredPacks?.length} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
               </Text>
             </View>
           </>
@@ -165,7 +165,7 @@ export function PackListScreen() {
             </View>
             <Text className="mb-1 text-lg font-medium text-foreground">No packs found</Text>
             <Text className="mb-6 text-center text-muted-foreground">
-              {activeFilter === "all"
+              {activeFilter === 'all'
                 ? "You haven't created any packs yet."
                 : `You don't have any ${activeFilter} packs.`}
             </Text>

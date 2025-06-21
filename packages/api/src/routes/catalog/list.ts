@@ -1,18 +1,18 @@
-import { createDb } from "@/db";
-import { catalogItems } from "@/db/schema";
-import { authenticateRequest, unauthorizedResponse } from "@/utils/api-middleware";
-import { eq } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createDb } from '@/db';
+import { catalogItems } from '@/db/schema';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { eq } from 'drizzle-orm';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 
 const catalogListRoutes = new OpenAPIHono();
 
 const listGetRoute = createRoute({
-  method: "get",
-  path: "/",
+  method: 'get',
+  path: '/',
   request: {
     query: z.object({ id: z.string().optional() }),
   },
-  responses: { 200: { description: "Get catalog items" } },
+  responses: { 200: { description: 'Get catalog items' } },
 });
 
 catalogListRoutes.openapi(listGetRoute, async (c) => {
@@ -24,7 +24,7 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
     }
 
     const db = createDb(c);
-    const id = c.req.query("id");
+    const id = c.req.query('id');
 
     if (id) {
       // Get a specific catalog item
@@ -33,7 +33,7 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
       });
 
       if (!item) {
-        return c.json({ error: "Catalog item not found" }, { status: 404 });
+        return c.json({ error: 'Catalog item not found' }, { status: 404 });
       }
 
       return c.json(item);
@@ -43,22 +43,22 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
       return c.json(items);
     }
   } catch (error) {
-    console.error("Error fetching catalog items:", error);
-    return c.json({ error: "Failed to fetch catalog items" }, { status: 500 });
+    console.error('Error fetching catalog items:', error);
+    return c.json({ error: 'Failed to fetch catalog items' }, { status: 500 });
   }
 });
 
 const listPostRoute = createRoute({
-  method: "post",
-  path: "/",
+  method: 'post',
+  path: '/',
   request: {
     body: {
       content: {
-        "application/json": { schema: z.any() },
+        'application/json': { schema: z.any() },
       },
     },
   },
-  responses: { 200: { description: "Create catalog item" } },
+  responses: { 200: { description: 'Create catalog item' } },
 });
 
 catalogListRoutes.openapi(listPostRoute, async (c) => {
@@ -110,8 +110,8 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
 
     return c.json(newItem);
   } catch (error) {
-    console.error("Error creating catalog item:", error);
-    return c.json({ error: "Failed to create catalog item" }, { status: 500 });
+    console.error('Error creating catalog item:', error);
+    return c.json({ error: 'Failed to create catalog item' }, { status: 500 });
   }
 });
 

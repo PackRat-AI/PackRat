@@ -1,5 +1,5 @@
-import { LucideIcon } from "@/lib/icons";
-import { cn } from "@/lib/utils";
+import { LucideIcon } from '@/lib/icons';
+import { cn } from '@/lib/utils';
 
 interface FeatureCardProps {
   title: string;
@@ -21,7 +21,7 @@ export default function FeatureCard({
   return (
     <div
       className={cn(
-        "group relative h-full overflow-hidden rounded-2xl bg-card p-8 shadow-lg transition-all duration-300 hover:shadow-xl",
+        'group relative h-full overflow-hidden rounded-2xl bg-card p-8 shadow-lg transition-all duration-300 hover:shadow-xl',
         className,
       )}
     >

@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import type React from "react";
+import type React from 'react';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Backpack, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/config/site";
-import GradientText from "@/components/ui/gradient-text";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Backpack, Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { siteConfig } from '@/config/site';
+import GradientText from '@/components/ui/gradient-text';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { cn } from '@/lib/utils';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 export default function MainNav() {
-  const [activeSection, setActiveSection] = useState<string>("");
+  const [activeSection, setActiveSection] = useState<string>('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -38,14 +38,14 @@ export default function MainNav() {
       if (currentSection) {
         setActiveSection(`#${currentSection.id}`);
       } else if (window.scrollY < 100) {
-        setActiveSection(""); // At the top of the page
+        setActiveSection(''); // At the top of the page
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
     handleScroll(); // Initialize on mount
 
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Handle smooth scrolling when clicking on navigation links
@@ -55,7 +55,7 @@ export default function MainNav() {
     const element = document.getElementById(targetId);
 
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      element.scrollIntoView({ behavior: 'smooth' });
       setActiveSection(href);
       setIsOpen(false); // Close mobile menu after clicking
     }
@@ -64,8 +64,8 @@ export default function MainNav() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 w-full transition-all duration-300",
-        isScrolled ? "bg-background/80 shadow-sm backdrop-blur-md py-2" : "bg-transparent py-4",
+        'sticky top-0 z-40 w-full transition-all duration-300',
+        isScrolled ? 'bg-background/80 shadow-sm backdrop-blur-md py-2' : 'bg-transparent py-4',
       )}
     >
       <div className="container flex items-center justify-between px-4 md:px-8 lg:px-12">
@@ -85,8 +85,8 @@ export default function MainNav() {
               href={item.href}
               onClick={(e) => scrollToSection(e, item.href)}
               className={cn(
-                "text-sm font-medium tracking-wide transition-colors hover:text-primary",
-                activeSection === item.href && "text-primary font-semibold",
+                'text-sm font-medium tracking-wide transition-colors hover:text-primary',
+                activeSection === item.href && 'text-primary font-semibold',
               )}
             >
               {item.title}
@@ -134,8 +134,8 @@ export default function MainNav() {
                       href={item.href}
                       onClick={(e) => scrollToSection(e, item.href)}
                       className={cn(
-                        "text-lg font-medium py-2 border-b border-border/20 transition-colors hover:text-primary",
-                        activeSection === item.href && "text-primary font-semibold",
+                        'text-lg font-medium py-2 border-b border-border/20 transition-colors hover:text-primary',
+                        activeSection === item.href && 'text-primary font-semibold',
                       )}
                     >
                       {item.title}

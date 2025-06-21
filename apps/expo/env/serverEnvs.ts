@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const serverEnvs = z.object({
   OPENAI_API_KEY: z.string(),

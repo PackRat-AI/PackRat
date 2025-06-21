@@ -1,13 +1,13 @@
-import { Icon } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { View } from "react-native";
-import { ListItem } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { Alert } from "nativewindui/Alert";
-import { useRef } from "react";
-import { type AlertRef } from "nativewindui/Alert/types";
-import { useUserPackItems } from "../hooks";
+import { Icon } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { ListItem } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { Alert } from 'nativewindui/Alert';
+import { useRef } from 'react';
+import { type AlertRef } from 'nativewindui/Alert/types';
+import { useUserPackItems } from '../hooks';
 
 export function GearInventoryTile() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export function GearInventoryTile() {
   const items = useUserPackItems();
 
   const handlePress = () => {
-    router.push("/gear-inventory");
+    router.push('/gear-inventory');
   };
 
   const gearInventoryCount = items.length;
@@ -39,7 +39,7 @@ export function GearInventoryTile() {
           </View>
         }
         item={{
-          title: "Gear Inventory",
+          title: 'Gear Inventory',
         }}
         onPress={handlePress}
         target="Cell"
@@ -48,12 +48,12 @@ export function GearInventoryTile() {
       <Alert
         title="No Items Yet"
         message="Create your items or add items to your pack from our items catalog."
-        materialIcon={{ name: "information-outline" }}
+        materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: "Got it",
-            style: "default",
+            text: 'Got it',
+            style: 'default',
           },
         ]}
         ref={alertRef}

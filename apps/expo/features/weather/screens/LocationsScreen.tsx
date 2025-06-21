@@ -1,6 +1,6 @@
-import { Icon } from "@roninoss/icons";
-import { router, useNavigation } from "expo-router";
-import { useEffect, useState, useRef } from "react";
+import { Icon } from '@roninoss/icons';
+import { router, useNavigation } from 'expo-router';
+import { useEffect, useState, useRef } from 'react';
 import {
   Pressable,
   TouchableOpacity,
@@ -11,21 +11,21 @@ import {
   Keyboard,
   Alert,
   SafeAreaView,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAtom } from "jotai";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAtom } from 'jotai';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { SearchInput } from "nativewindui/SearchInput";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { searchQueryAtom } from "../atoms/locationsAtoms";
-import { useLocations, useActiveLocation, useLocationRefresh } from "../hooks";
-import { LocationCard } from "../components/LocationCard";
-import { withAuthWall } from "~/features/auth/hocs";
-import { WeatherAuthWall } from "../components/WeatherAuthWall";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { SearchInput } from 'nativewindui/SearchInput';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { searchQueryAtom } from '../atoms/locationsAtoms';
+import { useLocations, useActiveLocation, useLocationRefresh } from '../hooks';
+import { LocationCard } from '../components/LocationCard';
+import { withAuthWall } from '~/features/auth/hocs';
+import { WeatherAuthWall } from '../components/WeatherAuthWall';
 
 function LocationsScreen() {
   const { colors } = useColorScheme();
@@ -40,10 +40,10 @@ function LocationsScreen() {
   const { removeLocation } = useLocations();
 
   // Determine if we're loading
-  const isLoading = locationsState.state === "loading";
+  const isLoading = locationsState.state === 'loading';
 
   // Get the locations array safely
-  const locations = locationsState.state === "hasData" ? locationsState.data : [];
+  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
 
   // Filter locations based on search query
   const filteredLocations = locations.filter((location) =>
@@ -57,7 +57,7 @@ function LocationsScreen() {
 
   // Clear search and dismiss keyboard
   const clearSearch = () => {
-    setSearchQuery("");
+    setSearchQuery('');
     Keyboard.dismiss();
     setIsSearchFocused(false);
   };
@@ -71,14 +71,14 @@ function LocationsScreen() {
 
   // Clear search when navigating to this screen -> https://github.com/PackRat-AI/PackRat/issues/1424
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
+    const unsubscribe = navigation.addListener('focus', () => {
       clearSearch();
     });
 
     // Also clear when navigating away (cleanup)
     return () => {
       unsubscribe();
-      setSearchQuery("");
+      setSearchQuery('');
     };
   }, [navigation]);
 
@@ -93,9 +93,9 @@ function LocationsScreen() {
     const location = locations.find((loc) => loc.id === locationId);
     if (location) {
       Alert.alert(
-        "Location Set",
+        'Location Set',
         `${location.name} is now your active location.`,
-        [{ text: "OK" }],
+        [{ text: 'OK' }],
         {
           cancelable: true,
         },
@@ -108,7 +108,7 @@ function LocationsScreen() {
   };
 
   const handleAddLocation = () => {
-    router.push("/weather/search");
+    router.push('/weather/search');
   };
 
   // Determine which state to show
@@ -125,7 +125,7 @@ function LocationsScreen() {
           <View className="flex-row items-center pr-2">
             <Pressable className="opacity-80" onPress={handleAddLocation}>
               {({ pressed }) => (
-                <View className={cn(pressed ? "opacity-50" : "opacity-90")}>
+                <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
                   <Icon name="plus" color={colors.foreground} />
                 </View>
               )}
@@ -207,8 +207,8 @@ function LocationsScreen() {
               {showSearchResults && (
                 <View className="mb-2">
                   <Text className="text-xs uppercase text-muted-foreground">
-                    {filteredLocations.length}{" "}
-                    {filteredLocations.length === 1 ? "RESULT" : "RESULTS"}
+                    {filteredLocations.length}{' '}
+                    {filteredLocations.length === 1 ? 'RESULT' : 'RESULTS'}
                   </Text>
                 </View>
               )}

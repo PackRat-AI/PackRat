@@ -1,12 +1,12 @@
-import { Icon } from "@roninoss/icons";
-import { Href, useRouter } from "expo-router";
-import { View } from "react-native";
-import { ListItem } from "nativewindui/List";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { usePacks } from "../hooks";
-import { Alert } from "nativewindui/Alert";
-import { useRef } from "react";
-import { type AlertRef } from "nativewindui/Alert/types";
+import { Icon } from '@roninoss/icons';
+import { Href, useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { ListItem } from 'nativewindui/List';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { usePacks } from '../hooks';
+import { Alert } from 'nativewindui/Alert';
+import { useRef } from 'react';
+import { type AlertRef } from 'nativewindui/Alert/types';
 
 export function PackStatsTile() {
   const router = useRouter();
@@ -44,7 +44,7 @@ export function PackStatsTile() {
           </View>
         }
         item={{
-          title: "Pack Stats",
+          title: 'Pack Stats',
         }}
         onPress={handlePress}
         target="Cell"
@@ -53,12 +53,12 @@ export function PackStatsTile() {
       <Alert
         title="No Packs Yet"
         message="Create a pack to start tracking stats."
-        materialIcon={{ name: "information-outline" }}
+        materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: "Got it",
-            style: "default",
+            text: 'Got it',
+            style: 'default',
           },
         ]}
         ref={alertRef}

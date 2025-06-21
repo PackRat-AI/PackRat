@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { FlatList, TouchableOpacity, View } from "react-native";
-import { Icon } from "@roninoss/icons";
-import { usePackItemSuggestions } from "../hooks";
-import type { PackItem } from "~/types";
-import { PackItemSuggestionSkeleton } from "./PackItemSuggestionSkeleton";
-import { Button } from "nativewindui/Button";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { Text } from "nativewindui/Text";
-import { isAuthed } from "~/features/auth/store";
-import { useRouter } from "expo-router";
-import { ItemSuggestionCard } from "./ItemSuggestionCard";
+import { useState } from 'react';
+import { FlatList, TouchableOpacity, View } from 'react-native';
+import { Icon } from '@roninoss/icons';
+import { usePackItemSuggestions } from '../hooks';
+import type { PackItem } from '~/types';
+import { PackItemSuggestionSkeleton } from './PackItemSuggestionSkeleton';
+import { Button } from 'nativewindui/Button';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { Text } from 'nativewindui/Text';
+import { isAuthed } from '~/features/auth/store';
+import { useRouter } from 'expo-router';
+import { ItemSuggestionCard } from './ItemSuggestionCard';
 
 interface AISuggestionsProps {
   packId: string;
@@ -32,10 +32,10 @@ export function PackItemSuggestions({ packId, packItems }: AISuggestionsProps) {
   const handleGenerateSuggestions = () => {
     if (!isAuthed.peek()) {
       return router.push({
-        pathname: "/auth",
+        pathname: '/auth',
         params: {
           redirectTo: `/pack/${packId}`,
-          showSignInCopy: "true",
+          showSignInCopy: 'true',
         },
       });
     }
@@ -84,7 +84,7 @@ export function PackItemSuggestions({ packId, packItems }: AISuggestionsProps) {
         <Text className="mb-3 text-sm text-muted-foreground">
           {isError
             ? "Couldn't generate suggestions. Try again later."
-            : "No suggestions available for your pack."}
+            : 'No suggestions available for your pack.'}
         </Text>
 
         <Button onPress={() => refetch()} variant="secondary" className="w-full">

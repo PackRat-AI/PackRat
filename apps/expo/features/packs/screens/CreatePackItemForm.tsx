@@ -1,7 +1,7 @@
-import { Icon } from "@roninoss/icons";
-import { useForm } from "@tanstack/react-form";
-import { useRouter } from "expo-router";
-import { useActionSheet } from "@expo/react-native-action-sheet";
+import { Icon } from '@roninoss/icons';
+import { useForm } from '@tanstack/react-form';
+import { useRouter } from 'expo-router';
+import { useActionSheet } from '@expo/react-native-action-sheet';
 import {
   Image,
   KeyboardAvoidingView,
@@ -13,30 +13,30 @@ import {
   TouchableOpacity,
   View,
   Alert,
-} from "react-native";
-import { z } from "zod";
-import { Form, FormItem, FormSection } from "nativewindui/Form";
-import { SegmentedControl } from "nativewindui/SegmentedControl";
-import { TextField } from "nativewindui/TextField";
-import { useCreatePackItem, useUpdatePackItem } from "../hooks";
-import { useImageUpload } from "../hooks/useImageUpload";
-import { useColorScheme } from "~/lib/useColorScheme";
-import type { WeightUnit } from "~/types";
-import { useState, useRef } from "react";
-import ImageCacheManager from "~/lib/utils/ImageCacheManager";
+} from 'react-native';
+import { z } from 'zod';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { SegmentedControl } from 'nativewindui/SegmentedControl';
+import { TextField } from 'nativewindui/TextField';
+import { useCreatePackItem, useUpdatePackItem } from '../hooks';
+import { useImageUpload } from '../hooks/useImageUpload';
+import { useColorScheme } from '~/lib/useColorScheme';
+import type { WeightUnit } from '~/types';
+import { useState, useRef } from 'react';
+import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 
 // Define Zod schema
 const itemFormSchema = z.object({
-  name: z.string().min(1, "Item name is required"),
+  name: z.string().min(1, 'Item name is required'),
   description: z.string(),
   weight: z.preprocess(
-    (val) => (val === "" ? 0 : Number(val)),
-    z.number().min(0, "Weight must be a positive number"),
+    (val) => (val === '' ? 0 : Number(val)),
+    z.number().min(0, 'Weight must be a positive number'),
   ),
-  weightUnit: z.enum(["g", "oz", "kg", "lb"]),
+  weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
   quantity: z.preprocess(
-    (val) => (val === "" ? 1 : Number(val)),
-    z.number().int().min(1, "Quantity must be at least 1"),
+    (val) => (val === '' ? 1 : Number(val)),
+    z.number().int().min(1, 'Quantity must be at least 1'),
   ),
   category: z.string(),
   consumable: z.boolean(),
@@ -49,7 +49,7 @@ const itemFormSchema = z.object({
 type ItemFormValues = z.infer<typeof itemFormSchema>;
 
 // Weight units
-const WEIGHT_UNITS: WeightUnit[] = ["g", "oz", "kg", "lb"];
+const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];
 
 export const CreatePackItemForm = ({
   packId,
@@ -78,18 +78,18 @@ export const CreatePackItemForm = ({
 
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
-  console.log("existingItem", existingItem);
+  console.log('existingItem', existingItem);
   const form = useForm({
     defaultValues: existingItem || {
-      name: "",
-      description: "",
+      name: '',
+      description: '',
       weight: 0,
-      weightUnit: "g",
-      quantity: "",
-      category: "",
+      weightUnit: 'g',
+      quantity: '',
+      category: '',
       consumable: false,
       worn: false,
-      notes: "",
+      notes: '',
       image: null,
     },
     validators: {
@@ -104,7 +104,7 @@ export const CreatePackItemForm = ({
         if (selectedImage) {
           imageUrl = await permanentlyPersistImageLocally();
           if (!imageUrl) {
-            Alert.alert("Error", "Failed to save item image. Please try again.");
+            Alert.alert('Error', 'Failed to save item image. Please try again.');
             return;
           }
           value.image = imageUrl;
@@ -124,14 +124,14 @@ export const CreatePackItemForm = ({
           deleteImage(oldImageUrl); // delete old image from local storage
         }
       } catch (err) {
-        console.error("Error submitting form:", err);
-        Alert.alert("Error", "Failed to save item. Please try again.");
+        console.error('Error submitting form:', err);
+        Alert.alert('Error', 'Failed to save item. Please try again.');
       }
     },
   });
 
   const handleAddImage = async () => {
-    const options = ["Take Photo", "Choose from Library", "Cancel"];
+    const options = ['Take Photo', 'Choose from Library', 'Cancel'];
     const cancelButtonIndex = 2;
 
     showActionSheetWithOptions(
@@ -139,7 +139,7 @@ export const CreatePackItemForm = ({
         options,
         cancelButtonIndex,
         containerStyle: {
-          backgroundColor: colorScheme === "dark" ? "black" : "white",
+          backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
         },
         textStyle: {
           color: colors.foreground,
@@ -161,8 +161,8 @@ export const CreatePackItemForm = ({
               return;
           }
         } catch (err) {
-          console.error("Error handling image:", err);
-          Alert.alert("Error", "Failed to process image. Please try again.");
+          console.error('Error handling image:', err);
+          Alert.alert('Error', 'Failed to process image. Please try again.');
         }
       },
     );
@@ -175,8 +175,8 @@ export const CreatePackItemForm = ({
     }
 
     // If we have an existing image URL in the form, clear it
-    if (form.getFieldValue("image")) {
-      form.setFieldValue("image", null);
+    if (form.getFieldValue('image')) {
+      form.setFieldValue('image', null);
       setImageChanged(true);
     }
   };
@@ -184,19 +184,19 @@ export const CreatePackItemForm = ({
   // Determine what image to show in the UI
   const displayImage = selectedImage
     ? { uri: selectedImage.uri }
-    : form.getFieldValue("image")
-      ? { uri: ImageCacheManager.cacheDirectory + form.getFieldValue("image") }
+    : form.getFieldValue('image')
+      ? { uri: ImageCacheManager.cacheDirectory + form.getFieldValue('image') }
       : null;
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
     >
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
-            ios={{ title: "Item Details" }}
+            ios={{ title: 'Item Details' }}
             footnote="Enter the basic information about your item"
           >
             <form.Field name="name">
@@ -259,7 +259,7 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: "Weight & Quantity" }} footnote="Specify the weight details">
+          <FormSection ios={{ title: 'Weight & Quantity' }} footnote="Specify the weight details">
             <form.Field name="weight">
               {(field) => (
                 <FormItem>
@@ -318,7 +318,7 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: "Properties" }} footnote="Special item properties">
+          <FormSection ios={{ title: 'Properties' }} footnote="Special item properties">
             <form.Field name="consumable">
               {(field) => (
                 <FormItem>
@@ -331,8 +331,8 @@ export const CreatePackItemForm = ({
                       value={field.state.value}
                       onValueChange={field.handleChange}
                       trackColor={{
-                        false: "hsl(var(--muted))",
-                        true: "hsl(var(--primary))",
+                        false: 'hsl(var(--muted))',
+                        true: 'hsl(var(--primary))',
                       }}
                       ios_backgroundColor="hsl(var(--muted))"
                     />
@@ -353,8 +353,8 @@ export const CreatePackItemForm = ({
                       value={field.state.value}
                       onValueChange={field.handleChange}
                       trackColor={{
-                        false: "hsl(var(--muted))",
-                        true: "hsl(var(--primary))",
+                        false: 'hsl(var(--muted))',
+                        true: 'hsl(var(--primary))',
                       }}
                       ios_backgroundColor="hsl(var(--muted))"
                     />
@@ -364,7 +364,7 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: "Image" }} footnote="Add an image of your item (optional)">
+          <FormSection ios={{ title: 'Image' }} footnote="Add an image of your item (optional)">
             <form.Field name="image">
               {(field) => (
                 <FormItem>
@@ -396,7 +396,7 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: "Notes" }} footnote="Additional information">
+          <FormSection ios={{ title: 'Notes' }} footnote="Additional information">
             <form.Field name="notes">
               {(field) => (
                 <FormItem>
@@ -426,11 +426,11 @@ export const CreatePackItemForm = ({
               onPress={form.handleSubmit}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${
-                !canSubmit || isSubmitting ? "bg-primary/70" : "bg-primary"
+                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
               }`}
             >
               <Text className="text-center text-base font-semibold text-primary-foreground">
-                {isSubmitting ? "Saving..." : isEditing ? "Update Item" : "Add Item"}
+                {isSubmitting ? 'Saving...' : isEditing ? 'Update Item' : 'Add Item'}
               </Text>
             </Pressable>
           )}

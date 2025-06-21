@@ -1,8 +1,8 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 export const metadata = {
-  title: "Account Deletion | PackRat",
-  description: "Instructions for deleting your PackRat account and associated data.",
+  title: 'Account Deletion | PackRat',
+  description: 'Instructions for deleting your PackRat account and associated data.',
 };
 
 export default function AccountDeletionPage() {
@@ -73,7 +73,7 @@ export default function AccountDeletionPage() {
           <h2 className="text-2xl font-semibold tracking-tight">Need Help?</h2>
           <p>
             If you're having trouble deleting your account or have questions about data deletion,
-            please contact our support team at{" "}
+            please contact our support team at{' '}
             <Link href="mailto:support@packratai.com" className="text-primary hover:underline">
               support@packratai.com
             </Link>

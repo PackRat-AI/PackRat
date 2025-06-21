@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { PackItem } from "../types";
-import { CatalogItem } from "~/features/catalog/types";
-import axiosInstance, { handleApiError } from "~/lib/api/client";
+import { useQuery } from '@tanstack/react-query';
+import { PackItem } from '../types';
+import { CatalogItem } from '~/features/catalog/types';
+import axiosInstance, { handleApiError } from '~/lib/api/client';
 
 // API function
 export const getPackItemSuggestions = async (
@@ -22,7 +22,7 @@ export const getPackItemSuggestions = async (
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
-    console.log("suggestions req error", error);
+    console.log('suggestions req error', error);
     throw new Error(`Failed to fetch pack item suggestions: ${message}`);
   }
 };
@@ -35,7 +35,7 @@ export function usePackItemSuggestions(
   location?: string,
 ) {
   return useQuery({
-    queryKey: ["packItemSuggestions", packId, packItems.length],
+    queryKey: ['packItemSuggestions', packId, packItems.length],
     queryFn: () => getPackItemSuggestions(packId as string, packItems, location),
     enabled: !!packId && enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes

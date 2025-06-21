@@ -1,17 +1,17 @@
-import { useLocalSearchParams } from "expo-router";
-import type React from "react";
-import { useState, useEffect } from "react";
-import { View, ScrollView, SafeAreaView } from "react-native";
+import { useLocalSearchParams } from 'expo-router';
+import type React from 'react';
+import { useState, useEffect } from 'react';
+import { View, ScrollView, SafeAreaView } from 'react-native';
 
-import { Avatar, AvatarFallback, AvatarImage } from "nativewindui/Avatar";
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { userStore } from "~/features/auth/store";
-import { usePackDetails } from "~/features/packs/hooks/usePackDetails";
-import { computeCategorySummaries } from "~/features/packs/utils";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { getRelativeTime } from "~/lib/utils/getRelativeTime";
+import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { userStore } from '~/features/auth/store';
+import { usePackDetails } from '~/features/packs/hooks/usePackDetails';
+import { computeCategorySummaries } from '~/features/packs/utils';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { getRelativeTime } from '~/lib/utils/getRelativeTime';
 
 function WeightCard({
   title,
@@ -23,7 +23,7 @@ function WeightCard({
   className?: string;
 }) {
   return (
-    <View className={cn("flex-1 rounded-lg bg-card p-4", className)}>
+    <View className={cn('flex-1 rounded-lg bg-card p-4', className)}>
       <Text variant="subhead" className="text-muted-foreground">
         {title}
       </Text>
@@ -53,19 +53,19 @@ function CustomList({
 }
 function CategoryItem({ category, index }: { category: any; index: number }) {
   const { colors } = useColorScheme();
-  const itemLabel = category.items === 1 ? "item" : "items";
+  const itemLabel = category.items === 1 ? 'item' : 'items';
 
   return (
     <View
       className={cn(
-        "flex-row items-center justify-between p-4",
-        index > 0 ? "border-border/25 dark:border-border/80 border-t" : "",
+        'flex-row items-center justify-between p-4',
+        index > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
       )}
     >
       <View>
         <Text>{category.name}</Text>
         <Text variant="footnote" className="text-muted-foreground">
-          {category.weight} {userStore.preferredWeightUnit.peek() ?? "g"} • {category.items}{" "}
+          {category.weight} {userStore.preferredWeightUnit.peek() ?? 'g'} • {category.items}{' '}
           {itemLabel}
         </Text>
       </View>
@@ -85,8 +85,8 @@ function ItemRow({ item, index }: { item: any; index: number }) {
   return (
     <View
       className={cn(
-        "flex-row items-center justify-between p-4",
-        index > 0 ? "border-border/25 dark:border-border/80 border-t" : "",
+        'flex-row items-center justify-between p-4',
+        index > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
       )}
     >
       <View>

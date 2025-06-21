@@ -1,13 +1,13 @@
-import { isArray } from "radash";
-import { Image, Pressable, Text, View } from "react-native";
-import type { Pack } from "../types";
-import { CategoryBadge } from "~/components/initial/CategoryBadge";
-import { WeightBadge } from "~/components/initial/WeightBadge";
-import { Icon } from "@roninoss/icons";
-import { Alert } from "nativewindui/Alert";
-import { Button } from "nativewindui/Button";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { useDeletePack, usePackDetails } from "../hooks";
+import { isArray } from 'radash';
+import { Image, Pressable, Text, View } from 'react-native';
+import type { Pack } from '../types';
+import { CategoryBadge } from '~/components/initial/CategoryBadge';
+import { WeightBadge } from '~/components/initial/WeightBadge';
+import { Icon } from '@roninoss/icons';
+import { Alert } from 'nativewindui/Alert';
+import { Button } from 'nativewindui/Button';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { useDeletePack, usePackDetails } from '../hooks';
 
 type PackCardProps = {
   packId: string;
@@ -20,8 +20,8 @@ export function PackCard({ packId, onPress }: PackCardProps) {
   const { colors } = useColorScheme();
 
   // Safely check if weights exist and are greater than 0
-  const hasBaseWeight = typeof pack.baseWeight === "number" && pack.baseWeight > 0;
-  const hasTotalWeight = typeof pack.totalWeight === "number" && pack.totalWeight > 0;
+  const hasBaseWeight = typeof pack.baseWeight === 'number' && pack.baseWeight > 0;
+  const hasTotalWeight = typeof pack.totalWeight === 'number' && pack.totalWeight > 0;
 
   return (
     <Pressable
@@ -72,11 +72,11 @@ export function PackCard({ packId, onPress }: PackCardProps) {
             message="Are you sure you want to delete this pack? This action cannot be undone."
             buttons={[
               {
-                text: "Cancel",
-                style: "cancel",
+                text: 'Cancel',
+                style: 'cancel',
               },
               {
-                text: "OK",
+                text: 'OK',
                 onPress: () => {
                   deletePack(pack.id);
                 },

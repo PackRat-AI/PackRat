@@ -1,8 +1,8 @@
-import { View, TouchableOpacity, Linking } from "react-native";
-import { Icon } from "@roninoss/icons";
-import type { ItemLink } from "~/types";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { View, TouchableOpacity, Linking } from 'react-native';
+import { Icon } from '@roninoss/icons';
+import type { ItemLink } from '~/types';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 type ItemLinksProps = {
   links: ItemLink[];
@@ -12,18 +12,18 @@ export function ItemLinks({ links }: ItemLinksProps) {
   if (!links || links.length === 0) return null;
   const { colors } = useColorScheme();
 
-  const getIconName = (type: ItemLink["type"]) => {
+  const getIconName = (type: ItemLink['type']) => {
     switch (type) {
-      case "official":
-        return "globe-model";
-      case "review":
-        return "star-outline";
-      case "guide":
-        return "book-open-outline";
-      case "purchase":
-        return "cart";
+      case 'official':
+        return 'globe-model';
+      case 'review':
+        return 'star-outline';
+      case 'guide':
+        return 'book-open-outline';
+      case 'purchase':
+        return 'cart';
       default:
-        return "link";
+        return 'link';
     }
   };
 

@@ -1,6 +1,6 @@
-import { Icon } from "@roninoss/icons";
-import { useLocalSearchParams, router, Stack } from "expo-router";
-import { useEffect, useState } from "react";
+import { Icon } from '@roninoss/icons';
+import { useLocalSearchParams, router, Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -8,17 +8,17 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { useActionSheet } from "@expo/react-native-action-sheet";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useActionSheet } from '@expo/react-native-action-sheet';
 
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { useLocations, useActiveLocation, useLocationRefresh } from "../hooks";
-import { getWeatherBackgroundColors } from "~/features/weather/lib/weatherService";
-import { WeatherIcon } from "../components";
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { useLocations, useActiveLocation, useLocationRefresh } from '../hooks';
+import { getWeatherBackgroundColors } from '~/features/weather/lib/weatherService';
+import { WeatherIcon } from '../components';
 
 export default function LocationDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -28,12 +28,12 @@ export default function LocationDetailScreen() {
   const { setActiveLocation } = useActiveLocation();
   const { isRefreshing, refreshLocation } = useLocationRefresh();
   const [error, setError] = useState<string | null>(null);
-  const [gradientColors, setGradientColors] = useState(["#4c669f", "#3b5998", "#192f6a"]);
+  const [gradientColors, setGradientColors] = useState(['#4c669f', '#3b5998', '#192f6a']);
   const { showActionSheetWithOptions } = useActionSheet();
   const { removeLocation } = useLocations();
 
   // Get the locations array safely
-  const locations = locationsState.state === "hasData" ? locationsState.data : [];
+  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
   const location = locations.find((loc) => loc.id === id);
 
   // Refresh weather data for this location
@@ -44,7 +44,7 @@ export default function LocationDetailScreen() {
     const success = await refreshLocation(location.id);
 
     if (!success) {
-      setError("Failed to refresh weather data");
+      setError('Failed to refresh weather data');
     } else {
       // Update gradient colors based on weather condition
       if (location.details) {
@@ -78,13 +78,13 @@ export default function LocationDetailScreen() {
 
   const showOptionsMenu = () => {
     const options = location.isActive
-      ? ["Refresh Weather", "Remove Location", "Cancel"]
-      : ["Set as Active", "Refresh Weather", "Remove Location", "Cancel"];
+      ? ['Refresh Weather', 'Remove Location', 'Cancel']
+      : ['Set as Active', 'Refresh Weather', 'Remove Location', 'Cancel'];
 
     const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = options.indexOf("Remove Location");
-    const refreshIndex = options.indexOf("Refresh Weather");
-    const setActiveIndex = options.indexOf("Set as Active");
+    const destructiveButtonIndex = options.indexOf('Remove Location');
+    const refreshIndex = options.indexOf('Refresh Weather');
+    const setActiveIndex = options.indexOf('Set as Active');
 
     showActionSheetWithOptions(
       {
@@ -94,14 +94,14 @@ export default function LocationDetailScreen() {
         title: location.name,
         message: `${location.temperature}° - ${location.condition}`,
         containerStyle: {
-          backgroundColor: colorScheme === "dark" ? colors.card : "white",
+          backgroundColor: colorScheme === 'dark' ? colors.card : 'white',
         },
         textStyle: {
           color: colors.foreground,
         },
         titleTextStyle: {
           color: colors.foreground,
-          fontWeight: "600",
+          fontWeight: '600',
         },
         messageTextStyle: {
           color: colors.grey2,
@@ -128,27 +128,27 @@ export default function LocationDetailScreen() {
 
   const setAsActive = () => {
     if (location.isActive) {
-      Alert.alert("Already Active", `${location.name} is already set as your active location.`, [
-        { text: "OK" },
+      Alert.alert('Already Active', `${location.name} is already set as your active location.`, [
+        { text: 'OK' },
       ]);
       return;
     }
 
     setActiveLocation(location.id);
-    Alert.alert("Location Set", `${location.name} has been set as your active location.`, [
-      { text: "OK" },
+    Alert.alert('Location Set', `${location.name} has been set as your active location.`, [
+      { text: 'OK' },
     ]);
   };
 
   const handleRemoveLocation = () => {
-    Alert.alert("Remove Location", `Are you sure you want to remove ${location.name}?`, [
+    Alert.alert('Remove Location', `Are you sure you want to remove ${location.name}?`, [
       {
-        text: "Cancel",
-        style: "cancel",
+        text: 'Cancel',
+        style: 'cancel',
       },
       {
-        text: "Remove",
-        style: "destructive",
+        text: 'Remove',
+        style: 'destructive',
         onPress: () => {
           removeLocation(location.id);
           router.back();
@@ -159,10 +159,10 @@ export default function LocationDetailScreen() {
 
   // Determine if we should use light or dark status bar based on gradient colors
   const isDarkGradient =
-    gradientColors[0].toLowerCase().startsWith("#4") ||
-    gradientColors[0].toLowerCase().startsWith("#3") ||
-    gradientColors[0].toLowerCase().startsWith("#2") ||
-    gradientColors[0].toLowerCase().startsWith("#1");
+    gradientColors[0].toLowerCase().startsWith('#4') ||
+    gradientColors[0].toLowerCase().startsWith('#3') ||
+    gradientColors[0].toLowerCase().startsWith('#2') ||
+    gradientColors[0].toLowerCase().startsWith('#1');
 
   return (
     <View className="flex-1">
@@ -243,7 +243,7 @@ export default function LocationDetailScreen() {
                     disabled={isRefreshing}
                   >
                     <Icon name="restart" color="white" size={20} className="mr-2" />
-                    <Text className="text-white">{isRefreshing ? "Refreshing..." : "Refresh"}</Text>
+                    <Text className="text-white">{isRefreshing ? 'Refreshing...' : 'Refresh'}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -253,7 +253,7 @@ export default function LocationDetailScreen() {
                     {location.hourlyForecast ? (
                       location.hourlyForecast.map((hour, index) => (
                         <View key={index} className="mr-4 min-w-[50px] items-center">
-                          <Text className="text-white">{index === 0 ? "Now" : hour.time}</Text>
+                          <Text className="text-white">{index === 0 ? 'Now' : hour.time}</Text>
                           <WeatherIcon
                             code={hour.weatherCode}
                             isDay={hour.isDay}
@@ -275,7 +275,7 @@ export default function LocationDetailScreen() {
                 {/* 10-Day forecast */}
                 <View className="mt-4 rounded-xl bg-white/10 p-4">
                   <Text className="mb-2 font-medium text-white">
-                    {location.dailyForecast ? `${location.dailyForecast.length}-DAY` : "DAILY"}{" "}
+                    {location.dailyForecast ? `${location.dailyForecast.length}-DAY` : 'DAILY'}{' '}
                     FORECAST
                   </Text>
                   {location.dailyForecast ? (
@@ -283,9 +283,9 @@ export default function LocationDetailScreen() {
                       <View
                         key={index}
                         className={cn(
-                          "flex-row items-center justify-between py-3",
+                          'flex-row items-center justify-between py-3',
                           index !== (location.dailyForecast?.length || 0) - 1 &&
-                            "border-b border-white/10",
+                            'border-b border-white/10',
                         )}
                       >
                         <Text className="min-w-[40px] text-white">{day.day}</Text>
@@ -325,26 +325,26 @@ export default function LocationDetailScreen() {
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Humidity</Text>
                       <Text className="text-xl text-white">
-                        {location.details?.humidity || "62"}%
+                        {location.details?.humidity || '62'}%
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Visibility</Text>
                       <Text className="text-xl text-white">
-                        {location.details?.visibility || "10"} mi
+                        {location.details?.visibility || '10'} mi
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">UV Index</Text>
                       <Text className="text-xl text-white">
-                        {location.details?.uvIndex || "6"}{" "}
-                        {location.details?.uvIndex && location.details.uvIndex > 5 ? "(High)" : ""}
+                        {location.details?.uvIndex || '6'}{' '}
+                        {location.details?.uvIndex && location.details.uvIndex > 5 ? '(High)' : ''}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Wind</Text>
                       <Text className="text-xl text-white">
-                        {location.details?.windSpeed || "5"} mph
+                        {location.details?.windSpeed || '5'} mph
                       </Text>
                     </View>
                   </View>

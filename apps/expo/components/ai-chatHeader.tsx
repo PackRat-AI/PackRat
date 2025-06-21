@@ -1,16 +1,16 @@
-import { BlurView } from "expo-blur";
-import { router } from "expo-router";
-import { Platform, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button } from "nativewindui/Button";
-import { Text } from "nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { BlurView } from 'expo-blur';
+import { router } from 'expo-router';
+import { Platform, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 
 const HEADER_POSITION_STYLE = {
-  position: "absolute",
+  position: 'absolute',
   zIndex: 50,
   top: 0,
   left: 0,
@@ -21,7 +21,7 @@ export function AiChatHeader() {
   const insets = useSafeAreaInsets();
   const { colors } = useColorScheme();
 
-  return Platform.OS === "ios" ? (
+  return Platform.OS === 'ios' ? (
     <BlurView intensity={100} style={[HEADER_POSITION_STYLE, { paddingTop: insets.top }]}>
       <View className="flex-row items-center justify-between px-4 pb-2">
         <View className="flex-row items-center">
@@ -56,8 +56,8 @@ export function AiChatHeader() {
             <Icon
               color={colors.foreground}
               name={Platform.select({
-                ios: "chevron-left",
-                default: "arrow-left",
+                ios: 'chevron-left',
+                default: 'arrow-left',
               })}
             />
           </Button>

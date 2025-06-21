@@ -1,11 +1,11 @@
-import type React from "react";
-import { useState, useEffect } from "react";
-import { Image, type ImageProps, ActivityIndicator, View, StyleSheet } from "react-native";
-import { Text } from "nativewindui/Text";
-import { useUser } from "~/features/auth/hooks/useUser";
-import ImageCacheManager from "~/lib/utils/ImageCacheManager";
+import type React from 'react';
+import { useState, useEffect } from 'react';
+import { Image, type ImageProps, ActivityIndicator, View, StyleSheet } from 'react-native';
+import { Text } from 'nativewindui/Text';
+import { useUser } from '~/features/auth/hooks/useUser';
+import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 
-interface CachedImageProps extends Omit<ImageProps, "source"> {
+interface CachedImageProps extends Omit<ImageProps, 'source'> {
   localFileName?: string;
   placeholderColor?: string;
 }
@@ -13,7 +13,7 @@ interface CachedImageProps extends Omit<ImageProps, "source"> {
 export const CachedImage: React.FC<CachedImageProps> = ({
   localFileName,
   className,
-  placeholderColor = "#e1e1e1",
+  placeholderColor = '#e1e1e1',
   ...props
 }) => {
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
           setImageUri(localUri);
         }
       } catch (error) {
-        console.error("Error loading image:", error);
+        console.error('Error loading image:', error);
         // Fallback to remote URL on error
         setImageUri(remoteUrl);
       } finally {

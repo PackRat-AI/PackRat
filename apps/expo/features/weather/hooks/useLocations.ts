@@ -1,13 +1,13 @@
-import { useAtom } from "jotai";
-import { locationsAtom, baseLocationsAtom } from "../atoms/locationsAtoms";
-import type { WeatherLocation } from "../types";
+import { useAtom } from 'jotai';
+import { locationsAtom, baseLocationsAtom } from '../atoms/locationsAtoms';
+import type { WeatherLocation } from '../types';
 
 export function useLocations() {
   const [locationsState] = useAtom(locationsAtom);
   const [, setBaseLocations] = useAtom(baseLocationsAtom);
 
   const addLocation = (location: WeatherLocation) => {
-    if (locationsState.state !== "hasData") return;
+    if (locationsState.state !== 'hasData') return;
 
     const locations = locationsState.data;
 
@@ -21,7 +21,7 @@ export function useLocations() {
   };
 
   const removeLocation = (locationId: string) => {
-    if (locationsState.state !== "hasData") return;
+    if (locationsState.state !== 'hasData') return;
 
     const locations = locationsState.data;
 
@@ -30,7 +30,7 @@ export function useLocations() {
   };
 
   const updateLocation = (locationId: string, updates: Partial<WeatherLocation>) => {
-    if (locationsState.state !== "hasData") return;
+    if (locationsState.state !== 'hasData') return;
 
     const locations = locationsState.data;
 

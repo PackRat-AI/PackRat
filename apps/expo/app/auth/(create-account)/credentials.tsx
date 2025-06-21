@@ -1,54 +1,54 @@
-import { router, useLocalSearchParams } from "expo-router";
-import * as React from "react";
-import { Image, Platform, View, Alert } from "react-native";
+import { router, useLocalSearchParams } from 'expo-router';
+import * as React from 'react';
+import { Image, Platform, View, Alert } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardController,
   KeyboardStickyView,
-} from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useForm } from "@tanstack/react-form";
-import { z } from "zod";
+} from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useForm } from '@tanstack/react-form';
+import { z } from 'zod';
 
-import { Button } from "nativewindui/Button";
-import { Form, FormItem, FormSection } from "nativewindui/Form";
-import { Text } from "nativewindui/Text";
-import { TextField } from "nativewindui/TextField";
-import { Icon } from "@roninoss/icons";
-import { Checkbox } from "nativewindui/Checkbox";
-import { AlertAnchor } from "nativewindui/Alert";
-import type { AlertRef } from "nativewindui/Alert/types";
-import { useAuthActions } from "~/features/auth/hooks/useAuthActions";
+import { Button } from 'nativewindui/Button';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { Text } from 'nativewindui/Text';
+import { TextField } from 'nativewindui/TextField';
+import { Icon } from '@roninoss/icons';
+import { Checkbox } from 'nativewindui/Checkbox';
+import { AlertAnchor } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
+import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
 
-const LOGO_SOURCE = require("~/assets/packrat-app-icon-gradient.png");
+const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
 // Enhanced password validation schema
 const passwordSchema = z
   .string()
-  .min(8, "Password must be at least 8 characters")
+  .min(8, 'Password must be at least 8 characters')
   .refine((password) => /[A-Z]/.test(password), {
-    message: "Password must contain at least one uppercase letter",
+    message: 'Password must contain at least one uppercase letter',
   })
   .refine((password) => /[a-z]/.test(password), {
-    message: "Password must contain at least one lowercase letter",
+    message: 'Password must contain at least one lowercase letter',
   })
   .refine((password) => /[0-9]/.test(password), {
-    message: "Password must contain at least one number",
+    message: 'Password must contain at least one number',
   })
   .refine((password) => /[^A-Za-z0-9]/.test(password), {
-    message: "Password must contain at least one special character",
+    message: 'Password must contain at least one special character',
   });
 
 // Define Zod schema for credentials validation
 const credentialsFormSchema = z
   .object({
-    email: z.string().email("Please enter a valid email address"),
+    email: z.string().email('Please enter a valid email address'),
     password: passwordSchema,
-    confirmPassword: z.string().min(1, "Please confirm your password"),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
   });
 
 // Type inference
@@ -73,24 +73,24 @@ const getPasswordStrength = (password: string) => {
     strength++;
   }
 
-  let label = "Very Weak";
-  let color = "bg-red-500";
+  let label = 'Very Weak';
+  let color = 'bg-red-500';
 
   if (strength === 1) {
-    label = "Weak";
-    color = "bg-red-500";
+    label = 'Weak';
+    color = 'bg-red-500';
   } else if (strength === 2) {
-    label = "Fair";
-    color = "bg-orange-500";
+    label = 'Fair';
+    color = 'bg-orange-500';
   } else if (strength === 3) {
-    label = "Good";
-    color = "bg-yellow-500";
+    label = 'Good';
+    color = 'bg-yellow-500';
   } else if (strength === 4) {
-    label = "Strong";
-    color = "bg-green-500";
+    label = 'Strong';
+    color = 'bg-green-500';
   } else if (strength === 5) {
-    label = "Very Strong";
-    color = "bg-green-700";
+    label = 'Very Strong';
+    color = 'bg-green-700';
   }
 
   return { strength, label, color };
@@ -102,7 +102,7 @@ export default function CredentialsScreen() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [passwordVisible, setPasswordVisible] = React.useState(false);
   const [focusedTextField, setFocusedTextField] = React.useState<
-    "email" | "password" | "confirm-password" | null
+    'email' | 'password' | 'confirm-password' | null
   >(null);
   const alertRef = React.useRef<AlertRef>(null);
 
@@ -114,9 +114,9 @@ export default function CredentialsScreen() {
 
   const form = useForm({
     defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
+      email: '',
+      password: '',
+      confirmPassword: '',
     },
     validators: {
       onChange: credentialsFormSchema,
@@ -127,8 +127,8 @@ export default function CredentialsScreen() {
 
         // Combine data from both screens
         const userData = {
-          firstName: params.firstName || "",
-          lastName: params.lastName || "",
+          firstName: params.firstName || '',
+          lastName: params.lastName || '',
           email: value.email,
           password: value.password,
         };
@@ -138,17 +138,17 @@ export default function CredentialsScreen() {
 
         // Navigate to verification code screen
         router.push({
-          pathname: "/auth/one-time-password",
+          pathname: '/auth/one-time-password',
           params: {
             email: userData.email,
-            mode: "verification",
+            mode: 'verification',
           },
         });
       } catch (error) {
         setIsLoading(false);
         Alert.alert(
-          "Registration Failed",
-          error instanceof Error ? error.message : "Please check your information and try again.",
+          'Registration Failed',
+          error instanceof Error ? error.message : 'Please check your information and try again.',
         );
       } finally {
         setIsLoading(false);
@@ -174,11 +174,11 @@ export default function CredentialsScreen() {
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
               {Platform.select({
-                ios: "Set up your credentials",
-                default: "Create Account",
+                ios: 'Set up your credentials',
+                default: 'Create Account',
               })}
             </Text>
-            {Platform.OS !== "ios" && (
+            {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">
                 Set up your credentials
               </Text>
@@ -192,18 +192,18 @@ export default function CredentialsScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: "Email",
-                          default: "",
+                          ios: 'Email',
+                          default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: "Email",
+                          default: 'Email',
                         })}
-                        onSubmitEditing={() => KeyboardController.setFocusTo("next")}
+                        onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
                         autoFocus
                         autoCapitalize="none"
-                        onFocus={() => setFocusedTextField("email")}
+                        onFocus={() => setFocusedTextField('email')}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -226,15 +226,15 @@ export default function CredentialsScreen() {
                         <View>
                           <TextField
                             placeholder={Platform.select({
-                              ios: "Password",
-                              default: "",
+                              ios: 'Password',
+                              default: '',
                             })}
                             label={Platform.select({
                               ios: undefined,
-                              default: "Password",
+                              default: 'Password',
                             })}
-                            onSubmitEditing={() => KeyboardController.setFocusTo("next")}
-                            onFocus={() => setFocusedTextField("password")}
+                            onSubmitEditing={() => KeyboardController.setFocusTo('next')}
+                            onFocus={() => setFocusedTextField('password')}
                             onBlur={() => {
                               setFocusedTextField(null);
                               field.handleBlur();
@@ -269,9 +269,9 @@ export default function CredentialsScreen() {
                               <View className="mt-2 space-y-1">
                                 <View className="flex-row items-center">
                                   <Icon
-                                    name={field.state.value.length >= 8 ? "check-circle" : "circle"}
+                                    name={field.state.value.length >= 8 ? 'check-circle' : 'circle'}
                                     size={14}
-                                    color={field.state.value.length >= 8 ? "#10B981" : "#9CA3AF"}
+                                    color={field.state.value.length >= 8 ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     At least 8 characters
@@ -280,10 +280,10 @@ export default function CredentialsScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[A-Z]/.test(field.state.value) ? "check-circle" : "circle"
+                                      /[A-Z]/.test(field.state.value) ? 'check-circle' : 'circle'
                                     }
                                     size={14}
-                                    color={/[A-Z]/.test(field.state.value) ? "#10B981" : "#9CA3AF"}
+                                    color={/[A-Z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     At least 1 uppercase letter
@@ -292,10 +292,10 @@ export default function CredentialsScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[a-z]/.test(field.state.value) ? "check-circle" : "circle"
+                                      /[a-z]/.test(field.state.value) ? 'check-circle' : 'circle'
                                     }
                                     size={14}
-                                    color={/[a-z]/.test(field.state.value) ? "#10B981" : "#9CA3AF"}
+                                    color={/[a-z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     At least 1 lowercase letter
@@ -304,10 +304,10 @@ export default function CredentialsScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[0-9]/.test(field.state.value) ? "check-circle" : "circle"
+                                      /[0-9]/.test(field.state.value) ? 'check-circle' : 'circle'
                                     }
                                     size={14}
-                                    color={/[0-9]/.test(field.state.value) ? "#10B981" : "#9CA3AF"}
+                                    color={/[0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     At least 1 number
@@ -317,12 +317,12 @@ export default function CredentialsScreen() {
                                   <Icon
                                     name={
                                       /[^A-Za-z0-9]/.test(field.state.value)
-                                        ? "check-circle"
-                                        : "circle"
+                                        ? 'check-circle'
+                                        : 'circle'
                                     }
                                     size={14}
                                     color={
-                                      /[^A-Za-z0-9]/.test(field.state.value) ? "#10B981" : "#9CA3AF"
+                                      /[^A-Za-z0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'
                                     }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
@@ -342,14 +342,14 @@ export default function CredentialsScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: "Confirm password",
-                          default: "",
+                          ios: 'Confirm password',
+                          default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: "Confirm password",
+                          default: 'Confirm password',
                         })}
-                        onFocus={() => setFocusedTextField("confirm-password")}
+                        onFocus={() => setFocusedTextField('confirm-password')}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -381,7 +381,7 @@ export default function CredentialsScreen() {
         </View>
       </KeyboardAwareScrollView>
       <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
-        {Platform.OS === "ios" ? (
+        {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
@@ -390,7 +390,7 @@ export default function CredentialsScreen() {
                   disabled={!canSubmit || isLoading}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{isLoading ? "Loading..." : "Submit"}</Text>
+                  <Text>{isLoading ? 'Loading...' : 'Submit'}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -402,8 +402,8 @@ export default function CredentialsScreen() {
                 <Button
                   disabled={!canSubmit || isLoading}
                   onPress={() => {
-                    if (focusedTextField !== "confirm-password") {
-                      KeyboardController.setFocusTo("next");
+                    if (focusedTextField !== 'confirm-password') {
+                      KeyboardController.setFocusTo('next');
                       return;
                     }
                     KeyboardController.dismiss();
@@ -412,10 +412,10 @@ export default function CredentialsScreen() {
                 >
                   <Text className="text-sm">
                     {isLoading
-                      ? "Loading..."
-                      : focusedTextField !== "confirm-password"
-                        ? "Next"
-                        : "Submit"}
+                      ? 'Loading...'
+                      : focusedTextField !== 'confirm-password'
+                        ? 'Next'
+                        : 'Submit'}
                   </Text>
                 </Button>
               )}

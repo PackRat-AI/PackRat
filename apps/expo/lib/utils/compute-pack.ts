@@ -1,15 +1,15 @@
-import type { Pack, WeightUnit } from "~/types";
+import type { Pack, WeightUnit } from '~/types';
 
 // Convert weights to a standard unit (grams) for calculations
 const convertToGrams = (weight: number, unit: WeightUnit): number => {
   switch (unit) {
-    case "g":
+    case 'g':
       return weight;
-    case "oz":
+    case 'oz':
       return weight * 28.35;
-    case "kg":
+    case 'kg':
       return weight * 1000;
-    case "lb":
+    case 'lb':
       return weight * 453.59;
     default:
       return weight;
@@ -19,20 +19,20 @@ const convertToGrams = (weight: number, unit: WeightUnit): number => {
 // Convert from grams back to the desired unit
 const convertFromGrams = (grams: number, unit: WeightUnit): number => {
   switch (unit) {
-    case "g":
+    case 'g':
       return grams;
-    case "oz":
+    case 'oz':
       return grams / 28.35;
-    case "kg":
+    case 'kg':
       return grams / 1000;
-    case "lb":
+    case 'lb':
       return grams / 453.59;
     default:
       return grams;
   }
 };
 
-export const computePackWeights = (pack: Pack, preferredUnit: WeightUnit = "g"): Pack => {
+export const computePackWeights = (pack: Pack, preferredUnit: WeightUnit = 'g'): Pack => {
   if (!pack.items) {
     throw new Error(`Pack with ID ${pack.id} has no items`);
   }
@@ -68,6 +68,6 @@ export const computePackWeights = (pack: Pack, preferredUnit: WeightUnit = "g"):
 };
 
 // Helper function to compute weights for a list of packs
-export const computePacksWeights = (packs: Pack[], preferredUnit: WeightUnit = "g"): Pack[] => {
+export const computePacksWeights = (packs: Pack[], preferredUnit: WeightUnit = 'g'): Pack[] => {
   return packs.map((pack) => computePackWeights(pack, preferredUnit));
 };

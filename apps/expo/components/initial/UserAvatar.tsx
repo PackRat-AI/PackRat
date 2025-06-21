@@ -1,23 +1,23 @@
-import { Image, Text, View } from "react-native";
-import type { User } from "~/types";
+import { Image, Text, View } from 'react-native';
+import type { User } from '~/types';
 
 type UserAvatarProps = {
   user: User;
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
   showName?: boolean;
 };
 
-export function UserAvatar({ user, size = "md", showName = false }: UserAvatarProps) {
+export function UserAvatar({ user, size = 'md', showName = false }: UserAvatarProps) {
   const sizeClass = {
-    sm: "w-8 h-8",
-    md: "w-12 h-12",
-    lg: "w-16 h-16",
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
   }[size];
 
   const fontClass = {
-    sm: "text-xs",
-    md: "text-sm",
-    lg: "text-base",
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
   }[size];
 
   return (

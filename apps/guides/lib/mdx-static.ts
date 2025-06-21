@@ -1,6 +1,6 @@
 // This is a browser-compatible version of your MDX utilities
-import { postContent, posts } from "./content";
-import type { Post } from "./types";
+import { postContent, posts } from './content';
+import type { Post } from './types';
 
 export function getAllPosts(): Post[] {
   return posts;

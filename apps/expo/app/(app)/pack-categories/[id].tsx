@@ -1,13 +1,13 @@
-import { Icon } from "@roninoss/icons";
-import { useLocalSearchParams } from "expo-router";
-import { View, ScrollView } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { useLocalSearchParams } from 'expo-router';
+import { View, ScrollView } from 'react-native';
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { userStore } from "~/features/auth/store";
-import { usePackDetails } from "~/features/packs/hooks/usePackDetails";
-import { computeCategorySummaries } from "~/features/packs/utils";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { userStore } from '~/features/auth/store';
+import { usePackDetails } from '~/features/packs/hooks/usePackDetails';
+import { computeCategorySummaries } from '~/features/packs/utils';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 function CategoryCard({
   category,
@@ -20,7 +20,7 @@ function CategoryCard({
   };
 }) {
   const { colors } = useColorScheme();
-  const itemLabel = category.items === 1 ? "item" : "items";
+  const itemLabel = category.items === 1 ? 'item' : 'items';
 
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
@@ -29,7 +29,7 @@ function CategoryCard({
           className="h-12 w-12 items-center justify-center rounded-md"
           style={{ backgroundColor: colors.grey4 }}
         >
-          <Icon name={category.icon || "backpack"} size={24} color="white" />
+          <Icon name={category.icon || 'backpack'} size={24} color="white" />
         </View>
 
         <View className="ml-4 flex-1">
@@ -43,7 +43,7 @@ function CategoryCard({
             <View className="flex-row items-center gap-1">
               <Icon name="dumbbell" size={14} color={colors.grey3} />
               <Text variant="subhead" className="text-muted-foreground">
-                {category.weight} {userStore.preferredWeightUnit.peek() ?? "g"}
+                {category.weight} {userStore.preferredWeightUnit.peek() ?? 'g'}
               </Text>
             </View>
           </View>

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import { useTheme } from "next-themes";
+import { useEffect, useRef } from 'react';
+import { useTheme } from 'next-themes';
 
 export default function AdvancedGridBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -11,7 +11,7 @@ export default function AdvancedGridBackground() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     let animationFrameId: number;
@@ -50,8 +50,8 @@ export default function AdvancedGridBackground() {
       const rows = Math.floor(height / gridSize) + 2;
 
       // Get colors based on theme
-      const primaryColor = theme === "dark" ? "rgba(180, 255, 255, " : "rgba(15, 118, 110, ";
-      const secondaryColor = theme === "dark" ? "rgba(255, 180, 120, " : "rgba(249, 115, 22, ";
+      const primaryColor = theme === 'dark' ? 'rgba(180, 255, 255, ' : 'rgba(15, 118, 110, ';
+      const secondaryColor = theme === 'dark' ? 'rgba(255, 180, 120, ' : 'rgba(249, 115, 22, ';
 
       // Calculate distance from mouse for glow effect
       const maxDistance = 300;
@@ -123,7 +123,7 @@ export default function AdvancedGridBackground() {
             // Draw glowing dot at intersection
             const gradient = ctx.createRadialGradient(x, y, 0, x, y, 5 + glowIntensity * 10);
             gradient.addColorStop(0, `rgba(255, 255, 255, ${0.3 + glowIntensity * 0.7})`);
-            gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
             ctx.fillStyle = gradient;
             ctx.beginPath();
@@ -137,14 +137,14 @@ export default function AdvancedGridBackground() {
     };
 
     resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('mousemove', handleMouseMove);
 
     drawGrid();
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
-      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
   }, [theme]);

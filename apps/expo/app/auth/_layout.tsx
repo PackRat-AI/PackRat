@@ -1,8 +1,8 @@
-import { Link, Stack } from "expo-router";
-import { Platform } from "react-native";
+import { Link, Stack } from 'expo-router';
+import { Platform } from 'react-native';
 
-import { Button } from "nativewindui/Button";
-import { Text } from "nativewindui/Text";
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
 
 export default function AuthLayout() {
   return (
@@ -19,13 +19,13 @@ const SCREEN_OPTIONS = {
 } as const;
 
 const LOGIN_MODAL_OPTIONS = {
-  presentation: "modal",
+  presentation: 'modal',
   headerShown: false,
 } as const;
 
 const CREATE_ACCOUNT_MODAL_OPTIONS = {
-  presentation: "modal",
-  headerShown: Platform.OS === "ios",
+  presentation: 'modal',
+  headerShown: Platform.OS === 'ios',
   headerShadowVisible: false,
   headerLeft() {
     return (

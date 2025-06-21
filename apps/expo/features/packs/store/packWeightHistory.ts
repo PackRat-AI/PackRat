@@ -1,19 +1,19 @@
-import { observable, syncState } from "@legendapp/state";
-import { syncedCrud } from "@legendapp/state/sync-plugins/crud";
-import axiosInstance, { handleApiError } from "~/lib/api/client";
-import { syncObservable } from "@legendapp/state/sync";
-import Storage from "expo-sqlite/kv-store";
-import { observablePersistSqlite } from "@legendapp/state/persist-plugins/expo-sqlite";
-import { PackWeightHistoryEntry } from "../types";
-import { isAuthed } from "~/features/auth/store";
-import { packItemsStore } from "./packItems";
-import { nanoid } from "nanoid/non-secure";
-import { computePackWeights } from "../utils";
-import { packsStore } from "./packs";
+import { observable, syncState } from '@legendapp/state';
+import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import axiosInstance, { handleApiError } from '~/lib/api/client';
+import { syncObservable } from '@legendapp/state/sync';
+import Storage from 'expo-sqlite/kv-store';
+import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
+import { PackWeightHistoryEntry } from '../types';
+import { isAuthed } from '~/features/auth/store';
+import { packItemsStore } from './packItems';
+import { nanoid } from 'nanoid/non-secure';
+import { computePackWeights } from '../utils';
+import { packsStore } from './packs';
 
 const listPackWeightHistories = async () => {
   try {
-    const res = await axiosInstance.get("/api/packs/weight-history");
+    const res = await axiosInstance.get('/api/packs/weight-history');
     return res.data;
   } catch (error) {
     const { message } = handleApiError(error);
@@ -38,23 +38,23 @@ export const packWeigthHistoryStore = observable<Record<string, PackWeightHistor
 syncObservable(
   packWeigthHistoryStore,
   syncedCrud({
-    fieldCreatedAt: "createdAt",
-    mode: "merge",
+    fieldCreatedAt: 'createdAt',
+    mode: 'merge',
     persist: {
       plugin: observablePersistSqlite(Storage),
       retrySync: true,
-      name: "packWeigthHistory",
+      name: 'packWeigthHistory',
     },
     waitFor: isAuthed,
     waitForSet: isAuthed,
     retry: {
       infinite: true, // Keep retrying until it saves
-      backoff: "exponential",
+      backoff: 'exponential',
       maxDelay: 30000,
     },
     list: listPackWeightHistories,
     create: createPackWeightHistoryEntry,
-    changesSince: "last-sync",
+    changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
       const intervalId = setInterval(() => {
         refresh();

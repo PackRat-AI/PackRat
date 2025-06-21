@@ -1,5 +1,5 @@
-import { useAuthState } from "./useAuthState";
-import { useAuthActions } from "./useAuthActions";
+import { useAuthState } from './useAuthState';
+import { useAuthActions } from './useAuthActions';
 
 export function useAuth() {
   const state = useAuthState();

@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from 'react-native';
 
 export function EditScreenInfo({ path }: { path: string }) {
-  const title = "Open up the code for this screen:";
+  const title = 'Open up the code for this screen:';
   const description =
-    "Change any of the text, save the file, and your app will automatically update.";
+    'Change any of the text, save the file, and your app will automatically update.';
 
   return (
     <View style={styles.getStartedContainer}>
@@ -22,16 +22,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   getStartedContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     marginHorizontal: 50,
   },
   getStartedText: {
     fontSize: 17,
     lineHeight: 24,
-    textAlign: "center",
+    textAlign: 'center',
   },
   helpContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     marginHorizontal: 20,
     marginTop: 15,
   },
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   helpLinkText: {
-    textAlign: "center",
+    textAlign: 'center',
   },
   homeScreenFilename: {
     marginVertical: 7,

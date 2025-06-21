@@ -1,5 +1,5 @@
-import { useCurrentPack } from "./useCurrentPack";
-import { usePackDetails } from "./usePackDetails";
+import { useCurrentPack } from './useCurrentPack';
+import { usePackDetails } from './usePackDetails';
 
 export function useCategoriesCount() {
   const currentPack = useCurrentPack();

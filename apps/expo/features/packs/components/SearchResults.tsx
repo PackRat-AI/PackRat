@@ -1,11 +1,11 @@
-import { FlatList, Pressable, Text, View } from "react-native";
-import { Icon } from "@roninoss/icons";
-import type { Pack } from "../types";
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { Icon } from '@roninoss/icons';
+import type { Pack } from '../types';
 
 type SearchResultsProps = {
-  results: Omit<Pack, "items" | "baseWeight" | "totalWeight">[];
+  results: Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>[];
   searchValue: string;
-  onResultPress: (pack: Omit<Pack, "items" | "baseWeight" | "totalWeight">) => void;
+  onResultPress: (pack: Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>) => void;
 };
 
 export function SearchResults({ results, searchValue, onResultPress }: SearchResultsProps) {

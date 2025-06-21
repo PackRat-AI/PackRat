@@ -1,13 +1,13 @@
-import { Icon } from "@roninoss/icons";
-import { Href, useRouter } from "expo-router";
-import { View } from "react-native";
-import { ListItem } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { useCurrentPack } from "../hooks";
-import { Alert } from "nativewindui/Alert";
-import { useRef } from "react";
-import { type AlertRef } from "nativewindui/Alert/types";
+import { Icon } from '@roninoss/icons';
+import { Href, useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { ListItem } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { useCurrentPack } from '../hooks';
+import { Alert } from 'nativewindui/Alert';
+import { useRef } from 'react';
+import { type AlertRef } from 'nativewindui/Alert/types';
 
 export function WeightAnalysisTile() {
   const router = useRouter();
@@ -44,7 +44,7 @@ export function WeightAnalysisTile() {
           </View>
         }
         item={{
-          title: "Weight Analysis",
+          title: 'Weight Analysis',
         }}
         onPress={handlePress}
         target="Cell"
@@ -53,12 +53,12 @@ export function WeightAnalysisTile() {
       <Alert
         title="No Packs Yet"
         message="Create a pack to get weight analysis."
-        materialIcon={{ name: "information-outline" }}
+        materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: "Got it",
-            style: "default",
+            text: 'Got it',
+            style: 'default',
           },
         ]}
         ref={alertRef}

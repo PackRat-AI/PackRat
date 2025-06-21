@@ -45,6 +45,6 @@ export type LocationSearchResult = {
 };
 
 export type WeatherLocationsState =
-  | { state: "loading" }
-  | { state: "hasData"; data: WeatherLocation[] }
-  | { state: "error"; error: string };
+  | { state: 'loading' }
+  | { state: 'hasData'; data: WeatherLocation[] }
+  | { state: 'error'; error: string };

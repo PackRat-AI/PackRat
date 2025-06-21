@@ -1,28 +1,28 @@
-import { siteConfig } from "@/config/site";
+import { siteConfig } from '@/config/site';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import GradientText from "@/components/ui/gradient-text";
-import { CardContent } from "@/components/ui/card";
-import GradientBackground from "@/components/ui/gradient-background";
-import GradientBorderCard from "@/components/ui/gradient-border-card";
+} from '@/components/ui/accordion';
+import GradientText from '@/components/ui/gradient-text';
+import { CardContent } from '@/components/ui/card';
+import GradientBackground from '@/components/ui/gradient-background';
+import GradientBorderCard from '@/components/ui/gradient-border-card';
 
 export default function FaqSection() {
   // Filter out any pricing-related FAQs or modify them
   const faqs = siteConfig.faqs.map((faq) => {
     // If the FAQ is about pricing, modify it to mention the app is free
     if (
-      faq.question.toLowerCase().includes("free") ||
-      faq.question.toLowerCase().includes("price") ||
-      faq.question.toLowerCase().includes("cost")
+      faq.question.toLowerCase().includes('free') ||
+      faq.question.toLowerCase().includes('price') ||
+      faq.question.toLowerCase().includes('cost')
     ) {
       return {
-        question: "Is PackRat free to use?",
+        question: 'Is PackRat free to use?',
         answer:
-          "Yes! PackRat is completely free to use with all features included. We may introduce premium features in the future, but our core functionality will always remain free.",
+          'Yes! PackRat is completely free to use with all features included. We may introduce premium features in the future, but our core functionality will always remain free.',
       };
     }
     return faq;

@@ -1,24 +1,24 @@
-import { useHeaderHeight } from "@react-navigation/elements";
-import { Icon } from "@roninoss/icons";
-import { FlashList } from "@shopify/flash-list";
-import { useRouter } from "expo-router";
-import { cssInterop } from "nativewind";
-import * as React from "react";
-import { useState } from "react";
-import { Linking, useWindowDimensions, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Card } from "~/components/Card";
+import { useHeaderHeight } from '@react-navigation/elements';
+import { Icon } from '@roninoss/icons';
+import { FlashList } from '@shopify/flash-list';
+import { useRouter } from 'expo-router';
+import { cssInterop } from 'nativewind';
+import * as React from 'react';
+import { useState } from 'react';
+import { Linking, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Card } from '~/components/Card';
 
-import { Button } from "nativewindui/Button";
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { ThemeToggle } from "~/components/ThemeToggle";
-import { useColorScheme } from "~/lib/useColorScheme";
-import { useHeaderSearchBar } from "~/lib/useHeaderSearchBar";
+import { Button } from 'nativewindui/Button';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { ThemeToggle } from '~/components/ThemeToggle';
+import { useColorScheme } from '~/lib/useColorScheme';
+import { useHeaderSearchBar } from '~/lib/useHeaderSearchBar';
 
 cssInterop(FlashList, {
-  className: "style",
-  contentContainerClassName: "contentContainerStyle",
+  className: 'style',
+  contentContainerClassName: 'contentContainerStyle',
 });
 
 export default function Screen() {
@@ -76,15 +76,15 @@ function ListEmptyComponent() {
         No Components Installed
       </Text>
       <Text color="tertiary" variant="subhead" className="pb-4 text-center">
-        You can install any of the free components from the{" "}
+        You can install any of the free components from the{' '}
         <Text
-          onPress={() => Linking.openURL("https://nativewindui.com")}
+          onPress={() => Linking.openURL('https://nativewindui.com')}
           variant="subhead"
           className="text-primary"
         >
           NativeWindUI
         </Text>
-        {" website."}
+        {' website.'}
       </Text>
     </View>
   );
@@ -110,7 +110,7 @@ function renderItem({ item }: { item: ComponentItem }) {
 
 const COMPONENTS: ComponentItem[] = [
   {
-    name: "Links",
+    name: 'Links',
     component: function LinksExample() {
       const router = useRouter();
       return (
@@ -119,16 +119,16 @@ const COMPONENTS: ComponentItem[] = [
             <Text>
               <Text>Main Screens</Text>
             </Text>
-            <Button onPress={() => router.push("/")}>
+            <Button onPress={() => router.push('/')}>
               <Text>Dashboard</Text>
             </Button>
-            <Button onPress={() => router.push("/packs")}>
+            <Button onPress={() => router.push('/packs')}>
               <Text>Packs</Text>
             </Button>
-            <Button onPress={() => router.push("/items")}>
+            <Button onPress={() => router.push('/items')}>
               <Text>Items</Text>
             </Button>
-            <Button onPress={() => router.push("/catalog")}>
+            <Button onPress={() => router.push('/catalog')}>
               <Text>Catalog</Text>
             </Button>
           </View>
@@ -136,34 +136,34 @@ const COMPONENTS: ComponentItem[] = [
             <Text>
               <Text>Modals</Text>
             </Text>
-            <Button onPress={() => router.push("/pack/new")}>
+            <Button onPress={() => router.push('/pack/new')}>
               <Text>New Pack</Text>
             </Button>
-            <Button onPress={() => router.push("/item/new")}>
+            <Button onPress={() => router.push('/item/new')}>
               <Text>New Item</Text>
             </Button>
           </View>
           <View className="gap-2">
             <Text>Additional Screens</Text>
-            <Button onPress={() => router.push("/settings")}>
+            <Button onPress={() => router.push('/settings')}>
               <Text>Settings</Text>
             </Button>
-            <Button onPress={() => router.push("/auth/one-time-password")}>
+            <Button onPress={() => router.push('/auth/one-time-password')}>
               <Text>OTP</Text>
             </Button>
-            <Button onPress={() => router.push("/auth")}>
+            <Button onPress={() => router.push('/auth')}>
               <Text>Login</Text>
             </Button>
-            <Button onPress={() => router.push("/messages/conversations")}>
+            <Button onPress={() => router.push('/messages/conversations')}>
               <Text>Messages (Conversations)</Text>
             </Button>
-            <Button onPress={() => router.push("/messages/chat")}>
+            <Button onPress={() => router.push('/messages/chat')}>
               <Text>Messages (Chat)</Text>
             </Button>
-            <Button onPress={() => router.push("/ai-chat")}>
+            <Button onPress={() => router.push('/ai-chat')}>
               <Text>AI Chat</Text>
             </Button>
-            <Button onPress={() => router.push("/ai-chat")}>
+            <Button onPress={() => router.push('/ai-chat')}>
               <Text>AI Chat (Better UI)</Text>
             </Button>
           </View>
@@ -172,7 +172,7 @@ const COMPONENTS: ComponentItem[] = [
     },
   },
   {
-    name: "Text",
+    name: 'Text',
     component: function TextExample() {
       return (
         <View className="gap-2">
@@ -214,7 +214,7 @@ const COMPONENTS: ComponentItem[] = [
     },
   },
   {
-    name: "Selectable Text",
+    name: 'Selectable Text',
     component: function SelectableTextExample() {
       return (
         <Text uiTextView selectable>
@@ -224,7 +224,7 @@ const COMPONENTS: ComponentItem[] = [
     },
   },
   {
-    name: "Button",
+    name: 'Button',
     component: function ButtonExample() {
       return (
         <View className="gap-4">

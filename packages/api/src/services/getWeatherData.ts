@@ -1,6 +1,6 @@
-import { Env } from "@/types/env";
-import { Context } from "hono";
-import { env } from "hono/adapter";
+import { Env } from '@/types/env';
+import { Context } from 'hono';
+import { env } from 'hono/adapter';
 
 type WeatherData = {
   location: string;
@@ -20,7 +20,7 @@ export async function getWeatherData(location: string, c: Context): Promise<Weat
     );
 
     if (!response.ok) {
-      throw new Error("Weather API request failed");
+      throw new Error('Weather API request failed');
     }
 
     const data = await response.json();
@@ -33,7 +33,7 @@ export async function getWeatherData(location: string, c: Context): Promise<Weat
       windSpeed: Math.round(data.wind.speed),
     };
   } catch (error) {
-    console.error("Error fetching weather data:", error);
+    console.error('Error fetching weather data:', error);
     throw error;
   }
 }

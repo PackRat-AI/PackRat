@@ -1,14 +1,14 @@
-import { useLocalSearchParams } from "expo-router";
-import { useState, useEffect } from "react";
-import { View, ScrollView, ActivityIndicator } from "react-native";
+import { useLocalSearchParams } from 'expo-router';
+import { useState, useEffect } from 'react';
+import { View, ScrollView, ActivityIndicator } from 'react-native';
 
-import { LargeTitleHeader } from "nativewindui/LargeTitleHeader";
-import { Text } from "nativewindui/Text";
-import { featureFlags } from "~/config";
-import { userStore } from "~/features/auth/store";
-import { usePackDetails } from "~/features/packs/hooks/usePackDetails";
-import { usePackWeightHistory } from "~/features/packs/hooks/usePackWeightHistory";
-import { computeCategorySummaries } from "~/features/packs/utils";
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { featureFlags } from '~/config';
+import { userStore } from '~/features/auth/store';
+import { usePackDetails } from '~/features/packs/hooks/usePackDetails';
+import { usePackWeightHistory } from '~/features/packs/hooks/usePackWeightHistory';
+import { computeCategorySummaries } from '~/features/packs/utils';
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();
@@ -21,7 +21,7 @@ export default function PackStatsScreen() {
   const CATEGORY_DISTRIBUTION = categories.map((category) => ({
     name: category.name,
     weight: category.weight,
-    color: "#888",
+    color: '#888',
     percentage: category.percentage,
   }));
 
@@ -96,7 +96,7 @@ export default function PackStatsScreen() {
                     <View className="mb-1 flex-row justify-between">
                       <Text variant="subhead">{item.name}</Text>
                       <Text variant="subhead">
-                        {item.weight.toFixed(1)} {userStore.preferredWeightUnit.peek() ?? "g"}(
+                        {item.weight.toFixed(1)} {userStore.preferredWeightUnit.peek() ?? 'g'}(
                         {item.percentage}%)
                       </Text>
                     </View>

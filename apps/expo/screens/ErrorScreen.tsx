@@ -1,40 +1,40 @@
-"use client";
+'use client';
 
-import { Icon, MaterialIconName } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { Text, View } from "react-native";
-import { Button } from "nativewindui/Button";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Icon, MaterialIconName } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
+import { Button } from 'nativewindui/Button';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 type ErrorScreenProps = {
   title?: string;
   message?: string;
   onRetry?: () => void;
   showHomeButton?: boolean;
-  variant?: "default" | "subtle" | "destructive";
+  variant?: 'default' | 'subtle' | 'destructive';
   icon?: MaterialIconName;
 };
 
 export function ErrorScreen({
-  title = "Something went wrong",
+  title = 'Something went wrong',
   message = "We're having trouble loading this page. Please try again.",
   onRetry,
   showHomeButton = true,
-  variant = "default",
-  icon = "exclamation",
+  variant = 'default',
+  icon = 'exclamation',
 }: ErrorScreenProps) {
   const router = useRouter();
   const { colors } = useColorScheme();
 
   const handleGoHome = () => {
-    router.replace("/");
+    router.replace('/');
   };
 
   const getIconColor = () => {
     switch (variant) {
-      case "subtle":
+      case 'subtle':
         return colors.grey3;
-      case "destructive":
+      case 'destructive':
         return colors.destructive;
       default:
         return colors.primary;

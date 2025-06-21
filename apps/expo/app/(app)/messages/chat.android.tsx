@@ -1,8 +1,8 @@
-import { Portal } from "@rn-primitives/portal";
-import { Icon } from "@roninoss/icons";
-import { FlashList } from "@shopify/flash-list";
-import { router, Stack } from "expo-router";
-import * as React from "react";
+import { Portal } from '@rn-primitives/portal';
+import { Icon } from '@roninoss/icons';
+import { FlashList } from '@shopify/flash-list';
+import { router, Stack } from 'expo-router';
+import * as React from 'react';
 import {
   Image,
   NativeSyntheticEvent,
@@ -13,12 +13,12 @@ import {
   TextStyle,
   View,
   ViewStyle,
-} from "react-native";
+} from 'react-native';
 import {
   KeyboardAvoidingView,
   KeyboardStickyView,
   useReanimatedKeyboardAnimation,
-} from "react-native-keyboard-controller";
+} from 'react-native-keyboard-controller';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -27,19 +27,19 @@ import Animated, {
   SharedValue,
   useAnimatedStyle,
   useSharedValue,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Avatar, AvatarFallback } from "nativewindui/Avatar";
-import { Button } from "nativewindui/Button";
-import { ContextMenu } from "nativewindui/ContextMenu";
-import { DropdownMenu } from "nativewindui/DropdownMenu";
-import { createDropdownItem } from "nativewindui/DropdownMenu/utils";
-import { Text } from "nativewindui/Text";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
+import { ContextMenu } from 'nativewindui/ContextMenu';
+import { DropdownMenu } from 'nativewindui/DropdownMenu';
+import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
+import { Text } from 'nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
 
-const ME = "Alice";
+const ME = 'Alice';
 
 const HEADER_HEIGHT = 64;
 
@@ -99,17 +99,17 @@ export default function ChatAndroid() {
           }}
           data={messages}
           renderItem={({ item, index }) => {
-            if (typeof item === "string") {
+            if (typeof item === 'string') {
               return <DateSeparator date={item} />;
             }
 
             const nextMessage = messages[index - 1];
             const isSameNextSender =
-              typeof nextMessage !== "string" ? nextMessage?.sender === item.sender : false;
+              typeof nextMessage !== 'string' ? nextMessage?.sender === item.sender : false;
 
             const previousMessage = messages[index + 1];
             const isSamePreviousSender =
-              typeof previousMessage !== "string" ? previousMessage?.sender === item.sender : false;
+              typeof previousMessage !== 'string' ? previousMessage?.sender === item.sender : false;
 
             return (
               <ChatBubble
@@ -169,8 +169,8 @@ function Header() {
               size={24}
               color={colors.foreground}
               name={Platform.select({
-                ios: "chevron-left",
-                default: "arrow-left",
+                ios: 'chevron-left',
+                default: 'arrow-left',
               })}
             />
           </Button>
@@ -231,24 +231,24 @@ function DateSeparator({ date }: { date: string }) {
 
 // Add as class when possible: https://github.com/marklawlor/nativewind/issues/522
 const BORDER_CURVE: ViewStyle = {
-  borderCurve: "continuous",
+  borderCurve: 'continuous',
 };
 
 const CONTEXT_MENU_ITEMS = [
   createDropdownItem({
-    actionKey: "reply",
-    title: "Reply",
-    icon: { name: "arrow-left-bold-outline" },
+    actionKey: 'reply',
+    title: 'Reply',
+    icon: { name: 'arrow-left-bold-outline' },
   }),
   createDropdownItem({
-    actionKey: "sticker",
-    title: "Sticker",
-    icon: { name: "plus-box-outline" },
+    actionKey: 'sticker',
+    title: 'Sticker',
+    icon: { name: 'plus-box-outline' },
   }),
   createDropdownItem({
-    actionKey: "copy",
-    title: "Copy",
-    icon: { name: "clipboard-outline" },
+    actionKey: 'copy',
+    title: 'Copy',
+    icon: { name: 'clipboard-outline' },
   }),
 ];
 
@@ -273,60 +273,60 @@ function ChatBubble({
       <View className="bg-card flex-row gap-2.5 rounded-full px-2 py-1 shadow-2xl">
         <Button
           size="icon"
-          variant={item.reactions.love?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.love?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
-            "ios:rounded-full rounded-full",
-            item.reactions.love?.includes(ME) && "bg-primary/30",
+            'ios:rounded-full rounded-full',
+            item.reactions.love?.includes(ME) && 'bg-primary/30',
           )}
         >
           <Text variant="title1">😍</Text>
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.like?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.like?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
-            "ios:rounded-full rounded-full",
-            item.reactions.like?.includes(ME) && "bg-primary/30",
+            'ios:rounded-full rounded-full',
+            item.reactions.like?.includes(ME) && 'bg-primary/30',
           )}
         >
           <Text variant="title1">👍</Text>
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.dislike?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.dislike?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
-            "ios:rounded-full rounded-full",
-            item.reactions.surprised?.includes(ME) && "bg-primary/30",
+            'ios:rounded-full rounded-full',
+            item.reactions.surprised?.includes(ME) && 'bg-primary/30',
           )}
         >
           <Text variant="title1">😮</Text>
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.dislike?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.dislike?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
-            "ios:rounded-full rounded-full",
-            item.reactions.dislike?.includes(ME) && "bg-primary/30",
+            'ios:rounded-full rounded-full',
+            item.reactions.dislike?.includes(ME) && 'bg-primary/30',
           )}
         >
           <Text variant="title1">👎</Text>
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.sad?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.sad?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
-            "ios:rounded-full rounded-full",
-            item.reactions.sad?.includes(ME) && "bg-primary/30",
+            'ios:rounded-full rounded-full',
+            item.reactions.sad?.includes(ME) && 'bg-primary/30',
           )}
         >
           <Text variant="title1">😢</Text>
         </Button>
         <Button
           size="icon"
-          variant={item.reactions.angry?.includes(ME) ? "primary" : "plain"}
+          variant={item.reactions.angry?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
-            "ios:rounded-full rounded-full",
-            item.reactions.angry?.includes(ME) && "bg-primary/20",
+            'ios:rounded-full rounded-full',
+            item.reactions.angry?.includes(ME) && 'bg-primary/20',
           )}
         >
           <Text variant="title1">😡</Text>
@@ -365,15 +365,15 @@ function ChatBubble({
     <Pressable
       onPress={resetSelectedMessages}
       className={cn(
-        "justify-center px-2 pb-3.5",
-        isSameNextSender ? "pb-1" : "pb-3.5",
-        item.sender === ME ? "items-end pl-16" : "items-start pr-16",
+        'justify-center px-2 pb-3.5',
+        isSameNextSender ? 'pb-1' : 'pb-3.5',
+        item.sender === ME ? 'items-end pl-16' : 'items-start pr-16',
       )}
     >
       <View>
         {item.attachments.length > 0 ? (
           <View
-            className={cn("flex-row items-center gap-2", item.sender === ME && "flex-row-reverse")}
+            className={cn('flex-row items-center gap-2', item.sender === ME && 'flex-row-reverse')}
           >
             {item.sender !== ME && (
               <Avatar alt="avatar">
@@ -387,7 +387,7 @@ function ChatBubble({
             <View>
               <ContextMenu
                 style={{ borderRadius: 12 }}
-                auxiliaryPreviewPosition={item.sender === ME ? "end" : "start"}
+                auxiliaryPreviewPosition={item.sender === ME ? 'end' : 'start'}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
                 items={Platform.select({
                   ios: CONTEXT_MENU_ITEMS,
@@ -400,11 +400,11 @@ function ChatBubble({
                   onLongPress={initSelectedMessages}
                   onPress={onItemPress}
                   className={cn(
-                    "bg-primary/20 rounded-xl",
-                    isSelected && "bg-primary",
+                    'bg-primary/20 rounded-xl',
+                    isSelected && 'bg-primary',
                     isSamePreviousSender &&
-                      (item.sender === ME ? "rounded-tr-md" : "rounded-tl-md"),
-                    isSameNextSender && (item.sender === ME ? "rounded-br-md" : "rounded-bl-md"),
+                      (item.sender === ME ? 'rounded-tr-md' : 'rounded-tl-md'),
+                    isSameNextSender && (item.sender === ME ? 'rounded-br-md' : 'rounded-bl-md'),
                   )}
                 >
                   <Image
@@ -412,7 +412,7 @@ function ChatBubble({
                     style={{
                       width: 300,
                       height: 300,
-                      resizeMode: "cover",
+                      resizeMode: 'cover',
                       opacity: isSelected ? 0.5 : 1,
                     }}
                     borderTopLeftRadius={item.sender !== ME ? (isSamePreviousSender ? 6 : 12) : 12}
@@ -425,8 +425,8 @@ function ChatBubble({
               {item.reactions.love?.includes(ME) && (
                 <View
                   className={cn(
-                    "bg-card dark:bg-background absolute -bottom-6 rounded-full p-px",
-                    item.sender === ME ? "right-0" : "left-0",
+                    'bg-card dark:bg-background absolute -bottom-6 rounded-full p-px',
+                    item.sender === ME ? 'right-0' : 'left-0',
                   )}
                 >
                   <View className="bg-primary/15 dark:bg-primary/50 h-7 w-7 items-center justify-center rounded-full">
@@ -438,7 +438,7 @@ function ChatBubble({
           </View>
         ) : (
           <View>
-            <View className={cn("flex-row items-end gap-2", item.sender === ME && "justify-end")}>
+            <View className={cn('flex-row items-end gap-2', item.sender === ME && 'justify-end')}>
               {item.sender !== ME && (
                 <View className="">
                   <Avatar alt="avatar">
@@ -451,7 +451,7 @@ function ChatBubble({
                 </View>
               )}
               <ContextMenu
-                auxiliaryPreviewPosition={item.sender === ME ? "end" : "start"}
+                auxiliaryPreviewPosition={item.sender === ME ? 'end' : 'start'}
                 items={Platform.select({
                   ios: CONTEXT_MENU_ITEMS,
                   default: [],
@@ -465,24 +465,24 @@ function ChatBubble({
                   <View
                     style={BORDER_CURVE}
                     className={cn(
-                      "bg-muted/30 dark:bg-muted-foreground/50 rounded-2xl px-3 py-1.5",
-                      Platform.OS === "ios" && "dark:bg-muted/70",
-                      item.sender === ME && "bg-primary/20 dark:bg-primary/30",
-                      isSelected && "bg-primary dark:bg-primary",
+                      'bg-muted/30 dark:bg-muted-foreground/50 rounded-2xl px-3 py-1.5',
+                      Platform.OS === 'ios' && 'dark:bg-muted/70',
+                      item.sender === ME && 'bg-primary/20 dark:bg-primary/30',
+                      isSelected && 'bg-primary dark:bg-primary',
                       isSamePreviousSender &&
-                        (item.sender === ME ? "rounded-tr-md" : "rounded-tl-md"),
-                      isSameNextSender && (item.sender === ME ? "rounded-br-md" : "rounded-bl-md"),
+                        (item.sender === ME ? 'rounded-tr-md' : 'rounded-tl-md'),
+                      isSameNextSender && (item.sender === ME ? 'rounded-br-md' : 'rounded-bl-md'),
                     )}
                   >
-                    <Text className={cn(isSelected && "text-white")}>{item.text}</Text>
+                    <Text className={cn(isSelected && 'text-white')}>{item.text}</Text>
                   </View>
                 </Pressable>
               </ContextMenu>
               {item.reactions.love?.includes(ME) && (
                 <View
                   className={cn(
-                    "bg-card dark:bg-background absolute -bottom-6 rounded-full p-px",
-                    item.sender === ME ? "right-0" : "left-12",
+                    'bg-card dark:bg-background absolute -bottom-6 rounded-full p-px',
+                    item.sender === ME ? 'right-0' : 'left-12',
                   )}
                 >
                   <View className="bg-primary/15 dark:bg-primary/50 h-7 w-7 items-center justify-center rounded-full">
@@ -496,9 +496,9 @@ function ChatBubble({
         {showTime && (
           <View
             className={cn(
-              "px-1 pt-0.5",
-              item.sender === ME ? "items-end" : "pl-14",
-              item.reactions.love?.includes(ME) && "pt-7",
+              'px-1 pt-0.5',
+              item.sender === ME ? 'items-end' : 'pl-14',
+              item.reactions.love?.includes(ME) && 'pt-7',
             )}
           >
             <Text variant="caption2" className="text-muted-foreground font-normal">
@@ -512,7 +512,7 @@ function ChatBubble({
 }
 
 const TEXT_INPUT_STYLE: TextStyle = {
-  borderCurve: "continuous",
+  borderCurve: 'continuous',
   maxHeight: 300,
 };
 
@@ -525,7 +525,7 @@ function Composer({
 }) {
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
-  const [message, setMessage] = React.useState("");
+  const [message, setMessage] = React.useState('');
   const [showOptions, setShowOptions] = React.useState(true);
 
   function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
@@ -554,15 +554,15 @@ function Composer({
         readBy: [],
         sender: ME,
         text: message,
-        date: new Date().toISOString().split("T")[0],
-        time: new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
         }),
       },
       ...prev,
     ]);
-    setMessage("");
+    setMessage('');
     if (!showOptions) {
       setShowOptions(true);
     }
@@ -574,7 +574,7 @@ function Composer({
       style={{ paddingBottom: insets.bottom }}
     >
       <View className="flex-row items-end gap-0.5 py-2 pl-2 pr-4">
-        {showOptions || Platform.OS === "ios" ? (
+        {showOptions || Platform.OS === 'ios' ? (
           <Animated.View
             key="options-container"
             entering={FadeIn.duration(200).delay(150)}
@@ -586,15 +586,15 @@ function Composer({
               className="ios:rounded-full ios:active:opacity-50 rounded-full opacity-70"
             >
               <Icon
-                ios={{ name: "plus.circle" }}
+                ios={{ name: 'plus.circle' }}
                 materialIcon={{
-                  type: "MaterialCommunityIcons",
-                  name: "plus-circle-outline",
+                  type: 'MaterialCommunityIcons',
+                  name: 'plus-circle-outline',
                 }}
                 color={colors.foreground}
               />
             </Button>
-            {Platform.OS !== "ios" && (
+            {Platform.OS !== 'ios' && (
               <Button
                 variant="plain"
                 size="icon"
@@ -618,10 +618,10 @@ function Composer({
         )}
 
         <Animated.View
-          layout={Platform.OS === "ios" ? undefined : LinearTransition.duration(200)}
+          layout={Platform.OS === 'ios' ? undefined : LinearTransition.duration(200)}
           className={cn(
-            "bg-muted/25 flex-1 overflow-hidden rounded-3xl",
-            Platform.OS === "ios" && "dark:bg-muted/50",
+            'bg-muted/25 flex-1 overflow-hidden rounded-3xl',
+            Platform.OS === 'ios' && 'dark:bg-muted/50',
           )}
         >
           <TextInput
@@ -638,10 +638,10 @@ function Composer({
         <View className="absolute bottom-2.5 right-4 flex-row">
           <Button size="icon" variant="plain" className="ios:rounded-full rounded-full opacity-60">
             <Icon
-              ios={{ name: "face.smiling" }}
+              ios={{ name: 'face.smiling' }}
               materialIcon={{
-                type: "MaterialCommunityIcons",
-                name: "emoticon-happy-outline",
+                type: 'MaterialCommunityIcons',
+                name: 'emoticon-happy-outline',
               }}
               size={23}
               color={colors.foreground}
@@ -672,8 +672,8 @@ function Composer({
 }
 
 const DROPDOWN_ITEMS = [
-  createDropdownItem({ actionKey: "share", title: "Share" }),
-  createDropdownItem({ actionKey: "forward", title: "Forward" }),
+  createDropdownItem({ actionKey: 'share', title: 'Share' }),
+  createDropdownItem({ actionKey: 'forward', title: 'Forward' }),
 ];
 
 function SelectMessagesHeader({
@@ -742,175 +742,175 @@ type MockMessage = {
 
 const MOCK_MESSAGES: (string | MockMessage)[] = [
   {
-    id: "36",
-    sender: "Bob",
-    text: "Hope you get some rest soon!",
-    date: "2024-07-13",
-    time: "10:08 AM",
+    id: '36',
+    sender: 'Bob',
+    text: 'Hope you get some rest soon!',
+    date: '2024-07-13',
+    time: '10:08 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "35",
-    sender: "Alice",
-    text: "Just yesterday. Still a bit jet-lagged.",
-    date: "2024-07-13",
-    time: "10:07 AM",
+    id: '35',
+    sender: 'Alice',
+    text: 'Just yesterday. Still a bit jet-lagged.',
+    date: '2024-07-13',
+    time: '10:07 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "34",
-    sender: "Bob",
-    text: "When did you get back?",
-    date: "2024-07-13",
-    time: "10:06 AM",
+    id: '34',
+    sender: 'Bob',
+    text: 'When did you get back?',
+    date: '2024-07-13',
+    time: '10:06 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "33",
-    sender: "Alice",
-    text: "Yes, it was a great trip.",
-    date: "2024-07-13",
-    time: "10:05 AM",
+    id: '33',
+    sender: 'Alice',
+    text: 'Yes, it was a great trip.',
+    date: '2024-07-13',
+    time: '10:05 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "32",
-    sender: "Bob",
-    text: "That looks amazing!",
-    date: "2024-07-13",
-    time: "10:04 AM",
+    id: '32',
+    sender: 'Bob',
+    text: 'That looks amazing!',
+    date: '2024-07-13',
+    time: '10:04 AM',
     reactions: {
-      love: ["Alice"],
+      love: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "31",
-    sender: "Alice",
-    text: "",
-    date: "2024-07-13",
-    time: "10:03 AM",
+    id: '31',
+    sender: 'Alice',
+    text: '',
+    date: '2024-07-13',
+    time: '10:03 AM',
     reactions: {
-      love: ["Alice"],
+      love: ['Alice'],
     },
     attachments: [
       {
-        type: "image",
-        url: "https://loremflickr.com/640/360",
+        type: 'image',
+        url: 'https://loremflickr.com/640/360',
       },
     ],
   },
   {
-    id: "30",
-    sender: "Alice",
-    text: "Here is a picture of the sunset from my vacation!",
-    date: "2024-07-13",
-    time: "10:02 AM",
+    id: '30',
+    sender: 'Alice',
+    text: 'Here is a picture of the sunset from my vacation!',
+    date: '2024-07-13',
+    time: '10:02 AM',
     reactions: {
       love: [],
     },
     attachments: [
       {
-        type: "image",
-        url: "https://placebear.com/640/360",
+        type: 'image',
+        url: 'https://placebear.com/640/360',
       },
     ],
   },
   {
-    id: "29",
-    sender: "Bob",
-    text: "I am good, thanks! How about you?",
-    date: "2024-07-13",
-    time: "10:01 AM",
+    id: '29',
+    sender: 'Bob',
+    text: 'I am good, thanks! How about you?',
+    date: '2024-07-13',
+    time: '10:01 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "28",
-    sender: "Alice",
-    text: "Hey, how are you?",
-    date: "2024-07-13",
-    time: "10:00 AM",
+    id: '28',
+    sender: 'Alice',
+    text: 'Hey, how are you?',
+    date: '2024-07-13',
+    time: '10:00 AM',
     reactions: {
       like: [],
     },
     attachments: [],
   },
-  "Monday 13 Jul 2024 · 10:00 AM",
+  'Monday 13 Jul 2024 · 10:00 AM',
 
   {
-    id: "27",
-    sender: "Bob",
-    text: "Hope you get some rest soon!",
-    date: "2024-07-12",
-    time: "10:08 AM",
+    id: '27',
+    sender: 'Bob',
+    text: 'Hope you get some rest soon!',
+    date: '2024-07-12',
+    time: '10:08 AM',
     reactions: {
-      love: ["Alice"],
+      love: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "26",
-    sender: "Alice",
-    text: "Just yesterday. Still a bit jet-lagged.",
-    date: "2024-07-12T10:07:00Z",
-    time: "10:07 AM",
+    id: '26',
+    sender: 'Alice',
+    text: 'Just yesterday. Still a bit jet-lagged.',
+    date: '2024-07-12T10:07:00Z',
+    time: '10:07 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "25",
-    sender: "Bob",
-    text: "When did you get back?",
-    date: "2024-07-12T10:06:00Z",
-    time: "10:06 AM",
+    id: '25',
+    sender: 'Bob',
+    text: 'When did you get back?',
+    date: '2024-07-12T10:06:00Z',
+    time: '10:06 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "24",
-    sender: "Alice",
-    text: "Yes, it was a great trip.",
-    date: "2024-07-12T10:05:00Z",
-    time: "10:05 AM",
+    id: '24',
+    sender: 'Alice',
+    text: 'Yes, it was a great trip.',
+    date: '2024-07-12T10:05:00Z',
+    time: '10:05 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "23",
-    sender: "Bob",
-    text: "That looks amazing!",
-    date: "2024-07-12T10:04:00Z",
-    time: "10:04 AM",
+    id: '23',
+    sender: 'Bob',
+    text: 'That looks amazing!',
+    date: '2024-07-12T10:04:00Z',
+    time: '10:04 AM',
     reactions: {
-      love: ["Alice"],
+      love: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "22",
-    sender: "Alice",
-    text: "",
-    date: "2024-07-12T10:03:00Z",
-    time: "10:03 AM",
+    id: '22',
+    sender: 'Alice',
+    text: '',
+    date: '2024-07-12T10:03:00Z',
+    time: '10:03 AM',
     reactions: {},
     attachments: [
       {
-        type: "image",
-        url: "https://loremflickr.com/640/360",
+        type: 'image',
+        url: 'https://loremflickr.com/640/360',
       },
     ],
   },
   {
-    id: "21",
-    sender: "Alice",
-    text: "Here is a picture of the sunset from my vacation!",
-    date: "2024-07-12T10:02:00Z",
-    time: "10:02 AM",
+    id: '21',
+    sender: 'Alice',
+    text: 'Here is a picture of the sunset from my vacation!',
+    date: '2024-07-12T10:02:00Z',
+    time: '10:02 AM',
     reactions: {
       like: [],
       love: [],
@@ -918,131 +918,131 @@ const MOCK_MESSAGES: (string | MockMessage)[] = [
     },
     attachments: [
       {
-        type: "image",
-        url: "https://placebear.com/640/360",
+        type: 'image',
+        url: 'https://placebear.com/640/360',
       },
     ],
   },
   {
-    id: "20",
-    sender: "Bob",
-    text: "I am good, thanks! How about you?",
-    date: "2024-07-12T10:01:00Z",
-    time: "10:01 AM",
+    id: '20',
+    sender: 'Bob',
+    text: 'I am good, thanks! How about you?',
+    date: '2024-07-12T10:01:00Z',
+    time: '10:01 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "19",
-    sender: "Alice",
-    text: "Hey, how are you?",
-    date: "2024-07-12T10:00:00Z",
-    time: "10:00 AM",
+    id: '19',
+    sender: 'Alice',
+    text: 'Hey, how are you?',
+    date: '2024-07-12T10:00:00Z',
+    time: '10:00 AM',
     reactions: {
-      love: ["Bob"],
+      love: ['Bob'],
     },
     attachments: [],
   },
-  "Sunday 12 Jul 2024 · 10:00 AM",
+  'Sunday 12 Jul 2024 · 10:00 AM',
 
   {
-    id: "18",
-    sender: "Bob",
-    text: "Hope you get some rest soon!",
-    date: "2024-07-11T10:08:00Z",
-    time: "10:08 AM",
+    id: '18',
+    sender: 'Bob',
+    text: 'Hope you get some rest soon!',
+    date: '2024-07-11T10:08:00Z',
+    time: '10:08 AM',
     reactions: {
-      love: ["Alice"],
+      love: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "17",
-    sender: "Alice",
-    text: "Just yesterday. Still a bit jet-lagged.",
-    date: "2024-07-11T10:07:00Z",
-    time: "10:07 AM",
+    id: '17',
+    sender: 'Alice',
+    text: 'Just yesterday. Still a bit jet-lagged.',
+    date: '2024-07-11T10:07:00Z',
+    time: '10:07 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "16",
-    sender: "Bob",
-    text: "When did you get back?",
-    date: "2024-07-11T10:06:00Z",
-    time: "10:06 AM",
+    id: '16',
+    sender: 'Bob',
+    text: 'When did you get back?',
+    date: '2024-07-11T10:06:00Z',
+    time: '10:06 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "15",
-    sender: "Alice",
-    text: "Yes, it was a great trip.",
-    date: "2024-07-11T10:05:00Z",
-    time: "10:05 AM",
+    id: '15',
+    sender: 'Alice',
+    text: 'Yes, it was a great trip.',
+    date: '2024-07-11T10:05:00Z',
+    time: '10:05 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "14",
-    sender: "Bob",
-    text: "That looks amazing!",
-    date: "2024-07-11T10:04:00Z",
-    time: "10:04 AM",
+    id: '14',
+    sender: 'Bob',
+    text: 'That looks amazing!',
+    date: '2024-07-11T10:04:00Z',
+    time: '10:04 AM',
     reactions: {
-      love: ["Alice"],
+      love: ['Alice'],
     },
     attachments: [],
   },
   {
-    id: "13",
-    sender: "Alice",
-    text: "",
-    date: "2024-07-11T10:03:00Z",
-    time: "10:03 AM",
+    id: '13',
+    sender: 'Alice',
+    text: '',
+    date: '2024-07-11T10:03:00Z',
+    time: '10:03 AM',
     reactions: {},
     attachments: [
       {
-        type: "image",
-        url: "https://loremflickr.com/640/360",
+        type: 'image',
+        url: 'https://loremflickr.com/640/360',
       },
     ],
   },
   {
-    id: "12",
-    sender: "Alice",
-    text: "Here is a picture of the sunset from my vacation!",
-    date: "2024-07-11T10:02:00Z",
-    time: "10:02 AM",
+    id: '12',
+    sender: 'Alice',
+    text: 'Here is a picture of the sunset from my vacation!',
+    date: '2024-07-11T10:02:00Z',
+    time: '10:02 AM',
     reactions: {
       love: [],
     },
     attachments: [
       {
-        type: "image",
-        url: "https://placebear.com/640/360",
+        type: 'image',
+        url: 'https://placebear.com/640/360',
       },
     ],
   },
   {
-    id: "11",
-    sender: "Bob",
-    text: "I am good, thanks! How about you?",
-    date: "2024-07-11T10:01:00Z",
-    time: "10:01 AM",
+    id: '11',
+    sender: 'Bob',
+    text: 'I am good, thanks! How about you?',
+    date: '2024-07-11T10:01:00Z',
+    time: '10:01 AM',
     reactions: {},
     attachments: [],
   },
   {
-    id: "10",
-    sender: "Alice",
-    text: "Hey, how are you?",
-    date: "2024-07-11T10:00:00Z",
-    time: "10:00 AM",
+    id: '10',
+    sender: 'Alice',
+    text: 'Hey, how are you?',
+    date: '2024-07-11T10:00:00Z',
+    time: '10:00 AM',
     reactions: {
-      love: ["Bob"],
+      love: ['Bob'],
     },
     attachments: [],
   },
-  "Saturday 11 Jul 2024 · 10:00 AM",
+  'Saturday 11 Jul 2024 · 10:00 AM',
 ];

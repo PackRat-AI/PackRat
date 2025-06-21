@@ -1,23 +1,23 @@
-import { Env } from "@/types/env";
-import { authenticateRequest, unauthorizedResponse } from "@/utils/api-middleware";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { env } from "hono/adapter";
+import { Env } from '@/types/env';
+import { authenticateRequest, unauthorizedResponse } from '@/utils/api-middleware';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { env } from 'hono/adapter';
 
 const weatherRoutes = new OpenAPIHono();
 
-const WEATHER_API_BASE_URL = "https://api.weatherapi.com/v1";
+const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
 // Search locations endpoint
 const searchRoute = createRoute({
-  method: "get",
-  path: "/search",
+  method: 'get',
+  path: '/search',
   request: {
     query: z.object({
       q: z.string().optional(),
     }),
   },
   responses: {
-    200: { description: "Search locations" },
+    200: { description: 'Search locations' },
   },
 });
 
@@ -30,10 +30,10 @@ weatherRoutes.openapi(searchRoute, async (c) => {
     return unauthorizedResponse();
   }
 
-  const query = c.req.query("q");
+  const query = c.req.query('q');
 
   if (!query) {
-    return c.json({ error: "Query parameter is required" }, 400);
+    return c.json({ error: 'Query parameter is required' }, 400);
   }
 
   try {
@@ -59,15 +59,15 @@ weatherRoutes.openapi(searchRoute, async (c) => {
 
     return c.json(locations);
   } catch (error) {
-    console.error("Error searching locations:", error);
-    return c.json({ error: "Failed to search locations" }, 500);
+    console.error('Error searching locations:', error);
+    return c.json({ error: 'Failed to search locations' }, 500);
   }
 });
 
 // Search locations by coordinates endpoint
 const searchByCoordRoute = createRoute({
-  method: "get",
-  path: "/search-by-coordinates",
+  method: 'get',
+  path: '/search-by-coordinates',
   request: {
     query: z.object({
       lat: z.string().optional(),
@@ -75,7 +75,7 @@ const searchByCoordRoute = createRoute({
     }),
   },
   responses: {
-    200: { description: "Search locations by coordinates" },
+    200: { description: 'Search locations by coordinates' },
   },
 });
 
@@ -88,11 +88,11 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
     return unauthorizedResponse();
   }
 
-  const latitude = Number.parseFloat(c.req.query("lat") || "");
-  const longitude = Number.parseFloat(c.req.query("lon") || "");
+  const latitude = Number.parseFloat(c.req.query('lat') || '');
+  const longitude = Number.parseFloat(c.req.query('lon') || '');
 
   if (isNaN(latitude) || isNaN(longitude)) {
-    return c.json({ error: "Valid latitude and longitude parameters are required" }, 400);
+    return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
   }
 
   try {
@@ -149,15 +149,15 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
     return c.json(locations);
   } catch (error) {
-    console.error("Error searching locations by coordinates:", error);
-    return c.json({ error: "Failed to find locations near you" }, 500);
+    console.error('Error searching locations by coordinates:', error);
+    return c.json({ error: 'Failed to find locations near you' }, 500);
   }
 });
 
 // Get weather data endpoint
 const forecastRoute = createRoute({
-  method: "get",
-  path: "/forecast",
+  method: 'get',
+  path: '/forecast',
   request: {
     query: z.object({
       lat: z.string().optional(),
@@ -165,7 +165,7 @@ const forecastRoute = createRoute({
     }),
   },
   responses: {
-    200: { description: "Get weather forecast" },
+    200: { description: 'Get weather forecast' },
   },
 });
 
@@ -178,11 +178,11 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     return unauthorizedResponse();
   }
 
-  const latitude = Number.parseFloat(c.req.query("lat") || "");
-  const longitude = Number.parseFloat(c.req.query("lon") || "");
+  const latitude = Number.parseFloat(c.req.query('lat') || '');
+  const longitude = Number.parseFloat(c.req.query('lon') || '');
 
   if (isNaN(latitude) || isNaN(longitude)) {
-    return c.json({ error: "Valid latitude and longitude parameters are required" }, 400);
+    return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
   }
 
   try {
@@ -201,8 +201,8 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     const data = await response.json();
     return c.json(data);
   } catch (error) {
-    console.error("Error getting weather data:", error);
-    return c.json({ error: "Failed to get weather data" }, 500);
+    console.error('Error getting weather data:', error);
+    return c.json({ error: 'Failed to get weather data' }, 500);
   }
 });
 

@@ -3,10 +3,10 @@ import axios, {
   type AxiosInstance,
   type AxiosRequestConfig,
   type AxiosResponse,
-} from "axios";
-import { store } from "~/atoms/store";
-import { tokenAtom, refreshTokenAtom } from "~/features/auth/atoms/authAtoms";
-import * as SecureStore from "expo-secure-store";
+} from 'axios';
+import { store } from '~/atoms/store';
+import { tokenAtom, refreshTokenAtom } from '~/features/auth/atoms/authAtoms';
+import * as SecureStore from 'expo-secure-store';
 
 // Define base API URL based on environment
 export const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -16,8 +16,8 @@ const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_URL,
   timeout: 15000,
   headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
   },
 });
 
@@ -48,7 +48,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 axiosInstance.interceptors.request.use(
   async (config: AxiosRequestConfig) => {
     try {
-      const token = await SecureStore.getItemAsync("access_token");
+      const token = await SecureStore.getItemAsync('access_token');
 
       // If token exists, attach it to the request
       if (token && config.headers) {
@@ -57,7 +57,7 @@ axiosInstance.interceptors.request.use(
 
       return config;
     } catch (error) {
-      console.error("Error attaching auth token:", error);
+      console.error('Error attaching auth token:', error);
       return config;
     }
   },
@@ -89,12 +89,12 @@ axiosInstance.interceptors.response.use(
       try {
         // Get refresh token
         // const refreshToken = await store.get(refreshTokenAtom);
-        const refreshToken = await SecureStore.getItemAsync("refresh_token");
+        const refreshToken = await SecureStore.getItemAsync('refresh_token');
 
         if (!refreshToken) {
           // No refresh token, logout user
           // You could dispatch a logout action here
-          processQueue(new Error("No refresh token"));
+          processQueue(new Error('No refresh token'));
           return Promise.reject(error);
         }
 
@@ -121,7 +121,7 @@ axiosInstance.interceptors.response.use(
         } else {
           // Refresh failed, logout user
           // You could dispatch a logout action here
-          processQueue(new Error("Token refresh failed"));
+          processQueue(new Error('Token refresh failed'));
           return Promise.reject(error);
         }
       } catch (refreshError) {
@@ -147,7 +147,7 @@ export const handleApiError = (error: unknown): { message: string; status?: numb
   }
 
   return {
-    message: error instanceof Error ? error.message : "An unknown error occurred",
+    message: error instanceof Error ? error.message : 'An unknown error occurred',
   };
 };
 

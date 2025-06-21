@@ -1,11 +1,11 @@
-import { Icon } from "@roninoss/icons";
-import { Link } from "expo-router";
-import { Platform, View, type ViewStyle } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Icon } from '@roninoss/icons';
+import { Link } from 'expo-router';
+import { Platform, View, type ViewStyle } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from "nativewindui/Button";
-import { Text } from "nativewindui/Text";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 const ROOT_STYLE: ViewStyle = { flex: 1 };
 
@@ -33,7 +33,7 @@ export function WelcomeConsentScreen() {
                   name={feature.icon}
                   size={38}
                   color={colors.primary}
-                  ios={{ renderingMode: "hierarchical" }}
+                  ios={{ renderingMode: 'hierarchical' }}
                 />
               </View>
               <View className="flex-1">
@@ -49,16 +49,16 @@ export function WelcomeConsentScreen() {
               name="account-multiple"
               size={24}
               color={colors.primary}
-              ios={{ renderingMode: "hierarchical" }}
+              ios={{ renderingMode: 'hierarchical' }}
             />
             <Text variant="caption2" className="pt-1 text-center">
-              By pressing continue, you agree to our{" "}
+              By pressing continue, you agree to our{' '}
               <Link href="/">
                 <Text variant="caption2" className="text-primary">
                   Terms of Service
                 </Text>
-              </Link>{" "}
-              and that you have read our{" "}
+              </Link>{' '}
+              and that you have read our{' '}
               <Link href="/">
                 <Text variant="caption2" className="text-primary">
                   Privacy Policy
@@ -67,7 +67,7 @@ export function WelcomeConsentScreen() {
             </Text>
           </View>
           <Link href="../" replace asChild>
-            <Button size={Platform.select({ ios: "lg", default: "md" })}>
+            <Button size={Platform.select({ ios: 'lg', default: 'md' })}>
               <Text>Continue</Text>
             </Button>
           </Link>
@@ -79,18 +79,18 @@ export function WelcomeConsentScreen() {
 
 const FEATURES = [
   {
-    title: "Profile Management",
-    description: "Easily update and manage your personal information, settings, and preferences",
-    icon: "account-circle-outline",
+    title: 'Profile Management',
+    description: 'Easily update and manage your personal information, settings, and preferences',
+    icon: 'account-circle-outline',
   },
   {
-    title: "Secure Messaging",
-    description: "Chat securely with friends and family in real-time.",
-    icon: "message-processing",
+    title: 'Secure Messaging',
+    description: 'Chat securely with friends and family in real-time.',
+    icon: 'message-processing',
   },
   {
-    title: "Activity Tracking",
-    description: "Monitor your daily activities and track your progress over time.",
-    icon: "chart-timeline-variant",
+    title: 'Activity Tracking',
+    description: 'Monitor your daily activities and track your progress over time.',
+    icon: 'chart-timeline-variant',
   },
 ] as const;

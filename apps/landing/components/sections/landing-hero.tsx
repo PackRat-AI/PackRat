@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import type React from "react";
-import Link from "next/link";
-import { Download, ChevronRight, ArrowRight, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/config/site";
-import DeviceMockup from "@/components/ui/device-mockup";
-import GlassCard from "@/components/ui/glass-card";
-import GradientText from "@/components/ui/gradient-text";
-import GradientBackground from "@/components/ui/gradient-background";
-import { motion } from "framer-motion";
+import type React from 'react';
+import Link from 'next/link';
+import { Download, ChevronRight, ArrowRight, Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { siteConfig } from '@/config/site';
+import DeviceMockup from '@/components/ui/device-mockup';
+import GlassCard from '@/components/ui/glass-card';
+import GradientText from '@/components/ui/gradient-text';
+import GradientBackground from '@/components/ui/gradient-background';
+import { motion } from 'framer-motion';
 
 export default function LandingHero() {
   // Handle smooth scrolling when clicking on navigation links
@@ -19,7 +19,7 @@ export default function LandingHero() {
     const element = document.getElementById(targetId);
 
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      element.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -40,7 +40,7 @@ export default function LandingHero() {
       y: 0,
       opacity: 1,
       transition: {
-        type: "spring",
+        type: 'spring',
         stiffness: 100,
         damping: 10,
       },
@@ -76,12 +76,12 @@ export default function LandingHero() {
               className="text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl xl:text-6xl max-w-screen-sm"
               variants={itemVariants}
             >
-              <span className="block text-foreground">{siteConfig.hero.title.split(".")[0]}.</span>
+              <span className="block text-foreground">{siteConfig.hero.title.split('.')[0]}.</span>
               <GradientText
                 className="block mt-1"
                 gradient="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient"
               >
-                {siteConfig.hero.title.split(".")[1]}.
+                {siteConfig.hero.title.split('.')[1]}.
               </GradientText>
             </motion.h1>
 

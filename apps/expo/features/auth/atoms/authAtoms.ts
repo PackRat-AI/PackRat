@@ -1,6 +1,6 @@
-import { atom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
-import * as SecureStore from "expo-secure-store";
+import { atom } from 'jotai';
+import { atomWithStorage } from 'jotai/utils';
+import * as SecureStore from 'expo-secure-store';
 
 // User type definition
 export type User = {
@@ -12,7 +12,7 @@ export type User = {
 };
 
 // Token storage atom
-export const tokenAtom = atomWithStorage<string | null>("access_token", null, {
+export const tokenAtom = atomWithStorage<string | null>('access_token', null, {
   getItem: async (key) => SecureStore.getItemAsync(key),
   setItem: async (key, value) => {
     if (value === null) {
@@ -23,7 +23,7 @@ export const tokenAtom = atomWithStorage<string | null>("access_token", null, {
   removeItem: async (key) => SecureStore.deleteItemAsync(key),
 });
 
-export const refreshTokenAtom = atomWithStorage<string | null>("refresh_token", null, {
+export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', null, {
   getItem: async (key) => SecureStore.getItemAsync(key),
   setItem: async (key, value) => {
     if (value === null) {
@@ -37,4 +37,4 @@ export const refreshTokenAtom = atomWithStorage<string | null>("refresh_token", 
 // Loading state atom
 export const isLoadingAtom = atom(false);
 
-export const redirectToAtom = atom<string>("/");
+export const redirectToAtom = atom<string>('/');

@@ -1,29 +1,29 @@
-import { Icon } from "@roninoss/icons";
-import { Href, useRouter } from "expo-router";
-import { View } from "react-native";
-import { ListItem } from "nativewindui/List";
-import { Text } from "nativewindui/Text";
-import { isAuthed } from "~/features/auth/store";
-import { cn } from "~/lib/cn";
-import { useColorScheme } from "~/lib/useColorScheme";
+import { Icon } from '@roninoss/icons';
+import { Href, useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { ListItem } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { isAuthed } from '~/features/auth/store';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 export function AIChatTile() {
   const router = useRouter();
 
   const route: Href = {
-    pathname: "/ai-chat",
+    pathname: '/ai-chat',
     params: {
-      contextType: "general",
+      contextType: 'general',
     },
   };
   const handlePress = () => {
     if (!isAuthed.peek()) {
       // AI featuer is protected. Redirect user to the auth page if not authenticated.
       return router.push({
-        pathname: "/auth",
+        pathname: '/auth',
         params: {
           redirectTo: JSON.stringify(route), // stringifying to pass along parameters
-          showSignInCopy: "true",
+          showSignInCopy: 'true',
         },
       });
     }
@@ -51,7 +51,7 @@ export function AIChatTile() {
         </View>
       }
       item={{
-        title: "PackRat AI",
+        title: 'PackRat AI',
       }}
       onPress={handlePress}
       target="Cell"

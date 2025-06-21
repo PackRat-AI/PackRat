@@ -1,9 +1,9 @@
-"use client";
-import { Icon } from "@roninoss/icons";
-import { useRouter } from "expo-router";
-import { Text, View } from "react-native";
-import { Button } from "nativewindui/Button";
-import { useColorScheme } from "~/lib/useColorScheme";
+'use client';
+import { Icon } from '@roninoss/icons';
+import { useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
+import { Button } from 'nativewindui/Button';
+import { useColorScheme } from '~/lib/useColorScheme';
 
 type NotFoundScreenProps = {
   title?: string;
@@ -13,9 +13,9 @@ type NotFoundScreenProps = {
 };
 
 export function NotFoundScreen({
-  title = "Not Found",
+  title = 'Not Found',
   message = "The content you're looking for doesn't exist or has been moved.",
-  backButtonLabel = "Go Back",
+  backButtonLabel = 'Go Back',
   onBackPress,
 }: NotFoundScreenProps) {
   const router = useRouter();
