@@ -8,13 +8,13 @@ import { User } from "../../profile/types";
 export const userStore = observable<User | null>(null);
 
 syncObservable(
-	userStore,
-	syncedCrud({
-		persist: {
-			name: "user",
-			plugin: observablePersistSqlite(Storage),
-		},
-	}),
+  userStore,
+  syncedCrud({
+    persist: {
+      name: "user",
+      plugin: observablePersistSqlite(Storage),
+    },
+  }),
 );
 
 export const userSyncState = syncState(userStore);

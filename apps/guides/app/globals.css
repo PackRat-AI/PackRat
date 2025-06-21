@@ -3,152 +3,144 @@
 @tailwind utilities;
 
 @layer base {
-	:root {
-		/* Apple-inspired color palette */
-		--background: 0 0% 100%;
-		--foreground: 240 10% 3.9%;
+  :root {
+    /* Apple-inspired color palette */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
 
-		--card: 0 0% 100%;
-		--card-foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
 
-		--popover: 0 0% 100%;
-		--popover-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
 
-		--primary: 211 100% 50%;
-		--primary-foreground: 0 0% 100%;
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 100%;
 
-		--secondary: 210 40% 96.1%;
-		--secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-		--muted: 210 40% 96.1%;
-		--muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-		--accent: 210 40% 96.1%;
-		--accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-		--destructive: 0 84.2% 60.2%;
-		--destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
 
-		--border: 214.3 31.8% 91.4%;
-		--input: 214.3 31.8% 91.4%;
-		--ring: 211 100% 50%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 211 100% 50%;
 
-		--radius: 0.5rem;
-	}
+    --radius: 0.5rem;
+  }
 
-	.dark {
-		--background: 240 10% 3.9%;
-		--foreground: 0 0% 98%;
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-		--card: 240 10% 3.9%;
-		--card-foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-		--popover: 240 10% 3.9%;
-		--popover-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-		--primary: 211 100% 50%;
-		--primary-foreground: 0 0% 98%;
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 98%;
 
-		--secondary: 240 3.7% 15.9%;
-		--secondary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
 
-		--muted: 240 3.7% 15.9%;
-		--muted-foreground: 240 5% 64.9%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-		--accent: 240 3.7% 15.9%;
-		--accent-foreground: 0 0% 98%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
 
-		--destructive: 0 62.8% 30.6%;
-		--destructive-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
 
-		--border: 240 3.7% 15.9%;
-		--input: 240 3.7% 15.9%;
-		--ring: 211 100% 50%;
-	}
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 211 100% 50%;
+  }
 }
 
 @layer base {
-	* {
-		@apply border-border;
-	}
-	body {
-		@apply bg-background text-foreground;
-		font-feature-settings:
-			"ss01" 1,
-			"ss03" 1;
-	}
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      "ss01" 1,
+      "ss03" 1;
+  }
 
-	/* Apple-style typography */
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		@apply font-medium tracking-tight;
-	}
+  /* Apple-style typography */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-medium tracking-tight;
+  }
 
-	h1 {
-		@apply text-4xl md:text-5xl;
-		letter-spacing: -0.025em;
-	}
+  h1 {
+    @apply text-4xl md:text-5xl;
+    letter-spacing: -0.025em;
+  }
 
-	h2 {
-		@apply text-3xl md:text-4xl;
-		letter-spacing: -0.025em;
-	}
+  h2 {
+    @apply text-3xl md:text-4xl;
+    letter-spacing: -0.025em;
+  }
 
-	h3 {
-		@apply text-2xl md:text-3xl;
-		letter-spacing: -0.015em;
-	}
+  h3 {
+    @apply text-2xl md:text-3xl;
+    letter-spacing: -0.015em;
+  }
 
-	/* Apple-style smooth transitions */
-	a,
-	button {
-		@apply transition-all duration-200;
-	}
+  /* Apple-style smooth transitions */
+  a,
+  button {
+    @apply transition-all duration-200;
+  }
 }
 
 @layer components {
-	/* Consistent container styling */
-	.container {
-		@apply px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
-	}
+  /* Consistent container styling */
+  .container {
+    @apply px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
+  }
 }
 
 /* Apple-style component customizations */
 .apple-card {
-	@apply rounded-xl border border-border/40 bg-card shadow-sm;
-	backdrop-filter: blur(20px);
+  @apply rounded-xl border border-border/40 bg-card shadow-sm;
+  backdrop-filter: blur(20px);
 }
 
 .apple-button {
-	@apply rounded-full font-medium transition-all duration-200 ease-in-out;
+  @apply rounded-full font-medium transition-all duration-200 ease-in-out;
 }
 
 .apple-button-primary {
-	@apply bg-primary text-primary-foreground hover:bg-primary/90;
+  @apply bg-primary text-primary-foreground hover:bg-primary/90;
 }
 
 .apple-gradient-bg {
-	background: linear-gradient(
-		180deg,
-		rgba(255, 255, 255, 0) 0%,
-		rgba(234, 238, 242, 1) 100%
-	);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(234, 238, 242, 1) 100%);
 }
 
 .dark .apple-gradient-bg {
-	background: linear-gradient(
-		180deg,
-		rgba(0, 0, 0, 0) 0%,
-		rgba(20, 22, 25, 1) 100%
-	);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(20, 22, 25, 1) 100%);
 }
 
 /* Apple-style blur effects */
 .apple-blur {
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }

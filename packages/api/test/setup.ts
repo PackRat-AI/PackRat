@@ -15,6 +15,6 @@ process.env.R2_BUCKET_NAME = "bucket";
 import { vi } from "vitest";
 
 vi.mock("hono/adapter", async () => {
-	const actual = await vi.importActual<any>("hono/adapter");
-	return { ...actual, env: () => process.env };
+  const actual = await vi.importActual<any>("hono/adapter");
+  return { ...actual, env: () => process.env };
 });

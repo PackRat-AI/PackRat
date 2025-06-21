@@ -9,20 +9,20 @@ import TopographyBackground from "@/components/ui/topography-background";
 import AdvancedGridBackground from "@/components/ui/advanced-grid-background";
 
 export default function Home() {
-	return (
-		<div className="relative flex min-h-screen flex-col">
-			<div className="absolute inset-0 -z-10 h-full w-full bg-noise-texture bg-repeat"></div>
-			<TopographyBackground />
-			<AdvancedGridBackground />
-			<main className="flex-1">
-				<LandingHero />
-				<FeatureSection />
-				<HowItWorksSection />
-				<IntegrationSection />
-				<TestimonialsSection />
-				<DownloadSection />
-				<FaqSection />
-			</main>
-		</div>
-	);
+  return (
+    <div className="relative flex min-h-screen flex-col">
+      <div className="absolute inset-0 -z-10 h-full w-full bg-noise-texture bg-repeat"></div>
+      <TopographyBackground />
+      <AdvancedGridBackground />
+      <main className="flex-1">
+        <LandingHero />
+        <FeatureSection />
+        <HowItWorksSection />
+        <IntegrationSection />
+        <TestimonialsSection />
+        <DownloadSection />
+        <FaqSection />
+      </main>
+    </div>
+  );
 }

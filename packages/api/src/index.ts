@@ -16,14 +16,14 @@ app.route("/api", routes);
 
 // OpenAPI documentation and UI
 app.doc("/doc", {
-	openapi: "3.0.0",
-	info: { title: "PackRat API", version: "1.0.0" },
+  openapi: "3.0.0",
+  info: { title: "PackRat API", version: "1.0.0" },
 });
 app.get("/scalar", Scalar({ url: "/doc" }));
 
 // Health check endpoint
 app.get("/", (c) => {
-	return c.text("PackRat API is running!");
+  return c.text("PackRat API is running!");
 });
 
 export default app;
