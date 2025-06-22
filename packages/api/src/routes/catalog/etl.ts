@@ -6,7 +6,7 @@ import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
 const catalogETLSchema = z.object({
-  r2Key: z.string().min(1, "R2 key is required"),
+  objectKey: z.string().min(1, "R2 object key is required"),
   filename: z.string().min(1, "Filename is required"),
 });
 
@@ -44,7 +44,7 @@ catalogETLQueueRoutes.openapi(
         content: {
           "application/json": {
             schema: z.object({
-              error: z.string(),
+              message: z.string(),
             }),
           },
         },
@@ -56,14 +56,8 @@ catalogETLQueueRoutes.openapi(
       "Initiates serverless ETL processing of catalog data from R2 object storage",
   },
   async (c) => {
-    const { r2Key, filename } = await c.req.json();
+    const { objectKey, filename } = c.req.valid("json");
     const userId = c.get("jwtPayload")?.userId;
-
-    if (!userId) {
-      throw new HTTPException(400, {
-        message: "User ID not found",
-      });
-    }
 
     if (!c.env.ETL_QUEUE) {
       throw new HTTPException(400, {
@@ -73,7 +67,7 @@ catalogETLQueueRoutes.openapi(
 
     const jobId = await queueCatalogETL({
       queue: c.env.ETL_QUEUE,
-      r2Key,
+      objectKey,
       userId,
       filename,
     });
