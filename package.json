@@ -16,7 +16,7 @@
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
-    "server": "bun run --cwd packages/api dev"
+    "api": "bun run --cwd packages/api dev"
   },
   "devDependencies": {
     "@manypkg/cli": "^0.23.0",

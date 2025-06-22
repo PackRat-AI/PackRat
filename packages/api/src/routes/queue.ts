@@ -1,0 +1,89 @@
+import { authMiddleware } from "@/middleware/auth";
+import { queueCatalogETL } from "@/services/queue";
+import { Env } from "@/types/env";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
+
+const queueRoutes = new OpenAPIHono<{ Bindings: Env }>();
+
+const catalogETLSchema = z.object({
+  r2Key: z.string().min(1, "R2 key is required"),
+  filename: z.string().min(1, "Filename is required"),
+});
+
+queueRoutes.openapi(
+  {
+    method: "post",
+    path: "/catalog/etl",
+    middleware: [authMiddleware],
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: catalogETLSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "ETL job queued successfully",
+        content: {
+          "application/json": {
+            schema: z.object({
+              message: z.string(),
+              jobId: z.string(),
+              queued: z.boolean(),
+            }),
+          },
+        },
+      },
+      400: {
+        description: "Bad request",
+        content: {
+          "application/json": {
+            schema: z.object({
+              error: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    tags: ["ETL"],
+    summary: "Queue catalog ETL job from R2 CSV file",
+    description:
+      "Initiates serverless ETL processing of catalog data from R2 object storage",
+  },
+  async (c) => {
+    const { r2Key, filename } = await c.req.json();
+    const userId = c.get("jwtPayload")?.userId;
+
+    if (!userId) {
+      throw new HTTPException(400, {
+        message: "User ID not found",
+      });
+    }
+
+    if (!c.env.ETL_QUEUE) {
+      throw new HTTPException(400, {
+        message: "ETL_QUEUE is not configured",
+      });
+    }
+
+    const jobId = await queueCatalogETL({
+      queue: c.env.ETL_QUEUE,
+      r2Key,
+      userId,
+      filename,
+    });
+
+    return c.json({
+      message: "Catalog ETL job queued successfully",
+      jobId,
+      queued: true,
+    });
+  }
+);
+
+export { queueRoutes };

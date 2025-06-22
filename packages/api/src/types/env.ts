@@ -1,3 +1,5 @@
+import { Queue } from "@cloudflare/workers-types";
+
 export type Env = {
   EMAIL_PROVIDER: string;
   RESEND_API_KEY: string;
@@ -12,4 +14,5 @@ export type Env = {
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
   R2_BUCKET_NAME: string;
+  ETL_QUEUE?: Queue;
 };
