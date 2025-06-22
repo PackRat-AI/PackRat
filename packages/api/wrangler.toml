@@ -17,4 +17,15 @@ OPENWEATHER_KEY = "key"
 CLOUDFLARE_ACCOUNT_ID = "id"
 R2_ACCESS_KEY_ID = "key"
 R2_SECRET_ACCESS_KEY = "key"
-R2_BUCKET_NAME = "bucket"
+PACKRAT_BUCKET_R2_BUCKET_NAME = "bucket"
+PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME = "bucket"
+PACKRAT_API_KEY = "key"
+
+[[queues.producers]]
+queue = "packrat-etl-queue"
+binding = "ETL_QUEUE"
+
+[[queues.consumers]]
+queue = "packrat-etl-queue"
+max_batch_size = 10
+max_batch_timeout = 5
