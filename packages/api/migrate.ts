@@ -7,6 +7,10 @@ import * as ws from "ws";
 neonConfig.webSocketConstructor = ws;
 
 async function runMigrations() {
+  if (!process.env.NEON_DATABASE_URL) {
+    throw new Error("NEON_DATABASE_URL is not set");
+  }
+
   const sql = neon(process.env.NEON_DATABASE_URL!);
   const db = drizzle(sql);
 
