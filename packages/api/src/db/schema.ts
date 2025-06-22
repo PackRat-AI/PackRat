@@ -1,14 +1,14 @@
 import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
 import {
-  pgTable,
-  serial,
-  text,
   boolean,
-  timestamp,
   integer,
   jsonb,
-  varchar,
+  pgTable,
   real,
+  serial,
+  text,
+  timestamp,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 // User table
@@ -94,7 +94,7 @@ export const catalogItems = pgTable('catalog_items', {
   productUrl: text('product_url'),
   color: text('color'),
   size: text('size'),
-  sku: text('sku'),
+  sku: text('sku').unique(),
   price: real('price'),
   availability: text('availability'),
   seller: text('seller'),
