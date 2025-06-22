@@ -204,23 +204,23 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
         // Nothing to delete if old image is null
         if (oldImage) {
           const {
-            R2_ACCESS_KEY_ID,
-            R2_SECRET_ACCESS_KEY,
+            PACKRAT_BUCKET_R2_ACCESS_KEY_ID,
+            PACKRAT_BUCKET_R2_SECRET_ACCESS_KEY,
             CLOUDFLARE_ACCOUNT_ID,
-            R2_BUCKET_NAME,
+            PACKRAT_BUCKET_R2_BUCKET_NAME,
           } = env<Env>(c);
 
           const s3Client = new S3Client({
             region: "auto",
             endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
             credentials: {
-              accessKeyId: R2_ACCESS_KEY_ID || "",
-              secretAccessKey: R2_SECRET_ACCESS_KEY || "",
+              accessKeyId: PACKRAT_BUCKET_R2_ACCESS_KEY_ID || "",
+              secretAccessKey: PACKRAT_BUCKET_R2_SECRET_ACCESS_KEY || "",
             },
           });
 
           const command = new DeleteObjectCommand({
-            Bucket: R2_BUCKET_NAME,
+            Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
             Key: oldImage,
           });
 

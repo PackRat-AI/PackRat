@@ -32,10 +32,10 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
 
   try {
     const {
-      R2_ACCESS_KEY_ID,
-      R2_SECRET_ACCESS_KEY,
+      PACKRAT_BUCKET_R2_ACCESS_KEY_ID,
+      PACKRAT_BUCKET_R2_SECRET_ACCESS_KEY,
       CLOUDFLARE_ACCOUNT_ID,
-      R2_BUCKET_NAME,
+      PACKRAT_BUCKET_R2_BUCKET_NAME,
     } = env<Env>(c);
     const { fileName, contentType } = c.req.query();
 
@@ -48,8 +48,8 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
       region: 'auto',
       endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID || '',
-        secretAccessKey: R2_SECRET_ACCESS_KEY || '',
+        accessKeyId: PACKRAT_BUCKET_R2_ACCESS_KEY_ID || '',
+        secretAccessKey: PACKRAT_BUCKET_R2_SECRET_ACCESS_KEY || '',
       },
     });
 
@@ -61,7 +61,7 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
 
     // Create the command for putting an object in the bucket
     const command = new PutObjectCommand({
-      Bucket: R2_BUCKET_NAME,
+      Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
       Key: fileName,
       ContentType: contentType,
     });
