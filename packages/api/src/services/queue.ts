@@ -1,26 +1,39 @@
+import { createDbClient } from "@/db";
+import { NewCatalogItem, catalogItems } from "@/db/schema";
 import { Env } from "@/types/env";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Queue } from "@cloudflare/workers-types";
+import { getTableColumns, sql } from "drizzle-orm";
 
 export enum QueueType {
   CATALOG_ETL = "catalog-etl",
+  CATALOG_ETL_WRITE_BATCH = "catalog-etl-write-batch",
 }
 
 export interface BaseQueueMessage {
   type: QueueType;
   timestamp: number;
-  id: string;
+  id: string; // Original Job ID
 }
 
 export interface CatalogETLMessage extends BaseQueueMessage {
   type: QueueType.CATALOG_ETL;
   data: {
-    r2Key: string;
+    objectKey: string;
     userId: string;
     filename: string;
   };
 }
 
-const BATCH_SIZE = 1000; // Process 1000 rows at a time
+export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
+  type: QueueType.CATALOG_ETL_WRITE_BATCH;
+  data: {
+    items: any[];
+    userId: string;
+  };
+}
+
+const BATCH_SIZE = 10; // Process 10 rows at a time to stay under 128KB message limit
 const CHUNK_SIZE = 5 * 1024 * 1024; // Read 5MB chunks from R2
 
 export async function sendToQueue({
@@ -35,12 +48,12 @@ export async function sendToQueue({
 
 export async function queueCatalogETL({
   queue,
-  r2Key,
+  objectKey,
   userId,
   filename,
 }: {
   queue: Queue;
-  r2Key: string;
+  objectKey: string;
   userId: string;
   filename: string;
 }): Promise<string> {
@@ -48,7 +61,7 @@ export async function queueCatalogETL({
 
   const message: CatalogETLMessage = {
     type: QueueType.CATALOG_ETL,
-    data: { r2Key, userId, filename },
+    data: { objectKey, userId, filename },
     timestamp: Date.now(),
     id: jobId,
   };
@@ -76,10 +89,17 @@ export async function processQueueBatch({
 
           await processCatalogETL({
             message: queueMessage as CatalogETLMessage,
-            queue: env.ETL_QUEUE,
+            env,
           });
-
           break;
+
+        case QueueType.CATALOG_ETL_WRITE_BATCH:
+          await processCatalogETLWriteBatch({
+            message: queueMessage as CatalogETLWriteBatchMessage,
+            env,
+          });
+          break;
+
         default:
           console.warn(`Unknown queue message type: ${queueMessage.type}`);
       }
@@ -91,65 +111,131 @@ export async function processQueueBatch({
 
 async function processCatalogETL({
   message,
-  queue,
+  env,
 }: {
   message: CatalogETLMessage;
-  queue: Queue;
+  env: Env;
 }): Promise<void> {
-  const { r2Key, userId, filename } = message.data;
+  const { objectKey, userId, filename } = message.data;
   const jobId = message.id;
 
   console.log(`Starting ETL job ${jobId} for file ${filename}`);
 
   try {
-    // Get the full file from R2 (could also stream this)
-    const csvContent = await getR2File({ queue, key: r2Key });
+    const {
+      CLOUDFLARE_ACCOUNT_ID,
+      R2_ACCESS_KEY_ID,
+      R2_SECRET_ACCESS_KEY,
+      PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
+    } = env;
 
-    // Parse headers and create field mapping
-    const lines = csvContent.split("\n");
-    if (lines.length < 2) {
-      throw new Error("CSV must have at least a header and one data row");
-    }
+    const s3Client = new S3Client({
+      region: "auto",
+      endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: R2_ACCESS_KEY_ID || "",
+        secretAccessKey: R2_SECRET_ACCESS_KEY || "",
+      },
+    });
 
-    const headerLine = lines[0];
-    const headers = parseCSVLine(headerLine).map((h) => h.trim().toLowerCase());
-    const fieldMap = createFieldMap(headers);
-
-    console.log(
-      `Processing ${lines.length - 1} rows with field mapping:`,
-      fieldMap
+    const object = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
+        Key: objectKey,
+      })
     );
 
-    // Process in batches
+    if (!object.Body) {
+      throw new Error(`Object not found or body is empty: ${objectKey}`);
+    }
+    const stream = object.Body as ReadableStream<Uint8Array>;
+    const reader = stream.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+
+    let isHeader = true;
+    let fieldMap: Record<string, number> = {};
     let batch: any[] = [];
-    let totalProcessed = 0;
+    let totalQueued = 0;
 
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
+    const processLine = async (line: string) => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) return;
 
-      const values = parseCSVLine(line);
+      if (isHeader) {
+        const headers = parseCSVLine(trimmedLine).map((h) =>
+          h.trim().toLowerCase()
+        );
+        fieldMap = createFieldMap(headers);
+        isHeader = false;
+        console.log(`Processing ${filename} with field mapping:`, fieldMap);
+        return;
+      }
+
+      const values = parseCSVLine(trimmedLine);
       const item = mapCsvRowToItem({ values, fieldMap });
 
       if (item) {
         batch.push(item);
       }
 
-      // Process batch when it reaches BATCH_SIZE or we're at the end
-      if (batch.length >= BATCH_SIZE || i === lines.length - 1) {
-        if (batch.length > 0) {
-          await insertCatalogItems({ queue, items: batch, userId, jobId });
-          totalProcessed += batch.length;
-          console.log(
-            `ETL job ${jobId}: Processed ${totalProcessed} items so far`
-          );
-          batch = [];
+      if (batch.length >= BATCH_SIZE) {
+        const writeMessage: CatalogETLWriteBatchMessage = {
+          type: QueueType.CATALOG_ETL_WRITE_BATCH,
+          id: jobId,
+          timestamp: Date.now(),
+          data: {
+            items: batch,
+            userId,
+          },
+        };
+        await env.ETL_QUEUE.send(writeMessage);
+        totalQueued += batch.length;
+        console.log(
+          `ETL job ${jobId}: Queued ${totalQueued} items for writing`
+        );
+        batch = [];
+        // Yield to the event loop to avoid overwhelming the local dev queue.
+        await new Promise((resolve) => setTimeout(resolve, 1));
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        // Process any remaining data in the buffer
+        if (buffer) {
+          await processLine(buffer);
         }
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || ""; // Keep the last partial line
+
+      for (const line of lines) {
+        await processLine(line);
       }
     }
 
+    // Queue any remaining items in the last batch
+    if (batch.length > 0) {
+      const writeMessage: CatalogETLWriteBatchMessage = {
+        type: QueueType.CATALOG_ETL_WRITE_BATCH,
+        id: jobId,
+        timestamp: Date.now(),
+        data: {
+          items: batch,
+          userId,
+        },
+      };
+      await env.ETL_QUEUE.send(writeMessage);
+      totalQueued += batch.length;
+    }
+
     console.log(
-      `ETL job ${jobId} completed: Processed ${totalProcessed} total items`
+      `ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`
     );
   } catch (error) {
     console.error(`ETL job ${jobId} failed:`, error);
@@ -157,22 +243,16 @@ async function processCatalogETL({
   }
 }
 
-async function getR2File({
-  queue,
-  key,
+async function processCatalogETLWriteBatch({
+  message,
+  env,
 }: {
-  queue: Queue;
-  key: string;
-}): Promise<string> {
-  // This would get the full file from R2
-  // For 500MB+ files, you might want to stream this instead
-  console.log(`Getting R2 file: ${key}`);
-
-  // Placeholder - you'll implement actual R2 fetch here
-  // const object = await env.R2_BUCKET.get(key);
-  // return await object.text();
-
-  return "name,description,weight\nTest Item,A test item,100g\nAnother Item,Another test,200g";
+  message: CatalogETLWriteBatchMessage;
+  env: Env;
+}) {
+  const { items, userId } = message.data;
+  const jobId = message.id;
+  await insertCatalogItems({ env, items, userId, jobId });
 }
 
 function parseCSVLine(line: string): string[] {
@@ -208,14 +288,29 @@ function createFieldMap(headers: string[]): Record<string, number> {
 
   const mappings = {
     name: ["name", "item_name", "product_name", "title", "product", "item"],
-    description: ["description", "desc", "details", "summary", "info"],
+    description: ["description", "desc", "summary", "info"],
     weight: ["weight", "weight_grams", "weight_oz", "wt", "mass"],
+    weightUnit: ["weight_unit"],
     category: ["category", "type", "category_name", "cat"],
     brand: ["brand", "manufacturer", "company", "make"],
-    model: ["model", "model_number", "sku", "part_number"],
+    model: ["model", "model_number", "part_number"],
+    sku: ["sku", "item_number"],
+    productSku: ["product_sku"],
     price: ["price", "cost", "amount", "price_usd", "msrp"],
-    image: ["image", "image_url", "photo", "picture", "img"],
-    url: ["url", "link", "product_url", "website", "web"],
+    image: ["image", "image_url", "photo", "picture", "img", "image_urls"],
+    url: ["url", "link", "website", "web"],
+    productUrl: ["product_url"],
+    color: ["color", "colour"],
+    size: ["size"],
+    material: ["material", "fabric"],
+    condition: ["condition"],
+    seller: ["seller", "vendor", "retailer"],
+    availability: ["availability", "stock", "inventory_status"],
+    currency: ["currency", "price_currency"],
+    ratingValue: ["rating", "rating_value", "stars", "average_rating"],
+    techs: ["techs"],
+    details: ["details"],
+    parameters: ["parameters"],
   };
 
   for (const [dbField, csvVariants] of Object.entries(mappings)) {
@@ -237,66 +332,228 @@ function mapCsvRowToItem({
 }: {
   values: string[];
   fieldMap: Record<string, number>;
-}): any {
-  const item: any = {};
-  let hasRequiredFields = false;
+}): Partial<NewCatalogItem> | null {
+  const item: Partial<NewCatalogItem> = {};
 
-  for (const [dbField, csvIndex] of Object.entries(fieldMap)) {
-    if (csvIndex < values.length && values[csvIndex]) {
-      let value = values[csvIndex].replace(/^"|"$/g, ""); // Remove surrounding quotes
+  const name =
+    fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
+  if (!name) {
+    return null; // A name is required
+  }
+  item.name = name;
 
-      if (dbField === "weight") {
-        value = parseWeight(value).toString();
-      } else if (dbField === "price") {
-        value = parsePrice(value).toString();
-      }
+  const descriptionParts: string[] = [];
+  if (fieldMap.description !== undefined && values[fieldMap.description]) {
+    descriptionParts.push(values[fieldMap.description].replace(/^"|"$/g, ""));
+  }
+  if (fieldMap.details !== undefined && values[fieldMap.details]) {
+    descriptionParts.push(
+      `Details: ${values[fieldMap.details].replace(/^"|"$/g, "")}`
+    );
+  }
+  if (fieldMap.parameters !== undefined && values[fieldMap.parameters]) {
+    descriptionParts.push(
+      `Parameters: ${parseAndFormatMultiString(values[fieldMap.parameters])}`
+    );
+  }
+  if (descriptionParts.length > 0) {
+    item.description = descriptionParts.join("\n\n");
+  }
 
-      item[dbField] = value;
-      if (dbField === "name") hasRequiredFields = true;
+  // --- Direct Mappings ---
+  const directMappings: (keyof NewCatalogItem)[] = [
+    "category",
+    "brand",
+    "model",
+    "url",
+    "productUrl",
+    "color",
+    "size",
+    "sku",
+    "productSku",
+    "availability",
+    "seller",
+    "material",
+    "currency",
+    "condition",
+  ];
+  for (const key of directMappings) {
+    const fieldIndex = fieldMap[key as string];
+    if (fieldIndex !== undefined && values[fieldIndex]) {
+      // @ts-expect-error - We are mapping strings to the correct keys
+      item[key] = values[fieldIndex].replace(/^"|"$/g, "").trim();
     }
   }
 
-  return hasRequiredFields ? item : null;
-}
+  // --- Transformed Mappings ---
+  const weightStr =
+    fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
+  const unitStr =
+    fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
 
-function parseWeight(weightStr: string): number {
-  const weight = parseFloat(weightStr.replace(/[^0-9.]/g, ""));
-  if (isNaN(weight)) return 0;
-
-  if (weightStr.toLowerCase().includes("oz")) {
-    return Math.round(weight * 28.35);
+  if (weightStr && parseFloat(weightStr) > 0) {
+    const { weight, unit } = parseWeight(weightStr, unitStr);
+    item.defaultWeight = weight;
+    item.defaultWeightUnit = unit;
   }
 
-  return weight;
+  const priceStr =
+    fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
+  if (priceStr) {
+    item.price = parsePrice(priceStr);
+  }
+
+  const ratingStr =
+    fieldMap.ratingValue !== undefined
+      ? values[fieldMap.ratingValue]
+      : undefined;
+  if (ratingStr) {
+    item.ratingValue = parseFloat(ratingStr) || null;
+  }
+
+  let imageUrl =
+    fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
+  if (imageUrl) {
+    const parsedImage = parseJsonOrString(imageUrl);
+    if (Array.isArray(parsedImage)) {
+      item.image = parsedImage[0];
+    } else {
+      item.image = parsedImage.split(",")[0].trim();
+    }
+  }
+
+  const techsStr =
+    fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
+  if (techsStr) {
+    try {
+      const parsedTechs = JSON.parse(techsStr);
+      item.techs = parsedTechs;
+
+      // Fallback weight parsing from techs
+      if (!item.defaultWeight) {
+        const claimedWeight =
+          parsedTechs["Claimed Weight"] || parsedTechs["weight"];
+        if (claimedWeight) {
+          const { weight, unit } = parseWeight(claimedWeight);
+          item.defaultWeight = weight;
+          item.defaultWeightUnit = unit;
+        }
+      }
+    } catch {
+      // Ignore malformed JSON
+    }
+  }
+
+  return item;
 }
 
-function parsePrice(priceStr: string): number {
+function parseJsonOrString(str: string): any {
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return str;
+  }
+}
+
+function parseAndFormatMultiString(str: string): string {
+  if (!str) return "";
+  const parsed = parseJsonOrString(str);
+  if (Array.isArray(parsed)) {
+    return parsed.join(", ");
+  }
+  return parsed;
+}
+
+function parseWeight(
+  weightStr: string,
+  unitStr?: string
+): { weight: number | null; unit: string | null } {
+  if (!weightStr) return { weight: null, unit: null };
+
+  const weightVal = parseFloat(weightStr);
+  if (isNaN(weightVal) || weightVal < 0) {
+    return { weight: null, unit: null };
+  }
+
+  const hint = (unitStr || weightStr).toLowerCase();
+
+  if (hint.includes("oz")) {
+    return { weight: Math.round(weightVal * 28.35), unit: "oz" };
+  }
+  if (hint.includes("lb")) {
+    return { weight: Math.round(weightVal * 453.592), unit: "lb" };
+  }
+  if (hint.includes("kg")) {
+    return { weight: weightVal * 1000, unit: "kg" };
+  }
+
+  return { weight: weightVal, unit: "g" };
+}
+
+function parsePrice(priceStr: string): number | null {
+  if (!priceStr) return null;
   const price = parseFloat(priceStr.replace(/[^0-9.]/g, ""));
-  return isNaN(price) ? 0 : price;
+  return isNaN(price) ? null : price;
 }
 
 async function insertCatalogItems({
-  queue,
+  env,
   items,
   userId,
   jobId,
 }: {
-  queue: Queue;
-  items: any[];
+  env: Env;
+  items: Partial<NewCatalogItem>[];
   userId: string;
   jobId: string;
 }): Promise<void> {
-  // This would batch insert items into your database
-  // Use your existing database connection and catalog table
+  const db = createDbClient(env);
   console.log(
-    `Inserting ${items.length} catalog items for user ${userId}, job ${jobId}`
+    `Job ${jobId}: Inserting ${items.length} catalog items for user ${userId}`
   );
 
-  if (items.length > 0) {
-    console.log("Sample items:", items.slice(0, 2));
+  if (items.length === 0) {
+    console.log(
+      `Job ${jobId}: All items were filtered out, nothing to insert.`
+    );
+    return;
   }
 
-  // TODO: Implement actual database insertion
-  // Example:
-  // await db.insert(catalogTable).values(items);
+  // Type predicate to ensure item has a name
+  const hasName = (item: Partial<NewCatalogItem>): item is NewCatalogItem =>
+    !!item.name;
+
+  const records = items.filter(hasName);
+
+  if (records.length === 0) {
+    console.log(
+      `Job ${jobId}: All items were filtered out, nothing to insert.`
+    );
+    return;
+  }
+
+  try {
+    const columns = getTableColumns(catalogItems);
+    const updateSet: Record<string, any> = {};
+    for (const column of Object.values(columns)) {
+      const colName = column.name as keyof NewCatalogItem;
+      if (colName !== "sku" && colName !== "createdAt" && colName !== "id") {
+        updateSet[colName] = sql.raw(`excluded."${colName}"`);
+      }
+    }
+
+    await db.insert(catalogItems).values(records).onConflictDoUpdate({
+      target: catalogItems.sku,
+      set: updateSet,
+    });
+
+    console.log(
+      `Job ${jobId}: Successfully inserted/updated ${records.length} items.`
+    );
+  } catch (error) {
+    console.error(`Job ${jobId}: Failed to insert batch for user ${userId}`);
+    console.error("Error:", error);
+    // Optionally re-throw or handle the error, e.g., send to a dead-letter queue
+    throw error;
+  }
 }
