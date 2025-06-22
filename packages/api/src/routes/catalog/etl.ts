@@ -5,17 +5,19 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
-const queueRoutes = new OpenAPIHono<{ Bindings: Env }>();
+const catalogQueueRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 const catalogETLSchema = z.object({
   r2Key: z.string().min(1, "R2 key is required"),
   filename: z.string().min(1, "Filename is required"),
 });
 
-queueRoutes.openapi(
+const catalogETLQueueRoutes = new OpenAPIHono<{ Bindings: Env }>();
+
+catalogETLQueueRoutes.openapi(
   {
     method: "post",
-    path: "/catalog/etl",
+    path: "/etl",
     middleware: [authMiddleware],
     request: {
       body: {
@@ -50,7 +52,7 @@ queueRoutes.openapi(
         },
       },
     },
-    tags: ["ETL"],
+    tags: ["ETL", "Catalog"],
     summary: "Queue catalog ETL job from R2 CSV file",
     description:
       "Initiates serverless ETL processing of catalog data from R2 object storage",
@@ -86,4 +88,4 @@ queueRoutes.openapi(
   }
 );
 
-export { queueRoutes };
+export { catalogETLQueueRoutes };

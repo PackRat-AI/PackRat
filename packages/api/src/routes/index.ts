@@ -4,7 +4,6 @@ import { authRoutes } from "./auth";
 import { catalogRoutes } from "./catalog";
 import { chatRoutes } from "./chat";
 import { packsRoutes } from "./packs";
-import { queueRoutes } from "./queue";
 import { uploadRoutes } from "./upload";
 import { userRoutes } from "./user";
 import { weatherRoutes } from "./weather";
@@ -25,7 +24,6 @@ protectedRoutes.route("/chat", chatRoutes);
 protectedRoutes.route("/weather", weatherRoutes);
 protectedRoutes.route("/user", userRoutes);
 protectedRoutes.route("/upload", uploadRoutes);
-protectedRoutes.route("/queue", queueRoutes);
 
 const routes = new OpenAPIHono();
 
