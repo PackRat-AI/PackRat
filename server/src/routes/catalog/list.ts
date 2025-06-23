@@ -6,16 +6,17 @@ import {
 } from "@/utils/api-middleware";
 import { eq } from "drizzle-orm";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { generateEmbedding } from "@/utils/vector";
 
 const catalogListRoutes = new OpenAPIHono();
 
 const listGetRoute = createRoute({
-  method: 'get',
-  path: '/',
+  method: "get",
+  path: "/",
   request: {
     query: z.object({ id: z.string().optional() }),
   },
-  responses: { 200: { description: 'Get catalog items' } },
+  responses: { 200: { description: "Get catalog items" } },
 });
 
 catalogListRoutes.openapi(listGetRoute, async (c) => {
@@ -52,33 +53,33 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
 });
 
 const listPostRoute = createRoute({
-  method: 'post',
-  path: '/',
+  method: "post",
+  path: "/",
   request: {
     body: {
       content: {
-        'application/json': { schema: z.any() },
+        "application/json": { schema: z.any() },
       },
     },
   },
-  responses: { 200: { description: 'Create catalog item' } },
+  responses: { 200: { description: "Create catalog item" } },
 });
 
 catalogListRoutes.openapi(listPostRoute, async (c) => {
   try {
-    // Only admins should be able to create catalog items
     const auth = await authenticateRequest(c);
     if (!auth) {
       return unauthorizedResponse();
     }
 
-    // In a real app, you would check if the user is an admin
-    // For now, we'll just use authentication
-
     const db = createDb(c);
     const data = await c.req.json();
 
-    // Create the catalog item
+    const embedding = await generateEmbedding(
+      `${data.name} ${data.description ?? ""}`,
+      process.env.OPENAI_API_KEY!,
+    );
+
     const [newItem] = await db
       .insert(catalogItems)
       .values({
@@ -91,8 +92,6 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
         brand: data.brand,
         model: data.model,
         url: data.url,
-
-        // New fields
         ratingValue: data.ratingValue,
         productUrl: data.productUrl,
         color: data.color,
@@ -108,6 +107,7 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
         techs: data.techs,
         links: data.links,
         reviews: data.reviews,
+        embedding,
       })
       .returning();
 

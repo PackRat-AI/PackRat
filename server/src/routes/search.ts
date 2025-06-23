@@ -1,0 +1,74 @@
+import { createDb } from "@/db";
+import { catalogItems } from "@/db/schema";
+import { generateEmbedding } from "@/utils/vector";
+import { cosineDistance, desc, gt, sql } from "drizzle-orm";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { env } from "hono/adapter";
+import {
+  authenticateRequest,
+  unauthorizedResponse,
+} from "@/utils/api-middleware";
+import { Env } from "@/types/env";
+
+const searchRoutes = new OpenAPIHono<{ Bindings: Env }>();
+
+const searchVectorRoute = createRoute({
+  method: "get",
+  path: "/vector",
+  request: {
+    query: z.object({
+      q: z.string().min(1),
+    }),
+  },
+  responses: {
+    200: {
+      description: "Search similar catalog items",
+    },
+    401: {
+      description: "Unauthorized",
+    },
+    500: {
+      description: "Internal Server Error",
+    },
+  },
+});
+
+searchRoutes.openapi(searchVectorRoute, async (c) => {
+  const auth = await authenticateRequest(c);
+  if (!auth) {
+    return unauthorizedResponse();
+  }
+
+  const db = createDb(c);
+  const { q } = c.req.query();
+  const { OPENAI_API_KEY } = env<Env>(c);
+
+  try {
+    const embedding = await generateEmbedding(q, OPENAI_API_KEY);
+    if (!embedding) {
+      return c.json({ error: "Failed to generate embedding" }, 500);
+    }
+
+    const similarity = sql<number>`1 - (${cosineDistance(
+      catalogItems.embedding,
+      embedding,
+    )})`;
+
+    const similarItems = await db
+      .select({
+        id: catalogItems.id,
+        name: catalogItems.name,
+        similarity,
+      })
+      .from(catalogItems)
+      .where(gt(similarity, 0.75))
+      .orderBy(desc(similarity))
+      .limit(10);
+
+    return c.json(similarItems);
+  } catch (err) {
+    return c.json({ error: "Vector search failed" }, 500);
+  }
+});
+
+export { searchRoutes };

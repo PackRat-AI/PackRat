@@ -9,6 +9,8 @@ import {
   jsonb,
   varchar,
   real,
+  vector,
+  index,
 } from "drizzle-orm/pg-core";
 
 // User table
@@ -19,7 +21,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"),
   firstName: text("first_name"),
   lastName: text("last_name"),
-  role: text('role').default('USER'), // 'USER', 'ADMIN'
+  role: text("role").default("USER"), // 'USER', 'ADMIN'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -81,55 +83,65 @@ export const packs = pgTable("packs", {
 });
 
 // Catalog items table
-export const catalogItems = pgTable("catalog_items", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  defaultWeight: real("default_weight"),
-  defaultWeightUnit: text("default_weight_unit"),
-  category: text("category"),
-  image: text("image"),
-  brand: text("brand"),
-  model: text("model"),
-  url: text("url"),
-  ratingValue: real("rating_value"),
-  productUrl: text("product_url"),
-  color: text("color"),
-  size: text("size"),
-  sku: text("sku"),
-  price: real("price"),
-  availability: text("availability"),
-  seller: text("seller"),
-  productSku: text("product_sku"),
-  material: text("material"),
-  currency: text("currency"),
-  condition: text("condition"),
-  techs: jsonb("techs").$type<Record<string, string>>(),
-  links: jsonb("links").$type<
-    Array<{
-      id: string;
-      title: string;
-      url: string;
-      type: string;
-    }>
-  >(),
-  reviews: jsonb("reviews").$type<
-    Array<{
-      id: string;
-      userId: string;
-      userName: string;
-      userAvatar: string;
-      rating: number;
-      text: string;
-      date: string;
-      helpful: number;
-      verified: boolean;
-    }>
-  >(),
+export const catalogItems = pgTable(
+  "catalog_items",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    defaultWeight: real("default_weight"),
+    defaultWeightUnit: text("default_weight_unit"),
+    category: text("category"),
+    image: text("image"),
+    brand: text("brand"),
+    model: text("model"),
+    url: text("url"),
+    ratingValue: real("rating_value"),
+    productUrl: text("product_url"),
+    color: text("color"),
+    size: text("size"),
+    sku: text("sku"),
+    price: real("price"),
+    availability: text("availability"),
+    seller: text("seller"),
+    productSku: text("product_sku"),
+    material: text("material"),
+    currency: text("currency"),
+    condition: text("condition"),
+    techs: jsonb("techs").$type<Record<string, string>>(),
+    links: jsonb("links").$type<
+      Array<{
+        id: string;
+        title: string;
+        url: string;
+        type: string;
+      }>
+    >(),
+    reviews: jsonb("reviews").$type<
+      Array<{
+        id: string;
+        userId: string;
+        userName: string;
+        userAvatar: string;
+        rating: number;
+        text: string;
+        date: string;
+        helpful: number;
+        verified: boolean;
+      }>
+    >(),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    embedding: vector("embedding", { dimensions: 1536 }),
+  },
+  (table) => [
+    index("embeddingIndex").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops"),
+    ),
+  ],
+);
 
 // Pack items table
 export const packItems = pgTable("pack_items", {
