@@ -4,6 +4,7 @@ import {
   authenticateRequest,
   unauthorizedResponse,
 } from "@/utils/api-middleware";
+
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { and, eq, or } from "drizzle-orm";
 
@@ -34,14 +35,14 @@ packTemplateRoutes.openapi(getTemplatesRoute, async (c) => {
 
 // Create a new template
 const createTemplateRoute = createRoute({
-  method: "post",
-  path: "/",
+  method: 'post',
+  path: '/',
   request: {
     body: {
-      content: { "application/json": { schema: z.any() } },
+      content: { 'application/json': { schema: z.any() } },
     },
   },
-  responses: { 201: { description: "Create a new pack template" } },
+  responses: { 201: { description: 'Create a new pack template' } },
 });
 
 packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
@@ -51,7 +52,7 @@ packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
   const db = createDb(c);
   const data = await c.req.json();
 
-  const isAppTemplate = auth.role === "ADMIN" ? data.isAppTemplate : false;
+  const isAppTemplate = auth.role === 'ADMIN' ? data.isAppTemplate : false;
 
   const [newTemplate] = await db
     .insert(packTemplates)
@@ -74,12 +75,12 @@ packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
 
 // Get a specific pack template
 const getTemplateRoute = createRoute({
-  method: "get",
-  path: "/{templateId}",
+  method: 'get',
+  path: '/{templateId}',
   request: {
     params: z.object({ templateId: z.string() }),
   },
-  responses: { 200: { description: "Get a specific pack template" } },
+  responses: { 200: { description: 'Get a specific pack template' } },
 });
 
 packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
@@ -87,7 +88,7 @@ packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
   if (!auth) return unauthorizedResponse();
 
   const db = createDb(c);
-  const templateId = c.req.param("templateId");
+  const templateId = c.req.param('templateId');
 
   const template = await db.query.packTemplates.findFirst({
     where: and(
@@ -101,21 +102,21 @@ packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
     with: { items: true },
   });
 
-  if (!template) return c.json({ error: "Template not found" }, 404);
+  if (!template) return c.json({ error: 'Template not found' }, 404);
   return c.json(template);
 });
 
 // Update a pack template
 const updateTemplateRoute = createRoute({
-  method: "put",
-  path: "/{templateId}",
+  method: 'put',
+  path: '/{templateId}',
   request: {
     params: z.object({ templateId: z.string() }),
     body: {
-      content: { "application/json": { schema: z.any() } },
+      content: { 'application/json': { schema: z.any() } },
     },
   },
-  responses: { 200: { description: "Update a pack template" } },
+  responses: { 200: { description: 'Update a pack template' } },
 });
 
 packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
@@ -123,7 +124,7 @@ packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
   if (!auth) return unauthorizedResponse();
 
   const db = createDb(c);
-  const templateId = c.req.param("templateId");
+  const templateId = c.req.param('templateId');
   const data = await c.req.json();
 
   const updateData: Record<string, any> = {};
@@ -162,18 +163,18 @@ packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
     with: { items: true },
   });
 
-  if (!updated) return c.json({ error: "Template not found" }, 404);
+  if (!updated) return c.json({ error: 'Template not found' }, 404);
   return c.json(updated);
 });
 
 // Delete a pack template
 const deleteTemplateRoute = createRoute({
-  method: "delete",
-  path: "/{templateId}",
+  method: 'delete',
+  path: '/{templateId}',
   request: {
     params: z.object({ templateId: z.string() }),
   },
-  responses: { 200: { description: "Delete a pack template" } },
+  responses: { 200: { description: 'Delete a pack template' } },
 });
 
 packTemplateRoutes.openapi(deleteTemplateRoute, async (c) => {
@@ -195,12 +196,11 @@ packTemplateRoutes.openapi(deleteTemplateRoute, async (c) => {
   await db.delete(packTemplates).where(
     packTemplate.isAppTemplate && auth.role === 'ADMIN'
       ? eq(packTemplates.id, templateId) // any admin can delete an app template
-      :
-      // regular users can only delete their own templates
-      and(
+      : // regular users can only delete their own templates
+        and(
           eq(packTemplates.id, templateId),
           eq(packTemplates.userId, auth.userId)
-        ) 
+        )
   );
 
   return c.json({ success: true });
