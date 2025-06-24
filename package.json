@@ -1,6 +1,5 @@
 {
   "name": "packrat-monorepo",
-  "private": true,
   "version": "2.0.0",
   "workspaces": [
     "apps/*",
@@ -18,10 +17,9 @@
     "ios": "cd apps/expo && bun ios",
     "api": "bun run --cwd packages/api dev"
   },
-  "devDependencies": {
-    "@manypkg/cli": "^0.23.0",
-    "@types/bun": "latest",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.8.2"
-  }
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "server"
+  ]
 }

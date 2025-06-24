@@ -8,6 +8,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { env } from "hono/adapter";
 
+
 const uploadRoutes = new OpenAPIHono();
 
 // Generate a presigned URL for uploading to R2
@@ -29,6 +30,13 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
   if (!auth) {
     return unauthorizedResponse();
   }
+
+  const {
+    R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY,
+    CLOUDFLARE_ACCOUNT_ID,
+    R2_BUCKET_NAME,
+  } = env<Env>(c);
 
   try {
     const {
@@ -75,8 +83,15 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
       url: presignedUrl,
     });
   } catch (error) {
-    console.error("Error generating presigned URL:", error);
-    return c.json({ error: "Failed to generate upload URL" }, 500);
+    c.get('sentry').setContext('upload-params', {
+      fileName: c.req.query('fileName'),
+      contentType: c.req.query('contentType'),
+      bucketName: R2_BUCKET_NAME,
+      accountId: CLOUDFLARE_ACCOUNT_ID,
+      r2AccessKeyId: !!R2_ACCESS_KEY_ID,
+      r2SecretAccessKey: !!R2_SECRET_ACCESS_KEY,
+    });
+    throw error; 
   }
 });
 

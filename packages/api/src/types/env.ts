@@ -7,6 +7,7 @@ export type Env = {
   NEON_DATABASE_URL: string;
   JWT_SECRET: string;
   PASSWORD_RESET_SECRET: string;
+  GOOGLE_CLIENT_ID: string;
   OPENAI_API_KEY: string;
   OPENWEATHER_KEY: string;
   WEATHER_API_KEY: string;
@@ -17,4 +18,7 @@ export type Env = {
   PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME: string;
   ETL_QUEUE: Queue;
   PACKRAT_API_KEY: string;
+  SENTRY_DSN: string;
+  CF_VERSION_METADATA: WorkerVersionMetadata;
+  ENVIRONMENT: string;
 };

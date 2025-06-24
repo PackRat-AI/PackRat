@@ -1,11 +1,8 @@
 import { Env } from "@/types/env";
 import { Context } from "hono";
 import { env } from "hono/adapter";
-import { Resend } from "resend";
+import { Resend } from 'resend';
 
-type EmailProvider = "nodemailer" | "resend";
-
-// Send an email using the configured provider
 export async function sendEmail({
   to,
   subject,
@@ -17,8 +14,7 @@ export async function sendEmail({
   html: string;
   c: Context;
 }): Promise<void> {
-  const { EMAIL_PROVIDER, RESEND_API_KEY, EMAIL_FROM } = env<Env>(c);
-  const provider = (EMAIL_PROVIDER as EmailProvider) || "nodemailer";
+  const { RESEND_API_KEY, EMAIL_FROM } = env<Env>(c);
   const resendClient = new Resend(RESEND_API_KEY);
 
   const options = {
@@ -28,13 +24,15 @@ export async function sendEmail({
     html,
   };
 
-  switch (provider) {
-    case "resend":
-      await resendClient.emails.send(options);
-      break;
-    case "nodemailer":
-    default:
-      throw new Error("Nodemailer is not supported in Cloudflare Workers");
+  try {
+    await resendClient.emails.send(options);
+  } catch (error) {
+    c.get('sentry').setContext('params', {
+      options,
+      resendApiKey: !!RESEND_API_KEY,
+      emailFrom: EMAIL_FROM,
+    });
+    throw error;
   }
 }
 

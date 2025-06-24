@@ -7,6 +7,7 @@ import { packsRoutes } from "./packs";
 import { uploadRoutes } from "./upload";
 import { userRoutes } from "./user";
 import { weatherRoutes } from "./weather";
+import { packTemplatesRoutes } from "./packTemplates";
 
 const publicRoutes = new OpenAPIHono();
 
@@ -22,6 +23,7 @@ protectedRoutes.route("/catalog", catalogRoutes);
 protectedRoutes.route("/packs", packsRoutes);
 protectedRoutes.route("/chat", chatRoutes);
 protectedRoutes.route("/weather", weatherRoutes);
+protectedRoutes.route("/pack-templates", packTemplatesRoutes);
 protectedRoutes.route("/user", userRoutes);
 protectedRoutes.route("/upload", uploadRoutes);
 
