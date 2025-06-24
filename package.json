@@ -12,9 +12,15 @@
     "fix:deps": "bun manypkg fix",
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
+    "format": "biome format --write",
+    "lint": "biome lint --write",
+    "check": "biome check --write",
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
     "api": "bun run --cwd packages/api dev"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.0.4"
   }
 }
