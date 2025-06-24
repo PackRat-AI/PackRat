@@ -13,4 +13,7 @@ export type Env = {
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
   R2_BUCKET_NAME: string;
+  SENTRY_DSN: string;
+  CF_VERSION_METADATA: WorkerVersionMetadata;
+  ENVIRONMENT: string;
 };

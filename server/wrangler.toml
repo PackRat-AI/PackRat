@@ -3,8 +3,10 @@ main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 keep_vars = true
+version_metadata = { binding = "CF_VERSION_METADATA" }
 
 [vars]
+ENVIRONMENT = "dev"
 NEON_DATABASE_URL = "postgres://user:pass@localhost/db"
 JWT_SECRET = "secret"
 GOOGLE_CLIENT_ID="some-client-id"
@@ -19,3 +21,4 @@ CLOUDFLARE_ACCOUNT_ID = "id"
 R2_ACCESS_KEY_ID = "key"
 R2_SECRET_ACCESS_KEY = "key"
 R2_BUCKET_NAME = "bucket"
+SENTRY_DSN = "dsn"
