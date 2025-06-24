@@ -1,5 +1,5 @@
 import { Icon } from '@roninoss/icons';
-import { Href, useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';

@@ -1,32 +1,32 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AppPreview() {
-  const [currentScreen, setCurrentScreen] = useState(0)
+  const [currentScreen, setCurrentScreen] = useState(0);
   const screens = [
     {
-      src: "/trail-prep.png",
-      alt: "Packing list screen",
+      src: '/trail-prep.png',
+      alt: 'Packing list screen',
     },
     {
-      src: "/trail-map-minimal.png",
-      alt: "Trail map screen",
+      src: '/trail-map-minimal.png',
+      alt: 'Trail map screen',
     },
     {
-      src: "/hiking-app-weather.png",
-      alt: "Weather screen",
+      src: '/hiking-app-weather.png',
+      alt: 'Weather screen',
     },
-  ]
+  ];
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentScreen((prev) => (prev + 1) % screens.length)
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [screens.length])
+      setCurrentScreen((prev) => (prev + 1) % screens.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [screens.length]);
 
   return (
     <>
@@ -40,7 +40,7 @@ export default function AppPreview() {
           className="absolute inset-0"
         >
           <Image
-            src={screens[currentScreen].src || "/placeholder.svg"}
+            src={screens[currentScreen].src || '/placeholder.svg'}
             alt={screens[currentScreen].alt}
             fill
             className="object-cover"
@@ -53,7 +53,7 @@ export default function AppPreview() {
           <button
             key={index}
             className={`h-2 w-2 rounded-full transition-all duration-300 ${
-              index === currentScreen ? "w-6 bg-white" : "bg-white/50"
+              index === currentScreen ? 'w-6 bg-white' : 'bg-white/50'
             }`}
             onClick={() => setCurrentScreen(index)}
             aria-label={`View screen ${index + 1}`}
@@ -62,5 +62,5 @@ export default function AppPreview() {
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
     </>
-  )
+  );
 }

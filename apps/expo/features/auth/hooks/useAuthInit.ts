@@ -39,7 +39,7 @@ export function useAuthInit() {
           if (accessToken) isAuthed.set(true);
           setIsLoading(false);
           return;
-        } else if(hasSkippedLogin === 'true'){
+        } else if (hasSkippedLogin === 'true') {
           // User has skipped login before, redirect to packs screen
           setIsLoading(false);
           router.replace('/packs');

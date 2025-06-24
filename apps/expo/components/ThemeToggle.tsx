@@ -13,7 +13,8 @@ export function ThemeToggle() {
       <Animated.View
         className="items-center justify-center"
         key={`toggle-${colorScheme}`}
-        entering={ZoomInRotate}>
+        entering={ZoomInRotate}
+      >
         <Pressable onPress={toggleColorScheme} className="opacity-80">
           {colorScheme === 'dark'
             ? ({ pressed }) => (

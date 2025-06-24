@@ -18,7 +18,7 @@ import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { Alert } from 'nativewindui/Alert';
 import { useRef } from 'react';
-import { AlertRef } from 'nativewindui/Alert/types';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 
@@ -118,8 +118,9 @@ function ListHeaderComponent() {
             variant="largeTitle"
             className={cn(
               'font-medium text-white dark:text-background',
-              Platform.OS === 'ios' && 'dark:text-foreground'
-            )}>
+              Platform.OS === 'ios' && 'dark:text-foreground',
+            )}
+          >
             {initials}
           </Text>
         </AvatarFallback>
@@ -154,7 +155,8 @@ function ListFooterComponent() {
         }}
         size="lg"
         variant={Platform.select({ ios: 'primary', default: 'secondary' })}
-        className="border-border bg-card">
+        className="border-border bg-card"
+      >
         {isLoading ? (
           <ActivityIndicator className="text-destructive" />
         ) : (

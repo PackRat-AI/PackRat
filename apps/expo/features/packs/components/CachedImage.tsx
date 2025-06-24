@@ -59,7 +59,8 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     return (
       <View
         className={`items-center justify-center bg-muted px-2 ${className}`}
-        style={[{ backgroundColor: placeholderColor }]}>
+        style={[{ backgroundColor: placeholderColor }]}
+      >
         <ActivityIndicator size="small" color="#999" />
       </View>
     );

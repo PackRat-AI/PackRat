@@ -1,10 +1,10 @@
-import { siteConfig } from "landing-app/config/site"
-import DeviceMockup from "landing-app/components/ui/device-mockup"
-import GradientText from "landing-app/components/ui/gradient-text"
-import FeatureCard from "landing-app/components/ui/feature-card"
-import { Check } from "lucide-react"
-import GradientBackground from "landing-app/components/ui/gradient-background"
-import GradientBorderCard from "landing-app/components/ui/gradient-border-card"
+import { siteConfig } from 'landing-app/config/site';
+import DeviceMockup from 'landing-app/components/ui/device-mockup';
+import GradientText from 'landing-app/components/ui/gradient-text';
+import FeatureCard from 'landing-app/components/ui/feature-card';
+import { Check } from 'lucide-react';
+import GradientBackground from 'landing-app/components/ui/gradient-background';
+import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
 
 export default function FeatureSection() {
   return (
@@ -33,19 +33,27 @@ export default function FeatureSection() {
             </GradientText>
           </h2>
           <p className="mt-6 text-base md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto">
-            PackRat combines powerful features to make your outdoor trips more organized and enjoyable, whether you're a
-            weekend camper or a seasoned backpacker.
+            PackRat combines powerful features to make your outdoor trips more organized and
+            enjoyable, whether you're a weekend camper or a seasoned backpacker.
           </p>
         </div>
 
         <div className="grid gap-12 md:gap-16">
           {/* Feature showcase 1 */}
-          <GradientBorderCard className="p-0 overflow-hidden bg-card/80 backdrop-blur-sm" interactive={false}>
+          <GradientBorderCard
+            className="p-0 overflow-hidden bg-card/80 backdrop-blur-sm"
+            interactive={false}
+          >
             <div className="grid gap-8 md:grid-cols-2 items-center p-6 md:p-8">
               <div className="order-2 md:order-1">
                 <div className="space-y-4 md:space-y-6">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/15 dark:bg-primary/10">
-                    <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                      className="w-6 h-6 text-primary"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -54,8 +62,12 @@ export default function FeatureSection() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">{siteConfig.features[0].title}</h3>
-                  <p className="text-base md:text-lg text-muted-foreground">{siteConfig.features[0].description}</p>
+                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                    {siteConfig.features[0].title}
+                  </h3>
+                  <p className="text-base md:text-lg text-muted-foreground">
+                    {siteConfig.features[0].description}
+                  </p>
                   <ul className="space-y-2">
                     <li className="flex items-center">
                       <Check className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
@@ -73,7 +85,11 @@ export default function FeatureSection() {
                 </div>
               </div>
               <div className="order-1 md:order-2 mx-auto">
-                <DeviceMockup image="/feature-packing-list.png" alt="Smart Packing Lists" showReflection />
+                <DeviceMockup
+                  image="/feature-packing-list.png"
+                  alt="Smart Packing Lists"
+                  showReflection
+                />
               </div>
             </div>
           </GradientBorderCard>
@@ -86,12 +102,21 @@ export default function FeatureSection() {
           >
             <div className="grid gap-8 md:grid-cols-2 items-center p-6 md:p-8">
               <div className="mx-auto">
-                <DeviceMockup image="/feature-trail-maps.png" alt="Trail Maps & Navigation" showReflection />
+                <DeviceMockup
+                  image="/feature-trail-maps.png"
+                  alt="Trail Maps & Navigation"
+                  showReflection
+                />
               </div>
               <div>
                 <div className="space-y-4 md:space-y-6">
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-secondary/15 dark:bg-secondary/10">
-                    <svg className="w-6 h-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg
+                      className="w-6 h-6 text-secondary"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -100,8 +125,12 @@ export default function FeatureSection() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">{siteConfig.features[1].title}</h3>
-                  <p className="text-base md:text-lg text-muted-foreground">{siteConfig.features[1].description}</p>
+                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                    {siteConfig.features[1].title}
+                  </h3>
+                  <p className="text-base md:text-lg text-muted-foreground">
+                    {siteConfig.features[1].description}
+                  </p>
                   <ul className="space-y-2">
                     <li className="flex items-center">
                       <Check className="w-5 h-5 mr-2 text-secondary flex-shrink-0" />
@@ -137,5 +166,5 @@ export default function FeatureSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

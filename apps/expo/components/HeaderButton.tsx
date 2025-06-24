@@ -21,7 +21,7 @@ export const HeaderButton = forwardRef<typeof Pressable, { onPress?: () => void 
         )}
       </Pressable>
     );
-  }
+  },
 );
 
 export const styles = StyleSheet.create({

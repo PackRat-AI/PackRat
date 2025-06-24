@@ -1,6 +1,6 @@
-import { Env } from "@packrat/api/types/env";
-import { Context } from "hono";
-import { env } from "hono/adapter";
+import type { Env } from '@packrat/api/types/env';
+import type { Context } from 'hono';
+import { env } from 'hono/adapter';
 import { Resend } from 'resend';
 
 export async function sendEmail({
@@ -61,7 +61,7 @@ export async function sendVerificationCodeEmail({
     </div>
   `;
 
-  await sendEmail({ to, subject: "Verify Your PackRat Account", html, c });
+  await sendEmail({ to, subject: 'Verify Your PackRat Account', html, c });
 }
 
 // Send a password reset email
@@ -89,5 +89,5 @@ export async function sendPasswordResetEmail({
     </div>
   `;
 
-  await sendEmail({ to, subject: "Reset Your PackRat Password", html, c });
+  await sendEmail({ to, subject: 'Reset Your PackRat Password', html, c });
 }

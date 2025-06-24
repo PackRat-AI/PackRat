@@ -1,24 +1,21 @@
-import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { createDb } from "@packrat/api/db";
-import { packItems, packs } from "@packrat/api/db/schema";
-import { Env } from "@packrat/api/types/env";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import { getEmbeddingText } from "@packrat/api/utils/embeddingHelper";
-import { and, eq } from "drizzle-orm";
-import { env } from "hono/adapter";
+import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { packItems, packs } from '@packrat/api/db/schema';
+import type { Env } from '@packrat/api/types/env';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { and, eq } from 'drizzle-orm';
+import { env } from 'hono/adapter';
 
 const packItemsRoutes = new OpenAPIHono();
 
 // Get all items for a pack
 const getItemsRoute = createRoute({
-  method: "get",
-  path: "/{packId}/items",
+  method: 'get',
+  path: '/{packId}/items',
   request: { params: z.object({ packId: z.string() }) },
-  responses: { 200: { description: "Get pack items" } },
+  responses: { 200: { description: 'Get pack items' } },
 });
 
 packItemsRoutes.openapi(getItemsRoute, async (c) => {
@@ -30,7 +27,7 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const packId = c.req.param("packId");
+    const packId = c.req.param('packId');
     const items = await db.query.packItems.findMany({
       where: eq(packItems.packId, packId),
       with: {
@@ -39,17 +36,17 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
     });
     return c.json(items);
   } catch (error) {
-    console.error("Error fetching pack items:", error);
-    return c.json({ error: "Failed to fetch pack items" }, 500);
+    console.error('Error fetching pack items:', error);
+    return c.json({ error: 'Failed to fetch pack items' }, 500);
   }
 });
 
 // Get pack item by ID
 const getItemRoute = createRoute({
-  method: "get",
-  path: "/items/{itemId}",
+  method: 'get',
+  path: '/items/{itemId}',
   request: { params: z.object({ itemId: z.string() }) },
-  responses: { 200: { description: "Get pack item" } },
+  responses: { 200: { description: 'Get pack item' } },
 });
 
 packItemsRoutes.openapi(getItemRoute, async (c) => {
@@ -62,39 +59,36 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
 
     const db = createDb(c);
     const userId = auth.userId;
-    const itemId = c.req.param("itemId");
+    const itemId = c.req.param('itemId');
 
     // Get the item
     const item = await db.query.packItems.findFirst({
-      where: and(
-        eq(packItems.id, itemId),
-        eq(packItems.userId, Number(userId))
-      ),
+      where: and(eq(packItems.id, itemId), eq(packItems.userId, Number(userId))),
       with: {
         catalogItem: true,
       },
     });
 
     if (!item) {
-      return c.json({ error: "Item not found" }, { status: 404 });
+      return c.json({ error: 'Item not found' }, { status: 404 });
     }
 
     return c.json(item);
   } catch (error) {
-    console.error("Error fetching pack item:", error);
-    return c.json({ error: "Failed to fetch pack item" }, { status: 500 });
+    console.error('Error fetching pack item:', error);
+    return c.json({ error: 'Failed to fetch pack item' }, { status: 500 });
   }
 });
 
 // Add an item to a pack
 const addItemRoute = createRoute({
-  method: "post",
-  path: "/{packId}/items",
+  method: 'post',
+  path: '/{packId}/items',
   request: {
     params: z.object({ packId: z.string() }),
-    body: { content: { "application/json": { schema: z.any() } } },
+    body: { content: { 'application/json': { schema: z.any() } } },
   },
-  responses: { 200: { description: "Add item to pack" } },
+  responses: { 200: { description: 'Add item to pack' } },
 });
 
 packItemsRoutes.openapi(addItemRoute, async (c) => {
@@ -105,20 +99,20 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
 
   const db = createDb(c);
   try {
-    const packId = c.req.param("packId");
+    const packId = c.req.param('packId');
     const data = await c.req.json();
     const { OPENAI_API_KEY } = env<Env>(c);
 
     if (!OPENAI_API_KEY) {
-      return c.json({ error: "OpenAI API key not configured" }, 500);
+      return c.json({ error: 'OpenAI API key not configured' }, 500);
     }
 
     if (!packId) {
-      return c.json({ error: "Pack ID is required" }, 400);
+      return c.json({ error: 'Pack ID is required' }, 400);
     }
 
     if (!data.id) {
-      return c.json({ error: "Item ID is required" }, 400);
+      return c.json({ error: 'Item ID is required' }, 400);
     }
 
     // Generate embedding
@@ -149,27 +143,24 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
       })
       .returning();
 
-    await db
-      .update(packs)
-      .set({ updatedAt: new Date() })
-      .where(eq(packs.id, packId));
+    await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
     return c.json(newItem);
   } catch (error) {
-    console.error("Error adding pack item:", error);
-    return c.json({ error: "Failed to add pack item" }, 500);
+    console.error('Error adding pack item:', error);
+    return c.json({ error: 'Failed to add pack item' }, 500);
   }
 });
 
 // Update a pack item
 const updateItemRoute = createRoute({
-  method: "patch",
-  path: "/items/{itemId}",
+  method: 'patch',
+  path: '/items/{itemId}',
   request: {
     params: z.object({ itemId: z.string() }),
-    body: { content: { "application/json": { schema: z.any() } } },
+    body: { content: { 'application/json': { schema: z.any() } } },
   },
-  responses: { 200: { description: "Update pack item" } },
+  responses: { 200: { description: 'Update pack item' } },
 });
 
 packItemsRoutes.openapi(updateItemRoute, async (c) => {
@@ -181,12 +172,12 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const itemId = c.req.param("itemId");
+    const itemId = c.req.param('itemId');
     const data = await c.req.json();
     const { OPENAI_API_KEY } = env<Env>(c);
 
     if (!OPENAI_API_KEY) {
-      return c.json({ error: "OpenAI API key not configured" }, 500);
+      return c.json({ error: 'OpenAI API key not configured' }, 500);
     }
 
     const existingItem = await db.query.packItems.findFirst({
@@ -194,7 +185,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
     });
 
     if (!existingItem) {
-      return c.json({ error: "Pack item not found" }, 404);
+      return c.json({ error: 'Pack item not found' }, 404);
     }
 
     // Only generate a new embedding if the text has changed
@@ -202,17 +193,17 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
     const oldEmbeddingText = getEmbeddingText(existingItem);
 
     const updateData: Partial<typeof packItems.$inferInsert> = {};
-    if ("name" in data) updateData.name = data.name;
-    if ("description" in data) updateData.description = data.description;
-    if ("weight" in data) updateData.weight = data.weight;
-    if ("weightUnit" in data) updateData.weightUnit = data.weightUnit;
-    if ("quantity" in data) updateData.quantity = data.quantity;
-    if ("category" in data) updateData.category = data.category;
-    if ("consumable" in data) updateData.consumable = data.consumable;
-    if ("worn" in data) updateData.worn = data.worn;
-    if ("image" in data) updateData.image = data.image;
-    if ("notes" in data) updateData.notes = data.notes;
-    if ("deleted" in data) updateData.deleted = data.deleted;
+    if ('name' in data) updateData.name = data.name;
+    if ('description' in data) updateData.description = data.description;
+    if ('weight' in data) updateData.weight = data.weight;
+    if ('weightUnit' in data) updateData.weightUnit = data.weightUnit;
+    if ('quantity' in data) updateData.quantity = data.quantity;
+    if ('category' in data) updateData.category = data.category;
+    if ('consumable' in data) updateData.consumable = data.consumable;
+    if ('worn' in data) updateData.worn = data.worn;
+    if ('image' in data) updateData.image = data.image;
+    if ('notes' in data) updateData.notes = data.notes;
+    if ('deleted' in data) updateData.deleted = data.deleted;
 
     if (newEmbeddingText !== oldEmbeddingText) {
       updateData.embedding = await generateEmbedding({
@@ -224,16 +215,13 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
     updateData.updatedAt = new Date();
 
     // Delete old image from R2 if we are changing image
-    if ("image" in data) {
+    if ('image' in data) {
       try {
         const item = await db.query.packItems.findFirst({
-          where: and(
-            eq(packItems.id, itemId),
-            eq(packItems.userId, auth.userId)
-          ),
+          where: and(eq(packItems.id, itemId), eq(packItems.userId, auth.userId)),
         });
         if (!item) {
-          return c.json({ error: "Pack item not found" }, 404);
+          return c.json({ error: 'Pack item not found' }, 404);
         }
         const oldImage = item.image;
 
@@ -247,11 +235,11 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
           } = env<Env>(c);
 
           const s3Client = new S3Client({
-            region: "auto",
+            region: 'auto',
             endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
             credentials: {
-              accessKeyId: R2_ACCESS_KEY_ID || "",
-              secretAccessKey: R2_SECRET_ACCESS_KEY || "",
+              accessKeyId: R2_ACCESS_KEY_ID || '',
+              secretAccessKey: R2_SECRET_ACCESS_KEY || '',
             },
           });
 
@@ -274,30 +262,27 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
       .returning();
 
     if (!updatedItem) {
-      return c.json({ error: "Pack item not found" }, 404);
+      return c.json({ error: 'Pack item not found' }, 404);
     }
 
     // Update the pack's updatedAt timestamp
-    await db
-      .update(packs)
-      .set({ updatedAt: new Date() })
-      .where(eq(packs.id, updatedItem.packId));
+    await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
     return c.json(updatedItem[0]);
   } catch (error) {
-    console.error("Error updating pack item:", error);
-    return c.json({ error: "Failed to update pack item" }, 500);
+    console.error('Error updating pack item:', error);
+    return c.json({ error: 'Failed to update pack item' }, 500);
   }
 });
 
 // Delete a pack item
 const deleteItemRoute = createRoute({
-  method: "delete",
-  path: "/items/{itemId}",
+  method: 'delete',
+  path: '/items/{itemId}',
   request: {
     params: z.object({ itemId: z.string() }),
   },
-  responses: { 200: { description: "Delete pack item" } },
+  responses: { 200: { description: 'Delete pack item' } },
 });
 
 packItemsRoutes.openapi(deleteItemRoute, async (c) => {
@@ -309,29 +294,26 @@ packItemsRoutes.openapi(deleteItemRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const itemId = c.req.param("itemId");
+    const itemId = c.req.param('itemId');
 
     const item = await db.query.packItems.findFirst({
       where: and(eq(packItems.id, itemId), eq(packItems.userId, auth.userId)),
     });
 
     if (!item) {
-      return c.json({ error: "Pack item not found" }, 404);
+      return c.json({ error: 'Pack item not found' }, 404);
     }
 
     const packId = item.packId;
 
     await db.delete(packItems).where(eq(packItems.id, itemId));
 
-    await db
-      .update(packs)
-      .set({ updatedAt: new Date() })
-      .where(eq(packs.id, packId));
+    await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
     return c.json({ success: true, itemId: itemId });
   } catch (error) {
-    console.error("Error deleting pack item:", error);
-    return c.json({ error: "Failed to delete pack item" }, 500);
+    console.error('Error deleting pack item:', error);
+    return c.json({ error: 'Failed to delete pack item' }, 500);
   }
 });
 

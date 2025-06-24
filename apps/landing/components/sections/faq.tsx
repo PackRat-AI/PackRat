@@ -1,27 +1,32 @@
-import { siteConfig } from "landing-app/config/site"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "landing-app/components/ui/accordion"
-import GradientText from "landing-app/components/ui/gradient-text"
-import { CardContent } from "landing-app/components/ui/card"
-import GradientBackground from "landing-app/components/ui/gradient-background"
-import GradientBorderCard from "landing-app/components/ui/gradient-border-card"
+import { siteConfig } from 'landing-app/config/site';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from 'landing-app/components/ui/accordion';
+import GradientText from 'landing-app/components/ui/gradient-text';
+import { CardContent } from 'landing-app/components/ui/card';
+import GradientBackground from 'landing-app/components/ui/gradient-background';
+import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
 
 export default function FaqSection() {
   // Filter out any pricing-related FAQs or modify them
   const faqs = siteConfig.faqs.map((faq) => {
     // If the FAQ is about pricing, modify it to mention the app is free
     if (
-      faq.question.toLowerCase().includes("free") ||
-      faq.question.toLowerCase().includes("price") ||
-      faq.question.toLowerCase().includes("cost")
+      faq.question.toLowerCase().includes('free') ||
+      faq.question.toLowerCase().includes('price') ||
+      faq.question.toLowerCase().includes('cost')
     ) {
       return {
-        question: "Is PackRat free to use?",
+        question: 'Is PackRat free to use?',
         answer:
-          "Yes! PackRat is completely free to use with all features included. We may introduce premium features in the future, but our core functionality will always remain free.",
-      }
+          'Yes! PackRat is completely free to use with all features included. We may introduce premium features in the future, but our core functionality will always remain free.',
+      };
     }
-    return faq
-  })
+    return faq;
+  });
 
   return (
     <section id="faq" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
@@ -41,7 +46,8 @@ export default function FaqSection() {
             Frequently Asked Questions
           </h2>
           <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Got questions? We've got answers. Here are some of the most common questions our users ask.
+            Got questions? We've got answers. Here are some of the most common questions our users
+            ask.
           </p>
         </div>
 
@@ -66,11 +72,17 @@ export default function FaqSection() {
           <div className="mt-10 md:mt-12 text-center">
             <GradientBorderCard className="bg-card/80 backdrop-blur-sm">
               <CardContent className="p-4 md:p-6 space-y-3 md:space-y-4">
-                <h3 className="text-base md:text-lg font-medium text-foreground">Still have questions?</h3>
+                <h3 className="text-base md:text-lg font-medium text-foreground">
+                  Still have questions?
+                </h3>
                 <p className="text-sm md:text-base text-muted-foreground">
-                  Can't find the answer you're looking for? Please reach out to our customer support team.
+                  Can't find the answer you're looking for? Please reach out to our customer support
+                  team.
                 </p>
-                <a href="#" className="inline-flex items-center text-sm font-medium transition-colors text-primary">
+                <a
+                  href="#"
+                  className="inline-flex items-center text-sm font-medium transition-colors text-primary"
+                >
                   <GradientText gradient="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient">
                     Contact support
                   </GradientText>
@@ -93,5 +105,5 @@ export default function FaqSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

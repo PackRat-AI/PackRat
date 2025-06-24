@@ -85,7 +85,8 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
             <View className="mt-2">
               <Text
                 className="text-foreground"
-                numberOfLines={shouldTruncate && !isExpanded ? 3 : undefined}>
+                numberOfLines={shouldTruncate && !isExpanded ? 3 : undefined}
+              >
                 {review.text}
               </Text>
 

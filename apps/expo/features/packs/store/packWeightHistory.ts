@@ -4,7 +4,7 @@ import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { syncObservable } from '@legendapp/state/sync';
 import Storage from 'expo-sqlite/kv-store';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
-import { PackWeightHistoryEntry } from '../types';
+import type { PackWeightHistoryEntry } from '../types';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { packItemsStore } from './packItems';
 import { nanoid } from 'nanoid/non-secure';
@@ -24,7 +24,7 @@ const createPackWeightHistoryEntry = async (packWeightHistoryEntry: PackWeightHi
   try {
     const response = await axiosInstance.post(
       `/api/packs/${packWeightHistoryEntry.packId}/weight-history`,
-      packWeightHistoryEntry
+      packWeightHistoryEntry,
     );
     return response.data;
   } catch (error) {
@@ -64,13 +64,13 @@ syncObservable(
         clearInterval(intervalId);
       };
     },
-  })
+  }),
 );
 
 export function recordPackWeight(packId: string) {
   const pack = packsStore[packId].peek();
   const packItems = Object.values(packItemsStore.peek()).filter(
-    (item) => item.packId === packId && !item.deleted
+    (item) => item.packId === packId && !item.deleted,
   );
   const { totalWeight } = computePackWeights({ ...pack, items: packItems });
   const id = nanoid();

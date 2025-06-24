@@ -1,13 +1,13 @@
-import { routes } from "@packrat/api/routes";
-import { processQueueBatch } from "@packrat/api/services/queue";
-import { Env } from "@packrat/api/types/env";
-import { MessageBatch } from "@cloudflare/workers-types";
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { Scalar } from "@scalar/hono-api-reference";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
+import { routes } from '@packrat/api/routes';
+import { processQueueBatch } from '@packrat/api/services/queue';
+import type { Env } from '@packrat/api/types/env';
+import type { MessageBatch } from '@cloudflare/workers-types';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { Scalar } from '@scalar/hono-api-reference';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
 import { HTTPException } from 'hono/http-exception';
-import { Variables } from './types/variables';
+import type { Variables } from './types/variables';
 import { sentry } from '@hono/sentry';
 
 const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
@@ -63,9 +63,8 @@ export default {
   fetch: app.fetch,
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     if (!env.ETL_QUEUE) {
-      throw new Error("ETL_QUEUE is not configured");
+      throw new Error('ETL_QUEUE is not configured');
     }
     await processQueueBatch({ batch, env });
   },
 };
-

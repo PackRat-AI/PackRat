@@ -79,11 +79,11 @@ export function useImageUpload() {
   // Function to get a presigned URL for uploading
   const getPresignedUrl = async (
     fileName: string,
-    contentType: string
+    contentType: string,
   ): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
     try {
       const response = await axiosInstance.get(
-        `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`
+        `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`,
       );
       return {
         url: response.data.url,

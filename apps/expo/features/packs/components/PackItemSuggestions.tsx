@@ -75,7 +75,8 @@ export function PackItemSuggestions({ packId, packItems }: AISuggestionsProps) {
           </View>
           <TouchableOpacity
             onPress={handleHideSuggestions}
-            className="rounded-full bg-gray-200 p-1">
+            className="rounded-full bg-gray-200 p-1"
+          >
             <Icon name="close" size={16} />
           </TouchableOpacity>
         </View>

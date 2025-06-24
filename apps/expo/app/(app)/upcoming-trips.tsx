@@ -113,7 +113,8 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
       {members.map((member, index) => (
         <Avatar
           key={member.id}
-          className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}>
+          className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}
+        >
           <AvatarImage source={{ uri: member.avatar }} />
           <AvatarFallback>
             <Text>{member.name.substring(0, 1)}</Text>
@@ -278,7 +279,8 @@ export default function UpcomingTripsScreen() {
                   <Text
                     key={index}
                     variant="footnote"
-                    className="mt-1 text-amber-600 dark:text-amber-400">
+                    className="mt-1 text-amber-600 dark:text-amber-400"
+                  >
                     • {alert}
                   </Text>
                 ))}
@@ -312,8 +314,9 @@ export default function UpcomingTripsScreen() {
                           'h-5 w-5 items-center justify-center rounded-full border',
                           checklistItem.completed
                             ? 'border-primary bg-primary'
-                            : 'border-muted-foreground'
-                        )}>
+                            : 'border-muted-foreground',
+                        )}
+                      >
                         {checklistItem.completed && <Icon name="check" size={12} color="white" />}
                       </View>
                     </View>

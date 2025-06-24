@@ -70,7 +70,8 @@ export default function PackStatsScreen() {
                 ) : (
                   <Text
                     variant="largeTitle"
-                    className="mx-auto mt-2 self-center text-center text-muted-foreground">
+                    className="mx-auto mt-2 self-center text-center text-muted-foreground"
+                  >
                     N/A
                   </Text>
                 )}

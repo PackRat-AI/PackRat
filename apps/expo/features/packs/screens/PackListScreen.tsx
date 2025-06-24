@@ -21,7 +21,7 @@ import type { Pack, PackCategory } from '../types';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { useCallback, useRef } from 'react';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
-import { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
+import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
 
 type FilterOption = {
   label: string;
@@ -64,7 +64,7 @@ export function PackListScreen() {
     (pack: Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>) => {
       router.push({ pathname: '/pack/[id]', params: { id: pack.id } });
     },
-    [router]
+    [router],
   );
 
   const handleCreatePack = () => {
@@ -78,16 +78,18 @@ export function PackListScreen() {
       : packs?.filter(
           (pack) =>
             pack.category === activeFilter &&
-            pack.name.toLowerCase().includes(searchValue.toLowerCase())
+            pack.name.toLowerCase().includes(searchValue.toLowerCase()),
         );
 
   const renderFilterChip = ({ label, value }: FilterOption) => (
     <TouchableOpacity
       key={value}
       onPress={() => setActiveFilter(value)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}>
+      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}
+    >
       <Text
-        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}>
+        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}
+      >
         {label}
       </Text>
     </TouchableOpacity>
@@ -100,7 +102,7 @@ export function PackListScreen() {
       // router.replace('/packs');
       handlePackPress(pack);
     },
-    [handlePackPress]
+    [handlePackPress],
   );
 
   return (
@@ -169,7 +171,8 @@ export function PackListScreen() {
             </Text>
             <TouchableOpacity
               className="rounded-lg bg-primary px-4 py-2"
-              onPress={handleCreatePack}>
+              onPress={handleCreatePack}
+            >
               <Text className="font-medium text-primary-foreground">Create New Pack</Text>
             </TouchableOpacity>
           </View>

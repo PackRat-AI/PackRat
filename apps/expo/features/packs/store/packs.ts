@@ -4,7 +4,7 @@ import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { syncObservable } from '@legendapp/state/sync';
 import Storage from 'expo-sqlite/kv-store';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
-import { Pack, PackInStore } from '../types';
+import { Pack, type PackInStore } from '../types';
 import { isAuthed } from 'expo-app/features/auth/store';
 
 const listPacks = async () => {
@@ -70,7 +70,7 @@ syncObservable(
         clearInterval(intervalId);
       };
     },
-  })
+  }),
 );
 
 export const packsSyncState = syncState(packsStore);

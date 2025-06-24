@@ -20,7 +20,7 @@ export function useCreatePackItem() {
       packsStore[packId].localUpdatedAt.set(new Date().toISOString());
       recordPackWeight(packId);
     },
-    []
+    [],
   );
 
   return createPackItem;

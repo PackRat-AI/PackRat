@@ -117,7 +117,8 @@ export default function LocationPreviewScreen() {
         {/* Fixed header buttons */}
         <View
           style={{ paddingTop: insets.top + 10 }}
-          className="absolute left-0 right-0 top-0 z-10 flex-row items-center justify-between px-4">
+          className="absolute left-0 right-0 top-0 z-10 flex-row items-center justify-between px-4"
+        >
           <TouchableOpacity onPress={() => router.back()}>
             <View className="rounded-full bg-white/20 p-2">
               <Icon name="arrow-left" color="white" size={20} />
@@ -128,7 +129,8 @@ export default function LocationPreviewScreen() {
             <TouchableOpacity
               className="rounded-full bg-white/20 px-4 py-2"
               onPress={handleSaveLocation}
-              disabled={isSaving}>
+              disabled={isSaving}
+            >
               {isSaving ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
@@ -140,7 +142,8 @@ export default function LocationPreviewScreen() {
 
         <ScrollView
           contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingTop: insets.top + 50 }}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           <View className="px-4">
             {isLoading ? (
               <View className="items-center justify-center py-20">
@@ -153,7 +156,8 @@ export default function LocationPreviewScreen() {
                 <Text className="mt-4 text-white">{error}</Text>
                 <TouchableOpacity
                   className="mt-4 rounded-full bg-white/20 px-4 py-2"
-                  onPress={loadWeatherData}>
+                  onPress={loadWeatherData}
+                >
                   <Text className="text-white">Try Again</Text>
                 </TouchableOpacity>
               </View>
@@ -177,7 +181,8 @@ export default function LocationPreviewScreen() {
                   <TouchableOpacity
                     className="mt-2 flex-row items-center gap-2 rounded-full bg-white/20 px-4 py-2"
                     onPress={loadWeatherData}
-                    disabled={isLoading}>
+                    disabled={isLoading}
+                  >
                     <Icon name="restart" color="white" size={20} />
                     <Text className="text-white">{isLoading ? 'Refreshing...' : 'Refresh'}</Text>
                   </TouchableOpacity>
@@ -223,8 +228,9 @@ export default function LocationPreviewScreen() {
                         className={cn(
                           'flex-row items-center justify-between py-3',
                           index !== (weatherData.dailyForecast?.length || 0) - 1 &&
-                            'border-b border-white/10'
-                        )}>
+                            'border-b border-white/10',
+                        )}
+                      >
                         <Text className="min-w-[40px] text-white">{day.day}</Text>
                         <WeatherIcon code={day.weatherCode} isDay={1} color="white" size={24} />
                         <View className="flex-1 flex-row items-center px-4">

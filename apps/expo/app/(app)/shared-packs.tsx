@@ -65,7 +65,8 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
       {displayMembers.map((member, index) => (
         <Avatar
           key={member.id}
-          className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}>
+          className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}
+        >
           <AvatarImage source={{ uri: member.avatar }} />
           <AvatarFallback>
             <Text>{member.name.substring(0, 1)}</Text>

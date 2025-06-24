@@ -30,7 +30,8 @@ export default function UsernameScreen() {
                 variant="plain"
                 onPress={() => {
                   router.back();
-                }}>
+                }}
+              >
                 <Text className={cn(canSave && 'text-primary')}>Save</Text>
               </Button>
             ),
@@ -43,11 +44,13 @@ export default function UsernameScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: insets.bottom }}>
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+      >
         <Form className="gap-5 px-4 pt-8">
           <FormSection
             materialIconProps={{ name: 'account-circle-outline' }}
-            footnote="Choose a unique identifier for your account.">
+            footnote="Choose a unique identifier for your account."
+          >
             <FormItem>
               <TextField
                 textContentType="username"
@@ -74,7 +77,8 @@ export default function UsernameScreen() {
                 disabled={!canSave}
                 onPress={() => {
                   router.back();
-                }}>
+                }}
+              >
                 <Text>Save</Text>
               </Button>
             </View>

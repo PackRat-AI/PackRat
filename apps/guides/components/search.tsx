@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { Input } from "guides-app/components/ui/input";
-import { getAllPosts } from "guides-app/lib/mdx-static";
-import type { Post } from "guides-app/lib/types";
-import { useQuery } from "@tanstack/react-query";
-import { SearchIcon, X } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { Input } from 'guides-app/components/ui/input';
+import { getAllPosts } from 'guides-app/lib/mdx-static';
+import type { Post } from 'guides-app/lib/types';
+import { useQuery } from '@tanstack/react-query';
+import { SearchIcon, X } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export function Search() {
   const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -21,24 +21,21 @@ export function Search() {
 
   // Fetch posts using TanStack Query
   const { data: posts = [] } = useQuery({
-    queryKey: ["posts"],
+    queryKey: ['posts'],
     queryFn: getAllPosts,
   });
 
   // Handle click outside to close search
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -62,7 +59,7 @@ export function Search() {
     const searchResults = posts.filter((post) => {
       const searchContent = `${post.title} ${
         post.description
-      } ${post.categories?.join(" ")}`.toLowerCase();
+      } ${post.categories?.join(' ')}`.toLowerCase();
       return searchContent.includes(query.toLowerCase());
     });
 
@@ -114,9 +111,7 @@ export function Search() {
             {query.trim() && (
               <div className="mt-3 max-h-80 overflow-auto">
                 {isLoading ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
-                    Searching...
-                  </div>
+                  <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
                 ) : results.length > 0 ? (
                   <div className="space-y-1">
                     {results.map((post) => (

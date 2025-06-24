@@ -1,26 +1,26 @@
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { authMiddleware } from "@packrat/api/middleware";
-import { queueCatalogETL } from "@packrat/api/services/queue";
-import { Env } from "@packrat/api/types/env";
-import { HTTPException } from "hono/http-exception";
-import { z } from "zod";
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { authMiddleware } from '@packrat/api/middleware';
+import { queueCatalogETL } from '@packrat/api/services/queue';
+import type { Env } from '@packrat/api/types/env';
+import { HTTPException } from 'hono/http-exception';
+import { z } from 'zod';
 
 const catalogETLSchema = z.object({
-  objectKey: z.string().min(1, "R2 object key is required"),
-  filename: z.string().min(1, "Filename is required"),
+  objectKey: z.string().min(1, 'R2 object key is required'),
+  filename: z.string().min(1, 'Filename is required'),
 });
 
 const catalogETLQueueRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 catalogETLQueueRoutes.openapi(
   {
-    method: "post",
-    path: "/etl",
+    method: 'post',
+    path: '/etl',
     middleware: [authMiddleware],
     request: {
       body: {
         content: {
-          "application/json": {
+          'application/json': {
             schema: catalogETLSchema,
           },
         },
@@ -28,9 +28,9 @@ catalogETLQueueRoutes.openapi(
     },
     responses: {
       200: {
-        description: "ETL job queued successfully",
+        description: 'ETL job queued successfully',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               message: z.string(),
               jobId: z.string(),
@@ -40,9 +40,9 @@ catalogETLQueueRoutes.openapi(
         },
       },
       400: {
-        description: "Bad request",
+        description: 'Bad request',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               message: z.string(),
             }),
@@ -50,18 +50,17 @@ catalogETLQueueRoutes.openapi(
         },
       },
     },
-    tags: ["Catalog"],
-    summary: "Queue catalog ETL job from R2 CSV file",
-    description:
-      "Initiates serverless ETL processing of catalog data from R2 object storage",
+    tags: ['Catalog'],
+    summary: 'Queue catalog ETL job from R2 CSV file',
+    description: 'Initiates serverless ETL processing of catalog data from R2 object storage',
   },
   async (c) => {
-    const { objectKey, filename } = c.req.valid("json");
-    const userId = c.get("jwtPayload")?.userId;
+    const { objectKey, filename } = c.req.valid('json');
+    const userId = c.get('jwtPayload')?.userId;
 
     if (!c.env.ETL_QUEUE) {
       throw new HTTPException(400, {
-        message: "ETL_QUEUE is not configured",
+        message: 'ETL_QUEUE is not configured',
       });
     }
 
@@ -73,11 +72,11 @@ catalogETLQueueRoutes.openapi(
     });
 
     return c.json({
-      message: "Catalog ETL job queued successfully",
+      message: 'Catalog ETL job queued successfully',
       jobId,
       queued: true,
     });
-  }
+  },
 );
 
 export { catalogETLQueueRoutes };

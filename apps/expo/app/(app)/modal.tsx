@@ -4,7 +4,7 @@ import React from 'react';
 import { Platform, ScrollView, View } from 'react-native';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 import { Alert } from 'nativewindui/Alert';
-import { AlertRef } from 'nativewindui/Alert/types';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 
 import { Text } from 'nativewindui/Text';
@@ -87,7 +87,8 @@ export default function ModalScreen() {
                 ],
               })
             }
-            className="flex-row items-center justify-between p-2">
+            className="flex-row items-center justify-between p-2"
+          >
             <View className="flex-row items-center gap-3">
               {isLoading ? (
                 <ActivityIndicator size={24} color={colors.destructive} />

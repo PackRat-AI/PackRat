@@ -4,7 +4,7 @@ import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { syncObservable } from '@legendapp/state/sync';
 import Storage from 'expo-sqlite/kv-store';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
-import { Pack, PackItem } from '../types';
+import type { Pack, PackItem } from '../types';
 import { isAuthed } from 'expo-app/features/auth/store';
 import * as FileSystem from 'expo-file-system';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
@@ -13,11 +13,11 @@ import { userStore } from 'expo-app/features/auth/store';
 // Function to get a presigned URL for uploading
 const getPresignedUrl = async (
   fileName: string,
-  contentType: string
+  contentType: string,
 ): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
   try {
     const response = await axiosInstance.get(
-      `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`
+      `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`,
     );
     return {
       url: response.data.url,
@@ -49,7 +49,7 @@ const uploadImage = async (fileName: string): Promise<void> => {
         headers: {
           'Content-Type': type,
         },
-      }
+      },
     );
 
     if (uploadResult.status >= 300) {
@@ -134,7 +134,7 @@ syncObservable(
         clearInterval(intervalId);
       };
     },
-  })
+  }),
 );
 
 export function getPackItems(id: string) {

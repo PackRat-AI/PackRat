@@ -7,7 +7,7 @@ import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useCategoriesCount, useCurrentPack } from '../hooks';
 import { Alert } from 'nativewindui/Alert';
 import { useRef } from 'react';
-import { AlertRef } from 'nativewindui/Alert/types';
+import type { AlertRef } from 'nativewindui/Alert/types';
 
 export function PackCategoriesTile() {
   const currentPack = useCurrentPack();

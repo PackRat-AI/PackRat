@@ -1,4 +1,4 @@
-import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { View } from 'react-native';
 
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
@@ -6,9 +6,9 @@ import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import {
   ESTIMATED_ITEM_HEIGHT,
   List,
-  ListDataItem,
+  type ListDataItem,
   ListItem,
-  ListRenderItemInfo,
+  type ListRenderItemInfo,
   ListSectionHeader,
 } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
@@ -41,7 +41,7 @@ function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>
     <ListItem
       className={cn(
         'ios:pl-0 pl-2',
-        info.index === 0 && 'ios:border-t-0 border-border/25 dark:border-border/80 border-t'
+        info.index === 0 && 'ios:border-t-0 border-border/25 dark:border-border/80 border-t',
       )}
       titleClassName="text-lg"
       leftView={info.item.leftView}

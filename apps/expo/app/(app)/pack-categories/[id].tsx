@@ -27,7 +27,8 @@ function CategoryCard({
       <View className="flex-row items-center p-4">
         <View
           className="h-12 w-12 items-center justify-center rounded-md"
-          style={{ backgroundColor: colors.grey4 }}>
+          style={{ backgroundColor: colors.grey4 }}
+        >
           <Icon name={category.icon || 'backpack'} size={24} color="white" />
         </View>
 

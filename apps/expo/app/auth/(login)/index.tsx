@@ -51,7 +51,7 @@ export default function LoginScreen() {
         setIsLoading(false);
         Alert.alert(
           'Login Failed',
-          error instanceof Error ? error.message : 'Invalid email or password'
+          error instanceof Error ? error.message : 'Invalid email or password',
         );
       }
     },
@@ -82,7 +82,8 @@ export default function LoginScreen() {
         bounces={false}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="ios:pt-12 pt-20">
+        contentContainerClassName="ios:pt-12 pt-20"
+      >
         <View className="ios:px-12 flex-1 px-8">
           <View className="items-center pb-1">
             <Image
@@ -162,7 +163,8 @@ export default function LoginScreen() {
         offset={{
           closed: 0,
           opened: Platform.select({ ios: insets.bottom + 30, default: insets.bottom }),
-        }}>
+        }}
+      >
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
@@ -170,7 +172,8 @@ export default function LoginScreen() {
                 <Button
                   size="lg"
                   disabled={!canSubmit || loading}
-                  onPress={() => form.handleSubmit()}>
+                  onPress={() => form.handleSubmit()}
+                >
                   <Text>{loading ? 'Logging in...' : 'Continue'}</Text>
                 </Button>
               )}
@@ -183,7 +186,8 @@ export default function LoginScreen() {
               className="px-2"
               onPress={() => {
                 router.replace('/auth/(create-account)');
-              }}>
+              }}
+            >
               <Text className="px-0.5 text-sm text-primary">Create Account</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
@@ -197,7 +201,8 @@ export default function LoginScreen() {
                     }
                     KeyboardController.dismiss();
                     form.handleSubmit();
-                  }}>
+                  }}
+                >
                   <Text className="text-sm">
                     {loading ? 'Logging in...' : focusedTextField === 'email' ? 'Next' : 'Submit'}
                   </Text>
@@ -212,7 +217,8 @@ export default function LoginScreen() {
           variant="plain"
           onPress={() => {
             router.replace({ pathname: '/auth/(create-account)', params: { redirectTo } });
-          }}>
+          }}
+        >
           <Text className="text-sm text-primary">Create Account</Text>
         </Button>
       )}

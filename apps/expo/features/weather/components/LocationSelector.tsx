@@ -26,7 +26,8 @@ export function LocationSelector() {
       <View className="px-4 py-2">
         <TouchableOpacity
           onPress={() => router.push('/weather')}
-          className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2">
+          className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2"
+        >
           <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
           <Text className="flex-1 text-sm font-medium">Add a location</Text>
           <Icon name="chevron-right" size={16} color={colors.grey2} />
@@ -52,7 +53,7 @@ export function LocationSelector() {
         [{ text: 'OK' }],
         {
           cancelable: true,
-        }
+        },
       );
     }
   };
@@ -70,7 +71,8 @@ export function LocationSelector() {
       <View className="px-4 py-2">
         <TouchableOpacity
           onPress={handleOpenSheet}
-          className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2">
+          className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2"
+        >
           <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
           <Text className="flex-1 text-sm font-medium">{activeLocation.name}</Text>
           <Text className="mr-1 text-sm text-muted-foreground">{activeLocation.temperature}°</Text>
@@ -85,7 +87,8 @@ export function LocationSelector() {
         enableDynamicSizing={false}
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.card }}
-        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}>
+        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+      >
         <BottomSheetScrollView style={{ flex: 1 }}>
           <View className="px-4 pb-4 pt-2">
             <Text className="mb-2 text-lg font-semibold">Select Location</Text>
@@ -100,14 +103,16 @@ export function LocationSelector() {
                   onPress={() => handleSelectLocation(location.id)}
                   className={cn(
                     'my-2 flex-row items-center rounded-lg p-3',
-                    location.id === activeLocation.id ? 'bg-primary/10' : 'bg-muted/50'
+                    location.id === activeLocation.id ? 'bg-primary/10' : 'bg-muted/50',
                   )}
-                  style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}>
+                  style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}
+                >
                   <View
                     className={cn(
                       'mr-3 h-8 w-8 items-center justify-center rounded-full',
-                      location.id === activeLocation.id ? 'bg-primary' : 'bg-muted'
-                    )}>
+                      location.id === activeLocation.id ? 'bg-primary' : 'bg-muted',
+                    )}
+                  >
                     <Icon
                       name={
                         location.id === activeLocation.id ? 'check' : 'map-marker-radius-outline'
@@ -127,7 +132,8 @@ export function LocationSelector() {
 
             <TouchableOpacity
               onPress={handleManageLocations}
-              className="bg-muted/50 mt-4 flex-row items-center gap-3 rounded-lg p-3">
+              className="bg-muted/50 mt-4 flex-row items-center gap-3 rounded-lg p-3"
+            >
               <Icon name="cog-outline" size={20} color={colors.foreground} />
               <Text>Manage Locations</Text>
             </TouchableOpacity>

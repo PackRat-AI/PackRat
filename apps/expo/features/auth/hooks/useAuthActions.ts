@@ -1,5 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai';
-import { Href, router } from 'expo-router';
+import { type Href, router } from 'expo-router';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as SecureStore from 'expo-secure-store';
@@ -322,7 +322,7 @@ export function useAuthActions() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ email }),
-        }
+        },
       );
 
       const data = await response.json();

@@ -1,6 +1,6 @@
 // This is a browser-compatible version of your MDX utilities
-import { postContent, posts } from "./content";
-import type { Post } from "./types";
+import { postContent, posts } from './content';
+import type { Post } from './types';
 
 export function getAllPosts(): Post[] {
   return posts;
@@ -20,17 +20,15 @@ export function getRelatedPosts(post: Post, count = 3): Post[] {
 
   // Find posts with matching categories
   const relatedByCategory = otherPosts.filter((p) =>
-    p.categories?.some((category) => post.categories?.includes(category))
+    p.categories?.some((category) => post.categories?.includes(category)),
   );
 
   // Sort by number of matching categories
   relatedByCategory.sort((a, b) => {
     const aMatches =
-      a.categories?.filter((category) => post.categories?.includes(category))
-        .length || 0;
+      a.categories?.filter((category) => post.categories?.includes(category)).length || 0;
     const bMatches =
-      b.categories?.filter((category) => post.categories?.includes(category))
-        .length || 0;
+      b.categories?.filter((category) => post.categories?.includes(category)).length || 0;
     return bMatches - aMatches;
   });
 
