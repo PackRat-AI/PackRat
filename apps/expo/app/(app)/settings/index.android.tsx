@@ -38,8 +38,9 @@ export default function SettingsAndroidStyleScreen() {
               <View
                 className={cn(
                   'flex-1',
-                  Platform.OS === 'ios' && 'bg-background dark:bg-background'
-                )}>
+                  Platform.OS === 'ios' && 'bg-background dark:bg-background',
+                )}
+              >
                 <Animated.View entering={FadeInUp.delay(150)}>
                   <SearchContent />
                 </Animated.View>
@@ -92,7 +93,8 @@ function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>
       size="lg"
       variant="plain"
       className="ios:gap-3 ios:px-6 justify-start px-8 py-5"
-      onPress={() => console.log('onPress')}>
+      onPress={() => console.log('onPress')}
+    >
       {info.item.leftView}
       <View className="flex-1">
         <Text className="pl-4 text-xl font-normal">{info.item.title}</Text>

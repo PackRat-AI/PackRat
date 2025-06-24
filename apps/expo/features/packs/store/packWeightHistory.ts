@@ -24,7 +24,7 @@ const createPackWeightHistoryEntry = async (packWeightHistoryEntry: PackWeightHi
   try {
     const response = await axiosInstance.post(
       `/api/packs/${packWeightHistoryEntry.packId}/weight-history`,
-      packWeightHistoryEntry
+      packWeightHistoryEntry,
     );
     return response.data;
   } catch (error) {
@@ -64,13 +64,13 @@ syncObservable(
         clearInterval(intervalId);
       };
     },
-  })
+  }),
 );
 
 export function recordPackWeight(packId: string) {
   const pack = packsStore[packId].peek();
   const packItems = Object.values(packItemsStore.peek()).filter(
-    (item) => item.packId === packId && !item.deleted
+    (item) => item.packId === packId && !item.deleted,
   );
   const { totalWeight } = computePackWeights({ ...pack, items: packItems });
   const id = nanoid();

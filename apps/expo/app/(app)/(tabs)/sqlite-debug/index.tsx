@@ -27,7 +27,7 @@ export default function SQLiteKVDebug() {
         allKeys.map(async (key) => {
           const value = await Storage.getItem(key);
           return { key, value };
-        })
+        }),
       );
       setEntries(loadedEntries);
     } catch (error) {
@@ -132,7 +132,7 @@ export default function SQLiteKVDebug() {
             }
           },
         },
-      ]
+      ],
     );
   };
 

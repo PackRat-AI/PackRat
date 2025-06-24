@@ -1,6 +1,6 @@
-import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config'
-import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
+import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 const bindings = {
   NEON_DATABASE_URL: 'postgres://user:pass@localhost/db',
@@ -19,10 +19,10 @@ const bindings = {
   PACKRAT_ITEMS_BUCKET_R2_ACCESS_KEY_ID: 'key',
   PACKRAT_ITEMS_BUCKET_R2_SECRET_ACCESS_KEY: 'key',
   PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME: 'bucket',
-  ETL_QUEUE: 'queue'
-}
+  ETL_QUEUE: 'queue',
+};
 
-Object.assign(process.env, bindings)
+Object.assign(process.env, bindings);
 
 export default defineWorkersConfig(
   defineConfig({
@@ -36,9 +36,9 @@ export default defineWorkersConfig(
       pool: '@cloudflare/vitest-pool-workers',
       poolOptions: {
         workers: {
-          wrangler: { configPath: './wrangler.toml' }
-        }
-      }
-    }
-  })
-)
+          wrangler: { configPath: './wrangler.toml' },
+        },
+      },
+    },
+  }),
+);

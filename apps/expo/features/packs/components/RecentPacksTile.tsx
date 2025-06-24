@@ -31,7 +31,8 @@ export function RecentPacksTile() {
               <Avatar
                 key={index}
                 alt={`${pack?.name ?? ''} avatar`}
-                className={cn('h-6 w-6', index > 0 && '-ml-2')}>
+                className={cn('h-6 w-6', index > 0 && '-ml-2')}
+              >
                 <AvatarImage source={{ uri: img }} />
                 <AvatarFallback>
                   <Text>{pack?.name.slice(0, 2).toUpperCase() ?? 'NA'}</Text>

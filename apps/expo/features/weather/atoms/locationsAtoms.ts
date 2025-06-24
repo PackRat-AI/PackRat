@@ -7,7 +7,7 @@ import type { WeatherLocation } from '../types';
 export const baseLocationsAtom = atomWithStorage<WeatherLocation[]>(
   'locations',
   [], // Start with an empty array, no hardcoded location
-  asyncStorage
+  asyncStorage,
 );
 
 // Create a loadable version of the atom to handle async loading
@@ -38,7 +38,7 @@ export const activeLocationAtom = atom(
       }));
       set(baseLocationsAtom, updatedLocations);
     }
-  }
+  },
 );
 
 // Create a search filter atom

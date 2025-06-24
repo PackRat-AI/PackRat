@@ -87,7 +87,8 @@ export default function ModalScreen() {
                 ],
               })
             }
-            className="flex-row items-center justify-between p-2">
+            className="flex-row items-center justify-between p-2"
+          >
             <View className="flex-row items-center gap-3">
               {isLoading ? (
                 <ActivityIndicator size={24} color={colors.destructive} />

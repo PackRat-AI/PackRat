@@ -4,7 +4,7 @@ import { convertToGrams } from './convertToGrams';
 
 export const computePackWeights = (
   pack: Omit<Pack, 'baseWeight' | 'totalWeight'>,
-  preferredUnit: WeightUnit = 'g'
+  preferredUnit: WeightUnit = 'g',
 ): Pack => {
   // Initialize weights
   let baseWeightGrams = 0;

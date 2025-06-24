@@ -1,17 +1,14 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { createDb } from "@packrat/api/db";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
 import {
   authProviders,
   oneTimePasswords,
   packs,
   refreshTokens,
   users,
-} from "@packrat/api/db/schema";
-import { Env } from "@packrat/api/types/env";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
+} from '@packrat/api/db/schema';
+import { Env } from '@packrat/api/types/env';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import {
   generateJWT,
   generateRefreshToken,
@@ -20,23 +17,20 @@ import {
   validateEmail,
   validatePassword,
   verifyPassword,
-} from "@packrat/api/utils/auth";
-import {
-  sendPasswordResetEmail,
-  sendVerificationCodeEmail,
-} from "@packrat/api/utils/email";
-import { and, eq, gt, isNull } from "drizzle-orm";
-import { OAuth2Client } from "google-auth-library";
-import { env } from "hono/adapter";
+} from '@packrat/api/utils/auth';
+import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
+import { and, eq, gt, isNull } from 'drizzle-orm';
+import { OAuth2Client } from 'google-auth-library';
+import { env } from 'hono/adapter';
 
 const authRoutes = new OpenAPIHono();
 
 // Login route
 const loginRoute = createRoute({
-  method: "post",
-  path: "/login",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Login" } },
+  method: 'post',
+  path: '/login',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Login' } },
 });
 
 authRoutes.openapi(loginRoute, async (c) => {
@@ -45,38 +39,31 @@ authRoutes.openapi(loginRoute, async (c) => {
 
   // Validate input
   if (!email || !password) {
-    return c.json({ error: "Email and password are required" }, 400);
+    return c.json({ error: 'Email and password are required' }, 400);
   }
 
   // Find user
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()))
-    .limit(1);
+  const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
   if (user.length === 0) {
-    return c.json({ error: "Invalid email or password" }, 401);
+    return c.json({ error: 'Invalid email or password' }, 401);
   }
 
   const userRecord = user[0];
   if (!userRecord) {
-    return c.json({ error: "Invalid email or password" }, 401);
+    return c.json({ error: 'Invalid email or password' }, 401);
   }
 
   // Verify password
-  const isPasswordValid = await verifyPassword(
-    password,
-    userRecord.passwordHash!
-  );
+  const isPasswordValid = await verifyPassword(password, userRecord.passwordHash!);
 
   if (!isPasswordValid) {
-    return c.json({ error: "Invalid email or password" }, 401);
+    return c.json({ error: 'Invalid email or password' }, 401);
   }
 
   // Check if email is verified
   if (!userRecord.emailVerified) {
-    return c.json({ error: "Please verify your email before logging in" }, 403);
+    return c.json({ error: 'Please verify your email before logging in' }, 403);
   }
 
   // Generate refresh token
@@ -114,10 +101,10 @@ authRoutes.openapi(loginRoute, async (c) => {
 
 // Register route
 const registerRoute = createRoute({
-  method: "post",
-  path: "/register",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Register user" } },
+  method: 'post',
+  path: '/register',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Register user' } },
 });
 
 authRoutes.openapi(registerRoute, async (c) => {
@@ -126,11 +113,11 @@ authRoutes.openapi(registerRoute, async (c) => {
 
   // Validate input
   if (!email || !password) {
-    return c.json({ error: "Email and password are required" }, 400);
+    return c.json({ error: 'Email and password are required' }, 400);
   }
 
   if (!validateEmail(email)) {
-    return c.json({ error: "Invalid email format" }, 400);
+    return c.json({ error: 'Invalid email format' }, 400);
   }
 
   const passwordValidation = validatePassword(password);
@@ -146,7 +133,7 @@ authRoutes.openapi(registerRoute, async (c) => {
     .limit(1);
 
   if (existingUser.length > 0) {
-    return c.json({ error: "Email already in use" }, 409);
+    return c.json({ error: 'Email already in use' }, 409);
   }
 
   // Hash password
@@ -165,7 +152,7 @@ authRoutes.openapi(registerRoute, async (c) => {
     .returning({ id: users.id });
 
   if (!newUser) {
-    return c.json({ error: "Failed to create user" }, 500);
+    return c.json({ error: 'Failed to create user' }, 500);
   }
 
   const code = generateVerificationCode(5);
@@ -182,18 +169,17 @@ authRoutes.openapi(registerRoute, async (c) => {
 
   return c.json({
     success: true,
-    message:
-      "User registered successfully. Please check your email for your verification code.",
+    message: 'User registered successfully. Please check your email for your verification code.',
     userId: newUser.id,
   });
 });
 
 // Verify email route
 const verifyEmailRoute = createRoute({
-  method: "post",
-  path: "/verify-email",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Verify email" } },
+  method: 'post',
+  path: '/verify-email',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Verify email' } },
 });
 
 authRoutes.openapi(verifyEmailRoute, async (c) => {
@@ -201,23 +187,19 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
   const db = createDb(c);
 
   if (!email || !code) {
-    return c.json({ error: "Email and verification code are required" }, 400);
+    return c.json({ error: 'Email and verification code are required' }, 400);
   }
 
   // Find the user by email
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()))
-    .limit(1);
+  const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
   if (user.length === 0) {
-    return c.json({ error: "User not found" }, 404);
+    return c.json({ error: 'User not found' }, 404);
   }
 
   const userRecord = user[0];
   if (!userRecord) {
-    return c.json({ error: "User not found" }, 404);
+    return c.json({ error: 'User not found' }, 404);
   }
 
   const userId = userRecord.id;
@@ -230,20 +212,17 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
       and(
         eq(oneTimePasswords.userId, userId),
         eq(oneTimePasswords.code, code),
-        gt(oneTimePasswords.expiresAt, new Date())
-      )
+        gt(oneTimePasswords.expiresAt, new Date()),
+      ),
     )
     .limit(1);
 
   if (verificationCode.length === 0) {
-    return c.json({ error: "Invalid or expired verification code" }, 400);
+    return c.json({ error: 'Invalid or expired verification code' }, 400);
   }
 
   // Update user as verified
-  await db
-    .update(users)
-    .set({ emailVerified: true })
-    .where(eq(users.id, userId));
+  await db.update(users).set({ emailVerified: true }).where(eq(users.id, userId));
 
   // Delete the verification code
   await db.delete(oneTimePasswords).where(eq(oneTimePasswords.userId, userId));
@@ -269,7 +248,7 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
 
   return c.json({
     success: true,
-    message: "Email verified successfully",
+    message: 'Email verified successfully',
     accessToken,
     refreshToken,
     user: {
@@ -284,45 +263,38 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
 
 // Resend verification route
 const resendVerificationRoute = createRoute({
-  method: "post",
-  path: "/resend-verification",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Resend verification code" } },
+  method: 'post',
+  path: '/resend-verification',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Resend verification code' } },
 });
 
 authRoutes.openapi(resendVerificationRoute, async (c) => {
   const { email } = await c.req.json();
 
   if (!email) {
-    return Response.json({ error: "Email is required" }, { status: 400 });
+    return Response.json({ error: 'Email is required' }, { status: 400 });
   }
 
   const db = createDb(c);
 
   // Find the user by email
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()))
-    .limit(1);
+  const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
   if (user.length === 0) {
-    return Response.json({ error: "User not found" }, { status: 404 });
+    return Response.json({ error: 'User not found' }, { status: 404 });
   }
 
   const userRecord = user[0];
   if (!userRecord) {
-    return Response.json({ error: "User not found" }, { status: 404 });
+    return Response.json({ error: 'User not found' }, { status: 404 });
   }
 
   const userId = userRecord.id;
 
   // Check if user is already verified
   if (userRecord.emailVerified) {
-    return Response.json(
-      { error: "Email is already verified" },
-      { status: 400 }
-    );
+    return Response.json({ error: 'Email is already verified' }, { status: 400 });
   }
 
   // Delete any existing verification codes
@@ -343,16 +315,16 @@ authRoutes.openapi(resendVerificationRoute, async (c) => {
 
   return Response.json({
     success: true,
-    message: "Verification code sent successfully",
+    message: 'Verification code sent successfully',
   });
 });
 
 // Forgot password route
 const forgotPasswordRoute = createRoute({
-  method: "post",
-  path: "/forgot-password",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Forgot password" } },
+  method: 'post',
+  path: '/forgot-password',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Forgot password' } },
 });
 
 authRoutes.openapi(forgotPasswordRoute, async (c) => {
@@ -361,22 +333,17 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
   const db = createDb(c);
 
   if (!email) {
-    return Response.json({ error: "Email is required" }, { status: 400 });
+    return Response.json({ error: 'Email is required' }, { status: 400 });
   }
 
   // Find user
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()))
-    .limit(1);
+  const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
   // Always return success even if user doesn't exist (security best practice)
   if (user.length === 0) {
     return Response.json({
       success: true,
-      message:
-        "If your email is registered, you will receive a verification code",
+      message: 'If your email is registered, you will receive a verification code',
     });
   }
 
@@ -384,8 +351,7 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
   if (!userRecord) {
     return Response.json({
       success: true,
-      message:
-        "If your email is registered, you will receive a verification code",
+      message: 'If your email is registered, you will receive a verification code',
     });
   }
 
@@ -393,9 +359,7 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
   const code = generateVerificationCode(5);
 
   // Delete any existing codes for this user
-  await db
-    .delete(oneTimePasswords)
-    .where(eq(oneTimePasswords.userId, userRecord.id));
+  await db.delete(oneTimePasswords).where(eq(oneTimePasswords.userId, userRecord.id));
 
   // Store code in database
   await db.insert(oneTimePasswords).values({
@@ -409,17 +373,16 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
 
   return Response.json({
     success: true,
-    message:
-      "If your email is registered, you will receive a verification code",
+    message: 'If your email is registered, you will receive a verification code',
   });
 });
 
 // Reset password route
 const resetPasswordRoute = createRoute({
-  method: "post",
-  path: "/reset-password",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Reset password" } },
+  method: 'post',
+  path: '/reset-password',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Reset password' } },
 });
 
 authRoutes.openapi(resetPasswordRoute, async (c) => {
@@ -428,19 +391,13 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
   const db = createDb(c);
 
   if (!email || !code || !newPassword) {
-    return Response.json(
-      { error: "Email, code, and new password are required" },
-      { status: 400 }
-    );
+    return Response.json({ error: 'Email, code, and new password are required' }, { status: 400 });
   }
 
   // Validate password
   const passwordValidation = validatePassword(newPassword);
   if (!passwordValidation.valid) {
-    return Response.json(
-      { error: passwordValidation.message },
-      { status: 400 }
-    );
+    return Response.json({ error: passwordValidation.message }, { status: 400 });
   }
 
   // Find user by email
@@ -451,44 +408,33 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
     .limit(1);
 
   if (userResult.length === 0) {
-    return Response.json({ error: "User not found" }, { status: 404 });
+    return Response.json({ error: 'User not found' }, { status: 404 });
   }
 
   const user = userResult[0];
   if (!user) {
-    return Response.json({ error: "User not found" }, { status: 404 });
+    return Response.json({ error: 'User not found' }, { status: 404 });
   }
 
   // Find verification code
   const codeRecord = await db
     .select()
     .from(oneTimePasswords)
-    .where(
-      and(eq(oneTimePasswords.userId, user.id), eq(oneTimePasswords.code, code))
-    )
+    .where(and(eq(oneTimePasswords.userId, user.id), eq(oneTimePasswords.code, code)))
     .limit(1);
 
   if (codeRecord.length === 0) {
-    return Response.json(
-      { error: "Invalid verification code" },
-      { status: 400 }
-    );
+    return Response.json({ error: 'Invalid verification code' }, { status: 400 });
   }
 
   const codeRecordItem = codeRecord[0];
   if (!codeRecordItem) {
-    return Response.json(
-      { error: "Invalid verification code" },
-      { status: 400 }
-    );
+    return Response.json({ error: 'Invalid verification code' }, { status: 400 });
   }
 
   // Check if code is expired
   if (new Date() > codeRecordItem.expiresAt) {
-    return Response.json(
-      { error: "Verification code has expired" },
-      { status: 400 }
-    );
+    return Response.json({ error: 'Verification code has expired' }, { status: 400 });
   }
 
   // Hash new password
@@ -498,22 +444,20 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
   await db.update(users).set({ passwordHash }).where(eq(users.id, user.id));
 
   // Delete the used verification code
-  await db
-    .delete(oneTimePasswords)
-    .where(eq(oneTimePasswords.id, codeRecordItem.id));
+  await db.delete(oneTimePasswords).where(eq(oneTimePasswords.id, codeRecordItem.id));
 
   return Response.json({
     success: true,
-    message: "Password reset successfully",
+    message: 'Password reset successfully',
   });
 });
 
 // Refresh token route
 const refreshTokenRoute = createRoute({
-  method: "post",
-  path: "/refresh",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Refresh token" } },
+  method: 'post',
+  path: '/refresh',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Refresh token' } },
 });
 
 authRoutes.openapi(refreshTokenRoute, async (c) => {
@@ -521,7 +465,7 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
     const { refreshToken } = await c.req.json();
 
     if (!refreshToken) {
-      return c.json({ error: "Refresh token is required" }, 400);
+      return c.json({ error: 'Refresh token is required' }, 400);
     }
 
     const db = createDb(c);
@@ -534,26 +478,21 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
         expiresAt: refreshTokens.expiresAt,
       })
       .from(refreshTokens)
-      .where(
-        and(
-          eq(refreshTokens.token, refreshToken),
-          isNull(refreshTokens.revokedAt)
-        )
-      )
+      .where(and(eq(refreshTokens.token, refreshToken), isNull(refreshTokens.revokedAt)))
       .limit(1);
 
     if (tokenRecord.length === 0) {
-      return c.json({ error: "Invalid refresh token" }, 401);
+      return c.json({ error: 'Invalid refresh token' }, 401);
     }
 
     const token = tokenRecord[0];
     if (!token) {
-      return c.json({ error: "Invalid refresh token" }, 401);
+      return c.json({ error: 'Invalid refresh token' }, 401);
     }
 
     // Check if token is expired
     if (new Date() > token.expiresAt) {
-      return c.json({ error: "Refresh token expired" }, 401);
+      return c.json({ error: 'Refresh token expired' }, 401);
     }
 
     // Generate new refresh token
@@ -600,7 +539,7 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
 
     const userRecord = user[0];
     if (!userRecord) {
-      return c.json({ error: "User not found" }, 404);
+      return c.json({ error: 'User not found' }, 404);
     }
 
     return c.json({
@@ -610,17 +549,17 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
       user: userRecord,
     });
   } catch (error) {
-    console.error("Token refresh error:", error);
-    return c.json({ error: "An error occurred during token refresh" }, 500);
+    console.error('Token refresh error:', error);
+    return c.json({ error: 'An error occurred during token refresh' }, 500);
   }
 });
 
 // Logout route
 const logoutRoute = createRoute({
-  method: "post",
-  path: "/logout",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Logout" } },
+  method: 'post',
+  path: '/logout',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Logout' } },
 });
 
 authRoutes.openapi(logoutRoute, async (c) => {
@@ -630,7 +569,7 @@ authRoutes.openapi(logoutRoute, async (c) => {
   const { refreshToken } = await c.req.json();
 
   if (!refreshToken) {
-    return c.json({ error: "Refresh token is required" }, 400);
+    return c.json({ error: 'Refresh token is required' }, 400);
   }
 
   // Revoke the refresh token
@@ -641,15 +580,15 @@ authRoutes.openapi(logoutRoute, async (c) => {
 
   return c.json({
     success: true,
-    message: "Logged out successfully",
+    message: 'Logged out successfully',
   });
 });
 
 // Me route
 const meRoute = createRoute({
-  method: "get",
-  path: "/me",
-  responses: { 200: { description: "Get current user" } },
+  method: 'get',
+  path: '/me',
+  responses: { 200: { description: 'Get current user' } },
 });
 
 authRoutes.openapi(meRoute, async (c) => {
@@ -675,12 +614,12 @@ authRoutes.openapi(meRoute, async (c) => {
       .limit(1);
 
     if (user.length === 0) {
-      return c.json({ error: "User not found" }, 404);
+      return c.json({ error: 'User not found' }, 404);
     }
 
     const userRecord = user[0];
     if (!userRecord) {
-      return c.json({ error: "User not found" }, 404);
+      return c.json({ error: 'User not found' }, 404);
     }
 
     return c.json({
@@ -688,16 +627,16 @@ authRoutes.openapi(meRoute, async (c) => {
       user: userRecord,
     });
   } catch (error) {
-    console.error("Get user info error:", error);
-    return c.json({ error: "An error occurred" }, 500);
+    console.error('Get user info error:', error);
+    return c.json({ error: 'An error occurred' }, 500);
   }
 });
 
 // Delete account route
 const deleteAccountRoute = createRoute({
-  method: "delete",
-  path: "/",
-  responses: { 200: { description: "Delete account" } },
+  method: 'delete',
+  path: '/',
+  responses: { 200: { description: 'Delete account' } },
 });
 authRoutes.openapi(deleteAccountRoute, async (c) => {
   const auth = await authenticateRequest(c);
@@ -729,12 +668,12 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
 });
 
 const googleRoute = createRoute({
-  method: "post",
-  path: "/google",
+  method: 'post',
+  path: '/google',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({
             idToken: z.string(),
           }),
@@ -742,7 +681,7 @@ const googleRoute = createRoute({
       },
     },
   },
-  responses: { 200: { description: "Google authentication" } },
+  responses: { 200: { description: 'Google authentication' } },
 });
 
 authRoutes.openapi(googleRoute, async (c) => {
@@ -752,7 +691,7 @@ authRoutes.openapi(googleRoute, async (c) => {
   const { idToken } = await c.req.json();
 
   if (!idToken) {
-    return Response.json({ error: "ID token is required" }, { status: 400 });
+    return Response.json({ error: 'ID token is required' }, { status: 400 });
   }
 
   const db = createDb(c);
@@ -766,19 +705,14 @@ authRoutes.openapi(googleRoute, async (c) => {
   const payload = ticket.getPayload();
 
   if (!payload || !payload.email || !payload.sub) {
-    return Response.json({ error: "Invalid Google token" }, { status: 400 });
+    return Response.json({ error: 'Invalid Google token' }, { status: 400 });
   }
 
   // Check if user exists with this Google ID
   const existingProvider = await db
     .select()
     .from(authProviders)
-    .where(
-      and(
-        eq(authProviders.provider, "google"),
-        eq(authProviders.providerId, payload.sub)
-      )
-    )
+    .where(and(eq(authProviders.provider, 'google'), eq(authProviders.providerId, payload.sub)))
     .limit(1);
 
   let userId: number;
@@ -801,7 +735,7 @@ authRoutes.openapi(googleRoute, async (c) => {
 
       await db.insert(authProviders).values({
         userId,
-        provider: "google",
+        provider: 'google',
         providerId: payload.sub,
       });
     } else {
@@ -822,7 +756,7 @@ authRoutes.openapi(googleRoute, async (c) => {
       // Link Google account
       await db.insert(authProviders).values({
         userId,
-        provider: "google",
+        provider: 'google',
         providerId: payload.sub,
       });
     }

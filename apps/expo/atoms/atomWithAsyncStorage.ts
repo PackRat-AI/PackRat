@@ -17,7 +17,7 @@ export const atomWithAsyncStorage = <T>(key: string, initialValue: T) => {
       const nextValue = typeof update === 'function' ? update(get(baseAtom)) : update;
       set(baseAtom, nextValue);
       AsyncStorage.setItem(key, JSON.stringify(nextValue));
-    }
+    },
   );
 
   return derivedAtom;

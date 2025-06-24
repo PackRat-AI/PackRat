@@ -1,10 +1,7 @@
-import { Env } from "@packrat/api/types/env";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { env } from "hono/adapter";
+import { Env } from '@packrat/api/types/env';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { env } from 'hono/adapter';
 
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { env } from 'hono/adapter';
@@ -44,7 +41,7 @@ weatherRoutes.openapi(searchRoute, async (c) => {
 
   try {
     const response = await fetch(
-      `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}`
+      `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}`,
     );
 
     if (!response.ok) {
@@ -102,10 +99,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
   const longitude = Number.parseFloat(c.req.query('lon') || '');
 
   if (isNaN(latitude) || isNaN(longitude)) {
-    return c.json(
-      { error: 'Valid latitude and longitude parameters are required' },
-      400
-    );
+    return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
   }
 
   try {
@@ -114,7 +108,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
     // Use the same search endpoint but with coordinates
     const response = await fetch(
-      `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}`
+      `${WEATHER_API_BASE_URL}/search.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}`,
     );
 
     if (!response.ok) {
@@ -126,7 +120,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
     // If no results, try a reverse geocoding approach with current conditions API
     if (!data || data.length === 0) {
       const currentResponse = await fetch(
-        `${WEATHER_API_BASE_URL}/current.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}`
+        `${WEATHER_API_BASE_URL}/current.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}`,
       );
 
       if (!currentResponse.ok) {
@@ -200,10 +194,7 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
   const longitude = Number.parseFloat(c.req.query('lon') || '');
 
   if (isNaN(latitude) || isNaN(longitude)) {
-    return c.json(
-      { error: 'Valid latitude and longitude parameters are required' },
-      400
-    );
+    return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
   }
 
   try {
@@ -212,7 +203,7 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
 
     // Get forecast data with all the details we need
     const response = await fetch(
-      `${WEATHER_API_BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}&days=10&aqi=yes&alerts=yes`
+      `${WEATHER_API_BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}&days=10&aqi=yes&alerts=yes`,
     );
 
     if (!response.ok) {

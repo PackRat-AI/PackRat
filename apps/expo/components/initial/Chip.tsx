@@ -29,8 +29,9 @@ export function Chip({
         variant === 'outline' && 'border border-border bg-transparent',
         variant === 'worn' && 'bg-emerald-100',
         variant === 'consumable' && 'bg-amber-100',
-        className
-      )}>
+        className,
+      )}
+    >
       <Text
         className={cn(
           'text-xs',
@@ -40,8 +41,9 @@ export function Chip({
           variant === 'outline' && 'text-foreground',
           variant === 'worn' && 'text-emerald-600',
           variant === 'consumable' && 'text-amber-600',
-          textClassName
-        )}>
+          textClassName,
+        )}
+      >
         {prefix ? `${prefix}${children}` : children}
       </Text>
     </View>

@@ -25,7 +25,7 @@ export function PackSelectionScreen() {
   const { catalogItemId } = useLocalSearchParams();
   const { data: packs, isLoading } = usePacks();
   const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
-    catalogItemId as string
+    catalogItemId as string,
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPacks, setFilteredPacks] = useState<Pack[]>([]);
@@ -51,8 +51,8 @@ export function PackSelectionScreen() {
             (pack) =>
               pack.name.toLowerCase().includes(query) ||
               pack.description.toLowerCase().includes(query) ||
-              pack.category.toLowerCase().includes(query)
-          )
+              pack.category.toLowerCase().includes(query),
+          ),
         );
       }
     }
@@ -132,7 +132,8 @@ export function PackSelectionScreen() {
                   <TouchableOpacity
                     className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm"
                     onPress={() => handlePackSelect(item.id)}
-                    activeOpacity={0.7}>
+                    activeOpacity={0.7}
+                  >
                     <View className="p-4 py-8">
                       <View className="flex-row items-center justify-between">
                         <View className="flex-1 gap-4">

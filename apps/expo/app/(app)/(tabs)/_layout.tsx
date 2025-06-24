@@ -17,7 +17,8 @@ export default function TabLayout() {
     <>
       <Tabs
         tabBar={TAB_BAR}
-        screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.primary }}>
+        screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.primary }}
+      >
         <Tabs.Screen name="(home)" options={INDEX_OPTIONS} />
         <Tabs.Screen name="packs" options={PACK_LIST_OPTIONS} />
         <Tabs.Screen name="catalog" options={ITEMS_CATALOG_OPTIONS} />
@@ -79,7 +80,8 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       style={{
         paddingBottom: insets.bottom + 12,
       }}
-      className="border-t-border/25 flex-row border-t bg-card pb-4 pt-3 dark:border-t-0">
+      className="border-t-border/25 flex-row border-t bg-card pb-4 pt-3 dark:border-t-0"
+    >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const label =
@@ -173,7 +175,8 @@ function MaterialTabItem({
     <Pressable
       className={cn('flex-1 items-center', className)}
       {...pressableProps}
-      style={tabBarItemStyle}>
+      style={tabBarItemStyle}
+    >
       <View className="h-8 w-16 items-center justify-center overflow-hidden rounded-full ">
         <Animated.View style={animatedStyle} className="bg-secondary/70 dark:bg-secondary" />
         <View>

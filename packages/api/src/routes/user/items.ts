@@ -1,11 +1,8 @@
-import { createDb } from "@packrat/api/db";
-import { packItems } from "@packrat/api/db/schema";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import { eq } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createDb } from '@packrat/api/db';
+import { packItems } from '@packrat/api/db/schema';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { eq } from 'drizzle-orm';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 
 const userItemsRoutes = new OpenAPIHono();
 

@@ -7,7 +7,7 @@ import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 export const getPackItemSuggestions = async (
   packId: string,
   packItems: PackItem[],
-  location?: string
+  location?: string,
 ): Promise<CatalogItem[]> => {
   try {
     // Extract categories from existing items to help with suggestions
@@ -32,7 +32,7 @@ export function usePackItemSuggestions(
   packId: string | undefined,
   packItems: PackItem[] = [],
   enabled = true,
-  location?: string
+  location?: string,
 ) {
   return useQuery({
     queryKey: ['packItemSuggestions', packId, packItems.length],

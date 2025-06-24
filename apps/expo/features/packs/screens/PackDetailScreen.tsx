@@ -29,7 +29,7 @@ export function PackDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       pack.refetch?.();
-    }, [pack])
+    }, [pack]),
   );
   const deletePack = useDeletePack();
   const { colors } = useColorScheme();
@@ -115,7 +115,8 @@ export function PackDetailScreen() {
                     key={index}
                     className="mb-1 mr-2"
                     textClassName="text-xs text-center"
-                    variant="outline">
+                    variant="outline"
+                  >
                     #{tag}
                   </Chip>
                 ))}
@@ -138,7 +139,8 @@ export function PackDetailScreen() {
                     }
                   },
                 },
-              ]}>
+              ]}
+            >
               <Button variant="plain" size="icon">
                 <Icon name="trash-can" color={colors.grey2} size={21} />
               </Button>
@@ -168,7 +170,8 @@ export function PackDetailScreen() {
                   pathname: '/ai-chat',
                   params: { packId: id, packName: pack.name, contextType: 'pack' },
                 });
-              }}>
+              }}
+            >
               <Icon name="message-outline" color={colors.foreground} />
               <Text>Ask AI</Text>
             </Button>
@@ -185,7 +188,8 @@ export function PackDetailScreen() {
 
             <TouchableOpacity
               className={getTabStyle('consumable')}
-              onPress={() => setActiveTab('consumable')}>
+              onPress={() => setActiveTab('consumable')}
+            >
               <Text className={getTabTextStyle('consumable')}>Consumable</Text>
             </TouchableOpacity>
           </View>
@@ -213,7 +217,8 @@ export function PackDetailScreen() {
 
           <Button
             className="m-4"
-            onPress={() => router.push({ pathname: '/item/new', params: { packId: pack.id } })}>
+            onPress={() => router.push({ pathname: '/item/new', params: { packId: pack.id } })}
+          >
             <Text>Add New Item</Text>
           </Button>
         </View>

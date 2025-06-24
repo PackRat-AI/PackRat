@@ -1,16 +1,10 @@
-import { createDb } from "@packrat/api/db";
-import { catalogItems, packItems, packs, users } from "@packrat/api/db/schema";
-import { eq, inArray } from "drizzle-orm";
-import { Context } from "hono";
+import { createDb } from '@packrat/api/db';
+import { catalogItems, packItems, packs, users } from '@packrat/api/db/schema';
+import { eq, inArray } from 'drizzle-orm';
+import { Context } from 'hono';
 
 // Get pack details from the database
-export async function getPackDetails({
-  packId,
-  c,
-}: {
-  packId: string;
-  c: Context;
-}) {
+export async function getPackDetails({ packId, c }: { packId: string; c: Context }) {
   const db = createDb(c);
 
   const packData = await db.query.packs.findFirst({
@@ -29,13 +23,7 @@ export async function getPackDetails({
 }
 
 // Get item details from the database
-export async function getItemDetails({
-  itemId,
-  c,
-}: {
-  itemId: string;
-  c: Context;
-}) {
+export async function getItemDetails({ itemId, c }: { itemId: string; c: Context }) {
   const db = createDb(c);
 
   // First try to find it as a pack item
@@ -57,13 +45,7 @@ export async function getItemDetails({
 }
 
 // Get user details
-export async function getUserDetails({
-  userId,
-  c,
-}: {
-  userId: string;
-  c: Context;
-}) {
+export async function getUserDetails({ userId, c }: { userId: string; c: Context }) {
   const db = createDb(c);
   return db.query.users.findFirst({
     where: eq(users.id, Number.parseInt(userId)),

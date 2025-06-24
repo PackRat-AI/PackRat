@@ -70,7 +70,7 @@ syncObservable(
         clearInterval(intervalId);
       };
     },
-  })
+  }),
 );
 
 export const packsSyncState = syncState(packsStore);

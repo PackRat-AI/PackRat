@@ -40,7 +40,7 @@ export default function GearInventoryScreen() {
         acc[category].push(item);
         return acc;
       },
-      {} as Record<string, PackItem[]>
+      {} as Record<string, PackItem[]>,
     );
   };
 
@@ -57,26 +57,28 @@ export default function GearInventoryScreen() {
           <View className="flex-row overflow-hidden rounded-lg bg-card">
             <Pressable
               className={cn('px-3 py-1.5', viewMode === 'all' ? 'bg-primary' : 'bg-transparent')}
-              onPress={() => setViewMode('all')}>
+              onPress={() => setViewMode('all')}
+            >
               <Text
                 variant="subhead"
-                className={
-                  viewMode === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'
-                }>
+                className={viewMode === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
+              >
                 All
               </Text>
             </Pressable>
             <Pressable
               className={cn(
                 'px-3 py-1.5',
-                viewMode === 'category' ? 'bg-primary' : 'bg-transparent'
+                viewMode === 'category' ? 'bg-primary' : 'bg-transparent',
               )}
-              onPress={() => setViewMode('category')}>
+              onPress={() => setViewMode('category')}
+            >
               <Text
                 variant="subhead"
                 className={
                   viewMode === 'category' ? 'text-primary-foreground' : 'text-muted-foreground'
-                }>
+                }
+              >
                 By Category
               </Text>
             </Pressable>

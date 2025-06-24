@@ -143,7 +143,8 @@ export function ItemDetailScreen() {
           <Button
             variant="primary"
             onPress={navigateToChat}
-            className="flex-row items-center justify-center rounded-full bg-primary px-4 py-3">
+            className="flex-row items-center justify-center rounded-full bg-primary px-4 py-3"
+          >
             <Icon name="message" size={20} color="white" />
             <Text className="font-semibold text-white">Ask AI About This Item</Text>
           </Button>

@@ -16,12 +16,7 @@
     }
   },
   "extends": "expo/tsconfig.base",
-  "include": [
-    "apps/**/*.ts",
-    "apps/**/*.tsx",
-    "packages/**/*.ts",
-    "packages/**/*.tsx"
-  ],
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"],
   "exclude": [
     "node_modules",
     "**/node_modules",

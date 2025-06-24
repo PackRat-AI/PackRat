@@ -66,8 +66,9 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
     <View
       className={cn(
         'mr-2 flex-col justify-between rounded-lg border border-border p-3',
-        'w-40 bg-card'
-      )}>
+        'w-40 bg-card',
+      )}
+    >
       <View>
         <Text className="mb-1 font-medium text-foreground" numberOfLines={1}>
           {item.name}

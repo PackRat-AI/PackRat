@@ -1,12 +1,12 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { Queue } from "@cloudflare/workers-types";
-import { NewCatalogItem, catalogItems } from "@packrat/api/db/schema";
-import { Env } from "@packrat/api/types/env";
-import { getTableColumns, sql } from "drizzle-orm";
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Queue } from '@cloudflare/workers-types';
+import { NewCatalogItem, catalogItems } from '@packrat/api/db/schema';
+import { Env } from '@packrat/api/types/env';
+import { getTableColumns, sql } from 'drizzle-orm';
 
 export enum QueueType {
-  CATALOG_ETL = "catalog-etl",
-  CATALOG_ETL_WRITE_BATCH = "catalog-etl-write-batch",
+  CATALOG_ETL = 'catalog-etl',
+  CATALOG_ETL_WRITE_BATCH = 'catalog-etl-write-batch',
 }
 
 export interface BaseQueueMessage {
@@ -69,13 +69,7 @@ export async function queueCatalogETL({
   return jobId;
 }
 
-export async function processQueueBatch({
-  batch,
-  env,
-}: {
-  batch: any;
-  env: Env;
-}): Promise<void> {
+export async function processQueueBatch({ batch, env }: { batch: any; env: Env }): Promise<void> {
   for (const message of batch.messages) {
     try {
       const queueMessage: BaseQueueMessage = message.body;
@@ -83,7 +77,7 @@ export async function processQueueBatch({
       switch (queueMessage.type) {
         case QueueType.CATALOG_ETL:
           if (!env.ETL_QUEUE) {
-            throw new Error("ETL_QUEUE is not configured");
+            throw new Error('ETL_QUEUE is not configured');
           }
 
           await processCatalogETL({
@@ -103,7 +97,7 @@ export async function processQueueBatch({
           console.warn(`Unknown queue message type: ${queueMessage.type}`);
       }
     } catch (error) {
-      console.error("Error processing queue message:", error);
+      console.error('Error processing queue message:', error);
     }
   }
 }
@@ -129,11 +123,11 @@ async function processCatalogETL({
     } = env;
 
     const s3Client = new S3Client({
-      region: "auto",
+      region: 'auto',
       endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID || "",
-        secretAccessKey: R2_SECRET_ACCESS_KEY || "",
+        accessKeyId: R2_ACCESS_KEY_ID || '',
+        secretAccessKey: R2_SECRET_ACCESS_KEY || '',
       },
     });
 
@@ -141,7 +135,7 @@ async function processCatalogETL({
       new GetObjectCommand({
         Bucket: PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
         Key: objectKey,
-      })
+      }),
     );
 
     if (!object.Body) {
@@ -149,8 +143,8 @@ async function processCatalogETL({
     }
     const stream = object.Body as ReadableStream<Uint8Array>;
     const reader = stream.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let buffer = "";
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
 
     let isHeader = true;
     let fieldMap: Record<string, number> = {};
@@ -162,9 +156,7 @@ async function processCatalogETL({
       if (!trimmedLine) return;
 
       if (isHeader) {
-        const headers = parseCSVLine(trimmedLine).map((h) =>
-          h.trim().toLowerCase()
-        );
+        const headers = parseCSVLine(trimmedLine).map((h) => h.trim().toLowerCase());
         fieldMap = createFieldMap(headers);
         isHeader = false;
         console.log(`Processing ${filename} with field mapping:`, fieldMap);
@@ -190,9 +182,7 @@ async function processCatalogETL({
         };
         await env.ETL_QUEUE.send(writeMessage);
         totalQueued += batch.length;
-        console.log(
-          `ETL job ${jobId}: Queued ${totalQueued} items for writing`
-        );
+        console.log(`ETL job ${jobId}: Queued ${totalQueued} items for writing`);
         batch = [];
         // Yield to the event loop to avoid overwhelming the local dev queue.
         await new Promise((resolve) => setTimeout(resolve, 1));
@@ -210,8 +200,8 @@ async function processCatalogETL({
       }
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || ""; // Keep the last partial line
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep the last partial line
 
       for (const line of lines) {
         await processLine(line);
@@ -233,9 +223,7 @@ async function processCatalogETL({
       totalQueued += batch.length;
     }
 
-    console.log(
-      `ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`
-    );
+    console.log(`ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`);
   } catch (error) {
     console.error(`ETL job ${jobId} failed:`, error);
     throw error;
@@ -256,7 +244,7 @@ async function processCatalogETLWriteBatch({
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
-  let current = "";
+  let current = '';
   let inQuotes = false;
 
   for (let i = 0; i < line.length; i++) {
@@ -270,9 +258,9 @@ function parseCSVLine(line: string): string[] {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (char === "," && !inQuotes) {
+    } else if (char === ',' && !inQuotes) {
       result.push(current);
-      current = "";
+      current = '';
     } else {
       current += char;
     }
@@ -287,96 +275,87 @@ function createFieldMap(headers: string[]): Record<string, number> {
 
   const mappings = {
     name: [
-      "name",
-      "item_name",
-      "product_name",
-      "title",
-      "product",
-      "item",
-      "Name",
-      "PRODUCT_NAME",
-      "Title",
+      'name',
+      'item_name',
+      'product_name',
+      'title',
+      'product',
+      'item',
+      'Name',
+      'PRODUCT_NAME',
+      'Title',
     ],
     description: [
-      "description",
-      "desc",
-      "summary",
-      "info",
-      "product_description",
-      "Description",
-      "DESCRIPTION",
+      'description',
+      'desc',
+      'summary',
+      'info',
+      'product_description',
+      'Description',
+      'DESCRIPTION',
     ],
-    weight: ["weight", "weight_grams", "weight_oz", "wt", "mass"],
-    weightUnit: ["weight_unit"],
+    weight: ['weight', 'weight_grams', 'weight_oz', 'wt', 'mass'],
+    weightUnit: ['weight_unit'],
     category: [
-      "category",
-      "type",
-      "category_name",
-      "cat",
-      "product_category",
-      "product_type",
-      "Category",
-      "CATEGORY",
+      'category',
+      'type',
+      'category_name',
+      'cat',
+      'product_category',
+      'product_type',
+      'Category',
+      'CATEGORY',
     ],
     brand: [
-      "brand",
-      "manufacturer",
-      "company",
-      "make",
-      "brand_name",
-      "Brand",
-      "BRAND_NAME",
-      "Manufacturer",
+      'brand',
+      'manufacturer',
+      'company',
+      'make',
+      'brand_name',
+      'Brand',
+      'BRAND_NAME',
+      'Manufacturer',
     ],
-    model: ["model", "model_number", "part_number"],
-    sku: ["sku", "item_number", "product_id", "id", "item_id"],
-    productSku: ["product_sku"],
-    price: [
-      "price",
-      "cost",
-      "amount",
-      "price_usd",
-      "msrp",
-      "Price",
-      "PRICE",
-      "Cost",
-    ],
+    model: ['model', 'model_number', 'part_number'],
+    sku: ['sku', 'item_number', 'product_id', 'id', 'item_id'],
+    productSku: ['product_sku'],
+    price: ['price', 'cost', 'amount', 'price_usd', 'msrp', 'Price', 'PRICE', 'Cost'],
     image: [
-      "image",
-      "image_url",
-      "photo",
-      "picture",
-      "img",
-      "image_urls",
-      "photo_url",
-      "Image",
-      "IMAGE_URL",
+      'image',
+      'image_url',
+      'photo',
+      'picture',
+      'img',
+      'image_urls',
+      'photo_url',
+      'Image',
+      'IMAGE_URL',
     ],
-    url: ["url", "link", "website", "web", "href", "URL"],
-    productUrl: ["product_url", "PRODUCT_URL"],
-    color: ["color", "colour"],
-    size: ["size"],
-    material: ["material", "fabric"],
-    condition: ["condition"],
-    seller: ["seller", "vendor", "retailer"],
+    url: ['url', 'link', 'website', 'web', 'href', 'URL'],
+    productUrl: ['product_url', 'PRODUCT_URL'],
+    color: ['color', 'colour'],
+    size: ['size'],
+    material: ['material', 'fabric'],
+    condition: ['condition'],
+    seller: ['seller', 'vendor', 'retailer'],
     availability: [
-      "availability",
-      "stock",
-      "inventory_status",
-      "in_stock",
-      "quantity",
-      "Availability",
-      "AVAILABILITY",
+      'availability',
+      'stock',
+      'inventory_status',
+      'in_stock',
+      'quantity',
+      'Availability',
+      'AVAILABILITY',
     ],
-    currency: ["currency", "price_currency"],
-    ratingValue: ["rating", "rating_value", "stars", "average_rating"],
-    techs: ["techs"],
-    details: ["details"],
-    parameters: ["parameters"],
-    site: ["site"],
-    filename: ["filename"],
-    sourceFile: ["source_file"],
-    timestamp: ["cached_at", "exported_at", "created_at"],
+    currency: ['currency', 'price_currency'],
+    ratingValue: ['rating', 'rating_value', 'stars', 'average_rating'],
+    techs: ['techs'],
+    details: ['details'],
+    parameters: ['parameters'],
+    site: ['site'],
+    filename: ['filename'],
+    sourceFile: ['source_file'],
+    timestamp: ['cached_at', 'exported_at', 'created_at'],
   };
 
   for (const [dbField, csvVariants] of Object.entries(mappings)) {
@@ -401,8 +380,7 @@ function mapCsvRowToItem({
 }): Partial<NewCatalogItem> | null {
   const item: Partial<NewCatalogItem> = {};
 
-  const name =
-    fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
+  const name = fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
   if (!name) {
     return null; // A name is required
   }
@@ -410,52 +388,46 @@ function mapCsvRowToItem({
 
   const descriptionParts: string[] = [];
   if (fieldMap.description !== undefined && values[fieldMap.description]) {
-    descriptionParts.push(values[fieldMap.description].replace(/^"|"$/g, ""));
+    descriptionParts.push(values[fieldMap.description].replace(/^"|"$/g, ''));
   }
   if (fieldMap.details !== undefined && values[fieldMap.details]) {
-    descriptionParts.push(
-      `Details: ${values[fieldMap.details].replace(/^"|"$/g, "")}`
-    );
+    descriptionParts.push(`Details: ${values[fieldMap.details].replace(/^"|"$/g, '')}`);
   }
   if (fieldMap.parameters !== undefined && values[fieldMap.parameters]) {
-    descriptionParts.push(
-      `Parameters: ${parseAndFormatMultiString(values[fieldMap.parameters])}`
-    );
+    descriptionParts.push(`Parameters: ${parseAndFormatMultiString(values[fieldMap.parameters])}`);
   }
   if (descriptionParts.length > 0) {
-    item.description = descriptionParts.join("\n\n");
+    item.description = descriptionParts.join('\n\n');
   }
 
   // --- Direct Mappings ---
   const directMappings: (keyof NewCatalogItem)[] = [
-    "category",
-    "brand",
-    "model",
-    "url",
-    "productUrl",
-    "color",
-    "size",
-    "sku",
-    "productSku",
-    "availability",
-    "seller",
-    "material",
-    "currency",
-    "condition",
+    'category',
+    'brand',
+    'model',
+    'url',
+    'productUrl',
+    'color',
+    'size',
+    'sku',
+    'productSku',
+    'availability',
+    'seller',
+    'material',
+    'currency',
+    'condition',
   ];
   for (const key of directMappings) {
     const fieldIndex = fieldMap[key as string];
     if (fieldIndex !== undefined && values[fieldIndex]) {
       // @ts-expect-error - We are mapping strings to the correct keys
-      item[key] = values[fieldIndex].replace(/^"|"$/g, "").trim();
+      item[key] = values[fieldIndex].replace(/^"|"$/g, '').trim();
     }
   }
 
   // --- Transformed Mappings ---
-  const weightStr =
-    fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
-  const unitStr =
-    fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
+  const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
+  const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
 
   if (weightStr && parseFloat(weightStr) > 0) {
     const { weight, unit } = parseWeight(weightStr, unitStr);
@@ -463,33 +435,27 @@ function mapCsvRowToItem({
     item.defaultWeightUnit = unit;
   }
 
-  const priceStr =
-    fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
+  const priceStr = fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
   if (priceStr) {
     item.price = parsePrice(priceStr);
   }
 
-  const ratingStr =
-    fieldMap.ratingValue !== undefined
-      ? values[fieldMap.ratingValue]
-      : undefined;
+  const ratingStr = fieldMap.ratingValue !== undefined ? values[fieldMap.ratingValue] : undefined;
   if (ratingStr) {
     item.ratingValue = parseFloat(ratingStr) || null;
   }
 
-  let imageUrl =
-    fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
+  let imageUrl = fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
   if (imageUrl) {
     const parsedImage = parseJsonOrString(imageUrl);
     if (Array.isArray(parsedImage)) {
       item.image = parsedImage[0];
     } else {
-      item.image = parsedImage.split(",")[0].trim();
+      item.image = parsedImage.split(',')[0].trim();
     }
   }
 
-  const techsStr =
-    fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
+  const techsStr = fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
   if (techsStr) {
     try {
       const parsedTechs = JSON.parse(techsStr);
@@ -497,8 +463,7 @@ function mapCsvRowToItem({
 
       // Fallback weight parsing from techs
       if (!item.defaultWeight) {
-        const claimedWeight =
-          parsedTechs["Claimed Weight"] || parsedTechs["weight"];
+        const claimedWeight = parsedTechs['Claimed Weight'] || parsedTechs['weight'];
         if (claimedWeight) {
           const { weight, unit } = parseWeight(claimedWeight);
           item.defaultWeight = weight;
@@ -522,17 +487,17 @@ function parseJsonOrString(str: string): any {
 }
 
 function parseAndFormatMultiString(str: string): string {
-  if (!str) return "";
+  if (!str) return '';
   const parsed = parseJsonOrString(str);
   if (Array.isArray(parsed)) {
-    return parsed.join(", ");
+    return parsed.join(', ');
   }
   return parsed;
 }
 
 function parseWeight(
   weightStr: string,
-  unitStr?: string
+  unitStr?: string,
 ): { weight: number | null; unit: string | null } {
   if (!weightStr) return { weight: null, unit: null };
 
@@ -543,22 +508,22 @@ function parseWeight(
 
   const hint = (unitStr || weightStr).toLowerCase();
 
-  if (hint.includes("oz")) {
-    return { weight: Math.round(weightVal * 28.35), unit: "oz" };
+  if (hint.includes('oz')) {
+    return { weight: Math.round(weightVal * 28.35), unit: 'oz' };
   }
-  if (hint.includes("lb")) {
-    return { weight: Math.round(weightVal * 453.592), unit: "lb" };
+  if (hint.includes('lb')) {
+    return { weight: Math.round(weightVal * 453.592), unit: 'lb' };
   }
-  if (hint.includes("kg")) {
-    return { weight: weightVal * 1000, unit: "kg" };
+  if (hint.includes('kg')) {
+    return { weight: weightVal * 1000, unit: 'kg' };
   }
 
-  return { weight: weightVal, unit: "g" };
+  return { weight: weightVal, unit: 'g' };
 }
 
 function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
-  const price = parseFloat(priceStr.replace(/[^0-9.]/g, ""));
+  const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
   return isNaN(price) ? null : price;
 }
 
@@ -574,27 +539,20 @@ async function insertCatalogItems({
   jobId: string;
 }): Promise<void> {
   const db = createDbClient(env);
-  console.log(
-    `Job ${jobId}: Inserting ${items.length} catalog items for user ${userId}`
-  );
+  console.log(`Job ${jobId}: Inserting ${items.length} catalog items for user ${userId}`);
 
   if (items.length === 0) {
-    console.log(
-      `Job ${jobId}: All items were filtered out, nothing to insert.`
-    );
+    console.log(`Job ${jobId}: All items were filtered out, nothing to insert.`);
     return;
   }
 
   // Type predicate to ensure item has a name
-  const hasName = (item: Partial<NewCatalogItem>): item is NewCatalogItem =>
-    !!item.name;
+  const hasName = (item: Partial<NewCatalogItem>): item is NewCatalogItem => !!item.name;
 
   const records = items.filter(hasName);
 
   if (records.length === 0) {
-    console.log(
-      `Job ${jobId}: All items were filtered out, nothing to insert.`
-    );
+    console.log(`Job ${jobId}: All items were filtered out, nothing to insert.`);
     return;
   }
 
@@ -603,7 +561,7 @@ async function insertCatalogItems({
     const updateSet: Record<string, any> = {};
     for (const column of Object.values(columns)) {
       const colName = column.name as keyof NewCatalogItem;
-      if (colName !== "sku" && colName !== "createdAt" && colName !== "id") {
+      if (colName !== 'sku' && colName !== 'createdAt' && colName !== 'id') {
         updateSet[colName] = sql.raw(`excluded."${colName}"`);
       }
     }
@@ -613,12 +571,10 @@ async function insertCatalogItems({
       set: updateSet,
     });
 
-    console.log(
-      `Job ${jobId}: Successfully inserted/updated ${records.length} items.`
-    );
+    console.log(`Job ${jobId}: Successfully inserted/updated ${records.length} items.`);
   } catch (error) {
     console.error(`Job ${jobId}: Failed to insert batch for user ${userId}`);
-    console.error("Error:", error);
+    console.error('Error:', error);
     // Optionally re-throw or handle the error, e.g., send to a dead-letter queue
     throw error;
   }

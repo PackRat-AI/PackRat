@@ -24,7 +24,7 @@ export async function searchLocations(query: string): Promise<LocationSearchResu
  */
 export async function searchLocationsByCoordinates(
   latitude: number,
-  longitude: number
+  longitude: number,
 ): Promise<LocationSearchResult[]> {
   try {
     const response = await axiosInstance.get(`/api/weather/search-by-coordinates`, {

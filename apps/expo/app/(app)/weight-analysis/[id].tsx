@@ -50,7 +50,8 @@ export default function WeightAnalysisScreen() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
-        removeClippedSubviews={false}>
+        removeClippedSubviews={false}
+      >
         <View className="grid grid-cols-2 gap-3 p-4">
           <WeightCard title="Base Weight" weight={`${data.baseWeight} g`} className="col-span-1" />
           <WeightCard
@@ -100,8 +101,9 @@ export default function WeightAnalysisScreen() {
                   key={`${categoryIndex}-${itemIndex}`}
                   className={cn(
                     'flex-row items-center justify-between p-4',
-                    itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : ''
-                  )}>
+                    itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
+                  )}
+                >
                   <View>
                     <Text>{item.name}</Text>
                     {item.notes && (

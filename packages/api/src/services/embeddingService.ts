@@ -1,5 +1,5 @@
-import { createOpenAI } from "@ai-sdk/openai";
-import { embed, embedMany } from "ai";
+import { createOpenAI } from '@ai-sdk/openai';
+import { embed, embedMany } from 'ai';
 
 type GenerateEmbeddingBaseParams = {
   openAiApiKey: string;
@@ -18,10 +18,10 @@ export const generateEmbedding = async ({
   });
 
   // OpenAI recommends replacing newlines with spaces for best results
-  const input = value.replace(/\n/g, " ");
+  const input = value.replace(/\n/g, ' ');
 
   const { embedding } = await embed({
-    model: openai.embedding("text-embedding-3-small"),
+    model: openai.embedding('text-embedding-3-small'),
     value: input,
   });
 
@@ -41,7 +41,7 @@ export const generateManyEmbeddings = async ({
   });
 
   const { embeddings } = await embedMany({
-    model: openai.embedding("text-embedding-3-small"),
+    model: openai.embedding('text-embedding-3-small'),
     values,
   });
 

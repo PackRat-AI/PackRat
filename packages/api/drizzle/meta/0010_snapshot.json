@@ -45,13 +45,9 @@
         "auth_providers_user_id_users_id_fk": {
           "name": "auth_providers_user_id_users_id_fk",
           "tableFrom": "auth_providers",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -280,13 +276,9 @@
         "one_time_passwords_user_id_users_id_fk": {
           "name": "one_time_passwords_user_id_users_id_fk",
           "tableFrom": "one_time_passwords",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -415,39 +407,27 @@
         "pack_items_pack_id_packs_id_fk": {
           "name": "pack_items_pack_id_packs_id_fk",
           "tableFrom": "pack_items",
-          "columnsFrom": [
-            "pack_id"
-          ],
+          "columnsFrom": ["pack_id"],
           "tableTo": "packs",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "pack_items_catalog_item_id_catalog_items_id_fk": {
           "name": "pack_items_catalog_item_id_catalog_items_id_fk",
           "tableFrom": "pack_items",
-          "columnsFrom": [
-            "catalog_item_id"
-          ],
+          "columnsFrom": ["catalog_item_id"],
           "tableTo": "catalog_items",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "pack_items_user_id_users_id_fk": {
           "name": "pack_items_user_id_users_id_fk",
           "tableFrom": "pack_items",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -505,26 +485,18 @@
         "weight_history_user_id_users_id_fk": {
           "name": "weight_history_user_id_users_id_fk",
           "tableFrom": "weight_history",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "weight_history_pack_id_packs_id_fk": {
           "name": "weight_history_pack_id_packs_id_fk",
           "tableFrom": "weight_history",
-          "columnsFrom": [
-            "pack_id"
-          ],
+          "columnsFrom": ["pack_id"],
           "tableTo": "packs",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -627,13 +599,9 @@
         "packs_user_id_users_id_fk": {
           "name": "packs_user_id_users_id_fk",
           "tableFrom": "packs",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -697,13 +665,9 @@
         "refresh_tokens_user_id_users_id_fk": {
           "name": "refresh_tokens_user_id_users_id_fk",
           "tableFrom": "refresh_tokens",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -712,9 +676,7 @@
       "uniqueConstraints": {
         "refresh_tokens_token_unique": {
           "name": "refresh_tokens_token_unique",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "nullsNotDistinct": false
         }
       },
@@ -801,26 +763,18 @@
         "reported_content_user_id_users_id_fk": {
           "name": "reported_content_user_id_users_id_fk",
           "tableFrom": "reported_content",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         },
         "reported_content_reviewed_by_users_id_fk": {
           "name": "reported_content_reviewed_by_users_id_fk",
           "tableFrom": "reported_content",
-          "columnsFrom": [
-            "reviewed_by"
-          ],
+          "columnsFrom": ["reviewed_by"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -900,9 +854,7 @@
       "uniqueConstraints": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "nullsNotDistinct": false
         }
       },

@@ -118,8 +118,9 @@ function ListHeaderComponent() {
             variant="largeTitle"
             className={cn(
               'font-medium text-white dark:text-background',
-              Platform.OS === 'ios' && 'dark:text-foreground'
-            )}>
+              Platform.OS === 'ios' && 'dark:text-foreground',
+            )}
+          >
             {initials}
           </Text>
         </AvatarFallback>
@@ -154,7 +155,8 @@ function ListFooterComponent() {
         }}
         size="lg"
         variant={Platform.select({ ios: 'primary', default: 'secondary' })}
-        className="border-border bg-card">
+        className="border-border bg-card"
+      >
         {isLoading ? (
           <ActivityIndicator className="text-destructive" />
         ) : (

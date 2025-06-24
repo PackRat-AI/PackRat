@@ -13,11 +13,11 @@ import { userStore } from 'expo-app/features/auth/store';
 // Function to get a presigned URL for uploading
 const getPresignedUrl = async (
   fileName: string,
-  contentType: string
+  contentType: string,
 ): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
   try {
     const response = await axiosInstance.get(
-      `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`
+      `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`,
     );
     return {
       url: response.data.url,
@@ -49,7 +49,7 @@ const uploadImage = async (fileName: string): Promise<void> => {
         headers: {
           'Content-Type': type,
         },
-      }
+      },
     );
 
     if (uploadResult.status >= 300) {
@@ -134,7 +134,7 @@ syncObservable(
         clearInterval(intervalId);
       };
     },
-  })
+  }),
 );
 
 export function getPackItems(id: string) {

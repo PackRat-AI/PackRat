@@ -147,7 +147,8 @@ export default function OneTimePasswordScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerClassName="flex-1 px-8"
         style={{ paddingBottom: insets.bottom, paddingTop: headerHeight }}
-        extraKeyboardSpace={-insets.bottom + 12}>
+        extraKeyboardSpace={-insets.bottom + 12}
+      >
         <View className="flex-1 justify-center gap-3">
           <View className="items-center pb-1">
             <Image source={LOGO_SOURCE} className="h-10 w-10 rounded-md" resizeMode="contain" />
@@ -187,7 +188,8 @@ export default function OneTimePasswordScreen() {
               <Animated.View
                 key="resend-in"
                 entering={Platform.select({ ios: FadeIn })}
-                layout={Platform.select({ ios: LinearTransition })}>
+                layout={Platform.select({ ios: LinearTransition })}
+              >
                 <Text variant="caption1" className="font-normal opacity-70">
                   Resend in {countdown} second{countdown > 1 ? 's' : ''}
                 </Text>
@@ -196,7 +198,8 @@ export default function OneTimePasswordScreen() {
               <Animated.View
                 key="resend"
                 entering={Platform.select({ ios: FadeIn.duration(500) })}
-                layout={Platform.select({ ios: LinearTransition })}>
+                layout={Platform.select({ ios: LinearTransition })}
+              >
                 <Pressable className="active:opacity-70" onPress={resendCode} disabled={isLoading}>
                   <Text className="text-xs font-semibold opacity-90">Resend</Text>
                 </Pressable>

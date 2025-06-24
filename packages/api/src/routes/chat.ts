@@ -1,14 +1,11 @@
-import { getWeatherData } from "@packrat/api/services/getWeatherData";
-import { Env } from "@packrat/api/types/env";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import { getItemDetails, getPackDetails } from "@packrat/api/utils/DbUtils";
-import { createOpenAI } from "@ai-sdk/openai";
-import { streamText } from "ai";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { env } from "hono/adapter";
+import { getWeatherData } from '@packrat/api/services/getWeatherData';
+import { Env } from '@packrat/api/types/env';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { getItemDetails, getPackDetails } from '@packrat/api/utils/DbUtils';
+import { createOpenAI } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { env } from 'hono/adapter';
 import { reportedContent } from '@packrat/api/db/schema';
 import { eq } from 'drizzle-orm';
 import { createDb } from '@packrat/api/db';
@@ -102,7 +99,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
         // Get unique categories
         const categories = Array.from(
-          new Set(pack.items.map((item) => item.category || 'Uncategorized'))
+          new Set(pack.items.map((item) => item.category || 'Uncategorized')),
         );
 
         systemPrompt = `
@@ -184,8 +181,7 @@ chatRoutes.post('/reports', async (c) => {
 
   const db = createDb(c);
 
-  const { messageId, userQuery, aiResponse, reason, userComment } =
-    await c.req.json();
+  const { messageId, userQuery, aiResponse, reason, userComment } = await c.req.json();
 
   // Insert the reported content into the database
   await db.insert(reportedContent).values({

@@ -46,7 +46,8 @@ export default function NameScreen() {
                 className="ios:px-0"
                 disabled={!canSave}
                 variant="plain"
-                onPress={router.back}>
+                onPress={router.back}
+              >
                 <Text className={cn(canSave && 'text-primary')}>Save</Text>
               </Button>
             ),
@@ -59,7 +60,8 @@ export default function NameScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: insets.bottom }}>
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+      >
         <Form className="gap-5 px-4 pt-8">
           <FormSection materialIconProps={{ name: 'person-outline' }}>
             <FormItem>
@@ -110,7 +112,8 @@ export default function NameScreen() {
               <Button
                 className={cn('px-6', !canSave && 'bg-muted')}
                 disabled={!canSave}
-                onPress={router.back}>
+                onPress={router.back}
+              >
                 <Text>Save</Text>
               </Button>
             </View>

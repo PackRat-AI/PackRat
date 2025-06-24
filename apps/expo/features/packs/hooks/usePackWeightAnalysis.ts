@@ -40,7 +40,7 @@ export function usePackWeightAnalysis(packId: string) {
       baseWeight: pack.baseWeight,
       consumableWeight: convertFromGrams(
         consumableWeightInGrams,
-        userStore.preferredWeightUnit.peek() ?? 'g'
+        userStore.preferredWeightUnit.peek() ?? 'g',
       ),
       wornWeight: convertFromGrams(wornWeightInGrams, userStore.preferredWeightUnit.peek() ?? 'g'),
       totalWeight: pack.totalWeight,

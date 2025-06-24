@@ -63,7 +63,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
             // Canceled
             break;
         }
-      }
+      },
     );
   };
 
@@ -73,9 +73,10 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
         <View
           className={cn(
             'border-border/10 mb-4 overflow-hidden rounded-2xl border',
-            pressed ? 'opacity-80' : 'opacity-100'
+            pressed ? 'opacity-80' : 'opacity-100',
           )}
-          style={{ backgroundColor: getCardColor(location, colors) }}>
+          style={{ backgroundColor: getCardColor(location, colors) }}
+        >
           <View className="flex-row items-center justify-between p-4">
             <View className="flex-1">
               <View className="flex-row items-center">

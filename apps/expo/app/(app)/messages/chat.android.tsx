@@ -63,7 +63,7 @@ export default function ChatAndroid() {
       height: interpolate(
         progress.value,
         [0, 1],
-        [52 + insets.bottom, insets.bottom + textInputHeight.value - 2]
+        [52 + insets.bottom, insets.bottom + textInputHeight.value - 2],
       ),
     };
   });
@@ -83,7 +83,8 @@ export default function ChatAndroid() {
             backgroundColor: isDarkColorScheme ? colors.background : colors.card,
           },
         ]}
-        behavior="padding">
+        behavior="padding"
+      >
         <FlashList
           inverted
           extraData={selectedMessages}
@@ -148,16 +149,19 @@ function Header() {
       style={{
         paddingTop: insets.top,
         height: HEADER_HEIGHT + insets.top,
-      }}>
+      }}
+    >
       <View
         style={{ height: HEADER_HEIGHT }}
-        className="ios:gap-0 ios:px-4 flex-row items-center justify-between gap-2 px-3 pb-2">
+        className="ios:gap-0 ios:px-4 flex-row items-center justify-between gap-2 px-3 pb-2"
+      >
         <View className="flex-row items-center">
           <Button
             variant="plain"
             size="icon"
             className="ios:justify-start opacity-70"
-            onPress={router.back}>
+            onPress={router.back}
+          >
             <Icon
               size={24}
               color={colors.foreground}
@@ -169,7 +173,8 @@ function Header() {
           <Button
             variant="plain"
             androidRootClassName="rounded-md"
-            className="ios:px-0 min-h-10 flex-row items-center justify-start gap-3 rounded-md px-0">
+            className="ios:px-0 min-h-10 flex-row items-center justify-start gap-3 rounded-md px-0"
+          >
             {!HAS_MESSAGES_FROM_OTHER && (
               <Avatar alt="avatar">
                 <AvatarFallback className="bg-primary/60">
@@ -198,7 +203,8 @@ function Header() {
           <Button
             variant="plain"
             size="icon"
-            className="ios:active:opacity-50 rotate-90 opacity-70">
+            className="ios:active:opacity-50 rotate-90 opacity-70"
+          >
             <Icon size={24} name="dots-horizontal" color={colors.foreground} />
           </Button>
         </View>
@@ -260,8 +266,9 @@ function ChatBubble({
           variant={item.reactions.love?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
             'ios:rounded-full rounded-full',
-            item.reactions.love?.includes(ME) && 'bg-primary/30'
-          )}>
+            item.reactions.love?.includes(ME) && 'bg-primary/30',
+          )}
+        >
           <Text variant="title1">😍</Text>
         </Button>
         <Button
@@ -269,8 +276,9 @@ function ChatBubble({
           variant={item.reactions.like?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
             'ios:rounded-full rounded-full',
-            item.reactions.like?.includes(ME) && 'bg-primary/30'
-          )}>
+            item.reactions.like?.includes(ME) && 'bg-primary/30',
+          )}
+        >
           <Text variant="title1">👍</Text>
         </Button>
         <Button
@@ -278,8 +286,9 @@ function ChatBubble({
           variant={item.reactions.dislike?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
             'ios:rounded-full rounded-full',
-            item.reactions.surprised?.includes(ME) && 'bg-primary/30'
-          )}>
+            item.reactions.surprised?.includes(ME) && 'bg-primary/30',
+          )}
+        >
           <Text variant="title1">😮</Text>
         </Button>
         <Button
@@ -287,8 +296,9 @@ function ChatBubble({
           variant={item.reactions.dislike?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
             'ios:rounded-full rounded-full',
-            item.reactions.dislike?.includes(ME) && 'bg-primary/30'
-          )}>
+            item.reactions.dislike?.includes(ME) && 'bg-primary/30',
+          )}
+        >
           <Text variant="title1">👎</Text>
         </Button>
         <Button
@@ -296,8 +306,9 @@ function ChatBubble({
           variant={item.reactions.sad?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
             'ios:rounded-full rounded-full',
-            item.reactions.sad?.includes(ME) && 'bg-primary/30'
-          )}>
+            item.reactions.sad?.includes(ME) && 'bg-primary/30',
+          )}
+        >
           <Text variant="title1">😢</Text>
         </Button>
         <Button
@@ -305,8 +316,9 @@ function ChatBubble({
           variant={item.reactions.angry?.includes(ME) ? 'primary' : 'plain'}
           className={cn(
             'ios:rounded-full rounded-full',
-            item.reactions.angry?.includes(ME) && 'bg-primary/20'
-          )}>
+            item.reactions.angry?.includes(ME) && 'bg-primary/20',
+          )}
+        >
           <Text variant="title1">😡</Text>
         </Button>
       </View>
@@ -345,12 +357,14 @@ function ChatBubble({
       className={cn(
         'justify-center px-2 pb-3.5',
         isSameNextSender ? 'pb-1' : 'pb-3.5',
-        item.sender === ME ? 'items-end pl-16' : 'items-start pr-16'
-      )}>
+        item.sender === ME ? 'items-end pl-16' : 'items-start pr-16',
+      )}
+    >
       <View>
         {item.attachments.length > 0 ? (
           <View
-            className={cn('flex-row items-center gap-2', item.sender === ME && 'flex-row-reverse')}>
+            className={cn('flex-row items-center gap-2', item.sender === ME && 'flex-row-reverse')}
+          >
             {item.sender !== ME && (
               <Avatar alt="avatar">
                 <AvatarFallback className="bg-primary/60">
@@ -367,7 +381,8 @@ function ChatBubble({
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
                 items={Platform.select({ ios: CONTEXT_MENU_ITEMS, default: [] })}
                 materialOverlayClassName="bg-black/0"
-                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}>
+                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
+              >
                 <Pressable
                   onLongPress={initSelectedMessages}
                   onPress={onItemPress}
@@ -376,8 +391,9 @@ function ChatBubble({
                     isSelected && 'bg-primary',
                     isSamePreviousSender &&
                       (item.sender === ME ? 'rounded-tr-md' : 'rounded-tl-md'),
-                    isSameNextSender && (item.sender === ME ? 'rounded-br-md' : 'rounded-bl-md')
-                  )}>
+                    isSameNextSender && (item.sender === ME ? 'rounded-br-md' : 'rounded-bl-md'),
+                  )}
+                >
                   <Image
                     source={{ uri: item.attachments[0].url }}
                     style={{
@@ -397,8 +413,9 @@ function ChatBubble({
                 <View
                   className={cn(
                     'bg-card dark:bg-background absolute -bottom-6 rounded-full p-px',
-                    item.sender === ME ? 'right-0' : 'left-0'
-                  )}>
+                    item.sender === ME ? 'right-0' : 'left-0',
+                  )}
+                >
                   <View className="bg-primary/15 dark:bg-primary/50 h-7 w-7 items-center justify-center rounded-full">
                     <Text variant="footnote">😍</Text>
                   </View>
@@ -426,7 +443,8 @@ function ChatBubble({
                 style={{ borderRadius: 20, marginBottom: 2 }}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
                 materialOverlayClassName="bg-black/0"
-                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}>
+                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
+              >
                 <Pressable onLongPress={initSelectedMessages} onPress={onItemPress}>
                   <View
                     style={BORDER_CURVE}
@@ -437,8 +455,9 @@ function ChatBubble({
                       isSelected && 'bg-primary dark:bg-primary',
                       isSamePreviousSender &&
                         (item.sender === ME ? 'rounded-tr-md' : 'rounded-tl-md'),
-                      isSameNextSender && (item.sender === ME ? 'rounded-br-md' : 'rounded-bl-md')
-                    )}>
+                      isSameNextSender && (item.sender === ME ? 'rounded-br-md' : 'rounded-bl-md'),
+                    )}
+                  >
                     <Text className={cn(isSelected && 'text-white')}>{item.text}</Text>
                   </View>
                 </Pressable>
@@ -447,8 +466,9 @@ function ChatBubble({
                 <View
                   className={cn(
                     'bg-card dark:bg-background absolute -bottom-6 rounded-full p-px',
-                    item.sender === ME ? 'right-0' : 'left-12'
-                  )}>
+                    item.sender === ME ? 'right-0' : 'left-12',
+                  )}
+                >
                   <View className="bg-primary/15 dark:bg-primary/50 h-7 w-7 items-center justify-center rounded-full">
                     <Text variant="footnote">😍</Text>
                   </View>
@@ -462,8 +482,9 @@ function ChatBubble({
             className={cn(
               'px-1 pt-0.5',
               item.sender === ME ? 'items-end' : 'pl-14',
-              item.reactions.love?.includes(ME) && 'pt-7'
-            )}>
+              item.reactions.love?.includes(ME) && 'pt-7',
+            )}
+          >
             <Text variant="caption2" className="text-muted-foreground font-normal">
               {item.time}
             </Text>
@@ -494,7 +515,7 @@ function Composer({
   function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
     textInputHeight.value = Math.max(
       Math.min(event.nativeEvent.contentSize.height, 280),
-      Platform.select({ ios: 24, default: 44 })
+      Platform.select({ ios: 24, default: 44 }),
     );
   }
 
@@ -534,17 +555,20 @@ function Composer({
   return (
     <View
       className="bg-card dark:bg-background absolute bottom-0 left-0 right-0 z-50"
-      style={{ paddingBottom: insets.bottom }}>
+      style={{ paddingBottom: insets.bottom }}
+    >
       <View className="flex-row items-end gap-0.5 py-2 pl-2 pr-4">
         {showOptions || Platform.OS === 'ios' ? (
           <Animated.View
             key="options-container"
             entering={FadeIn.duration(200).delay(150)}
-            className="flex-row">
+            className="flex-row"
+          >
             <Button
               variant="plain"
               size="icon"
-              className="ios:rounded-full ios:active:opacity-50 rounded-full opacity-70">
+              className="ios:rounded-full ios:active:opacity-50 rounded-full opacity-70"
+            >
               <Icon
                 ios={{ name: 'plus.circle' }}
                 materialIcon={{ type: 'MaterialCommunityIcons', name: 'plus-circle-outline' }}
@@ -555,7 +579,8 @@ function Composer({
               <Button
                 variant="plain"
                 size="icon"
-                className="ios:rounded-full ios:active:opacity-50 rounded-full opacity-70">
+                className="ios:rounded-full ios:active:opacity-50 rounded-full opacity-70"
+              >
                 <Icon name="image-outline" color={colors.foreground} />
               </Button>
             )}
@@ -566,7 +591,8 @@ function Composer({
               onPress={() => setShowOptions(true)}
               variant="plain"
               size="icon"
-              className="ios:rounded-full ios:active:opacity-50 rounded-full opacity-70">
+              className="ios:rounded-full ios:active:opacity-50 rounded-full opacity-70"
+            >
               <Icon name="chevron-right" color={colors.foreground} />
             </Button>
           </Animated.View>
@@ -576,8 +602,9 @@ function Composer({
           layout={Platform.OS === 'ios' ? undefined : LinearTransition.duration(200)}
           className={cn(
             'bg-muted/25 flex-1 overflow-hidden rounded-3xl',
-            Platform.OS === 'ios' && 'dark:bg-muted/50'
-          )}>
+            Platform.OS === 'ios' && 'dark:bg-muted/50',
+          )}
+        >
           <TextInput
             placeholder="Text Message"
             style={TEXT_INPUT_STYLE}
@@ -603,14 +630,16 @@ function Composer({
               onPress={sendMessage}
               size="icon"
               variant="plain"
-              className="ios:rounded-full ios:pt-1 w-11 rounded-full">
+              className="ios:rounded-full ios:pt-1 w-11 rounded-full"
+            >
               <Icon name="send" size={22} color={colors.primary} />
             </Button>
           ) : (
             <Button
               size="icon"
               variant="plain"
-              className="ios:rounded-full w-11 rounded-full opacity-60">
+              className="ios:rounded-full w-11 rounded-full opacity-60"
+            >
               <Icon name="microphone" size={22} color={colors.foreground} />
             </Button>
           )}
@@ -642,7 +671,8 @@ function SelectMessagesHeader({
         style={{
           height: HEADER_HEIGHT + insets.top,
         }}
-        className="bg-card absolute left-0 right-0 top-0 justify-end px-3 pb-4 shadow-xl">
+        className="bg-card absolute left-0 right-0 top-0 justify-end px-3 pb-4 shadow-xl"
+      >
         <View className="flex-row items-center justify-between gap-4">
           <Button size="icon" variant="plain" onPress={clearSelectedMessages}>
             <Icon name="close" size={24} color={colors.primary} />

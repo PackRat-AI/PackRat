@@ -14,7 +14,7 @@ syncObservable(
       name: 'user',
       plugin: observablePersistSqlite(Storage),
     },
-  })
+  }),
 );
 
 export const userSyncState = syncState(userStore);

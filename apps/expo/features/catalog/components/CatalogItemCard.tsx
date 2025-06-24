@@ -13,7 +13,8 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm">
+      className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm"
+    >
       <View className="flex-row">
         <Image
           source={{

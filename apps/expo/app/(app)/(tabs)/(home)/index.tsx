@@ -186,7 +186,8 @@ export default function DashboardScreen() {
                       onPress={() => {
                         setSearchValue('');
                         searchBarRef.current?.clearText();
-                      }}>
+                      }}
+                    >
                       <Component />
                     </Pressable>
                   );

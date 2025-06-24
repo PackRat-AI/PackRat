@@ -41,7 +41,7 @@ function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>
     <ListItem
       className={cn(
         'ios:pl-0 pl-2',
-        info.index === 0 && 'ios:border-t-0 border-border/25 dark:border-border/80 border-t'
+        info.index === 0 && 'ios:border-t-0 border-border/25 dark:border-border/80 border-t',
       )}
       titleClassName="text-lg"
       leftView={info.item.leftView}
