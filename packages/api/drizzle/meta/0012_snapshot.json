@@ -1,5 +1,5 @@
 {
-  "id": "c2a8c4c5-efb4-464e-bad8-931c87c71fbd",
+  "id": "258f29e2-5856-4a7e-bdc6-676ea044216c",
   "prevId": "3838b0af-0392-4f66-a7cd-bee467416ed4",
   "version": "7",
   "dialect": "postgresql",
@@ -225,35 +225,18 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "embedding": {
-          "name": "embedding",
-          "type": "vector(1536)",
-          "primaryKey": false,
-          "notNull": false
         }
       },
-      "indexes": {
-        "embeddingIndex": {
-          "name": "embeddingIndex",
-          "columns": [
-            {
-              "expression": "embedding",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last",
-              "opclass": "vector_cosine_ops"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "hnsw",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "catalog_items_sku_unique": {
+          "name": "catalog_items_sku_unique",
+          "nullsNotDistinct": false,
+          "columns": ["sku"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
