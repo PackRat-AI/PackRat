@@ -1,4 +1,4 @@
-import { Pack, WeightUnit } from '../types';
+import type { Pack, WeightUnit } from '../types';
 import { convertFromGrams } from './convertFromGrams';
 import { convertToGrams } from './convertToGrams';
 

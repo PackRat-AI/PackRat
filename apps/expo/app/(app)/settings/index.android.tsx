@@ -1,4 +1,4 @@
-import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { Platform, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,12 @@ import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { Button } from 'nativewindui/Button';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { List, ListDataItem, ListRenderItemInfo, ListSectionHeader } from 'nativewindui/List';
+import {
+  List,
+  type ListDataItem,
+  type ListRenderItemInfo,
+  ListSectionHeader,
+} from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';

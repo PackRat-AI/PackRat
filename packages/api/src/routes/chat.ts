@@ -1,5 +1,5 @@
 import { getWeatherData } from '@packrat/api/services/getWeatherData';
-import { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getItemDetails, getPackDetails } from '@packrat/api/utils/DbUtils';
 import { createOpenAI } from '@ai-sdk/openai';

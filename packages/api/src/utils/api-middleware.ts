@@ -1,5 +1,5 @@
-import { User } from '@packrat/api/db/schema';
-import { Context } from 'hono';
+import type { User } from '@packrat/api/db/schema';
+import type { Context } from 'hono';
 import { verifyJWT } from './auth';
 
 export async function authenticateRequest(

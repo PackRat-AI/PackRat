@@ -24,7 +24,7 @@ import { ContextMenu } from 'nativewindui/ContextMenu';
 import { createContextItem } from 'nativewindui/ContextMenu/utils';
 import { DropdownMenu } from 'nativewindui/DropdownMenu';
 import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { List, ListItem, ListRenderItemInfo } from 'nativewindui/List';
+import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { Toolbar, ToolbarCTA } from 'nativewindui/Toolbar';
 import { cn } from 'expo-app/lib/cn';

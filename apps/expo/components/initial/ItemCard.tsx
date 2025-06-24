@@ -1,4 +1,4 @@
-import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { Image, Pressable, Text, View } from 'react-native';
 import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';

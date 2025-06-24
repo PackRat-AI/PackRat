@@ -1,4 +1,4 @@
-import { Queue } from '@cloudflare/workers-types';
+import type { Queue } from '@cloudflare/workers-types';
 
 export type Env = {
   EMAIL_PROVIDER: string;

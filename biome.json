@@ -6,7 +6,20 @@
     "useIgnoreFile": false
   },
   "files": {
-    "ignoreUnknown": true
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/build",
+      "!**/out",
+      "!**/public",
+      "!**/.next",
+      "!**/.wrangler",
+      "!**/*.gen.ts",
+      "!**/vite.config.ts.timestamp-*.mjs",
+      "!**/src/codegen"
+    ]
   },
   "formatter": {
     "enabled": true,

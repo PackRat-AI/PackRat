@@ -7,7 +7,7 @@ import {
   refreshTokens,
   users,
 } from '@packrat/api/db/schema';
-import { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import {
   generateJWT,

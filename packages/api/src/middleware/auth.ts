@@ -1,5 +1,5 @@
-import { Env } from '@packrat/api/types/env';
-import { MiddlewareHandler } from 'hono';
+import type { Env } from '@packrat/api/types/env';
+import type { MiddlewareHandler } from 'hono';
 import { env } from 'hono/adapter';
 import { verify } from 'hono/jwt';
 

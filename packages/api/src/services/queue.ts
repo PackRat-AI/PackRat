@@ -1,7 +1,7 @@
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { Queue } from '@cloudflare/workers-types';
-import { NewCatalogItem, catalogItems } from '@packrat/api/db/schema';
-import { Env } from '@packrat/api/types/env';
+import type { Queue } from '@cloudflare/workers-types';
+import { type NewCatalogItem, catalogItems } from '@packrat/api/db/schema';
+import type { Env } from '@packrat/api/types/env';
 import { getTableColumns, sql } from 'drizzle-orm';
 
 export enum QueueType {
@@ -445,7 +445,7 @@ function mapCsvRowToItem({
     item.ratingValue = parseFloat(ratingStr) || null;
   }
 
-  let imageUrl = fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
+  const imageUrl = fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
   if (imageUrl) {
     const parsedImage = parseJsonOrString(imageUrl);
     if (Array.isArray(parsedImage)) {

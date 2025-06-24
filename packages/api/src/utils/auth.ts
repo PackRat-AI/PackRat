@@ -1,9 +1,9 @@
-import { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/types/env';
 import * as bcrypt from 'bcryptjs';
-import { Context } from 'hono';
+import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 import { sign, verify } from 'hono/jwt';
-import { JWTPayload } from 'hono/utils/jwt/types';
+import type { JWTPayload } from 'hono/utils/jwt/types';
 import { randomBytes } from 'node:crypto';
 
 // Generate a random token

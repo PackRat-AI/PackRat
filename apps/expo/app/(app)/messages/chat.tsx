@@ -6,14 +6,14 @@ import * as React from 'react';
 import {
   Dimensions,
   Image,
-  NativeSyntheticEvent,
+  type NativeSyntheticEvent,
   Platform,
   Pressable,
   TextInput,
-  TextInputContentSizeChangeEventData,
-  TextStyle,
+  type TextInputContentSizeChangeEventData,
+  type TextStyle,
   View,
-  ViewStyle,
+  type ViewStyle,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
@@ -24,7 +24,7 @@ import {
 import Animated, {
   clamp,
   interpolate,
-  SharedValue,
+  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -34,7 +34,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
 import { Button } from 'nativewindui/Button';
 import { ContextMenu } from 'nativewindui/ContextMenu';
-import { ContextMenuRef } from 'nativewindui/ContextMenu/types';
+import type { ContextMenuRef } from 'nativewindui/ContextMenu/types';
 import { createContextItem } from 'nativewindui/ContextMenu/utils';
 import { Text } from 'nativewindui/Text';
 import { cn } from 'expo-app/lib/cn';

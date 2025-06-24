@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { PackItem } from '../types';
-import { CatalogItem } from 'expo-app/features/catalog/types';
+import type { PackItem } from '../types';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 
 // API function

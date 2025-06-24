@@ -1,4 +1,4 @@
-import { type PackWithItems } from '@packrat/api/db/schema';
+import type { PackWithItems } from '@packrat/api/db/schema';
 import type { WeightUnit } from '@packrat/api/types';
 
 // Convert weights to a standard unit (grams) for calculations

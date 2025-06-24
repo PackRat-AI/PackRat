@@ -1,7 +1,7 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packItems, packs, users } from '@packrat/api/db/schema';
 import { eq, inArray } from 'drizzle-orm';
-import { Context } from 'hono';
+import type { Context } from 'hono';
 
 // Get pack details from the database
 export async function getPackDetails({ packId, c }: { packId: string; c: Context }) {

@@ -5,14 +5,14 @@ import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import {
   Image,
-  NativeSyntheticEvent,
+  type NativeSyntheticEvent,
   Platform,
   Pressable,
   TextInput,
-  TextInputContentSizeChangeEventData,
-  TextStyle,
+  type TextInputContentSizeChangeEventData,
+  type TextStyle,
   View,
-  ViewStyle,
+  type ViewStyle,
 } from 'react-native';
 import {
   KeyboardAvoidingView,
@@ -24,7 +24,7 @@ import Animated, {
   FadeOut,
   interpolate,
   LinearTransition,
-  SharedValue,
+  type SharedValue,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';

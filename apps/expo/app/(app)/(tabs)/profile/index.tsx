@@ -18,7 +18,7 @@ import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { Alert } from 'nativewindui/Alert';
 import { useRef } from 'react';
-import { AlertRef } from 'nativewindui/Alert/types';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 

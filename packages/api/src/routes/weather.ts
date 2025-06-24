@@ -1,4 +1,4 @@
-import { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { env } from 'hono/adapter';

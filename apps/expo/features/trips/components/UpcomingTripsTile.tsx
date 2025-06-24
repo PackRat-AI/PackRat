@@ -6,7 +6,7 @@ import { Text } from 'nativewindui/Text';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Alert } from 'nativewindui/Alert';
 import { useRef } from 'react';
-import { AlertRef } from 'nativewindui/Alert/types';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { featureFlags } from 'expo-app/config';
 
 export function UpcomingTripsTile() {

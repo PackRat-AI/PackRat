@@ -1,5 +1,5 @@
-import { Env } from '@packrat/api/types/env';
-import { Context } from 'hono';
+import type { Env } from '@packrat/api/types/env';
+import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 import { Resend } from 'resend';
 

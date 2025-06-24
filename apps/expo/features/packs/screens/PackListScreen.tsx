@@ -21,7 +21,7 @@ import type { Pack, PackCategory } from '../types';
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { useCallback, useRef } from 'react';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
-import { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
+import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
 
 type FilterOption = {
   label: string;

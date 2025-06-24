@@ -1,4 +1,4 @@
-import { CatalogItem, PackItem } from '../db/schema';
+import type { CatalogItem, PackItem } from '../db/schema';
 
 type ItemForEmbedding =
   | Partial<CatalogItem>

@@ -1,8 +1,15 @@
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Icon, IconProps } from '@roninoss/icons';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Icon, type IconProps } from '@roninoss/icons';
 import { Tabs } from 'expo-router';
-import * as React from 'react';
-import { Platform, Pressable, PressableProps, StyleProp, View, ViewStyle } from 'react-native';
+import type * as React from 'react';
+import {
+  Platform,
+  Pressable,
+  type PressableProps,
+  type StyleProp,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import Animated, { useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

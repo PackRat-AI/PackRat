@@ -32,7 +32,7 @@ import { Checkbox } from 'nativewindui/Checkbox';
 import { DropdownMenu } from 'nativewindui/DropdownMenu';
 import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { List, ListItem, ListRenderItemInfo } from 'nativewindui/List';
+import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { Toolbar } from 'nativewindui/Toolbar';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';

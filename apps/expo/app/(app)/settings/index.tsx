@@ -1,4 +1,4 @@
-import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { View } from 'react-native';
 
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
@@ -6,9 +6,9 @@ import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import {
   ESTIMATED_ITEM_HEIGHT,
   List,
-  ListDataItem,
+  type ListDataItem,
   ListItem,
-  ListRenderItemInfo,
+  type ListRenderItemInfo,
   ListSectionHeader,
 } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';

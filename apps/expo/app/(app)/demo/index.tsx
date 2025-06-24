@@ -3,7 +3,7 @@ import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
-import * as React from 'react';
+import type * as React from 'react';
 import { useState } from 'react';
 import { Linking, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

@@ -4,7 +4,7 @@ import React from 'react';
 import { Platform, ScrollView, View } from 'react-native';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 import { Alert } from 'nativewindui/Alert';
-import { AlertRef } from 'nativewindui/Alert/types';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 
 import { Text } from 'nativewindui/Text';

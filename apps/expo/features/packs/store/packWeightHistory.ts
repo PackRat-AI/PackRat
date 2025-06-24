@@ -4,7 +4,7 @@ import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { syncObservable } from '@legendapp/state/sync';
 import Storage from 'expo-sqlite/kv-store';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
-import { PackWeightHistoryEntry } from '../types';
+import type { PackWeightHistoryEntry } from '../types';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { packItemsStore } from './packItems';
 import { nanoid } from 'nanoid/non-secure';

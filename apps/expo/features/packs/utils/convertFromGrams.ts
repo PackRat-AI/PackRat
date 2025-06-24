@@ -1,4 +1,4 @@
-import { WeightUnit } from '../types';
+import type { WeightUnit } from '../types';
 
 export const convertFromGrams = (grams: number, unit: WeightUnit): number => {
   switch (unit) {
