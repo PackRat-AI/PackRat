@@ -1,5 +1,5 @@
 {
-  "id": "c016e0d6-fdc8-4f02-ad49-5d373ea7388b",
+  "id": "0b1f7362-225f-47bd-8807-f22e86033fd5",
   "prevId": "02601cb8-cf7f-46a4-bbda-85222ab31aef",
   "version": "7",
   "dialect": "postgresql",
@@ -45,15 +45,15 @@
         "auth_providers_user_id_users_id_fk": {
           "name": "auth_providers_user_id_users_id_fk",
           "tableFrom": "auth_providers",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -234,15 +234,7 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "catalog_items_sku_unique": {
-          "name": "catalog_items_sku_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "sku"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -288,15 +280,15 @@
         "one_time_passwords_user_id_users_id_fk": {
           "name": "one_time_passwords_user_id_users_id_fk",
           "tableFrom": "one_time_passwords",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -423,41 +415,41 @@
         "pack_items_pack_id_packs_id_fk": {
           "name": "pack_items_pack_id_packs_id_fk",
           "tableFrom": "pack_items",
-          "tableTo": "packs",
           "columnsFrom": [
             "pack_id"
           ],
+          "tableTo": "packs",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "pack_items_catalog_item_id_catalog_items_id_fk": {
           "name": "pack_items_catalog_item_id_catalog_items_id_fk",
           "tableFrom": "pack_items",
-          "tableTo": "catalog_items",
           "columnsFrom": [
             "catalog_item_id"
           ],
+          "tableTo": "catalog_items",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "pack_items_user_id_users_id_fk": {
           "name": "pack_items_user_id_users_id_fk",
           "tableFrom": "pack_items",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -513,28 +505,28 @@
         "weight_history_user_id_users_id_fk": {
           "name": "weight_history_user_id_users_id_fk",
           "tableFrom": "weight_history",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         },
         "weight_history_pack_id_packs_id_fk": {
           "name": "weight_history_pack_id_packs_id_fk",
           "tableFrom": "weight_history",
-          "tableTo": "packs",
           "columnsFrom": [
             "pack_id"
           ],
+          "tableTo": "packs",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -635,15 +627,15 @@
         "packs_user_id_users_id_fk": {
           "name": "packs_user_id_users_id_fk",
           "tableFrom": "packs",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -705,25 +697,25 @@
         "refresh_tokens_user_id_users_id_fk": {
           "name": "refresh_tokens_user_id_users_id_fk",
           "tableFrom": "refresh_tokens",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "refresh_tokens_token_unique": {
           "name": "refresh_tokens_token_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "token"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -809,28 +801,28 @@
         "reported_content_user_id_users_id_fk": {
           "name": "reported_content_user_id_users_id_fk",
           "tableFrom": "reported_content",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "reported_content_reviewed_by_users_id_fk": {
           "name": "reported_content_reviewed_by_users_id_fk",
           "tableFrom": "reported_content",
-          "tableTo": "users",
           "columnsFrom": [
             "reviewed_by"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -908,10 +900,10 @@
       "uniqueConstraints": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -921,10 +913,10 @@
   },
   "enums": {},
   "schemas": {},
+  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

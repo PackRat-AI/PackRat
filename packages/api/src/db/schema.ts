@@ -1,6 +1,7 @@
 import { InferInsertModel, InferSelectModel, relations } from "drizzle-orm";
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -9,6 +10,7 @@ import {
   text,
   timestamp,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
 
 // User table
@@ -19,7 +21,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash"),
   firstName: text("first_name"),
   lastName: text("last_name"),
-  role: text('role').default('USER'), // 'USER', 'ADMIN'
+  role: text("role").default("USER"), // 'USER', 'ADMIN'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -81,84 +83,103 @@ export const packs = pgTable("packs", {
 });
 
 // Catalog items table
-export const catalogItems = pgTable('catalog_items', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  defaultWeight: real('default_weight'),
-  defaultWeightUnit: text('default_weight_unit'),
-  category: text('category'),
-  image: text('image'),
-  brand: text('brand'),
-  model: text('model'),
-  url: text('url'),
-  ratingValue: real('rating_value'),
-  productUrl: text('product_url'),
-  color: text('color'),
-  size: text('size'),
-  sku: text('sku').unique(),
-  price: real('price'),
-  availability: text('availability'),
-  seller: text('seller'),
-  productSku: text('product_sku'),
-  material: text('material'),
-  currency: text('currency'),
-  condition: text('condition'),
-  techs: jsonb('techs').$type<Record<string, string>>(),
-  links: jsonb('links').$type<
-    Array<{
-      id: string;
-      title: string;
-      url: string;
-      type: string;
-    }>
-  >(),
-  reviews: jsonb("reviews").$type<
-    Array<{
-      id: string;
-      userId: string;
-      userName: string;
-      userAvatar: string;
-      rating: number;
-      text: string;
-      date: string;
-      helpful: number;
-      verified: boolean;
-    }>
-  >(),
+export const catalogItems = pgTable(
+  "catalog_items",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    defaultWeight: real("default_weight"),
+    defaultWeightUnit: text("default_weight_unit"),
+    category: text("category"),
+    image: text("image"),
+    brand: text("brand"),
+    model: text("model"),
+    url: text("url"),
+    ratingValue: real("rating_value"),
+    productUrl: text("product_url"),
+    color: text("color"),
+    size: text("size"),
+    sku: text("sku"),
+    price: real("price"),
+    availability: text("availability"),
+    seller: text("seller"),
+    productSku: text("product_sku"),
+    material: text("material"),
+    currency: text("currency"),
+    condition: text("condition"),
+    techs: jsonb("techs").$type<Record<string, string>>(),
+    links: jsonb("links").$type<
+      Array<{
+        id: string;
+        title: string;
+        url: string;
+        type: string;
+      }>
+    >(),
+    reviews: jsonb("reviews").$type<
+      Array<{
+        id: string;
+        userId: string;
+        userName: string;
+        userAvatar: string;
+        rating: number;
+        text: string;
+        date: string;
+        helpful: number;
+        verified: boolean;
+      }>
+    >(),
+    embedding: vector("embedding", { dimensions: 1536 }),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    embeddingIndex: index("embedding_idx").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops")
+    ),
+  })
+);
 
 // Pack items table
-export const packItems = pgTable("pack_items", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  weight: real("weight").notNull(),
-  weightUnit: text("weight_unit").notNull(),
-  quantity: integer("quantity").default(1).notNull(),
-  category: text("category"),
-  consumable: boolean("consumable").default(false),
-  worn: boolean("worn").default(false),
-  image: text("image"),
-  notes: text("notes"),
-  packId: text("pack_id")
-    .references(() => packs.id, { onDelete: "cascade" })
-    .notNull(),
-  catalogItemId: integer("catalog_item_id").references(() => catalogItems.id),
-  userId: integer("user_id")
-    .references(() => users.id)
-    .notNull(),
-  templateItemId: text("template_item_id").references(
-    () => packTemplateItems.id,
-  ),
-
-  deleted: boolean("deleted").default(false),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+export const packItems = pgTable(
+  "pack_items",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    weight: real("weight").notNull(),
+    weightUnit: text("weight_unit").notNull(),
+    quantity: integer("quantity").default(1).notNull(),
+    category: text("category"),
+    consumable: boolean("consumable").default(false),
+    worn: boolean("worn").default(false),
+    image: text("image"),
+    notes: text("notes"),
+    packId: text("pack_id")
+      .references(() => packs.id, { onDelete: "cascade" })
+      .notNull(),
+    catalogItemId: integer("catalog_item_id").references(() => catalogItems.id),
+    userId: integer("user_id")
+      .references(() => users.id)
+      .notNull(),
+    deleted: boolean("deleted").default(false),
+    templateItemId: text("template_item_id").references(
+      () => packTemplateItems.id
+    ),
+    embedding: vector("embedding", { dimensions: 1536 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    embeddingIndex: index("pack_items_embedding_idx").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops")
+    ),
+  })
+);
 
 export const packWeightHistory = pgTable("weight_history", {
   id: text("id").primaryKey(),
@@ -256,7 +277,7 @@ export const packWeightHistoryRelations = relations(
       fields: [packWeightHistory.packId],
       references: [packs.id],
     }),
-  }),
+  })
 );
 
 // Reported content table
@@ -287,7 +308,7 @@ export const reportedContentRelations = relations(
       fields: [reportedContent.reviewedBy],
       references: [users.id],
     }),
-  }),
+  })
 );
 
 export const packTemplatesRelations = relations(
@@ -298,7 +319,7 @@ export const packTemplatesRelations = relations(
       references: [users.id],
     }),
     items: many(packTemplateItems),
-  }),
+  })
 );
 
 export const packTemplateItemsRelations = relations(
@@ -316,7 +337,7 @@ export const packTemplateItemsRelations = relations(
       fields: [packTemplateItems.catalogItemId],
       references: [catalogItems.id],
     }),
-  }),
+  })
 );
 
 // Infer models from tables
