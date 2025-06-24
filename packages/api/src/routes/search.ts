@@ -1,20 +1,17 @@
-import { cosineDistance, desc, gt, sql } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { env } from "hono/adapter";
-import { Env } from "../types/env";
-import { createDb } from "../db";
-import { catalogItems } from "../db/schema";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "../utils/api-middleware";
-import { generateEmbedding } from "../services/embeddingService";
+import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { env } from 'hono/adapter';
+import type { Env } from '../types/env';
+import { createDb } from '../db';
+import { catalogItems } from '../db/schema';
+import { authenticateRequest, unauthorizedResponse } from '../utils/api-middleware';
+import { generateEmbedding } from '../services/embeddingService';
 
 const searchRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 const searchVectorRoute = createRoute({
-  method: "get",
-  path: "/vector",
+  method: 'get',
+  path: '/vector',
   request: {
     query: z.object({
       q: z.string().min(1),
@@ -22,13 +19,13 @@ const searchVectorRoute = createRoute({
   },
   responses: {
     200: {
-      description: "Search similar catalog items",
+      description: 'Search similar catalog items',
     },
     401: {
-      description: "Unauthorized",
+      description: 'Unauthorized',
     },
     500: {
-      description: "Internal Server Error",
+      description: 'Internal Server Error',
     },
   },
 });
@@ -50,13 +47,10 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
     });
 
     if (!embedding) {
-      return c.json({ error: "Failed to generate embedding" }, 500);
+      return c.json({ error: 'Failed to generate embedding' }, 500);
     }
 
-    const similarity = sql<number>`1 - (${cosineDistance(
-      catalogItems.embedding,
-      embedding,
-    )})`;
+    const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
 
     const similarItems = await db
       .select({
@@ -71,7 +65,7 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
 
     return c.json(similarItems);
   } catch (err) {
-    return c.json({ error: "Vector search failed" }, 500);
+    return c.json({ error: 'Vector search failed' }, 500);
   }
 });
 

@@ -1,25 +1,22 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { createDb } from "@packrat/api/db";
-import { catalogItems } from "@packrat/api/db/schema";
-import { generateEmbedding } from "@packrat/api/services/embeddingService";
-import type { Env } from "@packrat/api/types/env";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import { getEmbeddingText } from "@packrat/api/utils/embeddingHelper";
-import { and, eq, like, sql } from "drizzle-orm";
-import { env } from "hono/adapter";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { catalogItems } from '@packrat/api/db/schema';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import type { Env } from '@packrat/api/types/env';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { and, eq, like, sql } from 'drizzle-orm';
+import { env } from 'hono/adapter';
 
 const catalogListRoutes = new OpenAPIHono();
 
 const listGetRoute = createRoute({
-  method: "get",
-  path: "/",
+  method: 'get',
+  path: '/',
   request: {
     query: z.object({ id: z.string().optional() }),
   },
-  responses: { 200: { description: "Get catalog items" } },
+  responses: { 200: { description: 'Get catalog items' } },
 });
 
 catalogListRoutes.openapi(listGetRoute, async (c) => {
@@ -31,7 +28,7 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
     }
 
     const db = createDb(c);
-    const id = c.req.query("id");
+    const id = c.req.query('id');
 
     if (id) {
       // Get a specific catalog item
@@ -40,7 +37,7 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
       });
 
       if (!item) {
-        return c.json({ error: "Catalog item not found" }, { status: 404 });
+        return c.json({ error: 'Catalog item not found' }, { status: 404 });
       }
 
       return c.json(item);
@@ -50,22 +47,22 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
       return c.json(items);
     }
   } catch (error) {
-    console.error("Error fetching catalog items:", error);
-    return c.json({ error: "Failed to fetch catalog items" }, { status: 500 });
+    console.error('Error fetching catalog items:', error);
+    return c.json({ error: 'Failed to fetch catalog items' }, { status: 500 });
   }
 });
 
 const listPostRoute = createRoute({
-  method: "post",
-  path: "/",
+  method: 'post',
+  path: '/',
   request: {
     body: {
       content: {
-        "application/json": { schema: z.any() },
+        'application/json': { schema: z.any() },
       },
     },
   },
-  responses: { 200: { description: "Create catalog item" } },
+  responses: { 200: { description: 'Create catalog item' } },
 });
 
 catalogListRoutes.openapi(listPostRoute, async (c) => {
@@ -80,7 +77,7 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
     const { OPENAI_API_KEY } = env<Env>(c);
 
     if (!OPENAI_API_KEY) {
-      return c.json({ error: "OpenAI API key not configured" }, 500);
+      return c.json({ error: 'OpenAI API key not configured' }, 500);
     }
 
     // Generate embedding
@@ -125,8 +122,8 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
 
     return c.json(newItem);
   } catch (error) {
-    console.error("Error creating catalog item:", error);
-    return c.json({ error: "Failed to create catalog item" }, { status: 500 });
+    console.error('Error creating catalog item:', error);
+    return c.json({ error: 'Failed to create catalog item' }, { status: 500 });
   }
 });
 
