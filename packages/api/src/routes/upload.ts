@@ -1,12 +1,12 @@
-import { Env } from "@/types/env";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { Env } from "@packrat/api/types/env";
 import {
   authenticateRequest,
   unauthorizedResponse,
 } from "@packrat/api/utils/api-middleware";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { Env } from "@packrat/api/types/env";
 import { env } from "hono/adapter";
-
 
 const uploadRoutes = new OpenAPIHono();
 
@@ -34,7 +34,7 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
     R2_ACCESS_KEY_ID,
     R2_SECRET_ACCESS_KEY,
     CLOUDFLARE_ACCOUNT_ID,
-    R2_BUCKET_NAME,
+    PACKRAT_BUCKET_R2_BUCKET_NAME,
   } = env<Env>(c);
 
   try {
@@ -82,15 +82,15 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
       url: presignedUrl,
     });
   } catch (error) {
-    c.get('sentry').setContext('upload-params', {
-      fileName: c.req.query('fileName'),
-      contentType: c.req.query('contentType'),
-      bucketName: R2_BUCKET_NAME,
+    c.get("sentry").setContext("upload-params", {
+      fileName: c.req.query("fileName"),
+      contentType: c.req.query("contentType"),
+      bucketName: PACKRAT_BUCKET_R2_BUCKET_NAME,
       accountId: CLOUDFLARE_ACCOUNT_ID,
       r2AccessKeyId: !!R2_ACCESS_KEY_ID,
       r2SecretAccessKey: !!R2_SECRET_ACCESS_KEY,
     });
-    throw error; 
+    throw error;
   }
 });
 

@@ -1,8 +1,7 @@
-import { createDbClient } from "@/db";
-import { NewCatalogItem, catalogItems } from "@/db/schema";
-import { Env } from "@/types/env";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Queue } from "@cloudflare/workers-types";
+import { NewCatalogItem, catalogItems } from "@packrat/api/db/schema";
+import { Env } from "@packrat/api/types/env";
 import { getTableColumns, sql } from "drizzle-orm";
 
 export enum QueueType {

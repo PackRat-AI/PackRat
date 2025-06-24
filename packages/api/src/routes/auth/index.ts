@@ -27,7 +27,7 @@ import { and, eq, gt, isNull } from 'drizzle-orm';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { OAuth2Client } from 'google-auth-library';
 import { env } from 'hono/adapter';
-import { Env } from '@/types/env';
+import { Env } from '@packrat/api/types/env';
 
 const authRoutes = new OpenAPIHono();
 
@@ -113,10 +113,6 @@ authRoutes.openapi(loginRoute, async (c) => {
         emailVerified: userRecord.emailVerified,
       },
     });
-  } catch (error) {
-    console.error('Login error:', error);
-    return c.json({ error: 'An error occurred during login' }, 500);
-  }
 });
 
 // Register route
@@ -240,7 +236,6 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
           gt(oneTimePasswords.expiresAt, new Date())
         )
       )
-    )
     .limit(1);
 
   if (verificationCode.length === 0) {
@@ -288,13 +283,6 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
         emailVerified: true,
       },
     });
-  } catch (error) {
-    console.error('Email verification error:', error);
-    return c.json(
-      { error: 'An error occurred during email verification' },
-      500
-    );
-  }
 });
 
 // Resend verification route
