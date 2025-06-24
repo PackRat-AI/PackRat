@@ -1,14 +1,14 @@
 import { InferInsertModel, InferSelectModel, relations } from "drizzle-orm";
 import {
-  pgTable,
-  serial,
-  text,
   boolean,
-  timestamp,
   integer,
   jsonb,
-  varchar,
+  pgTable,
   real,
+  serial,
+  text,
+  timestamp,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 // User table
@@ -81,31 +81,31 @@ export const packs = pgTable("packs", {
 });
 
 // Catalog items table
-export const catalogItems = pgTable("catalog_items", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  defaultWeight: real("default_weight"),
-  defaultWeightUnit: text("default_weight_unit"),
-  category: text("category"),
-  image: text("image"),
-  brand: text("brand"),
-  model: text("model"),
-  url: text("url"),
-  ratingValue: real("rating_value"),
-  productUrl: text("product_url"),
-  color: text("color"),
-  size: text("size"),
-  sku: text("sku"),
-  price: real("price"),
-  availability: text("availability"),
-  seller: text("seller"),
-  productSku: text("product_sku"),
-  material: text("material"),
-  currency: text("currency"),
-  condition: text("condition"),
-  techs: jsonb("techs").$type<Record<string, string>>(),
-  links: jsonb("links").$type<
+export const catalogItems = pgTable('catalog_items', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  defaultWeight: real('default_weight'),
+  defaultWeightUnit: text('default_weight_unit'),
+  category: text('category'),
+  image: text('image'),
+  brand: text('brand'),
+  model: text('model'),
+  url: text('url'),
+  ratingValue: real('rating_value'),
+  productUrl: text('product_url'),
+  color: text('color'),
+  size: text('size'),
+  sku: text('sku').unique(),
+  price: real('price'),
+  availability: text('availability'),
+  seller: text('seller'),
+  productSku: text('product_sku'),
+  material: text('material'),
+  currency: text('currency'),
+  condition: text('condition'),
+  techs: jsonb('techs').$type<Record<string, string>>(),
+  links: jsonb('links').$type<
     Array<{
       id: string;
       title: string;

@@ -13,9 +13,13 @@ const bindings = {
   WEATHER_API_KEY: 'key',
   OPENWEATHER_KEY: 'key',
   CLOUDFLARE_ACCOUNT_ID: 'id',
-  R2_ACCESS_KEY_ID: 'key',
-  R2_SECRET_ACCESS_KEY: 'key',
-  R2_BUCKET_NAME: 'bucket'
+  PACKRAT_BUCKET_R2_ACCESS_KEY_ID: 'key',
+  PACKRAT_BUCKET_R2_SECRET_ACCESS_KEY: 'key',
+  PACKRAT_BUCKET_R2_BUCKET_NAME: 'bucket',
+  PACKRAT_ITEMS_BUCKET_R2_ACCESS_KEY_ID: 'key',
+  PACKRAT_ITEMS_BUCKET_R2_SECRET_ACCESS_KEY: 'key',
+  PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME: 'bucket',
+  ETL_QUEUE: 'queue'
 }
 
 Object.assign(process.env, bindings)

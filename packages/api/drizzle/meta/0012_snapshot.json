@@ -1,6 +1,6 @@
 {
-  "id": "d86d61af-c81d-4ba8-81dc-5c4a25389707",
-  "prevId": "02601cb8-cf7f-46a4-bbda-85222ab31aef",
+  "id": "258f29e2-5856-4a7e-bdc6-676ea044216c",
+  "prevId": "3838b0af-0392-4f66-a7cd-bee467416ed4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -234,7 +234,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "catalog_items_sku_unique": {
+          "name": "catalog_items_sku_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "sku"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -575,18 +583,6 @@
           "notNull": false,
           "default": false
         },
-        "local_created_at": {
-          "name": "local_created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "local_updated_at": {
-          "name": "local_updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -684,13 +680,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "is_public": {
-          "name": "is_public",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": true
-        },
         "image": {
           "name": "image",
           "type": "text",
@@ -702,6 +691,13 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "is_app_template": {
+          "name": "is_app_template",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
         },
         "deleted": {
           "name": "deleted",
@@ -1191,6 +1187,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'USER'"
         },
         "created_at": {
           "name": "created_at",

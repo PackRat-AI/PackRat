@@ -195,13 +195,32 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
           },
         });
 
-        const command = new DeleteObjectCommand({
-          Bucket: R2_BUCKET_NAME,
-          Key: oldImage,
-        });
+        // Nothing to delete if old image is null
+        if (oldImage) {
+          const {
+            PACKRAT_BUCKET_R2_ACCESS_KEY_ID,
+            PACKRAT_BUCKET_R2_SECRET_ACCESS_KEY,
+            CLOUDFLARE_ACCOUNT_ID,
+            PACKRAT_BUCKET_R2_BUCKET_NAME,
+          } = env<Env>(c);
 
-        await s3Client.send(command);
-      } catch (error) {
+          const s3Client = new S3Client({
+            region: "auto",
+            endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            credentials: {
+              accessKeyId: PACKRAT_BUCKET_R2_ACCESS_KEY_ID || "",
+              secretAccessKey: PACKRAT_BUCKET_R2_SECRET_ACCESS_KEY || "",
+            },
+          });
+
+          const command = new DeleteObjectCommand({
+            Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
+            Key: oldImage,
+          });
+
+          await s3Client.send(command);
+        }
+      } catch {
         // Silently fail because this op shouldn't prevent the update
         console.error('Error deleting old image from R2:', error);
         const sentry = c.get('sentry');

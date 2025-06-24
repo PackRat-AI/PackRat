@@ -2,12 +2,12 @@ import { authMiddleware } from "@/middleware";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { authRoutes } from "./auth";
 import { catalogRoutes } from "./catalog";
-import { chatRoutes } from './chat';
+import { chatRoutes } from "./chat";
 import { packsRoutes } from "./packs";
-import { weatherRoutes } from './weather';
-import { uploadRoutes } from './upload';
+import { uploadRoutes } from "./upload";
 import { userRoutes } from "./user";
-import { packTemplatesRoutes } from "./packTemplates";
+import { weatherRoutes } from "./weather";
+// import { packTemplatesRoutes } from "./packTemplates";
 
 const publicRoutes = new OpenAPIHono();
 
@@ -21,9 +21,9 @@ protectedRoutes.use(authMiddleware);
 // Mount protected routes
 protectedRoutes.route("/catalog", catalogRoutes);
 protectedRoutes.route("/packs", packsRoutes);
-protectedRoutes.route("/pack-templates", packTemplatesRoutes);
-protectedRoutes.route('/chat', chatRoutes);
-publicRoutes.route('/weather', weatherRoutes);
+protectedRoutes.route("/chat", chatRoutes);
+protectedRoutes.route("/weather", weatherRoutes);
+// protectedRoutes.route("/pack-templates", packTemplatesRoutes);
 protectedRoutes.route("/user", userRoutes);
 protectedRoutes.route("/upload", uploadRoutes);
 

@@ -1,26 +1,20 @@
 {
   "name": "packrat-monorepo",
   "version": "2.0.0",
-  "devDependencies": {
-    "@manypkg/cli": "^0.23.0",
-    "@types/bun": "latest",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.8.2"
-  },
-  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "clean:all": "bun run --cwd apps/* clean && bun run --cwd packages/* clean",
     "clean": "bun run clean:all && bunx rimraf node_modules",
     "check:deps": "manypkg check",
     "fix:deps": "bun manypkg fix",
+    "check-types": "tsc --noEmit",
+    "check-types-watch": "tsc --noEmit --watch",
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
-    "server": "cd server && bun dev"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "server"
-  ]
+    "api": "bun run --cwd packages/api dev"
+  }
 }
