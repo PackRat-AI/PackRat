@@ -16,7 +16,7 @@ import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { TextField } from 'nativewindui/TextField';
 import { useCreatePack, useUpdatePack } from '../hooks';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import type { Pack, PackCategory } from '../types';
 import { Button } from 'nativewindui/Button';
 // Define Zod schema

@@ -1,4 +1,4 @@
-import { Env } from "@/types/env";
+import { Env } from "@packrat/api/types/env";
 import * as bcrypt from "bcryptjs";
 import { Context } from "hono";
 import { env } from "hono/adapter";

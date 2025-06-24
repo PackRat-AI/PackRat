@@ -1,12 +1,12 @@
-import LandingHero from "@/components/sections/landing-hero"
-import FeatureSection from "@/components/sections/feature-section"
-import HowItWorksSection from "@/components/sections/how-it-works"
-import TestimonialsSection from "@/components/sections/testimonials"
-import DownloadSection from "@/components/sections/download"
-import FaqSection from "@/components/sections/faq"
-import IntegrationSection from "@/components/sections/integration-section"
-import TopographyBackground from "@/components/ui/topography-background"
-import AdvancedGridBackground from "@/components/ui/advanced-grid-background"
+import LandingHero from "landing-app/components/sections/landing-hero"
+import FeatureSection from "landing-app/components/sections/feature-section"
+import HowItWorksSection from "landing-app/components/sections/how-it-works"
+import TestimonialsSection from "landing-app/components/sections/testimonials"
+import DownloadSection from "landing-app/components/sections/download"
+import FaqSection from "landing-app/components/sections/faq"
+import IntegrationSection from "landing-app/components/sections/integration-section"
+import TopographyBackground from "landing-app/components/ui/topography-background"
+import AdvancedGridBackground from "landing-app/components/ui/advanced-grid-background"
 
 export default function Home() {
   return (

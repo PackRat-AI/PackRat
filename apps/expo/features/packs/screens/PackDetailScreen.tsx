@@ -5,19 +5,19 @@ import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-n
 
 import { useDeletePack, usePackDetails } from '../hooks';
 
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { Chip } from '~/components/initial/Chip';
-import { WeightBadge } from '~/components/initial/WeightBadge';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { Chip } from 'expo-app/components/initial/Chip';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { Alert } from 'nativewindui/Alert';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { isAuthed } from '~/features/auth/store';
-import { PackItemCard } from '~/features/packs/components/PackItemCard';
-import { PackItemSuggestions } from '~/features/packs/components/PackItemSuggestions';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { NotFoundScreen } from '~/screens/NotFoundScreen';
-import type { PackItem } from '~/types';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
+import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
+import type { PackItem } from 'expo-app/types';
 
 export function PackDetailScreen() {
   const router = useRouter();

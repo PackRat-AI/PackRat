@@ -1,4 +1,4 @@
-import type { Pack, WeightUnit } from '~/types';
+import type { Pack, WeightUnit } from 'expo-app/types';
 
 // Convert weights to a standard unit (grams) for calculations
 const convertToGrams = (weight: number, unit: WeightUnit): number => {

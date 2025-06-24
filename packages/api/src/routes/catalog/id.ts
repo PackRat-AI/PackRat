@@ -1,13 +1,13 @@
-import { createDb } from "@/db";
-import { catalogItems } from "@/db/schema";
-import { generateEmbedding } from "@/services/embeddingService";
-import { Env } from "@/types/env";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createDb } from "@packrat/api/db";
+import { catalogItems } from "@packrat/api/db/schema";
+import { generateEmbedding } from "@packrat/api/services/embeddingService";
+import { Env } from "@packrat/api/types/env";
 import {
   authenticateRequest,
   unauthorizedResponse,
-} from "@/utils/api-middleware";
-import { getEmbeddingText } from "@/utils/embeddingHelper";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+} from "@packrat/api/utils/api-middleware";
+import { getEmbeddingText } from "@packrat/api/utils/embeddingHelper";
 import { eq } from "drizzle-orm";
 import { env } from "hono/adapter";
 

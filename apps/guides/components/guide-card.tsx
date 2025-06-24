@@ -1,9 +1,9 @@
 import Link from "next/link"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardFooter, CardHeader } from "guides-app/components/ui/card"
+import { Badge } from "guides-app/components/ui/badge"
 import { format } from "date-fns"
 import { Clock, Calendar, MountainSnow } from "lucide-react"
-import type { Post } from "@/lib/types"
+import type { Post } from "guides-app/lib/types"
 
 export default function GuideCard({ post }: { post: Post }) {
   return (

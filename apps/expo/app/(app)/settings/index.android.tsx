@@ -9,8 +9,8 @@ import { Button } from 'nativewindui/Button';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { List, ListDataItem, ListRenderItemInfo, ListSectionHeader } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 export default function SettingsAndroidStyleScreen() {
   const insets = useSafeAreaInsets();

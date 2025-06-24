@@ -1,6 +1,6 @@
-import { routes } from "@/routes";
-import { processQueueBatch } from "@/services/queue";
-import { Env } from "@/types/env";
+import { routes } from "@packrat/api/routes";
+import { processQueueBatch } from "@packrat/api/services/queue";
+import { Env } from "@packrat/api/types/env";
 import { MessageBatch } from "@cloudflare/workers-types";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";

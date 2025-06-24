@@ -4,10 +4,10 @@ import { View, ScrollView } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { userStore } from '~/features/auth/store';
-import { usePackDetails } from '~/features/packs/hooks/usePackDetails';
-import { computeCategorySummaries } from '~/features/packs/utils';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { userStore } from 'expo-app/features/auth/store';
+import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
+import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 function CategoryCard({
   category,

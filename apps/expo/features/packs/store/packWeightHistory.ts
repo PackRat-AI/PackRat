@@ -1,11 +1,11 @@
 import { observable, syncState } from '@legendapp/state';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { syncObservable } from '@legendapp/state/sync';
 import Storage from 'expo-sqlite/kv-store';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { PackWeightHistoryEntry } from '../types';
-import { isAuthed } from '~/features/auth/store';
+import { isAuthed } from 'expo-app/features/auth/store';
 import { packItemsStore } from './packItems';
 import { nanoid } from 'nanoid/non-secure';
 import { computePackWeights } from '../utils';

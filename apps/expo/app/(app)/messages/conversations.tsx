@@ -35,8 +35,8 @@ import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { List, ListItem, ListRenderItemInfo } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
 import { Toolbar } from 'nativewindui/Toolbar';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { cn } from '~/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
 
 export default function ConversationsIosScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();

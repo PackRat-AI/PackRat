@@ -1,4 +1,4 @@
-import type { CatalogItem, PackItem, WeightUnit } from '~/types';
+import type { CatalogItem, PackItem, WeightUnit } from 'expo-app/types';
 
 /**
  * Checks if an item is a pack item

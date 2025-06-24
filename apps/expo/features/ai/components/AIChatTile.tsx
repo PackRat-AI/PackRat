@@ -3,9 +3,9 @@ import { Href, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { isAuthed } from '~/features/auth/store';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 export function AIChatTile() {
   const router = useRouter();

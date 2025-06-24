@@ -6,8 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { List, ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 // Mock data for upcoming trips with hardcoded dates
 const UPCOMING_TRIPS = [

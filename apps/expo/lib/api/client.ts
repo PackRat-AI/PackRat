@@ -4,8 +4,8 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from 'axios';
-import { store } from '~/atoms/store';
-import { tokenAtom, refreshTokenAtom } from '~/features/auth/atoms/authAtoms';
+import { store } from 'expo-app/atoms/store';
+import { tokenAtom, refreshTokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import * as SecureStore from 'expo-secure-store';
 
 // Define base API URL based on environment

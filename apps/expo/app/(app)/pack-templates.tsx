@@ -4,7 +4,7 @@ import { colors } from 'react-native-keyboard-controller/lib/typescript/componen
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 // Mock data for pack templates
 const PACK_TEMPLATES = [

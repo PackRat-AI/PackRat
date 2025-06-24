@@ -1,5 +1,5 @@
-import { LucideIcon } from "@/lib/icons"
-import { cn } from "@/lib/utils"
+import { LucideIcon } from "landing-app/lib/icons"
+import { cn } from "landing-app/lib/utils"
 
 interface FeatureCardProps {
   title: string

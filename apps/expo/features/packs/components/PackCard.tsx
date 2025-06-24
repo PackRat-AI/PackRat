@@ -1,12 +1,12 @@
 import { isArray } from 'radash';
 import { Image, Pressable, Text, View } from 'react-native';
 import type { Pack } from '../types';
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { WeightBadge } from '~/components/initial/WeightBadge';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { Icon } from '@roninoss/icons';
 import { Alert } from 'nativewindui/Alert';
 import { Button } from 'nativewindui/Button';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useDeletePack, usePackDetails } from '../hooks';
 
 type PackCardProps = {

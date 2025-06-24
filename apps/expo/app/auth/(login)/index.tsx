@@ -14,9 +14,9 @@ import { Button } from 'nativewindui/Button';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
-import { useAuth } from '~/features/auth/hooks/useAuth';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for login validation
 const loginFormSchema = z.object({

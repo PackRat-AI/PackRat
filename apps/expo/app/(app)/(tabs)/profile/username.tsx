@@ -8,7 +8,7 @@ import { Button } from 'nativewindui/Button';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
-import { cn } from '~/lib/cn';
+import { cn } from 'expo-app/lib/cn';
 
 export default function UsernameScreen() {
   const insets = useSafeAreaInsets();

@@ -5,12 +5,12 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Backpack, Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
-import GradientText from "@/components/ui/gradient-text"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { cn } from "@/lib/utils"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Button } from "landing-app/components/ui/button"
+import { siteConfig } from "landing-app/config/site"
+import GradientText from "landing-app/components/ui/gradient-text"
+import { ThemeToggle } from "landing-app/components/theme-toggle"
+import { cn } from "landing-app/lib/utils"
+import { Sheet, SheetContent, SheetTrigger } from "landing-app/components/ui/sheet"
 
 export default function MainNav() {
   const [activeSection, setActiveSection] = useState<string>("")

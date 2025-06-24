@@ -1,10 +1,10 @@
+import { User } from "@packrat/api/db/schema";
 import { Context } from "hono";
 import { verifyJWT } from "./auth";
-import { User } from "@/db/schema";
 
 export async function authenticateRequest(
   c: Context
-): Promise<{ userId: User['id']; role: User['role'] } | null> {
+): Promise<{ userId: User["id"]; role: User["role"] } | null> {
   const authHeader = c.req.header("Authorization");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -17,7 +17,7 @@ export async function authenticateRequest(
     return null;
   }
 
-  const payload = await verifyJWT({token, c});
+  const payload = await verifyJWT({ token, c });
 
   if (!payload) {
     return null;

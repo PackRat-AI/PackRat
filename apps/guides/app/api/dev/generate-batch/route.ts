@@ -1,4 +1,4 @@
-import { generatePosts } from "@/scripts/generate-content";
+import { generatePosts } from "guides-app/scripts/generate-content";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-static"

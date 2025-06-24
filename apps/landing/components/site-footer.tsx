@@ -3,10 +3,10 @@
 import type React from "react"
 import Link from "next/link"
 import { Backpack } from "lucide-react"
-import { siteConfig } from "@/config/site"
-import { LucideIcon } from "@/lib/icons"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
+import { siteConfig } from "landing-app/config/site"
+import { LucideIcon } from "landing-app/lib/icons"
+import GradientText from "landing-app/components/ui/gradient-text"
+import GradientBorderCard from "landing-app/components/ui/gradient-border-card"
 
 export default function SiteFooter() {
   // Handle smooth scrolling when clicking on navigation links

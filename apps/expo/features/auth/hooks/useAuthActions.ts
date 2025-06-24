@@ -4,11 +4,11 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { tokenAtom, refreshTokenAtom, isLoadingAtom, redirectToAtom } from '../atoms/authAtoms';
-import { packItemsSyncState, packsSyncState } from '~/features/packs/store';
-import { isAuthed, userStore, userSyncState } from '~/features/auth/store';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
-import { packWeigthHistorySyncState } from '~/features/packs/store/packWeightHistory';
-import axiosInstance from '~/lib/api/client';
+import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
+import { isAuthed, userStore, userSyncState } from 'expo-app/features/auth/store';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { packWeigthHistorySyncState } from 'expo-app/features/packs/store/packWeightHistory';
+import axiosInstance from 'expo-app/lib/api/client';
 
 function redirect(route: string) {
   try {

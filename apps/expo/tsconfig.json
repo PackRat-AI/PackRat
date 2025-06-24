@@ -5,8 +5,11 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "~/*": [
+      "expo-app/*": [
         "./*"
+      ],
+      "nativewindui/*": [
+        "./components/ui/*"
       ]
     }
   },

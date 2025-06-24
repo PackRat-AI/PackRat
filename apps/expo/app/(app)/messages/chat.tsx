@@ -37,8 +37,8 @@ import { ContextMenu } from 'nativewindui/ContextMenu';
 import { ContextMenuRef } from 'nativewindui/ContextMenu/types';
 import { createContextItem } from 'nativewindui/ContextMenu/utils';
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 const ME = 'Alice';
 

@@ -4,7 +4,7 @@ import { Image, SafeAreaView, View } from 'react-native';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 export function WeatherAuthWall() {
   const router = useRouter();

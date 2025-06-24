@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import axiosInstance from '~/lib/api/client';
+import axiosInstance from 'expo-app/lib/api/client';
 import { nanoid } from 'nanoid/non-secure';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 
 export type SelectedImage = {
   uri: string;

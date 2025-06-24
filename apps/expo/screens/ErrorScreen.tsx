@@ -4,7 +4,7 @@ import { Icon, MaterialIconName } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 import { Button } from 'nativewindui/Button';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 type ErrorScreenProps = {
   title?: string;

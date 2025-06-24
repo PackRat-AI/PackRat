@@ -2,11 +2,11 @@
 
 import type React from "react"
 import Link from "next/link"
-import { siteConfig } from "@/config/site"
-import { Button } from "@/components/ui/button"
+import { siteConfig } from "landing-app/config/site"
+import { Button } from "landing-app/components/ui/button"
 import { Check, Apple, Store } from "lucide-react"
-import GradientBackground from "@/components/ui/gradient-background"
-import AnimatedGradientBorder from "@/components/ui/animated-gradient-border"
+import GradientBackground from "landing-app/components/ui/gradient-background"
+import AnimatedGradientBorder from "landing-app/components/ui/animated-gradient-border"
 
 export default function DownloadSection() {
   // Handle smooth scrolling when clicking on navigation links

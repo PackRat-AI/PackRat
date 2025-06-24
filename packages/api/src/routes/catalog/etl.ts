@@ -1,7 +1,7 @@
-import { authMiddleware } from "@/middleware/auth";
-import { queueCatalogETL } from "@/services/queue";
-import { Env } from "@/types/env";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { authMiddleware } from "@packrat/api/middleware";
+import { queueCatalogETL } from "@packrat/api/services/queue";
+import { Env } from "@packrat/api/types/env";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 

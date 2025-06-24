@@ -4,7 +4,7 @@ import {
   getWeatherData,
   formatWeatherData,
   searchLocationsByCoordinates,
-} from '~/features/weather/lib/weatherService';
+} from 'expo-app/features/weather/lib/weatherService';
 import type { LocationSearchResult, WeatherLocation } from '../types';
 import { useLocations } from './useLocations';
 

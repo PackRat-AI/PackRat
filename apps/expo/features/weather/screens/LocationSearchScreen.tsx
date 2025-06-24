@@ -19,8 +19,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Text } from 'nativewindui/Text';
 import { SearchInput } from 'nativewindui/SearchInput';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useLocationSearch } from '../hooks';
 import type { LocationSearchResult } from '../types';
 

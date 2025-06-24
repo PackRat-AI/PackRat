@@ -1,8 +1,8 @@
 import { PortalHost } from '@rn-primitives/portal';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { ErrorBoundary } from '~/components/initial/ErrorBoundary';
-import '~/utils/polyfills';
+import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
+import 'expo-app/utils/polyfills';
 import { JotaiProvider } from './JotaiProvider';
 import { TanstackProvider } from './TanstackProvider';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';

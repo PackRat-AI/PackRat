@@ -17,7 +17,7 @@ import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for name validation
 const nameFormSchema = z.object({

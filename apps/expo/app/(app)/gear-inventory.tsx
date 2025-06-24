@@ -3,10 +3,10 @@ import { View, ScrollView, Pressable, ActivityIndicator, SafeAreaView } from 're
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { PackItemCard } from '~/features/packs/components/PackItemCard';
-import { useUserPackItems } from '~/features/packs/hooks/useUserPackItems';
-import { cn } from '~/lib/cn';
-import type { PackItem } from '~/features/packs/types';
+import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
+import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
+import { cn } from 'expo-app/lib/cn';
+import type { PackItem } from 'expo-app/features/packs/types';
 
 function CategorySection({ category, items }: { category: string; items: PackItem[] }) {
   return (

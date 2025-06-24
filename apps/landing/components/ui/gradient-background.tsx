@@ -2,7 +2,7 @@
 
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "landing-app/lib/utils"
 
 interface GradientBackgroundProps {
   className?: string

@@ -1,12 +1,12 @@
 "use client";
 
-import CategoryFilter from "@/components/category-filter";
-import FeaturedGuides from "@/components/featured-guides";
-import GuideCard from "@/components/guide-card";
-import { Button } from "@/components/ui/button";
-import { getAllCategories } from "@/lib/categories";
-import { featuresConfig } from "@/lib/config";
-import { getAllPosts } from "@/lib/mdx-static";
+import CategoryFilter from "guides-app/components/category-filter";
+import FeaturedGuides from "guides-app/components/featured-guides";
+import GuideCard from "guides-app/components/guide-card";
+import { Button } from "guides-app/components/ui/button";
+import { getAllCategories } from "guides-app/lib/categories";
+import { featuresConfig } from "guides-app/lib/config";
+import { getAllPosts } from "guides-app/lib/mdx-static";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";

@@ -2,8 +2,8 @@ import type React from 'react';
 import { useState, useEffect } from 'react';
 import { Image, type ImageProps, ActivityIndicator, View, StyleSheet } from 'react-native';
 import { Text } from 'nativewindui/Text';
-import { useUser } from '~/features/auth/hooks/useUser';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
   localFileName?: string;

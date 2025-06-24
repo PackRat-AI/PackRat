@@ -19,12 +19,12 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
 import { SearchInput } from 'nativewindui/SearchInput';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { searchQueryAtom } from '../atoms/locationsAtoms';
 import { useLocations, useActiveLocation, useLocationRefresh } from '../hooks';
 import { LocationCard } from '../components/LocationCard';
-import { withAuthWall } from '~/features/auth/hocs';
+import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { WeatherAuthWall } from '../components/WeatherAuthWall';
 
 function LocationsScreen() {

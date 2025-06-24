@@ -20,10 +20,10 @@ import { SegmentedControl } from 'nativewindui/SegmentedControl';
 import { TextField } from 'nativewindui/TextField';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
-import { useColorScheme } from '~/lib/useColorScheme';
-import type { WeightUnit } from '~/types';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import type { WeightUnit } from 'expo-app/types';
 import { useState, useRef } from 'react';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 
 // Define Zod schema
 const itemFormSchema = z.object({

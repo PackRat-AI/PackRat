@@ -1,7 +1,7 @@
-import { siteConfig } from "@/config/site"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
-import { LucideIcon } from "@/lib/icons"
+import { siteConfig } from "landing-app/config/site"
+import GradientText from "landing-app/components/ui/gradient-text"
+import GradientBorderCard from "landing-app/components/ui/gradient-border-card"
+import { LucideIcon } from "landing-app/lib/icons"
 
 export default function HowItWorksSection() {
   // Icons for each step
