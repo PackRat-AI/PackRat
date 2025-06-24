@@ -1,14 +1,14 @@
-import { createDb } from "@/db";
-import { catalogItems } from "@/db/schema";
-import { generateEmbedding } from "@/utils/vector";
 import { cosineDistance, desc, gt, sql } from "drizzle-orm";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { env } from "hono/adapter";
+import { Env } from "../types/env";
+import { createDb } from "../db";
+import { catalogItems } from "../db/schema";
 import {
   authenticateRequest,
   unauthorizedResponse,
-} from "@/utils/api-middleware";
-import { Env } from "@/types/env";
+} from "../utils/api-middleware";
+import { generateEmbedding } from "../services/embeddingService";
 
 const searchRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -44,7 +44,11 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
   const { OPENAI_API_KEY } = env<Env>(c);
 
   try {
-    const embedding = await generateEmbedding(q, OPENAI_API_KEY);
+    const embedding = await generateEmbedding({
+      value: q,
+      openAiApiKey: OPENAI_API_KEY,
+    });
+
     if (!embedding) {
       return c.json({ error: "Failed to generate embedding" }, 500);
     }
@@ -61,7 +65,7 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
         similarity,
       })
       .from(catalogItems)
-      .where(gt(similarity, 0.75))
+      .where(gt(similarity, 0.1))
       .orderBy(desc(similarity))
       .limit(10);
 

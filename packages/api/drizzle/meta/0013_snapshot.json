@@ -1,6 +1,6 @@
 {
-  "id": "c2a8c4c5-efb4-464e-bad8-931c87c71fbd",
-  "prevId": "3838b0af-0392-4f66-a7cd-bee467416ed4",
+  "id": "5a835dbf-6e60-41d8-b980-8b699645d83d",
+  "prevId": "258f29e2-5856-4a7e-bdc6-676ea044216c",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -46,8 +46,12 @@
           "name": "auth_providers_user_id_users_id_fk",
           "tableFrom": "auth_providers",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -212,6 +216,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(1536)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -225,17 +235,11 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "embedding": {
-          "name": "embedding",
-          "type": "vector(1536)",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
-        "embeddingIndex": {
-          "name": "embeddingIndex",
+        "embedding_idx": {
+          "name": "embedding_idx",
           "columns": [
             {
               "expression": "embedding",
@@ -300,8 +304,12 @@
           "name": "one_time_passwords_user_id_users_id_fk",
           "tableFrom": "one_time_passwords",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -403,18 +411,24 @@
           "primaryKey": false,
           "notNull": true
         },
-        "template_item_id": {
-          "name": "template_item_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "deleted": {
           "name": "deleted",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
           "default": false
+        },
+        "template_item_id": {
+          "name": "template_item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(1536)",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -431,14 +445,35 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "pack_items_embedding_idx": {
+          "name": "pack_items_embedding_idx",
+          "columns": [
+            {
+              "expression": "embedding",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "vector_cosine_ops"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "hnsw",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "pack_items_pack_id_packs_id_fk": {
           "name": "pack_items_pack_id_packs_id_fk",
           "tableFrom": "pack_items",
           "tableTo": "packs",
-          "columnsFrom": ["pack_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pack_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -446,8 +481,12 @@
           "name": "pack_items_catalog_item_id_catalog_items_id_fk",
           "tableFrom": "pack_items",
           "tableTo": "catalog_items",
-          "columnsFrom": ["catalog_item_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "catalog_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -455,8 +494,12 @@
           "name": "pack_items_user_id_users_id_fk",
           "tableFrom": "pack_items",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -464,8 +507,12 @@
           "name": "pack_items_template_item_id_pack_template_items_id_fk",
           "tableFrom": "pack_items",
           "tableTo": "pack_template_items",
-          "columnsFrom": ["template_item_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "template_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -595,8 +642,12 @@
           "name": "pack_template_items_pack_template_id_pack_templates_id_fk",
           "tableFrom": "pack_template_items",
           "tableTo": "pack_templates",
-          "columnsFrom": ["pack_template_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pack_template_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -604,8 +655,12 @@
           "name": "pack_template_items_catalog_item_id_catalog_items_id_fk",
           "tableFrom": "pack_template_items",
           "tableTo": "catalog_items",
-          "columnsFrom": ["catalog_item_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "catalog_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -613,8 +668,12 @@
           "name": "pack_template_items_user_id_users_id_fk",
           "tableFrom": "pack_template_items",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -718,8 +777,12 @@
           "name": "pack_templates_user_id_users_id_fk",
           "tableFrom": "pack_templates",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -778,8 +841,12 @@
           "name": "weight_history_user_id_users_id_fk",
           "tableFrom": "weight_history",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -787,8 +854,12 @@
           "name": "weight_history_pack_id_packs_id_fk",
           "tableFrom": "weight_history",
           "tableTo": "packs",
-          "columnsFrom": ["pack_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pack_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -898,8 +969,12 @@
           "name": "packs_user_id_users_id_fk",
           "tableFrom": "packs",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -907,8 +982,12 @@
           "name": "packs_template_id_pack_templates_id_fk",
           "tableFrom": "packs",
           "tableTo": "pack_templates",
-          "columnsFrom": ["template_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "template_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -973,8 +1052,12 @@
           "name": "refresh_tokens_user_id_users_id_fk",
           "tableFrom": "refresh_tokens",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -984,7 +1067,9 @@
         "refresh_tokens_token_unique": {
           "name": "refresh_tokens_token_unique",
           "nullsNotDistinct": false,
-          "columns": ["token"]
+          "columns": [
+            "token"
+          ]
         }
       },
       "policies": {},
@@ -1071,8 +1156,12 @@
           "name": "reported_content_user_id_users_id_fk",
           "tableFrom": "reported_content",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1080,8 +1169,12 @@
           "name": "reported_content_reviewed_by_users_id_fk",
           "tableFrom": "reported_content",
           "tableTo": "users",
-          "columnsFrom": ["reviewed_by"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "reviewed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1162,7 +1255,9 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},

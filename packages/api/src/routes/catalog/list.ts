@@ -8,7 +8,7 @@ import {
   unauthorizedResponse,
 } from "@packrat/api/utils/api-middleware";
 import { getEmbeddingText } from "@packrat/api/utils/embeddingHelper";
-import { eq } from "drizzle-orm";
+import { and, eq, like, sql } from "drizzle-orm";
 import { env } from "hono/adapter";
 
 const catalogListRoutes = new OpenAPIHono();
@@ -90,11 +90,6 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
       value: embeddingText,
     });
 
-    const embedding = await generateEmbedding(
-      `${data.name} ${data.description ?? ""}`,
-      process.env.OPENAI_API_KEY!,
-    );
-
     const [newItem] = await db
       .insert(catalogItems)
       .values({
@@ -107,7 +102,6 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
         brand: data.brand,
         model: data.model,
         url: data.url,
-        embedding: embedding,
 
         // New fields
         ratingValue: data.ratingValue,
