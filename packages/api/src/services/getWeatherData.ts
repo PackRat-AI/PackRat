@@ -36,7 +36,11 @@ export async function getWeatherData(
       windSpeed: Math.round(data.wind.speed),
     };
   } catch (error) {
+    c.get('sentry').setContext('weather', {
+      location,
+      openWeatherKey: !!env<Env>(c).OPENWEATHER_KEY,
+    });
     console.error('Error fetching weather data:', error);
-    throw error;
+    throw error; // will be captured by Sentry middleware
   }
 }

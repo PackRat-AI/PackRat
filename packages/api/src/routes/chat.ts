@@ -40,9 +40,18 @@ chatRoutes.openapi(chatRoute, async (c) => {
     return unauthorizedResponse();
   }
 
+  let body: {
+    messages?: any[];
+    contextType?: string;
+    itemId?: string;
+    packId?: string;
+    userId?: number;
+    location?: string;
+  } = {};
+
   try {
-    const { messages, contextType, itemId, packId, userId, location } =
-      await c.req.json();
+    body = await c.req.json();
+    const { messages, contextType, itemId, packId, userId, location } = body;
 
     // Only get weather data if location is defined
     const weatherData = location ? await getWeatherData(location, c) : null;
@@ -158,16 +167,12 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     return result.toDataStreamResponse();
   } catch (error) {
-    console.error('AI Chat API error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Failed to process AI chat request' }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    c.get('sentry').setContext('chat', {
+      body,
+      openAiApiKey: !!env<Env>(c).OPENAI_API_KEY,
+    });
+
+    throw error; // will be captured by Sentry middleware
   }
 });
 
@@ -179,24 +184,19 @@ chatRoutes.post('/reports', async (c) => {
 
   const db = createDb(c);
 
-  try {
-    const { messageId, userQuery, aiResponse, reason, userComment } =
-      await c.req.json();
+  const { messageId, userQuery, aiResponse, reason, userComment } =
+    await c.req.json();
 
-    // Insert the reported content into the database
-    await db.insert(reportedContent).values({
-      userId: auth.userId,
-      userQuery,
-      aiResponse,
-      reason,
-      userComment,
-    });
+  // Insert the reported content into the database
+  await db.insert(reportedContent).values({
+    userId: auth.userId,
+    userQuery,
+    aiResponse,
+    reason,
+    userComment,
+  });
 
-    return c.json({ success: true });
-  } catch (error) {
-    console.error('Report content API error:', error);
-    return c.json({ error: 'Failed to report content' }, 500);
-  }
+  return c.json({ success: true });
 });
 
 // Get all reported content (admin only) - separate endpoint
@@ -209,24 +209,19 @@ chatRoutes.get('/reports', async (c) => {
   const db = createDb(c);
 
   // Check if user is admin
-  const isAdmin = await checkIfUserIsAdmin(auth.userId, c);
+  const isAdmin = auth.role === 'ADMIN';
   if (!isAdmin) {
     return c.json({ error: 'Unauthorized' }, 403);
   }
 
-  try {
-    const reportedItems = await db.query.reportedContent.findMany({
-      orderBy: (reportedContent, { desc }) => [desc(reportedContent.createdAt)],
-      with: {
-        user: true,
-      },
-    });
+  const reportedItems = await db.query.reportedContent.findMany({
+    orderBy: (reportedContent, { desc }) => [desc(reportedContent.createdAt)],
+    with: {
+      user: true,
+    },
+  });
 
-    return c.json({ reportedItems });
-  } catch (error) {
-    console.error('Get reported content API error:', error);
-    return c.json({ error: 'Failed to get reported content' }, 500);
-  }
+  return c.json({ reportedItems });
 });
 
 // Update reported content status (admin only)
@@ -239,49 +234,25 @@ chatRoutes.patch('/reports/:id', async (c) => {
   const db = createDb(c);
 
   // Check if user is admin
-  const isAdmin = await checkIfUserIsAdmin(auth.userId, c);
+  const isAdmin = auth.role === 'ADMIN';
   if (!isAdmin) {
     return c.json({ error: 'Unauthorized' }, 403);
   }
 
-  try {
-    const id = Number.parseInt(c.req.param('id'));
-    const { status } = await c.req.json();
+  const id = Number.parseInt(c.req.param('id'));
+  const { status } = await c.req.json();
 
-    await db
-      .update(reportedContent)
-      .set({
-        status,
-        reviewed: true,
-        reviewedBy: auth.userId,
-        reviewedAt: new Date(),
-      })
-      .where(eq(reportedContent.id, id));
+  await db
+    .update(reportedContent)
+    .set({
+      status,
+      reviewed: true,
+      reviewedBy: auth.userId,
+      reviewedAt: new Date(),
+    })
+    .where(eq(reportedContent.id, id));
 
-    return c.json({ success: true });
-  } catch (error) {
-    console.error('Update reported content API error:', error);
-    return c.json({ error: 'Failed to update reported content' }, 500);
-  }
+  return c.json({ success: true });
 });
-
-// Helper function to check if a user is an admin
-async function checkIfUserIsAdmin(userId: number, c: any) {
-  const db = createDb(c);
-
-  try {
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, userId),
-      columns: {
-        role: true,
-      },
-    });
-
-    return user?.role === 'ADMIN';
-  } catch (error) {
-    console.error('Error checking admin status:', error);
-    return false;
-  }
-}
 
 export { chatRoutes };

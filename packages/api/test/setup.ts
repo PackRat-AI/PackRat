@@ -8,9 +8,9 @@ process.env.PASSWORD_RESET_SECRET = 'secret'
 process.env.WEATHER_API_KEY = 'key'
 process.env.OPENWEATHER_KEY = 'key'
 process.env.CLOUDFLARE_ACCOUNT_ID = 'id'
-process.env.R2_ACCESS_KEY_ID = 'key'
-process.env.R2_SECRET_ACCESS_KEY = 'key'
-process.env.R2_BUCKET_NAME = 'bucket'
+process.env.PACKRAT_BUCKET_R2_ACCESS_KEY_ID = 'key'
+process.env.PACKRAT_BUCKET_R2_SECRET_ACCESS_KEY = 'key'
+process.env.PACKRAT_BUCKET_R2_BUCKET_NAME = 'bucket'
 
 import { vi } from 'vitest'
 

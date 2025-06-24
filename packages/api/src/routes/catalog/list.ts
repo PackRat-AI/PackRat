@@ -1,21 +1,25 @@
 import { createDb } from "@packrat/api/db";
 import { catalogItems } from "@packrat/api/db/schema";
+import { generateEmbedding } from "@/services/embeddingService";
+import { Env } from "@/types/env";
 import {
   authenticateRequest,
   unauthorizedResponse,
 } from "@packrat/api/utils/api-middleware";
-import { eq } from "drizzle-orm";
+import { getEmbeddingText } from "@/utils/embeddingHelper";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { eq } from "drizzle-orm";
+import { env } from "hono/adapter";
 
 const catalogListRoutes = new OpenAPIHono();
 
 const listGetRoute = createRoute({
-  method: 'get',
-  path: '/',
+  method: "get",
+  path: "/",
   request: {
     query: z.object({ id: z.string().optional() }),
   },
-  responses: { 200: { description: 'Get catalog items' } },
+  responses: { 200: { description: "Get catalog items" } },
 });
 
 catalogListRoutes.openapi(listGetRoute, async (c) => {
@@ -52,16 +56,16 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
 });
 
 const listPostRoute = createRoute({
-  method: 'post',
-  path: '/',
+  method: "post",
+  path: "/",
   request: {
     body: {
       content: {
-        'application/json': { schema: z.any() },
+        "application/json": { schema: z.any() },
       },
     },
   },
-  responses: { 200: { description: 'Create catalog item' } },
+  responses: { 200: { description: "Create catalog item" } },
 });
 
 catalogListRoutes.openapi(listPostRoute, async (c) => {
@@ -77,6 +81,18 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
 
     const db = createDb(c);
     const data = await c.req.json();
+    const { OPENAI_API_KEY } = env<Env>(c);
+
+    if (!OPENAI_API_KEY) {
+      return c.json({ error: "OpenAI API key not configured" }, 500);
+    }
+
+    // Generate embedding
+    const embeddingText = getEmbeddingText(data);
+    const embedding = await generateEmbedding({
+      openAiApiKey: OPENAI_API_KEY,
+      value: embeddingText,
+    });
 
     // Create the catalog item
     const [newItem] = await db
@@ -91,6 +107,7 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
         brand: data.brand,
         model: data.model,
         url: data.url,
+        embedding: embedding,
 
         // New fields
         ratingValue: data.ratingValue,
