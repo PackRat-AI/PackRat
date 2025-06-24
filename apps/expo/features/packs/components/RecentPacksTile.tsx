@@ -4,8 +4,8 @@ import { View } from 'react-native';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { cn } from '~/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
 import { useRecentPacks } from '../hooks/useRecentPacks';
 
 export function RecentPacksTile() {
@@ -31,7 +31,8 @@ export function RecentPacksTile() {
               <Avatar
                 key={index}
                 alt={`${pack?.name ?? ''} avatar`}
-                className={cn('h-6 w-6', index > 0 && '-ml-2')}>
+                className={cn('h-6 w-6', index > 0 && '-ml-2')}
+              >
                 <AvatarImage source={{ uri: img }} />
                 <AvatarFallback>
                   <Text>{pack?.name.slice(0, 2).toUpperCase() ?? 'NA'}</Text>

@@ -20,10 +20,10 @@ import { SegmentedControl } from 'nativewindui/SegmentedControl';
 import { TextField } from 'nativewindui/TextField';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
-import { useColorScheme } from '~/lib/useColorScheme';
-import type { WeightUnit } from '~/types';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import type { WeightUnit } from 'expo-app/types';
 import { useState, useRef } from 'react';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 
 // Define Zod schema
 const itemFormSchema = z.object({
@@ -31,12 +31,12 @@ const itemFormSchema = z.object({
   description: z.string(),
   weight: z.preprocess(
     (val) => (val === '' ? 0 : Number(val)),
-    z.number().min(0, 'Weight must be a positive number')
+    z.number().min(0, 'Weight must be a positive number'),
   ),
   weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
   quantity: z.preprocess(
     (val) => (val === '' ? 1 : Number(val)),
-    z.number().int().min(1, 'Quantity must be at least 1')
+    z.number().int().min(1, 'Quantity must be at least 1'),
   ),
   category: z.string(),
   consumable: z.boolean(),
@@ -164,7 +164,7 @@ export const CreatePackItemForm = ({
           console.error('Error handling image:', err);
           Alert.alert('Error', 'Failed to process image. Please try again.');
         }
-      }
+      },
     );
   };
 
@@ -191,12 +191,14 @@ export const CreatePackItemForm = ({
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1">
+      className="flex-1"
+    >
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
             ios={{ title: 'Item Details' }}
-            footnote="Enter the basic information about your item">
+            footnote="Enter the basic information about your item"
+          >
             <form.Field name="name">
               {(field) => (
                 <FormItem>
@@ -375,14 +377,16 @@ export const CreatePackItemForm = ({
                       />
                       <TouchableOpacity
                         className="absolute right-2 top-2 rounded-full bg-black bg-opacity-50 p-1"
-                        onPress={handleRemoveImage}>
+                        onPress={handleRemoveImage}
+                      >
                         <Icon name="close" size={20} color="#ffffff" />
                       </TouchableOpacity>
                     </View>
                   ) : (
                     <TouchableOpacity
                       className="h-48 items-center justify-center rounded-lg border border-dashed border-input bg-background p-4"
-                      onPress={handleAddImage}>
+                      onPress={handleAddImage}
+                    >
                       <Icon name="camera" size={32} color={colors.foreground} />
                       <Text className="mt-2 text-muted-foreground">Tap to add an image</Text>
                     </TouchableOpacity>
@@ -423,7 +427,8 @@ export const CreatePackItemForm = ({
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${
                 !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-              }`}>
+              }`}
+            >
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting ? 'Saving...' : isEditing ? 'Update Item' : 'Add Item'}
               </Text>

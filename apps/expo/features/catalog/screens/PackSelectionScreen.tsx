@@ -14,18 +14,18 @@ import {
 import { Icon } from '@roninoss/icons';
 import { Button } from 'nativewindui/Button';
 import { useCatalogItemDetails } from '../hooks';
-import type { Pack } from '~/types';
+import type { Pack } from 'expo-app/types';
 import { SearchInput } from 'nativewindui/SearchInput';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { usePacks } from '~/features/packs';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { usePacks } from 'expo-app/features/packs';
 
 export function PackSelectionScreen() {
   const router = useRouter();
   const { catalogItemId } = useLocalSearchParams();
   const { data: packs, isLoading } = usePacks();
   const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
-    catalogItemId as string
+    catalogItemId as string,
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPacks, setFilteredPacks] = useState<Pack[]>([]);
@@ -51,8 +51,8 @@ export function PackSelectionScreen() {
             (pack) =>
               pack.name.toLowerCase().includes(query) ||
               pack.description.toLowerCase().includes(query) ||
-              pack.category.toLowerCase().includes(query)
-          )
+              pack.category.toLowerCase().includes(query),
+          ),
         );
       }
     }
@@ -132,7 +132,8 @@ export function PackSelectionScreen() {
                   <TouchableOpacity
                     className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm"
                     onPress={() => handlePackSelect(item.id)}
-                    activeOpacity={0.7}>
+                    activeOpacity={0.7}
+                  >
                     <View className="p-4 py-8">
                       <View className="flex-row items-center justify-between">
                         <View className="flex-1 gap-4">

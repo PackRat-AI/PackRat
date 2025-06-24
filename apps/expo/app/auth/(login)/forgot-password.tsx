@@ -14,9 +14,9 @@ import { Button } from 'nativewindui/Button';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
-import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for email validation
 const emailSchema = z.object({
@@ -52,7 +52,7 @@ export default function ForgotPasswordScreen() {
       } catch (error) {
         Alert.alert(
           'Error',
-          error instanceof Error ? error.message : 'Failed to send verification code'
+          error instanceof Error ? error.message : 'Failed to send verification code',
         );
       } finally {
         setIsLoading(false);
@@ -73,7 +73,8 @@ export default function ForgotPasswordScreen() {
         bounces={false}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="ios:pt-12 pt-20">
+        contentContainerClassName="ios:pt-12 pt-20"
+      >
         <View className="ios:px-12 flex-1 px-8">
           <View className="items-center pb-1">
             <Image
@@ -129,7 +130,8 @@ export default function ForgotPasswordScreen() {
                 <Button
                   size="lg"
                   onPress={() => form.handleSubmit()}
-                  disabled={!canSubmit || isLoading}>
+                  disabled={!canSubmit || isLoading}
+                >
                   <Text>{isLoading ? 'Sending...' : 'Send Code'}</Text>
                 </Button>
               )}
@@ -142,7 +144,8 @@ export default function ForgotPasswordScreen() {
               className="px-2"
               onPress={() => {
                 router.replace('/auth/(create-account)');
-              }}>
+              }}
+            >
               <Text className="text-sm text-primary">Create Account</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>

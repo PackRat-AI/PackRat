@@ -73,7 +73,9 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01" 1, "ss03" 1;
+    font-feature-settings:
+      "ss01" 1,
+      "ss03" 1;
   }
 
   /* Apple-style typography */
@@ -142,4 +144,3 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
-

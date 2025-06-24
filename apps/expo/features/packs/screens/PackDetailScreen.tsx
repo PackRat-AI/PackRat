@@ -5,19 +5,19 @@ import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-n
 
 import { useDeletePack, usePackDetails } from '../hooks';
 
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { Chip } from '~/components/initial/Chip';
-import { WeightBadge } from '~/components/initial/WeightBadge';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { Chip } from 'expo-app/components/initial/Chip';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { Alert } from 'nativewindui/Alert';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { isAuthed } from '~/features/auth/store';
-import { PackItemCard } from '~/features/packs/components/PackItemCard';
-import { PackItemSuggestions } from '~/features/packs/components/PackItemSuggestions';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { NotFoundScreen } from '~/screens/NotFoundScreen';
-import type { PackItem } from '~/types';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
+import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
+import type { PackItem } from 'expo-app/types';
 
 export function PackDetailScreen() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export function PackDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       pack.refetch?.();
-    }, [pack])
+    }, [pack]),
   );
   const deletePack = useDeletePack();
   const { colors } = useColorScheme();
@@ -115,7 +115,8 @@ export function PackDetailScreen() {
                     key={index}
                     className="mb-1 mr-2"
                     textClassName="text-xs text-center"
-                    variant="outline">
+                    variant="outline"
+                  >
                     #{tag}
                   </Chip>
                 ))}
@@ -138,7 +139,8 @@ export function PackDetailScreen() {
                     }
                   },
                 },
-              ]}>
+              ]}
+            >
               <Button variant="plain" size="icon">
                 <Icon name="trash-can" color={colors.grey2} size={21} />
               </Button>
@@ -168,7 +170,8 @@ export function PackDetailScreen() {
                   pathname: '/ai-chat',
                   params: { packId: id, packName: pack.name, contextType: 'pack' },
                 });
-              }}>
+              }}
+            >
               <Icon name="message-outline" color={colors.foreground} />
               <Text>Ask AI</Text>
             </Button>
@@ -185,7 +188,8 @@ export function PackDetailScreen() {
 
             <TouchableOpacity
               className={getTabStyle('consumable')}
-              onPress={() => setActiveTab('consumable')}>
+              onPress={() => setActiveTab('consumable')}
+            >
               <Text className={getTabTextStyle('consumable')}>Consumable</Text>
             </TouchableOpacity>
           </View>
@@ -213,7 +217,8 @@ export function PackDetailScreen() {
 
           <Button
             className="m-4"
-            onPress={() => router.push({ pathname: '/item/new', params: { packId: pack.id } })}>
+            onPress={() => router.push({ pathname: '/item/new', params: { packId: pack.id } })}
+          >
             <Text>Add New Item</Text>
           </Button>
         </View>

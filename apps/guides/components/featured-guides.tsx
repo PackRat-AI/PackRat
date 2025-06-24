@@ -1,15 +1,15 @@
-import type { Post } from "@/lib/types"
-import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import type { Post } from 'guides-app/lib/types';
+import Link from 'next/link';
+import { Badge } from 'guides-app/components/ui/badge';
+import { Button } from 'guides-app/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader } from 'guides-app/components/ui/card';
 
 export default function FeaturedGuides({ guides }: { guides: Post[] }) {
-  if (!guides.length) return null
+  if (!guides.length) return null;
 
-  const mainGuide = guides[0]
-  const secondaryGuides = guides.slice(1)
+  const mainGuide = guides[0];
+  const secondaryGuides = guides.slice(1);
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -18,7 +18,10 @@ export default function FeaturedGuides({ guides }: { guides: Post[] }) {
         <CardHeader className="pb-2">
           <div className="flex flex-wrap gap-2 mb-2">
             {mainGuide.categories?.map((category) => (
-              <Badge key={category} className="rounded-full px-3 py-1 bg-apple-blue hover:bg-apple-blue/90 text-white">
+              <Badge
+                key={category}
+                className="rounded-full px-3 py-1 bg-apple-blue hover:bg-apple-blue/90 text-white"
+              >
                 {category}
               </Badge>
             ))}
@@ -62,7 +65,11 @@ export default function FeaturedGuides({ guides }: { guides: Post[] }) {
               <p className="text-sm text-muted-foreground line-clamp-2">{guide.description}</p>
             </CardContent>
             <CardFooter>
-              <Button asChild variant="link" className="p-0 text-apple-blue hover:text-apple-blue/90">
+              <Button
+                asChild
+                variant="link"
+                className="p-0 text-apple-blue hover:text-apple-blue/90"
+              >
                 <Link href={`/guide/${guide.slug}`} className="flex items-center gap-1">
                   Read Guide
                   <ArrowRight className="h-3 w-3" />
@@ -73,6 +80,5 @@ export default function FeaturedGuides({ guides }: { guides: Post[] }) {
         ))}
       </div>
     </div>
-  )
+  );
 }
-

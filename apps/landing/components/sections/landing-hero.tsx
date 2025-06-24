@@ -1,27 +1,27 @@
-"use client"
+'use client';
 
-import type React from "react"
-import Link from "next/link"
-import { Download, ChevronRight, ArrowRight, Star } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { siteConfig } from "@/config/site"
-import DeviceMockup from "@/components/ui/device-mockup"
-import GlassCard from "@/components/ui/glass-card"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBackground from "@/components/ui/gradient-background"
-import { motion } from "framer-motion"
+import type React from 'react';
+import Link from 'next/link';
+import { Download, ChevronRight, ArrowRight, Star } from 'lucide-react';
+import { Button } from 'landing-app/components/ui/button';
+import { siteConfig } from 'landing-app/config/site';
+import DeviceMockup from 'landing-app/components/ui/device-mockup';
+import GlassCard from 'landing-app/components/ui/glass-card';
+import GradientText from 'landing-app/components/ui/gradient-text';
+import GradientBackground from 'landing-app/components/ui/gradient-background';
+import { motion } from 'framer-motion';
 
 export default function LandingHero() {
   // Handle smooth scrolling when clicking on navigation links
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault()
-    const targetId = href.substring(1)
-    const element = document.getElementById(targetId)
+    e.preventDefault();
+    const targetId = href.substring(1);
+    const element = document.getElementById(targetId);
 
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
+      element.scrollIntoView({ behavior: 'smooth' });
     }
-  }
+  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -32,7 +32,7 @@ export default function LandingHero() {
         delayChildren: 0.2,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -40,12 +40,12 @@ export default function LandingHero() {
       y: 0,
       opacity: 1,
       transition: {
-        type: "spring",
+        type: 'spring',
         stiffness: 100,
         damping: 10,
       },
     },
-  }
+  };
 
   return (
     <section className="relative py-16 overflow-hidden md:py-24 lg:py-32">
@@ -59,7 +59,12 @@ export default function LandingHero() {
 
       <div className="container px-4 md:px-8 lg:px-12">
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
-          <motion.div className="space-y-6 max-w-2xl" variants={containerVariants} initial="hidden" animate="visible">
+          <motion.div
+            className="space-y-6 max-w-2xl"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             <motion.div variants={itemVariants}>
               <GlassCard className="inline-flex items-center py-1.5 px-4 text-sm font-medium">
                 <span className="mr-1.5 h-2 w-2 rounded-full animate-pulse bg-primary"></span>
@@ -71,16 +76,19 @@ export default function LandingHero() {
               className="text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl xl:text-6xl max-w-screen-sm"
               variants={itemVariants}
             >
-              <span className="block text-foreground">{siteConfig.hero.title.split(".")[0]}.</span>
+              <span className="block text-foreground">{siteConfig.hero.title.split('.')[0]}.</span>
               <GradientText
                 className="block mt-1"
                 gradient="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient"
               >
-                {siteConfig.hero.title.split(".")[1]}.
+                {siteConfig.hero.title.split('.')[1]}.
               </GradientText>
             </motion.h1>
 
-            <motion.p className="text-lg md:text-xl text-muted-foreground max-w-xl" variants={itemVariants}>
+            <motion.p
+              className="text-lg md:text-xl text-muted-foreground max-w-xl"
+              variants={itemVariants}
+            >
               {siteConfig.hero.subtitle}
             </motion.p>
 
@@ -108,14 +116,19 @@ export default function LandingHero() {
               </Button>
             </motion.div>
 
-            <motion.div className="flex flex-col sm:flex-row items-center gap-6 pt-4" variants={itemVariants}>
+            <motion.div
+              className="flex flex-col sm:flex-row items-center gap-6 pt-4"
+              variants={itemVariants}
+            >
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
                     className="w-10 h-10 rounded-full border-2 border-background flex items-center justify-center overflow-hidden bg-primary/20"
                   >
-                    <span className="text-xs font-bold text-primary">{String.fromCharCode(64 + i)}</span>
+                    <span className="text-xs font-bold text-primary">
+                      {String.fromCharCode(64 + i)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -137,7 +150,13 @@ export default function LandingHero() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <DeviceMockup image="/hero-app-preview.png" alt="PackRat App" priority showReflection showGradient />
+            <DeviceMockup
+              image="/hero-app-preview.png"
+              alt="PackRat App"
+              priority
+              showReflection
+              showGradient
+            />
 
             {/* Floating UI elements - only show on larger screens */}
             <motion.div
@@ -185,5 +204,5 @@ export default function LandingHero() {
         </div>
       </div>
     </section>
-  )
+  );
 }

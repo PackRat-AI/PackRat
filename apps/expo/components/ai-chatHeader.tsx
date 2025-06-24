@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 
@@ -45,10 +45,12 @@ export function AiChatHeader() {
   ) : (
     <View
       className="absolute left-0 right-0 top-0 z-50 justify-end bg-card dark:bg-background"
-      style={{ paddingTop: insets.top, height: HEADER_HEIGHT + insets.top }}>
+      style={{ paddingTop: insets.top, height: HEADER_HEIGHT + insets.top }}
+    >
       <View
         style={{ height: HEADER_HEIGHT }}
-        className="flex-row items-center justify-between gap-2 px-3 pb-2">
+        className="flex-row items-center justify-between gap-2 px-3 pb-2"
+      >
         <View className="flex-row items-center">
           <Button variant="plain" size="icon" className="opacity-70" onPress={router.back}>
             <Icon

@@ -6,7 +6,7 @@ import type React from 'react';
 import type { ErrorInfo } from 'react';
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { Pressable, Text, View } from 'react-native';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 type ErrorBoundaryProps = {
   children: React.ReactNode;
@@ -40,14 +40,16 @@ const DefaultFallback = ({ resetErrorBoundary }: { resetErrorBoundary: () => voi
           <Pressable
             onPress={resetErrorBoundary}
             className="mb-4 w-full items-center justify-center rounded-lg bg-primary py-3.5"
-            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          >
             <Text className="font-medium text-primary-foreground">Try Again</Text>
           </Pressable>
 
           <Pressable
             onPress={() => router.replace('/')}
             className="w-full items-center justify-center rounded-lg border border-border py-3.5"
-            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
+            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+          >
             <Text className="font-medium text-foreground">Go Home</Text>
           </Pressable>
         </View>
@@ -74,7 +76,8 @@ export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBou
       onReset={onReset}
       onError={(error: Error, info: ErrorInfo) =>
         handleError(error, { componentStack: info.componentStack || '' })
-      }>
+      }
+    >
       {children}
     </ReactErrorBoundary>
   );

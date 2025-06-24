@@ -9,13 +9,13 @@ import { AlertAnchor } from 'nativewindui/Alert';
 import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useLocalSearchParams } from 'expo-router';
-import { featureFlags } from '~/config';
+import { featureFlags } from 'expo-app/config';
 import { useSetAtom } from 'jotai';
-import { redirectToAtom } from '~/features/auth/atoms/authAtoms';
+import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 const GOOGLE_SOURCE = {
   uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',
@@ -74,7 +74,7 @@ export default function AuthIndexScreen() {
               </Text>
             )}
           </View>
-          <Link href='/auth/(create-account)' asChild>
+          <Link href="/auth/(create-account)" asChild>
             <Button size={Platform.select({ ios: 'lg', default: 'md' })}>
               <Text>Sign up free</Text>
             </Button>
@@ -85,7 +85,8 @@ export default function AuthIndexScreen() {
                 variant="secondary"
                 className="ios:border-foreground/60"
                 size={Platform.select({ ios: 'lg', default: 'md' })}
-                onPress={signInWithGoogle}>
+                onPress={signInWithGoogle}
+              >
                 <Image
                   source={GOOGLE_SOURCE}
                   className="absolute left-4 h-4 w-4"
@@ -98,7 +99,8 @@ export default function AuthIndexScreen() {
                   variant="secondary"
                   className="ios:border-foreground/60"
                   size={Platform.select({ ios: 'lg', default: 'md' })}
-                  onPress={signInWithApple}>
+                  onPress={signInWithApple}
+                >
                   <Text className="ios:text-foreground absolute left-4 text-[22px]"></Text>
                   <Text className="ios:text-foreground">Continue with Apple</Text>
                 </Button>
@@ -108,7 +110,8 @@ export default function AuthIndexScreen() {
           <Link href={'/auth/(login)'} asChild>
             <Button
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
-              size={Platform.select({ ios: 'lg', default: 'md' })}>
+              size={Platform.select({ ios: 'lg', default: 'md' })}
+            >
               <Text className="text-primary">Log in</Text>
             </Button>
           </Link>
@@ -118,7 +121,8 @@ export default function AuthIndexScreen() {
               variant="plain"
               size={Platform.select({ ios: 'lg', default: 'md' })}
               onPress={handleSkipLogin}
-              className="mt-2">
+              className="mt-2"
+            >
               <Text>Skip login</Text>
             </Button>
           )}

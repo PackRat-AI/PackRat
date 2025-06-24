@@ -19,12 +19,12 @@ import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
 import { SearchInput } from 'nativewindui/SearchInput';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { searchQueryAtom } from '../atoms/locationsAtoms';
 import { useLocations, useActiveLocation, useLocationRefresh } from '../hooks';
 import { LocationCard } from '../components/LocationCard';
-import { withAuthWall } from '~/features/auth/hocs';
+import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { WeatherAuthWall } from '../components/WeatherAuthWall';
 
 function LocationsScreen() {
@@ -47,7 +47,7 @@ function LocationsScreen() {
 
   // Filter locations based on search query
   const filteredLocations = locations.filter((location) =>
-    location.name.toLowerCase().includes(searchQuery.toLowerCase())
+    location.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   // Handle search query change
@@ -98,7 +98,7 @@ function LocationsScreen() {
         [{ text: 'OK' }],
         {
           cancelable: true,
-        }
+        },
       );
     }
   };
@@ -155,7 +155,8 @@ function LocationsScreen() {
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(200)}
-          className="px-4 py-2">
+          className="px-4 py-2"
+        >
           <Text className="mb-2 text-xs uppercase text-muted-foreground">SEARCH RESULTS</Text>
           <View className="bg-muted/30 items-center rounded-lg p-4">
             <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
@@ -163,12 +164,14 @@ function LocationsScreen() {
             <View className="mt-4 flex-row">
               <TouchableOpacity
                 className="bg-primary/10 mr-2 rounded-full px-4 py-2"
-                onPress={clearSearch}>
+                onPress={clearSearch}
+              >
                 <Text className="text-primary">Clear Search</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="rounded-full bg-primary px-4 py-2"
-                onPress={handleAddLocation}>
+                onPress={handleAddLocation}
+              >
                 <Text className="text-white">Add New Location</Text>
               </TouchableOpacity>
             </View>
@@ -197,7 +200,8 @@ function LocationsScreen() {
               tintColor={colors.primary}
             />
           }
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+        >
           {showLocationsList && (
             <>
               {showSearchResults && (
@@ -237,7 +241,8 @@ function LocationsScreen() {
               </Text>
               <TouchableOpacity
                 className="mt-2 rounded-full bg-primary px-6 py-3"
-                onPress={handleAddLocation}>
+                onPress={handleAddLocation}
+              >
                 <Text className="font-medium text-white">Add Your First Location</Text>
               </TouchableOpacity>
               <Text className="mt-4 text-xs text-muted-foreground">

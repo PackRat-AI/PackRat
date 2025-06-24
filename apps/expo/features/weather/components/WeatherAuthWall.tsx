@@ -4,7 +4,7 @@ import { Image, SafeAreaView, View } from 'react-native';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 export function WeatherAuthWall() {
   const router = useRouter();
@@ -45,7 +45,8 @@ export function WeatherAuthWall() {
           onPress={() => router.push({ pathname: '/auth', params: { redirectTo: currentRoute } })}
           size="lg"
           variant="primary"
-          className="mb-4 w-full">
+          className="mb-4 w-full"
+        >
           <Text className="font-medium">Sign In</Text>
         </Button>
       </View>

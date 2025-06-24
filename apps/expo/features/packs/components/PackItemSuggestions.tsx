@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
 import { Icon } from '@roninoss/icons';
 import { usePackItemSuggestions } from '../hooks';
-import type { PackItem } from '~/types';
+import type { PackItem } from 'expo-app/types';
 import { PackItemSuggestionSkeleton } from './PackItemSuggestionSkeleton';
 import { Button } from 'nativewindui/Button';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Text } from 'nativewindui/Text';
-import { isAuthed } from '~/features/auth/store';
+import { isAuthed } from 'expo-app/features/auth/store';
 import { useRouter } from 'expo-router';
 import { ItemSuggestionCard } from './ItemSuggestionCard';
 
@@ -75,7 +75,8 @@ export function PackItemSuggestions({ packId, packItems }: AISuggestionsProps) {
           </View>
           <TouchableOpacity
             onPress={handleHideSuggestions}
-            className="rounded-full bg-gray-200 p-1">
+            className="rounded-full bg-gray-200 p-1"
+          >
             <Icon name="close" size={16} />
           </TouchableOpacity>
         </View>

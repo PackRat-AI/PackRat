@@ -34,14 +34,14 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { LocationSelector } from '~/features/weather/components/LocationSelector';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { formatAIResponse } from '~/utils/format-ai-response';
-import { getContextualGreeting, getContextualSuggestions } from '~/utils/chatContextHelpers';
+import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { formatAIResponse } from 'expo-app/utils/format-ai-response';
+import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { useAtomValue } from 'jotai';
-import { tokenAtom } from '~/features/auth/atoms/authAtoms';
-import { useActiveLocation } from '~/features/weather/hooks';
+import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { useActiveLocation } from 'expo-app/features/weather/hooks';
 
 const USER = 'User';
 const AI = 'PackRat AI';
@@ -145,7 +145,7 @@ export default function AIChat() {
     height: interpolate(
       progress.value,
       [0, 1],
-      [52 + insets.bottom, insets.bottom + textInputHeight.value - 2]
+      [52 + insets.bottom, insets.bottom + textInputHeight.value - 2],
     ),
   }));
 
@@ -241,7 +241,8 @@ export default function AIChat() {
             ROOT_STYLE,
             { backgroundColor: isDarkColorScheme ? colors.background : colors.card },
           ]}
-          behavior="padding">
+          behavior="padding"
+        >
           <FlashList
             // inverted
             ref={listRef}
@@ -262,7 +263,8 @@ export default function AIChat() {
                         <TouchableOpacity
                           key={index}
                           onPress={() => handleSuggestionPress(suggestion)}
-                          className="mb-2 rounded-full border border-border bg-card px-3 py-2">
+                          className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                        >
                           <Text className="text-sm text-foreground">{suggestion}</Text>
                         </TouchableOpacity>
                       ))}
@@ -371,15 +373,17 @@ function ChatBubble({
       className={cn(
         'justify-center px-2 pb-3.5',
         isSameNextSender ? 'pb-1' : 'pb-3.5',
-        isAI ? 'items-start pr-16' : 'items-end pl-16'
-      )}>
+        isAI ? 'items-start pr-16' : 'items-end pl-16',
+      )}
+    >
       <Animated.View style={!isAI ? rootStyle : undefined}>
         <View>
           <View
             className={cn(
               'absolute bottom-0 items-center justify-center',
-              isAI ? '-left-2 ' : '-right-2.5'
-            )}>
+              isAI ? '-left-2 ' : '-right-2.5',
+            )}
+          >
             {Platform.OS === 'ios' && (
               <>
                 <View
@@ -389,19 +393,19 @@ function ChatBubble({
                       ? 'bg-primary'
                       : Platform.OS === 'ios'
                         ? 'bg-background dark:bg-muted'
-                        : 'bg-background dark:bg-muted-foreground'
+                        : 'bg-background dark:bg-muted-foreground',
                   )}
                 />
                 <View
                   className={cn(
                     'absolute h-5 w-5 rounded-full bg-card dark:bg-background',
-                    !isAI ? '-right-2' : 'right-2'
+                    !isAI ? '-right-2' : 'right-2',
                   )}
                 />
                 <View
                   className={cn(
                     'absolute h-5 w-5 -translate-y-1 rounded-full bg-card dark:bg-background',
-                    !isAI ? '-right-2' : 'right-2'
+                    !isAI ? '-right-2' : 'right-2',
                   )}
                 />
               </>
@@ -414,8 +418,9 @@ function ChatBubble({
                 className={cn(
                   'rounded-2xl bg-background px-3 py-1.5 dark:bg-muted-foreground',
                   Platform.OS === 'ios' && 'dark:bg-muted',
-                  !isAI && 'bg-primary dark:bg-primary'
-                )}>
+                  !isAI && 'bg-primary dark:bg-primary',
+                )}
+              >
                 <Text className={cn(!isAI && 'text-white')}>
                   {isAI ? formatAIResponse(item.text) : item.text}
                 </Text>
@@ -467,7 +472,7 @@ function Composer({
   function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
     textInputHeight.value = Math.max(
       Math.min(event.nativeEvent.contentSize.height, 280),
-      Platform.select({ ios: 20, default: 38 })
+      Platform.select({ ios: 20, default: 38 }),
     );
   }
 
@@ -483,7 +488,8 @@ function Composer({
           }),
           paddingBottom: insets.bottom,
         },
-      ]}>
+      ]}
+    >
       <View className="flex-row items-end gap-2 px-4 py-2">
         <TextInput
           placeholder={placeholder}
@@ -505,14 +511,16 @@ function Composer({
             <Button
               onPress={handleSubmit}
               size="icon"
-              className="ios:rounded-full h-7 w-7 rounded-full">
+              className="ios:rounded-full h-7 w-7 rounded-full"
+            >
               <Icon name="arrow-up" size={18} color="white" />
             </Button>
           ) : (
             <Button
               size="icon"
               variant="plain"
-              className="ios:rounded-full h-7 w-7 rounded-full opacity-40">
+              className="ios:rounded-full h-7 w-7 rounded-full opacity-40"
+            >
               <Icon name="arrow-up" size={20} color={colors.foreground} />
             </Button>
           )}

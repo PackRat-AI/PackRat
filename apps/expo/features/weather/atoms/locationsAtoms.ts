@@ -1,13 +1,13 @@
 import { atom } from 'jotai';
 import { atomWithStorage, loadable } from 'jotai/utils';
-import { asyncStorage } from '~/utils/storage';
+import { asyncStorage } from 'expo-app/utils/storage';
 import type { WeatherLocation } from '../types';
 
 // Create a base atom for locations
 export const baseLocationsAtom = atomWithStorage<WeatherLocation[]>(
   'locations',
   [], // Start with an empty array, no hardcoded location
-  asyncStorage
+  asyncStorage,
 );
 
 // Create a loadable version of the atom to handle async loading
@@ -38,7 +38,7 @@ export const activeLocationAtom = atom(
       }));
       set(baseLocationsAtom, updatedLocations);
     }
-  }
+  },
 );
 
 // Create a search filter atom

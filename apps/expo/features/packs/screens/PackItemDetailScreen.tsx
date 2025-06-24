@@ -1,7 +1,7 @@
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, ScrollView, Text, View } from 'react-native';
-import { Chip } from '~/components/initial/Chip';
-import { WeightBadge } from '~/components/initial/WeightBadge';
+import { Chip } from 'expo-app/components/initial/Chip';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { Icon } from '@roninoss/icons';
 
 import {
@@ -13,12 +13,12 @@ import {
   isPackItem,
   isWorn,
   shouldShowQuantity,
-} from '~/lib/utils/itemCalculations';
+} from 'expo-app/lib/utils/itemCalculations';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { Button } from 'nativewindui/Button';
 import { usePackItem } from '../hooks';
-import { isAuthed } from '~/features/auth/store';
-import { CachedImage } from '~/features/packs/components/CachedImage';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 
 export function ItemDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -143,7 +143,8 @@ export function ItemDetailScreen() {
           <Button
             variant="primary"
             onPress={navigateToChat}
-            className="flex-row items-center justify-center rounded-full bg-primary px-4 py-3">
+            className="flex-row items-center justify-center rounded-full bg-primary px-4 py-3"
+          >
             <Icon name="message" size={20} color="white" />
             <Text className="font-semibold text-white">Ask AI About This Item</Text>
           </Button>

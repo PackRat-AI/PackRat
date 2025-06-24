@@ -1,21 +1,27 @@
-import { LucideIcon } from "@/lib/icons"
-import { cn } from "@/lib/utils"
+import { LucideIcon } from 'landing-app/lib/icons';
+import { cn } from 'landing-app/lib/utils';
 
 interface FeatureCardProps {
-  title: string
-  description: string
-  icon: string
-  color: string
-  className?: string
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
+  className?: string;
 }
 
-export default function FeatureCard({ title, description, icon, color, className }: FeatureCardProps) {
-  const Icon = LucideIcon(icon)
+export default function FeatureCard({
+  title,
+  description,
+  icon,
+  color,
+  className,
+}: FeatureCardProps) {
+  const Icon = LucideIcon(icon);
 
   return (
     <div
       className={cn(
-        "group relative h-full overflow-hidden rounded-2xl bg-card p-8 shadow-lg transition-all duration-300 hover:shadow-xl",
+        'group relative h-full overflow-hidden rounded-2xl bg-card p-8 shadow-lg transition-all duration-300 hover:shadow-xl',
         className,
       )}
     >
@@ -30,7 +36,10 @@ export default function FeatureCard({ title, description, icon, color, className
         <h3 className="mb-3 text-xl font-bold text-foreground">{title}</h3>
         <p className="text-muted-foreground flex-grow">{description}</p>
 
-        <div className="mt-6 inline-flex items-center text-sm font-medium transition-colors" style={{ color: color }}>
+        <div
+          className="mt-6 inline-flex items-center text-sm font-medium transition-colors"
+          style={{ color: color }}
+        >
           <span>Learn more</span>
           <svg
             className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-1"
@@ -61,5 +70,5 @@ export default function FeatureCard({ title, description, icon, color, className
         style={{ background: color }}
       ></div>
     </div>
-  )
+  );
 }

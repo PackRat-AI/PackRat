@@ -3,8 +3,8 @@ import { View, ScrollView } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 // Mock data for weather alerts
 const WEATHER_ALERTS = [
@@ -85,7 +85,8 @@ function WeatherAlertCard({ alert }: { alert: (typeof WEATHER_ALERTS)[0] }) {
         <View className="flex-row items-center">
           <View
             className="h-12 w-12 items-center justify-center rounded-full"
-            style={{ backgroundColor: alert.color }}>
+            style={{ backgroundColor: alert.color }}
+          >
             <Icon name={alert.icon} size={24} color="white" />
           </View>
 

@@ -14,23 +14,23 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from 'nativewindui/List';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { WeatherTile } from '~/features/weather/components/WeatherTile';
-import { CurrentPackTile } from '~/features/packs/components/CurrentPackTile';
-import { RecentPacksTile } from '~/features/packs/components/RecentPacksTile';
-import { AIChatTile } from '~/features/ai/components/AIChatTile';
-import { PackStatsTile } from '~/features/packs/components/PackStatsTile';
-import { WeightAnalysisTile } from '~/features/packs/components/WeightAnalysisTile';
-import { PackCategoriesTile } from '~/features/packs/components/PackCategoriesTile';
-import { UpcomingTripsTile } from '~/features/trips/components/UpcomingTripsTile';
-import { TrailConditionsTile } from '~/features/trips/components/TrailConditionsTile';
-import { WeatherAlertsTile } from '~/features/weather/components/WeatherAlertsTile';
-import { GearInventoryTile } from '~/features/packs/components/GearInventoryTile';
-import { SharedPacksTile } from '~/features/packs/components/SharedPacksTile';
-import { PackTemplatesTile } from '~/features/pack-templates/components/PackTemplatesTile';
-import { ShoppingListTile } from '~/features/packs/components/ShoppingListTile';
-import { featureFlags } from '~/config';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
+import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
+import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
+import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
+import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
+import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
+import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
+import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
+import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
+import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
+import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
+import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
+import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
+import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
+import { featureFlags } from 'expo-app/config';
 
 // Define tile metadata for search functionality
 const tileMetadata = {
@@ -186,7 +186,8 @@ export default function DashboardScreen() {
                       onPress={() => {
                         setSearchValue('');
                         searchBarRef.current?.clearText();
-                      }}>
+                      }}
+                    >
                       <Component />
                     </Pressable>
                   );

@@ -7,7 +7,7 @@ import { Button } from 'nativewindui/Button';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { Toggle } from 'nativewindui/Toggle';
-import { cn } from '~/lib/cn';
+import { cn } from 'expo-app/lib/cn';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
@@ -39,7 +39,8 @@ export default function NotificationsScreen() {
                 variant="plain"
                 onPress={() => {
                   router.back();
-                }}>
+                }}
+              >
                 <Text className={cn(canSave && 'text-primary')}>Save</Text>
               </Button>
             ),
@@ -49,11 +50,13 @@ export default function NotificationsScreen() {
 
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: insets.bottom }}>
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+      >
         <Form className="gap-5 px-4 pt-8">
           <FormSection
             materialIconProps={{ name: 'bell-outline' }}
-            footnote="Receive communication including announcements, marketing, recommendations, and updates about products, services, and software.">
+            footnote="Receive communication including announcements, marketing, recommendations, and updates about products, services, and software."
+          >
             <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row justify-between px-2 pb-4">
               <View className="w-40 flex-row items-center justify-between">
                 <Text className="font-medium">Push Notifications</Text>
@@ -74,7 +77,8 @@ export default function NotificationsScreen() {
                 disabled={!canSave}
                 onPress={() => {
                   router.back();
-                }}>
+                }}
+              >
                 <Text>Save</Text>
               </Button>
             </View>

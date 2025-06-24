@@ -1,8 +1,8 @@
 import { View, TouchableOpacity, Linking } from 'react-native';
 import { Icon } from '@roninoss/icons';
-import type { ItemLink } from '~/types';
+import type { ItemLink } from 'expo-app/types';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 type ItemLinksProps = {
   links: ItemLink[];
@@ -46,7 +46,8 @@ export function ItemLinks({ links }: ItemLinksProps) {
           <TouchableOpacity
             key={link.id}
             className="flex-row items-center border-b border-border p-3 last:border-b-0"
-            onPress={() => handleLinkPress(link.url)}>
+            onPress={() => handleLinkPress(link.url)}
+          >
             <Icon name={getIconName(link.type)} size={18} color={colors.primary} />
             <View className="ml-3 flex-1">
               <Text className="text-foreground">{link.title}</Text>

@@ -4,8 +4,8 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from 'axios';
-import { store } from '~/atoms/store';
-import { tokenAtom, refreshTokenAtom } from '~/features/auth/atoms/authAtoms';
+import { store } from 'expo-app/atoms/store';
+import { tokenAtom, refreshTokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import * as SecureStore from 'expo-secure-store';
 
 // Define base API URL based on environment
@@ -63,7 +63,7 @@ axiosInstance.interceptors.request.use(
   },
   (error: AxiosError) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for error handling
@@ -133,7 +133,7 @@ axiosInstance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // Helper function to handle API errors

@@ -18,9 +18,9 @@ import { Icon } from '@roninoss/icons';
 import { Checkbox } from 'nativewindui/Checkbox';
 import { AlertAnchor } from 'nativewindui/Alert';
 import type { AlertRef } from 'nativewindui/Alert/types';
-import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Enhanced password validation schema
 const passwordSchema = z
@@ -148,7 +148,7 @@ export default function CredentialsScreen() {
         setIsLoading(false);
         Alert.alert(
           'Registration Failed',
-          error instanceof Error ? error.message : 'Please check your information and try again.'
+          error instanceof Error ? error.message : 'Please check your information and try again.',
         );
       } finally {
         setIsLoading(false);
@@ -163,7 +163,8 @@ export default function CredentialsScreen() {
         bounces={false}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="ios:pt-12 pt-20">
+        contentContainerClassName="ios:pt-12 pt-20"
+      >
         <View className="ios:px-12 flex-1 px-8">
           <View className="items-center pb-1">
             <Image
@@ -364,7 +365,8 @@ export default function CredentialsScreen() {
                 <Button
                   size="lg"
                   disabled={!canSubmit || isLoading}
-                  onPress={() => form.handleSubmit()}>
+                  onPress={() => form.handleSubmit()}
+                >
                   <Text>{isLoading ? 'Loading...' : 'Submit'}</Text>
                 </Button>
               )}
@@ -383,7 +385,8 @@ export default function CredentialsScreen() {
                     }
                     KeyboardController.dismiss();
                     form.handleSubmit();
-                  }}>
+                  }}
+                >
                   <Text className="text-sm">
                     {isLoading
                       ? 'Loading...'

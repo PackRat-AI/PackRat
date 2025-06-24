@@ -10,14 +10,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { searchValueAtom } from '~/atoms/itemListAtoms';
-import { CatalogItemCard } from '~/features/catalog/components/CatalogItemCard';
-import { useHeaderSearchBar } from '~/lib/useHeaderSearchBar';
+import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
+import { CatalogItemCard } from 'expo-app/features/catalog/components/CatalogItemCard';
+import { useHeaderSearchBar } from 'expo-app/lib/useHeaderSearchBar';
 import { useCatalogItems } from '../hooks';
 import type { CatalogItem } from '../types';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { withAuthWall } from '~/features/auth/hocs';
+import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { CatalogItemsAuthWall } from '../components';
 
 type FilterOption = {
@@ -72,9 +72,11 @@ function CatalogItemsScreen() {
     <TouchableOpacity
       key={value}
       onPress={() => setActiveFilter(value)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}>
+      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}
+    >
       <Text
-        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}>
+        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}
+      >
         {label}
       </Text>
     </TouchableOpacity>

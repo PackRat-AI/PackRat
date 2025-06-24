@@ -18,16 +18,16 @@ import {
 import { Icon } from '@roninoss/icons';
 import { Button } from 'nativewindui/Button';
 import { useCatalogItemDetails } from '../hooks';
-import type { WeightUnit } from '~/types';
-import { useColorScheme } from '~/lib/useColorScheme';
+import type { WeightUnit } from 'expo-app/types';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Text } from 'nativewindui/Text';
-import { useCreatePackItem, usePackDetails } from '~/features/packs';
+import { useCreatePackItem, usePackDetails } from 'expo-app/features/packs';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();
   const { catalogItemId, packId } = useLocalSearchParams();
   const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
-    catalogItemId as string
+    catalogItemId as string,
   );
   const { data: pack, isLoading: isLoadingPack } = usePackDetails(packId as string);
   const { mutate: createItem, isPending: isCreating } = useCreatePackItem();
@@ -87,7 +87,7 @@ export function AddCatalogItemDetailsScreen() {
             params: { id: catalogItemId },
           });
         },
-      }
+      },
     );
   };
 
@@ -113,7 +113,8 @@ export function AddCatalogItemDetailsScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-background">
+      className="flex-1 bg-background"
+    >
       <SafeAreaView className="flex-1">
         <Animated.View style={{ opacity: fadeAnim }} className="flex-1">
           <ScrollView className="flex-1">
@@ -157,7 +158,8 @@ export function AddCatalogItemDetailsScreen() {
                   variant="secondary"
                   onPress={() =>
                     router.push({ pathname: '/catalog/add-to-pack', params: { catalogItemId } })
-                  }>
+                  }
+                >
                   <Text className="font-normal">Change</Text>
                 </Button>
               </View>
@@ -173,7 +175,8 @@ export function AddCatalogItemDetailsScreen() {
                       className="items-center justify-center rounded-l-md border border-r-0 border-border bg-card px-3 py-2"
                       onPress={() =>
                         setQuantity((prev) => Math.max(1, Number.parseInt(prev, 10) - 1).toString())
-                      }>
+                      }
+                    >
                       <Icon name="minus" size={18} color={colors.foreground} />
                     </TouchableOpacity>
                     <TextInput
@@ -187,7 +190,8 @@ export function AddCatalogItemDetailsScreen() {
                       className="items-center justify-center rounded-r-md border border-l-0 border-border bg-card px-3 py-2"
                       onPress={() =>
                         setQuantity((prev) => (Number.parseInt(prev, 10) + 1).toString())
-                      }>
+                      }
+                    >
                       <Icon name="plus" size={18} color={colors.foreground} />
                     </TouchableOpacity>
                   </View>

@@ -1,24 +1,24 @@
-"use client"
+'use client';
 
-import type React from "react"
-import Link from "next/link"
-import { siteConfig } from "@/config/site"
-import { Button } from "@/components/ui/button"
-import { Check, Apple, Store } from "lucide-react"
-import GradientBackground from "@/components/ui/gradient-background"
-import AnimatedGradientBorder from "@/components/ui/animated-gradient-border"
+import type React from 'react';
+import Link from 'next/link';
+import { siteConfig } from 'landing-app/config/site';
+import { Button } from 'landing-app/components/ui/button';
+import { Check, Apple, Store } from 'lucide-react';
+import GradientBackground from 'landing-app/components/ui/gradient-background';
+import AnimatedGradientBorder from 'landing-app/components/ui/animated-gradient-border';
 
 export default function DownloadSection() {
   // Handle smooth scrolling when clicking on navigation links
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault()
-    const targetId = href.substring(1)
-    const element = document.getElementById(targetId)
+    e.preventDefault();
+    const targetId = href.substring(1);
+    const element = document.getElementById(targetId);
 
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
+      element.scrollIntoView({ behavior: 'smooth' });
     }
-  }
+  };
 
   return (
     <section id="download" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
@@ -29,7 +29,7 @@ export default function DownloadSection() {
       <div className="container px-4 md:px-8 lg:px-12">
         <AnimatedGradientBorder
           borderWidth={1}
-          colors={["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--primary))"]}
+          colors={['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--primary))']}
           className="rounded-2xl md:rounded-[40px] shadow-2xl overflow-hidden relative border animate-fade-in"
         >
           <div className="rounded-2xl md:rounded-[40px] bg-card shadow-2xl overflow-hidden relative">
@@ -47,7 +47,9 @@ export default function DownloadSection() {
                   {siteConfig.download.title}
                 </h2>
 
-                <p className="text-base md:text-lg text-muted-foreground">{siteConfig.download.subtitle}</p>
+                <p className="text-base md:text-lg text-muted-foreground">
+                  {siteConfig.download.subtitle}
+                </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   {/* Modified features list to remove pricing references */}
@@ -105,12 +107,12 @@ export default function DownloadSection() {
                 <div className="relative mx-auto max-w-[220px] md:max-w-[280px]">
                   <div
                     className="relative overflow-hidden rounded-[30px] md:rounded-[40px] border-[10px] md:border-[14px] bg-black aspect-[9/19.5] shadow-2xl shadow-black/20"
-                    style={{ borderColor: "#1E293B" }}
+                    style={{ borderColor: '#1E293B' }}
                   >
                     <div className="absolute top-0 left-1/2 z-10 h-4 md:h-6 w-24 md:w-36 -translate-x-1/2 rounded-b-3xl bg-black"></div>
                     <div className="absolute inset-0 overflow-hidden">
                       <img
-                        src={siteConfig.download.image || "/placeholder.svg"}
+                        src={siteConfig.download.image || '/placeholder.svg'}
                         alt="PackRat App"
                         className="object-cover w-full h-full"
                       />
@@ -151,5 +153,5 @@ export default function DownloadSection() {
         </AnimatedGradientBorder>
       </div>
     </section>
-  )
+  );
 }

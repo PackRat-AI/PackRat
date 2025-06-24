@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { usePackDetails } from './usePackDetails';
 import { computeCategorySummaries, convertFromGrams, convertToGrams } from '../utils';
-import { userStore } from '~/features/auth/store';
+import { userStore } from 'expo-app/features/auth/store';
 
 export const getPackWeightAnalysis = async (packId: string): Promise<any> => {
   try {
@@ -40,7 +40,7 @@ export function usePackWeightAnalysis(packId: string) {
       baseWeight: pack.baseWeight,
       consumableWeight: convertFromGrams(
         consumableWeightInGrams,
-        userStore.preferredWeightUnit.peek() ?? 'g'
+        userStore.preferredWeightUnit.peek() ?? 'g',
       ),
       wornWeight: convertFromGrams(wornWeightInGrams, userStore.preferredWeightUnit.peek() ?? 'g'),
       totalWeight: pack.totalWeight,

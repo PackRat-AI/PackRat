@@ -1,7 +1,7 @@
-import { userStore } from '~/features/auth/store';
+import { userStore } from 'expo-app/features/auth/store';
 import { convertToGrams } from './convertToGrams';
 import { convertFromGrams } from './convertFromGrams';
-import { Pack } from '../types';
+import type { Pack } from '../types';
 
 export function computeCategorySummaries(pack: Pack) {
   const items = pack.items;

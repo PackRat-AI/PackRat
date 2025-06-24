@@ -4,12 +4,12 @@ import React from 'react';
 import { Platform, ScrollView, View } from 'react-native';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 import { Alert } from 'nativewindui/Alert';
-import { AlertRef } from 'nativewindui/Alert/types';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 
 import { Text } from 'nativewindui/Text';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 export default function ModalScreen() {
   const { colorScheme, colors } = useColorScheme();
@@ -87,7 +87,8 @@ export default function ModalScreen() {
                 ],
               })
             }
-            className="flex-row items-center justify-between p-2">
+            className="flex-row items-center justify-between p-2"
+          >
             <View className="flex-row items-center gap-3">
               {isLoading ? (
                 <ActivityIndicator size={24} color={colors.destructive} />

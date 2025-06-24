@@ -1,24 +1,24 @@
-"use client"
+'use client';
 
-import type React from "react"
-import Link from "next/link"
-import { Backpack } from "lucide-react"
-import { siteConfig } from "@/config/site"
-import { LucideIcon } from "@/lib/icons"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
+import type React from 'react';
+import Link from 'next/link';
+import { Backpack } from 'lucide-react';
+import { siteConfig } from 'landing-app/config/site';
+import { LucideIcon } from 'landing-app/lib/icons';
+import GradientText from 'landing-app/components/ui/gradient-text';
+import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
 
 export default function SiteFooter() {
   // Handle smooth scrolling when clicking on navigation links
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault()
-    const targetId = href.substring(1)
-    const element = document.getElementById(targetId)
+    e.preventDefault();
+    const targetId = href.substring(1);
+    const element = document.getElementById(targetId);
 
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
+      element.scrollIntoView({ behavior: 'smooth' });
     }
-  }
+  };
 
   return (
     <footer className="border-t py-10 md:py-14 lg:py-16 relative border-border">
@@ -39,19 +39,28 @@ export default function SiteFooter() {
                 {siteConfig.name}
               </GradientText>
             </div>
-            <p className="text-sm text-muted-foreground mb-6">Your ultimate companion for outdoor adventures.</p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Your ultimate companion for outdoor adventures.
+            </p>
             <div className="flex gap-4">
               {siteConfig.social.map((item) => {
-                const Icon = LucideIcon(item.icon)
+                const Icon = LucideIcon(item.icon);
 
                 return (
-                  <GradientBorderCard key={item.name} className="p-2 bg-card/80" containerClassName="w-fit h-fit">
-                    <Link href={item.href} className="text-muted-foreground hover:text-primary transition-colors">
+                  <GradientBorderCard
+                    key={item.name}
+                    className="p-2 bg-card/80"
+                    containerClassName="w-fit h-fit"
+                  >
+                    <Link
+                      href={item.href}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
                       <span className="sr-only">{item.name}</span>
                       {Icon && <Icon className="h-5 w-5" />}
                     </Link>
                   </GradientBorderCard>
-                )
+                );
               })}
             </div>
           </div>
@@ -63,7 +72,7 @@ export default function SiteFooter() {
                 <li key={index}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith("#") && scrollToSection(e, item.href)}
+                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {item.title}
@@ -80,7 +89,7 @@ export default function SiteFooter() {
                 <li key={index}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith("#") && scrollToSection(e, item.href)}
+                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {item.title}
@@ -97,7 +106,7 @@ export default function SiteFooter() {
                 <li key={index}>
                   <Link
                     href={item.href}
-                    onClick={(e) => item.href.startsWith("#") && scrollToSection(e, item.href)}
+                    onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {item.title}
@@ -117,5 +126,5 @@ export default function SiteFooter() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 const ROOT_STYLE: ViewStyle = { flex: 1 };
 
@@ -20,7 +20,8 @@ export function WelcomeConsentScreen() {
           </Text>
           <Text
             variant="largeTitle"
-            className="ios:text-left ios:font-black text-center font-bold text-primary">
+            className="ios:text-left ios:font-black text-center font-bold text-primary"
+          >
             Application
           </Text>
         </View>

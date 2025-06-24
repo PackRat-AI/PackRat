@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { CatalogItem } from '../types';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 
 // API function
 export const getCatalogItem = async (id: string): Promise<CatalogItem> => {

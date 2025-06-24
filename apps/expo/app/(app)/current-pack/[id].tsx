@@ -6,12 +6,12 @@ import { View, ScrollView, SafeAreaView } from 'react-native';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { userStore } from '~/features/auth/store';
-import { usePackDetails } from '~/features/packs/hooks/usePackDetails';
-import { computeCategorySummaries } from '~/features/packs/utils';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/useColorScheme';
-import { getRelativeTime } from '~/lib/utils/getRelativeTime';
+import { userStore } from 'expo-app/features/auth/store';
+import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
+import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 
 function WeightCard({
   title,
@@ -59,8 +59,9 @@ function CategoryItem({ category, index }: { category: any; index: number }) {
     <View
       className={cn(
         'flex-row items-center justify-between p-4',
-        index > 0 ? 'border-border/25 dark:border-border/80 border-t' : ''
-      )}>
+        index > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
+      )}
+    >
       <View>
         <Text>{category.name}</Text>
         <Text variant="footnote" className="text-muted-foreground">
@@ -70,7 +71,8 @@ function CategoryItem({ category, index }: { category: any; index: number }) {
       </View>
       <View
         className="h-6 w-6 items-center justify-center rounded-full"
-        style={{ backgroundColor: colors.grey4 }}>
+        style={{ backgroundColor: colors.grey4 }}
+      >
         <Text variant="caption2" style={{ color: colors.grey }}>
           {category.items}
         </Text>
@@ -84,8 +86,9 @@ function ItemRow({ item, index }: { item: any; index: number }) {
     <View
       className={cn(
         'flex-row items-center justify-between p-4',
-        index > 0 ? 'border-border/25 dark:border-border/80 border-t' : ''
-      )}>
+        index > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
+      )}
+    >
       <View>
         <Text>{item.name}</Text>
         <Text variant="footnote" className="text-muted-foreground">
@@ -127,7 +130,8 @@ export default function CurrentPackScreen() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
-        removeClippedSubviews={false}>
+        removeClippedSubviews={false}
+      >
         <View className="flex-row items-center p-4">
           <Avatar className="mr-4 h-16 w-16" alt="">
             <AvatarImage source={{ uri: pack.image }} />

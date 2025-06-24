@@ -1,13 +1,16 @@
-import { siteConfig } from "@/config/site"
-import { QuoteIcon } from "lucide-react"
-import GradientText from "@/components/ui/gradient-text"
-import GradientBackground from "@/components/ui/gradient-background"
-import GradientBorderCard from "@/components/ui/gradient-border-card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { siteConfig } from 'landing-app/config/site';
+import { QuoteIcon } from 'lucide-react';
+import GradientText from 'landing-app/components/ui/gradient-text';
+import GradientBackground from 'landing-app/components/ui/gradient-background';
+import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
+import { Avatar, AvatarFallback } from 'landing-app/components/ui/avatar';
 
 export default function TestimonialsSection() {
   return (
-    <section id="testimonials" className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted/50">
+    <section
+      id="testimonials"
+      className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted/50"
+    >
       {/* Background pattern */}
       <GradientBackground variant="mesh" />
 
@@ -40,7 +43,9 @@ export default function TestimonialsSection() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="font-bold text-foreground text-sm md:text-base">{testimonial.name}</h4>
+                  <h4 className="font-bold text-foreground text-sm md:text-base">
+                    {testimonial.name}
+                  </h4>
                   <GradientText className="text-xs md:text-sm">{testimonial.role}</GradientText>
                 </div>
               </div>
@@ -54,7 +59,7 @@ export default function TestimonialsSection() {
                   <svg
                     key={i}
                     className={`w-4 h-4 md:w-5 md:h-5 ${
-                      i < testimonial.rating ? "text-amber-400" : "text-gray-300 dark:text-gray-600"
+                      i < testimonial.rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'
                     }`}
                     fill="currentColor"
                     viewBox="0 0 20 20"
@@ -77,5 +82,5 @@ export default function TestimonialsSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

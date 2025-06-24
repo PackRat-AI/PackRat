@@ -31,7 +31,8 @@ export function CatalogItemsAuthWall() {
           onPress={() => router.push({ pathname: '/auth', params: { redirectTo: currentRoute } })}
           size="lg"
           variant="primary"
-          className="mb-4 w-full">
+          className="mb-4 w-full"
+        >
           <Text className="font-medium">Sign In</Text>
         </Button>
       </View>

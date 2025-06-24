@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import type { FC } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 export function withAuthWall<P extends object>(Component: FC<P>, AuthWall: FC): FC<P> {

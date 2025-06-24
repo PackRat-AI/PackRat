@@ -11,11 +11,11 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "components": "landing-app/components",
+    "utils": "landing-app/lib/utils",
+    "ui": "landing-app/components/ui",
+    "lib": "landing-app/lib",
+    "hooks": "landing-app/hooks"
   },
   "iconLibrary": "lucide"
 }

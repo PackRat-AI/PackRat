@@ -1,16 +1,16 @@
-import GuideCard from "@/components/guide-card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import GuideCard from 'guides-app/components/guide-card';
+import { Badge } from 'guides-app/components/ui/badge';
+import { Button } from 'guides-app/components/ui/button';
 import {
   getAllPosts,
   getMdxContent,
   getPostBySlug,
   getRelatedPosts,
-} from "@/lib/mdx-static";
-import { format } from "date-fns";
-import { ArrowLeft, Calendar, Clock, MountainSnow, User } from "lucide-react";
-import Link from "next/link";
-import { notFound } from "next/navigation";
+} from 'guides-app/lib/mdx-static';
+import { format } from 'date-fns';
+import { ArrowLeft, Calendar, Clock, MountainSnow, User } from 'lucide-react';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
 
 export async function generateStaticParams() {
   const posts = getAllPosts();
@@ -19,18 +19,14 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
   const post = getPostBySlug(slug);
 
   if (!post) {
     return {
-      title: "Guide Not Found",
+      title: 'Guide Not Found',
     };
   }
 
@@ -40,11 +36,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function GuidePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function GuidePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
   const post = getPostBySlug(slug);
@@ -84,17 +76,15 @@ export default async function GuidePage({
           <div className="mt-6 flex flex-wrap items-center gap-5 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1.5">
               <User className="h-4 w-4" />
-              <span>{post.author || "PackRat Team"}</span>
+              <span>{post.author || 'PackRat Team'}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4" />
-              <time dateTime={post.date}>
-                {format(new Date(post.date), "MMMM d, yyyy")}
-              </time>
+              <time dateTime={post.date}>{format(new Date(post.date), 'MMMM d, yyyy')}</time>
             </div>
             <div className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
-              <span>{post.readingTime || "5 min read"}</span>
+              <span>{post.readingTime || '5 min read'}</span>
             </div>
             {post.difficulty && (
               <div className="flex items-center gap-1.5">
@@ -122,9 +112,7 @@ export default async function GuidePage({
 
           {relatedPosts.length > 0 && (
             <div className="mt-16">
-              <h2 className="mb-8 text-2xl font-semibold text-center">
-                Related Guides
-              </h2>
+              <h2 className="mb-8 text-2xl font-semibold text-center">Related Guides</h2>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedPosts.map((post) => (
                   <GuideCard key={post.slug} post={post} />

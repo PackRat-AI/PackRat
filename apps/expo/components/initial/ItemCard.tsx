@@ -1,8 +1,8 @@
-import { Icon, MaterialIconName } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { Image, Pressable, Text, View } from 'react-native';
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { cn } from '~/lib/cn';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { cn } from 'expo-app/lib/cn';
 import {
   calculateTotalWeight,
   getQuantity,
@@ -10,8 +10,8 @@ import {
   isPackItem,
   isWorn,
   shouldShowQuantity,
-} from '~/lib/utils/itemCalculations';
-import type { CatalogItem, PackItem } from '~/types';
+} from 'expo-app/lib/utils/itemCalculations';
+import type { CatalogItem, PackItem } from 'expo-app/types';
 
 type ItemCardProps = {
   item: CatalogItem | PackItem;
@@ -32,7 +32,8 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
-      onPress={() => onPress(item)}>
+      onPress={() => onPress(item)}
+    >
       <View className="flex-row">
         {item.image ? (
           <Image source={{ uri: item.image }} className="h-24 w-24" resizeMode="cover" />
@@ -52,8 +53,9 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
             <View
               className={cn(
                 'rounded-full px-2 py-0.5',
-                isPackItem(item) ? 'bg-primary/20' : 'bg-secondary/20'
-              )}>
+                isPackItem(item) ? 'bg-primary/20' : 'bg-secondary/20',
+              )}
+            >
               <Text className="text-xs text-primary">
                 {isPackItem(item) ? 'Pack Item' : 'Catalog Item'}
               </Text>

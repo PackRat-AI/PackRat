@@ -4,11 +4,11 @@ import { View, ScrollView, ActivityIndicator } from 'react-native';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { featureFlags } from '~/config';
-import { userStore } from '~/features/auth/store';
-import { usePackDetails } from '~/features/packs/hooks/usePackDetails';
-import { usePackWeightHistory } from '~/features/packs/hooks/usePackWeightHistory';
-import { computeCategorySummaries } from '~/features/packs/utils';
+import { featureFlags } from 'expo-app/config';
+import { userStore } from 'expo-app/features/auth/store';
+import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
+import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
+import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();
@@ -70,7 +70,8 @@ export default function PackStatsScreen() {
                 ) : (
                   <Text
                     variant="largeTitle"
-                    className="mx-auto mt-2 self-center text-center text-muted-foreground">
+                    className="mx-auto mt-2 self-center text-center text-muted-foreground"
+                  >
                     N/A
                   </Text>
                 )}

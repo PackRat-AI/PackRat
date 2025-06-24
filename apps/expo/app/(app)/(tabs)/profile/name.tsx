@@ -8,7 +8,7 @@ import { Button } from 'nativewindui/Button';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
-import { cn } from '~/lib/cn';
+import { cn } from 'expo-app/lib/cn';
 
 export default function NameScreen() {
   const insets = useSafeAreaInsets();
@@ -46,7 +46,8 @@ export default function NameScreen() {
                 className="ios:px-0"
                 disabled={!canSave}
                 variant="plain"
-                onPress={router.back}>
+                onPress={router.back}
+              >
                 <Text className={cn(canSave && 'text-primary')}>Save</Text>
               </Button>
             ),
@@ -59,7 +60,8 @@ export default function NameScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ paddingBottom: insets.bottom }}>
+        contentContainerStyle={{ paddingBottom: insets.bottom }}
+      >
         <Form className="gap-5 px-4 pt-8">
           <FormSection materialIconProps={{ name: 'person-outline' }}>
             <FormItem>
@@ -110,7 +112,8 @@ export default function NameScreen() {
               <Button
                 className={cn('px-6', !canSave && 'bg-muted')}
                 disabled={!canSave}
-                onPress={router.back}>
+                onPress={router.back}
+              >
                 <Text>Save</Text>
               </Button>
             </View>

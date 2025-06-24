@@ -17,7 +17,7 @@ import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for name validation
 const nameFormSchema = z.object({
@@ -31,7 +31,7 @@ type NameFormValues = z.infer<typeof nameFormSchema>;
 export default function InfoScreen() {
   const insets = useSafeAreaInsets();
   const [focusedTextField, setFocusedTextField] = React.useState<'first-name' | 'last-name' | null>(
-    null
+    null,
   );
 
   const form = useForm({
@@ -61,7 +61,8 @@ export default function InfoScreen() {
         bounces={false}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
-        contentContainerClassName="ios:pt-12 pt-20">
+        contentContainerClassName="ios:pt-12 pt-20"
+      >
         <View className="ios:px-12 flex-1 px-8">
           <View className="items-center pb-1">
             <Image
@@ -133,7 +134,8 @@ export default function InfoScreen() {
         offset={{
           closed: 0,
           opened: Platform.select({ ios: insets.bottom + 30, default: insets.bottom }),
-        }}>
+        }}
+      >
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
@@ -141,7 +143,8 @@ export default function InfoScreen() {
                 <Button
                   size="lg"
                   disabled={!canSubmit || isSubmitting}
-                  onPress={() => form.handleSubmit()}>
+                  onPress={() => form.handleSubmit()}
+                >
                   <Text>{isSubmitting ? 'Loading...' : 'Continue'}</Text>
                 </Button>
               )}
@@ -154,7 +157,8 @@ export default function InfoScreen() {
               className="px-2"
               onPress={() => {
                 router.replace('/auth/(login)');
-              }}>
+              }}
+            >
               <Text className="text-sm text-primary">Already have an account?</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
@@ -168,7 +172,8 @@ export default function InfoScreen() {
                     }
                     KeyboardController.dismiss();
                     form.handleSubmit();
-                  }}>
+                  }}
+                >
                   <Text className="text-sm">{isSubmitting ? 'Loading...' : 'Next'}</Text>
                 </Button>
               )}
@@ -181,7 +186,8 @@ export default function InfoScreen() {
           variant="plain"
           onPress={() => {
             router.replace('/auth/(login)');
-          }}>
+          }}
+        >
           <Text className="text-sm text-primary">Already have an account?</Text>
         </Button>
       )}
