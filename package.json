@@ -16,10 +16,5 @@
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
     "api": "bun run --cwd packages/api dev"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*",
-    "server"
-  ]
+  }
 }

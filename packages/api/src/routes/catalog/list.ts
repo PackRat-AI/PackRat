@@ -31,80 +31,76 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
     return unauthorizedResponse();
   }
 
-    const db = createDb(c);
-    const { id, page, limit, q, category } = c.req.valid("query");
+  const db = createDb(c);
+  const { id, page, limit, q, category } = c.req.valid("query");
 
-    if (id) {
-      // Get a specific catalog item
-      const item = await db.query.catalogItems.findFirst({
-        where: eq(catalogItems.id, Number.parseInt(id, 10)),
-      });
+  if (id) {
+    // Get a specific catalog item
+    const item = await db.query.catalogItems.findFirst({
+      where: eq(catalogItems.id, Number.parseInt(id, 10)),
+    });
 
-      if (!item) {
-        return c.json({ error: "Catalog item not found" }, { status: 404 });
-      }
-
-      return c.json(item);
+    if (!item) {
+      return c.json({ error: "Catalog item not found" }, { status: 404 });
     }
 
-    const conditions = [];
-    if (q) {
-      conditions.push(
-        or(
-          ilike(catalogItems.name, `%${q}%`),
-          ilike(catalogItems.description, `%${q}%`),
-          ilike(catalogItems.brand, `%${q}%`),
-          ilike(catalogItems.model, `%${q}%`),
-          ilike(catalogItems.category, `%${q}%`)
-        )
-      );
-    }
-    if (category) {
-      conditions.push(eq(catalogItems.category, category));
-    }
-    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    return c.json(item);
+  }
 
-    if (limit === 0) {
-      const items = await db.query.catalogItems.findMany({
-        where,
-        orderBy: [desc(catalogItems.id)],
-      });
-      return c.json({
-        items,
-        totalCount: items.length,
-        page: 1,
-        limit: items.length > 0 ? items.length : 1,
-        totalPages: 1,
-      });
-    }
+  const conditions = [];
+  if (q) {
+    conditions.push(
+      or(
+        ilike(catalogItems.name, `%${q}%`),
+        ilike(catalogItems.description, `%${q}%`),
+        ilike(catalogItems.brand, `%${q}%`),
+        ilike(catalogItems.model, `%${q}%`),
+        ilike(catalogItems.category, `%${q}%`)
+      )
+    );
+  }
+  if (category) {
+    conditions.push(eq(catalogItems.category, category));
+  }
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Get paginated catalog items
-    const offset = (page - 1) * limit;
-
-    const [items, total] = await Promise.all([
-      db.query.catalogItems.findMany({
-        where,
-        limit: limit,
-        offset,
-        orderBy: [desc(catalogItems.id)],
-      }),
-      db.select({ count: count() }).from(catalogItems).where(where),
-    ]);
-
-    const totalCount = total[0].count;
-    const totalPages = Math.ceil(totalCount / limit);
-
+  if (limit === 0) {
+    const items = await db.query.catalogItems.findMany({
+      where,
+      orderBy: [desc(catalogItems.id)],
+    });
     return c.json({
       items,
-      totalCount,
-      page,
-      limit,
-      totalPages,
+      totalCount: items.length,
+      page: 1,
+      limit: items.length > 0 ? items.length : 1,
+      totalPages: 1,
     });
-  } catch (error) {
-    console.error("Error fetching catalog items:", error);
-    return c.json({ error: "Failed to fetch catalog items" }, { status: 500 });
   }
+
+  // Get paginated catalog items
+  const offset = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    db.query.catalogItems.findMany({
+      where,
+      limit: limit,
+      offset,
+      orderBy: [desc(catalogItems.id)],
+    }),
+    db.select({ count: count() }).from(catalogItems).where(where),
+  ]);
+
+  const totalCount = total[0].count;
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return c.json({
+    items,
+    totalCount,
+    page,
+    limit,
+    totalPages,
+  });
 });
 
 const listPostRoute = createRoute({
