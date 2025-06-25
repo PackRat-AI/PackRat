@@ -10,13 +10,18 @@ type WeatherData = {
   windSpeed: number;
 };
 
-export async function getWeatherData(location: string, c: Context): Promise<WeatherData> {
-  try {
-    const { OPENWEATHER_KEY } = env<Env>(c);
+export class WeatherService {
+  private env: Env;
+
+  constructor(c: Context) {
+    this.env = env<Env>(c);
+  }
+
+  async getWeatherForLocation(location: string): Promise<WeatherData> {
     const response = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-        location,
-      )}&units=imperial&appid=${OPENWEATHER_KEY}`,
+        location
+      )}&units=imperial&appid=${this.env.OPENWEATHER_KEY}`
     );
 
     if (!response.ok) {
@@ -32,12 +37,5 @@ export async function getWeatherData(location: string, c: Context): Promise<Weat
       humidity: data.main.humidity,
       windSpeed: Math.round(data.wind.speed),
     };
-  } catch (error) {
-    c.get('sentry').setContext('weather', {
-      location,
-      openWeatherKey: !!env<Env>(c).OPENWEATHER_KEY,
-    });
-    console.error('Error fetching weather data:', error);
-    throw error; // will be captured by Sentry middleware
   }
 }
