@@ -1,17 +1,50 @@
-import { createDb } from '@packrat/api/db';
-import { packs, packWeightHistory } from '@packrat/api/db/schema';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import { computePacksWeights } from '@packrat/api/utils/compute-pack';
-import { eq } from 'drizzle-orm';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { createDb } from "@packrat/api/db";
+import { packs, packWeightHistory } from "@packrat/api/db/schema";
+import {
+  authenticateRequest,
+  unauthorizedResponse,
+} from "@packrat/api/utils/api-middleware";
+import { computePacksWeights } from "@packrat/api/utils/compute-pack";
+import { eq, or, and, ne } from "drizzle-orm";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 
 const packsListRoutes = new OpenAPIHono();
 
+// Get all packs (user + public)
+const allPacksRoute = createRoute({
+  method: "get",
+  path: "/all",
+  responses: { 200: { description: "Get all user + public packs" } },
+});
+
+packsListRoutes.openapi(allPacksRoute, async (c) => {
+  const auth = await authenticateRequest(c);
+  if (!auth) {
+    return unauthorizedResponse();
+  }
+
+  const db = createDb(c);
+
+  const allVisiblePacks = await db.query.packs.findMany({
+    where: or(
+      eq(packs.userId, auth.userId),
+      and(ne(packs.userId, auth.userId), eq(packs.isPublic, true)),
+    ),
+    with: {
+      items: true,
+    },
+  });
+
+  const packsWithWeights = computePacksWeights(allVisiblePacks);
+
+  return c.json(packsWithWeights);
+});
+
 // Get all packs for the user
 const listGetRoute = createRoute({
-  method: 'get',
-  path: '/',
-  responses: { 200: { description: 'Get user packs' } },
+  method: "get",
+  path: "/",
+  responses: { 200: { description: "Get user packs" } },
 });
 
 packsListRoutes.openapi(listGetRoute, async (c) => {
@@ -29,15 +62,16 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
   });
 
   const packsWithWeights = computePacksWeights(userPacks);
+
   return c.json(packsWithWeights);
 });
 
 // Create a new pack
 const listPostRoute = createRoute({
-  method: 'post',
-  path: '/',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Create pack' } },
+  method: "post",
+  path: "/",
+  request: { body: { content: { "application/json": { schema: z.any() } } } },
+  responses: { 200: { description: "Create pack" } },
 });
 
 packsListRoutes.openapi(listPostRoute, async (c) => {
@@ -51,7 +85,7 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
 
   // Ensure the client provides an ID
   if (!data.id) {
-    return c.json({ error: 'Pack ID is required' }, 400);
+    return c.json({ error: "Pack ID is required" }, 400);
   }
 
   const [newPack] = await db
@@ -75,9 +109,9 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
 });
 
 const weightHistoryRoute = createRoute({
-  method: 'get',
-  path: '/weight-history',
-  responses: { 200: { description: 'Get weight history' } },
+  method: "get",
+  path: "/weight-history",
+  responses: { 200: { description: "Get weight history" } },
 });
 
 packsListRoutes.openapi(weightHistoryRoute, async (c) => {
