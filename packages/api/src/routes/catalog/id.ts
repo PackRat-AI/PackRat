@@ -61,7 +61,6 @@ const updateItemRoute = createRoute({
 
 catalogItemRoutes.openapi(updateItemRoute, async (c) => {
   try {
-    // Only admins should be able to update catalog items
     const auth = await authenticateRequest(c);
     if (!auth) {
       return unauthorizedResponse();

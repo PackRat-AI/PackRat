@@ -5,7 +5,7 @@ import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { eq } from 'drizzle-orm';
+import { and, eq, like, sql } from 'drizzle-orm';
 import { env } from 'hono/adapter';
 
 const catalogListRoutes = new OpenAPIHono();
@@ -67,14 +67,10 @@ const listPostRoute = createRoute({
 
 catalogListRoutes.openapi(listPostRoute, async (c) => {
   try {
-    // Only admins should be able to create catalog items
     const auth = await authenticateRequest(c);
     if (!auth) {
       return unauthorizedResponse();
     }
-
-    // In a real app, you would check if the user is an admin
-    // For now, we'll just use authentication
 
     const db = createDb(c);
     const data = await c.req.json();
@@ -91,7 +87,6 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
       value: embeddingText,
     });
 
-    // Create the catalog item
     const [newItem] = await db
       .insert(catalogItems)
       .values({
@@ -104,7 +99,6 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
         brand: data.brand,
         model: data.model,
         url: data.url,
-        embedding: embedding,
 
         // New fields
         ratingValue: data.ratingValue,
@@ -122,6 +116,7 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
         techs: data.techs,
         links: data.links,
         reviews: data.reviews,
+        embedding,
       })
       .returning();
 
