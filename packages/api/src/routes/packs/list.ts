@@ -10,7 +10,30 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 
 const packsListRoutes = new OpenAPIHono();
 
-// Get all packs (user + public)
+async function getPacks({
+  db,
+  userId,
+  includePublic = false,
+}: {
+  db: ReturnType<typeof createDb>;
+  userId: number;
+  includePublic?: boolean;
+}) {
+  const where = includePublic
+    ? or(
+        eq(packs.userId, userId),
+        and(ne(packs.userId, userId), eq(packs.isPublic, true)),
+      )
+    : eq(packs.userId, userId);
+
+  const result = await db.query.packs.findMany({
+    where,
+    with: { items: true },
+  });
+
+  return computePacksWeights(result);
+}
+
 const allPacksRoute = createRoute({
   method: "get",
   path: "/all",
@@ -19,28 +42,18 @@ const allPacksRoute = createRoute({
 
 packsListRoutes.openapi(allPacksRoute, async (c) => {
   const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  if (!auth) return unauthorizedResponse();
 
   const db = createDb(c);
-
-  const allVisiblePacks = await db.query.packs.findMany({
-    where: or(
-      eq(packs.userId, auth.userId),
-      and(ne(packs.userId, auth.userId), eq(packs.isPublic, true)),
-    ),
-    with: {
-      items: true,
-    },
+  const result = await getPacks({
+    db,
+    userId: auth.userId,
+    includePublic: true,
   });
 
-  const packsWithWeights = computePacksWeights(allVisiblePacks);
-
-  return c.json(packsWithWeights);
+  return c.json(result);
 });
 
-// Get all packs for the user
 const listGetRoute = createRoute({
   method: "get",
   path: "/",
@@ -49,24 +62,14 @@ const listGetRoute = createRoute({
 
 packsListRoutes.openapi(listGetRoute, async (c) => {
   const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  if (!auth) return unauthorizedResponse();
 
   const db = createDb(c);
-  const userPacks = await db.query.packs.findMany({
-    where: eq(packs.userId, auth.userId),
-    with: {
-      items: true,
-    },
-  });
+  const result = await getPacks({ db, userId: auth.userId });
 
-  const packsWithWeights = computePacksWeights(userPacks);
-
-  return c.json(packsWithWeights);
+  return c.json(result);
 });
 
-// Create a new pack
 const listPostRoute = createRoute({
   method: "post",
   path: "/",
@@ -76,9 +79,7 @@ const listPostRoute = createRoute({
 
 packsListRoutes.openapi(listPostRoute, async (c) => {
   const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  if (!auth) return unauthorizedResponse();
 
   const db = createDb(c);
   const data = await c.req.json();
@@ -116,9 +117,7 @@ const weightHistoryRoute = createRoute({
 
 packsListRoutes.openapi(weightHistoryRoute, async (c) => {
   const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  if (!auth) return unauthorizedResponse();
 
   const db = createDb(c);
   const userPackWeightHistories = await db.query.packWeightHistory.findMany({
