@@ -131,10 +131,25 @@ export function createTools(c: Context, userId: number) {
         'Search the comprehensive gear database using semantic search.',
       parameters: z.object({
         query: z.string().min(1).describe('Search query to find catalog items'),
+        limit: z
+          .number()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe('Optional limit for number of results to return'),
+        offset: z
+          .number()
+          .min(0)
+          .optional()
+          .describe('Optional offset for pagination of results'),
       }),
-      execute: async ({ query }) => {
+      execute: async ({ query, limit, offset }) => {
         try {
-          const items = await catalogService.semanticSearch(query);
+          const items = await catalogService.semanticSearch(
+            query,
+            limit || 10,
+            offset || 0
+          );
           return {
             success: true,
             items,
