@@ -4,6 +4,7 @@ import {
   PackService,
   WeatherService,
   PackItemService,
+  CatalogService,
 } from '@packrat/api/services';
 import type { Context } from 'hono';
 
@@ -11,6 +12,7 @@ export function createTools(c: Context, userId: number) {
   const packService = new PackService(c, userId);
   const packItemService = new PackItemService(c, userId);
   const weatherService = new WeatherService(c);
+  const catalogService = new CatalogService(c);
 
   const sentry = c.get('sentry');
 
@@ -119,6 +121,34 @@ export function createTools(c: Context, userId: number) {
               error instanceof Error
                 ? error.message
                 : 'Failed to get weather data',
+          };
+        }
+      },
+    }),
+
+    semanticCatalogSearch: tool({
+      description:
+        'Search the comprehensive gear database using semantic search.',
+      parameters: z.object({
+        query: z.string().min(1).describe('Search query to find catalog items'),
+      }),
+      execute: async ({ query }) => {
+        try {
+          const items = await catalogService.semanticSearch(query);
+          return {
+            success: true,
+            items,
+          };
+        } catch (error) {
+          sentry.setTag('location', 'ai-tool-call/semanticCatalogSearch');
+          sentry.setContext('meta', { query });
+          sentry.captureException(error);
+          return {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to perform semantic search',
           };
         }
       },
