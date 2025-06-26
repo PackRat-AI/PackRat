@@ -1,4 +1,4 @@
-import type { Queue } from '@cloudflare/workers-types';
+import type { Ai, Queue } from '@cloudflare/workers-types';
 
 export type Env = {
   EMAIL_PROVIDER: string;
@@ -21,4 +21,7 @@ export type Env = {
   SENTRY_DSN: string;
   CF_VERSION_METADATA: WorkerVersionMetadata;
   ENVIRONMENT: string;
+  AI: Ai;
+  PACKRAT_GUIDES_RAG_NAME: string;
+  PACKRAT_GUIDES_BASE_URL: string;
 };

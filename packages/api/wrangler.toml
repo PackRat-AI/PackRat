@@ -24,6 +24,8 @@ PACKRAT_BUCKET_R2_BUCKET_NAME = "bucket"
 PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME = "bucket"
 PACKRAT_API_KEY = "key"
 SENTRY_DSN = "dsn"
+PACKRAT_GUIDES_RAG_NAME="packrat-guides-rag"
+PACKRAT_GUIDES_WEBSITE_URL="url"
 
 [[queues.producers]]
 queue = "packrat-etl-queue"
@@ -33,3 +35,6 @@ binding = "ETL_QUEUE"
 queue = "packrat-etl-queue"
 max_batch_size = 10
 max_batch_timeout = 5
+
+[ai]
+binding = "AI" 

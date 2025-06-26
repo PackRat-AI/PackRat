@@ -5,6 +5,7 @@ import {
   WeatherService,
   PackItemService,
   CatalogService,
+  AIService,
 } from '@packrat/api/services';
 import type { Context } from 'hono';
 
@@ -13,6 +14,7 @@ export function createTools(c: Context, userId: number) {
   const packItemService = new PackItemService(c, userId);
   const weatherService = new WeatherService(c);
   const catalogService = new CatalogService(c);
+  const aiService = new AIService(c);
 
   const sentry = c.get('sentry');
 
@@ -215,6 +217,46 @@ export function createTools(c: Context, userId: number) {
               error instanceof Error
                 ? error.message
                 : 'Failed to perform semantic search',
+          };
+        }
+      },
+    }),
+
+    searchPackratOutdoorGuidesRAG: tool({
+      description:
+        'Search the Packrat outdoor guides knowledge base using RAG (Retrieval-Augmented Generation).',
+      parameters: z.object({
+        query: z.string().min(1).describe('Search query for outdoor guides'),
+        limit: z
+          .number()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe('Optional limit for number of results to return'),
+      }),
+      execute: async ({ query, limit }) => {
+        try {
+          const results = await aiService.searchPackratOutdoorGuidesRAG(
+            query,
+            limit || 5
+          );
+          return {
+            success: true,
+            results,
+          };
+        } catch (error) {
+          sentry.setTag(
+            'location',
+            'ai-tool-call/searchPackratOutdoorGuidesRAG'
+          );
+          sentry.setContext('meta', { query });
+          sentry.captureException(error);
+          return {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to search outdoor guides',
           };
         }
       },
