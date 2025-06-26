@@ -126,6 +126,57 @@ export function createTools(c: Context, userId: number) {
       },
     }),
 
+    getCatalogItems: tool({
+      description:
+        'Retrieve items from the comprehensive gear database with optional filters or search criteria.',
+      parameters: z.object({
+        query: z
+          .string()
+          .optional()
+          .describe('Optional search query to filter catalog items'),
+        category: z
+          .string()
+          .optional()
+          .describe('Optional category to filter catalog items'),
+        limit: z
+          .number()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe('Optional limit for number of results to return'),
+        offset: z
+          .number()
+          .min(0)
+          .optional()
+          .describe('Optional offset for pagination of results'),
+      }),
+      execute: async ({ query, category, limit, offset }) => {
+        try {
+          const data = await catalogService.getCatalogItems({
+            q: query,
+            category,
+            limit: limit || 10,
+            offset: offset || 0,
+          });
+          return {
+            success: true,
+            data,
+          };
+        } catch (error) {
+          sentry.setTag('location', 'ai-tool-call/getCatalogItems');
+          sentry.setContext('meta', { query, category, limit, offset });
+          sentry.captureException(error);
+          return {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Failed to retrieve catalog items',
+          };
+        }
+      },
+    }),
+
     semanticCatalogSearch: tool({
       description:
         'Search the comprehensive gear database using semantic search.',

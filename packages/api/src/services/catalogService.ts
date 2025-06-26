@@ -5,6 +5,10 @@ import {
   gt,
   sql,
   count,
+  or,
+  ilike,
+  eq,
+  and,
 } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
@@ -22,6 +26,78 @@ export class CatalogService {
     this.env = env<Env>(c);
   }
 
+  async getCatalogItems(params: {
+    q?: string;
+    limit?: number;
+    offset?: number;
+    category?: string;
+  }): Promise<{
+    items: CatalogItem[];
+    total: number;
+    limit: number;
+    offset: number;
+    nextOffset: number;
+  }> {
+    const { q, limit = 10, offset = 0, category } = params;
+
+    if (limit < 1) {
+      throw new Error('Limit must be at least 1');
+    }
+
+    if (offset < 0) {
+      throw new Error('Offset cannot be negative');
+    }
+
+    const conditions = [];
+    if (q) {
+      conditions.push(
+        or(
+          ilike(catalogItems.name, `%${q}%`),
+          ilike(catalogItems.description, `%${q}%`),
+          ilike(catalogItems.brand, `%${q}%`),
+          ilike(catalogItems.model, `%${q}%`),
+          ilike(catalogItems.category, `%${q}%`)
+        )
+      );
+    }
+
+    if (category) {
+      conditions.push(eq(catalogItems.category, category));
+    }
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+    if (!limit) {
+      const items = await this.db.query.catalogItems.findMany({
+        where,
+      });
+      return {
+        items,
+        limit: items.length,
+        total: items.length,
+        offset: 0,
+        nextOffset: items.length,
+      };
+    }
+
+    const [items, [{ totalCount }]] = await Promise.all([
+      this.db.query.catalogItems.findMany({
+        where,
+        limit: limit,
+        offset,
+        orderBy: [desc(catalogItems.id)],
+      }),
+      this.db.select({ totalCount: count() }).from(catalogItems).where(where),
+    ]);
+
+    return {
+      items,
+      total: Number(totalCount),
+      limit,
+      offset,
+      nextOffset: offset + limit,
+    };
+  }
+
   async semanticSearch(
     q: string,
     limit: number = 10,
@@ -31,6 +107,7 @@ export class CatalogService {
     total: number;
     limit: number;
     offset: number;
+    nextOffset: number;
   }> {
     if (!q || q.trim() === '') {
       return {
@@ -38,6 +115,7 @@ export class CatalogService {
         total: 0,
         limit,
         offset,
+        nextOffset: offset + limit,
       };
     }
 
@@ -72,6 +150,7 @@ export class CatalogService {
       total: Number(totalCount),
       limit,
       offset,
+      nextOffset: offset + limit,
     };
   }
 }
