@@ -1,10 +1,8 @@
 import { Icon } from '@roninoss/icons';
-import { View, ScrollView } from 'react-native';
-import { colors } from 'react-native-keyboard-controller/lib/typescript/components/KeyboardToolbar/colors';
-
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { ScrollView, View } from 'react-native';
 
 // Mock data for pack templates
 const PACK_TEMPLATES = [

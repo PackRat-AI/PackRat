@@ -1,12 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import { type VariantProps, cva } from 'class-variance-authority';
-import { PanelLeft } from 'lucide-react';
-
-import { useIsMobile } from 'landing-app/hooks/use-mobile';
-import { cn } from 'landing-app/lib/utils';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from 'landing-app/components/ui/button';
 import { Input } from 'landing-app/components/ui/input';
 import { Separator } from 'landing-app/components/ui/separator';
@@ -18,6 +13,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from 'landing-app/components/ui/tooltip';
+import { useIsMobile } from 'landing-app/hooks/use-mobile';
+import { cn } from 'landing-app/lib/utils';
+import { PanelLeft } from 'lucide-react';
+import * as React from 'react';
 
 const SIDEBAR_COOKIE_NAME = 'sidebar:state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;

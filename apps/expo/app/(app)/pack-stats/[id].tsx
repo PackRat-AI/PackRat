@@ -1,14 +1,12 @@
-import { useLocalSearchParams } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
-
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { featureFlags } from 'expo-app/config';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
 import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { useLocalSearchParams } from 'expo-router';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { ScrollView, View } from 'react-native';
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();

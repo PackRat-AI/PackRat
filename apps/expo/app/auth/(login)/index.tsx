@@ -1,20 +1,19 @@
-import { Link, Stack, router, useLocalSearchParams } from 'expo-router';
+import { useForm } from '@tanstack/react-form';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
+import { Button } from 'nativewindui/Button';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { Text } from 'nativewindui/Text';
+import { TextField } from 'nativewindui/TextField';
 import * as React from 'react';
-import { Image, Platform, View, Alert } from 'react-native';
+import { Alert, Image, Platform, View } from 'react-native';
 import {
   KeyboardAwareScrollView,
   KeyboardController,
   KeyboardStickyView,
 } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
-
-import { Button } from 'nativewindui/Button';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { Text } from 'nativewindui/Text';
-import { TextField } from 'nativewindui/TextField';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 

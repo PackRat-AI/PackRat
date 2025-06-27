@@ -1,7 +1,7 @@
 import { use$ } from '@legendapp/state/react';
-import { isAuthed } from '../store';
 import { useAtomValue } from 'jotai';
 import { isLoadingAtom } from '../atoms/authAtoms';
+import { isAuthed } from '../store';
 import { useUser } from './useUser';
 
 export function useAuthState() {

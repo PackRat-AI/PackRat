@@ -1,6 +1,10 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon, type IconProps } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Tabs } from 'expo-router';
+import { Badge } from 'nativewindui/Badge';
+import { Text } from 'nativewindui/Text';
 import type * as React from 'react';
 import {
   Platform,
@@ -12,11 +16,6 @@ import {
 } from 'react-native';
 import Animated, { useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { Badge } from 'nativewindui/Badge';
-import { Text } from 'nativewindui/Text';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 export default function TabLayout() {
   const { colors } = useColorScheme();

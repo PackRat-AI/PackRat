@@ -1,13 +1,12 @@
 import { Icon } from '@roninoss/icons';
-import 'expo-dev-client';
-import { Stack, useRouter } from 'expo-router';
-import { Pressable, View } from 'react-native';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
-
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import 'expo-dev-client';
+import { Stack, useRouter } from 'expo-router';
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { Pressable, View } from 'react-native';
 
 export {
   // Catch any errors thrown by the Layout component.

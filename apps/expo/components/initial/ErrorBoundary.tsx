@@ -1,12 +1,12 @@
 'use client';
 
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { router } from 'expo-router';
 import type React from 'react';
 import type { ErrorInfo } from 'react';
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { Pressable, Text, View } from 'react-native';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 type ErrorBoundaryProps = {
   children: React.ReactNode;

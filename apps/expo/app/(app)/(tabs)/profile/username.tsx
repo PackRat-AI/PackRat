@@ -1,14 +1,13 @@
+import { cn } from 'expo-app/lib/cn';
 import { router, Stack } from 'expo-router';
-import * as React from 'react';
-import { Platform, View } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 import { Button } from 'nativewindui/Button';
 import { Form, FormItem, FormSection } from 'nativewindui/Form';
 import { Text } from 'nativewindui/Text';
 import { TextField } from 'nativewindui/TextField';
-import { cn } from 'expo-app/lib/cn';
+import * as React from 'react';
+import { Platform, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function UsernameScreen() {
   const insets = useSafeAreaInsets();

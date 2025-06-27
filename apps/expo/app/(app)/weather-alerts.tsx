@@ -1,10 +1,9 @@
 import { Icon } from '@roninoss/icons';
-import { View, ScrollView } from 'react-native';
-
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { ScrollView, View } from 'react-native';
 
 // Mock data for weather alerts
 const WEATHER_ALERTS = [

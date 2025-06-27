@@ -1,13 +1,13 @@
 'use client';
 
 import { Icon } from '@roninoss/icons';
-import { useState } from 'react';
-import { View, ScrollView, Pressable } from 'react-native';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import { Text } from 'nativewindui/Text';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 
 // Mock data for shopping list
 const SHOPPING_LIST = [

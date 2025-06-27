@@ -1,12 +1,12 @@
 'use client';
 
-import type React from 'react';
-import Link from 'next/link';
-import { Backpack } from 'lucide-react';
+import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
+import GradientText from 'landing-app/components/ui/gradient-text';
 import { siteConfig } from 'landing-app/config/site';
 import { LucideIcon } from 'landing-app/lib/icons';
-import GradientText from 'landing-app/components/ui/gradient-text';
-import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
+import { Backpack } from 'lucide-react';
+import Link from 'next/link';
+import type React from 'react';
 
 export default function SiteFooter() {
   // Handle smooth scrolling when clicking on navigation links

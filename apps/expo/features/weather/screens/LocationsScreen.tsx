@@ -1,31 +1,30 @@
 import { Icon } from '@roninoss/icons';
-import { router, useNavigation } from 'expo-router';
-import { useEffect, useState, useRef } from 'react';
-import {
-  Pressable,
-  TouchableOpacity,
-  View,
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  Keyboard,
-  Alert,
-  SafeAreaView,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAtom } from 'jotai';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
-import { SearchInput } from 'nativewindui/SearchInput';
+import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { router, useNavigation } from 'expo-router';
+import { useAtom } from 'jotai';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { SearchInput } from 'nativewindui/SearchInput';
+import { Text } from 'nativewindui/Text';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  Pressable,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { searchQueryAtom } from '../atoms/locationsAtoms';
-import { useLocations, useActiveLocation, useLocationRefresh } from '../hooks';
 import { LocationCard } from '../components/LocationCard';
-import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { WeatherAuthWall } from '../components/WeatherAuthWall';
+import { useActiveLocation, useLocationRefresh, useLocations } from '../hooks';
 
 function LocationsScreen() {
   const { colors } = useColorScheme();

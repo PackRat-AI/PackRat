@@ -1,15 +1,15 @@
 import { Icon } from '@roninoss/icons';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { Platform, ScrollView, View } from 'react-native';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 import { Alert } from 'nativewindui/Alert';
 import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 
 import { Text } from 'nativewindui/Text';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import React from 'react';
+import { Platform, ScrollView, View } from 'react-native';
 
 export default function ModalScreen() {
   const { colorScheme, colors } = useColorScheme();

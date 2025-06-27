@@ -1,11 +1,11 @@
 import type {
-  NavItem,
+  FaqItem,
   Feature,
+  Integration,
+  NavItem,
+  SocialLink,
   Step,
   Testimonial,
-  FaqItem,
-  SocialLink,
-  Integration,
 } from 'landing-app/types/site';
 
 export const siteConfig = {

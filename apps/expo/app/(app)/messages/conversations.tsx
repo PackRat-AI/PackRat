@@ -1,14 +1,27 @@
 import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
+import { Checkbox } from 'nativewindui/Checkbox';
+import { ContextMenu } from 'nativewindui/ContextMenu';
+import { createContextItem } from 'nativewindui/ContextMenu/utils';
+import { DropdownMenu } from 'nativewindui/DropdownMenu';
+import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { Toolbar } from 'nativewindui/Toolbar';
 import * as React from 'react';
 import {
-  type TextStyle,
-  type ViewStyle,
+  Dimensions,
   Platform,
   Pressable,
+  type TextStyle,
   View,
-  Dimensions,
+  type ViewStyle,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -23,20 +36,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { Checkbox } from 'nativewindui/Checkbox';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
-import { Toolbar } from 'nativewindui/Toolbar';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { cn } from 'expo-app/lib/cn';
 
 export default function ConversationsIosScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();
@@ -148,14 +147,14 @@ function LeftView({
         className="ios:px-0 px-2 py-1"
         onPress={() => setIsSelecting(false)}
       >
-        <Text className="text-primary font-normal">Done</Text>
+        <Text className="font-normal text-primary">Done</Text>
       </Button>
     );
   }
   return (
     <DropdownMenu items={dropdownItems} onItemPress={onItemPress}>
       <Button variant="plain" size="md" className="ios:px-0 px-2 py-1">
-        <Text className="text-primary font-normal">Edit</Text>
+        <Text className="font-normal text-primary">Edit</Text>
       </Button>
     </DropdownMenu>
   );
@@ -184,14 +183,14 @@ const SEARCH_BAR = {
     <View className={cn('flex-1', Platform.OS === 'ios' && 'bg-card dark:bg-background')}>
       <Animated.View
         entering={FadeIn.delay(150)}
-        className="ios:pt-4 border-border flex-row border-b px-4 pb-4"
+        className="ios:pt-4 flex-row border-b border-border px-4 pb-4"
       >
         <View className="items-center gap-2 py-2">
           <Avatar alt="avatar" className="h-12 w-12">
             <AvatarFallback>
               <View className="opacity-90 dark:opacity-80">
                 <Text
-                  className="dark:ios:text-white dark:text-background leading-6 text-white"
+                  className="dark:ios:text-white leading-6 text-white dark:text-background"
                   variant="title3"
                 >
                   GM
@@ -297,7 +296,7 @@ function MessageRow({
               </Animated.View>
               <View className="w-6 items-center justify-center">
                 <View className="pr-0.5">
-                  {info.item.unread && <View className="bg-primary h-2.5 w-2.5 rounded-full" />}
+                  {info.item.unread && <View className="h-2.5 w-2.5 rounded-full bg-primary" />}
                 </View>
               </View>
               <Avatar alt="avatar" className="h-12 w-12">
@@ -305,7 +304,7 @@ function MessageRow({
                   <View className="opacity-90 dark:opacity-80">
                     {info.item.contact ? (
                       <Text
-                        className="dark:ios:text-white dark:text-background leading-6 text-white"
+                        className="dark:ios:text-white leading-6 text-white dark:text-background"
                         variant="title3"
                       >
                         {getInitials(info.item.title)}
@@ -359,7 +358,7 @@ const renderIosContextMenuPreview = (info: { item: (typeof ITEMS)[number] }) => 
           </Text>
         </View>
         <View className="pr-10">
-          <View style={{ borderCurve: 'circular' }} className="bg-card rounded-2xl p-3">
+          <View style={{ borderCurve: 'circular' }} className="rounded-2xl bg-card p-3">
             <Text>{info.item.subTitle}</Text>
           </View>
         </View>

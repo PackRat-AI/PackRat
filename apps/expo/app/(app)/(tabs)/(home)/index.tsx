@@ -1,11 +1,24 @@
 'use client';
 
 import { Icon } from '@roninoss/icons';
+import { featureFlags } from 'expo-app/config';
+import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
+import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
+import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
+import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
+import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
+import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
+import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
+import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
+import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
+import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
+import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
+import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
+import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
+import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Link } from 'expo-router';
-import { Pressable, View, Text, FlatList } from 'react-native';
-import { useState, useRef, useMemo } from 'react';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
-
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
 import {
@@ -14,23 +27,8 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from 'nativewindui/List';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
-import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
-import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
-import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
-import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
-import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
-import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
-import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
-import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
-import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
-import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
-import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
-import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
-import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
-import { featureFlags } from 'expo-app/config';
+import { useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
 // Define tile metadata for search functionality
 const tileMetadata = {

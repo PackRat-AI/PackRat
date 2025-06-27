@@ -1,14 +1,14 @@
-import { siteConfig } from 'landing-app/config/site';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from 'landing-app/components/ui/accordion';
-import GradientText from 'landing-app/components/ui/gradient-text';
 import { CardContent } from 'landing-app/components/ui/card';
 import GradientBackground from 'landing-app/components/ui/gradient-background';
 import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
+import GradientText from 'landing-app/components/ui/gradient-text';
+import { siteConfig } from 'landing-app/config/site';
 
 export default function FaqSection() {
   // Filter out any pricing-related FAQs or modify them

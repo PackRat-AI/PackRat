@@ -1,6 +1,6 @@
+import * as SecureStore from 'expo-secure-store';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import * as SecureStore from 'expo-secure-store';
 
 // User type definition
 export type User = {

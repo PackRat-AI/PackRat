@@ -6,8 +6,10 @@
     "packages/*"
   ],
   "scripts": {
-    "clean:all": "bun run --cwd apps/* clean && bun run --cwd packages/* clean",
-    "clean": "bun run clean:all && bunx rimraf node_modules",
+    "clean": "bun run .github/scripts/clean.ts",
+    "env": "bun run .github/scripts/env.ts",
+    "lefthook": "lefthook install",
+    "postinstall": "bun run lefthook && bun run env",
     "check:deps": "manypkg check",
     "fix:deps": "bun manypkg fix",
     "check-types": "tsc --noEmit",
@@ -21,6 +23,10 @@
     "api": "bun run --cwd packages/api dev"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.4"
+    "@biomejs/biome": "2.0.4",
+    "@manypkg/cli": "^0.24.0",
+    "@types/bun": "^1.2.17",
+    "fs-extra": "^11.3.0",
+    "lefthook": "^1.11.14"
   }
 }

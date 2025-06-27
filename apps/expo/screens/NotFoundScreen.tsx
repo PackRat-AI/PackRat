@@ -1,9 +1,9 @@
 'use client';
 import { Icon } from '@roninoss/icons';
-import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
-import { Button } from 'nativewindui/Button';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useRouter } from 'expo-router';
+import { Button } from 'nativewindui/Button';
+import { Text, View } from 'react-native';
 
 type NotFoundScreenProps = {
   title?: string;

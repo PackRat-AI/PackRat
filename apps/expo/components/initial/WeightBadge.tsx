@@ -1,7 +1,7 @@
-import { Text, View } from 'react-native';
 import { cn } from 'expo-app/lib/cn';
 import type { WeightUnit } from 'expo-app/types';
 import { formatWeight } from 'expo-app/utils/weight';
+import { Text, View } from 'react-native';
 
 type WeightBadgeProps = {
   weight: number;

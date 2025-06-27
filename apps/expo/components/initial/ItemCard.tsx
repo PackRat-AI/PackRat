@@ -1,5 +1,4 @@
 import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { Image, Pressable, Text, View } from 'react-native';
 import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { cn } from 'expo-app/lib/cn';
@@ -12,6 +11,7 @@ import {
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
 import type { CatalogItem, PackItem } from 'expo-app/types';
+import { Image, Pressable, Text, View } from 'react-native';
 
 type ItemCardProps = {
   item: CatalogItem | PackItem;
