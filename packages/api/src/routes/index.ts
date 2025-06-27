@@ -9,11 +9,13 @@ import { searchRoutes } from './search';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
+import { adminRoutes } from './admin';
 
 const publicRoutes = new OpenAPIHono();
 
 // Mount public routes
 publicRoutes.route('/auth', authRoutes);
+publicRoutes.route('/admin', adminRoutes);
 
 const protectedRoutes = new OpenAPIHono();
 
