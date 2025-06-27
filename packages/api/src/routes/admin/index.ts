@@ -17,12 +17,10 @@ adminRoutes.use(
   },
   basicAuth({
     verifyUser: (username, password, c) => {
-      return (
-        username === env<Env>(c).ADMIN_USERNAME && password === env<Env>(c).ADMIN_PASSWORD
-      )
+      return username === env<Env>(c).ADMIN_USERNAME && password === env<Env>(c).ADMIN_PASSWORD;
     },
     realm: 'PackRat Admin Panel',
-  })
+  }),
 );
 
 const adminLayout = (title: string, content: any) => html`
