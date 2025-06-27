@@ -1,0 +1,10 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      run: bun format
+      stage_fixed: true
+    
+    # Ready for when you add linting
+    # lint:
+    #   run: bun lint {staged_files}
