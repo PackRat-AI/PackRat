@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { View, Image, TouchableOpacity } from 'react-native';
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import type { ItemReview } from 'expo-app/types';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useState } from 'react';
+import { Image, TouchableOpacity, View } from 'react-native';
 
 type ItemReviewsProps = {
   reviews: ItemReview[];

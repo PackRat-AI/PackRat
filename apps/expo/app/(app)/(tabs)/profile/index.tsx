@@ -1,6 +1,13 @@
-import { Stack, useRouter } from 'expo-router';
-import { Platform, View } from 'react-native';
-
+import { withAuthWall } from 'expo-app/features/auth/hocs';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
+import { ProfileAuthWall } from 'expo-app/features/profile/components';
+import { cn } from 'expo-app/lib/cn';
+import { Stack } from 'expo-router';
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { Alert } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
 import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
 import { Button } from 'nativewindui/Button';
 import {
@@ -11,16 +18,8 @@ import {
   ListSectionHeader,
 } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { cn } from 'expo-app/lib/cn';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { withAuthWall } from 'expo-app/features/auth/hocs';
-import { ProfileAuthWall } from 'expo-app/features/profile/components';
-import { Alert } from 'nativewindui/Alert';
 import { useRef } from 'react';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { Platform, View } from 'react-native';
 
 const SCREEN_OPTIONS = {
   title: 'Profile',

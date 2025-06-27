@@ -1,7 +1,7 @@
 import { use$ } from '@legendapp/state/react';
-import { usePacks } from './usePacks';
-import { getPackItems, packItemsStore } from '../store';
+import { getPackItems } from '../store';
 import { computePackWeights } from '../utils/computePackWeights';
+import { usePacks } from './usePacks';
 
 export function useRecentPacks() {
   const packs = usePacks();

@@ -1,8 +1,7 @@
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packTemplateItems, packTemplates } from '@packrat/api/db/schema';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { and, eq, or } from 'drizzle-orm';
 import { z } from 'zod';
 

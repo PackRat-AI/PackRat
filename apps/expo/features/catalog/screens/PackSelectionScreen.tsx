@@ -1,24 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  View,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  SafeAreaView,
-  Image,
-  Animated,
-} from 'react-native';
 import { Icon } from '@roninoss/icons';
-import { Button } from 'nativewindui/Button';
-import { useCatalogItemDetails } from '../hooks';
+import { usePacks } from 'expo-app/features/packs';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import type { Pack } from 'expo-app/types';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Button } from 'nativewindui/Button';
 import { SearchInput } from 'nativewindui/SearchInput';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { usePacks } from 'expo-app/features/packs';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  FlatList,
+  Image,
+  SafeAreaView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useCatalogItemDetails } from '../hooks';
 
 export function PackSelectionScreen() {
   const router = useRouter();

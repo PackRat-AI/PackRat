@@ -1,7 +1,7 @@
 import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
 import { useCallback } from 'react';
-import type { PackItem } from '../types';
 import { recordPackWeight } from '../store/packWeightHistory';
+import type { PackItem } from '../types';
 
 export function useUpdatePackItem() {
   const updatePackItem = useCallback((item: PackItem) => {

@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { Text, View, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 export const BackButton = ({ onPress }: { onPress: () => void }) => {
   return (

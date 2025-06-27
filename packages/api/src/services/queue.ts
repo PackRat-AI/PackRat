@@ -1,6 +1,6 @@
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import type { Queue } from '@cloudflare/workers-types';
-import { type NewCatalogItem, catalogItems } from '@packrat/api/db/schema';
+import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import { getTableColumns, sql } from 'drizzle-orm';
 

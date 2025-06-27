@@ -1,6 +1,6 @@
 import { CreatePackItemForm } from 'expo-app/features/packs/screens/CreatePackItemForm';
-import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { useLocalSearchParams } from 'expo-router';
+import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { usePackItem } from '../hooks';
 
 export function EditPackItemScreen() {

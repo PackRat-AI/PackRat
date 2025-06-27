@@ -1,12 +1,12 @@
 'use client';
 
-import type React from 'react';
-import Link from 'next/link';
-import { siteConfig } from 'landing-app/config/site';
-import { Button } from 'landing-app/components/ui/button';
-import { Check, Apple, Store } from 'lucide-react';
-import GradientBackground from 'landing-app/components/ui/gradient-background';
 import AnimatedGradientBorder from 'landing-app/components/ui/animated-gradient-border';
+import { Button } from 'landing-app/components/ui/button';
+import GradientBackground from 'landing-app/components/ui/gradient-background';
+import { siteConfig } from 'landing-app/config/site';
+import { Apple, Check, Store } from 'lucide-react';
+import Link from 'next/link';
+import type React from 'react';
 
 export default function DownloadSection() {
   // Handle smooth scrolling when clicking on navigation links

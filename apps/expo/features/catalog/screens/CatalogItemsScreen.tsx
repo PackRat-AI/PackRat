@@ -1,6 +1,12 @@
 import { Icon } from '@roninoss/icons';
+import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
+import { withAuthWall } from 'expo-app/features/auth/hocs';
+import { CatalogItemCard } from 'expo-app/features/catalog/components/CatalogItemCard';
+import { useHeaderSearchBar } from 'expo-app/lib/useHeaderSearchBar';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,15 +16,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
-import { CatalogItemCard } from 'expo-app/features/catalog/components/CatalogItemCard';
-import { useHeaderSearchBar } from 'expo-app/lib/useHeaderSearchBar';
+import { CatalogItemsAuthWall } from '../components';
 import { useCatalogItems } from '../hooks';
 import type { CatalogItem } from '../types';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
-import { withAuthWall } from 'expo-app/features/auth/hocs';
-import { CatalogItemsAuthWall } from '../components';
 
 type FilterOption = {
   label: string;

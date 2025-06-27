@@ -1,15 +1,15 @@
 'use client';
 
-import type React from 'react';
-import Link from 'next/link';
-import { Download, ChevronRight, ArrowRight, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from 'landing-app/components/ui/button';
-import { siteConfig } from 'landing-app/config/site';
 import DeviceMockup from 'landing-app/components/ui/device-mockup';
 import GlassCard from 'landing-app/components/ui/glass-card';
-import GradientText from 'landing-app/components/ui/gradient-text';
 import GradientBackground from 'landing-app/components/ui/gradient-background';
-import { motion } from 'framer-motion';
+import GradientText from 'landing-app/components/ui/gradient-text';
+import { siteConfig } from 'landing-app/config/site';
+import { ArrowRight, ChevronRight, Download, Star } from 'lucide-react';
+import Link from 'next/link';
+import type React from 'react';
 
 export default function LandingHero() {
   // Handle smooth scrolling when clicking on navigation links

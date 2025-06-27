@@ -1,6 +1,6 @@
+import { neon } from '@neondatabase/serverless';
 import * as schema from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
-import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import type { Context } from 'hono';
 import { env as honoEnv } from 'hono/adapter';

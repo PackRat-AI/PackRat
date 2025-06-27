@@ -1,6 +1,12 @@
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useRouter } from 'expo-router';
+import { Button } from 'nativewindui/Button';
+import { DropdownMenu } from 'nativewindui/DropdownMenu';
+import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { TextField } from 'nativewindui/TextField';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,14 +17,9 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { TextField } from 'nativewindui/TextField';
 import { useCreatePack, useUpdatePack } from '../hooks';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import type { Pack, PackCategory } from '../types';
-import { Button } from 'nativewindui/Button';
+
 // Define Zod schema
 const packFormSchema = z.object({
   name: z.string().min(1, 'Pack name is required'),

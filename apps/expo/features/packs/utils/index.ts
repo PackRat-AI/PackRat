@@ -1,4 +1,4 @@
-export * from './computePackWeights';
 export * from './computeCategories';
-export * from './convertToGrams';
+export * from './computePackWeights';
 export * from './convertFromGrams';
+export * from './convertToGrams';

@@ -1,15 +1,13 @@
 import { Icon } from '@roninoss/icons';
-import { useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
-
-import { Alert } from 'nativewindui/Alert';
-import { Button } from 'nativewindui/Button';
-import { useDeletePackItem } from '../hooks';
-import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
-
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useRouter } from 'expo-router';
+import { Alert } from 'nativewindui/Alert';
+import { Button } from 'nativewindui/Button';
+import { Pressable, Text, View } from 'react-native';
+import { useDeletePackItem } from '../hooks';
 import type { PackItem } from '../types';
 
 type PackItemCardProps = {

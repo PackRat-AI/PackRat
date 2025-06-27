@@ -1,8 +1,8 @@
-import { View } from 'react-native';
+import { Icon } from '@roninoss/icons';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { Icon } from '@roninoss/icons';
+import { View } from 'react-native';
 
 const SCREEN_OPTIONS = {
   title: 'Profile',

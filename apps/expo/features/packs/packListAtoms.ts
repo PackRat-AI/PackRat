@@ -1,6 +1,6 @@
-import { atom } from 'jotai';
 import { mockPacks } from 'expo-app/data/mockData';
 import type { Pack, PackCategory } from 'expo-app/types';
+import { atom } from 'jotai';
 
 // Temporary mock data
 export const packListAtom = atom<Pack[]>([...mockPacks]);

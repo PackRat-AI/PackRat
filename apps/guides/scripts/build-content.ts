@@ -2,10 +2,9 @@
 // It processes your MDX files and outputs JSON that can be imported
 // in your static site
 
-import type { Post } from 'guides-app/lib/types';
-
 import fs from 'fs';
 import matter from 'gray-matter';
+import type { Post } from 'guides-app/lib/types';
 import path from 'path';
 import remarkHtml from 'remark-html';
 import markdown from 'remark-parse';

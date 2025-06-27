@@ -1,9 +1,8 @@
 'use client';
 
-import type React from 'react';
-
-import { useEffect, useRef } from 'react';
 import { cn } from 'landing-app/lib/utils';
+import type React from 'react';
+import { useEffect, useRef } from 'react';
 
 interface AnimatedGradientTextProps {
   children: React.ReactNode;

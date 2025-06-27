@@ -1,6 +1,6 @@
 import type { LocationSearchResult } from 'expo-app/features/weather/types';
-import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**
  * Search for locations by name

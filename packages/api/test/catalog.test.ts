@@ -1,5 +1,5 @@
+import { describe, expect, it } from 'vitest';
 import app from '../src/index';
-import { describe, it, expect } from 'vitest';
 
 describe('catalog routes', () => {
   it('list requires auth', async () => {

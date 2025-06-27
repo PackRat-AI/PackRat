@@ -1,5 +1,5 @@
-import type React from 'react';
 import { cn } from 'landing-app/lib/utils';
+import type React from 'react';
 
 interface GlassCardProps {
   children: React.ReactNode;

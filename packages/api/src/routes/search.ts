@@ -1,11 +1,11 @@
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { env } from 'hono/adapter';
-import type { Env } from '../types/env';
 import { createDb } from '../db';
 import { catalogItems } from '../db/schema';
-import { authenticateRequest, unauthorizedResponse } from '../utils/api-middleware';
 import { generateEmbedding } from '../services/embeddingService';
+import type { Env } from '../types/env';
+import { authenticateRequest, unauthorizedResponse } from '../utils/api-middleware';
 
 const searchRoutes = new OpenAPIHono<{ Bindings: Env }>();
 

@@ -1,4 +1,4 @@
-import { type LucideIcon, Compass, Map, MountainSnow } from 'lucide-react';
+import { Compass, type LucideIcon, Map, MountainSnow } from 'lucide-react';
 
 // Site metadata
 export const siteConfig = {

@@ -1,24 +1,17 @@
-import { Icon } from '@roninoss/icons';
-import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  StatusBar,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useActionSheet } from '@expo/react-native-action-sheet';
-
-import { Text } from 'nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { useLocations, useActiveLocation, useLocationRefresh } from '../hooks';
-import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+
+import { Text } from 'nativewindui/Text';
+import { useEffect, useState } from 'react';
+import { Alert, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WeatherIcon } from '../components';
+import { useActiveLocation, useLocationRefresh, useLocations } from '../hooks';
 
 export default function LocationDetailScreen() {
   const { id } = useLocalSearchParams();

@@ -1,5 +1,5 @@
-import { Button } from "guides-app/components/ui/button";
-import Link from "next/link";
+import { Button } from 'guides-app/components/ui/button';
+import Link from 'next/link';
 
 export default function NotFound() {
   return (

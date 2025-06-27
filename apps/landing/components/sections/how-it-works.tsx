@@ -1,6 +1,6 @@
-import { siteConfig } from 'landing-app/config/site';
-import GradientText from 'landing-app/components/ui/gradient-text';
 import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
+import GradientText from 'landing-app/components/ui/gradient-text';
+import { siteConfig } from 'landing-app/config/site';
 import { LucideIcon } from 'landing-app/lib/icons';
 
 export default function HowItWorksSection() {
