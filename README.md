@@ -217,8 +217,7 @@ PackRat consists of two main components: a client and a server. Follow the steps
 
 ### Dependencies
 
-- [Node.js](https://nodejs.org/en/)
-- [Yarn](https://classic.yarnpkg.com/en/docs/install)
+- [Bun](https://bun.sh)
 - [Expo CLI](https://docs.expo.io/workflow/expo-cli/)
 - [React Native CLI](https://reactnative.dev/docs/environment-setup)
 
@@ -290,6 +289,18 @@ cp .wrangler.toml.example wrangler.toml
 cd ..
 ```
 
+### Git Hooks Setup
+
+PackRat uses Lefthook for git hooks to ensure code quality. The hooks are automatically installed when you run `bun install`.
+
+- **Pre-push hook**: Runs `bun format` to check code formatting before pushing
+- **Configuration**: See `lefthook.yml` in the root directory
+
+If you need to skip hooks temporarily, use:
+```bash
+git push --no-verify
+```
+
 ### Yarn Setup
 
 Recommended to open two terminal windows.
@@ -299,7 +310,7 @@ Recommended to open two terminal windows.
 1.  From the main`PackRat` directory.
 
 ```
-yarn install
+bun install
 ```
 
 
