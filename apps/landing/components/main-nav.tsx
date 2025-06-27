@@ -1,16 +1,15 @@
 'use client';
 
-import type React from 'react';
-
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Backpack, Menu, X } from 'lucide-react';
-import { Button } from 'landing-app/components/ui/button';
-import { siteConfig } from 'landing-app/config/site';
-import GradientText from 'landing-app/components/ui/gradient-text';
 import { ThemeToggle } from 'landing-app/components/theme-toggle';
-import { cn } from 'landing-app/lib/utils';
+import { Button } from 'landing-app/components/ui/button';
+import GradientText from 'landing-app/components/ui/gradient-text';
 import { Sheet, SheetContent, SheetTrigger } from 'landing-app/components/ui/sheet';
+import { siteConfig } from 'landing-app/config/site';
+import { cn } from 'landing-app/lib/utils';
+import { Backpack, Menu, X } from 'lucide-react';
+import Link from 'next/link';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 export default function MainNav() {
   const [activeSection, setActiveSection] = useState<string>('');

@@ -1,10 +1,10 @@
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useRouter } from 'expo-router';
-import { Image, View } from 'react-native';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { View } from 'react-native';
 import { useCurrentPack } from '../hooks';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');

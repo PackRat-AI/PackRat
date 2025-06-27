@@ -1,19 +1,16 @@
-import { Link, Route } from 'expo-router';
-import * as React from 'react';
-import { Image, Platform, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { featureFlags } from 'expo-app/config';
+import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
+import { Link, router, useLocalSearchParams } from 'expo-router';
+import { useSetAtom } from 'jotai';
 import { AlertAnchor } from 'nativewindui/Alert';
 import type { AlertRef } from 'nativewindui/Alert/types';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
-import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
-import { useLocalSearchParams } from 'expo-router';
-import { featureFlags } from 'expo-app/config';
-import { useSetAtom } from 'jotai';
-import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import * as React from 'react';
+import { Image, Platform, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 

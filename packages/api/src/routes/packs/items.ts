@@ -133,10 +133,7 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
     })
     .returning();
 
-  await db
-    .update(packs)
-    .set({ updatedAt: new Date() })
-    .where(eq(packs.id, packId));
+  await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
   return c.json(newItem);
 });
@@ -264,10 +261,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
   }
 
   // Update the pack's updatedAt timestamp
-  await db
-    .update(packs)
-    .set({ updatedAt: new Date() })
-    .where(eq(packs.id, updatedItem.packId));
+  await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
   return c.json(updatedItem[0]);
 });
@@ -304,10 +298,7 @@ packItemsRoutes.openapi(deleteItemRoute, async (c) => {
 
   await db.delete(packItems).where(eq(packItems.id, itemId));
 
-  await db
-    .update(packs)
-    .set({ updatedAt: new Date() })
-    .where(eq(packs.id, packId));
+  await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
   return c.json({ success: true, itemId: itemId });
 });

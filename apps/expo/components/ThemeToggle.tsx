@@ -1,10 +1,9 @@
 import { Icon } from '@roninoss/icons';
-import { Pressable, View } from 'react-native';
-import Animated, { LayoutAnimationConfig, ZoomInRotate } from 'react-native-reanimated';
-
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { COLORS } from 'expo-app/theme/colors';
+import { Pressable, View } from 'react-native';
+import Animated, { LayoutAnimationConfig, ZoomInRotate } from 'react-native-reanimated';
 
 export function ThemeToggle() {
   const { colorScheme, toggleColorScheme } = useColorScheme();

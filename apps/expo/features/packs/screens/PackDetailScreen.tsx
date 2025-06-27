@@ -1,16 +1,7 @@
 import { Icon } from '@roninoss/icons';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-
-import { useDeletePack, usePackDetails } from '../hooks';
-
 import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { Alert } from 'nativewindui/Alert';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
@@ -18,6 +9,13 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import type { PackItem } from 'expo-app/types';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Alert } from 'nativewindui/Alert';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { useCallback, useState } from 'react';
+import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useDeletePack, usePackDetails } from '../hooks';
 
 export function PackDetailScreen() {
   const router = useRouter();

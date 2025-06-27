@@ -1,9 +1,19 @@
 import { useChat } from '@ai-sdk/react';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
+import { useActiveLocation } from 'expo-app/features/weather/hooks';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
+import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import { BlurView } from 'expo-blur';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { fetch as expoFetch } from 'expo/fetch';
+import { useAtomValue } from 'jotai';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
 import * as React from 'react';
 import {
   Dimensions,
@@ -13,9 +23,9 @@ import {
   TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
-  type ViewStyle,
   TouchableOpacity,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
@@ -32,16 +42,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
-import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { formatAIResponse } from 'expo-app/utils/format-ai-response';
-import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
-import { useAtomValue } from 'jotai';
-import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useActiveLocation } from 'expo-app/features/weather/hooks';
 
 const USER = 'User';
 const AI = 'PackRat AI';

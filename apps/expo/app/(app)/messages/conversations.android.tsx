@@ -1,9 +1,21 @@
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
+import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
+import { ContextMenu } from 'nativewindui/ContextMenu';
+import { createContextItem } from 'nativewindui/ContextMenu/utils';
+import { DropdownMenu } from 'nativewindui/DropdownMenu';
+import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
+import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
+import { Text } from 'nativewindui/Text';
+import { Toolbar, ToolbarCTA } from 'nativewindui/Toolbar';
 import * as React from 'react';
-import { type ViewStyle, Dimensions, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Dimensions, Platform, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   clamp,
@@ -16,19 +28,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
-import { Toolbar, ToolbarCTA } from 'nativewindui/Toolbar';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 export default function ConversationsAndroidScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();
@@ -248,7 +247,7 @@ function MessageRow({
             onPress={onListItemPress}
             onLongPress={onListItemLongPress}
             className={cn(
-              'ios:bg-card bg-background rounded-l-xl',
+              'ios:bg-card rounded-l-xl bg-background',
               selectedMessages.includes(info.item.id) &&
                 'bg-primary/15 dark:bg-primary/30 ios:bg-primary/15',
             )}
@@ -285,7 +284,7 @@ function MessageRow({
                   3:08PM
                 </Text>
                 <View className="w-[22px] justify-center pl-1 pt-2 ">
-                  {info.item.unread && <View className="bg-primary h-3 w-3 rounded-full" />}
+                  {info.item.unread && <View className="h-3 w-3 rounded-full bg-primary" />}
                 </View>
               </View>
             }
@@ -321,7 +320,7 @@ function StartChatButton() {
   const insets = useSafeAreaInsets();
   return (
     <View style={{ bottom: insets.bottom + 12 }} className="absolute bottom-24 right-4 z-50">
-      <View className="bg-background rounded-xl shadow-xl">
+      <View className="rounded-xl bg-background shadow-xl">
         <Button size="lg">
           <Icon color="white" size={24} name="message-outline" />
           <Text className="py-1 text-[15px]">Start chat</Text>
@@ -357,7 +356,7 @@ function SelectMessagesHeader({
             default: MATERIAL_HEADER_HEIGHT + insets.top,
           }),
         }}
-        className="bg-card absolute left-0 right-0 top-0 justify-end px-3 pb-4 shadow-md"
+        className="absolute left-0 right-0 top-0 justify-end bg-card px-3 pb-4 shadow-md"
       >
         <View className="flex-row items-center justify-between gap-4">
           <Button size="icon" variant="plain" onPress={clearSelectedMessages}>

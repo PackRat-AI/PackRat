@@ -1,12 +1,12 @@
 import { Icon } from '@roninoss/icons';
-import { type Href, useRouter } from 'expo-router';
-import { View } from 'react-native';
-import { ListItem } from 'nativewindui/List';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { usePacks } from '../hooks';
+import { type Href, useRouter } from 'expo-router';
 import { Alert } from 'nativewindui/Alert';
-import { useRef } from 'react';
 import type { AlertRef } from 'nativewindui/Alert/types';
+import { ListItem } from 'nativewindui/List';
+import { useRef } from 'react';
+import { View } from 'react-native';
+import { usePacks } from '../hooks';
 
 export function PackStatsTile() {
   const router = useRouter();

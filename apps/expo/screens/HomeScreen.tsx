@@ -1,10 +1,10 @@
-import { useAtomValue } from 'jotai';
-import { FlatList, SafeAreaView, Text, View } from 'react-native';
 import { authAtom } from 'expo-app/atoms/authAtoms';
 import { PackCard } from 'expo-app/components/initial/PackCard';
 import { UserAvatar } from 'expo-app/components/initial/UserAvatar';
 import { usePacks } from 'expo-app/hooks/usePacks';
 import type { Pack } from 'expo-app/types';
+import { useAtomValue } from 'jotai';
+import { FlatList, SafeAreaView, Text, View } from 'react-native';
 
 export function HomeScreen() {
   const user = useAtomValue(authAtom);

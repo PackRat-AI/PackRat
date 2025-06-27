@@ -1,17 +1,15 @@
-import { useLocalSearchParams } from 'expo-router';
-import type React from 'react';
-import { useState, useEffect } from 'react';
-import { View, ScrollView, SafeAreaView } from 'react-native';
-
-import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
+import { useLocalSearchParams } from 'expo-router';
+import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import type React from 'react';
+import { SafeAreaView, ScrollView, View } from 'react-native';
 
 function WeightCard({
   title,

@@ -21,4 +21,6 @@ export type Env = {
   SENTRY_DSN: string;
   CF_VERSION_METADATA: WorkerVersionMetadata;
   ENVIRONMENT: string;
+  ADMIN_USERNAME: string;
+  ADMIN_PASSWORD: string;
 };

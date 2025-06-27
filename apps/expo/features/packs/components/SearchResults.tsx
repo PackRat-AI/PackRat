@@ -1,5 +1,5 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
 import { Icon } from '@roninoss/icons';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import type { Pack } from '../types';
 
 type SearchResultsProps = {

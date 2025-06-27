@@ -1,13 +1,12 @@
 import { Icon } from '@roninoss/icons';
-import { useLocalSearchParams } from 'expo-router';
-import { View, ScrollView } from 'react-native';
-
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useLocalSearchParams } from 'expo-router';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { ScrollView, View } from 'react-native';
 
 function CategoryCard({
   category,

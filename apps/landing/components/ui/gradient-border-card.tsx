@@ -1,10 +1,9 @@
 'use client';
 
-import type React from 'react';
-
-import { useState, useRef, useEffect } from 'react';
 import { cn } from 'landing-app/lib/utils';
 import { useTheme } from 'next-themes';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface GradientBorderCardProps {
   children: React.ReactNode;

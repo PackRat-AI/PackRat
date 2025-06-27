@@ -1,14 +1,12 @@
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Icon } from '@roninoss/icons';
-import { useRouter } from 'expo-router';
-import { TouchableOpacity, View, Pressable, Alert, ScrollView } from 'react-native';
-import { BottomSheetScrollView, BottomSheetView } from '@gorhom/bottom-sheet';
-
-import { Text } from 'nativewindui/Text';
-import { Sheet, useSheetRef } from 'nativewindui/Sheet';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { cn } from 'expo-app/lib/cn';
-import { useLocations } from '../hooks';
-import { useActiveLocation } from '../hooks';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useRouter } from 'expo-router';
+import { Sheet, useSheetRef } from 'nativewindui/Sheet';
+import { Text } from 'nativewindui/Text';
+import { Alert, Pressable, TouchableOpacity, View } from 'react-native';
+import { useActiveLocation, useLocations } from '../hooks';
 
 export function LocationSelector() {
   const { colors } = useColorScheme();

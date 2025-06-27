@@ -1,5 +1,5 @@
-import { Platform } from 'react-native';
 import structuredClone from '@ungap/structured-clone';
+import { Platform } from 'react-native';
 
 if (Platform.OS !== 'web') {
   const setupPolyfills = async () => {

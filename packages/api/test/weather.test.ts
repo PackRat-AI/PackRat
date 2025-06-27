@@ -1,8 +1,6 @@
-import app from '../src/index';
-import { describe, it, expect } from 'vitest';
-
 import { sign } from 'hono/jwt';
-import { vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import app from '../src/index';
 
 describe('weather routes', () => {
   it('search requires auth', async () => {
@@ -13,7 +11,11 @@ describe('weather routes', () => {
   it('search returns data when authed', async () => {
     const token = await sign({ userId: 1 }, 'secret');
     const mockFetch = vi.fn(() =>
-      Promise.resolve(new Response(JSON.stringify([{ id: '1', name: 'Test' }]), { status: 200 })),
+      Promise.resolve(
+        new Response(JSON.stringify([{ id: '1', name: 'Test' }]), {
+          status: 200,
+        }),
+      ),
     );
     vi.stubGlobal('fetch', mockFetch);
 

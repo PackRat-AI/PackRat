@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import Storage from 'expo-sqlite/kv-store';
+import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
+  ActivityIndicator,
+  Alert,
   Button,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
-  Alert,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
-import Storage from 'expo-sqlite/kv-store';
 
 export default function SQLiteKVDebug() {
   const [isLoading, setIsLoading] = useState(true);

@@ -1,8 +1,8 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { getAllCategories } from 'guides-app/lib/categories';
 import { footerConfig, siteConfig } from 'guides-app/lib/config';
-import { useQuery } from '@tanstack/react-query';
 import { Backpack, Facebook, Github, Instagram, Twitter } from 'lucide-react';
 import Link from 'next/link';
 
