@@ -17,7 +17,7 @@ export class PackItemService {
       where: and(
         eq(packItems.id, itemId),
         eq(packItems.userId, this.userId),
-        eq(packItems.deleted, false)
+        eq(packItems.deleted, false),
       ),
       with: {
         pack: true,

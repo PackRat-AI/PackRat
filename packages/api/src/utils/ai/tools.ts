@@ -37,7 +37,7 @@ export function createTools(c: Context, userId: number) {
           }
 
           const categories = Array.from(
-            new Set(pack.items.map((item) => item.category || 'Uncategorized'))
+            new Set(pack.items.map((item) => item.category || 'Uncategorized')),
           );
 
           return {
@@ -54,10 +54,7 @@ export function createTools(c: Context, userId: number) {
           sentry.captureException(error);
           return {
             success: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to get pack details',
+            error: error instanceof Error ? error.message : 'Failed to get pack details',
           };
         }
       },
@@ -89,10 +86,7 @@ export function createTools(c: Context, userId: number) {
           sentry.captureException(error);
           return {
             success: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to get item details',
+            error: error instanceof Error ? error.message : 'Failed to get item details',
           };
         }
       },
@@ -103,14 +97,11 @@ export function createTools(c: Context, userId: number) {
       parameters: z.object({
         location: z
           .string()
-          .describe(
-            'Location to get weather for (city, state, coordinates, or trail name)'
-          ),
+          .describe('Location to get weather for (city, state, coordinates, or trail name)'),
       }),
       execute: async ({ location }) => {
         try {
-          const weatherData =
-            await weatherService.getWeatherForLocation(location);
+          const weatherData = await weatherService.getWeatherForLocation(location);
           return {
             success: true,
             ...weatherData,
@@ -122,10 +113,7 @@ export function createTools(c: Context, userId: number) {
           sentry.captureException(error);
           return {
             success: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to get weather data',
+            error: error instanceof Error ? error.message : 'Failed to get weather data',
           };
         }
       },
@@ -135,25 +123,15 @@ export function createTools(c: Context, userId: number) {
       description:
         'Retrieve items from the comprehensive gear database with optional filters or search criteria.',
       parameters: z.object({
-        query: z
-          .string()
-          .optional()
-          .describe('Optional search query to filter catalog items'),
-        category: z
-          .string()
-          .optional()
-          .describe('Optional category to filter catalog items'),
+        query: z.string().optional().describe('Optional search query to filter catalog items'),
+        category: z.string().optional().describe('Optional category to filter catalog items'),
         limit: z
           .number()
           .min(1)
           .max(100)
           .optional()
           .describe('Optional limit for number of results to return'),
-        offset: z
-          .number()
-          .min(0)
-          .optional()
-          .describe('Optional offset for pagination of results'),
+        offset: z.number().min(0).optional().describe('Optional offset for pagination of results'),
       }),
       execute: async ({ query, category, limit, offset }) => {
         try {
@@ -174,18 +152,14 @@ export function createTools(c: Context, userId: number) {
           sentry.captureException(error);
           return {
             success: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to retrieve catalog items',
+            error: error instanceof Error ? error.message : 'Failed to retrieve catalog items',
           };
         }
       },
     }),
 
     semanticCatalogSearch: tool({
-      description:
-        'Search the comprehensive gear database using semantic search.',
+      description: 'Search the comprehensive gear database using semantic search.',
       parameters: z.object({
         query: z.string().min(1).describe('Search query to find catalog items'),
         limit: z
@@ -194,19 +168,11 @@ export function createTools(c: Context, userId: number) {
           .max(100)
           .optional()
           .describe('Optional limit for number of results to return'),
-        offset: z
-          .number()
-          .min(0)
-          .optional()
-          .describe('Optional offset for pagination of results'),
+        offset: z.number().min(0).optional().describe('Optional offset for pagination of results'),
       }),
       execute: async ({ query, limit, offset }) => {
         try {
-          const items = await catalogService.semanticSearch(
-            query,
-            limit || 10,
-            offset || 0
-          );
+          const items = await catalogService.semanticSearch(query, limit || 10, offset || 0);
           return {
             success: true,
             items,
@@ -218,10 +184,7 @@ export function createTools(c: Context, userId: number) {
           sentry.captureException(error);
           return {
             success: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to perform semantic search',
+            error: error instanceof Error ? error.message : 'Failed to perform semantic search',
           };
         }
       },
@@ -241,28 +204,19 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, limit }) => {
         try {
-          const results = await aiService.searchPackratOutdoorGuidesRAG(
-            query,
-            limit || 5
-          );
+          const results = await aiService.searchPackratOutdoorGuidesRAG(query, limit || 5);
           return {
             success: true,
             results,
           };
         } catch (error) {
           console.error('searchPackratOutdoorGuidesRAG', error);
-          sentry.setTag(
-            'location',
-            'ai-tool-call/searchPackratOutdoorGuidesRAG'
-          );
+          sentry.setTag('location', 'ai-tool-call/searchPackratOutdoorGuidesRAG');
           sentry.setContext('meta', { query });
           sentry.captureException(error);
           return {
             success: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : 'Failed to search outdoor guides',
+            error: error instanceof Error ? error.message : 'Failed to search outdoor guides',
           };
         }
       },

@@ -98,7 +98,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
           openAiApiKey: !!OPENAI_API_KEY,
         });
         c.get('sentry').captureException(error);
-      }
+      },
     });
 
     return result.toDataStreamResponse();
@@ -120,8 +120,7 @@ chatRoutes.post('/reports', async (c) => {
 
   const db = createDb(c);
 
-  const { messageId, userQuery, aiResponse, reason, userComment } =
-    await c.req.json();
+  const { messageId, userQuery, aiResponse, reason, userComment } = await c.req.json();
 
   // Insert the reported content into the database
   await db.insert(reportedContent).values({

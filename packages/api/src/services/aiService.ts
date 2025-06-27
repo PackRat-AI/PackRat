@@ -14,7 +14,7 @@ export class AIService {
 
   async searchPackratOutdoorGuidesRAG(
     query: string,
-    limit: number = 5
+    limit: number = 5,
   ): Promise<
     Omit<AutoRagSearchResponse, 'data'> & {
       data: (AutoRagSearchResponse['data'][0] & { url: string })[];
@@ -46,7 +46,7 @@ export class AIService {
   private filenameToUrl(filename: string): string {
     const slug = filename.replace(/\.mdx$/, '').trim();
     const baseUrl = this.env.PACKRAT_GUIDES_BASE_URL;
-    const url = (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/' )+ slug;
+    const url = (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') + slug;
     return url;
   }
 }

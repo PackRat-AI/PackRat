@@ -15,11 +15,7 @@ export class PackService {
 
   async getPackDetails(packId: string): Promise<PackWithItems | null> {
     const pack = await this.db.query.packs.findFirst({
-      where: and(
-        eq(packs.id, packId),
-        eq(packs.userId, this.userId),
-        eq(packs.deleted, false)
-      ),
+      where: and(eq(packs.id, packId), eq(packs.userId, this.userId), eq(packs.deleted, false)),
       with: {
         items: {
           where: eq(packItems.deleted, false),

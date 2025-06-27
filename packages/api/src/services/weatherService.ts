@@ -20,8 +20,8 @@ export class WeatherService {
   async getWeatherForLocation(location: string): Promise<WeatherData> {
     const response = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-        location
-      )}&units=imperial&appid=${this.env.OPENWEATHER_KEY}`
+        location,
+      )}&units=imperial&appid=${this.env.OPENWEATHER_KEY}`,
     );
 
     if (!response.ok) {

@@ -56,8 +56,8 @@ export class CatalogService {
           ilike(catalogItems.description, `%${q}%`),
           ilike(catalogItems.brand, `%${q}%`),
           ilike(catalogItems.model, `%${q}%`),
-          ilike(catalogItems.category, `%${q}%`)
-        )
+          ilike(catalogItems.category, `%${q}%`),
+        ),
       );
     }
 
@@ -101,7 +101,7 @@ export class CatalogService {
   async semanticSearch(
     q: string,
     limit: number = 10,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<{
     items: (CatalogItem & { similarity: number })[];
     total: number;
