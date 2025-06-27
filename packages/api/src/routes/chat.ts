@@ -90,6 +90,15 @@ chatRoutes.openapi(chatRoute, async (c) => {
       maxTokens: 1000,
       temperature: 0.7,
       maxSteps: 5,
+      onError: ({ error }) => {
+        console.error('streaming error', error);
+        c.get('sentry').setTag('location', 'chat/streamText');
+        c.get('sentry').setContext('params', {
+          body,
+          openAiApiKey: !!OPENAI_API_KEY,
+        });
+        c.get('sentry').captureException(error);
+      }
     });
 
     return result.toDataStreamResponse();

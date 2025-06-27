@@ -48,6 +48,7 @@ export function createTools(c: Context, userId: number) {
             },
           };
         } catch (error) {
+          console.error('getPackDetails tool error', error);
           sentry.setTag('location', 'ai-tool-call/getPackDetails');
           sentry.setContext('meta', { packId });
           sentry.captureException(error);
@@ -82,6 +83,7 @@ export function createTools(c: Context, userId: number) {
             item,
           };
         } catch (error) {
+          console.error('getPackItemDetails tool error', error);
           sentry.setTag('location', 'ai-tool-call/getPackItemDetails');
           sentry.setContext('meta', { itemId });
           sentry.captureException(error);
@@ -114,6 +116,7 @@ export function createTools(c: Context, userId: number) {
             ...weatherData,
           };
         } catch (error) {
+          console.error('getWeatherForLocation tool error', error);
           sentry.setTag('location', 'ai-tool-call/getWeatherForLocation');
           sentry.setContext('meta', { location });
           sentry.captureException(error);
@@ -165,6 +168,7 @@ export function createTools(c: Context, userId: number) {
             data,
           };
         } catch (error) {
+          console.error('getCatalogItems tool error', error);
           sentry.setTag('location', 'ai-tool-call/getCatalogItems');
           sentry.setContext('meta', { query, category, limit, offset });
           sentry.captureException(error);
@@ -208,6 +212,7 @@ export function createTools(c: Context, userId: number) {
             items,
           };
         } catch (error) {
+          console.error('semanticCatalogSearch tool error', error);
           sentry.setTag('location', 'ai-tool-call/semanticCatalogSearch');
           sentry.setContext('meta', { query });
           sentry.captureException(error);
@@ -245,6 +250,7 @@ export function createTools(c: Context, userId: number) {
             results,
           };
         } catch (error) {
+          console.error('searchPackratOutdoorGuidesRAG', error);
           sentry.setTag(
             'location',
             'ai-tool-call/searchPackratOutdoorGuidesRAG'
