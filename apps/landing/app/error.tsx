@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "landing-app/components/ui/button";
+import { Button } from 'landing-app/components/ui/button';
 
 export default function ErrorPage({
   error,
