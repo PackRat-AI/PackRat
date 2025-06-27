@@ -1,7 +1,7 @@
-import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { Icon } from '@roninoss/icons';
-import type { CatalogItem } from 'expo-app/types';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import type { CatalogItem } from 'expo-app/types';
+import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 
 type CatalogItemCardProps = {
   item: CatalogItem;

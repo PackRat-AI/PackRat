@@ -1,9 +1,6 @@
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { env } from 'hono/adapter';
-
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { env } from 'hono/adapter';
 
 const weatherRoutes = new OpenAPIHono();

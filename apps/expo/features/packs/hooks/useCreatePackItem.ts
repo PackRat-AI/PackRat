@@ -1,8 +1,8 @@
 import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
-import { useCallback } from 'react';
-import type { PackItem, PackItemInput } from '../types';
 import { nanoid } from 'nanoid/non-secure';
+import { useCallback } from 'react';
 import { recordPackWeight } from '../store/packWeightHistory';
+import type { PackItem, PackItemInput } from '../types';
 
 export function useCreatePackItem() {
   const createPackItem = useCallback(

@@ -1,9 +1,9 @@
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { View } from 'react-native';
 
 export function ShoppingListTile() {
   const router = useRouter();

@@ -1,13 +1,13 @@
-import { isArray } from 'radash';
-import { Image, Pressable, Text, View } from 'react-native';
-import type { Pack } from '../types';
+import { Icon } from '@roninoss/icons';
 import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Alert } from 'nativewindui/Alert';
 import { Button } from 'nativewindui/Button';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { isArray } from 'radash';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useDeletePack, usePackDetails } from '../hooks';
+import type { Pack } from '../types';
 
 type PackCardProps = {
   packId: string;

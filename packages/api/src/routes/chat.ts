@@ -1,14 +1,14 @@
+import { createOpenAI } from '@ai-sdk/openai';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { reportedContent } from '@packrat/api/db/schema';
 import { getWeatherData } from '@packrat/api/services/getWeatherData';
 import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getItemDetails, getPackDetails } from '@packrat/api/utils/DbUtils';
-import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { env } from 'hono/adapter';
-import { reportedContent } from '@packrat/api/db/schema';
 import { eq } from 'drizzle-orm';
-import { createDb } from '@packrat/api/db';
+import { env } from 'hono/adapter';
 
 const chatRoutes = new OpenAPIHono();
 

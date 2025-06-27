@@ -1,9 +1,9 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Input } from 'guides-app/components/ui/input';
 import { getAllPosts } from 'guides-app/lib/mdx-static';
 import type { Post } from 'guides-app/lib/types';
-import { useQuery } from '@tanstack/react-query';
 import { SearchIcon, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

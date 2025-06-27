@@ -1,10 +1,10 @@
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { packs, packWeightHistory, type PackWithItems } from '@packrat/api/db/schema';
+import { type PackWithItems, packs, packWeightHistory } from '@packrat/api/db/schema';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getCatalogItems, getPackDetails } from '@packrat/api/utils/DbUtils';
 import { and, eq } from 'drizzle-orm';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 
 const packRoutes = new OpenAPIHono();
 

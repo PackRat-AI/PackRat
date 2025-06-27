@@ -1,5 +1,16 @@
-import { usePathname, useRouter } from 'expo-router';
+import { Icon } from '@roninoss/icons';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { PackCard } from 'expo-app/features/packs/components/PackCard';
+import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
+import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
+import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
+import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { Link, usePathname, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
+import { useCallback, useRef } from 'react';
 import {
   FlatList,
   Pressable,
@@ -9,19 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Icon } from '@roninoss/icons';
-import { Link } from 'expo-router';
-import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
-import { PackCard } from 'expo-app/features/packs/components/PackCard';
-import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import type { Pack, PackCategory } from '../types';
-import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
-import { useCallback, useRef } from 'react';
-import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
-import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
 
 type FilterOption = {
   label: string;

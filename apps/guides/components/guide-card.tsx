@@ -1,9 +1,9 @@
-import Link from 'next/link';
-import { Card, CardContent, CardFooter, CardHeader } from 'guides-app/components/ui/card';
-import { Badge } from 'guides-app/components/ui/badge';
 import { format } from 'date-fns';
-import { Clock, Calendar, MountainSnow } from 'lucide-react';
+import { Badge } from 'guides-app/components/ui/badge';
+import { Card, CardContent, CardFooter, CardHeader } from 'guides-app/components/ui/card';
 import type { Post } from 'guides-app/lib/types';
+import { Calendar, Clock, MountainSnow } from 'lucide-react';
+import Link from 'next/link';
 
 export default function GuideCard({ post }: { post: Post }) {
   return (

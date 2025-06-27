@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { locationsAtom, baseLocationsAtom } from '../atoms/locationsAtoms';
+import { baseLocationsAtom, locationsAtom } from '../atoms/locationsAtoms';
 import type { WeatherLocation } from '../types';
 
 export function useLocations() {

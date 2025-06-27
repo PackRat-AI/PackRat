@@ -1,6 +1,6 @@
 import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { View } from 'react-native';
-
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import {
@@ -12,8 +12,7 @@ import {
   ListSectionHeader,
 } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { View } from 'react-native';
 
 export default function SettingsIosStyleScreen() {
   return (
@@ -48,13 +47,13 @@ function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
           {info.item.rightText && (
-            <Text variant="callout" className="ios:px-0 text-muted-foreground px-2">
+            <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
               {info.item.rightText}
             </Text>
           )}
           {info.item.badge && (
-            <View className="bg-destructive h-5 w-5 items-center justify-center rounded-full">
-              <Text variant="footnote" className="text-destructive-foreground font-bold leading-4">
+            <View className="h-5 w-5 items-center justify-center rounded-full bg-destructive">
+              <Text variant="footnote" className="font-bold leading-4 text-destructive-foreground">
                 {info.item.badge}
               </Text>
             </View>

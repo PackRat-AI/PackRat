@@ -1,9 +1,9 @@
-import type { Post } from 'guides-app/lib/types';
-import Link from 'next/link';
 import { Badge } from 'guides-app/components/ui/badge';
 import { Button } from 'guides-app/components/ui/button';
-import { ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from 'guides-app/components/ui/card';
+import type { Post } from 'guides-app/lib/types';
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function FeaturedGuides({ guides }: { guides: Post[] }) {
   if (!guides.length) return null;

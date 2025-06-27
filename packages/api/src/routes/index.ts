@@ -1,14 +1,14 @@
-import { authMiddleware } from '@packrat/api/middleware';
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { authMiddleware } from '@packrat/api/middleware';
 import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
+import { searchRoutes } from './search';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
-import { searchRoutes } from './search';
 
 const publicRoutes = new OpenAPIHono();
 

@@ -1,26 +1,25 @@
-import { Icon } from '@roninoss/icons';
-import { router } from 'expo-router';
-import { useEffect, useState, useRef } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  ActivityIndicator,
-  FlatList,
-  Keyboard,
-  Alert,
-  Platform,
-  Linking,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import debounce from 'lodash.debounce';
-import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import { Text } from 'nativewindui/Text';
-import { SearchInput } from 'nativewindui/SearchInput';
+import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import * as Location from 'expo-location';
+import { router } from 'expo-router';
+import debounce from 'lodash.debounce';
+import { SearchInput } from 'nativewindui/SearchInput';
+import { Text } from 'nativewindui/Text';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Keyboard,
+  Linking,
+  Platform,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocationSearch } from '../hooks';
 import type { LocationSearchResult } from '../types';
 

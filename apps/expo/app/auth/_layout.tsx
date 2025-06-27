@@ -1,8 +1,7 @@
 import { Link, Stack } from 'expo-router';
-import { Platform } from 'react-native';
-
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';
+import { Platform } from 'react-native';
 
 export default function AuthLayout() {
   return (
