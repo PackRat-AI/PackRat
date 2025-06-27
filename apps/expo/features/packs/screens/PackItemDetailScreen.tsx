@@ -1,8 +1,8 @@
-import { useLocalSearchParams, router } from 'expo-router';
-import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { Icon } from '@roninoss/icons';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 
 import {
   calculateTotalWeight,
@@ -14,11 +14,11 @@ import {
   isWorn,
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
-import { NotFoundScreen } from '../../../screens/NotFoundScreen';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Button } from 'nativewindui/Button';
+import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { usePackItem } from '../hooks';
-import { isAuthed } from 'expo-app/features/auth/store';
-import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 
 export function ItemDetailScreen() {
   const { id } = useLocalSearchParams();

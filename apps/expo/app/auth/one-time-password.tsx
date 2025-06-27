@@ -1,9 +1,18 @@
 'use client';
 
 import { useHeaderHeight } from '@react-navigation/elements';
-import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { AlertAnchor } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { TextField } from 'nativewindui/TextField';
 import * as React from 'react';
 import {
+  Alert,
   Image,
   Keyboard,
   type NativeSyntheticEvent,
@@ -12,20 +21,10 @@ import {
   type TextInputFocusEventData,
   type TextInputKeyPressEventData,
   View,
-  Alert,
 } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
-import { AlertAnchor } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
-import { TextField } from 'nativewindui/TextField';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
-import { Route } from 'expo-router';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 

@@ -1,11 +1,11 @@
 import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { ListItem } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { cn } from 'expo-app/lib/cn';
+import { View } from 'react-native';
 import { useRecentPacks } from '../hooks/useRecentPacks';
 
 export function RecentPacksTile() {

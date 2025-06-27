@@ -1,8 +1,16 @@
+import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Form, FormItem, FormSection } from 'nativewindui/Form';
+import { SegmentedControl } from 'nativewindui/SegmentedControl';
+import { TextField } from 'nativewindui/TextField';
+import { useRef, useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,18 +20,10 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
 } from 'react-native';
 import { z } from 'zod';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { SegmentedControl } from 'nativewindui/SegmentedControl';
-import { TextField } from 'nativewindui/TextField';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import type { WeightUnit } from 'expo-app/types';
-import { useState, useRef } from 'react';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 
 // Define Zod schema
 const itemFormSchema = z.object({

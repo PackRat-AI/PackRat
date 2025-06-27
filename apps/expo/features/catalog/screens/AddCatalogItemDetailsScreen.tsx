@@ -1,27 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Icon } from '@roninoss/icons';
+import { useCreatePackItem, usePackDetails } from 'expo-app/features/packs';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import type { WeightUnit } from 'expo-app/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { useEffect, useState } from 'react';
 import {
-  View,
-  ScrollView,
-  TextInput,
-  Switch,
+  ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   SafeAreaView,
-  Image,
+  ScrollView,
+  Switch,
+  TextInput,
   TouchableOpacity,
-  Animated,
+  View,
 } from 'react-native';
-import { Icon } from '@roninoss/icons';
-import { Button } from 'nativewindui/Button';
 import { useCatalogItemDetails } from '../hooks';
-import type { WeightUnit } from 'expo-app/types';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { Text } from 'nativewindui/Text';
-import { useCreatePackItem, usePackDetails } from 'expo-app/features/packs';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();

@@ -1,15 +1,15 @@
+import { Icon } from '@roninoss/icons';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import type { PackItem } from 'expo-app/types';
+import { useRouter } from 'expo-router';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
-import { Icon } from '@roninoss/icons';
 import { usePackItemSuggestions } from '../hooks';
-import type { PackItem } from 'expo-app/types';
-import { PackItemSuggestionSkeleton } from './PackItemSuggestionSkeleton';
-import { Button } from 'nativewindui/Button';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { Text } from 'nativewindui/Text';
-import { isAuthed } from 'expo-app/features/auth/store';
-import { useRouter } from 'expo-router';
 import { ItemSuggestionCard } from './ItemSuggestionCard';
+import { PackItemSuggestionSkeleton } from './PackItemSuggestionSkeleton';
 
 interface AISuggestionsProps {
   packId: string;

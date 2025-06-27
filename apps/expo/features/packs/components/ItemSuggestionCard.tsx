@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { Platform, View } from 'react-native';
 import { Icon } from '@roninoss/icons';
-import { useCreatePackItem } from '../hooks';
 import { cn } from 'expo-app/lib/cn';
-import type { CatalogItem } from 'expo-app/types';
-import { Button } from 'nativewindui/Button';
 import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { Text } from 'nativewindui/Text';
-import type { PackItemInput } from '../types';
-import { nanoid } from 'nanoid/non-secure';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
+import type { CatalogItem } from 'expo-app/types';
+import { nanoid } from 'nanoid/non-secure';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { Button } from 'nativewindui/Button';
+import { Text } from 'nativewindui/Text';
+import { useState } from 'react';
+import { Platform, View } from 'react-native';
+import { useCreatePackItem } from '../hooks';
+import type { PackItemInput } from '../types';
 
 interface ItemSuggestionCardProps {
   packId: string;

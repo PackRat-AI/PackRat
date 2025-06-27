@@ -1,12 +1,11 @@
-import { useState } from 'react';
-import { View, ScrollView, Pressable, ActivityIndicator, SafeAreaView } from 'react-native'; // 👈 import ActivityIndicator
-
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
-import { cn } from 'expo-app/lib/cn';
 import type { PackItem } from 'expo-app/features/packs/types';
+import { cn } from 'expo-app/lib/cn';
+import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Text } from 'nativewindui/Text';
+import { useState } from 'react';
+import { Pressable, SafeAreaView, ScrollView, View } from 'react-native'; // 👈 import ActivityIndicator
 
 function CategorySection({ category, items }: { category: string; items: PackItem[] }) {
   return (

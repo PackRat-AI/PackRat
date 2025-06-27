@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,6 @@ import { Sheet, SheetContent, SheetTrigger } from 'guides-app/components/ui/shee
 import { getAllCategories } from 'guides-app/lib/categories';
 import { navigationConfig, siteConfig } from 'guides-app/lib/config';
 import { cn } from 'guides-app/lib/utils';
-import { useQuery } from '@tanstack/react-query';
 import { Backpack, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

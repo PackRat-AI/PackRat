@@ -1,7 +1,15 @@
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
+import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
+import { ContextMenu } from 'nativewindui/ContextMenu';
+import type { ContextMenuRef } from 'nativewindui/ContextMenu/types';
+import { createContextItem } from 'nativewindui/ContextMenu/utils';
+import { Text } from 'nativewindui/Text';
 import * as React from 'react';
 import {
   Dimensions,
@@ -30,15 +38,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import type { ContextMenuRef } from 'nativewindui/ContextMenu/types';
-import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { Text } from 'nativewindui/Text';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 const ME = 'Alice';
 
@@ -222,7 +221,7 @@ function Header() {
           <View className="flex-row items-center">
             <Button variant="plain" size="icon" className="ios:justify-start" onPress={router.back}>
               <Icon size={30} color={colors.primary} name="chevron-left" />
-              <View className="bg-primary h-5 w-5 -translate-x-4 items-center justify-center rounded-full">
+              <View className="h-5 w-5 -translate-x-4 items-center justify-center rounded-full bg-primary">
                 <Text variant="caption2" className="text-center leading-[14px] text-white">
                   3
                 </Text>
@@ -234,7 +233,7 @@ function Header() {
               <AvatarFallback className="z-50">
                 <View className="opacity-90 dark:opacity-80">
                   <Text
-                    className="dark:ios:text-white dark:text-background leading-6 text-white"
+                    className="dark:ios:text-white leading-6 text-white dark:text-background"
                     variant="title3"
                   >
                     {MOCK_CONVERSATION_INFO.initials}
@@ -257,7 +256,7 @@ function Header() {
 
   return (
     <View
-      className="bg-card dark:bg-background absolute left-0 right-0 top-0 z-50 justify-end"
+      className="absolute left-0 right-0 top-0 z-50 justify-end bg-card dark:bg-background"
       style={{
         paddingTop: insets.top,
         height: HEADER_HEIGHT + insets.top,
@@ -304,7 +303,7 @@ function Header() {
 function DateSeparator({ date }: { date: string }) {
   return (
     <View className="items-center px-4 pb-3 pt-5">
-      <Text variant="caption2" className="text-muted-foreground font-medium">
+      <Text variant="caption2" className="font-medium text-muted-foreground">
         {date}
       </Text>
     </View>
@@ -366,7 +365,7 @@ function ChatBubble({
     return (
       <View
         className={cn(
-          'bg-card flex-row gap-1 rounded-full p-0.5',
+          'flex-row gap-1 rounded-full bg-card p-0.5',
           Platform.OS === 'ios' && 'ios:bg-card/60 ios:dark:bg-border/70',
         )}
       >
@@ -491,11 +490,11 @@ function ChatBubble({
               {item.reactions.like?.includes(ME) && (
                 <View
                   className={cn(
-                    'bg-card dark:bg-background absolute -top-3 rounded-full p-px',
+                    'absolute -top-3 rounded-full bg-card p-px dark:bg-background',
                     item.sender === ME ? '-left-5' : '-right-5',
                   )}
                 >
-                  <View className="bg-primary rounded-full p-1">
+                  <View className="rounded-full bg-primary p-1">
                     <Icon
                       ios={{ name: 'hand.thumbsup.fill' }}
                       materialIcon={{
@@ -509,13 +508,13 @@ function ChatBubble({
                       <>
                         <View
                           className={cn(
-                            'bg-primary absolute bottom-0 h-2 w-2 rounded-full',
+                            'absolute bottom-0 h-2 w-2 rounded-full bg-primary',
                             item.sender === ME ? 'left-0' : 'right-0',
                           )}
                         />
                         <View
                           className={cn(
-                            'bg-primary absolute -bottom-1 h-1 w-1 rounded-full',
+                            'absolute -bottom-1 h-1 w-1 rounded-full bg-primary',
                             item.sender === ME ? '-left-1' : '-right-1',
                           )}
                         />
@@ -528,7 +527,7 @@ function ChatBubble({
             <Button
               size="icon"
               variant="secondary"
-              className="ios:rounded-full ios:border-border ios:h-10 ios:w-10 border-border h-8 w-8 rounded-full"
+              className="ios:rounded-full ios:border-border ios:h-10 ios:w-10 h-8 w-8 rounded-full border-border"
               androidRootClassName="rounded-full"
             >
               <Icon
@@ -561,13 +560,13 @@ function ChatBubble({
                   />
                   <View
                     className={cn(
-                      'bg-card dark:bg-background absolute h-5 w-5 rounded-full',
+                      'absolute h-5 w-5 rounded-full bg-card dark:bg-background',
                       item.sender === ME ? '-right-2' : 'right-2',
                     )}
                   />
                   <View
                     className={cn(
-                      'bg-card dark:bg-background absolute  h-5 w-5  -translate-y-1 rounded-full',
+                      'absolute h-5 w-5  -translate-y-1 rounded-full  bg-card dark:bg-background',
                       item.sender === ME ? '-right-2' : 'right-2',
                     )}
                   />
@@ -587,7 +586,7 @@ function ChatBubble({
                   <View
                     style={BORDER_CURVE}
                     className={cn(
-                      'bg-background dark:bg-muted-foreground rounded-2xl px-3 py-1.5',
+                      'rounded-2xl bg-background px-3 py-1.5 dark:bg-muted-foreground',
                       Platform.OS === 'ios' && 'dark:bg-muted',
                       item.sender === ME && 'bg-primary dark:bg-primary',
                     )}
@@ -599,11 +598,11 @@ function ChatBubble({
               {item.reactions.like?.includes(ME) && (
                 <View
                   className={cn(
-                    'bg-card dark:bg-background absolute -top-3 rounded-full p-px',
+                    'absolute -top-3 rounded-full bg-card p-px dark:bg-background',
                     item.sender === ME ? '-left-5' : '-right-5',
                   )}
                 >
-                  <View className="bg-primary rounded-full p-1">
+                  <View className="rounded-full bg-primary p-1">
                     <Icon
                       ios={{ name: 'hand.thumbsup.fill' }}
                       materialIcon={{
@@ -617,13 +616,13 @@ function ChatBubble({
                       <>
                         <View
                           className={cn(
-                            'bg-primary absolute bottom-0 h-2 w-2 rounded-full',
+                            'absolute bottom-0 h-2 w-2 rounded-full bg-primary',
                             item.sender === ME ? 'left-0' : 'right-0',
                           )}
                         />
                         <View
                           className={cn(
-                            'bg-primary absolute -bottom-1 h-1 w-1 rounded-full',
+                            'absolute -bottom-1 h-1 w-1 rounded-full bg-primary',
                             item.sender === ME ? '-left-1' : '-right-1',
                           )}
                         />
@@ -637,9 +636,9 @@ function ChatBubble({
         )}
         {item.sender === ME && !!item.isRead && (
           <View className="items-end pt-0.5">
-            <Text variant="caption2" className="text-muted-foreground font-medium">
+            <Text variant="caption2" className="font-medium text-muted-foreground">
               Read{' '}
-              <Text variant="caption2" className="text-muted-foreground font-normal">
+              <Text variant="caption2" className="font-normal text-muted-foreground">
                 Yesterday
               </Text>
             </Text>
@@ -728,7 +727,7 @@ function Composer({
         <TextInput
           placeholder="Message"
           style={TEXT_INPUT_STYLE}
-          className="ios:pt-[7px] ios:pb-1 border-border bg-background text-foreground min-h-9 flex-1 rounded-[18px] border py-1 pl-3 pr-8 text-base leading-5"
+          className="ios:pt-[7px] ios:pb-1 min-h-9 flex-1 rounded-[18px] border border-border bg-background py-1 pl-3 pr-8 text-base leading-5 text-foreground"
           placeholderTextColor={colors.grey2}
           multiline
           onContentSizeChange={onContentSizeChange}

@@ -1,7 +1,15 @@
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { router, Stack } from 'expo-router';
+import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
+import { Button } from 'nativewindui/Button';
+import { ContextMenu } from 'nativewindui/ContextMenu';
+import { DropdownMenu } from 'nativewindui/DropdownMenu';
+import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
+import { Text } from 'nativewindui/Text';
 import * as React from 'react';
 import {
   Image,
@@ -29,15 +37,6 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { Text } from 'nativewindui/Text';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 
 const ME = 'Alice';
 
@@ -145,7 +144,7 @@ function Header() {
   const insets = useSafeAreaInsets();
   return (
     <View
-      className="bg-card dark:bg-background absolute left-0 right-0 top-0 z-50 justify-end"
+      className="absolute left-0 right-0 top-0 z-50 justify-end bg-card dark:bg-background"
       style={{
         paddingTop: insets.top,
         height: HEADER_HEIGHT + insets.top,
@@ -216,7 +215,7 @@ function Header() {
 function DateSeparator({ date }: { date: string }) {
   return (
     <View className="items-center px-4 pb-3 pt-5">
-      <Text variant="caption1" className="text-muted-foreground font-medium">
+      <Text variant="caption1" className="font-medium text-muted-foreground">
         {date}
       </Text>
     </View>
@@ -260,7 +259,7 @@ function ChatBubble({
 
   const renderAuxiliaryPreview = React.useCallback(() => {
     return (
-      <View className="bg-card flex-row gap-2.5 rounded-full px-2 py-1 shadow-2xl">
+      <View className="flex-row gap-2.5 rounded-full bg-card px-2 py-1 shadow-2xl">
         <Button
           size="icon"
           variant={item.reactions.love?.includes(ME) ? 'primary' : 'plain'}
@@ -412,7 +411,7 @@ function ChatBubble({
               {item.reactions.love?.includes(ME) && (
                 <View
                   className={cn(
-                    'bg-card dark:bg-background absolute -bottom-6 rounded-full p-px',
+                    'absolute -bottom-6 rounded-full bg-card p-px dark:bg-background',
                     item.sender === ME ? 'right-0' : 'left-0',
                   )}
                 >
@@ -465,7 +464,7 @@ function ChatBubble({
               {item.reactions.love?.includes(ME) && (
                 <View
                   className={cn(
-                    'bg-card dark:bg-background absolute -bottom-6 rounded-full p-px',
+                    'absolute -bottom-6 rounded-full bg-card p-px dark:bg-background',
                     item.sender === ME ? 'right-0' : 'left-12',
                   )}
                 >
@@ -485,7 +484,7 @@ function ChatBubble({
               item.reactions.love?.includes(ME) && 'pt-7',
             )}
           >
-            <Text variant="caption2" className="text-muted-foreground font-normal">
+            <Text variant="caption2" className="font-normal text-muted-foreground">
               {item.time}
             </Text>
           </View>
@@ -554,7 +553,7 @@ function Composer({
 
   return (
     <View
-      className="bg-card dark:bg-background absolute bottom-0 left-0 right-0 z-50"
+      className="absolute bottom-0 left-0 right-0 z-50 bg-card dark:bg-background"
       style={{ paddingBottom: insets.bottom }}
     >
       <View className="flex-row items-end gap-0.5 py-2 pl-2 pr-4">
@@ -608,7 +607,7 @@ function Composer({
           <TextInput
             placeholder="Text Message"
             style={TEXT_INPUT_STYLE}
-            className="ios:py-2.5 text-foreground min-h-11 flex-1 rounded-3xl py-1.5 pl-3.5 pr-20 text-base leading-6"
+            className="ios:py-2.5 min-h-11 flex-1 rounded-3xl py-1.5 pl-3.5 pr-20 text-base leading-6 text-foreground"
             placeholderTextColor={colors.grey2}
             multiline
             onContentSizeChange={onContentSizeChange}
@@ -671,7 +670,7 @@ function SelectMessagesHeader({
         style={{
           height: HEADER_HEIGHT + insets.top,
         }}
-        className="bg-card absolute left-0 right-0 top-0 justify-end px-3 pb-4 shadow-xl"
+        className="absolute left-0 right-0 top-0 justify-end bg-card px-3 pb-4 shadow-xl"
       >
         <View className="flex-row items-center justify-between gap-4">
           <Button size="icon" variant="plain" onPress={clearSelectedMessages}>

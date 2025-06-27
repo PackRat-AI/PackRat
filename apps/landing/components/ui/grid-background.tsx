@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { siteConfig } from 'landing-app/config/site';
+import { useEffect, useRef } from 'react';
 
 export default function GridBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

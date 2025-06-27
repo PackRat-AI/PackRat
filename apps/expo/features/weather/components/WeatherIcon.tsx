@@ -1,5 +1,5 @@
 import { Icon } from '@roninoss/icons';
-import { getWeatherIconName, getWeatherIconByCondition } from '../lib/weatherIcons';
+import { getWeatherIconByCondition, getWeatherIconName } from '../lib/weatherIcons';
 
 type WeatherIconProps = {
   // Either provide a condition code or text

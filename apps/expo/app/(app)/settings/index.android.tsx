@@ -1,8 +1,6 @@
 import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { Platform, View } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
 import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
 import { Button } from 'nativewindui/Button';
@@ -14,8 +12,9 @@ import {
   ListSectionHeader,
 } from 'nativewindui/List';
 import { Text } from 'nativewindui/Text';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { Platform, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsAndroidStyleScreen() {
   const insets = useSafeAreaInsets();
@@ -103,7 +102,7 @@ function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>
       {info.item.leftView}
       <View className="flex-1">
         <Text className="pl-4 text-xl font-normal">{info.item.title}</Text>
-        <Text className="text-muted-foreground pl-4 text-base font-normal">
+        <Text className="pl-4 text-base font-normal text-muted-foreground">
           {info.item.subTitle}
         </Text>
       </View>
