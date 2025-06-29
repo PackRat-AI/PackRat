@@ -29,14 +29,37 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
   }
 
   const db = createDb(c);
+  const packId = c.req.param('packId');
 
-  const packId = c.req.param("packId");
+  // First, get the pack to check ownership and public status
+  const pack = await db.query.packs.findFirst({
+    where: eq(packs.id, packId),
+    columns: {
+      id: true,
+      userId: true,
+      isPublic: true,
+    },
+  });
+
+  if (!pack) {
+    return c.json({ error: 'Pack not found' }, 404);
+  }
+
+  // Check if user can access this pack (owns it or it's public)
+  const canAccess = pack.isPublic || pack.userId === auth.userId;
+
+  if (!canAccess) {
+    return c.json({ error: 'Unauthorized' }, 403);
+  }
+
+  // If authorized, return the pack items
   const items = await db.query.packItems.findMany({
     where: eq(packItems.packId, packId),
     with: {
       catalogItem: true,
     },
   });
+
   return c.json(items);
 });
 
