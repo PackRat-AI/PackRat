@@ -40,33 +40,29 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
   const { q } = c.req.query();
   const { OPENAI_API_KEY } = env<Env>(c);
 
-  try {
-    const embedding = await generateEmbedding({
-      value: q,
-      openAiApiKey: OPENAI_API_KEY,
-    });
+  const embedding = await generateEmbedding({
+    value: q,
+    openAiApiKey: OPENAI_API_KEY,
+  });
 
-    if (!embedding) {
-      return c.json({ error: 'Failed to generate embedding' }, 500);
-    }
-
-    const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
-
-    const similarItems = await db
-      .select({
-        id: catalogItems.id,
-        name: catalogItems.name,
-        similarity,
-      })
-      .from(catalogItems)
-      .where(gt(similarity, 0.1))
-      .orderBy(desc(similarity))
-      .limit(10);
-
-    return c.json(similarItems);
-  } catch (err) {
-    return c.json({ error: 'Vector search failed' }, 500);
+  if (!embedding) {
+    return c.json({ error: 'Failed to generate embedding' }, 500);
   }
+
+  const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+
+  const similarItems = await db
+    .select({
+      id: catalogItems.id,
+      name: catalogItems.name,
+      similarity,
+    })
+    .from(catalogItems)
+    .where(gt(similarity, 0.1))
+    .orderBy(desc(similarity))
+    .limit(10);
+
+  return c.json(similarItems);
 });
 
 export { searchRoutes };

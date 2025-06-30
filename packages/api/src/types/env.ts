@@ -1,4 +1,4 @@
-import type { Queue } from '@cloudflare/workers-types';
+import type { Ai, Queue } from '@cloudflare/workers-types';
 
 export type Env = {
   EMAIL_PROVIDER: string;
@@ -23,4 +23,7 @@ export type Env = {
   ENVIRONMENT: string;
   ADMIN_USERNAME: string;
   ADMIN_PASSWORD: string;
+  AI: Ai;
+  PACKRAT_GUIDES_RAG_NAME: string;
+  PACKRAT_GUIDES_BASE_URL: string;
 };

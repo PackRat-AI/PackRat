@@ -100,7 +100,7 @@ export const catalogItems = pgTable(
     productUrl: text('product_url'),
     color: text('color'),
     size: text('size'),
-    sku: text('sku'),
+    sku: text('sku').unique(),
     price: real('price'),
     availability: text('availability'),
     seller: text('seller'),
