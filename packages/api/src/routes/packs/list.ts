@@ -5,7 +5,7 @@ import {
   unauthorizedResponse,
 } from "@packrat/api/utils/api-middleware";
 import { computePacksWeights } from "@packrat/api/utils/compute-pack";
-import { eq, or, and, ne } from "drizzle-orm";
+import { and, eq, or } from 'drizzle-orm';
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 
 const packsListRoutes = new OpenAPIHono();
@@ -29,7 +29,10 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
 
   const db = createDb(c);
   const where = includePublic
-    ? or(eq(packs.userId, auth.userId), eq(packs.isPublic, true))
+    ? and(
+        or(eq(packs.userId, auth.userId), eq(packs.isPublic, true)),
+        eq(packs.deleted, false)
+      )
     : eq(packs.userId, auth.userId);
 
   const result = await db.query.packs.findMany({
