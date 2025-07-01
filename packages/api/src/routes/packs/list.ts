@@ -1,12 +1,12 @@
 import { createDb } from "@packrat/api/db";
-import { packs, packWeightHistory } from "@packrat/api/db/schema";
+import { packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
 import {
   authenticateRequest,
   unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import { computePacksWeights } from "@packrat/api/utils/compute-pack";
+} from '@packrat/api/utils/api-middleware';
+import { computePacksWeights } from '@packrat/api/utils/compute-pack';
 import { and, eq, or } from 'drizzle-orm';
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 
 const packsListRoutes = new OpenAPIHono();
 
@@ -15,7 +15,13 @@ const listGetRoute = createRoute({
   path: '/',
   request: {
     query: z.object({
-      includePublic: z.boolean().optional().default(false),
+      includePublic: z.coerce
+        .number()
+        .int()
+        .min(0)
+        .max(1)
+        .optional()
+        .default(0),
     }),
   },
   responses: { 200: { description: 'Get user packs' } },
@@ -26,9 +32,10 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
   if (!auth) return unauthorizedResponse();
 
   const { includePublic } = c.req.valid('query');
+  const includePublicBool = Boolean(includePublic).valueOf();
 
   const db = createDb(c);
-  const where = includePublic
+  const where = includePublicBool
     ? and(
         or(eq(packs.userId, auth.userId), eq(packs.isPublic, true)),
         eq(packs.deleted, false)
@@ -37,7 +44,9 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
 
   const result = await db.query.packs.findMany({
     where,
-    with: { items: true },
+    with: {
+      items: includePublicBool ? { where: eq(packItems.deleted, false) } : true,
+    },
   });
 
   return c.json(computePacksWeights(result));

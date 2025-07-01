@@ -1,10 +1,11 @@
 import { createDb } from "@packrat/api/db";
 import {
+  packItems,
   catalogItems,
   packs,
   packWeightHistory,
   type PackWithItems,
-} from "@packrat/api/db/schema";
+} from '@packrat/api/db/schema';
 import {
   authenticateRequest,
   unauthorizedResponse,
@@ -40,7 +41,9 @@ packRoutes.openapi(getPackRoute, async (c) => {
     const pack = await db.query.packs.findFirst({
       where: eq(packs.id, packId),
       with: {
-        items: true,
+        items: {
+          where: eq(packItems.deleted, false),
+        },
       },
     });
 

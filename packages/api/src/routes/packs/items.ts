@@ -52,9 +52,16 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
     return c.json({ error: 'Unauthorized' }, 403);
   }
 
+  const conditions = [eq(packItems.packId, packId)];
+  // Don't include deleted items if pack doesn't belong to user
+  // Deleted items are included for user owned packs for sync purposes
+  if (pack.userId !== auth.userId) {
+    conditions.push(eq(packItems.deleted, false));
+  }
+
   // If authorized, return the pack items
   const items = await db.query.packItems.findMany({
-    where: eq(packItems.packId, packId),
+    where: and(...conditions),
     with: {
       catalogItem: true,
     },
