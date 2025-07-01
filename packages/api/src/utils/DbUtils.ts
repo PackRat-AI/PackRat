@@ -22,36 +22,6 @@ export async function getPackDetails({ packId, c }: { packId: string; c: Context
   return packData;
 }
 
-// Get item details from the database
-export async function getItemDetails({ itemId, c }: { itemId: string; c: Context }) {
-  const db = createDb(c);
-
-  // First try to find it as a pack item
-  const packItem = await db.query.packItems.findFirst({
-    where: eq(packItems.id, itemId),
-    with: {
-      catalogItem: true,
-    },
-  });
-
-  if (packItem) return packItem;
-
-  // If not found, try to find it as a catalog item
-  const catalogItem = await db.query.catalogItems.findFirst({
-    where: eq(catalogItems.id, Number.parseInt(itemId)),
-  });
-
-  return catalogItem;
-}
-
-// Get user details
-export async function getUserDetails({ userId, c }: { userId: string; c: Context }) {
-  const db = createDb(c);
-  return db.query.users.findFirst({
-    where: eq(users.id, Number.parseInt(userId)),
-  });
-}
-
 // Get catalog items from the database
 export async function getCatalogItems({
   options,

@@ -1,5 +1,6 @@
 import { createDb } from "@packrat/api/db";
 import {
+  catalogItems,
   packs,
   packWeightHistory,
   type PackWithItems,
@@ -9,9 +10,11 @@ import {
   unauthorizedResponse,
 } from "@packrat/api/utils/api-middleware";
 import { computePackWeights } from "@packrat/api/utils/compute-pack";
-import { getCatalogItems, getPackDetails } from "@packrat/api/utils/DbUtils";
-import { and, eq } from "drizzle-orm";
+import { getPackDetails } from "@packrat/api/utils/DbUtils";
+import { and, eq, cosineDistance, desc, gt, sql } from "drizzle-orm";
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { env } from "hono/adapter";
+import { Env } from "@packrat/api/types/env";
 
 const packRoutes = new OpenAPIHono();
 
@@ -156,58 +159,56 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     return unauthorizedResponse();
   }
 
-  try {
-    const packId = c.req.param("packId");
-    const { categories } = await c.req.json();
+  const db = createDb(c);
+  const packId = c.req.param("packId");
 
-    // Get pack details
+  try {
     const pack = await getPackDetails({ packId, c });
     if (!pack) {
       return c.json({ error: "Pack not found" }, 404);
     }
 
-    // Get catalog items that could be suggested
-    const catalogItems = await getCatalogItems({ options: { categories }, c });
+    const existingEmbeddings = pack.items
+      .map((item) => item.embedding)
+      .filter((e): e is number[] => Array.isArray(e) && e.length > 0);
 
-    // For now, let's implement a simple algorithm to suggest items
-    // This avoids the AI complexity that's causing issues
+    if (existingEmbeddings.length === 0) {
+      console.warn("[ItemSuggestions] No embeddings found in items");
+      return c.json({ error: "No embeddings found for existing items" }, 400);
+    }
 
-    // Get existing categories and items in the pack
-    const existingCategories = new Set(
-      pack.items.map((item) => item.category || "Uncategorized"),
+    const avgEmbedding = existingEmbeddings[0].map(
+      (_, i) =>
+        existingEmbeddings.reduce((sum, emb) => sum + emb[i], 0) /
+        existingEmbeddings.length,
     );
 
-    const existingItemNames = new Set(
-      pack.items.map((item) => item.name.toLowerCase()),
+    const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
+
+    const existingCatalogIds = new Set(
+      pack.items.map((item) => item.catalogItemId).filter(Boolean),
     );
 
-    // Simple suggestion algorithm:
-    // 1. Suggest items from categories not in the pack
-    // 2. Suggest items that complement existing categories
-    // 3. Don't suggest items with names already in the pack
+    const excludeCondition = existingCatalogIds.size
+      ? sql`NOT (${catalogItems.id} = ANY(${Array.from(existingCatalogIds)}))`
+      : sql`TRUE`;
 
-    const suggestions = catalogItems.filter((item) => {
-      // Don't suggest items already in the pack
-      if (existingItemNames.has(item.name.toLowerCase())) {
-        return false;
-      }
+    const similarItems = await db
+      .select({
+        id: catalogItems.id,
+        name: catalogItems.name,
+        image: catalogItems.image,
+        category: catalogItems.category,
+        similarity,
+      })
+      .from(catalogItems)
+      .where(and(gt(similarity, 0.1), excludeCondition))
+      .orderBy(desc(similarity))
+      .limit(5);
 
-      // Prioritize items from categories not in the pack
-      if (item.category && !existingCategories.has(item.category)) {
-        return true;
-      }
-
-      // Include some items from existing categories (complementary items)
-      return Math.random() > 0.7; // Random selection for variety
-    });
-
-    // Limit to 5 suggestions
-    const limitedSuggestions = suggestions.slice(0, 5);
-
-    return c.json(limitedSuggestions);
+    return c.json(similarItems);
   } catch (error) {
-    console.error("Pack Item Suggestions API error:", error);
-    return c.json({ error: "Failed to process item suggestions request" }, 500);
+    return c.json({ error: "Failed to compute item suggestions" }, 500);
   }
 });
 

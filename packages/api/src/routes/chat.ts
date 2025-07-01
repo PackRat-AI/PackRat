@@ -2,10 +2,9 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { reportedContent } from '@packrat/api/db/schema';
-import { getWeatherData } from '@packrat/api/services/getWeatherData';
 import type { Env } from '@packrat/api/types/env';
+import { createTools } from '@packrat/api/utils/ai/tools';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import { getItemDetails, getPackDetails } from '@packrat/api/utils/DbUtils';
 import { streamText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { env } from 'hono/adapter';
@@ -42,113 +41,42 @@ chatRoutes.openapi(chatRoute, async (c) => {
     contextType?: string;
     itemId?: string;
     packId?: string;
-    userId?: number;
     location?: string;
   } = {};
 
   try {
     body = await c.req.json();
-    const { messages, contextType, itemId, packId, userId, location } = body;
+    const { messages, contextType, itemId, packId, location } = body;
 
-    // Only get weather data if location is defined
-    const weatherData = location ? await getWeatherData(location, c) : null;
+    const tools = createTools(c, auth.userId);
 
-    // Build context based on what was passed
-    let systemPrompt = '';
+    // Build context-aware system prompt
+    let systemPrompt = `
+      You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
+      You help users manage their hiking packs and gear efficiently using ultralight principles.
+            
+      Guidelines:
+      - Focus on ultralight hiking principles when appropriate
+      - For beginners, emphasize safety and comfort over weight savings
+      - Always consider weather conditions in your recommendations
+      - Suggest multi-purpose items to reduce pack weight
+      - Be concise but helpful in your responses
+      - Use tools proactively to provide accurate, up-to-date information
+    `;
 
-    if (contextType === 'item' && itemId) {
-      const item = await getItemDetails({ itemId, c });
-      if (item) {
-        // Determine if it's a pack item or catalog item
-        const isPackItem = 'packId' in item;
+    // Add context-specific information
+    if (contextType === 'pack' && packId) {
+      systemPrompt += `\n\nContext: You are currently helping with a pack with ID: ${packId}.`;
+    } else if (contextType === 'item' && itemId) {
+      systemPrompt += `\n\nContext: You are currently helping with an item with ID: ${itemId}.`;
+    }
 
-        systemPrompt = `
-          You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
-          You're currently helping with an item named: ${item.name} (${item.category || 'Uncategorized'}).
-          
-          Item details:
-          - Weight: ${isPackItem ? `${item.weight} ${item.weightUnit}` : `${item.defaultWeight || 'Unknown'} ${item.defaultWeightUnit || 'oz'}`}
-          ${item.description ? `- Description: ${item.description}` : ''}
-          ${isPackItem && item.notes ? `- Notes: ${item.notes}` : ''}
-          ${isPackItem ? `- Consumable: ${item.consumable ? 'Yes' : 'No'}` : ''}
-          ${isPackItem ? `- Worn: ${item.worn ? 'Yes' : 'No'}` : ''}
-          ${!isPackItem && item.brand ? `- Brand: ${item.brand}` : ''}
-          ${!isPackItem && item.model ? `- Model: ${item.model}` : ''}
-          
-          ${
-            weatherData
-              ? `Current weather in ${weatherData.location}: ${weatherData.temperature}°F, ${weatherData.conditions}, 
-          ${weatherData.humidity}% humidity, wind ${weatherData.windSpeed} mph.`
-              : ''
-          }
-          
-          Provide friendly, concise advice about this item. You can suggest alternatives, 
-          maintenance tips, or ways to use it effectively${weatherData ? ' based on the current weather conditions' : ''}.
-          Keep your responses brief and focused on ultralight hiking principles when appropriate.
-        `;
-      }
-    } else if (contextType === 'pack' && packId) {
-      const pack = await getPackDetails({ packId, c });
-      if (pack) {
-        // Calculate total weight
-        const totalWeight = pack.items.reduce((sum, item) => {
-          // Skip worn items in base weight calculation
-          if (item.worn) return sum;
-          return sum + item.weight * item.quantity;
-        }, 0);
-
-        // Get unique categories
-        const categories = Array.from(
-          new Set(pack.items.map((item) => item.category || 'Uncategorized')),
-        );
-
-        systemPrompt = `
-          You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
-          You're currently helping with a pack named: ${pack.name} (${pack.category || 'Uncategorized'}).
-          
-          Pack details:
-          - Items: ${JSON.stringify(pack.items)}
-          - Base Weight: ${totalWeight.toFixed(2)} ${pack.items[0]?.weightUnit || 'oz'}
-          - Categories: ${categories.join(', ')}
-          ${pack.description ? `- Description: ${pack.description}` : ''}
-          ${pack.tags?.length ? `- Tags: ${pack.tags.join(', ')}` : ''}
-          
-          ${
-            weatherData
-              ? `Current weather in ${weatherData.location}: ${weatherData.temperature}°F, ${weatherData.conditions}, 
-          ${weatherData.humidity}% humidity, wind ${weatherData.windSpeed} mph.`
-              : ''
-          }
-          
-          Provide friendly, concise advice about this pack. You can suggest items that might be missing,
-          ways to reduce weight, or improvements based on the pack's purpose${weatherData ? ' and current weather conditions' : ''}.
-          Keep your responses brief and focused on ultralight hiking principles when appropriate.
-        `;
-      }
-    } else {
-      // General outdoor conversation
-      systemPrompt = `
-        You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
-        You provide advice on what items users should take in their packs based on their needs,
-        ${weatherData ? 'weather conditions, and' : 'and'} ultralight hiking best practices.
-        
-        ${
-          weatherData
-            ? `Current weather in ${weatherData.location}: ${weatherData.temperature}°F, ${weatherData.conditions}, 
-        ${weatherData.humidity}% humidity, wind ${weatherData.windSpeed} mph.`
-            : ''
-        }
-        
-        Provide friendly, concise advice. Suggest items based on the user's questions${weatherData ? ' and current weather' : ''}.
-        For ultralight hikers, focus on multi-purpose items and weight savings.
-        For beginners, emphasize safety and comfort.
-        Keep your responses brief and to the point.
-      `;
+    if (location) {
+      systemPrompt += `\n\nContext: The current location of the user is: ${location}.`;
     }
 
     const { OPENAI_API_KEY } = env<Env>(c);
 
-    // Create a custom OpenAI provider with your API key
     const customOpenAI = createOpenAI({
       apiKey: OPENAI_API_KEY,
     });
@@ -158,8 +86,19 @@ chatRoutes.openapi(chatRoute, async (c) => {
       model: customOpenAI('gpt-4o'),
       system: systemPrompt,
       messages,
+      tools,
       maxTokens: 1000,
-      temperature: 0.7, // Add some creativity but not too much
+      temperature: 0.7,
+      maxSteps: 5,
+      onError: ({ error }) => {
+        console.error('streaming error', error);
+        c.get('sentry').setTag('location', 'chat/streamText');
+        c.get('sentry').setContext('params', {
+          body,
+          openAiApiKey: !!OPENAI_API_KEY,
+        });
+        c.get('sentry').captureException(error);
+      },
     });
 
     return result.toDataStreamResponse();
@@ -169,7 +108,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
       openAiApiKey: !!env<Env>(c).OPENAI_API_KEY,
     });
 
-    throw error; // will be captured by Sentry middleware
+    throw error;
   }
 });
 

@@ -25,5 +25,8 @@
         "max_batch_timeout": 5
       }
     ]
+  },
+  "ai": {
+    "binding": "AI"
   }
 }
