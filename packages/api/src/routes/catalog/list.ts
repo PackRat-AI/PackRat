@@ -1,22 +1,19 @@
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { createDb } from "@packrat/api/db";
-import { catalogItems } from "@packrat/api/db/schema";
-import { CatalogService } from "@packrat/api/services/catalogService";
-import { generateEmbedding } from "@packrat/api/services/embeddingService";
-import type { Env } from "@packrat/api/types/env";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import { getEmbeddingText } from "@packrat/api/utils/embeddingHelper";
-import { eq } from "drizzle-orm";
-import { env } from "hono/adapter";
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { catalogItems } from '@packrat/api/db/schema';
+import { CatalogService } from '@packrat/api/services/catalogService';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import type { Env } from '@packrat/api/types/env';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { eq } from 'drizzle-orm';
+import { env } from 'hono/adapter';
 
 const catalogListRoutes = new OpenAPIHono();
 
 const listGetRoute = createRoute({
-  method: "get",
-  path: "/",
+  method: 'get',
+  path: '/',
   request: {
     query: z.object({
       id: z.string().optional(),
@@ -27,20 +24,20 @@ const listGetRoute = createRoute({
       sort: z
         .object({
           field: z.enum([
-            "name",
-            "brand",
-            "category",
-            "price",
-            "ratingValue",
-            "createdAt",
-            "updatedAt",
+            'name',
+            'brand',
+            'category',
+            'price',
+            'ratingValue',
+            'createdAt',
+            'updatedAt',
           ]),
-          order: z.enum(["asc", "desc"]),
+          order: z.enum(['asc', 'desc']),
         })
         .optional(),
     }),
   },
-  responses: { 200: { description: "Get catalog items" } },
+  responses: { 200: { description: 'Get catalog items' } },
 });
 
 catalogListRoutes.openapi(listGetRoute, async (c) => {
@@ -50,24 +47,24 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
     return unauthorizedResponse();
   }
 
-  const { id, page, limit, q, category } = c.req.valid("query");
+  const { id, page, limit, q, category } = c.req.valid('query');
 
   // Manually parse sort parameters from raw query
   const url = new URL(c.req.url);
-  const sortField = url.searchParams.get("sort[field]");
-  const sortOrder = url.searchParams.get("sort[order]");
+  const sortField = url.searchParams.get('sort[field]');
+  const sortOrder = url.searchParams.get('sort[order]');
 
   // Validate sort parameters
   const validSortFields = [
-    "name",
-    "brand",
-    "category",
-    "price",
-    "ratingValue",
-    "createdAt",
-    "updatedAt",
+    'name',
+    'brand',
+    'category',
+    'price',
+    'ratingValue',
+    'createdAt',
+    'updatedAt',
   ] as const;
-  const validSortOrders = ["asc", "desc"] as const;
+  const validSortOrders = ['asc', 'desc'] as const;
 
   const sort =
     sortField &&
@@ -88,7 +85,7 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
     });
 
     if (!item) {
-      return c.json({ error: "Catalog item not found" }, { status: 404 });
+      return c.json({ error: 'Catalog item not found' }, { status: 404 });
     }
 
     return c.json(item);
@@ -118,16 +115,16 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
 });
 
 const listPostRoute = createRoute({
-  method: "post",
-  path: "/",
+  method: 'post',
+  path: '/',
   request: {
     body: {
       content: {
-        "application/json": { schema: z.any() },
+        'application/json': { schema: z.any() },
       },
     },
   },
-  responses: { 200: { description: "Create catalog item" } },
+  responses: { 200: { description: 'Create catalog item' } },
 });
 
 catalogListRoutes.openapi(listPostRoute, async (c) => {
@@ -141,7 +138,7 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
   const { OPENAI_API_KEY } = env<Env>(c);
 
   if (!OPENAI_API_KEY) {
-    return c.json({ error: "OpenAI API key not configured" }, 500);
+    return c.json({ error: 'OpenAI API key not configured' }, 500);
   }
 
   // Generate embedding

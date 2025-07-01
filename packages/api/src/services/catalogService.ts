@@ -1,7 +1,7 @@
-import { createDb } from "@packrat/api/db";
-import { type CatalogItem, catalogItems } from "@packrat/api/db/schema";
-import { generateEmbedding } from "@packrat/api/services/embeddingService";
-import type { Env } from "@packrat/api/types/env";
+import { createDb } from '@packrat/api/db';
+import { type CatalogItem, catalogItems } from '@packrat/api/db/schema';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import type { Env } from '@packrat/api/types/env';
 import {
   and,
   asc,
@@ -14,9 +14,9 @@ import {
   ilike,
   or,
   sql,
-} from "drizzle-orm";
-import type { Context } from "hono";
-import { env } from "hono/adapter";
+} from 'drizzle-orm';
+import type { Context } from 'hono';
+import { env } from 'hono/adapter';
 
 export class CatalogService {
   private db;
@@ -33,15 +33,8 @@ export class CatalogService {
     offset?: number;
     category?: string;
     sort?: {
-      field:
-        | "name"
-        | "brand"
-        | "category"
-        | "price"
-        | "ratingValue"
-        | "createdAt"
-        | "updatedAt";
-      order: "asc" | "desc";
+      field: 'name' | 'brand' | 'category' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
+      order: 'asc' | 'desc';
     };
   }): Promise<{
     items: CatalogItem[];
@@ -54,11 +47,11 @@ export class CatalogService {
     console.log(params);
 
     if (limit < 1) {
-      throw new Error("Limit must be at least 1");
+      throw new Error('Limit must be at least 1');
     }
 
     if (offset < 0) {
-      throw new Error("Offset cannot be negative");
+      throw new Error('Offset cannot be negative');
     }
 
     const conditions = [];
@@ -69,8 +62,8 @@ export class CatalogService {
           ilike(catalogItems.description, `%${q}%`),
           ilike(catalogItems.brand, `%${q}%`),
           ilike(catalogItems.model, `%${q}%`),
-          ilike(catalogItems.category, `%${q}%`)
-        )
+          ilike(catalogItems.category, `%${q}%`),
+        ),
       );
     }
 
@@ -85,7 +78,7 @@ export class CatalogService {
       const { field, order } = sort;
       const sortColumn = catalogItems[field];
       if (sortColumn) {
-        orderBy = [order === "desc" ? desc(sortColumn) : asc(sortColumn)];
+        orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn)];
       }
     }
     console.log(orderBy);
@@ -126,7 +119,7 @@ export class CatalogService {
   async semanticSearch(
     q: string,
     limit: number = 10,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<{
     items: (CatalogItem & { similarity: number })[];
     total: number;
@@ -134,7 +127,7 @@ export class CatalogService {
     offset: number;
     nextOffset: number;
   }> {
-    if (!q || q.trim() === "") {
+    if (!q || q.trim() === '') {
       return {
         items: [],
         total: 0,
