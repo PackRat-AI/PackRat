@@ -1,18 +1,22 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { createDb } from '@packrat/api/db';
-import { catalogItems } from '@packrat/api/db/schema';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import type { Env } from '@packrat/api/types/env';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
-import { env } from 'hono/adapter';
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { createDb } from "@packrat/api/db";
+import { catalogItems } from "@packrat/api/db/schema";
+import { CatalogService } from "@packrat/api/services/catalogService";
+import { generateEmbedding } from "@packrat/api/services/embeddingService";
+import type { Env } from "@packrat/api/types/env";
+import {
+  authenticateRequest,
+  unauthorizedResponse,
+} from "@packrat/api/utils/api-middleware";
+import { getEmbeddingText } from "@packrat/api/utils/embeddingHelper";
+import { eq } from "drizzle-orm";
+import { env } from "hono/adapter";
 
 const catalogListRoutes = new OpenAPIHono();
 
 const listGetRoute = createRoute({
-  method: 'get',
-  path: '/',
+  method: "get",
+  path: "/",
   request: {
     query: z.object({
       id: z.string().optional(),
@@ -20,9 +24,23 @@ const listGetRoute = createRoute({
       limit: z.coerce.number().int().nonnegative().optional().default(20),
       q: z.string().optional(),
       category: z.string().optional(),
+      sort: z
+        .object({
+          field: z.enum([
+            "name",
+            "brand",
+            "category",
+            "price",
+            "ratingValue",
+            "createdAt",
+            "updatedAt",
+          ]),
+          order: z.enum(["asc", "desc"]),
+        })
+        .optional(),
     }),
   },
-  responses: { 200: { description: 'Get catalog items' } },
+  responses: { 200: { description: "Get catalog items" } },
 });
 
 catalogListRoutes.openapi(listGetRoute, async (c) => {
@@ -32,72 +50,67 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
     return unauthorizedResponse();
   }
 
-  const db = createDb(c);
-  const { id, page, limit, q, category } = c.req.valid('query');
+  const { id, page, limit, q, category } = c.req.valid("query");
+
+  // Manually parse sort parameters from raw query
+  const url = new URL(c.req.url);
+  const sortField = url.searchParams.get("sort[field]");
+  const sortOrder = url.searchParams.get("sort[order]");
+
+  // Validate sort parameters
+  const validSortFields = [
+    "name",
+    "brand",
+    "category",
+    "price",
+    "ratingValue",
+    "createdAt",
+    "updatedAt",
+  ] as const;
+  const validSortOrders = ["asc", "desc"] as const;
+
+  const sort =
+    sortField &&
+    sortOrder &&
+    validSortFields.includes(sortField as any) &&
+    validSortOrders.includes(sortOrder as any)
+      ? {
+          field: sortField as (typeof validSortFields)[number],
+          order: sortOrder as (typeof validSortOrders)[number],
+        }
+      : undefined;
 
   if (id) {
     // Get a specific catalog item
+    const db = createDb(c);
     const item = await db.query.catalogItems.findFirst({
       where: eq(catalogItems.id, Number.parseInt(id, 10)),
     });
 
     if (!item) {
-      return c.json({ error: 'Catalog item not found' }, { status: 404 });
+      return c.json({ error: "Catalog item not found" }, { status: 404 });
     }
 
     return c.json(item);
   }
 
-  const conditions = [];
-  if (q) {
-    conditions.push(
-      or(
-        ilike(catalogItems.name, `%${q}%`),
-        ilike(catalogItems.description, `%${q}%`),
-        ilike(catalogItems.brand, `%${q}%`),
-        ilike(catalogItems.model, `%${q}%`),
-        ilike(catalogItems.category, `%${q}%`)
-      )
-    );
-  }
-  if (category) {
-    conditions.push(eq(catalogItems.category, category));
-  }
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-
-  if (limit === 0) {
-    const items = await db.query.catalogItems.findMany({
-      where,
-      orderBy: [desc(catalogItems.id)],
-    });
-    return c.json({
-      items,
-      totalCount: items.length,
-      page: 1,
-      limit: items.length > 0 ? items.length : 1,
-      totalPages: 1,
-    });
-  }
-
-  // Get paginated catalog items
+  // Use CatalogService for list queries
+  const catalogService = new CatalogService(c);
   const offset = (page - 1) * limit;
 
-  const [items, total] = await Promise.all([
-    db.query.catalogItems.findMany({
-      where,
-      limit: limit,
-      offset,
-      orderBy: [desc(catalogItems.id)],
-    }),
-    db.select({ count: count() }).from(catalogItems).where(where),
-  ]);
+  const result = await catalogService.getCatalogItems({
+    q,
+    limit,
+    offset,
+    category,
+    sort,
+  });
 
-  const totalCount = total[0].count;
-  const totalPages = Math.ceil(totalCount / limit);
+  const totalPages = Math.ceil(result.total / limit);
 
   return c.json({
-    items,
-    totalCount,
+    items: result.items,
+    totalCount: result.total,
     page,
     limit,
     totalPages,
@@ -105,16 +118,16 @@ catalogListRoutes.openapi(listGetRoute, async (c) => {
 });
 
 const listPostRoute = createRoute({
-  method: 'post',
-  path: '/',
+  method: "post",
+  path: "/",
   request: {
     body: {
       content: {
-        'application/json': { schema: z.any() },
+        "application/json": { schema: z.any() },
       },
     },
   },
-  responses: { 200: { description: 'Create catalog item' } },
+  responses: { 200: { description: "Create catalog item" } },
 });
 
 catalogListRoutes.openapi(listPostRoute, async (c) => {
@@ -128,7 +141,7 @@ catalogListRoutes.openapi(listPostRoute, async (c) => {
   const { OPENAI_API_KEY } = env<Env>(c);
 
   if (!OPENAI_API_KEY) {
-    return c.json({ error: 'OpenAI API key not configured' }, 500);
+    return c.json({ error: "OpenAI API key not configured" }, 500);
   }
 
   // Generate embedding
