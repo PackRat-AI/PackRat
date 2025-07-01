@@ -1,21 +1,18 @@
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import {
-  packItems,
   catalogItems,
+  type NewPack,
+  type PackWithItems,
+  packItems,
   packs,
   packWeightHistory,
-  type PackWithItems,
 } from '@packrat/api/db/schema';
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from '@packrat/api/utils/api-middleware';
+
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { and, eq, cosineDistance, desc, gt, sql } from 'drizzle-orm';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import { env } from 'hono/adapter';
-import { Env } from '@packrat/api/types/env';
+import { and, cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
 
 const packRoutes = new OpenAPIHono();
 
@@ -82,7 +79,7 @@ packRoutes.openapi(updatePackRoute, async (c) => {
     const data = await c.req.json();
 
     // Create update object with only the provided fields
-    const updateData: Record<string, any> = {};
+    const updateData: Partial<NewPack> = {};
     if ('name' in data) updateData.name = data.name;
     if ('description' in data) updateData.description = data.description;
     if ('category' in data) updateData.category = data.category;
@@ -90,8 +87,7 @@ packRoutes.openapi(updatePackRoute, async (c) => {
     if ('image' in data) updateData.image = data.image;
     if ('tags' in data) updateData.tags = data.tags;
     if ('deleted' in data) updateData.deleted = data.deleted;
-    if ('localUpdatedAt' in data)
-      updateData.localUpdatedAt = new Date(data.localUpdatedAt);
+    if ('localUpdatedAt' in data) updateData.localUpdatedAt = new Date(data.localUpdatedAt);
 
     // Always update the updatedAt timestamp
     updateData.updatedAt = new Date();
@@ -101,13 +97,12 @@ packRoutes.openapi(updatePackRoute, async (c) => {
       .set(updateData)
       .where(and(eq(packs.id, packId), eq(packs.userId, auth.userId)));
 
-    const updatedPack: PackWithItems | undefined =
-      await db.query.packs.findFirst({
-        where: and(eq(packs.id, packId), eq(packs.userId, auth.userId)),
-        with: {
-          items: true,
-        },
-      });
+    const updatedPack: PackWithItems | undefined = await db.query.packs.findFirst({
+      where: and(eq(packs.id, packId), eq(packs.userId, auth.userId)),
+      with: {
+        items: true,
+      },
+    });
 
     if (!updatedPack) {
       return c.json({ error: 'Pack not found' }, 404);
@@ -165,54 +160,46 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
   const db = createDb(c);
   const packId = c.req.param('packId');
 
-  try {
-    const pack = await getPackDetails({ packId, c });
-    if (!pack) {
-      return c.json({ error: 'Pack not found' }, 404);
-    }
-
-    const existingEmbeddings = pack.items
-      .map((item) => item.embedding)
-      .filter((e): e is number[] => Array.isArray(e) && e.length > 0);
-
-    if (existingEmbeddings.length === 0) {
-      console.warn('[ItemSuggestions] No embeddings found in items');
-      return c.json({ error: 'No embeddings found for existing items' }, 400);
-    }
-
-    const avgEmbedding = existingEmbeddings[0].map(
-      (_, i) =>
-        existingEmbeddings.reduce((sum, emb) => sum + emb[i], 0) /
-        existingEmbeddings.length
-    );
-
-    const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
-
-    const existingCatalogIds = new Set(
-      pack.items.map((item) => item.catalogItemId).filter(Boolean)
-    );
-
-    const excludeCondition = existingCatalogIds.size
-      ? sql`NOT (${catalogItems.id} = ANY(${Array.from(existingCatalogIds)}))`
-      : sql`TRUE`;
-
-    const similarItems = await db
-      .select({
-        id: catalogItems.id,
-        name: catalogItems.name,
-        image: catalogItems.image,
-        category: catalogItems.category,
-        similarity,
-      })
-      .from(catalogItems)
-      .where(and(gt(similarity, 0.1), excludeCondition))
-      .orderBy(desc(similarity))
-      .limit(5);
-
-    return c.json(similarItems);
-  } catch (error) {
-    return c.json({ error: 'Failed to compute item suggestions' }, 500);
+  const pack = await getPackDetails({ packId, c });
+  if (!pack) {
+    return c.json({ error: 'Pack not found' }, 404);
   }
+
+  const existingEmbeddings = pack.items
+    .map((item) => item.embedding)
+    .filter((e): e is number[] => Array.isArray(e) && e.length > 0);
+
+  if (existingEmbeddings.length === 0) {
+    console.warn('[ItemSuggestions] No embeddings found in items');
+    return c.json({ error: 'No embeddings found for existing items' }, 400);
+  }
+
+  const avgEmbedding = existingEmbeddings[0].map(
+    (_, i) => existingEmbeddings.reduce((sum, emb) => sum + emb[i], 0) / existingEmbeddings.length,
+  );
+
+  const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
+
+  const existingCatalogIds = new Set(pack.items.map((item) => item.catalogItemId).filter(Boolean));
+
+  const excludeCondition = existingCatalogIds.size
+    ? sql`NOT (${catalogItems.id} = ANY(${Array.from(existingCatalogIds)}))`
+    : sql`TRUE`;
+
+  const similarItems = await db
+    .select({
+      id: catalogItems.id,
+      name: catalogItems.name,
+      image: catalogItems.image,
+      category: catalogItems.category,
+      similarity,
+    })
+    .from(catalogItems)
+    .where(and(gt(similarity, 0.1), excludeCondition))
+    .orderBy(desc(similarity))
+    .limit(5);
+
+  return c.json(similarItems);
 });
 
 const weightHistoryRoute = createRoute({

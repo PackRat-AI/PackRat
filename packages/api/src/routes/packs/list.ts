@@ -1,12 +1,9 @@
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from '@packrat/api/utils/api-middleware';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { computePacksWeights } from '@packrat/api/utils/compute-pack';
 import { and, eq, or } from 'drizzle-orm';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 
 const packsListRoutes = new OpenAPIHono();
 
@@ -15,13 +12,7 @@ const listGetRoute = createRoute({
   path: '/',
   request: {
     query: z.object({
-      includePublic: z.coerce
-        .number()
-        .int()
-        .min(0)
-        .max(1)
-        .optional()
-        .default(0),
+      includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
     }),
   },
   responses: { 200: { description: 'Get user packs' } },
@@ -36,10 +27,7 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
 
   const db = createDb(c);
   const where = includePublicBool
-    ? and(
-        or(eq(packs.userId, auth.userId), eq(packs.isPublic, true)),
-        eq(packs.deleted, false)
-      )
+    ? and(or(eq(packs.userId, auth.userId), eq(packs.isPublic, true)), eq(packs.deleted, false))
     : eq(packs.userId, auth.userId);
 
   const result = await db.query.packs.findMany({
