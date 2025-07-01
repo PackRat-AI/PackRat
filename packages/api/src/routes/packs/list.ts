@@ -1,4 +1,4 @@
-import { createDb } from "@packrat/api/db";
+import { createDb } from '@packrat/api/db';
 import { packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
 import {
   authenticateRequest,
@@ -53,10 +53,10 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
 });
 
 const listPostRoute = createRoute({
-  method: "post",
-  path: "/",
-  request: { body: { content: { "application/json": { schema: z.any() } } } },
-  responses: { 200: { description: "Create pack" } },
+  method: 'post',
+  path: '/',
+  request: { body: { content: { 'application/json': { schema: z.any() } } } },
+  responses: { 200: { description: 'Create pack' } },
 });
 
 packsListRoutes.openapi(listPostRoute, async (c) => {
@@ -68,7 +68,7 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
 
   // Ensure the client provides an ID
   if (!data.id) {
-    return c.json({ error: "Pack ID is required" }, 400);
+    return c.json({ error: 'Pack ID is required' }, 400);
   }
 
   const [newPack] = await db
@@ -92,9 +92,9 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
 });
 
 const weightHistoryRoute = createRoute({
-  method: "get",
-  path: "/weight-history",
-  responses: { 200: { description: "Get weight history" } },
+  method: 'get',
+  path: '/weight-history',
+  responses: { 200: { description: 'Get weight history' } },
 });
 
 packsListRoutes.openapi(weightHistoryRoute, async (c) => {

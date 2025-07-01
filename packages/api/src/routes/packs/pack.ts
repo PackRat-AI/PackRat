@@ -1,4 +1,4 @@
-import { createDb } from "@packrat/api/db";
+import { createDb } from '@packrat/api/db';
 import {
   packItems,
   catalogItems,
@@ -9,24 +9,24 @@ import {
 import {
   authenticateRequest,
   unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import { computePackWeights } from "@packrat/api/utils/compute-pack";
-import { getPackDetails } from "@packrat/api/utils/DbUtils";
-import { and, eq, cosineDistance, desc, gt, sql } from "drizzle-orm";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { env } from "hono/adapter";
-import { Env } from "@packrat/api/types/env";
+} from '@packrat/api/utils/api-middleware';
+import { computePackWeights } from '@packrat/api/utils/compute-pack';
+import { getPackDetails } from '@packrat/api/utils/DbUtils';
+import { and, eq, cosineDistance, desc, gt, sql } from 'drizzle-orm';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { env } from 'hono/adapter';
+import { Env } from '@packrat/api/types/env';
 
 const packRoutes = new OpenAPIHono();
 
 // Get a specific pack
 const getPackRoute = createRoute({
-  method: "get",
-  path: "/{packId}",
+  method: 'get',
+  path: '/{packId}',
   request: {
     params: z.object({ packId: z.string() }),
   },
-  responses: { 200: { description: "Get pack" } },
+  responses: { 200: { description: 'Get pack' } },
 });
 
 packRoutes.openapi(getPackRoute, async (c) => {
@@ -37,7 +37,7 @@ packRoutes.openapi(getPackRoute, async (c) => {
 
   const db = createDb(c);
   try {
-    const packId = c.req.param("packId");
+    const packId = c.req.param('packId');
     const pack = await db.query.packs.findFirst({
       where: eq(packs.id, packId),
       with: {
@@ -48,26 +48,26 @@ packRoutes.openapi(getPackRoute, async (c) => {
     });
 
     if (!pack) {
-      return c.json({ error: "Pack not found" }, 404);
+      return c.json({ error: 'Pack not found' }, 404);
     }
     return c.json(pack);
   } catch (error) {
-    console.error("Error fetching pack:", error);
-    return c.json({ error: "Failed to fetch pack" }, 500);
+    console.error('Error fetching pack:', error);
+    return c.json({ error: 'Failed to fetch pack' }, 500);
   }
 });
 
 // Update a pack
 const updatePackRoute = createRoute({
-  method: "put",
-  path: "/{packId}",
+  method: 'put',
+  path: '/{packId}',
   request: {
     params: z.object({ packId: z.string() }),
     body: {
-      content: { "application/json": { schema: z.any() } },
+      content: { 'application/json': { schema: z.any() } },
     },
   },
-  responses: { 200: { description: "Update pack" } },
+  responses: { 200: { description: 'Update pack' } },
 });
 
 packRoutes.openapi(updatePackRoute, async (c) => {
@@ -78,19 +78,19 @@ packRoutes.openapi(updatePackRoute, async (c) => {
 
   const db = createDb(c);
   try {
-    const packId = c.req.param("packId");
+    const packId = c.req.param('packId');
     const data = await c.req.json();
 
     // Create update object with only the provided fields
     const updateData: Record<string, any> = {};
-    if ("name" in data) updateData.name = data.name;
-    if ("description" in data) updateData.description = data.description;
-    if ("category" in data) updateData.category = data.category;
-    if ("isPublic" in data) updateData.isPublic = data.isPublic;
-    if ("image" in data) updateData.image = data.image;
-    if ("tags" in data) updateData.tags = data.tags;
-    if ("deleted" in data) updateData.deleted = data.deleted;
-    if ("localUpdatedAt" in data)
+    if ('name' in data) updateData.name = data.name;
+    if ('description' in data) updateData.description = data.description;
+    if ('category' in data) updateData.category = data.category;
+    if ('isPublic' in data) updateData.isPublic = data.isPublic;
+    if ('image' in data) updateData.image = data.image;
+    if ('tags' in data) updateData.tags = data.tags;
+    if ('deleted' in data) updateData.deleted = data.deleted;
+    if ('localUpdatedAt' in data)
       updateData.localUpdatedAt = new Date(data.localUpdatedAt);
 
     // Always update the updatedAt timestamp
@@ -110,23 +110,23 @@ packRoutes.openapi(updatePackRoute, async (c) => {
       });
 
     if (!updatedPack) {
-      return c.json({ error: "Pack not found" }, 404);
+      return c.json({ error: 'Pack not found' }, 404);
     }
 
     const packWithWeights = computePackWeights(updatedPack);
     return c.json(packWithWeights);
   } catch (error) {
-    console.error("Error updating pack:", error);
-    return c.json({ error: "Failed to update pack" }, 500);
+    console.error('Error updating pack:', error);
+    return c.json({ error: 'Failed to update pack' }, 500);
   }
 });
 
 // Delete a pack
 const deletePackRoute = createRoute({
-  method: "delete",
-  path: "/{packId}",
+  method: 'delete',
+  path: '/{packId}',
   request: { params: z.object({ packId: z.string() }) },
-  responses: { 200: { description: "Delete pack" } },
+  responses: { 200: { description: 'Delete pack' } },
 });
 
 packRoutes.openapi(deletePackRoute, async (c) => {
@@ -137,23 +137,23 @@ packRoutes.openapi(deletePackRoute, async (c) => {
 
   const db = createDb(c);
   try {
-    const packId = c.req.param("packId");
+    const packId = c.req.param('packId');
     await db.delete(packs).where(eq(packs.id, packId));
     return c.json({ success: true });
   } catch (error) {
-    console.error("Error deleting pack:", error);
-    return c.json({ error: "Failed to delete pack" }, 500);
+    console.error('Error deleting pack:', error);
+    return c.json({ error: 'Failed to delete pack' }, 500);
   }
 });
 
 const itemSuggestionsRoute = createRoute({
-  method: "post",
-  path: "/{packId}/item-suggestions",
+  method: 'post',
+  path: '/{packId}/item-suggestions',
   request: {
     params: z.object({ packId: z.string() }),
-    body: { content: { "application/json": { schema: z.any() } } },
+    body: { content: { 'application/json': { schema: z.any() } } },
   },
-  responses: { 200: { description: "Pack item suggestions" } },
+  responses: { 200: { description: 'Pack item suggestions' } },
 });
 
 packRoutes.openapi(itemSuggestionsRoute, async (c) => {
@@ -163,12 +163,12 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
   }
 
   const db = createDb(c);
-  const packId = c.req.param("packId");
+  const packId = c.req.param('packId');
 
   try {
     const pack = await getPackDetails({ packId, c });
     if (!pack) {
-      return c.json({ error: "Pack not found" }, 404);
+      return c.json({ error: 'Pack not found' }, 404);
     }
 
     const existingEmbeddings = pack.items
@@ -176,20 +176,20 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
       .filter((e): e is number[] => Array.isArray(e) && e.length > 0);
 
     if (existingEmbeddings.length === 0) {
-      console.warn("[ItemSuggestions] No embeddings found in items");
-      return c.json({ error: "No embeddings found for existing items" }, 400);
+      console.warn('[ItemSuggestions] No embeddings found in items');
+      return c.json({ error: 'No embeddings found for existing items' }, 400);
     }
 
     const avgEmbedding = existingEmbeddings[0].map(
       (_, i) =>
         existingEmbeddings.reduce((sum, emb) => sum + emb[i], 0) /
-        existingEmbeddings.length,
+        existingEmbeddings.length
     );
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
 
     const existingCatalogIds = new Set(
-      pack.items.map((item) => item.catalogItemId).filter(Boolean),
+      pack.items.map((item) => item.catalogItemId).filter(Boolean)
     );
 
     const excludeCondition = existingCatalogIds.size
@@ -211,18 +211,18 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
 
     return c.json(similarItems);
   } catch (error) {
-    return c.json({ error: "Failed to compute item suggestions" }, 500);
+    return c.json({ error: 'Failed to compute item suggestions' }, 500);
   }
 });
 
 const weightHistoryRoute = createRoute({
-  method: "post",
-  path: "/{packId}/weight-history",
+  method: 'post',
+  path: '/{packId}/weight-history',
   request: {
     params: z.object({ packId: z.string() }),
-    body: { content: { "application/json": { schema: z.any() } } },
+    body: { content: { 'application/json': { schema: z.any() } } },
   },
-  responses: { 200: { description: "Create pack weight history" } },
+  responses: { 200: { description: 'Create pack weight history' } },
 });
 
 packRoutes.openapi(weightHistoryRoute, async (c) => {
@@ -233,7 +233,7 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
 
   const db = createDb(c);
   try {
-    const packId = c.req.param("packId");
+    const packId = c.req.param('packId');
     const data = await c.req.json();
 
     const packWeightHistoryEntry = await db
@@ -249,8 +249,8 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
 
     return c.json(packWeightHistoryEntry);
   } catch (error) {
-    console.error("Pack weight history API error:", error);
-    return c.json({ error: "Failed to create weight history entry" }, 500);
+    console.error('Pack weight history API error:', error);
+    return c.json({ error: 'Failed to create weight history entry' }, 500);
   }
 });
 

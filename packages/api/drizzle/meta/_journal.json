@@ -113,6 +113,20 @@
       "when": 1751037237694,
       "tag": "0014_free_mindworm",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1751394939190,
+      "tag": "0015_keen_power_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1751394948090,
+      "tag": "0016_curved_gambit",
+      "breakpoints": true
     }
   ]
 }

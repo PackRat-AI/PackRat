@@ -1,21 +1,22 @@
-import {
-  cosineDistance,
-  desc,
-  getTableColumns,
-  gt,
-  sql,
-  count,
-  or,
-  ilike,
-  eq,
-  and,
-} from 'drizzle-orm';
-import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 import { createDb } from '@packrat/api/db';
 import { type CatalogItem, catalogItems } from '@packrat/api/db/schema';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
+import {
+  and,
+  asc,
+  cosineDistance,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  gt,
+  ilike,
+  or,
+  sql,
+} from 'drizzle-orm';
+import type { Context } from 'hono';
+import { env } from 'hono/adapter';
 
 export class CatalogService {
   private db;
@@ -31,6 +32,10 @@ export class CatalogService {
     limit?: number;
     offset?: number;
     category?: string;
+    sort?: {
+      field: 'name' | 'brand' | 'category' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
+      order: 'asc' | 'desc';
+    };
   }): Promise<{
     items: CatalogItem[];
     total: number;
@@ -38,7 +43,8 @@ export class CatalogService {
     offset: number;
     nextOffset: number;
   }> {
-    const { q, limit = 10, offset = 0, category } = params;
+    const { q, limit = 10, offset = 0, category, sort } = params;
+    console.log(params);
 
     if (limit < 1) {
       throw new Error('Limit must be at least 1');
@@ -66,9 +72,21 @@ export class CatalogService {
     }
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
+    // Build orderBy clause
+    let orderBy = [desc(catalogItems.id)]; // default ordering
+    if (sort) {
+      const { field, order } = sort;
+      const sortColumn = catalogItems[field];
+      if (sortColumn) {
+        orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn)];
+      }
+    }
+    console.log(orderBy);
+
     if (!limit) {
       const items = await this.db.query.catalogItems.findMany({
         where,
+        orderBy,
       });
       return {
         items,
@@ -82,9 +100,9 @@ export class CatalogService {
     const [items, [{ totalCount }]] = await Promise.all([
       this.db.query.catalogItems.findMany({
         where,
-        limit: limit,
+        limit,
         offset,
-        orderBy: [desc(catalogItems.id)],
+        orderBy,
       }),
       this.db.select({ totalCount: count() }).from(catalogItems).where(where),
     ]);
