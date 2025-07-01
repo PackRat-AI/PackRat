@@ -3,6 +3,8 @@ import type { Queue } from '@cloudflare/workers-types';
 import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import { getTableColumns, sql } from 'drizzle-orm';
+import { parse } from 'csv-parse/sync';
+import { createDbClient } from '../db';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
@@ -76,10 +78,7 @@ export async function processQueueBatch({ batch, env }: { batch: any; env: Env }
 
       switch (queueMessage.type) {
         case QueueType.CATALOG_ETL:
-          if (!env.ETL_QUEUE) {
-            throw new Error('ETL_QUEUE is not configured');
-          }
-
+          if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
           await processCatalogETL({
             message: queueMessage as CatalogETLMessage,
             env,
@@ -114,120 +113,80 @@ async function processCatalogETL({
 
   console.log(`Starting ETL job ${jobId} for file ${filename}`);
 
-  try {
-    const {
-      CLOUDFLARE_ACCOUNT_ID,
-      R2_ACCESS_KEY_ID,
-      R2_SECRET_ACCESS_KEY,
-      PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
-    } = env;
+  const {
+    CLOUDFLARE_ACCOUNT_ID,
+    R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY,
+    PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
+  } = env;
 
-    const s3Client = new S3Client({
-      region: 'auto',
-      endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: R2_ACCESS_KEY_ID || '',
-        secretAccessKey: R2_SECRET_ACCESS_KEY || '',
-      },
-    });
+  const s3Client = new S3Client({
+    region: 'auto',
+    endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: R2_ACCESS_KEY_ID || '',
+      secretAccessKey: R2_SECRET_ACCESS_KEY || '',
+    },
+  });
 
-    const object = await s3Client.send(
-      new GetObjectCommand({
-        Bucket: PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
-        Key: objectKey,
-      }),
-    );
+  const object = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
+      Key: objectKey,
+    }),
+  );
 
-    if (!object.Body) {
-      throw new Error(`Object not found or body is empty: ${objectKey}`);
-    }
-    const stream = object.Body as ReadableStream<Uint8Array>;
-    const reader = stream.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let buffer = '';
+  if (!object.Body) {
+    throw new Error(`Object not found or body is empty: ${objectKey}`);
+  }
 
-    let isHeader = true;
-    let fieldMap: Record<string, number> = {};
-    let batch: any[] = [];
-    let totalQueued = 0;
+  const text = await new Response(object.Body).text();
 
-    const processLine = async (line: string) => {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) return;
+  const rows: string[][] = parse(text, {
+    relax_column_count: true,
+    skip_empty_lines: true,
+  });
 
-      if (isHeader) {
-        const headers = parseCSVLine(trimmedLine).map((h) => h.trim().toLowerCase());
-        fieldMap = createFieldMap(headers);
-        isHeader = false;
-        console.log(`Processing ${filename} with field mapping:`, fieldMap);
-        return;
-      }
+  let isHeader = true;
+  let fieldMap: Record<string, number> = {};
+  let batch: any[] = [];
+  let totalQueued = 0;
 
-      const values = parseCSVLine(trimmedLine);
-      const item = mapCsvRowToItem({ values, fieldMap });
-
-      if (item) {
-        batch.push(item);
-      }
-
-      if (batch.length >= BATCH_SIZE) {
-        const writeMessage: CatalogETLWriteBatchMessage = {
-          type: QueueType.CATALOG_ETL_WRITE_BATCH,
-          id: jobId,
-          timestamp: Date.now(),
-          data: {
-            items: batch,
-            userId,
-          },
-        };
-        await env.ETL_QUEUE.send(writeMessage);
-        totalQueued += batch.length;
-        console.log(`ETL job ${jobId}: Queued ${totalQueued} items for writing`);
-        batch = [];
-        // Yield to the event loop to avoid overwhelming the local dev queue.
-        await new Promise((resolve) => setTimeout(resolve, 1));
-      }
-    };
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        // Process any remaining data in the buffer
-        if (buffer) {
-          await processLine(buffer);
-        }
-        break;
-      }
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || ''; // Keep the last partial line
-
-      for (const line of lines) {
-        await processLine(line);
-      }
+  for (const row of rows) {
+    if (isHeader) {
+      fieldMap = createFieldMap(row.map((h) => h.trim().toLowerCase()));
+      isHeader = false;
+      console.log(`Processing ${filename} with field mapping:`, fieldMap);
+      continue;
     }
 
-    // Queue any remaining items in the last batch
-    if (batch.length > 0) {
-      const writeMessage: CatalogETLWriteBatchMessage = {
+    const item = mapCsvRowToItem({ values: row, fieldMap });
+    if (item) batch.push(item);
+
+    if (batch.length >= BATCH_SIZE) {
+      await env.ETL_QUEUE.send({
         type: QueueType.CATALOG_ETL_WRITE_BATCH,
         id: jobId,
         timestamp: Date.now(),
-        data: {
-          items: batch,
-          userId,
-        },
-      };
-      await env.ETL_QUEUE.send(writeMessage);
+        data: { items: batch, userId },
+      });
       totalQueued += batch.length;
+      batch = [];
+      await new Promise((r) => setTimeout(r, 1));
     }
-
-    console.log(`ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`);
-  } catch (error) {
-    console.error(`ETL job ${jobId} failed:`, error);
-    throw error;
   }
+
+  if (batch.length > 0) {
+    await env.ETL_QUEUE.send({
+      type: QueueType.CATALOG_ETL_WRITE_BATCH,
+      id: jobId,
+      timestamp: Date.now(),
+      data: { items: batch, userId },
+    });
+    totalQueued += batch.length;
+  }
+
+  console.log(`ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`);
 }
 
 async function processCatalogETLWriteBatch({
@@ -240,34 +199,6 @@ async function processCatalogETLWriteBatch({
   const { items, userId } = message.data;
   const jobId = message.id;
   await insertCatalogItems({ env, items, userId, jobId });
-}
-
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        // Handle escaped quotes
-        current += '"';
-        i++; // Skip next quote
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  result.push(current);
-  return result.map((field) => field.trim());
 }
 
 function createFieldMap(headers: string[]): Record<string, number> {
@@ -475,6 +406,13 @@ function mapCsvRowToItem({
     }
   }
 
+  if (item.description) {
+    item.description = item.description
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/Details:\s*Item\s+#\S+/gi, '')
+      .trim();
+  }
+
   return item;
 }
 
@@ -539,43 +477,27 @@ async function insertCatalogItems({
   jobId: string;
 }): Promise<void> {
   const db = createDbClient(env);
-  console.log(`Job ${jobId}: Inserting ${items.length} catalog items for user ${userId}`);
+  console.log(`Job ${jobId}: Inserting ${items.length} catalog items`);
 
-  if (items.length === 0) {
-    console.log(`Job ${jobId}: All items were filtered out, nothing to insert.`);
+  const validItems = items.filter((i): i is NewCatalogItem => !!i.name);
+  if (validItems.length === 0) {
+    console.log(`Job ${jobId}: No valid items to insert.`);
     return;
   }
 
-  // Type predicate to ensure item has a name
-  const hasName = (item: Partial<NewCatalogItem>): item is NewCatalogItem => !!item.name;
-
-  const records = items.filter(hasName);
-
-  if (records.length === 0) {
-    console.log(`Job ${jobId}: All items were filtered out, nothing to insert.`);
-    return;
-  }
-
-  try {
-    const columns = getTableColumns(catalogItems);
-    const updateSet: Record<string, any> = {};
-    for (const column of Object.values(columns)) {
-      const colName = column.name as keyof NewCatalogItem;
-      if (colName !== 'sku' && colName !== 'createdAt' && colName !== 'id') {
-        updateSet[colName] = sql.raw(`excluded."${colName}"`);
-      }
+  const columns = getTableColumns(catalogItems);
+  const updateSet: Record<string, any> = {};
+  for (const col of Object.values(columns)) {
+    const name = col.name as keyof NewCatalogItem;
+    if (!['sku', 'createdAt', 'id'].includes(name)) {
+      updateSet[name] = sql.raw(`excluded."${name}"`);
     }
-
-    await db.insert(catalogItems).values(records).onConflictDoUpdate({
-      target: catalogItems.sku,
-      set: updateSet,
-    });
-
-    console.log(`Job ${jobId}: Successfully inserted/updated ${records.length} items.`);
-  } catch (error) {
-    console.error(`Job ${jobId}: Failed to insert batch for user ${userId}`);
-    console.error('Error:', error);
-    // Optionally re-throw or handle the error, e.g., send to a dead-letter queue
-    throw error;
   }
+
+  await db.insert(catalogItems).values(validItems).onConflictDoUpdate({
+    target: catalogItems.sku,
+    set: updateSet,
+  });
+
+  console.log(`Job ${jobId}: Inserted/updated ${validItems.length} items.`);
 }
