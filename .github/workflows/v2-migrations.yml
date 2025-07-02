@@ -7,6 +7,7 @@ on:
       - develop
     paths:
       - 'packages/api/drizzle/**'
+      
   workflow_dispatch:
     inputs:
       environment:
@@ -59,3 +60,4 @@ jobs:
         env:
           NEON_DATABASE_URL: ${{ env.TARGET_ENV == 'prod' && secrets.NEON_PROD_DATABASE_URL || secrets.NEON_DEV_DATABASE_URL }}
         run: bun run packages/api/migrate.ts
+
