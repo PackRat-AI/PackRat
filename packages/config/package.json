@@ -1,6 +1,0 @@
-{
-  "name": "@packrat/config",
-  "version": "1.1.1",
-  "private": true,
-  "main": "src/index.js"
-}

@@ -1,0 +1,37 @@
+import { OpenAPIHono } from '@hono/zod-openapi';
+import * as getCatalogItemsRoute from './getCatalogItemsRoute';
+import * as createCatalogItemRoute from './createCatalogItemRoute';
+import * as getCatalogItemRoute from './getCatalogItemRoute';
+import * as deleteCatalogItemRoute from './deleteCatalogItemRoute';
+import * as updateCatalogItemRoute from './updateCatalogItemRoute';
+import * as queueCatalogEtlRoute from './queueCatalogEtlRoute';
+import { Env } from '@packrat/api/types/env';
+
+const catalogRoutes = new OpenAPIHono<{ Bindings: Env }>();
+
+catalogRoutes.openapi(
+  getCatalogItemsRoute.routeDefinition,
+  getCatalogItemsRoute.handler
+);
+catalogRoutes.openapi(
+  createCatalogItemRoute.routeDefinition,
+  createCatalogItemRoute.handler
+);
+catalogRoutes.openapi(
+  getCatalogItemRoute.routeDefinition,
+  getCatalogItemRoute.handler
+);
+catalogRoutes.openapi(
+  deleteCatalogItemRoute.routeDefinition,
+  deleteCatalogItemRoute.handler
+);
+catalogRoutes.openapi(
+  updateCatalogItemRoute.routeDefinition,
+  updateCatalogItemRoute.handler
+);
+catalogRoutes.openapi(
+  queueCatalogEtlRoute.routeDefinition,
+  queueCatalogEtlRoute.handler
+);
+
+export { catalogRoutes };

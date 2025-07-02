@@ -1,0 +1,39 @@
+{
+  "cesVersion": "2.14.1",
+  "projectName": "packrat-expo-v2-poc",
+  "packages": [
+    {
+      "name": "nativewindui",
+      "type": "styling",
+      "options": {
+        "selectedComponents": ["text"]
+      }
+    },
+    {
+      "name": "expo-router",
+      "type": "navigation",
+      "options": {
+        "type": "stack"
+      }
+    }
+  ],
+  "flags": {
+    "noGit": false,
+    "noInstall": false,
+    "overwrite": false,
+    "importAlias": true,
+    "packageManager": "bun",
+    "eas": false,
+    "publish": false
+  },
+  "packageManager": {
+    "type": "bun",
+    "version": "1.2.4"
+  },
+  "os": {
+    "type": "Darwin",
+    "platform": "darwin",
+    "arch": "arm64",
+    "kernelVersion": "24.3.0"
+  }
+}

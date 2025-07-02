@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "landing-app/components",
+    "utils": "landing-app/lib/utils",
+    "ui": "landing-app/components/ui",
+    "lib": "landing-app/lib",
+    "hooks": "landing-app/hooks"
+  },
+  "iconLibrary": "lucide"
+}

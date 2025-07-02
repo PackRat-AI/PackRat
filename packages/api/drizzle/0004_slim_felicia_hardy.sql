@@ -1,0 +1,1 @@
+ALTER TABLE "packs" ADD COLUMN "deleted" boolean DEFAULT false;

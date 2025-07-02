@@ -1,7 +1,0 @@
-diff --git a/node_modules/osm-polygon-features/index.js b/node_modules/osm-polygon-features/index.js
-index 4fcec74..4ebcc9c 100644
---- a/node_modules/osm-polygon-features/index.js
-+++ b/node_modules/osm-polygon-features/index.js
-@@ -1 +1 @@
--module.exports = require('./polygon-features.json')
-+module.exports = require('./polygon-features.js')

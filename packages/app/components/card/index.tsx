@@ -1,1 +1,0 @@
-export { CustomCard } from './CustomCard';
