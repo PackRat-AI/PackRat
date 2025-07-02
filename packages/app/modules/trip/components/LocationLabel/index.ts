@@ -1,1 +1,0 @@
-export { LocationLabel } from './LocationLabel';

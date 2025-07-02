@@ -1,28 +1,13 @@
 {
-  "extends": "@tsconfig/react-native/tsconfig.json",
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "lib": [
-      "es2022"
-    ],
-    "alwaysStrict": false,
-    "strictNullChecks": false,
-    "strictBindCallApply": false,
-    "strictFunctionTypes": false,
-    "strictPropertyInitialization": false,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "useUnknownInCatchVariables": false,
+    "strict": true,
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@packrat/validations": [
-        "../../packages/validations/src"
-      ]
-    },
+      "expo-app/*": ["./*"],
+      "nativewindui/*": ["./components/ui/*"]
+    }
   },
-  "exclude": [
-    "node_modules",
-    "babel.config.js",
-    "metro.config.js",
-    "jest.config.js"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"]
 }

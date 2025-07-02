@@ -1,30 +1,29 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
-    "module": "CommonJS",
+    "skipLibCheck": true,
+    "noEmit": true,
     "paths": {
+      "guides-app/*": ["./apps/guides/*"],
+      "landing-app/*": ["./apps/landing/*"],
+      "expo-app/*": ["./apps/expo/*"],
       "app/*": ["./packages/app/*"],
-      "@packrat/api/*": ["./packages/api/*"],
+      "@packrat/api/*": ["./packages/api/src/*"],
       "@packrat/ui/*": ["./packages/ui/*"],
-      "server/*": ["./server/*"],
-      "@cloudflare/vitest-pool-workers/config": [
-        "./node_modules/@cloudflare/vitest-pool-workers/dist/config"
-      ]
-    },
-    "plugins": [
-      {
-        "name": "@nderscore/tamagui-typescript-plugin",
-        "pathToApp": "apps/next",
-        "defaultTheme": "light",
-        "colorTileSize": 18,
-        "completionFilters": {
-          "showColorTokens": true,
-          "showTrueTokens": true,
-          "custom": {}
-        }
-      }
-    ]
+      "nativewindui/*": ["./apps/expo/components/ui/*"]
+    }
   },
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"],
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/.next",
+    "**/.expo",
+    "**/coverage"
+  ]
 }

@@ -1,50 +1,108 @@
+import { Icon } from '@roninoss/icons';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { StatusBar } from 'expo-status-bar';
+import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { Alert } from 'nativewindui/Alert';
+import type { AlertRef } from 'nativewindui/Alert/types';
+import { Button } from 'nativewindui/Button';
+
+import { Text } from 'nativewindui/Text';
 import React from 'react';
 import { Platform, ScrollView, View } from 'react-native';
-import { Stack, router, Link } from 'expo-router';
-import Head from 'expo-router/head';
-import { RText } from '@packrat/ui';
-import { StatusBar } from 'expo-status-bar';
 
-export default function Modal() {
-  // If the page was reloaded or navigated to directly, then the modal should be presented as
-  // a full screen page. You may need to change the UI to account for this.
-  const isPresented = router.canGoBack();
+export default function ModalScreen() {
+  const { colorScheme, colors } = useColorScheme();
+  const { deleteAccount, isLoading } = useAuth();
+
+  const alertRef = React.useRef<AlertRef>(null);
 
   return (
-    <>
-      {Platform.OS === 'web' && (
-        <Head>
-          <title>Modal</title>
-        </Head>
-      )}
-      <Stack.Screen
-        name="Modal"
-        options={{
-          // https://reactnavigation.org/docs/headers#setting-the-header-title
-          title: 'Modal',
-          // http://reactnavigation.org/docs/headers#adjusting-header-styles
+    <ScrollView className="flex-1 px-4 py-6">
+      <View className="gap-6">
+        <StatusBar
+          style={Platform.OS === 'ios' ? 'light' : colorScheme === 'dark' ? 'light' : 'dark'}
+        />
 
-          // https://reactnavigation.org/docs/headers#replacing-the-title-with-a-custom-component
+        <View>
+          <Text variant="subhead" className="mb-4">
+            Danger Zone
+          </Text>
 
-          presentation: 'modal',
-          headerShown: false,
-          headerTitle: 'model',
-        }}
-        // screenOptions={{ headerShown: false, headerTitle: 'modal' }}
-      />
+          <Button
+            variant="secondary"
+            disabled={isLoading}
+            onPress={() =>
+              alertRef.current?.prompt({
+                title: 'Delete Account?',
+                message: 'Type "DELETE" to confirm.',
+                materialIcon: { name: 'trash-can' },
+                materialWidth: 370,
+                prompt: {
+                  type: 'plain-text',
+                  keyboardType: 'default',
+                },
+                buttons: [
+                  {
+                    text: 'Cancel',
+                    style: 'cancel',
+                  },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async (text) => {
+                      if (text === 'DELETE') {
+                        try {
+                          await deleteAccount(); // redirection is handled in the hook
+                        } catch (error) {
+                          setTimeout(() => {
+                            alertRef.current?.alert({
+                              title: 'Error',
+                              message: 'Failed to delete account.',
+                              buttons: [
+                                {
+                                  text: 'OK',
+                                  style: 'default',
+                                },
+                              ],
+                            });
+                          }, 0);
+                        }
+                      } else {
+                        setTimeout(() => {
+                          alertRef.current?.alert({
+                            title: 'Error',
+                            message: 'Invalid confirmation text.',
+                            buttons: [
+                              {
+                                text: 'OK',
+                                style: 'default',
+                              },
+                            ],
+                          });
+                        }, 0);
+                      }
+                    },
+                  },
+                ],
+              })
+            }
+            className="flex-row items-center justify-between p-2"
+          >
+            <View className="flex-row items-center gap-3">
+              {isLoading ? (
+                <ActivityIndicator size={24} color={colors.destructive} />
+              ) : (
+                <Icon name="trash-can-outline" color={colors.destructive} />
+              )}
+              <Text style={{ color: colors.destructive }}>Delete Account</Text>
+            </View>
+            <Icon name="chevron-right" color={colors.destructive} />
+          </Button>
+        </View>
 
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        {/* Use `../` as a simple way to navigate to the root. This is not analogous to "goBack". */}
-        {!isPresented && <Link href="../">Dismiss</Link>}
-        {/* Native modals have dark backgrounds on iOS, set the status bar to light content. */}
-        <StatusBar style="dark" />
-        <RText>modal</RText>
-
-        <RText>isPresented: {isPresented ? 'true' : 'false'}</RText>
-
-        <Link href="../">Close</Link>
+        <Alert buttons={[]} ref={alertRef} />
       </View>
-      {/* Add Modal content logic */}
-    </>
+    </ScrollView>
   );
 }

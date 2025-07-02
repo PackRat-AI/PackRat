@@ -1,1 +1,0 @@
-export { CreatedAtLabel } from './CreatedAtLabel';

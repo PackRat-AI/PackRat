@@ -1,0 +1,16 @@
+# deps
+node_modules/
+
+# env
+.env
+.env.*
+
+.wrangler/
+
+.dev.vars
+
+# yarn/pnp files - using bun in prod
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/
+yarn.lock

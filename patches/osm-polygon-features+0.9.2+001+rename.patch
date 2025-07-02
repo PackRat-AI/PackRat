@@ -1,4 +1,0 @@
-diff --git a/node_modules/osm-polygon-features/polygon-features.json b/node_modules/osm-polygon-features/polygon-features.js
-similarity index 100%
-rename from node_modules/osm-polygon-features/polygon-features.json
-rename to node_modules/osm-polygon-features/polygon-features.js

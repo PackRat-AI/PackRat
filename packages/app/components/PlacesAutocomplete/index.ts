@@ -1,1 +1,0 @@
-export { PlacesAutocomplete } from './PlacesAutocomplete';

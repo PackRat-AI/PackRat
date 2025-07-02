@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX `offlineMap_name_owner_id_unique` ON `offlineMap` (`name`,`owner_id`);

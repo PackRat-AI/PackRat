@@ -1,1 +1,0 @@
-export { RSkeleton } from './RSkeleton';

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "guides-app/components",
+    "utils": "guides-app/lib/utils",
+    "ui": "guides-app/components/ui",
+    "lib": "guides-app/lib",
+    "hooks": "guides-app/hooks"
+  },
+  "iconLibrary": "lucide"
+}
