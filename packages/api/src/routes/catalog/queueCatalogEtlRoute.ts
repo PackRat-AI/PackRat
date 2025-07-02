@@ -1,7 +1,8 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
 import { authMiddleware } from '@packrat/api/middleware';
 import { queueCatalogETL } from '@packrat/api/services/queue';
 import type { Env } from '@packrat/api/types/env';
+import { RouteHandler } from '@packrat/api/types/routeHandler';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 
@@ -10,9 +11,7 @@ const catalogETLSchema = z.object({
   filename: z.string().min(1, 'Filename is required'),
 });
 
-const catalogETLQueueRoutes = new OpenAPIHono<{ Bindings: Env }>();
-
-catalogETLQueueRoutes.openapi(
+export const routeDefinition = createRoute(
   {
     method: 'post',
     path: '/etl',
@@ -53,8 +52,10 @@ catalogETLQueueRoutes.openapi(
     tags: ['Catalog'],
     summary: 'Queue catalog ETL job from R2 CSV file',
     description: 'Initiates serverless ETL processing of catalog data from R2 object storage',
-  },
-  async (c) => {
+  })
+  
+
+export const handler: RouteHandler<typeof routeDefinition>  =  async (c) => {
     const { objectKey, filename } = c.req.valid('json');
     const userId = c.get('jwtPayload')?.userId;
 
@@ -76,7 +77,7 @@ catalogETLQueueRoutes.openapi(
       jobId,
       queued: true,
     });
-  },
-);
+  }
 
-export { catalogETLQueueRoutes };
+
+
