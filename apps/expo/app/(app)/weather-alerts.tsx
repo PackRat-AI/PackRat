@@ -1,74 +1,74 @@
-import { Icon } from '@roninoss/icons';
-import { LargeTitleHeader } from 'expo-app/components/nativewindui/LargeTitleHeader';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { ScrollView, View } from 'react-native';
+import { LargeTitleHeader } from "@packrat/ui/nativewindui/LargeTitleHeader";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { Icon } from "@roninoss/icons";
+import { cn } from "expo-app/lib/cn";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { ScrollView, View } from "react-native";
 
 // Mock data for weather alerts
 const WEATHER_ALERTS = [
   {
-    id: '1',
-    type: 'Rain',
-    location: 'Appalachian Trail, GA',
-    dates: 'May 15-17, 2024',
-    severity: 'Moderate',
+    id: "1",
+    type: "Rain",
+    location: "Appalachian Trail, GA",
+    dates: "May 15-17, 2024",
+    severity: "Moderate",
     details:
-      'Expect 1-2 inches of rain over a 48-hour period. Trails may be muddy and creek crossings could be difficult.',
-    icon: 'water',
-    color: '#36A2EB',
+      "Expect 1-2 inches of rain over a 48-hour period. Trails may be muddy and creek crossings could be difficult.",
+    icon: "water",
+    color: "#36A2EB",
   },
   {
-    id: '2',
-    type: 'Heat Advisory',
-    location: 'Appalachian Trail, VA',
-    dates: 'June 1-3, 2024',
-    severity: 'High',
+    id: "2",
+    type: "Heat Advisory",
+    location: "Appalachian Trail, VA",
+    dates: "June 1-3, 2024",
+    severity: "High",
     details:
-      'Temperatures expected to reach 90-95°F with high humidity. Increased risk of heat-related illness. Carry extra water and plan for shade breaks.',
-    icon: 'lightbulb',
-    color: '#FF6384',
+      "Temperatures expected to reach 90-95°F with high humidity. Increased risk of heat-related illness. Carry extra water and plan for shade breaks.",
+    icon: "lightbulb",
+    color: "#FF6384",
   },
   {
-    id: '3',
-    type: 'Thunderstorms',
-    location: 'Appalachian Trail, NC',
-    dates: 'May 20, 2024',
-    severity: 'High',
+    id: "3",
+    type: "Thunderstorms",
+    location: "Appalachian Trail, NC",
+    dates: "May 20, 2024",
+    severity: "High",
     details:
-      'Severe thunderstorms with lightning risk. Avoid exposed ridges and summits during afternoon hours.',
-    icon: 'lightning-bolt',
-    color: '#FFCE56',
+      "Severe thunderstorms with lightning risk. Avoid exposed ridges and summits during afternoon hours.",
+    icon: "lightning-bolt",
+    color: "#FFCE56",
   },
   {
-    id: '4',
-    type: 'Wind Advisory',
-    location: 'Appalachian Trail, NH',
-    dates: 'June 5-6, 2024',
-    severity: 'Moderate',
+    id: "4",
+    type: "Wind Advisory",
+    location: "Appalachian Trail, NH",
+    dates: "June 5-6, 2024",
+    severity: "Moderate",
     details:
-      'Sustained winds of 20-30 mph with gusts up to 45 mph. Secure loose items and be cautious of falling branches.',
-    icon: 'arrow-left-right-bold',
-    color: '#4BC0C0',
+      "Sustained winds of 20-30 mph with gusts up to 45 mph. Secure loose items and be cautious of falling branches.",
+    icon: "arrow-left-right-bold",
+    color: "#4BC0C0",
   },
 ];
 
 function AlertSeverity({ severity }: { severity: string }) {
   const getColor = () => {
     switch (severity) {
-      case 'High':
-        return 'bg-red-500';
-      case 'Moderate':
-        return 'bg-amber-500';
-      case 'Low':
-        return 'bg-green-500';
+      case "High":
+        return "bg-red-500";
+      case "Moderate":
+        return "bg-amber-500";
+      case "Low":
+        return "bg-green-500";
       default:
-        return 'bg-blue-500';
+        return "bg-blue-500";
     }
   };
 
   return (
-    <View className={cn('rounded-full px-2 py-1', getColor())}>
+    <View className={cn("rounded-full px-2 py-1", getColor())}>
       <Text variant="caption2" className="font-medium text-white">
         {severity}
       </Text>

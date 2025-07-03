@@ -1,12 +1,12 @@
-import { LargeTitleHeader } from 'expo-app/components/nativewindui/LargeTitleHeader';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { featureFlags } from 'expo-app/config';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
-import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
-import { computeCategorySummaries } from 'expo-app/features/packs/utils';
-import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { LargeTitleHeader } from "@packrat/ui/nativewindui/LargeTitleHeader";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { featureFlags } from "expo-app/config";
+import { userStore } from "expo-app/features/auth/store";
+import { usePackDetailsFromStore } from "expo-app/features/packs/hooks/usePackDetailsFromStore";
+import { usePackWeightHistory } from "expo-app/features/packs/hooks/usePackWeightHistory";
+import { computeCategorySummaries } from "expo-app/features/packs/utils";
+import { useLocalSearchParams } from "expo-router";
+import { ScrollView, View } from "react-native";
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();
@@ -19,7 +19,7 @@ export default function PackStatsScreen() {
   const CATEGORY_DISTRIBUTION = categories.map((category) => ({
     name: category.name,
     weight: category.weight,
-    color: '#888',
+    color: "#888",
     percentage: category.percentage,
   }));
 
@@ -44,10 +44,15 @@ export default function PackStatsScreen() {
                 {WEIGHT_HISTORY.length ? (
                   <>
                     {WEIGHT_HISTORY.map((item, index) => {
-                      const maxWeight = Math.max(...WEIGHT_HISTORY.map((w) => w.weight));
-                      const minWeight = Math.min(...WEIGHT_HISTORY.map((w) => w.weight));
+                      const maxWeight = Math.max(
+                        ...WEIGHT_HISTORY.map((w) => w.weight)
+                      );
+                      const minWeight = Math.min(
+                        ...WEIGHT_HISTORY.map((w) => w.weight)
+                      );
                       const range = maxWeight - minWeight || 1;
-                      const heightPercentage = ((item.weight - minWeight) / range) * 80 + 20;
+                      const heightPercentage =
+                        ((item.weight - minWeight) / range) * 80 + 20;
 
                       return (
                         <View key={index} className="flex-1 items-center">
@@ -58,7 +63,10 @@ export default function PackStatsScreen() {
                           <Text variant="caption2" className="mt-1">
                             {item.month}
                           </Text>
-                          <Text variant="caption2" className="text-muted-foreground">
+                          <Text
+                            variant="caption2"
+                            className="text-muted-foreground"
+                          >
                             {item.weight.toFixed(1)} g
                           </Text>
                         </View>
@@ -75,7 +83,10 @@ export default function PackStatsScreen() {
                 )}
               </View>
 
-              <Text variant="footnote" className="mt-2 text-center text-muted-foreground">
+              <Text
+                variant="footnote"
+                className="mt-2 text-center text-muted-foreground"
+              >
                 Pack weight over the last 6 months (g)
               </Text>
             </View>
@@ -94,7 +105,8 @@ export default function PackStatsScreen() {
                     <View className="mb-1 flex-row justify-between">
                       <Text variant="subhead">{item.name}</Text>
                       <Text variant="subhead">
-                        {item.weight.toFixed(1)} {userStore.preferredWeightUnit.peek() ?? 'g'}(
+                        {item.weight.toFixed(1)}{" "}
+                        {userStore.preferredWeightUnit.peek() ?? "g"}(
                         {item.percentage}%)
                       </Text>
                     </View>
@@ -111,7 +123,10 @@ export default function PackStatsScreen() {
                 ))}
               </View>
 
-              <Text variant="footnote" className="mt-2 text-center text-muted-foreground">
+              <Text
+                variant="footnote"
+                className="mt-2 text-center text-muted-foreground"
+              >
                 Weight distribution by category
               </Text>
             </View>

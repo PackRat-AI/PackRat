@@ -1,22 +1,33 @@
-import { Portal } from '@rn-primitives/portal';
-import { Icon } from '@roninoss/icons';
-import { AdaptiveSearchHeader } from 'expo-app/components/nativewindui/AdaptiveSearchHeader';
-import { Avatar, AvatarFallback } from 'expo-app/components/nativewindui/Avatar';
-import { Button } from 'expo-app/components/nativewindui/Button';
-import { ContextMenu } from 'expo-app/components/nativewindui/ContextMenu';
-import { createContextItem } from 'expo-app/components/nativewindui/ContextMenu/utils';
-import { DropdownMenu } from 'expo-app/components/nativewindui/DropdownMenu';
-import { createDropdownItem } from 'expo-app/components/nativewindui/DropdownMenu/utils';
-import { List, ListItem, type ListRenderItemInfo } from 'expo-app/components/nativewindui/List';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { Toolbar, ToolbarCTA } from 'expo-app/components/nativewindui/Toolbar';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
-import * as React from 'react';
-import { Dimensions, Platform, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { AdaptiveSearchHeader } from "@packrat/ui/nativewindui/AdaptiveSearchHeader";
+import { Avatar, AvatarFallback } from "@packrat/ui/nativewindui/Avatar";
+import { Button } from "@packrat/ui/nativewindui/Button";
+import { ContextMenu } from "@packrat/ui/nativewindui/ContextMenu";
+import { createContextItem } from "@packrat/ui/nativewindui/ContextMenu/utils";
+import { DropdownMenu } from "@packrat/ui/nativewindui/DropdownMenu";
+import { createDropdownItem } from "@packrat/ui/nativewindui/DropdownMenu/utils";
+import {
+  List,
+  ListItem,
+  type ListRenderItemInfo,
+} from "@packrat/ui/nativewindui/List";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { Toolbar, ToolbarCTA } from "@packrat/ui/nativewindui/Toolbar";
+import { Portal } from "@rn-primitives/portal";
+import { Icon } from "@roninoss/icons";
+import { cn } from "expo-app/lib/cn";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import * as React from "react";
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+  type ViewStyle,
+} from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   clamp,
   FadeIn,
@@ -26,8 +37,8 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-} from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ConversationsAndroidScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();
@@ -43,7 +54,7 @@ export default function ConversationsAndroidScreen() {
         />
       );
     },
-    [selectedMessages],
+    [selectedMessages]
   );
 
   function clearSelectedMessages() {
@@ -72,14 +83,19 @@ export default function ConversationsAndroidScreen() {
         ListFooterComponent={<View className="h-16" />} // Prevent last message from being blocked by the FAB/Toolbar
         renderItem={renderItem}
       />
-      {Platform.OS === 'ios' ? (
+      {Platform.OS === "ios" ? (
         <Animated.View
           entering={FadeIn.duration(500)}
           className="bg-card/70 dark:bg-background/70 absolute bottom-0 left-0 right-0"
         >
           <Toolbar
             leftView={<View className="flex-1" />}
-            rightView={<ToolbarCTA className="h-8 w-8" icon={{ name: 'pencil-box-outline' }} />}
+            rightView={
+              <ToolbarCTA
+                className="h-8 w-8"
+                icon={{ name: "pencil-box-outline" }}
+              />
+            }
             iosBlurIntensity={30}
           />
         </Animated.View>
@@ -106,42 +122,42 @@ function LeftView() {
   const dropdownItems = React.useMemo(() => {
     return [
       createDropdownItem({
-        actionKey: 'go-home',
-        title: 'Go Home',
-        icon: { name: 'home' },
+        actionKey: "go-home",
+        title: "Go Home",
+        icon: { name: "home" },
       }),
       createDropdownItem({
-        actionKey: 'toggle-theme',
-        title: 'Toggle Theme',
+        actionKey: "toggle-theme",
+        title: "Toggle Theme",
         icon: {
-          name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
-          namingScheme: 'sfSymbol',
+          name: isDarkColorScheme ? "moon.stars" : "sun.min",
+          namingScheme: "sfSymbol",
         },
       }),
     ];
   }, [isDarkColorScheme]);
 
   function onItemPress({ actionKey }: { actionKey: string }) {
-    if (actionKey === 'go-home') {
-      router.push('../');
+    if (actionKey === "go-home") {
+      router.push("../");
       return;
     }
-    if (actionKey === 'toggle-theme') {
+    if (actionKey === "toggle-theme") {
       toggleColorScheme();
       return;
     }
-    console.log('NOT IMPLEMENTED');
+    console.log("NOT IMPLEMENTED");
   }
   return (
     <DropdownMenu items={dropdownItems} onItemPress={onItemPress}>
       <Button
         variant="plain"
-        size={Platform.select({ ios: 'md', default: 'icon' })}
+        size={Platform.select({ ios: "md", default: "icon" })}
         className="ios:px-0"
       >
         <Icon
-          ios={{ name: 'line.3.horizontal' }}
-          materialIcon={{ name: 'menu', type: 'MaterialCommunityIcons' }}
+          ios={{ name: "line.3.horizontal" }}
+          materialIcon={{ name: "menu", type: "MaterialCommunityIcons" }}
           color={colors.foreground}
         />
       </Button>
@@ -169,7 +185,12 @@ const SEARCH_BAR = {
 function SearchBarContent() {
   const { colors } = useColorScheme();
   return (
-    <View className={cn('flex-1', Platform.OS === 'ios' && 'bg-card dark:bg-background')}>
+    <View
+      className={cn(
+        "flex-1",
+        Platform.OS === "ios" && "bg-card dark:bg-background"
+      )}
+    >
       <View className="pt-12">
         <Text className="pb-3 pl-4 font-medium" variant="callout">
           Categories
@@ -226,7 +247,7 @@ function MessageRow({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       return;
     }
-    router.push('/messages-android/chat-android');
+    router.push("/messages-android/chat-android");
   }
 
   function onListItemLongPress() {
@@ -250,9 +271,9 @@ function MessageRow({
             onPress={onListItemPress}
             onLongPress={onListItemLongPress}
             className={cn(
-              'ios:bg-card rounded-l-xl bg-background',
+              "ios:bg-card rounded-l-xl bg-background",
               selectedMessages.includes(info.item.id) &&
-                'bg-primary/15 dark:bg-primary/30 ios:bg-primary/15',
+                "bg-primary/15 dark:bg-primary/30 ios:bg-primary/15"
             )}
             androidRootClassName="rounded-l-xl"
             leftView={
@@ -276,18 +297,23 @@ function MessageRow({
                 </Avatar>
               </View>
             }
-            titleClassName={cn('pb-1', info.item.unread && 'font-medium')}
-            subTitleClassName={cn(info.item.unread && 'font-medium')}
+            titleClassName={cn("pb-1", info.item.unread && "font-medium")}
+            subTitleClassName={cn(info.item.unread && "font-medium")}
             rightView={
               <View className="items-end pr-4">
                 <Text
                   variant="footnote"
-                  className={cn('text-muted-foreground', info.item.unread && 'font-medium')}
+                  className={cn(
+                    "text-muted-foreground",
+                    info.item.unread && "font-medium"
+                  )}
                 >
                   3:08PM
                 </Text>
                 <View className="w-[22px] justify-center pl-1 pt-2 ">
-                  {info.item.unread && <View className="h-3 w-3 rounded-full bg-primary" />}
+                  {info.item.unread && (
+                    <View className="h-3 w-3 rounded-full bg-primary" />
+                  )}
                 </View>
               </View>
             }
@@ -299,17 +325,17 @@ function MessageRow({
 }
 
 function IosContextMenu({ children }: { children: React.ReactNode }) {
-  if (Platform.OS !== 'ios') {
+  if (Platform.OS !== "ios") {
     return <>{children}</>;
   }
   return (
     <ContextMenu
       style={{ borderRadius: 16 }}
       items={[
-        createContextItem({ actionKey: 'archive', title: 'Archive' }),
+        createContextItem({ actionKey: "archive", title: "Archive" }),
         createContextItem({
-          actionKey: 'delete',
-          title: 'Delete',
+          actionKey: "delete",
+          title: "Delete",
           destructive: true,
         }),
       ]}
@@ -326,7 +352,10 @@ function renderItemSeparator() {
 function StartChatButton() {
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ bottom: insets.bottom + 12 }} className="absolute bottom-24 right-4 z-50">
+    <View
+      style={{ bottom: insets.bottom + 12 }}
+      className="absolute bottom-24 right-4 z-50"
+    >
       <View className="rounded-xl bg-background shadow-xl">
         <Button size="lg">
           <Icon color="white" size={24} name="message-outline" />
@@ -338,8 +367,8 @@ function StartChatButton() {
 }
 
 const DROPDOWN_ITEMS = [
-  createDropdownItem({ actionKey: 'mark-as-read', title: 'Mark as read' }),
-  createDropdownItem({ actionKey: 'block', title: 'Block' }),
+  createDropdownItem({ actionKey: "mark-as-read", title: "Mark as read" }),
+  createDropdownItem({ actionKey: "block", title: "Block" }),
 ];
 
 const MATERIAL_HEADER_HEIGHT = 74;
@@ -383,7 +412,11 @@ function SelectMessagesHeader({
             </Button>
             <DropdownMenu items={DROPDOWN_ITEMS}>
               <Button size="icon" variant="plain" className="rotate-90">
-                <Icon name="dots-horizontal" size={21} color={colors.foreground} />
+                <Icon
+                  name="dots-horizontal"
+                  size={21}
+                  color={colors.foreground}
+                />
               </Button>
             </DropdownMenu>
           </View>
@@ -393,7 +426,7 @@ function SelectMessagesHeader({
   );
 }
 
-const dimensions = Dimensions.get('window');
+const dimensions = Dimensions.get("window");
 
 const BUTTON_WIDTH = 75;
 
@@ -413,7 +446,9 @@ const ACTION_BUTTON_STYLE: ViewStyle = {
 function Swipeable({ children }: { children: React.ReactNode }) {
   const translateX = useSharedValue(0);
   const previousTranslateX = useSharedValue(0);
-  const initialTouchLocation = useSharedValue<{ x: number; y: number } | null>(null);
+  const initialTouchLocation = useSharedValue<{ x: number; y: number } | null>(
+    null
+  );
 
   const rootStyle = useAnimatedStyle(() => {
     return {
@@ -422,49 +457,57 @@ function Swipeable({ children }: { children: React.ReactNode }) {
   });
   const leftActionStyle = useAnimatedStyle(() => {
     return {
-      position: 'absolute',
+      position: "absolute",
       flex: 1,
-      height: '100%',
-      width: interpolate(translateX.value, [0, dimensions.width], [0, dimensions.width]),
-      overflow: 'hidden',
+      height: "100%",
+      width: interpolate(
+        translateX.value,
+        [0, dimensions.width],
+        [0, dimensions.width]
+      ),
+      overflow: "hidden",
     };
   });
   const rightActionStyle = useAnimatedStyle(() => {
     return {
-      position: 'absolute',
+      position: "absolute",
       right: 0,
       flex: 1,
-      height: '100%',
-      width: interpolate(-translateX.value, [0, dimensions.width], [0, dimensions.width]),
-      overflow: 'hidden',
+      height: "100%",
+      width: interpolate(
+        -translateX.value,
+        [0, dimensions.width],
+        [0, dimensions.width]
+      ),
+      overflow: "hidden",
     };
   });
   const leftIconStyle = useAnimatedStyle(() => {
     return {
-      height: '100%',
+      height: "100%",
       width: BUTTON_WIDTH,
-      position: 'absolute',
+      position: "absolute",
       left: 0,
       opacity: translateX.value > 1 ? 1 : 0,
     };
   });
   const rightIconStyle = useAnimatedStyle(() => {
     return {
-      height: '100%',
+      height: "100%",
       width: BUTTON_WIDTH,
-      position: 'absolute',
+      position: "absolute",
       right: 0,
       opacity: translateX.value < 0 ? 1 : 0,
     };
   });
 
   function onArchive() {
-    console.log('onArchive');
+    console.log("onArchive");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
 
   const pan = Gesture.Pan()
-    .manualActivation(Platform.OS !== 'ios')
+    .manualActivation(Platform.OS !== "ios")
     .onBegin((evt) => {
       initialTouchLocation.value = { x: evt.x, y: evt.y };
     })
@@ -478,8 +521,12 @@ function Swipeable({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const xDiff = Math.abs(evt.changedTouches[0].x - initialTouchLocation.value.x);
-      const yDiff = Math.abs(evt.changedTouches[0].y - initialTouchLocation.value.y);
+      const xDiff = Math.abs(
+        evt.changedTouches[0].x - initialTouchLocation.value.x
+      );
+      const yDiff = Math.abs(
+        evt.changedTouches[0].y - initialTouchLocation.value.y
+      );
       const isHorizontalPanning = xDiff > yDiff;
       if (isHorizontalPanning && xDiff > 0.5) {
         state.activate();
@@ -491,7 +538,7 @@ function Swipeable({ children }: { children: React.ReactNode }) {
       translateX.value = clamp(
         event.translationX + previousTranslateX.value,
         -dimensions.width,
-        dimensions.width,
+        dimensions.width
       );
     })
     .onEnd((event) => {
@@ -552,107 +599,108 @@ function Swipeable({ children }: { children: React.ReactNode }) {
 
 const ITEMS = [
   {
-    id: '1',
+    id: "1",
     contact: true,
     unread: true,
-    title: 'Alice Johnson',
+    title: "Alice Johnson",
     subTitle:
-      'Hi team, please find the latest updates on the project. We have completed the initial phase and are moving into the testing stage.',
-    timestamp: '8:32 AM',
+      "Hi team, please find the latest updates on the project. We have completed the initial phase and are moving into the testing stage.",
+    timestamp: "8:32 AM",
   },
   {
-    id: '2',
+    id: "2",
     contact: true,
     unread: true,
-    title: 'Bob Smith',
+    title: "Bob Smith",
     subTitle:
-      'Reminder: We have a team meeting scheduled for tomorrow at 10 AM. Please make sure to bring your reports.',
-    timestamp: 'Yesterday',
+      "Reminder: We have a team meeting scheduled for tomorrow at 10 AM. Please make sure to bring your reports.",
+    timestamp: "Yesterday",
   },
   {
-    id: '3',
+    id: "3",
     contact: false,
     unread: false,
-    title: '(555) 123-4567',
+    title: "(555) 123-4567",
     subTitle:
-      'You have a missed call from this number. Please call back at your earliest convenience.',
-    timestamp: 'Saturday',
+      "You have a missed call from this number. Please call back at your earliest convenience.",
+    timestamp: "Saturday",
   },
   {
-    id: '4',
+    id: "4",
     contact: true,
     unread: false,
-    title: 'Catherine Davis',
+    title: "Catherine Davis",
     subTitle:
-      'Hi, please find attached the invoice for the services provided last month. Let me know if you need any further information.',
-    timestamp: 'Last Tuesday',
+      "Hi, please find attached the invoice for the services provided last month. Let me know if you need any further information.",
+    timestamp: "Last Tuesday",
   },
   {
-    id: '5',
+    id: "5",
     contact: true,
     unread: true,
-    title: 'Daniel Brown',
+    title: "Daniel Brown",
     subTitle: "Hey, are you free for lunch this Thursday? Let's catch up!",
-    timestamp: '10:15 AM',
+    timestamp: "10:15 AM",
   },
   {
-    id: '6',
+    id: "6",
     contact: false,
     unread: false,
-    title: '(555) 987-6543',
+    title: "(555) 987-6543",
     subTitle:
-      'Your service appointment is scheduled for June 29th. Please be available during the time slot.',
-    timestamp: '2024-06-29',
+      "Your service appointment is scheduled for June 29th. Please be available during the time slot.",
+    timestamp: "2024-06-29",
   },
   {
-    id: '7',
+    id: "7",
     contact: true,
     unread: false,
-    title: 'Evelyn Clark',
-    subTitle: 'Wishing you a very happy birthday! Have a great year ahead.',
-    timestamp: '2024-06-29',
+    title: "Evelyn Clark",
+    subTitle: "Wishing you a very happy birthday! Have a great year ahead.",
+    timestamp: "2024-06-29",
   },
   {
-    id: '8',
+    id: "8",
     contact: false,
     unread: false,
-    title: '(555) 321-7654',
+    title: "(555) 321-7654",
     subTitle: "Don't forget to submit your timesheet by the end of the day.",
-    timestamp: '2024-06-29',
+    timestamp: "2024-06-29",
   },
   {
-    id: '9',
+    id: "9",
     contact: true,
     unread: false,
-    title: 'Fiona Wilson',
-    subTitle: 'Attached is the weekly report for your review. Please provide your feedback.',
-    timestamp: '2024-06-29',
-  },
-  {
-    id: '10',
-    contact: true,
-    unread: false,
-    title: 'George Martinez',
+    title: "Fiona Wilson",
     subTitle:
-      'Hi all, we are planning a team outing next weekend. Please confirm your availability.',
-    timestamp: '2024-06-29',
+      "Attached is the weekly report for your review. Please provide your feedback.",
+    timestamp: "2024-06-29",
   },
   {
-    id: '11',
+    id: "10",
+    contact: true,
+    unread: false,
+    title: "George Martinez",
+    subTitle:
+      "Hi all, we are planning a team outing next weekend. Please confirm your availability.",
+    timestamp: "2024-06-29",
+  },
+  {
+    id: "11",
     contact: false,
     unread: false,
-    title: '(555) 654-3210',
+    title: "(555) 654-3210",
     subTitle:
-      'Congratulations! You are eligible for a special promotion. Contact us to learn more.',
-    timestamp: '2024-06-29',
+      "Congratulations! You are eligible for a special promotion. Contact us to learn more.",
+    timestamp: "2024-06-29",
   },
   {
-    id: '12',
+    id: "12",
     contact: true,
     unread: false,
-    title: 'Hannah Lee',
+    title: "Hannah Lee",
     subTitle:
-      'Hi, your contract is up for renewal. Please review the attached document and let us know if you have any questions.',
-    timestamp: '2024-06-29',
+      "Hi, your contract is up for renewal. Please review the attached document and let us know if you have any questions.",
+    timestamp: "2024-06-29",
   },
 ];

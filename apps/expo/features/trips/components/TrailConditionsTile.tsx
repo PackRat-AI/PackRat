@@ -1,12 +1,12 @@
-import { Icon } from '@roninoss/icons';
-import { Alert } from 'expo-app/components/nativewindui/Alert';
-import type { AlertRef } from 'expo-app/components/nativewindui/Alert/types';
-import { ListItem } from 'expo-app/components/nativewindui/List';
-import { featureFlags } from 'expo-app/config';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { View } from 'react-native';
+import { Alert } from "@packrat/ui/nativewindui/Alert";
+import type { AlertRef } from "@packrat/ui/nativewindui/Alert/types";
+import { ListItem } from "@packrat/ui/nativewindui/List";
+import { Icon } from "@roninoss/icons";
+import { featureFlags } from "expo-app/config";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { useRouter } from "expo-router";
+import { useRef } from "react";
+import { View } from "react-native";
 
 export function TrailConditionsTile() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export function TrailConditionsTile() {
 
   const handlePress = () => {
     // if (!currentPack) return alertRef.current?.show();
-    router.push('/trail-conditions');
+    router.push("/trail-conditions");
   };
 
   if (!featureFlags.enableTrips) return null;
@@ -23,7 +23,7 @@ export function TrailConditionsTile() {
   return (
     <>
       <ListItem
-        className={'ios:pl-0 pl-2'}
+        className={"ios:pl-0 pl-2"}
         titleClassName="text-lg"
         leftView={
           <View className="px-3">
@@ -38,7 +38,7 @@ export function TrailConditionsTile() {
           </View>
         }
         item={{
-          title: 'Trail Conditions',
+          title: "Trail Conditions",
         }}
         onPress={handlePress}
         target="Cell"
@@ -47,12 +47,12 @@ export function TrailConditionsTile() {
       <Alert
         title="No Trips Yet"
         message="Create trips, see which ones are near the corner!"
-        materialIcon={{ name: 'information-outline' }}
+        materialIcon={{ name: "information-outline" }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
-            style: 'default',
+            text: "Got it",
+            style: "default",
           },
         ]}
         ref={alertRef}

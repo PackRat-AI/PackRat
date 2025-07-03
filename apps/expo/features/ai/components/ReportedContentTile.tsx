@@ -1,23 +1,23 @@
-import { Icon } from '@roninoss/icons';
-import { ListItem } from 'expo-app/components/nativewindui/List';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { type Href, useRouter } from 'expo-router';
-import { View } from 'react-native';
-import { useReportedContentCount } from '../hooks/useReportedContent';
+import { ListItem } from "@packrat/ui/nativewindui/List";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { Icon } from "@roninoss/icons";
+import { useUser } from "expo-app/features/auth/hooks/useUser";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { type Href, useRouter } from "expo-router";
+import { View } from "react-native";
+import { useReportedContentCount } from "../hooks/useReportedContent";
 
 export function ReportedContentTile() {
   const router = useRouter();
   const user = useUser();
   const { data, isLoading } = useReportedContentCount();
 
-  if (user?.role !== 'ADMIN') {
+  if (user?.role !== "ADMIN") {
     return null; // Don't render if user is not an admin
   }
 
   const route: Href = {
-    pathname: '/reported-ai-content',
+    pathname: "/reported-ai-content",
   };
 
   const handlePress = () => {
@@ -38,11 +38,17 @@ export function ReportedContentTile() {
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
           {isLoading ? (
-            <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
+            <Text
+              variant="callout"
+              className="ios:px-0 px-2 text-muted-foreground"
+            >
               Loading...
             </Text>
           ) : (
-            <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
+            <Text
+              variant="callout"
+              className="ios:px-0 px-2 text-muted-foreground"
+            >
               {data?.count || 0} pending
             </Text>
           )}
@@ -50,7 +56,7 @@ export function ReportedContentTile() {
         </View>
       }
       item={{
-        title: 'Reported Content',
+        title: "Reported Content",
       }}
       onPress={handlePress}
       target="Cell"

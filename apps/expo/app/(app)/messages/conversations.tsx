@@ -1,20 +1,24 @@
-import { Icon } from '@roninoss/icons';
-import { Avatar, AvatarFallback } from 'expo-app/components/nativewindui/Avatar';
-import { Button } from 'expo-app/components/nativewindui/Button';
-import { Checkbox } from 'expo-app/components/nativewindui/Checkbox';
-import { ContextMenu } from 'expo-app/components/nativewindui/ContextMenu';
-import { createContextItem } from 'expo-app/components/nativewindui/ContextMenu/utils';
-import { DropdownMenu } from 'expo-app/components/nativewindui/DropdownMenu';
-import { createDropdownItem } from 'expo-app/components/nativewindui/DropdownMenu/utils';
-import { LargeTitleHeader } from 'expo-app/components/nativewindui/LargeTitleHeader';
-import { List, ListItem, type ListRenderItemInfo } from 'expo-app/components/nativewindui/List';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { Toolbar } from 'expo-app/components/nativewindui/Toolbar';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
-import * as React from 'react';
+import { Avatar, AvatarFallback } from "@packrat/ui/nativewindui/Avatar";
+import { Button } from "@packrat/ui/nativewindui/Button";
+import { Checkbox } from "@packrat/ui/nativewindui/Checkbox";
+import { ContextMenu } from "@packrat/ui/nativewindui/ContextMenu";
+import { createContextItem } from "@packrat/ui/nativewindui/ContextMenu/utils";
+import { DropdownMenu } from "@packrat/ui/nativewindui/DropdownMenu";
+import { createDropdownItem } from "@packrat/ui/nativewindui/DropdownMenu/utils";
+import { LargeTitleHeader } from "@packrat/ui/nativewindui/LargeTitleHeader";
+import {
+  List,
+  ListItem,
+  type ListRenderItemInfo,
+} from "@packrat/ui/nativewindui/List";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { Toolbar } from "@packrat/ui/nativewindui/Toolbar";
+import { Icon } from "@roninoss/icons";
+import { cn } from "expo-app/lib/cn";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
+import * as React from "react";
 import {
   Dimensions,
   Platform,
@@ -22,8 +26,8 @@ import {
   type TextStyle,
   View,
   type ViewStyle,
-} from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+} from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   clamp,
   FadeIn,
@@ -35,7 +39,7 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 export default function ConversationsIosScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();
@@ -61,7 +65,7 @@ export default function ConversationsIosScreen() {
         />
       );
     },
-    [isSelecting, selectedMessages],
+    [isSelecting, selectedMessages]
   );
 
   function onIsSelectingChange(value: boolean) {
@@ -75,7 +79,12 @@ export default function ConversationsIosScreen() {
     <>
       <LargeTitleHeader
         title="Messages"
-        leftView={() => <LeftView isSelecting={isSelecting} setIsSelecting={onIsSelectingChange} />}
+        leftView={() => (
+          <LeftView
+            isSelecting={isSelecting}
+            setIsSelecting={onIsSelectingChange}
+          />
+        )}
         rightView={rightView}
         backgroundColor={isDarkColorScheme ? colors.background : colors.card}
         searchBar={SEARCH_BAR}
@@ -84,12 +93,16 @@ export default function ConversationsIosScreen() {
         data={ITEMS}
         extraData={[isSelecting, selectedMessages]}
         contentInsetAdjustmentBehavior="automatic"
-        ListFooterComponent={isSelecting ? <View className="h-[46px]" /> : undefined}
+        ListFooterComponent={
+          isSelecting ? <View className="h-[46px]" /> : undefined
+        }
         estimatedItemSize={88}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
       />
-      {isSelecting && <SelectingToolbar hasSelectedAMessage={selectedMessages.length > 0} />}
+      {isSelecting && (
+        <SelectingToolbar hasSelectedAMessage={selectedMessages.length > 0} />
+      )}
     </>
   );
 }
@@ -106,40 +119,40 @@ function LeftView({
   const dropdownItems = React.useMemo(() => {
     return [
       createDropdownItem({
-        actionKey: 'go-home',
-        title: 'Go Home',
-        icon: { name: 'home' },
+        actionKey: "go-home",
+        title: "Go Home",
+        icon: { name: "home" },
       }),
       createDropdownItem({
-        actionKey: 'select-messages',
-        title: 'Select messages',
-        icon: { name: 'checkmark.circle', namingScheme: 'sfSymbol' },
+        actionKey: "select-messages",
+        title: "Select messages",
+        icon: { name: "checkmark.circle", namingScheme: "sfSymbol" },
       }),
       createDropdownItem({
-        actionKey: 'toggle-theme',
-        title: 'Toggle Theme',
+        actionKey: "toggle-theme",
+        title: "Toggle Theme",
         icon: {
-          name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
-          namingScheme: 'sfSymbol',
+          name: isDarkColorScheme ? "moon.stars" : "sun.min",
+          namingScheme: "sfSymbol",
         },
       }),
     ];
   }, [isDarkColorScheme]);
 
   function onItemPress({ actionKey }: { actionKey: string }) {
-    if (actionKey === 'go-home') {
-      router.push('../');
+    if (actionKey === "go-home") {
+      router.push("../");
       return;
     }
-    if (actionKey === 'toggle-theme') {
+    if (actionKey === "toggle-theme") {
       toggleColorScheme();
       return;
     }
-    if (actionKey === 'select-messages') {
+    if (actionKey === "select-messages") {
       setIsSelecting(true);
       return;
     }
-    console.log('NOT IMPLEMENTED');
+    console.log("NOT IMPLEMENTED");
   }
 
   if (isSelecting) {
@@ -186,7 +199,12 @@ function RightView() {
 const SEARCH_BAR = {
   iosHideWhenScrolling: true,
   content: (
-    <View className={cn('flex-1', Platform.OS === 'ios' && 'bg-card dark:bg-background')}>
+    <View
+      className={cn(
+        "flex-1",
+        Platform.OS === "ios" && "bg-card dark:bg-background"
+      )}
+    >
       <Animated.View
         entering={FadeIn.delay(150)}
         className="ios:pt-4 flex-row border-b border-border px-4 pb-4"
@@ -213,14 +231,14 @@ const SEARCH_BAR = {
 
 const CONTEXT_MENU_ITEMS = [
   createContextItem({
-    actionKey: 'hide-alerts',
-    title: 'Hide Alerts',
-    icon: { name: 'bell-outline' },
+    actionKey: "hide-alerts",
+    title: "Hide Alerts",
+    icon: { name: "bell-outline" },
   }),
   createContextItem({
-    actionKey: 'delete',
-    title: 'Delete',
-    icon: { name: 'trash-can-outline', color: 'red' },
+    actionKey: "delete",
+    title: "Delete",
+    icon: { name: "trash-can-outline", color: "red" },
     destructive: true,
   }),
 ];
@@ -253,13 +271,15 @@ function MessageRow({
   function onListItemPress() {
     if (isSelecting) {
       if (selectedMessages.includes(info.item.id)) {
-        setSelectedMessages(selectedMessages.filter((id) => id !== info.item.id));
+        setSelectedMessages(
+          selectedMessages.filter((id) => id !== info.item.id)
+        );
         return;
       }
       setSelectedMessages([...selectedMessages, info.item.id]);
       return;
     }
-    router.push('/messages-ios/chat-ios');
+    router.push("/messages-ios/chat-ios");
   }
 
   function onCheckedChange(isChecked: boolean) {
@@ -283,16 +303,20 @@ function MessageRow({
           onLongPress={noop} // Prevent onPress from firing when long pressing with quick release
           onPress={onListItemPress}
           className={cn(
-            'h-[88px]',
-            selectedMessages.includes(info.item.id) && 'bg-muted/15',
+            "h-[88px]",
+            selectedMessages.includes(info.item.id) && "bg-muted/15",
             selectedMessages.includes(info.item.id) &&
-              Platform.OS === 'ios' &&
-              'dark:bg-muted/50 bg-muted/20',
-            info.index === 0 && 'ios:border-t-0 border-border/25 dark:border-border/80 border-t',
+              Platform.OS === "ios" &&
+              "dark:bg-muted/50 bg-muted/20",
+            info.index === 0 &&
+              "ios:border-t-0 border-border/25 dark:border-border/80 border-t"
           )}
           leftView={
             <View className="flex-1 flex-row items-center px-3 py-3 pl-2">
-              <Animated.View style={checkboxContainerStyle} className="items-center justify-center">
+              <Animated.View
+                style={checkboxContainerStyle}
+                className="items-center justify-center"
+              >
                 {isSelecting && (
                   <Checkbox
                     checked={selectedMessages.includes(info.item.id)}
@@ -302,7 +326,9 @@ function MessageRow({
               </Animated.View>
               <View className="w-6 items-center justify-center">
                 <View className="pr-0.5">
-                  {info.item.unread && <View className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                  {info.item.unread && (
+                    <View className="h-2.5 w-2.5 rounded-full bg-primary" />
+                  )}
                 </View>
               </View>
               <Avatar alt="avatar" className="h-12 w-12">
@@ -320,7 +346,7 @@ function MessageRow({
                         size={36}
                         name="person"
                         color={Platform.select({
-                          ios: 'white',
+                          ios: "white",
                           default: colors.background,
                         })}
                       />
@@ -336,14 +362,23 @@ function MessageRow({
           rightView={
             <>
               <View className="pr-3">
-                {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
+                {!isSelecting && (
+                  <Icon name="chevron-right" size={15} color={colors.grey} />
+                )}
               </View>
             </>
           }
         />
       </ContextMenu>
-      <View style={TIMESTAMP_CONTAINER_STYLE} className="absolute right-8 top-1.5">
-        <Text numberOfLines={1} variant="footnote" className="text-muted-foreground">
+      <View
+        style={TIMESTAMP_CONTAINER_STYLE}
+        className="absolute right-8 top-1.5"
+      >
+        <Text
+          numberOfLines={1}
+          variant="footnote"
+          className="text-muted-foreground"
+        >
           {info.item.timestamp}
         </Text>
       </View>
@@ -351,7 +386,9 @@ function MessageRow({
   );
 }
 
-const renderIosContextMenuPreview = (info: { item: (typeof ITEMS)[number] }) => {
+const renderIosContextMenuPreview = (info: {
+  item: (typeof ITEMS)[number];
+}) => {
   return () => {
     return (
       <View className="bg-card/60 dark:bg-muted/70 h-96 w-screen rounded-lg p-4">
@@ -364,7 +401,10 @@ const renderIosContextMenuPreview = (info: { item: (typeof ITEMS)[number] }) => 
           </Text>
         </View>
         <View className="pr-10">
-          <View style={{ borderCurve: 'circular' }} className="rounded-2xl bg-card p-3">
+          <View
+            style={{ borderCurve: "circular" }}
+            className="rounded-2xl bg-card p-3"
+          >
             <Text>{info.item.subTitle}</Text>
           </View>
         </View>
@@ -383,7 +423,7 @@ function getInitials(name: string): string {
   return firstInitial + lastInitial;
 }
 
-const dimensions = Dimensions.get('window');
+const dimensions = Dimensions.get("window");
 
 const BUTTON_WIDTH = 75;
 
@@ -400,10 +440,18 @@ const ACTION_BUTTON_STYLE: ViewStyle = {
   width: BUTTON_WIDTH,
 };
 
-function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread: boolean }) {
+function Swipeable({
+  children,
+  isUnread,
+}: {
+  children: React.ReactNode;
+  isUnread: boolean;
+}) {
   const translateX = useSharedValue(0);
   const previousTranslateX = useSharedValue(0);
-  const initialTouchLocation = useSharedValue<{ x: number; y: number } | null>(null);
+  const initialTouchLocation = useSharedValue<{ x: number; y: number } | null>(
+    null
+  );
 
   const rootStyle = useAnimatedStyle(() => {
     return {
@@ -412,93 +460,117 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
   });
   const statusActionStyle = useAnimatedStyle(() => {
     return {
-      position: 'absolute',
+      position: "absolute",
       flex: 1,
-      height: '100%',
-      width: interpolate(translateX.value, [0, dimensions.width], [0, dimensions.width]),
+      height: "100%",
+      width: interpolate(
+        translateX.value,
+        [0, dimensions.width],
+        [0, dimensions.width]
+      ),
     };
   });
   const trashActionStyle = useAnimatedStyle(() => {
     return {
-      position: 'absolute',
+      position: "absolute",
       right: 0,
       flex: 1,
-      height: '100%',
-      width: interpolate(-translateX.value, [0, dimensions.width], [0, dimensions.width]),
+      height: "100%",
+      width: interpolate(
+        -translateX.value,
+        [0, dimensions.width],
+        [0, dimensions.width]
+      ),
     };
   });
   const notificationActionStyle = useAnimatedStyle(() => {
     return {
-      overflow: 'hidden',
-      position: 'absolute',
-      left: interpolate(-translateX.value, [0, dimensions.width], [dimensions.width, 0]),
+      overflow: "hidden",
+      position: "absolute",
+      left: interpolate(
+        -translateX.value,
+        [0, dimensions.width],
+        [dimensions.width, 0]
+      ),
       flex: 1,
-      height: '100%',
+      height: "100%",
       width:
         previousTranslateX.value > translateX.value
           ? interpolate(
               -translateX.value,
               [0, BUTTON_WIDTH * 2, BUTTON_WIDTH * 3, dimensions.width],
-              [0, BUTTON_WIDTH, BUTTON_WIDTH * 1.2, 0],
+              [0, BUTTON_WIDTH, BUTTON_WIDTH * 1.2, 0]
             )
           : interpolate(
               -translateX.value,
               [0, BUTTON_WIDTH * 2, dimensions.width],
-              [0, BUTTON_WIDTH, 0],
+              [0, BUTTON_WIDTH, 0]
             ),
     };
   });
   const statusIconStyle = useAnimatedStyle(() => {
     return {
-      overflow: 'hidden',
-      position: 'absolute',
+      overflow: "hidden",
+      position: "absolute",
       left: interpolate(
         translateX.value,
         [0, BUTTON_WIDTH, BUTTON_WIDTH * 2, BUTTON_WIDTH * 3, dimensions.width],
-        [-BUTTON_WIDTH, 0, 0, BUTTON_WIDTH * 2, dimensions.width - BUTTON_WIDTH],
+        [-BUTTON_WIDTH, 0, 0, BUTTON_WIDTH * 2, dimensions.width - BUTTON_WIDTH]
       ),
 
       flex: 1,
-      height: '100%',
+      height: "100%",
       width: BUTTON_WIDTH,
     };
   });
   const trashIconStyle = useAnimatedStyle(() => {
     return {
-      overflow: 'hidden',
-      position: 'absolute',
+      overflow: "hidden",
+      position: "absolute",
       right:
         previousTranslateX.value > translateX.value
           ? interpolate(
               -translateX.value,
-              [0, BUTTON_WIDTH * 2, BUTTON_WIDTH * 3, BUTTON_WIDTH * 3 + 40, dimensions.width],
-              [-BUTTON_WIDTH, 0, 0, BUTTON_WIDTH + 40, dimensions.width - BUTTON_WIDTH],
+              [
+                0,
+                BUTTON_WIDTH * 2,
+                BUTTON_WIDTH * 3,
+                BUTTON_WIDTH * 3 + 40,
+                dimensions.width,
+              ],
+              [
+                -BUTTON_WIDTH,
+                0,
+                0,
+                BUTTON_WIDTH + 40,
+                dimensions.width - BUTTON_WIDTH,
+              ]
             )
           : interpolate(
               -translateX.value,
               [0, BUTTON_WIDTH * 2, dimensions.width],
-              [-BUTTON_WIDTH, 0, dimensions.width - BUTTON_WIDTH],
+              [-BUTTON_WIDTH, 0, dimensions.width - BUTTON_WIDTH]
             ),
       flex: 1,
-      height: '100%',
+      height: "100%",
       width: BUTTON_WIDTH,
     };
   });
 
   function onToggleMarkAsRead() {
-    console.log('onToggleMarkAsRead');
+    console.log("onToggleMarkAsRead");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
   function onDelete() {
-    console.log('onDelete');
+    console.log("onDelete");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
   function onToggleNotifications() {
-    console.log('onToggleNotifications');
+    console.log("onToggleNotifications");
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
   const pan = Gesture.Pan()
-    .manualActivation(Platform.OS !== 'ios')
+    .manualActivation(Platform.OS !== "ios")
     .onBegin((evt) => {
       initialTouchLocation.value = { x: evt.x, y: evt.y };
     })
@@ -512,8 +584,12 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
         return;
       }
 
-      const xDiff = Math.abs(evt.changedTouches[0].x - initialTouchLocation.value.x);
-      const yDiff = Math.abs(evt.changedTouches[0].y - initialTouchLocation.value.y);
+      const xDiff = Math.abs(
+        evt.changedTouches[0].x - initialTouchLocation.value.x
+      );
+      const yDiff = Math.abs(
+        evt.changedTouches[0].y - initialTouchLocation.value.y
+      );
       const isHorizontalPanning = xDiff > yDiff;
 
       if (isHorizontalPanning && xDiff > 0.5) {
@@ -526,7 +602,7 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
       translateX.value = clamp(
         event.translationX + previousTranslateX.value,
         -dimensions.width,
-        dimensions.width,
+        dimensions.width
       );
     })
     .onEnd((event) => {
@@ -541,7 +617,7 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
         }
         translateX.value = withSpring(
           event.translationX > 0 ? BUTTON_WIDTH : -BUTTON_WIDTH,
-          SPRING_CONFIG,
+          SPRING_CONFIG
         );
         return;
       }
@@ -554,7 +630,7 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
         }
         translateX.value = withSpring(
           event.translationX > 0 ? BUTTON_WIDTH * 2 : -BUTTON_WIDTH * 2,
-          SPRING_CONFIG,
+          SPRING_CONFIG
         );
         return;
       }
@@ -589,11 +665,13 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
             >
               <Icon
                 ios={{
-                  name: isUnread ? 'checkmark.message.fill' : 'message.badge.fill',
+                  name: isUnread
+                    ? "checkmark.message.fill"
+                    : "message.badge.fill",
                 }}
                 materialIcon={{
-                  type: 'MaterialCommunityIcons',
-                  name: isUnread ? 'read' : 'email-mark-as-unread',
+                  type: "MaterialCommunityIcons",
+                  name: isUnread ? "read" : "email-mark-as-unread",
                 }}
                 size={24}
                 color="white"
@@ -612,17 +690,20 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
             </Pressable>
           </Animated.View>
         </Animated.View>
-        <Animated.View style={notificationActionStyle} className="bg-violet-600">
+        <Animated.View
+          style={notificationActionStyle}
+          className="bg-violet-600"
+        >
           <Pressable
             style={ACTION_BUTTON_STYLE}
             onPress={onNotificationActionPress}
             className="absolute bottom-0 left-0 top-0 items-center justify-center"
           >
             <Icon
-              ios={{ name: 'bell.slash.fill' }}
+              ios={{ name: "bell.slash.fill" }}
               materialIcon={{
-                type: 'MaterialCommunityIcons',
-                name: 'bell-cancel',
+                type: "MaterialCommunityIcons",
+                name: "bell-cancel",
               }}
               size={24}
               color="white"
@@ -635,9 +716,17 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
   );
 }
 
-function SelectingToolbar({ hasSelectedAMessage }: { hasSelectedAMessage: boolean }) {
+function SelectingToolbar({
+  hasSelectedAMessage,
+}: {
+  hasSelectedAMessage: boolean;
+}) {
   return (
-    <Animated.View entering={FadeIn} exiting={FadeOut} className="absolute bottom-0 left-0 right-0">
+    <Animated.View
+      entering={FadeIn}
+      exiting={FadeOut}
+      className="absolute bottom-0 left-0 right-0"
+    >
       <Toolbar
         leftView={
           <Button size="sm" variant="plain">
@@ -646,7 +735,11 @@ function SelectingToolbar({ hasSelectedAMessage }: { hasSelectedAMessage: boolea
         }
         rightView={
           <Button size="sm" variant="plain" disabled={!hasSelectedAMessage}>
-            <Text className={cn(!hasSelectedAMessage ? 'text-muted-foreground' : 'text-primary')}>
+            <Text
+              className={cn(
+                !hasSelectedAMessage ? "text-muted-foreground" : "text-primary"
+              )}
+            >
               Delete
             </Text>
           </Button>
@@ -660,107 +753,108 @@ function noop() {}
 
 const ITEMS = [
   {
-    id: '1',
+    id: "1",
     contact: true,
     unread: true,
-    title: 'Alice Johnson',
+    title: "Alice Johnson",
     subTitle:
-      'Hi team, please find the latest updates on the project. We have completed the initial phase and are moving into the testing stage.',
-    timestamp: '8:32 AM',
+      "Hi team, please find the latest updates on the project. We have completed the initial phase and are moving into the testing stage.",
+    timestamp: "8:32 AM",
   },
   {
-    id: '2',
+    id: "2",
     contact: true,
     unread: true,
-    title: 'Bob Smith',
+    title: "Bob Smith",
     subTitle:
-      'Reminder: We have a team meeting scheduled for tomorrow at 10 AM. Please make sure to bring your reports.',
-    timestamp: 'Yesterday',
+      "Reminder: We have a team meeting scheduled for tomorrow at 10 AM. Please make sure to bring your reports.",
+    timestamp: "Yesterday",
   },
   {
-    id: '3',
+    id: "3",
     contact: false,
     unread: false,
-    title: '(555) 123-4567',
+    title: "(555) 123-4567",
     subTitle:
-      'You have a missed call from this number. Please call back at your earliest convenience.',
-    timestamp: 'Saturday',
+      "You have a missed call from this number. Please call back at your earliest convenience.",
+    timestamp: "Saturday",
   },
   {
-    id: '4',
+    id: "4",
     contact: true,
     unread: false,
-    title: 'Catherine Davis',
+    title: "Catherine Davis",
     subTitle:
-      'Hi, please find attached the invoice for the services provided last month. Let me know if you need any further information.',
-    timestamp: 'Last Tuesday',
+      "Hi, please find attached the invoice for the services provided last month. Let me know if you need any further information.",
+    timestamp: "Last Tuesday",
   },
   {
-    id: '5',
+    id: "5",
     contact: true,
     unread: true,
-    title: 'Daniel Brown',
+    title: "Daniel Brown",
     subTitle: "Hey, are you free for lunch this Thursday? Let's catch up!",
-    timestamp: '10:15 AM',
+    timestamp: "10:15 AM",
   },
   {
-    id: '6',
+    id: "6",
     contact: false,
     unread: false,
-    title: '(555) 987-6543',
+    title: "(555) 987-6543",
     subTitle:
-      'Your service appointment is scheduled for June 29th. Please be available during the time slot.',
-    timestamp: '2024-06-29',
+      "Your service appointment is scheduled for June 29th. Please be available during the time slot.",
+    timestamp: "2024-06-29",
   },
   {
-    id: '7',
+    id: "7",
     contact: true,
     unread: false,
-    title: 'Evelyn Clark',
-    subTitle: 'Wishing you a very happy birthday! Have a great year ahead.',
-    timestamp: '2024-06-29',
+    title: "Evelyn Clark",
+    subTitle: "Wishing you a very happy birthday! Have a great year ahead.",
+    timestamp: "2024-06-29",
   },
   {
-    id: '8',
+    id: "8",
     contact: false,
     unread: false,
-    title: '(555) 321-7654',
+    title: "(555) 321-7654",
     subTitle: "Don't forget to submit your timesheet by the end of the day.",
-    timestamp: '2024-06-29',
+    timestamp: "2024-06-29",
   },
   {
-    id: '9',
+    id: "9",
     contact: true,
     unread: false,
-    title: 'Fiona Wilson',
-    subTitle: 'Attached is the weekly report for your review. Please provide your feedback.',
-    timestamp: '2024-06-29',
-  },
-  {
-    id: '10',
-    contact: true,
-    unread: false,
-    title: 'George Martinez',
+    title: "Fiona Wilson",
     subTitle:
-      'Hi all, we are planning a team outing next weekend. Please confirm your availability.',
-    timestamp: '2024-06-29',
+      "Attached is the weekly report for your review. Please provide your feedback.",
+    timestamp: "2024-06-29",
   },
   {
-    id: '11',
+    id: "10",
+    contact: true,
+    unread: false,
+    title: "George Martinez",
+    subTitle:
+      "Hi all, we are planning a team outing next weekend. Please confirm your availability.",
+    timestamp: "2024-06-29",
+  },
+  {
+    id: "11",
     contact: false,
     unread: false,
-    title: '(555) 654-3210',
+    title: "(555) 654-3210",
     subTitle:
-      'Congratulations! You are eligible for a special promotion. Contact us to learn more.',
-    timestamp: '2024-06-29',
+      "Congratulations! You are eligible for a special promotion. Contact us to learn more.",
+    timestamp: "2024-06-29",
   },
   {
-    id: '12',
+    id: "12",
     contact: true,
     unread: false,
-    title: 'Hannah Lee',
+    title: "Hannah Lee",
     subTitle:
-      'Hi, your contract is up for renewal. Please review the attached document and let us know if you have any questions.',
-    timestamp: '2024-06-29',
+      "Hi, your contract is up for renewal. Please review the attached document and let us know if you have any questions.",
+    timestamp: "2024-06-29",
   },
 ];

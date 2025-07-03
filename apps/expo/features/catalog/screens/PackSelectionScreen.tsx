@@ -1,25 +1,32 @@
-'use client';
+"use client";
 
-import { Icon } from '@roninoss/icons';
-import { Button } from 'expo-app/components/nativewindui/Button';
-import { SearchInput } from 'expo-app/components/nativewindui/SearchInput';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { usePacks } from 'expo-app/features/packs';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import type { Pack } from 'expo-app/types';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Animated, FlatList, Image, SafeAreaView, TouchableOpacity, View } from 'react-native';
-import { useCatalogItemDetails } from '../hooks';
+import { Button } from "@packrat/ui/nativewindui/Button";
+import { SearchInput } from "@packrat/ui/nativewindui/SearchInput";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { Icon } from "@roninoss/icons";
+import { usePacks } from "expo-app/features/packs";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import type { Pack } from "expo-app/types";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  Animated,
+  FlatList,
+  Image,
+  SafeAreaView,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useCatalogItemDetails } from "../hooks";
 
 export function PackSelectionScreen() {
   const router = useRouter();
   const { catalogItemId } = useLocalSearchParams();
   const packs = usePacks();
   const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
-    catalogItemId as string,
+    catalogItemId as string
   );
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [filteredPacks, setFilteredPacks] = useState<Pack[]>([]);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const { colors } = useColorScheme();
@@ -34,7 +41,7 @@ export function PackSelectionScreen() {
 
   useEffect(() => {
     if (packs) {
-      if (searchQuery.trim() === '') {
+      if (searchQuery.trim() === "") {
         setFilteredPacks(packs);
       } else {
         const query = searchQuery.toLowerCase();
@@ -43,8 +50,8 @@ export function PackSelectionScreen() {
             (pack) =>
               pack.name.toLowerCase().includes(query) ||
               pack.description.toLowerCase().includes(query) ||
-              pack.category.toLowerCase().includes(query),
-          ),
+              pack.category.toLowerCase().includes(query)
+          )
         );
       }
     }
@@ -52,13 +59,13 @@ export function PackSelectionScreen() {
 
   const handlePackSelect = (packId: string) => {
     router.push({
-      pathname: '/catalog/add-to-pack/details',
+      pathname: "/catalog/add-to-pack/details",
       params: { catalogItemId, packId },
     });
   };
 
   const handleCreatePack = () => {
-    router.push('/pack/new');
+    router.push("/pack/new");
   };
 
   return (
@@ -126,26 +133,46 @@ export function PackSelectionScreen() {
                           </Text>
                           <View className="mt-1 flex-row flex-wrap items-center">
                             <View className="mr-3 flex-row items-center">
-                              <Icon name="basket-outline" size={14} color={colors.grey2} />
+                              <Icon
+                                name="basket-outline"
+                                size={14}
+                                color={colors.grey2}
+                              />
                               <Text variant="caption2" className="ml-1">
-                                {item.items?.length} {item.items?.length === 1 ? 'item' : 'items'}
+                                {item.items?.length}{" "}
+                                {item.items?.length === 1 ? "item" : "items"}
                               </Text>
                             </View>
                             <View className="mr-3 flex-row items-center">
-                              <Icon name="dumbbell" size={14} color={colors.grey2} />
+                              <Icon
+                                name="dumbbell"
+                                size={14}
+                                color={colors.grey2}
+                              />
                               <Text variant="caption2" className="ml-1">
                                 {item.baseWeight?.toFixed(2)} g
                               </Text>
                             </View>
                             <View className="flex-row items-center">
-                              <Icon name="tag-outline" size={14} color={colors.grey2} />
-                              <Text variant="caption2" className="ml-1 capitalize">
+                              <Icon
+                                name="tag-outline"
+                                size={14}
+                                color={colors.grey2}
+                              />
+                              <Text
+                                variant="caption2"
+                                className="ml-1 capitalize"
+                              >
                                 {item.category}
                               </Text>
                             </View>
                           </View>
                         </View>
-                        <Icon name="chevron-right" size={20} color={colors.grey2} />
+                        <Icon
+                          name="chevron-right"
+                          size={20}
+                          color={colors.grey2}
+                        />
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -161,8 +188,16 @@ export function PackSelectionScreen() {
             </>
           ) : (
             <View className="items-center justify-center rounded-lg bg-card p-8 shadow-sm">
-              <Icon name="backpack-outline" size={48} color="text-muted-foreground" />
-              <Text variant="title3" color="primary" className="mt-4 text-center">
+              <Icon
+                name="backpack-outline"
+                size={48}
+                color="text-muted-foreground"
+              />
+              <Text
+                variant="title3"
+                color="primary"
+                className="mt-4 text-center"
+              >
                 No packs available
               </Text>
               <Text variant="body" className="mb-4 text-center">

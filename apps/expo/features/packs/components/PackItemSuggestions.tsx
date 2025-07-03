@@ -1,14 +1,14 @@
-import { Icon } from '@roninoss/icons';
-import { Button } from 'expo-app/components/nativewindui/Button';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { isAuthed } from 'expo-app/features/auth/store';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, TouchableOpacity, View } from 'react-native';
-import { usePackItemSuggestions } from '../hooks';
-import { ItemSuggestionCard } from './ItemSuggestionCard';
-import { PackItemSuggestionSkeleton } from './PackItemSuggestionSkeleton';
+import { Button } from "@packrat/ui/nativewindui/Button";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { Icon } from "@roninoss/icons";
+import { isAuthed } from "expo-app/features/auth/store";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { FlatList, TouchableOpacity, View } from "react-native";
+import { usePackItemSuggestions } from "../hooks";
+import { ItemSuggestionCard } from "./ItemSuggestionCard";
+import { PackItemSuggestionSkeleton } from "./PackItemSuggestionSkeleton";
 
 interface AISuggestionsProps {
   packId: string;
@@ -30,10 +30,10 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
   const handleGenerateSuggestions = () => {
     if (!isAuthed.peek()) {
       return router.push({
-        pathname: '/auth',
+        pathname: "/auth",
         params: {
           redirectTo: `/pack/${packId}`,
-          showSignInCopy: 'true',
+          showSignInCopy: "true",
         },
       });
     }
@@ -49,7 +49,11 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
   if (!showSuggestions) {
     return (
       <View className="bg-card p-4">
-        <Button onPress={handleGenerateSuggestions} className="w-full" variant="secondary">
+        <Button
+          onPress={handleGenerateSuggestions}
+          className="w-full"
+          variant="secondary"
+        >
           <Icon name="atom" size={18} color={colors.foreground} />
           <Text>Get AI Item Suggestions</Text>
         </Button>
@@ -59,7 +63,9 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
 
   // Show loading state
   if (isLoading) {
-    return <PackItemSuggestionSkeleton hideSuggestions={handleHideSuggestions} />;
+    return (
+      <PackItemSuggestionSkeleton hideSuggestions={handleHideSuggestions} />
+    );
   }
 
   // Handle error state
@@ -69,7 +75,9 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
         <View className="mb-3 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Icon name="atom" size={18} />
-            <Text className="text-base font-semibold text-gray-700">AI Suggestions</Text>
+            <Text className="text-base font-semibold text-gray-700">
+              AI Suggestions
+            </Text>
           </View>
           <TouchableOpacity
             onPress={handleHideSuggestions}
@@ -82,10 +90,14 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
         <Text className="mb-3 text-sm text-muted-foreground">
           {isError
             ? "Couldn't generate suggestions. Try again later."
-            : 'No suggestions available for your pack.'}
+            : "No suggestions available for your pack."}
         </Text>
 
-        <Button onPress={() => refetch()} variant="secondary" className="w-full">
+        <Button
+          onPress={() => refetch()}
+          variant="secondary"
+          className="w-full"
+        >
           <Icon name="power-cycle" size={16} />
           <Text>Try Again</Text>
         </Button>
@@ -99,9 +111,14 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
       <View className="mb-3 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Icon name="atom" size={18} />
-          <Text className="text-base font-semibold text-gray-700">AI Suggestions</Text>
+          <Text className="text-base font-semibold text-gray-700">
+            AI Suggestions
+          </Text>
         </View>
-        <TouchableOpacity onPress={handleHideSuggestions} className="rounded-full bg-gray-200 p-1">
+        <TouchableOpacity
+          onPress={handleHideSuggestions}
+          className="rounded-full bg-gray-200 p-1"
+        >
           <Icon name="close" size={16} />
         </TouchableOpacity>
       </View>
@@ -116,7 +133,9 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.id}
         className="mb-2"
-        renderItem={({ item }) => <ItemSuggestionCard item={item} packId={packId} />}
+        renderItem={({ item }) => (
+          <ItemSuggestionCard item={item} packId={packId} />
+        )}
       />
     </View>
   );

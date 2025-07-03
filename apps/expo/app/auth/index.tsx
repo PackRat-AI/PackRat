@@ -1,22 +1,22 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator } from 'expo-app/components/nativewindui/ActivityIndicator';
-import { AlertAnchor } from 'expo-app/components/nativewindui/Alert';
-import type { AlertRef } from 'expo-app/components/nativewindui/Alert/types';
-import { Button } from 'expo-app/components/nativewindui/Button';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { featureFlags } from 'expo-app/config';
-import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useSetAtom } from 'jotai';
-import * as React from 'react';
-import { Image, Platform, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator } from "@packrat/ui/nativewindui/ActivityIndicator";
+import { AlertAnchor } from "@packrat/ui/nativewindui/Alert";
+import type { AlertRef } from "@packrat/ui/nativewindui/Alert/types";
+import { Button } from "@packrat/ui/nativewindui/Button";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { featureFlags } from "expo-app/config";
+import { redirectToAtom } from "expo-app/features/auth/atoms/authAtoms";
+import { useAuth } from "expo-app/features/auth/hooks/useAuth";
+import { Link, router, useLocalSearchParams } from "expo-router";
+import { useSetAtom } from "jotai";
+import * as React from "react";
+import { Image, Platform, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require("expo-app/assets/packrat-app-icon-gradient.png");
 
 const GOOGLE_SOURCE = {
-  uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',
+  uri: "https://www.pngall.com/wp-content/uploads/13/Google-Logo.png",
 };
 
 type RouteParams = {
@@ -29,13 +29,13 @@ export default function AuthIndexScreen() {
   const { signInWithGoogle, signInWithApple, isLoading } = useAuth();
   const alertRef = React.useRef<AlertRef>(null);
   const {
-    redirectTo = '/',
+    redirectTo = "/",
     showSignInCopy,
     showSkipLoginBtn,
   } = useLocalSearchParams<RouteParams>();
   const handleSkipLogin = async () => {
-    await AsyncStorage.setItem('skipped_login', 'true');
-    router.replace('/');
+    await AsyncStorage.setItem("skipped_login", "true");
+    router.replace("/");
   };
 
   const setRedirectTo = useSetAtom(redirectToAtom);
@@ -46,7 +46,9 @@ export default function AuthIndexScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
         <ActivityIndicator size="large" />
       </SafeAreaView>
     );
@@ -64,7 +66,7 @@ export default function AuthIndexScreen() {
             />
           </View>
           <View className="ios:pb-5 ios:pt-2 pb-2">
-            {showSignInCopy === 'true' ? (
+            {showSignInCopy === "true" ? (
               <Text className="ios:font-extrabold text-center text-3xl font-medium">
                 Login Required
               </Text>
@@ -85,7 +87,7 @@ export default function AuthIndexScreen() {
             )}
           </View>
           <Link href="/auth/(create-account)" asChild>
-            <Button size={Platform.select({ ios: 'lg', default: 'md' })}>
+            <Button size={Platform.select({ ios: "lg", default: "md" })}>
               <Text>Sign up free</Text>
             </Button>
           </Link>
@@ -94,7 +96,7 @@ export default function AuthIndexScreen() {
               <Button
                 variant="secondary"
                 className="ios:border-foreground/60"
-                size={Platform.select({ ios: 'lg', default: 'md' })}
+                size={Platform.select({ ios: "lg", default: "md" })}
                 onPress={signInWithGoogle}
               >
                 <Image
@@ -102,34 +104,38 @@ export default function AuthIndexScreen() {
                   className="absolute left-4 h-4 w-4"
                   resizeMode="contain"
                 />
-                <Text className="ios:text-foreground">Continue with Google</Text>
+                <Text className="ios:text-foreground">
+                  Continue with Google
+                </Text>
               </Button>
-              {Platform.OS === 'ios' && (
+              {Platform.OS === "ios" && (
                 <Button
                   variant="secondary"
                   className="ios:border-foreground/60"
-                  size={Platform.select({ ios: 'lg', default: 'md' })}
+                  size={Platform.select({ ios: "lg", default: "md" })}
                   onPress={signInWithApple}
                 >
                   <Text className="ios:text-foreground absolute left-4 text-[22px]"></Text>
-                  <Text className="ios:text-foreground">Continue with Apple</Text>
+                  <Text className="ios:text-foreground">
+                    Continue with Apple
+                  </Text>
                 </Button>
               )}
             </>
           )}
-          <Link href={'/auth/(login)'} asChild>
+          <Link href={"/auth/(login)"} asChild>
             <Button
-              variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
-              size={Platform.select({ ios: 'lg', default: 'md' })}
+              variant={showSkipLoginBtn === "true" ? "tonal" : "plain"}
+              size={Platform.select({ ios: "lg", default: "md" })}
             >
               <Text className="text-primary">Log in</Text>
             </Button>
           </Link>
 
-          {showSkipLoginBtn === 'true' && (
+          {showSkipLoginBtn === "true" && (
             <Button
               variant="plain"
-              size={Platform.select({ ios: 'lg', default: 'md' })}
+              size={Platform.select({ ios: "lg", default: "md" })}
               onPress={handleSkipLogin}
               className="mt-2"
             >

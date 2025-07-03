@@ -1,8 +1,8 @@
-import { Icon } from '@roninoss/icons';
-import { ListItem } from 'expo-app/components/nativewindui/List';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { ListItem } from "@packrat/ui/nativewindui/List";
+import { Icon } from "@roninoss/icons";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { useRouter } from "expo-router";
+import { View } from "react-native";
 
 export function SharedPacksTile() {
   const router = useRouter();
@@ -12,7 +12,7 @@ export function SharedPacksTile() {
     //   alertRef.current?.show();
     //   return;
     // }
-    router.push('/shared-packs');
+    router.push("/shared-packs");
   };
 
   return (
@@ -32,7 +32,7 @@ export function SharedPacksTile() {
         </View>
       }
       item={{
-        title: 'Shared Packs',
+        title: "Shared Packs",
       }}
       onPress={handlePress}
       target="Cell"

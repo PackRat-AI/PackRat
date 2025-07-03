@@ -1,13 +1,13 @@
-import { Icon } from '@roninoss/icons';
-import { Alert } from 'expo-app/components/nativewindui/Alert';
-import type { AlertRef } from 'expo-app/components/nativewindui/Alert/types';
-import { ListItem } from 'expo-app/components/nativewindui/List';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { View } from 'react-native';
-import { useCategoriesCount, useCurrentPack } from '../hooks';
+import { Alert } from "@packrat/ui/nativewindui/Alert";
+import type { AlertRef } from "@packrat/ui/nativewindui/Alert/types";
+import { ListItem } from "@packrat/ui/nativewindui/List";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { Icon } from "@roninoss/icons";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { useRouter } from "expo-router";
+import { useRef } from "react";
+import { View } from "react-native";
+import { useCategoriesCount, useCurrentPack } from "../hooks";
 
 export function PackCategoriesTile() {
   const currentPack = useCurrentPack();
@@ -25,7 +25,7 @@ export function PackCategoriesTile() {
   return (
     <>
       <ListItem
-        className={'ios:pl-0 pl-2'}
+        className={"ios:pl-0 pl-2"}
         titleClassName="text-lg"
         leftView={
           <View className="px-3">
@@ -37,7 +37,10 @@ export function PackCategoriesTile() {
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
             <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
-              <Text variant="footnote" className="font-bold leading-4 text-primary-foreground">
+              <Text
+                variant="footnote"
+                className="font-bold leading-4 text-primary-foreground"
+              >
                 {categoriesCount}
               </Text>
             </View>
@@ -45,7 +48,7 @@ export function PackCategoriesTile() {
           </View>
         }
         item={{
-          title: 'Pack Categories',
+          title: "Pack Categories",
         }}
         onPress={handlePress}
         target="Cell"
@@ -54,12 +57,12 @@ export function PackCategoriesTile() {
       <Alert
         title="No Packs Yet"
         message="Create a pack to see gear distribution by category."
-        materialIcon={{ name: 'information-outline' }}
+        materialIcon={{ name: "information-outline" }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
-            style: 'default',
+            text: "Got it",
+            style: "default",
           },
         ]}
         ref={alertRef}

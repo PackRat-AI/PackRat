@@ -1,14 +1,14 @@
-import { useHeaderHeight } from '@react-navigation/elements';
-import { ActivityIndicator } from 'expo-app/components/nativewindui/ActivityIndicator';
-import { AlertAnchor } from 'expo-app/components/nativewindui/Alert';
-import type { AlertRef } from 'expo-app/components/nativewindui/Alert/types';
-import { Button } from 'expo-app/components/nativewindui/Button';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { TextField } from 'expo-app/components/nativewindui/TextField';
-import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import * as React from 'react';
+import { ActivityIndicator } from "@packrat/ui/nativewindui/ActivityIndicator";
+import { AlertAnchor } from "@packrat/ui/nativewindui/Alert";
+import type { AlertRef } from "@packrat/ui/nativewindui/Alert/types";
+import { Button } from "@packrat/ui/nativewindui/Button";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { TextField } from "@packrat/ui/nativewindui/TextField";
+import { useHeaderHeight } from "@react-navigation/elements";
+import { useAuthActions } from "expo-app/features/auth/hooks/useAuthActions";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import * as React from "react";
 import {
   Alert,
   Image,
@@ -19,35 +19,45 @@ import {
   type TextInputFocusEventData,
   type TextInputKeyPressEventData,
   View,
-} from 'react-native';
-import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
-import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import {
+  KeyboardAwareScrollView,
+  KeyboardController,
+} from "react-native-keyboard-controller";
+import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require("expo-app/assets/packrat-app-icon-gradient.png");
 
 const COUNTDOWN_SECONDS_TO_RESEND_CODE = 60;
 const NUM_OF_CODE_CHARACTERS = 5;
 const SCREEN_OPTIONS = {
-  headerBackTitle: 'Back',
+  headerBackTitle: "Back",
   headerTransparent: true,
-  title: '',
+  title: "",
 };
 
 export default function OneTimePasswordScreen() {
   const insets = useSafeAreaInsets();
-  const [countdown, setCountdown] = React.useState(COUNTDOWN_SECONDS_TO_RESEND_CODE);
-  const [codeValues, setCodeValues] = React.useState(Array(NUM_OF_CODE_CHARACTERS).fill(''));
+  const [countdown, setCountdown] = React.useState(
+    COUNTDOWN_SECONDS_TO_RESEND_CODE
+  );
+  const [codeValues, setCodeValues] = React.useState(
+    Array(NUM_OF_CODE_CHARACTERS).fill("")
+  );
   const [errorIndexes, setErrorIndexes] = React.useState<number[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const alertRef = React.useRef<AlertRef>(null);
   const headerHeight = useHeaderHeight();
   const params = useLocalSearchParams<{ email: string; mode: string }>();
-  const email = params.email || '';
-  const mode = params.mode || 'verification';
-  const { verifyEmail, forgotPassword, resendVerificationEmail } = useAuthActions();
+  const email = params.email || "";
+  const mode = params.mode || "verification";
+  const { verifyEmail, forgotPassword, resendVerificationEmail } =
+    useAuthActions();
 
-  const countdownInterval = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownInterval = React.useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
 
   React.useEffect(() => {
     startCountdown();
@@ -82,7 +92,7 @@ export default function OneTimePasswordScreen() {
     try {
       setIsLoading(true);
 
-      if (mode === 'reset-password') {
+      if (mode === "reset-password") {
         await forgotPassword(email);
       } else {
         await resendVerificationEmail(email);
@@ -92,12 +102,15 @@ export default function OneTimePasswordScreen() {
       startCountdown();
 
       // Clear current code values
-      setCodeValues(Array(NUM_OF_CODE_CHARACTERS).fill(''));
+      setCodeValues(Array(NUM_OF_CODE_CHARACTERS).fill(""));
       setErrorIndexes([]);
 
-      Alert.alert('Success', 'Verification code has been resent');
+      Alert.alert("Success", "Verification code has been resent");
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to resend code');
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to resend code"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -106,15 +119,15 @@ export default function OneTimePasswordScreen() {
   // Handles both email verification for new accounts and password reset modes
   async function onSubmit() {
     const errorIndexes = codeValues
-      .map((str, index) => (str === '' ? index : -1))
+      .map((str, index) => (str === "" ? index : -1))
       .filter((index) => index !== -1);
 
     if (errorIndexes.length > 0) {
       setErrorIndexes(errorIndexes);
       alertRef.current?.alert({
-        title: 'Error',
-        message: 'Please enter the complete verification code',
-        buttons: [{ text: 'OK' }],
+        title: "Error",
+        message: "Please enter the complete verification code",
+        buttons: [{ text: "OK" }],
       });
       return;
     }
@@ -123,19 +136,22 @@ export default function OneTimePasswordScreen() {
     setIsLoading(true);
 
     try {
-      const code = codeValues.join('');
+      const code = codeValues.join("");
 
-      if (mode === 'reset-password') {
+      if (mode === "reset-password") {
         // Navigate to reset password screen with email and code
         router.push({
-          pathname: '/auth/reset-password',
+          pathname: "/auth/reset-password",
           params: { email, code },
         });
       } else {
         await verifyEmail(email, code); // Navigation is handled in the function
       }
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Invalid verification code');
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Invalid verification code"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -152,14 +168,20 @@ export default function OneTimePasswordScreen() {
       >
         <View className="flex-1 justify-center gap-3">
           <View className="items-center pb-1">
-            <Image source={LOGO_SOURCE} className="h-10 w-10 rounded-md" resizeMode="contain" />
+            <Image
+              source={LOGO_SOURCE}
+              className="h-10 w-10 rounded-md"
+              resizeMode="contain"
+            />
           </View>
           <View className="gap-1">
             <Text variant="title1" className="text-center font-semibold">
-              {mode === 'reset-password' ? 'Reset Password' : 'Verify Your Email'}
+              {mode === "reset-password"
+                ? "Reset Password"
+                : "Verify Your Email"}
             </Text>
             <Text variant="subhead" className="text-center">
-              We sent the code to{' '}
+              We sent the code to{" "}
               <Text variant="subhead" className="font-semibold">
                 {email}
               </Text>
@@ -181,8 +203,11 @@ export default function OneTimePasswordScreen() {
           </View>
           <Animated.View className="flex-row justify-center gap-0.5">
             <Animated.View layout={Platform.select({ ios: LinearTransition })}>
-              <Text variant="caption1" className="text-center font-medium opacity-70">
-                Didn't receive the code?{' '}
+              <Text
+                variant="caption1"
+                className="text-center font-medium opacity-70"
+              >
+                Didn't receive the code?{" "}
               </Text>
             </Animated.View>
             {countdown > 0 ? (
@@ -192,7 +217,7 @@ export default function OneTimePasswordScreen() {
                 layout={Platform.select({ ios: LinearTransition })}
               >
                 <Text variant="caption1" className="font-normal opacity-70">
-                  Resend in {countdown} second{countdown > 1 ? 's' : ''}
+                  Resend in {countdown} second{countdown > 1 ? "s" : ""}
                 </Text>
               </Animated.View>
             ) : (
@@ -201,8 +226,14 @@ export default function OneTimePasswordScreen() {
                 entering={Platform.select({ ios: FadeIn.duration(500) })}
                 layout={Platform.select({ ios: LinearTransition })}
               >
-                <Pressable className="active:opacity-70" onPress={resendCode} disabled={isLoading}>
-                  <Text className="text-xs font-semibold opacity-90">Resend</Text>
+                <Pressable
+                  className="active:opacity-70"
+                  onPress={resendCode}
+                  disabled={isLoading}
+                >
+                  <Text className="text-xs font-semibold opacity-90">
+                    Resend
+                  </Text>
                 </Pressable>
               </Animated.View>
             )}
@@ -246,12 +277,14 @@ function OTPField({
 }: OTPFieldProps) {
   const { colors } = useColorScheme();
 
-  function onKeyPress({ nativeEvent }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
-    if (nativeEvent.key === 'Backspace' && value === '') {
-      KeyboardController.setFocusTo('prev');
+  function onKeyPress({
+    nativeEvent,
+  }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
+    if (nativeEvent.key === "Backspace" && value === "") {
+      KeyboardController.setFocusTo("prev");
     }
     if (value === nativeEvent.key) {
-      KeyboardController.setFocusTo('next');
+      KeyboardController.setFocusTo("next");
     }
   }
 
@@ -265,9 +298,9 @@ function OTPField({
     setCodeValues((prev) => {
       const values = [...prev];
       if (text.length === 0) {
-        values[index] = '';
-        if (codeValues[index + 1] === '') {
-          KeyboardController.setFocusTo('prev');
+        values[index] = "";
+        if (codeValues[index + 1] === "") {
+          KeyboardController.setFocusTo("prev");
         }
         return values;
       }
@@ -278,7 +311,7 @@ function OTPField({
         values[index + i] = text.charAt(i);
       }
       if (text.length < NUM_OF_CODE_CHARACTERS - 1) {
-        KeyboardController.setFocusTo('next');
+        KeyboardController.setFocusTo("next");
       } else {
         Keyboard.dismiss();
       }
@@ -305,12 +338,12 @@ ios:border ios:border-border ios:rounded-lg "
       onSubmitEditing={
         index === NUM_OF_CODE_CHARACTERS - 1
           ? onSubmit
-          : () => KeyboardController.setFocusTo('next')
+          : () => KeyboardController.setFocusTo("next")
       }
       submitBehavior="submit"
       autoFocus={index === 0}
       selection={OTP_FIELD_SELECTION}
-      accessibilityHint={hasError ? 'Missing OTP Character' : undefined}
+      accessibilityHint={hasError ? "Missing OTP Character" : undefined}
     />
   );
 }

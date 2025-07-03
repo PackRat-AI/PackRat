@@ -1,6 +1,6 @@
-import { Icon } from '@roninoss/icons';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { View } from 'react-native';
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { Icon } from "@roninoss/icons";
+import { View } from "react-native";
 
 interface PackItem {
   id: string;
@@ -44,49 +44,51 @@ interface PackItemDetailsGenerativeUIProps {
   item: PackItem;
 }
 
-export function PackItemDetailsGenerativeUI({ item }: PackItemDetailsGenerativeUIProps) {
+export function PackItemDetailsGenerativeUI({
+  item,
+}: PackItemDetailsGenerativeUIProps) {
   const getCategoryIcon = (category: string) => {
     const categoryLower = category.toLowerCase().trim();
     switch (categoryLower) {
-      case 'shelter':
-        return 'home';
+      case "shelter":
+        return "home";
 
-      case 'clothing':
-        return 'account-circle';
+      case "clothing":
+        return "account-circle";
 
-      case 'cooking':
-        return 'fire';
+      case "cooking":
+        return "fire";
 
-      case 'electronics':
-        return 'cellphone';
+      case "electronics":
+        return "cellphone";
 
-      case 'first-aid':
-        return 'plus';
+      case "first-aid":
+        return "plus";
 
-      case 'tools':
-        return 'hammer';
+      case "tools":
+        return "hammer";
 
-      case 'food':
-        return 'apple';
+      case "food":
+        return "apple";
 
-      case 'water':
-        return 'circle';
+      case "water":
+        return "circle";
 
       default:
-        return 'archive';
+        return "archive";
     }
   };
 
   const formatWeight = (weight: number, unit: string) => {
-    if (weight === 0) return 'No weight specified';
+    if (weight === 0) return "No weight specified";
     return `${weight}${unit}`;
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -97,13 +99,22 @@ export function PackItemDetailsGenerativeUI({ item }: PackItemDetailsGenerativeU
         <View className="flex-row items-center justify-between">
           <View className="flex-1 flex-row items-center">
             <View className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-              <Icon name={getCategoryIcon(item.category)} size={16} color="#3B82F6" />
+              <Icon
+                name={getCategoryIcon(item.category)}
+                size={16}
+                color="#3B82F6"
+              />
             </View>
             <View className="flex-1">
-              <Text className="text-lg font-semibold text-gray-900" numberOfLines={1}>
+              <Text
+                className="text-lg font-semibold text-gray-900"
+                numberOfLines={1}
+              >
                 {item.name}
               </Text>
-              <Text className="text-sm capitalize text-gray-500">{item.category}</Text>
+              <Text className="text-sm capitalize text-gray-500">
+                {item.category}
+              </Text>
             </View>
           </View>
           <View className="items-end">
@@ -116,7 +127,9 @@ export function PackItemDetailsGenerativeUI({ item }: PackItemDetailsGenerativeU
         <View className="mt-2 flex-row items-center gap-2">
           {item.consumable && (
             <View className="rounded-full bg-orange-100 px-2 py-1">
-              <Text className="text-xs font-medium text-orange-700">Consumable</Text>
+              <Text className="text-xs font-medium text-orange-700">
+                Consumable
+              </Text>
             </View>
           )}
           {item.worn && (
@@ -141,7 +154,9 @@ export function PackItemDetailsGenerativeUI({ item }: PackItemDetailsGenerativeU
         {/* Notes */}
         {item.notes && (
           <View className="mb-4">
-            <Text className="mb-1 text-sm font-medium text-gray-500">Notes</Text>
+            <Text className="mb-1 text-sm font-medium text-gray-500">
+              Notes
+            </Text>
             <View className="rounded-lg border border-yellow-200 bg-yellow-50 p-3">
               <Text className="text-sm text-gray-700" numberOfLines={2}>
                 {item.notes}
@@ -155,11 +170,15 @@ export function PackItemDetailsGenerativeUI({ item }: PackItemDetailsGenerativeU
           <View className="flex-row items-center justify-between">
             <View>
               <Text className="text-xs text-gray-400">Created</Text>
-              <Text className="text-xs text-gray-600">{formatDate(item.createdAt)}</Text>
+              <Text className="text-xs text-gray-600">
+                {formatDate(item.createdAt)}
+              </Text>
             </View>
             <View>
               <Text className="text-xs text-gray-400">Updated</Text>
-              <Text className="text-xs text-gray-600">{formatDate(item.updatedAt)}</Text>
+              <Text className="text-xs text-gray-600">
+                {formatDate(item.updatedAt)}
+              </Text>
             </View>
           </View>
         </View>

@@ -1,27 +1,27 @@
-'use client';
+"use client";
 
-import { useForm } from '@tanstack/react-form';
-import { Button } from 'expo-app/components/nativewindui/Button';
-import { Form, FormItem, FormSection } from 'expo-app/components/nativewindui/Form';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { TextField } from 'expo-app/components/nativewindui/TextField';
-import { router } from 'expo-router';
-import * as React from 'react';
-import { Image, Platform, View } from 'react-native';
+import { Button } from "@packrat/ui/nativewindui/Button";
+import { Form, FormItem, FormSection } from "@packrat/ui/nativewindui/Form";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { TextField } from "@packrat/ui/nativewindui/TextField";
+import { useForm } from "@tanstack/react-form";
+import { router } from "expo-router";
+import * as React from "react";
+import { Image, Platform, View } from "react-native";
 import {
   KeyboardAwareScrollView,
   KeyboardController,
   KeyboardStickyView,
-} from 'react-native-keyboard-controller';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { z } from 'zod';
+} from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require("expo-app/assets/packrat-app-icon-gradient.png");
 
 // Define Zod schema for name validation
 const nameFormSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
 });
 
 // Type inference
@@ -29,14 +29,14 @@ type NameFormValues = z.infer<typeof nameFormSchema>;
 
 export default function InfoScreen() {
   const insets = useSafeAreaInsets();
-  const [focusedTextField, setFocusedTextField] = React.useState<'first-name' | 'last-name' | null>(
-    null,
-  );
+  const [focusedTextField, setFocusedTextField] = React.useState<
+    "first-name" | "last-name" | null
+  >(null);
 
   const form = useForm({
     defaultValues: {
-      firstName: '',
-      lastName: '',
+      firstName: "",
+      lastName: "",
     },
     validators: {
       onChange: nameFormSchema,
@@ -44,7 +44,7 @@ export default function InfoScreen() {
     onSubmit: async ({ value }) => {
       // Navigate to credentials screen with form data
       router.push({
-        pathname: '/auth/(create-account)/credentials',
+        pathname: "/auth/(create-account)/credentials",
         params: {
           firstName: value.firstName,
           lastName: value.lastName,
@@ -54,7 +54,10 @@ export default function InfoScreen() {
   });
 
   return (
-    <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
+    <View
+      className="ios:bg-card flex-1"
+      style={{ paddingBottom: insets.bottom }}
+    >
       <KeyboardAwareScrollView
         bottomOffset={Platform.select({ ios: 8 })}
         bounces={false}
@@ -69,14 +72,19 @@ export default function InfoScreen() {
               className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
               resizeMode="contain"
             />
-            <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
+            <Text
+              variant="title1"
+              className="ios:font-bold pb-1 pt-4 text-center"
+            >
               {Platform.select({
                 ios: "What's your name?",
-                default: 'Create your account',
+                default: "Create your account",
               })}
             </Text>
-            {Platform.OS !== 'ios' && (
-              <Text className="ios:text-sm text-center text-muted-foreground">Welcome back!</Text>
+            {Platform.OS !== "ios" && (
+              <Text className="ios:text-sm text-center text-muted-foreground">
+                Welcome back!
+              </Text>
             )}
           </View>
           <View className="ios:pt-4 pt-6">
@@ -87,17 +95,19 @@ export default function InfoScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'First Name',
-                          default: '',
+                          ios: "First Name",
+                          default: "",
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'First Name',
+                          default: "First Name",
                         })}
-                        onSubmitEditing={() => KeyboardController.setFocusTo('next')}
+                        onSubmitEditing={() =>
+                          KeyboardController.setFocusTo("next")
+                        }
                         submitBehavior="submit"
                         autoFocus
-                        onFocus={() => setFocusedTextField('first-name')}
+                        onFocus={() => setFocusedTextField("first-name")}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -116,14 +126,14 @@ export default function InfoScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'Last Name',
-                          default: '',
+                          ios: "Last Name",
+                          default: "",
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'Last Name',
+                          default: "Last Name",
                         })}
-                        onFocus={() => setFocusedTextField('last-name')}
+                        onFocus={() => setFocusedTextField("last-name")}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -153,16 +163,18 @@ export default function InfoScreen() {
           }),
         }}
       >
-        {Platform.OS === 'ios' ? (
+        {Platform.OS === "ios" ? (
           <View className="px-12 py-4">
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
               {([canSubmit, isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || isSubmitting}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{isSubmitting ? 'Loading...' : 'Continue'}</Text>
+                  <Text>{isSubmitting ? "Loading..." : "Continue"}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -173,36 +185,42 @@ export default function InfoScreen() {
               variant="plain"
               className="px-2"
               onPress={() => {
-                router.replace('/auth/(login)');
+                router.replace("/auth/(login)");
               }}
             >
-              <Text className="text-sm text-primary">Already have an account?</Text>
+              <Text className="text-sm text-primary">
+                Already have an account?
+              </Text>
             </Button>
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
               {([canSubmit, isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || isSubmitting}
                   onPress={() => {
-                    if (focusedTextField === 'first-name') {
-                      KeyboardController.setFocusTo('next');
+                    if (focusedTextField === "first-name") {
+                      KeyboardController.setFocusTo("next");
                       return;
                     }
                     KeyboardController.dismiss();
                     form.handleSubmit();
                   }}
                 >
-                  <Text className="text-sm">{isSubmitting ? 'Loading...' : 'Next'}</Text>
+                  <Text className="text-sm">
+                    {isSubmitting ? "Loading..." : "Next"}
+                  </Text>
                 </Button>
               )}
             </form.Subscribe>
           </View>
         )}
       </KeyboardStickyView>
-      {Platform.OS === 'ios' && (
+      {Platform.OS === "ios" && (
         <Button
           variant="plain"
           onPress={() => {
-            router.replace('/auth/(login)');
+            router.replace("/auth/(login)");
           }}
         >
           <Text className="text-sm text-primary">Already have an account?</Text>

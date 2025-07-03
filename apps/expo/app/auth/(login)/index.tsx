@@ -1,26 +1,26 @@
-import { useForm } from '@tanstack/react-form';
-import { Button } from 'expo-app/components/nativewindui/Button';
-import { Form, FormItem, FormSection } from 'expo-app/components/nativewindui/Form';
-import { Text } from 'expo-app/components/nativewindui/Text';
-import { TextField } from 'expo-app/components/nativewindui/TextField';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
-import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
-import * as React from 'react';
-import { Alert, Image, Platform, View } from 'react-native';
+import { Button } from "@packrat/ui/nativewindui/Button";
+import { Form, FormItem, FormSection } from "@packrat/ui/nativewindui/Form";
+import { Text } from "@packrat/ui/nativewindui/Text";
+import { TextField } from "@packrat/ui/nativewindui/TextField";
+import { useForm } from "@tanstack/react-form";
+import { useAuth } from "expo-app/features/auth/hooks/useAuth";
+import { Link, router, Stack, useLocalSearchParams } from "expo-router";
+import * as React from "react";
+import { Alert, Image, Platform, View } from "react-native";
 import {
   KeyboardAwareScrollView,
   KeyboardController,
   KeyboardStickyView,
-} from 'react-native-keyboard-controller';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { z } from 'zod';
+} from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require("expo-app/assets/packrat-app-icon-gradient.png");
 
 // Define Zod schema for login validation
 const loginFormSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 // Type inference
@@ -30,13 +30,15 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [focusedTextField, setFocusedTextField] = React.useState<'email' | 'password' | null>(null);
+  const [focusedTextField, setFocusedTextField] = React.useState<
+    "email" | "password" | null
+  >(null);
   const { redirectTo } = useLocalSearchParams<{ redirectTo: string }>();
 
   const form = useForm({
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
     validators: {
       onChange: loginFormSchema,
@@ -49,8 +51,8 @@ export default function LoginScreen() {
       } catch (error) {
         setIsLoading(false);
         Alert.alert(
-          'Login Failed',
-          error instanceof Error ? error.message : 'Invalid email or password',
+          "Login Failed",
+          error instanceof Error ? error.message : "Invalid email or password"
         );
       }
     },
@@ -60,10 +62,13 @@ export default function LoginScreen() {
   const loading = isLoading || authLoading;
 
   return (
-    <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
+    <View
+      className="ios:bg-card flex-1"
+      style={{ paddingBottom: insets.bottom }}
+    >
       <Stack.Screen
         options={{
-          title: 'Log in',
+          title: "Log in",
           headerShadowVisible: false,
           headerLeft() {
             return (
@@ -90,11 +95,16 @@ export default function LoginScreen() {
               className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
               resizeMode="contain"
             />
-            <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: 'Welcome back!', default: 'Log in' })}
+            <Text
+              variant="title1"
+              className="ios:font-bold pb-1 pt-4 text-center"
+            >
+              {Platform.select({ ios: "Welcome back!", default: "Log in" })}
             </Text>
-            {Platform.OS !== 'ios' && (
-              <Text className="ios:text-sm text-center text-muted-foreground">Welcome back!</Text>
+            {Platform.OS !== "ios" && (
+              <Text className="ios:text-sm text-center text-muted-foreground">
+                Welcome back!
+              </Text>
             )}
           </View>
           <View className="ios:pt-4 pt-6">
@@ -105,17 +115,19 @@ export default function LoginScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'Email',
-                          default: '',
+                          ios: "Email",
+                          default: "",
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'Email',
+                          default: "Email",
                         })}
-                        onSubmitEditing={() => KeyboardController.setFocusTo('next')}
+                        onSubmitEditing={() =>
+                          KeyboardController.setFocusTo("next")
+                        }
                         submitBehavior="submit"
                         autoFocus
-                        onFocus={() => setFocusedTextField('email')}
+                        onFocus={() => setFocusedTextField("email")}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -135,14 +147,14 @@ export default function LoginScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'Password',
-                          default: '',
+                          ios: "Password",
+                          default: "",
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'Password',
+                          default: "Password",
                         })}
-                        onFocus={() => setFocusedTextField('password')}
+                        onFocus={() => setFocusedTextField("password")}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -162,7 +174,9 @@ export default function LoginScreen() {
               <View className="flex-row">
                 <Link asChild href="/auth/(login)/forgot-password">
                   <Button size="sm" variant="plain" className="px-0.5">
-                    <Text className="text-sm text-primary">Forgot password?</Text>
+                    <Text className="text-sm text-primary">
+                      Forgot password?
+                    </Text>
                   </Button>
                 </Link>
               </View>
@@ -179,16 +193,18 @@ export default function LoginScreen() {
           }),
         }}
       >
-        {Platform.OS === 'ios' ? (
+        {Platform.OS === "ios" ? (
           <View className="px-12 py-4">
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
               {([canSubmit, isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || loading}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{loading ? 'Logging in...' : 'Continue'}</Text>
+                  <Text>{loading ? "Logging in..." : "Continue"}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -199,18 +215,22 @@ export default function LoginScreen() {
               variant="plain"
               className="px-2"
               onPress={() => {
-                router.replace('/auth/(create-account)');
+                router.replace("/auth/(create-account)");
               }}
             >
-              <Text className="px-0.5 text-sm text-primary">Create Account</Text>
+              <Text className="px-0.5 text-sm text-primary">
+                Create Account
+              </Text>
             </Button>
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
               {([canSubmit, isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || loading}
                   onPress={() => {
-                    if (focusedTextField === 'email') {
-                      KeyboardController.setFocusTo('next');
+                    if (focusedTextField === "email") {
+                      KeyboardController.setFocusTo("next");
                       return;
                     }
                     KeyboardController.dismiss();
@@ -218,7 +238,11 @@ export default function LoginScreen() {
                   }}
                 >
                   <Text className="text-sm">
-                    {loading ? 'Logging in...' : focusedTextField === 'email' ? 'Next' : 'Submit'}
+                    {loading
+                      ? "Logging in..."
+                      : focusedTextField === "email"
+                        ? "Next"
+                        : "Submit"}
                   </Text>
                 </Button>
               )}
@@ -226,12 +250,12 @@ export default function LoginScreen() {
           </View>
         )}
       </KeyboardStickyView>
-      {Platform.OS === 'ios' && (
+      {Platform.OS === "ios" && (
         <Button
           variant="plain"
           onPress={() => {
             router.replace({
-              pathname: '/auth/(create-account)',
+              pathname: "/auth/(create-account)",
               params: { redirectTo },
             });
           }}
