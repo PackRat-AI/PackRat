@@ -1,9 +1,9 @@
-"use client";
-import { Button } from "@packrat/ui/nativewindui/Button";
-import { Icon } from "@roninoss/icons";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { useRouter } from "expo-router";
-import { Text, View } from "react-native";
+'use client';
+import { Button } from '@packrat/ui/nativewindui/Button';
+import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useRouter } from 'expo-router';
+import { Text, View } from 'react-native';
 
 type NotFoundScreenProps = {
   title?: string;
@@ -13,9 +13,9 @@ type NotFoundScreenProps = {
 };
 
 export const NotFoundScreen = ({
-  title = "Not Found",
+  title = 'Not Found',
   message = "The content you're looking for doesn't exist or has been moved.",
-  backButtonLabel = "Go Back",
+  backButtonLabel = 'Go Back',
   onBackPress,
 }: NotFoundScreenProps) => {
   const router = useRouter();

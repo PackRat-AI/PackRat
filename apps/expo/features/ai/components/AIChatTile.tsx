@@ -1,28 +1,28 @@
-import { ListItem } from "@packrat/ui/nativewindui/List";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import { isAuthed } from "expo-app/features/auth/store";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { type Href, useRouter } from "expo-router";
-import { View } from "react-native";
+import { ListItem } from '@packrat/ui/nativewindui/List';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { type Href, useRouter } from 'expo-router';
+import { View } from 'react-native';
 
 export function AIChatTile() {
   const router = useRouter();
 
   const route: Href = {
-    pathname: "/ai-chat",
+    pathname: '/ai-chat',
     params: {
-      contextType: "general",
+      contextType: 'general',
     },
   };
   const handlePress = () => {
     if (!isAuthed.peek()) {
       // AI featuer is protected. Redirect user to the auth page if not authenticated.
       return router.push({
-        pathname: "/auth",
+        pathname: '/auth',
         params: {
           redirectTo: JSON.stringify(route), // stringifying to pass along parameters
-          showSignInCopy: "true",
+          showSignInCopy: 'true',
         },
       });
     }
@@ -43,17 +43,14 @@ export function AIChatTile() {
       }
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-          <Text
-            variant="callout"
-            className="ios:px-0 px-2 text-muted-foreground"
-          >
+          <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
             Anything outdoors...
           </Text>
           <ChevronRight />
         </View>
       }
       item={{
-        title: "PackRat AI",
+        title: 'PackRat AI',
       }}
       onPress={handlePress}
       target="Cell"

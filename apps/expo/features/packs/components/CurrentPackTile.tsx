@@ -1,17 +1,13 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@packrat/ui/nativewindui/Avatar";
-import { ListItem } from "@packrat/ui/nativewindui/List";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { useRouter } from "expo-router";
-import { View } from "react-native";
-import { useCurrentPack } from "../hooks";
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui/Avatar';
+import { ListItem } from '@packrat/ui/nativewindui/List';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { useCurrentPack } from '../hooks';
 
-const LOGO_SOURCE = require("expo-app/assets/packrat-app-icon-gradient.png");
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 export function CurrentPackTile({ ...props }: any) {
   const currentPack = useCurrentPack();
@@ -20,48 +16,39 @@ export function CurrentPackTile({ ...props }: any) {
 
   const avatarImage =
     currentPack?.image ??
-    "https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=400&auto=format&fit=crop&b=2s";
+    'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=400&auto=format&fit=crop&b=2s';
 
   const handlePress = () => {
-    if (!currentPack) return router.push("/pack/new");
+    if (!currentPack) return router.push('/pack/new');
     router.push(`/current-pack/${currentPack.id}`);
   };
 
   return (
     <ListItem
       {...props}
-      className={"ios:pl-0 pl-2"}
+      className={'ios:pl-0 pl-2'}
       titleClassName="text-lg"
       leftView={
         <View className="px-3">
           <Avatar alt="Current pack avatar">
             <AvatarImage source={{ uri: avatarImage }} />
             <AvatarFallback>
-              <Text>
-                {currentPack
-                  ? currentPack.name.slice(0, 2).toUpperCase()
-                  : "NA"}
-              </Text>
+              <Text>{currentPack ? currentPack.name.slice(0, 2).toUpperCase() : 'NA'}</Text>
             </AvatarFallback>
           </Avatar>
         </View>
       }
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-          <Text
-            variant="callout"
-            className="ios:px-0 px-2 text-muted-foreground"
-          >
-            {currentPack ? `${currentPack.totalWeight} g` : ""}
+          <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
+            {currentPack ? `${currentPack.totalWeight} g` : ''}
           </Text>
           <ChevronRight />
         </View>
       }
       item={{
-        title: "Current Pack",
-        subTitle: currentPack
-          ? currentPack.name
-          : "Create your first pack to start tracking",
+        title: 'Current Pack',
+        subTitle: currentPack ? currentPack.name : 'Create your first pack to start tracking',
       }}
       onPress={handlePress}
       target="Cell"

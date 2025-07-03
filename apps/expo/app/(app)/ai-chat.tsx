@@ -1,23 +1,20 @@
-import { useChat } from "@ai-sdk/react";
-import { Button } from "@packrat/ui/nativewindui/Button";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import { FlashList } from "@shopify/flash-list";
-import { clientEnvs } from "expo-app/env/clientEnvs";
-import { ChatBubble } from "expo-app/features/ai/components/ChatBubble";
-import { tokenAtom } from "expo-app/features/auth/atoms/authAtoms";
-import { LocationSelector } from "expo-app/features/weather/components/LocationSelector";
-import { useActiveLocation } from "expo-app/features/weather/hooks";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import {
-  getContextualGreeting,
-  getContextualSuggestions,
-} from "expo-app/utils/chatContextHelpers";
-import { BlurView } from "expo-blur";
-import { Stack, useLocalSearchParams } from "expo-router";
-import { fetch as expoFetch } from "expo/fetch";
-import { useAtomValue } from "jotai";
-import * as React from "react";
+import { useChat } from '@ai-sdk/react';
+import { Button } from '@packrat/ui/nativewindui/Button';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { FlashList } from '@shopify/flash-list';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
+import { useActiveLocation } from 'expo-app/features/weather/hooks';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
+import { BlurView } from 'expo-blur';
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { fetch as expoFetch } from 'expo/fetch';
+import { useAtomValue } from 'jotai';
+import * as React from 'react';
 import {
   Alert,
   Dimensions,
@@ -30,24 +27,24 @@ import {
   TouchableOpacity,
   View,
   type ViewStyle,
-} from "react-native";
+} from 'react-native';
 import {
   KeyboardAvoidingView,
   KeyboardStickyView,
   useReanimatedKeyboardAnimation,
-} from "react-native-keyboard-controller";
+} from 'react-native-keyboard-controller';
 import Animated, {
   interpolate,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const USER = "User";
-const AI = "PackRat AI";
+const USER = 'User';
+const AI = 'PackRat AI';
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
-const dimensions = Dimensions.get("window");
+const dimensions = Dimensions.get('window');
 
 const ROOT_STYLE: ViewStyle = {
   flex: 1,
@@ -65,12 +62,12 @@ const SPRING_CONFIG = {
 
 type Message = {
   id: string;
-  role: "user" | "assistant";
+  role: 'user' | 'assistant';
   content: string;
 };
 
 const HEADER_POSITION_STYLE: ViewStyle = {
-  position: "absolute",
+  position: 'absolute',
   zIndex: 50,
   top: 0,
   left: 0,
@@ -94,25 +91,16 @@ export default function AIChat() {
     itemName: params.itemName as string,
     packId: params.packId as string,
     packName: params.packName as string,
-    contextType:
-      (params.contextType as "item" | "pack" | "general") || "general",
+    contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
     location: activeLocation ? activeLocation.name : undefined,
   };
 
   const token = useAtomValue(tokenAtom);
   // Call the chat hook at the top level.
-  const {
-    messages,
-    error,
-    handleInputChange,
-    input,
-    setInput,
-    handleSubmit,
-    isLoading,
-  } = useChat({
+  const { messages, error, handleInputChange, input, setInput, handleSubmit, isLoading } = useChat({
     fetch: expoFetch as unknown as typeof globalThis.fetch,
     api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-    onError: (error: Error) => console.log(error, "ERROR"),
+    onError: (error: Error) => console.log(error, 'ERROR'),
     body: {
       contextType: context.contextType,
       itemId: context.itemId,
@@ -124,8 +112,8 @@ export default function AIChat() {
     },
     initialMessages: [
       {
-        id: "1",
-        role: "assistant",
+        id: '1',
+        role: 'assistant',
         content: getContextualGreeting(context),
       },
     ],
@@ -151,7 +139,7 @@ export default function AIChat() {
     height: interpolate(
       progress.value,
       [0, 1],
-      [52 + insets.bottom, insets.bottom + textInputHeight.value - 2]
+      [52 + insets.bottom, insets.bottom + textInputHeight.value - 2],
     ),
   }));
 
@@ -164,12 +152,12 @@ export default function AIChat() {
     const formattedMessages = messages.map((message, index) => {
       const now = new Date();
       const formattedMessage = {
-        sender: message.role === "user" ? USER : AI,
+        sender: message.role === 'user' ? USER : AI,
         text: message.content,
-        date: now.toISOString().split("T")[0],
-        time: now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
+        date: now.toISOString().split('T')[0],
+        time: now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
         }),
         ...message,
       };
@@ -178,11 +166,11 @@ export default function AIChat() {
     });
 
     // Add a date separator at the beginning
-    const today = new Date().toLocaleDateString("en-US", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+    const today = new Date().toLocaleDateString('en-US', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
     });
 
     return [today, ...formattedMessages];
@@ -195,10 +183,7 @@ export default function AIChat() {
 
     scrollToBottom();
 
-    const keyboardListener = Keyboard.addListener(
-      "keyboardDidShow",
-      scrollToBottom
-    );
+    const keyboardListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
 
     return () => {
       keyboardListener.remove();
@@ -212,9 +197,7 @@ export default function AIChat() {
         style={[
           ROOT_STYLE,
           {
-            backgroundColor: isDarkColorScheme
-              ? colors.background
-              : colors.card,
+            backgroundColor: isDarkColorScheme ? colors.background : colors.card,
           },
         ]}
         behavior="padding"
@@ -233,23 +216,17 @@ export default function AIChat() {
             <>
               {showSuggestions && messages.length <= 2 && (
                 <View className="px-4 py-4">
-                  <Text className="mb-2 text-xs text-muted-foreground">
-                    SUGGESTIONS
-                  </Text>
+                  <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
                   <View className="flex-row flex-wrap gap-2">
-                    {getContextualSuggestions(context).map(
-                      (suggestion, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          onPress={() => handleSuggestionPress(suggestion)}
-                          className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                        >
-                          <Text className="text-sm text-foreground">
-                            {suggestion}
-                          </Text>
-                        </TouchableOpacity>
-                      )
-                    )}
+                    {getContextualSuggestions(context).map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => handleSuggestionPress(suggestion)}
+                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                      >
+                        <Text className="text-sm text-foreground">{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                 </View>
               )}
@@ -264,27 +241,19 @@ export default function AIChat() {
           }}
           data={chatMessages}
           renderItem={({ item, index }) => {
-            if (typeof item === "string") {
+            if (typeof item === 'string') {
               return <DateSeparator date={item} />;
             }
 
             item.parts?.forEach((part) => {
-              console.log("part", JSON.stringify(part));
+              console.log('part', JSON.stringify(part));
             });
 
             // Get the user query for this AI response
             const userQuery =
-              item.sender === AI && index > 1
-                ? messages[index - 1].content
-                : undefined;
+              item.sender === AI && index > 1 ? messages[index - 1].content : undefined;
 
-            return (
-              <ChatBubble
-                item={item}
-                translateX={translateX}
-                userQuery={userQuery}
-              />
-            );
+            return <ChatBubble item={item} translateX={translateX} userQuery={userQuery} />;
           }}
         />
       </KeyboardAvoidingView>
@@ -299,9 +268,9 @@ export default function AIChat() {
           }}
           isLoading={isLoading}
           placeholder={
-            context.contextType == "general"
-              ? "Ask anything outdoors"
-              : `Ask about this ${context.contextType == "item" ? "item" : "pack"}...`
+            context.contextType == 'general'
+              ? 'Ask anything outdoors'
+              : `Ask about this ${context.contextType == 'item' ? 'item' : 'pack'}...`
           }
         />
       </KeyboardStickyView>
@@ -320,11 +289,11 @@ function DateSeparator({ date }: { date: string }) {
 }
 
 const BORDER_CURVE: ViewStyle = {
-  borderCurve: "continuous",
+  borderCurve: 'continuous',
 };
 
 const COMPOSER_STYLE: ViewStyle = {
-  position: "absolute",
+  position: 'absolute',
   zIndex: 50,
   bottom: 0,
   left: 0,
@@ -332,7 +301,7 @@ const COMPOSER_STYLE: ViewStyle = {
 };
 
 const TEXT_INPUT_STYLE: TextStyle = {
-  borderCurve: "continuous",
+  borderCurve: 'continuous',
   maxHeight: 300,
 };
 
@@ -354,12 +323,10 @@ function Composer({
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
 
-  function onContentSizeChange(
-    event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>
-  ) {
+  function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
     textInputHeight.value = Math.max(
       Math.min(event.nativeEvent.contentSize.height, 280),
-      Platform.select({ ios: 20, default: 38 })
+      Platform.select({ ios: 20, default: 38 }),
     );
   }
 
@@ -370,7 +337,7 @@ function Composer({
         COMPOSER_STYLE,
         {
           backgroundColor: Platform.select({
-            ios: isDarkColorScheme ? "#00000080" : "#ffffff80",
+            ios: isDarkColorScheme ? '#00000080' : '#ffffff80',
             default: isDarkColorScheme ? colors.background : colors.card,
           }),
           paddingBottom: insets.bottom,

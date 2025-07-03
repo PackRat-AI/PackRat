@@ -1,12 +1,12 @@
-import { Button } from "@packrat/ui/nativewindui/Button";
-import { Form, FormItem, FormSection } from "@packrat/ui/nativewindui/Form";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Toggle } from "@packrat/ui/nativewindui/Toggle";
-import { cn } from "expo-app/lib/cn";
-import { router, Stack } from "expo-router";
-import * as React from "react";
-import { Platform, ScrollView, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from '@packrat/ui/nativewindui/Button';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui/Form';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Toggle } from '@packrat/ui/nativewindui/Toggle';
+import { cn } from 'expo-app/lib/cn';
+import { router, Stack } from 'expo-router';
+import * as React from 'react';
+import { Platform, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
@@ -15,7 +15,7 @@ export default function NotificationsScreen() {
     email: false,
   });
 
-  function onValueChange(type: "push" | "email") {
+  function onValueChange(type: 'push' | 'email') {
     return (value: boolean) => {
       setNotifications((prev) => ({ ...prev, [type]: value }));
     };
@@ -27,9 +27,9 @@ export default function NotificationsScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Notifications",
-          headerTransparent: Platform.OS === "ios",
-          headerBlurEffect: "systemMaterial",
+          title: 'Notifications',
+          headerTransparent: Platform.OS === 'ios',
+          headerBlurEffect: 'systemMaterial',
           headerRight: Platform.select({
             ios: () => (
               <Button
@@ -40,7 +40,7 @@ export default function NotificationsScreen() {
                   router.back();
                 }}
               >
-                <Text className={cn(canSave && "text-primary")}>Save</Text>
+                <Text className={cn(canSave && 'text-primary')}>Save</Text>
               </Button>
             ),
           }),
@@ -53,32 +53,26 @@ export default function NotificationsScreen() {
       >
         <Form className="gap-5 px-4 pt-8">
           <FormSection
-            materialIconProps={{ name: "bell-outline" }}
+            materialIconProps={{ name: 'bell-outline' }}
             footnote="Receive communication including announcements, marketing, recommendations, and updates about products, services, and software."
           >
             <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row justify-between px-2 pb-4">
               <View className="w-40 flex-row items-center justify-between">
                 <Text className="font-medium">Push Notifications</Text>
               </View>
-              <Toggle
-                value={notifications.push}
-                onValueChange={onValueChange("push")}
-              />
+              <Toggle value={notifications.push} onValueChange={onValueChange('push')} />
             </FormItem>
             <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row justify-between px-2 pb-4">
               <View className="w-40 flex-row items-center justify-between">
                 <Text className="font-medium">Email Notifications</Text>
               </View>
-              <Toggle
-                value={notifications.email}
-                onValueChange={onValueChange("email")}
-              />
+              <Toggle value={notifications.email} onValueChange={onValueChange('email')} />
             </FormItem>
           </FormSection>
-          {Platform.OS !== "ios" && (
+          {Platform.OS !== 'ios' && (
             <View className="items-end">
               <Button
-                className={cn("px-6", !canSave && "bg-muted")}
+                className={cn('px-6', !canSave && 'bg-muted')}
                 disabled={!canSave}
                 onPress={() => {
                   router.back();

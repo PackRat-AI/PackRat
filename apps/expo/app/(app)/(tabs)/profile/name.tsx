@@ -1,39 +1,34 @@
-import { Button } from "@packrat/ui/nativewindui/Button";
-import { Form, FormItem, FormSection } from "@packrat/ui/nativewindui/Form";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { TextField } from "@packrat/ui/nativewindui/TextField";
-import { cn } from "expo-app/lib/cn";
-import { router, Stack } from "expo-router";
-import * as React from "react";
-import { Platform, View } from "react-native";
-import {
-  KeyboardAwareScrollView,
-  KeyboardController,
-} from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from '@packrat/ui/nativewindui/Button';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui/Form';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { TextField } from '@packrat/ui/nativewindui/TextField';
+import { cn } from 'expo-app/lib/cn';
+import { router, Stack } from 'expo-router';
+import * as React from 'react';
+import { Platform, View } from 'react-native';
+import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NameScreen() {
   const insets = useSafeAreaInsets();
   const [form, setForm] = React.useState({
-    first: "Zach",
-    middle: "Danger",
-    last: "Nugent",
+    first: 'Zach',
+    middle: 'Danger',
+    last: 'Nugent',
   });
 
-  function onChangeText(type: "first" | "middle" | "last") {
+  function onChangeText(type: 'first' | 'middle' | 'last') {
     return (text: string) => {
       setForm((prev) => ({ ...prev, [type]: text }));
     };
   }
 
   function focusNext() {
-    KeyboardController.setFocusTo("next");
+    KeyboardController.setFocusTo('next');
   }
 
   const canSave =
-    (form.first !== "Zach" ||
-      form.middle !== "Danger" ||
-      form.last !== "Nugent") &&
+    (form.first !== 'Zach' || form.middle !== 'Danger' || form.last !== 'Nugent') &&
     !!form.first &&
     !!form.last;
 
@@ -41,9 +36,9 @@ export default function NameScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Name",
-          headerTransparent: Platform.OS === "ios",
-          headerBlurEffect: "systemMaterial",
+          title: 'Name',
+          headerTransparent: Platform.OS === 'ios',
+          headerBlurEffect: 'systemMaterial',
           headerRight: Platform.select({
             ios: () => (
               <Button
@@ -52,7 +47,7 @@ export default function NameScreen() {
                 variant="plain"
                 onPress={router.back}
               >
-                <Text className={cn(canSave && "text-primary")}>Save</Text>
+                <Text className={cn(canSave && 'text-primary')}>Save</Text>
               </Button>
             ),
           }),
@@ -67,19 +62,19 @@ export default function NameScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom }}
       >
         <Form className="gap-5 px-4 pt-8">
-          <FormSection materialIconProps={{ name: "person-outline" }}>
+          <FormSection materialIconProps={{ name: 'person-outline' }}>
             <FormItem>
               <TextField
                 textContentType="givenName"
                 autoFocus
                 autoComplete="name-given"
-                label={Platform.select({ ios: undefined, default: "First" })}
+                label={Platform.select({ ios: undefined, default: 'First' })}
                 leftView={Platform.select({
                   ios: <LeftLabel>First</LeftLabel>,
                 })}
                 placeholder="required"
                 value={form.first}
-                onChangeText={onChangeText("first")}
+                onChangeText={onChangeText('first')}
                 onSubmitEditing={focusNext}
                 submitBehavior="submit"
                 enterKeyHint="next"
@@ -89,13 +84,13 @@ export default function NameScreen() {
               <TextField
                 textContentType="middleName"
                 autoComplete="name-middle"
-                label={Platform.select({ ios: undefined, default: "Middle" })}
+                label={Platform.select({ ios: undefined, default: 'Middle' })}
                 leftView={Platform.select({
                   ios: <LeftLabel>Middle</LeftLabel>,
                 })}
                 placeholder="optional"
                 value={form.middle}
-                onChangeText={onChangeText("middle")}
+                onChangeText={onChangeText('middle')}
                 onSubmitEditing={focusNext}
                 submitBehavior="submit"
                 enterKeyHint="next"
@@ -105,20 +100,20 @@ export default function NameScreen() {
               <TextField
                 textContentType="familyName"
                 autoComplete="name-family"
-                label={Platform.select({ ios: undefined, default: "Last" })}
+                label={Platform.select({ ios: undefined, default: 'Last' })}
                 leftView={Platform.select({ ios: <LeftLabel>Last</LeftLabel> })}
                 placeholder="required"
                 value={form.last}
-                onChangeText={onChangeText("last")}
+                onChangeText={onChangeText('last')}
                 onSubmitEditing={router.back}
                 enterKeyHint="done"
               />
             </FormItem>
           </FormSection>
-          {Platform.OS !== "ios" && (
+          {Platform.OS !== 'ios' && (
             <View className="items-end">
               <Button
-                className={cn("px-6", !canSave && "bg-muted")}
+                className={cn('px-6', !canSave && 'bg-muted')}
                 disabled={!canSave}
                 onPress={router.back}
               >

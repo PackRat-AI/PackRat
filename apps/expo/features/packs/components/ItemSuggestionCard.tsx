@@ -1,17 +1,17 @@
-import { ActivityIndicator } from "@packrat/ui/nativewindui/ActivityIndicator";
-import { Button } from "@packrat/ui/nativewindui/Button";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import { cn } from "expo-app/lib/cn";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import ImageCacheManager from "expo-app/lib/utils/ImageCacheManager";
-import { getImageExtension } from "expo-app/lib/utils/imageUtils";
-import type { CatalogItem } from "expo-app/types";
-import { nanoid } from "nanoid/non-secure";
-import { useState } from "react";
-import { Platform, View } from "react-native";
-import { useCreatePackItem } from "../hooks";
-import type { PackItemInput } from "../types";
+import { ActivityIndicator } from '@packrat/ui/nativewindui/ActivityIndicator';
+import { Button } from '@packrat/ui/nativewindui/Button';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
+import type { CatalogItem } from 'expo-app/types';
+import { nanoid } from 'nanoid/non-secure';
+import { useState } from 'react';
+import { Platform, View } from 'react-native';
+import { useCreatePackItem } from '../hooks';
+import type { PackItemInput } from '../types';
 
 interface ItemSuggestionCardProps {
   packId: string;
@@ -24,9 +24,7 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
   const createItem = useCreatePackItem();
   const { colors } = useColorScheme();
 
-  const handleAddItem = async (
-    item: Omit<CatalogItem, "image"> & { image: string | null }
-  ) => {
+  const handleAddItem = async (item: Omit<CatalogItem, 'image'> & { image: string | null }) => {
     setIsAdding(true);
     if (item.image) {
       try {
@@ -35,7 +33,7 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
         await ImageCacheManager.cacheRemoteImage(fileName, item.image);
         item.image = fileName;
       } catch (err) {
-        console.log("caching remote image failed", err);
+        console.log('caching remote image failed', err);
         item.image = null;
       }
     } else {
@@ -44,15 +42,15 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
     // Create a new pack item from the catalog item
     const newItem: PackItemInput = {
       name: item.name,
-      description: item.description || "",
+      description: item.description || '',
       weight: item.defaultWeight || 0,
-      weightUnit: item.defaultWeightUnit || "oz",
+      weightUnit: item.defaultWeightUnit || 'oz',
       quantity: 1,
-      category: item.category || "Uncategorized",
+      category: item.category || 'Uncategorized',
       consumable: false,
       worn: false,
       image: item.image,
-      notes: "Suggested by PackRat AI",
+      notes: 'Suggested by PackRat AI',
       catalogItemId: item.id,
     };
 
@@ -66,8 +64,8 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
   return (
     <View
       className={cn(
-        "mr-2 flex-col justify-between rounded-lg border border-border p-3",
-        "w-40 bg-card"
+        'mr-2 flex-col justify-between rounded-lg border border-border p-3',
+        'w-40 bg-card',
       )}
     >
       <View>
@@ -83,18 +81,13 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
           {item.defaultWeight}
           {item.weightUnit}
         </Text>
-        <Button
-          disabled={isAdding}
-          onPress={() => handleAddItem(item)}
-          variant="tonal"
-          size="icon"
-        >
+        <Button disabled={isAdding} onPress={() => handleAddItem(item)} variant="tonal" size="icon">
           {isAdding ? (
             <ActivityIndicator />
           ) : (
             <Icon
               name="plus"
-              color={Platform.OS === "ios" ? colors.primary : colors.foreground}
+              color={Platform.OS === 'ios' ? colors.primary : colors.foreground}
               size={21}
             />
           )}

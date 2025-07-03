@@ -1,16 +1,13 @@
-"use client";
+'use client';
 
-import { Button } from "@packrat/ui/nativewindui/Button";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import {
-  useCreatePackItem,
-  usePackDetailsFromStore,
-} from "expo-app/features/packs";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import type { WeightUnit } from "expo-app/types";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { Button } from '@packrat/ui/nativewindui/Button';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import type { WeightUnit } from 'expo-app/types';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -22,24 +19,22 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import { useCatalogItemDetails } from "../hooks";
+} from 'react-native';
+import { useCatalogItemDetails } from '../hooks';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();
   const { catalogItemId, packId } = useLocalSearchParams();
   const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
-    catalogItemId as string
+    catalogItemId as string,
   );
-  const { data: pack, isLoading: isLoadingPack } = usePackDetailsFromStore(
-    packId as string
-  );
+  const { data: pack, isLoading: isLoadingPack } = usePackDetailsFromStore(packId as string);
   const { mutate: createItem, isPending: isCreating } = useCreatePackItem();
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   // Form state
-  const [quantity, setQuantity] = useState("1");
-  const [notes, setNotes] = useState("");
+  const [quantity, setQuantity] = useState('1');
+  const [notes, setNotes] = useState('');
   const [isConsumable, setIsConsumable] = useState(false);
   const [isWorn, setIsWorn] = useState(false);
 
@@ -56,8 +51,8 @@ export function AddCatalogItemDetailsScreen() {
   // Reset form when catalog item changes
   useEffect(() => {
     if (catalogItem) {
-      setQuantity("1");
-      setNotes("");
+      setQuantity('1');
+      setNotes('');
       setIsConsumable(false);
       setIsWorn(false);
     }
@@ -87,11 +82,11 @@ export function AddCatalogItemDetailsScreen() {
         onSuccess: () => {
           // Navigate back to the catalog item detail screen
           router.dismissTo({
-            pathname: "/catalog/[id]",
+            pathname: '/catalog/[id]',
             params: { id: catalogItemId },
           });
         },
-      }
+      },
     );
   };
 
@@ -116,19 +111,15 @@ export function AddCatalogItemDetailsScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-background"
     >
       <SafeAreaView className="flex-1">
         <Animated.View style={{ opacity: fadeAnim }} className="flex-1">
           <ScrollView className="flex-1">
             <View className="mb-6 rounded-lg bg-card p-4 shadow-sm">
-              <Text className="mb-2 text-xl font-semibold text-foreground">
-                {catalogItem.name}
-              </Text>
-              <Text className="mb-4 text-muted-foreground">
-                {catalogItem.description}
-              </Text>
+              <Text className="mb-2 text-xl font-semibold text-foreground">{catalogItem.name}</Text>
+              <Text className="mb-4 text-muted-foreground">{catalogItem.description}</Text>
               <View className="flex-row gap-4">
                 <View className="flex-row items-center">
                   <Icon name="dumbbell" size={16} color={colors.grey} />
@@ -139,9 +130,7 @@ export function AddCatalogItemDetailsScreen() {
                 {catalogItem.brand && (
                   <View>
                     <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
-                    <Text className="text-xs text-muted-foreground">
-                      {catalogItem.brand}
-                    </Text>
+                    <Text className="text-xs text-muted-foreground">{catalogItem.brand}</Text>
                   </View>
                 )}
               </View>
@@ -151,17 +140,12 @@ export function AddCatalogItemDetailsScreen() {
             <View className="mt-6 border-b border-border bg-card px-4 py-3">
               <View className="flex-row items-center justify-between">
                 <View>
-                  <Text className="text-sm text-muted-foreground">
-                    Selected Pack
-                  </Text>
-                  <Text className="text-base font-medium text-foreground">
-                    {pack.name}
-                  </Text>
+                  <Text className="text-sm text-muted-foreground">Selected Pack</Text>
+                  <Text className="text-base font-medium text-foreground">{pack.name}</Text>
                   <View className="mt-1 flex-row items-center">
                     <Icon name="basket-outline" size={14} color={colors.grey} />
                     <Text className="ml-1 text-xs text-muted-foreground">
-                      {pack.items.length}{" "}
-                      {pack.items.length === 1 ? "item" : "items"}
+                      {pack.items.length} {pack.items.length === 1 ? 'item' : 'items'}
                     </Text>
                     <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
                     <Text className="text-xs capitalize text-muted-foreground">
@@ -173,7 +157,7 @@ export function AddCatalogItemDetailsScreen() {
                   variant="secondary"
                   onPress={() =>
                     router.push({
-                      pathname: "/catalog/add-to-pack",
+                      pathname: '/catalog/add-to-pack',
                       params: { catalogItemId },
                     })
                   }
@@ -187,16 +171,12 @@ export function AddCatalogItemDetailsScreen() {
             <View className="p-4">
               <View className="rounded-lg bg-card p-4 shadow-sm">
                 <View className="mb-4">
-                  <Text className="mb-1 text-sm font-medium text-foreground">
-                    Quantity
-                  </Text>
+                  <Text className="mb-1 text-sm font-medium text-foreground">Quantity</Text>
                   <View className="flex-row items-center">
                     <TouchableOpacity
                       className="items-center justify-center rounded-l-md border border-r-0 border-border bg-card px-3 py-2"
                       onPress={() =>
-                        setQuantity((prev) =>
-                          Math.max(1, Number.parseInt(prev, 10) - 1).toString()
-                        )
+                        setQuantity((prev) => Math.max(1, Number.parseInt(prev, 10) - 1).toString())
                       }
                     >
                       <Icon name="minus" size={18} color={colors.foreground} />
@@ -211,9 +191,7 @@ export function AddCatalogItemDetailsScreen() {
                     <TouchableOpacity
                       className="items-center justify-center rounded-r-md border border-l-0 border-border bg-card px-3 py-2"
                       onPress={() =>
-                        setQuantity((prev) =>
-                          (Number.parseInt(prev, 10) + 1).toString()
-                        )
+                        setQuantity((prev) => (Number.parseInt(prev, 10) + 1).toString())
                       }
                     >
                       <Icon name="plus" size={18} color={colors.foreground} />
@@ -222,9 +200,7 @@ export function AddCatalogItemDetailsScreen() {
                 </View>
 
                 <View className="mb-4">
-                  <Text className="mb-1 text-sm font-medium text-foreground">
-                    Notes
-                  </Text>
+                  <Text className="mb-1 text-sm font-medium text-foreground">Notes</Text>
                   <TextInput
                     className="rounded-md border border-border bg-background px-3 py-2 text-foreground"
                     value={notes}
@@ -238,24 +214,17 @@ export function AddCatalogItemDetailsScreen() {
 
                 <View className="mb-2 flex-row items-center justify-between">
                   <View>
-                    <Text className="text-sm font-medium text-foreground">
-                      Consumable
-                    </Text>
+                    <Text className="text-sm font-medium text-foreground">Consumable</Text>
                     <Text className="text-xs text-muted-foreground">
                       Item will be consumed during trip
                     </Text>
                   </View>
-                  <Switch
-                    value={isConsumable}
-                    onValueChange={setIsConsumable}
-                  />
+                  <Switch value={isConsumable} onValueChange={setIsConsumable} />
                 </View>
 
                 <View className="flex-row items-center justify-between">
                   <View>
-                    <Text className="text-sm font-medium text-foreground">
-                      Worn
-                    </Text>
+                    <Text className="text-sm font-medium text-foreground">Worn</Text>
                     <Text className="text-xs text-muted-foreground">
                       Item will be worn, not carried
                     </Text>
@@ -267,10 +236,7 @@ export function AddCatalogItemDetailsScreen() {
               <View className="mb-2 mt-6">
                 <Button onPress={handleAddToPack} disabled={isCreating}>
                   {isCreating ? (
-                    <ActivityIndicator
-                      size="small"
-                      color="text-primary-foreground"
-                    />
+                    <ActivityIndicator size="small" color="text-primary-foreground" />
                   ) : (
                     <Text>Add to Pack</Text>
                   )}

@@ -1,21 +1,16 @@
-"use client";
+'use client';
 
-import { Button } from "@packrat/ui/nativewindui/Button";
-import { LargeTitleHeader } from "@packrat/ui/nativewindui/LargeTitleHeader";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import { cn } from "expo-app/lib/cn";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { useReportedContent } from "../hooks/useReportedContent";
-import { useUpdateReportStatus } from "../hooks/useUpdateReportStatus";
-import { reportReasonLabels } from "../lib/reportReasons";
+import { Button } from '@packrat/ui/nativewindui/Button';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useState } from 'react';
+import { ActivityIndicator, FlatList, TouchableOpacity, View } from 'react-native';
+import { useReportedContent } from '../hooks/useReportedContent';
+import { useUpdateReportStatus } from '../hooks/useUpdateReportStatus';
+import { reportReasonLabels } from '../lib/reportReasons';
 
 type ReportedItem = {
   id: number;
@@ -23,7 +18,7 @@ type ReportedItem = {
   aiResponse: string;
   reason: string;
   userComment?: string | null;
-  status: "pending" | "reviewed" | "dismissed";
+  status: 'pending' | 'reviewed' | 'dismissed';
   createdAt: string;
   user: {
     id: number;
@@ -36,18 +31,18 @@ type ReportedItem = {
 export default function ReportedContentScreen() {
   const { colors } = useColorScheme();
   const [selectedFilter, setSelectedFilter] = useState<
-    "all" | "pending" | "reviewed" | "dismissed"
-  >("pending");
+    'all' | 'pending' | 'reviewed' | 'dismissed'
+  >('pending');
 
   const { data, isLoading, error } = useReportedContent();
   const updateMutation = useUpdateReportStatus();
 
   const filteredData = data?.filter((item) => {
-    if (selectedFilter === "all") return true;
+    if (selectedFilter === 'all') return true;
     return item.status === selectedFilter;
   });
 
-  const handleReview = (id: string, status: "reviewed" | "dismissed") => {
+  const handleReview = (id: string, status: 'reviewed' | 'dismissed') => {
     updateMutation.mutate({ id, status });
   };
 
@@ -58,23 +53,23 @@ export default function ReportedContentScreen() {
       <View className="flex-row justify-around px-4 py-2">
         <FilterButton
           label="Pending"
-          isActive={selectedFilter === "pending"}
-          onPress={() => setSelectedFilter("pending")}
+          isActive={selectedFilter === 'pending'}
+          onPress={() => setSelectedFilter('pending')}
         />
         <FilterButton
           label="Reviewed"
-          isActive={selectedFilter === "reviewed"}
-          onPress={() => setSelectedFilter("reviewed")}
+          isActive={selectedFilter === 'reviewed'}
+          onPress={() => setSelectedFilter('reviewed')}
         />
         <FilterButton
           label="Dismissed"
-          isActive={selectedFilter === "dismissed"}
-          onPress={() => setSelectedFilter("dismissed")}
+          isActive={selectedFilter === 'dismissed'}
+          onPress={() => setSelectedFilter('dismissed')}
         />
         <FilterButton
           label="All"
-          isActive={selectedFilter === "all"}
-          onPress={() => setSelectedFilter("all")}
+          isActive={selectedFilter === 'all'}
+          onPress={() => setSelectedFilter('all')}
         />
       </View>
 
@@ -84,16 +79,12 @@ export default function ReportedContentScreen() {
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-center text-destructive">
-            Error loading reported content
-          </Text>
+          <Text className="text-center text-destructive">Error loading reported content</Text>
         </View>
       ) : filteredData?.length === 0 ? (
         <View className="flex-1 items-center justify-center p-4">
           <Icon name="magnify" size={48} color={colors.grey2} />
-          <Text className="mt-4 text-center text-muted-foreground">
-            No reported content found
-          </Text>
+          <Text className="mt-4 text-center text-muted-foreground">No reported content found</Text>
         </View>
       ) : (
         <FlatList
@@ -113,34 +104,25 @@ export default function ReportedContentScreen() {
               <View className="mb-3 flex-row">
                 <View className="rounded-full bg-amber-100 px-2 py-1 dark:bg-amber-900">
                   <Text className="text-xs font-medium text-amber-800 dark:text-amber-100">
-                    {reportReasonLabels[
-                      item.reason as keyof typeof reportReasonLabels
-                    ] || item.reason}
+                    {reportReasonLabels[item.reason as keyof typeof reportReasonLabels] ||
+                      item.reason}
                   </Text>
                 </View>
               </View>
 
               {/* User Query Section */}
               <View className="my-2">
-                <Text className="mb-1 text-xs font-medium text-muted-foreground">
-                  USER QUERY:
-                </Text>
+                <Text className="mb-1 text-xs font-medium text-muted-foreground">USER QUERY:</Text>
                 <View className="rounded-md bg-blue-50 p-3 dark:bg-blue-950">
-                  <Text className="text-blue-900 dark:text-blue-100">
-                    {item.userQuery}
-                  </Text>
+                  <Text className="text-blue-900 dark:text-blue-100">{item.userQuery}</Text>
                 </View>
               </View>
 
               {/* AI Response Section */}
               <View className="my-2">
-                <Text className="mb-1 text-xs font-medium text-muted-foreground">
-                  AI RESPONSE:
-                </Text>
+                <Text className="mb-1 text-xs font-medium text-muted-foreground">AI RESPONSE:</Text>
                 <View className="rounded-md bg-red-50 p-3 dark:bg-red-950">
-                  <Text className="text-red-900 dark:text-red-100">
-                    {item.aiResponse}
-                  </Text>
+                  <Text className="text-red-900 dark:text-red-100">{item.aiResponse}</Text>
                 </View>
               </View>
 
@@ -158,12 +140,12 @@ export default function ReportedContentScreen() {
                 </View>
               )}
 
-              {item.status === "pending" ? (
+              {item.status === 'pending' ? (
                 <View className="mt-3 flex-row justify-end gap-2">
                   <Button
                     variant="tonal"
                     size="sm"
-                    onPress={() => handleReview(item.id, "dismissed")}
+                    onPress={() => handleReview(item.id, 'dismissed')}
                     disabled={updateMutation.isPending}
                   >
                     <Text>Dismiss</Text>
@@ -171,7 +153,7 @@ export default function ReportedContentScreen() {
                   <Button
                     variant="primary"
                     size="sm"
-                    onPress={() => handleReview(item.id, "reviewed")}
+                    onPress={() => handleReview(item.id, 'reviewed')}
                     disabled={updateMutation.isPending}
                   >
                     <Text>Resolve</Text>
@@ -181,13 +163,11 @@ export default function ReportedContentScreen() {
                 <View className="mt-3 flex-row justify-end">
                   <Text
                     className={cn(
-                      "text-xs font-medium",
-                      item.status === "resolved"
-                        ? "text-destructive"
-                        : "text-muted-foreground"
+                      'text-xs font-medium',
+                      item.status === 'resolved' ? 'text-destructive' : 'text-muted-foreground',
                     )}
                   >
-                    {item.status === "resolved" ? "Resolved" : "Dismissed"}
+                    {item.status === 'resolved' ? 'Resolved' : 'Dismissed'}
                   </Text>
                 </View>
               )}
@@ -211,15 +191,12 @@ function FilterButton({
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={cn(
-        "rounded-full px-4 py-1",
-        isActive ? "bg-primary" : "bg-muted"
-      )}
+      className={cn('rounded-full px-4 py-1', isActive ? 'bg-primary' : 'bg-muted')}
     >
       <Text
         className={cn(
-          "text-sm font-medium",
-          isActive ? "text-primary-foreground" : "text-muted-foreground"
+          'text-sm font-medium',
+          isActive ? 'text-primary-foreground' : 'text-muted-foreground',
         )}
       >
         {label}

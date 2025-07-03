@@ -1,8 +1,8 @@
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import type { ItemLink } from "expo-app/types";
-import { Linking, TouchableOpacity, View } from "react-native";
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import type { ItemLink } from 'expo-app/types';
+import { Linking, TouchableOpacity, View } from 'react-native';
 
 type ItemLinksProps = {
   links: ItemLink[];
@@ -12,18 +12,18 @@ export function ItemLinks({ links }: ItemLinksProps) {
   if (!links || links.length === 0) return null;
   const { colors } = useColorScheme();
 
-  const getIconName = (type: ItemLink["type"]) => {
+  const getIconName = (type: ItemLink['type']) => {
     switch (type) {
-      case "official":
-        return "globe-model";
-      case "review":
-        return "star-outline";
-      case "guide":
-        return "book-open-outline";
-      case "purchase":
-        return "cart";
+      case 'official':
+        return 'globe-model';
+      case 'review':
+        return 'star-outline';
+      case 'guide':
+        return 'book-open-outline';
+      case 'purchase':
+        return 'cart';
       default:
-        return "link";
+        return 'link';
     }
   };
 
@@ -48,11 +48,7 @@ export function ItemLinks({ links }: ItemLinksProps) {
             className="flex-row items-center border-b border-border p-3 last:border-b-0"
             onPress={() => handleLinkPress(link.url)}
           >
-            <Icon
-              name={getIconName(link.type)}
-              size={18}
-              color={colors.primary}
-            />
+            <Icon name={getIconName(link.type)} size={18} color={colors.primary} />
             <View className="ml-3 flex-1">
               <Text className="text-foreground">{link.title}</Text>
               <Text className="text-xs text-muted-foreground" numberOfLines={1}>

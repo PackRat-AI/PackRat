@@ -1,26 +1,26 @@
-import { Button } from "@packrat/ui/nativewindui/Button";
-import { Form, FormItem, FormSection } from "@packrat/ui/nativewindui/Form";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { TextField } from "@packrat/ui/nativewindui/TextField";
-import { cn } from "expo-app/lib/cn";
-import { router, Stack } from "expo-router";
-import * as React from "react";
-import { Platform, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Button } from '@packrat/ui/nativewindui/Button';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui/Form';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { TextField } from '@packrat/ui/nativewindui/TextField';
+import { cn } from 'expo-app/lib/cn';
+import { router, Stack } from 'expo-router';
+import * as React from 'react';
+import { Platform, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function UsernameScreen() {
   const insets = useSafeAreaInsets();
-  const [username, setUsername] = React.useState("mrzachnugent");
+  const [username, setUsername] = React.useState('mrzachnugent');
 
-  const canSave = !!username && username !== "mrzachnugent";
+  const canSave = !!username && username !== 'mrzachnugent';
   return (
     <>
       <Stack.Screen
         options={{
-          title: "Username",
-          headerTransparent: Platform.OS === "ios",
-          headerBlurEffect: "systemMaterial",
+          title: 'Username',
+          headerTransparent: Platform.OS === 'ios',
+          headerBlurEffect: 'systemMaterial',
           headerRight: Platform.select({
             ios: () => (
               <Button
@@ -31,7 +31,7 @@ export default function UsernameScreen() {
                   router.back();
                 }}
               >
-                <Text className={cn(canSave && "text-primary")}>Save</Text>
+                <Text className={cn(canSave && 'text-primary')}>Save</Text>
               </Button>
             ),
           }),
@@ -47,7 +47,7 @@ export default function UsernameScreen() {
       >
         <Form className="gap-5 px-4 pt-8">
           <FormSection
-            materialIconProps={{ name: "account-circle-outline" }}
+            materialIconProps={{ name: 'account-circle-outline' }}
             footnote="Choose a unique identifier for your account."
           >
             <FormItem>
@@ -56,12 +56,10 @@ export default function UsernameScreen() {
                 autoFocus
                 autoComplete="username"
                 className="pl-0.5"
-                label={Platform.select({ ios: undefined, default: "First" })}
+                label={Platform.select({ ios: undefined, default: 'First' })}
                 leftView={
                   <View className="ios:w-36 ios:justify-between flex-row items-center pl-2">
-                    {Platform.OS === "ios" && (
-                      <Text className="font-medium">Username</Text>
-                    )}
+                    {Platform.OS === 'ios' && <Text className="font-medium">Username</Text>}
                     <Text className="text-muted-foreground">@</Text>
                   </View>
                 }
@@ -71,10 +69,10 @@ export default function UsernameScreen() {
               />
             </FormItem>
           </FormSection>
-          {Platform.OS !== "ios" && (
+          {Platform.OS !== 'ios' && (
             <View className="items-end">
               <Button
-                className={cn("px-6", !canSave && "bg-muted")}
+                className={cn('px-6', !canSave && 'bg-muted')}
                 disabled={!canSave}
                 onPress={() => {
                   router.back();

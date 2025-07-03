@@ -1,18 +1,18 @@
-import { ListItem } from "@packrat/ui/nativewindui/List";
-import { Text } from "@packrat/ui/nativewindui/Text";
-import { Icon } from "@roninoss/icons";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { router } from "expo-router";
-import { View } from "react-native";
-import { useActiveLocation } from "../hooks";
-import { WeatherIcon } from "./WeatherIcon";
+import { ListItem } from '@packrat/ui/nativewindui/List';
+import { Text } from '@packrat/ui/nativewindui/Text';
+import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { router } from 'expo-router';
+import { View } from 'react-native';
+import { useActiveLocation } from '../hooks';
+import { WeatherIcon } from './WeatherIcon';
 
 export function WeatherTile() {
   const { activeLocation } = useActiveLocation();
   const { colors } = useColorScheme();
 
   const handlePress = () => {
-    router.push("/weather");
+    router.push('/weather');
   };
 
   return (
@@ -24,7 +24,7 @@ export function WeatherTile() {
           <View className="px-3">
             <View className="h-6 w-6 items-center justify-center rounded-md bg-blue-500">
               <WeatherIcon
-                condition={activeLocation?.condition || "partly cloudy"}
+                condition={activeLocation?.condition || 'partly cloudy'}
                 code={activeLocation?.details?.weatherCode}
                 isDay={activeLocation?.details?.isDay}
                 size={15}
@@ -36,10 +36,7 @@ export function WeatherTile() {
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
             {activeLocation && (
-              <Text
-                variant="callout"
-                className="ios:px-0 px-2 text-muted-foreground"
-              >
+              <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
                 {activeLocation.temperature}° • {activeLocation.condition}
               </Text>
             )}
@@ -47,10 +44,8 @@ export function WeatherTile() {
           </View>
         }
         item={{
-          title: "Weather",
-          subTitle: activeLocation
-            ? activeLocation.name
-            : "See weather updates",
+          title: 'Weather',
+          subTitle: activeLocation ? activeLocation.name : 'See weather updates',
         }}
         onPress={handlePress}
         target="Cell"
