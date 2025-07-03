@@ -1,9 +1,9 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import { createDb } from "@packrat/api/db";
-import { catalogItems } from "@packrat/api/db/schema";
-import { RouteHandler } from "@packrat/api/types/routeHandler";
-import { authenticateRequest, unauthorizedResponse } from "@packrat/api/utils/api-middleware";
-import { eq } from "drizzle-orm";
+import { createRoute, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { catalogItems } from '@packrat/api/db/schema';
+import { RouteHandler } from '@packrat/api/types/routeHandler';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -15,7 +15,7 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-// Authenticate the request
+  // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
     return unauthorizedResponse();
@@ -33,4 +33,4 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   }
 
   return c.json(item);
-}
+};

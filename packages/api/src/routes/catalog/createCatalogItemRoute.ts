@@ -1,12 +1,12 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import { createDb } from "@packrat/api/db";
-import { catalogItems } from "@packrat/api/db/schema";
-import { generateEmbedding } from "@packrat/api/services/embeddingService";
-import { Env } from "@packrat/api/types/env";
-import { RouteHandler } from "@packrat/api/types/routeHandler";
-import { authenticateRequest, unauthorizedResponse } from "@packrat/api/utils/api-middleware";
-import { getEmbeddingText } from "@packrat/api/utils/embeddingHelper";
-import { env } from "hono/adapter";
+import { createRoute, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { catalogItems } from '@packrat/api/db/schema';
+import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import { Env } from '@packrat/api/types/env';
+import { RouteHandler } from '@packrat/api/types/routeHandler';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { env } from 'hono/adapter';
 
 export const routeDefinition = createRoute({
   method: 'post',
@@ -76,4 +76,4 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     .returning();
 
   return c.json(newItem);
-}
+};
