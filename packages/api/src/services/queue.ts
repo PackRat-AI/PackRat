@@ -1,4 +1,3 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import type { Queue } from '@cloudflare/workers-types';
 import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
@@ -113,34 +112,16 @@ async function processCatalogETL({
 
   console.log(`Starting ETL job ${jobId} for file ${filename}`);
 
-  const {
-    CLOUDFLARE_ACCOUNT_ID,
-    R2_ACCESS_KEY_ID,
-    R2_SECRET_ACCESS_KEY,
-    PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
-  } = env;
+  // Use R2 bucket binding instead of S3 client
+  const { PACKRAT_ITEMS_BUCKET } = env;
 
-  const s3Client = new S3Client({
-    region: 'auto',
-    endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: R2_ACCESS_KEY_ID || '',
-      secretAccessKey: R2_SECRET_ACCESS_KEY || '',
-    },
-  });
+  const object = await PACKRAT_ITEMS_BUCKET.get(objectKey);
 
-  const object = await s3Client.send(
-    new GetObjectCommand({
-      Bucket: PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
-      Key: objectKey,
-    }),
-  );
-
-  if (!object.Body) {
-    throw new Error(`Object not found or body is empty: ${objectKey}`);
+  if (!object) {
+    throw new Error(`Object not found: ${objectKey}`);
   }
 
-  const text = await new Response(object.Body).text();
+  const text = await object.text();
 
   const rows: string[][] = parse(text, {
     relax_column_count: true,

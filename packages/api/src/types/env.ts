@@ -1,4 +1,4 @@
-import type { Ai, Queue } from '@cloudflare/workers-types';
+import type { Ai, Queue, R2Bucket } from "@cloudflare/workers-types";
 
 export type Env = {
   EMAIL_PROVIDER: string;
@@ -16,6 +16,8 @@ export type Env = {
   CLOUDFLARE_ACCOUNT_ID: string;
   PACKRAT_BUCKET_R2_BUCKET_NAME: string;
   PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME: string;
+  PACKRAT_BUCKET: R2Bucket;
+  PACKRAT_ITEMS_BUCKET: R2Bucket;
   ETL_QUEUE: Queue;
   PACKRAT_API_KEY: string;
   SENTRY_DSN: string;
