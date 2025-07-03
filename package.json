@@ -15,7 +15,7 @@
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
     "format": "biome format --write",
-    "lint": "biome lint --write",
+    "lint": "biome check --write",
     "check": "biome check --write",
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
