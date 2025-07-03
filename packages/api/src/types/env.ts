@@ -1,4 +1,4 @@
-import type { Ai, Queue, R2Bucket } from "@cloudflare/workers-types";
+import type { Ai, Queue, R2Bucket } from '@cloudflare/workers-types';
 
 export type Env = {
   // Environment & Deployment
