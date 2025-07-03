@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Text } from '@packrat/ui/nativewindui';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 

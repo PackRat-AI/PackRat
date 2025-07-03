@@ -1,6 +1,6 @@
-import { Button } from '@packrat/ui/nativewindui/Button';
-import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Button } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { usePathname, useRouter } from 'expo-router';
 import { SafeAreaView, View } from 'react-native';

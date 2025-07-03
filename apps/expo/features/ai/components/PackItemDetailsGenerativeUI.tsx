@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { View } from 'react-native';
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@packrat/ui/nativewindui/Button';
-import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui/Form';
-import { Text } from '@packrat/ui/nativewindui/Text';
-import { TextField } from '@packrat/ui/nativewindui/TextField';
+import { Button } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
 import * as React from 'react';

@@ -1,5 +1,5 @@
-import { Badge } from '@packrat/ui/nativewindui/Badge';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Badge } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon, type IconProps } from '@roninoss/icons';
 import { clientEnvs } from 'expo-app/env/clientEnvs';

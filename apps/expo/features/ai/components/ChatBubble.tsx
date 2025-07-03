@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Text } from '@packrat/ui/nativewindui';
 import { ReportButton } from 'expo-app/features/ai/components/ReportButton';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Text } from '@packrat/ui/nativewindui';
 import { Link, Stack } from 'expo-router';
 import { View } from 'react-native';
 

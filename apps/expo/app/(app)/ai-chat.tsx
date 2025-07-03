@@ -1,6 +1,6 @@
 import { useChat } from '@ai-sdk/react';
-import { Button } from '@packrat/ui/nativewindui/Button';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { clientEnvs } from 'expo-app/env/clientEnvs';

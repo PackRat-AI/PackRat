@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Text } from '@packrat/ui/nativewindui';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

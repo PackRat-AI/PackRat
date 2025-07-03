@@ -1,6 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui/Avatar';
-import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
 import { ScrollView, View } from 'react-native';
 

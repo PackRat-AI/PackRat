@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Text } from '@packrat/ui/nativewindui';
 import { View } from 'react-native';
 
 export function Card({ children, title }: { children: React.ReactNode; title: string }) {

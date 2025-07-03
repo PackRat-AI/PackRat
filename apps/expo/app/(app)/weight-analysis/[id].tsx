@@ -1,7 +1,7 @@
 'use client';
 
-import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
 import { cn } from 'expo-app/lib/cn';

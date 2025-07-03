@@ -1,6 +1,6 @@
-import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
-import { SearchInput } from '@packrat/ui/nativewindui/SearchInput';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { SearchInput } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { cn } from 'expo-app/lib/cn';

@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Text } from '@packrat/ui/nativewindui';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';

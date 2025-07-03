@@ -1,5 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
 import { cn } from 'expo-app/lib/cn';

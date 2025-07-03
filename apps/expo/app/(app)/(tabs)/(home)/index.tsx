@@ -1,13 +1,13 @@
 'use client';
 
-import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
-import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui/LargeTitleHeader/types';
+import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
 import {
   ESTIMATED_ITEM_HEIGHT,
+  LargeTitleHeader,
   List,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from '@packrat/ui/nativewindui/List';
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';

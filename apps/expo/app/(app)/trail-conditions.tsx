@@ -1,5 +1,5 @@
-import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
 import { ScrollView, View } from 'react-native';
 

@@ -1,5 +1,5 @@
-import { Button } from '@packrat/ui/nativewindui/Button';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Link, Stack } from 'expo-router';
 import { Platform } from 'react-native';
 

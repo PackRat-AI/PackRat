@@ -1,7 +1,7 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui/Avatar';
-import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
-import { List, ListItem } from '@packrat/ui/nativewindui/List';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { List, ListItem } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

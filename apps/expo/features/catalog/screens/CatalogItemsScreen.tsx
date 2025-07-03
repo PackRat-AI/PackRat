@@ -1,5 +1,5 @@
-import { LargeTitleHeader } from '@packrat/ui/nativewindui/LargeTitleHeader';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { withAuthWall } from 'expo-app/features/auth/hocs';

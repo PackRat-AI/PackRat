@@ -1,5 +1,5 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui/ActivityIndicator';
-import { Button } from '@packrat/ui/nativewindui/Button';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';

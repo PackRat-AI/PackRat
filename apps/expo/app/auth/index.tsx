@@ -1,8 +1,8 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui/ActivityIndicator';
-import { AlertAnchor } from '@packrat/ui/nativewindui/Alert';
-import type { AlertRef } from '@packrat/ui/nativewindui/Alert/types';
-import { Button } from '@packrat/ui/nativewindui/Button';
-import { Text } from '@packrat/ui/nativewindui/Text';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { AlertAnchor } from '@packrat/ui/nativewindui';
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
 import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';

@@ -1,4 +1,4 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui/ActivityIndicator';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
