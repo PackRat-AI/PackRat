@@ -1,6 +1,6 @@
-import { packsStore } from "expo-app/features/packs/store";
-import { useCallback } from "react";
-import type { Pack } from "../types";
+import { packsStore } from 'expo-app/features/packs/store';
+import { useCallback } from 'react';
+import type { Pack } from '../types';
 
 export function useUpdatePack() {
   const updatePack = useCallback((pack: Pack) => {

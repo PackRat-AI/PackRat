@@ -1,19 +1,17 @@
-import { observable, syncState } from "@legendapp/state";
-import { observablePersistSqlite } from "@legendapp/state/persist-plugins/expo-sqlite";
-import { syncObservable } from "@legendapp/state/sync";
-import { syncedCrud } from "@legendapp/state/sync-plugins/crud";
-import { isAuthed } from "expo-app/features/auth/store";
-import axiosInstance, { handleApiError } from "expo-app/lib/api/client";
-import Storage from "expo-sqlite/kv-store";
-import type { PackTemplate, PackTemplateItem } from "../types";
+import { observable, syncState } from '@legendapp/state';
+import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
+import { syncObservable } from '@legendapp/state/sync';
+import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { isAuthed } from 'expo-app/features/auth/store';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import Storage from 'expo-sqlite/kv-store';
+import type { PackTemplate, PackTemplateItem } from '../types';
 
 // API: List all pack template items by flattening all items from pack templates
 const listAllPackTemplateItems = async (): Promise<PackTemplateItem[]> => {
   try {
-    const res = await axiosInstance.get<PackTemplate[]>("/api/pack-templates");
-    const packTemplateItems = res.data.flatMap(
-      (template: PackTemplate) => template.items
-    );
+    const res = await axiosInstance.get<PackTemplate[]>('/api/pack-templates');
+    const packTemplateItems = res.data.flatMap((template: PackTemplate) => template.items);
     return packTemplateItems;
   } catch (error) {
     const { message } = handleApiError(error);
@@ -29,7 +27,7 @@ const createPackTemplateItem = async ({
   try {
     const response = await axiosInstance.post(
       `/api/pack-templates/${packTemplateId}/items`,
-      itemData
+      itemData,
     );
     return response.data;
   } catch (error) {
@@ -44,10 +42,7 @@ const updatePackTemplateItem = async ({
   ...data
 }: Partial<PackTemplateItem>): Promise<PackTemplateItem> => {
   try {
-    const response = await axiosInstance.patch(
-      `/api/pack-templates/items/${id}`,
-      data
-    );
+    const response = await axiosInstance.patch(`/api/pack-templates/items/${id}`, data);
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
@@ -56,48 +51,46 @@ const updatePackTemplateItem = async ({
 };
 
 // Local observable store
-export const packTemplateItemsStore = observable<
-  Record<string, PackTemplateItem>
->({});
+export const packTemplateItemsStore = observable<Record<string, PackTemplateItem>>({});
 
 // Synchronize observable store with server
 syncObservable(
   packTemplateItemsStore,
   syncedCrud({
-    fieldUpdatedAt: "updatedAt",
-    fieldCreatedAt: "createdAt",
-    fieldDeleted: "deleted",
+    fieldUpdatedAt: 'updatedAt',
+    fieldCreatedAt: 'createdAt',
+    fieldDeleted: 'deleted',
     updatePartial: true,
-    mode: "merge",
+    mode: 'merge',
     persist: {
       plugin: observablePersistSqlite(Storage),
       retrySync: true,
-      name: "packTemplateItems",
+      name: 'packTemplateItems',
     },
     waitFor: isAuthed,
     waitForSet: isAuthed,
     retry: {
       infinite: true,
-      backoff: "exponential",
+      backoff: 'exponential',
       maxDelay: 30000,
     },
     list: listAllPackTemplateItems,
     create: createPackTemplateItem,
     update: updatePackTemplateItem,
-    changesSince: "last-sync",
+    changesSince: 'last-sync',
     subscribe: ({ refresh }) => {
       const intervalId = setInterval(() => {
         refresh();
       }, 30000);
       return () => clearInterval(intervalId);
     },
-  })
+  }),
 );
 
 // 🔍 Helper: Get all non-deleted items for a specific template
 export function getTemplateItems(templateId: string): PackTemplateItem[] {
   return Object.values(packTemplateItemsStore.get()).filter(
-    (item) => item.packTemplateId === templateId && !item.deleted
+    (item) => item.packTemplateId === templateId && !item.deleted,
   );
 }
 

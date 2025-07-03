@@ -1,13 +1,13 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Icon } from "@roninoss/icons";
-import { SearchInput } from "expo-app/components/nativewindui/SearchInput";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { cn } from "expo-app/lib/cn";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import * as Location from "expo-location";
-import { router } from "expo-router";
-import debounce from "lodash.debounce";
-import { useEffect, useRef, useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Icon } from '@roninoss/icons';
+import { SearchInput } from 'expo-app/components/nativewindui/SearchInput';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import * as Location from 'expo-location';
+import { router } from 'expo-router';
+import debounce from 'lodash.debounce';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,34 +17,27 @@ import {
   Platform,
   TouchableOpacity,
   View,
-} from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocationSearch } from "../hooks";
-import type { LocationSearchResult } from "../types";
+} from 'react-native';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocationSearch } from '../hooks';
+import type { LocationSearchResult } from '../types';
 
 // Key for storing recent searches in AsyncStorage
-const RECENT_SEARCHES_KEY = "packrat_recent_location_searches";
+const RECENT_SEARCHES_KEY = 'packrat_recent_location_searches';
 
 export default function LocationSearchScreen() {
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState("");
-  const {
-    isLoading,
-    results,
-    error,
-    search,
-    addSearchResult,
-    searchByCoordinates,
-  } = useLocationSearch();
+  const [query, setQuery] = useState('');
+  const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
+    useLocationSearch();
   const searchInputRef = useRef<any>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<string | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [locationPermissionDenied, setLocationPermissionDenied] =
-    useState(false);
+  const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 
   // Focus search input on mount
   useEffect(() => {
@@ -62,7 +55,7 @@ export default function LocationSearchScreen() {
           setRecentSearches(JSON.parse(storedSearches));
         }
       } catch (err) {
-        console.error("Error loading recent searches:", err);
+        console.error('Error loading recent searches:', err);
       }
     };
 
@@ -81,22 +74,16 @@ export default function LocationSearchScreen() {
         ].slice(0, 5); // Keep only 5 most recent
 
         setRecentSearches(updatedSearches);
-        await AsyncStorage.setItem(
-          RECENT_SEARCHES_KEY,
-          JSON.stringify(updatedSearches)
-        );
+        await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
         return;
       }
 
       // Add new search term to the beginning and limit to 5
       const updatedSearches = [searchTerm, ...recentSearches].slice(0, 5);
       setRecentSearches(updatedSearches);
-      await AsyncStorage.setItem(
-        RECENT_SEARCHES_KEY,
-        JSON.stringify(updatedSearches)
-      );
+      await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
     } catch (err) {
-      console.error("Error saving recent search:", err);
+      console.error('Error saving recent search:', err);
     }
   };
 
@@ -104,7 +91,7 @@ export default function LocationSearchScreen() {
   const debouncedSearch = useRef(
     debounce((text: string) => {
       search(text);
-    }, 500)
+    }, 500),
   ).current;
 
   // Handle search input change
@@ -126,29 +113,29 @@ export default function LocationSearchScreen() {
 
         // Show success message
         Alert.alert(
-          "Location Added",
+          'Location Added',
           `${location.name} has been added to your locations.`,
           [
             {
-              text: "View All Locations",
+              text: 'View All Locations',
               onPress: () => router.back(),
             },
             {
-              text: "Add Another",
+              text: 'Add Another',
               onPress: () => {
-                setQuery("");
+                setQuery('');
                 searchInputRef.current?.focus();
               },
             },
           ],
-          { cancelable: false }
+          { cancelable: false },
         );
       } else {
-        Alert.alert("Error", "Failed to add location. Please try again.");
+        Alert.alert('Error', 'Failed to add location. Please try again.');
       }
     } catch (err) {
-      console.error("Error adding location:", err);
-      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+      console.error('Error adding location:', err);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setIsAdding(false);
       setAddingLocationId(null);
@@ -161,12 +148,12 @@ export default function LocationSearchScreen() {
 
     // Navigate to preview screen with location coordinates
     router.push({
-      pathname: "/weather/preview",
+      pathname: '/weather/preview',
       params: {
         lat: location.lat.toString(),
         lon: location.lon.toString(),
         name: location.name,
-        region: location.region || "",
+        region: location.region || '',
         country: location.country,
       },
     });
@@ -189,24 +176,24 @@ export default function LocationSearchScreen() {
       // Request location permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
 
-      if (status !== "granted") {
+      if (status !== 'granted') {
         setLocationPermissionDenied(true);
         Alert.alert(
-          "Permission Denied",
-          "We need location permissions to get your current location.",
+          'Permission Denied',
+          'We need location permissions to get your current location.',
           [
-            { text: "Cancel", style: "cancel" },
+            { text: 'Cancel', style: 'cancel' },
             {
-              text: "Open Settings",
+              text: 'Open Settings',
               onPress: () => {
-                if (Platform.OS === "ios") {
-                  Linking.openURL("app-settings:");
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
                 } else {
                   Linking.openSettings();
                 }
               },
             },
-          ]
+          ],
         );
         return;
       }
@@ -218,7 +205,7 @@ export default function LocationSearchScreen() {
 
       // Set a timeout for location retrieval
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Location request timed out")), 15000)
+        setTimeout(() => reject(new Error('Location request timed out')), 15000),
       );
 
       // Race between location retrieval and timeout
@@ -228,31 +215,25 @@ export default function LocationSearchScreen() {
       ])) as Location.LocationObject;
 
       // Search for locations near coordinates
-      await searchByCoordinates(
-        location.coords.latitude,
-        location.coords.longitude
-      );
+      await searchByCoordinates(location.coords.latitude, location.coords.longitude);
 
       // Clear search query since we're showing results based on coordinates
-      setQuery("");
+      setQuery('');
     } catch (err) {
-      console.error("Error getting location:", err);
+      console.error('Error getting location:', err);
 
       // Provide more specific error messages
-      if (
-        err instanceof Error &&
-        err.message === "Location request timed out"
-      ) {
+      if (err instanceof Error && err.message === 'Location request timed out') {
         Alert.alert(
-          "Location Timeout",
-          "Unable to get your location in time. Please try again or search manually.",
-          [{ text: "OK" }]
+          'Location Timeout',
+          'Unable to get your location in time. Please try again or search manually.',
+          [{ text: 'OK' }],
         );
       } else {
         Alert.alert(
-          "Location Error",
-          "Unable to get your current location. Please try again or search manually.",
-          [{ text: "OK" }]
+          'Location Error',
+          'Unable to get your current location. Please try again or search manually.',
+          [{ text: 'OK' }],
         );
       }
     } finally {
@@ -262,13 +243,13 @@ export default function LocationSearchScreen() {
 
   // Popular cities list
   const POPULAR_CITIES = [
-    { name: "New York", country: "United States" },
-    { name: "London", country: "United Kingdom" },
-    { name: "Tokyo", country: "Japan" },
-    { name: "Paris", country: "France" },
-    { name: "Sydney", country: "Australia" },
-    { name: "Berlin", country: "Germany" },
-    { name: "Toronto", country: "Canada" },
+    { name: 'New York', country: 'United States' },
+    { name: 'London', country: 'United Kingdom' },
+    { name: 'Tokyo', country: 'Japan' },
+    { name: 'Paris', country: 'France' },
+    { name: 'Sydney', country: 'Australia' },
+    { name: 'Berlin', country: 'Germany' },
+    { name: 'Toronto', country: 'Canada' },
   ];
 
   // Render a search result item
@@ -278,7 +259,7 @@ export default function LocationSearchScreen() {
         <View className="flex-1">
           <Text className="font-medium">{item.name}</Text>
           <Text className="text-sm text-muted-foreground">
-            {item.region ? `${item.region}, ` : ""}
+            {item.region ? `${item.region}, ` : ''}
             {item.country}
           </Text>
         </View>
@@ -314,19 +295,11 @@ export default function LocationSearchScreen() {
     if (error) {
       return (
         <View className="flex-1 items-center justify-center p-8">
-          <Icon
-            name="alert-circle-outline"
-            size={48}
-            color={colors.destructive}
-          />
+          <Icon name="alert-circle-outline" size={48} color={colors.destructive} />
           <Text className="mt-4 text-center text-destructive">{error}</Text>
           <TouchableOpacity
             className="mt-6 rounded-full bg-primary px-4 py-2"
-            onPress={() =>
-              query.length > 0
-                ? debouncedSearch(query)
-                : handleUseDeviceLocation()
-            }
+            onPress={() => (query.length > 0 ? debouncedSearch(query) : handleUseDeviceLocation())}
           >
             <Text className="text-white">Try Again</Text>
           </TouchableOpacity>
@@ -353,8 +326,8 @@ export default function LocationSearchScreen() {
         {/* Current Location Button */}
         <TouchableOpacity
           className={cn(
-            "mb-6 flex-row items-center justify-center gap-2 rounded-lg p-3",
-            locationPermissionDenied ? "bg-destructive/10" : "bg-primary/10"
+            'mb-6 flex-row items-center justify-center gap-2 rounded-lg p-3',
+            locationPermissionDenied ? 'bg-destructive/10' : 'bg-primary/10',
           )}
           onPress={handleUseDeviceLocation}
           disabled={isGettingLocation}
@@ -362,36 +335,24 @@ export default function LocationSearchScreen() {
           {isGettingLocation ? (
             <>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text className="font-medium text-primary">
-                Getting your location...
-              </Text>
+              <Text className="font-medium text-primary">Getting your location...</Text>
             </>
           ) : locationPermissionDenied ? (
             <>
               <Icon name="bell-outline" size={20} color={colors.destructive} />
-              <Text className="font-medium text-destructive">
-                Location permission required
-              </Text>
+              <Text className="font-medium text-destructive">Location permission required</Text>
             </>
           ) : (
             <>
-              <Icon
-                name="map-marker-radius-outline"
-                size={20}
-                color={colors.primary}
-              />
-              <Text className="font-medium text-primary">
-                Use my current location
-              </Text>
+              <Icon name="map-marker-radius-outline" size={20} color={colors.primary} />
+              <Text className="font-medium text-primary">Use my current location</Text>
             </>
           )}
         </TouchableOpacity>
 
         {recentSearches.length > 0 && (
           <>
-            <Text className="mb-2 text-xs uppercase text-muted-foreground">
-              RECENT SEARCHES
-            </Text>
+            <Text className="mb-2 text-xs uppercase text-muted-foreground">RECENT SEARCHES</Text>
             <View className="mb-6">
               {recentSearches.map((search, index) => (
                 <TouchableOpacity
@@ -407,9 +368,7 @@ export default function LocationSearchScreen() {
           </>
         )}
 
-        <Text className="mb-2 text-xs uppercase text-muted-foreground">
-          POPULAR CITIES
-        </Text>
+        <Text className="mb-2 text-xs uppercase text-muted-foreground">POPULAR CITIES</Text>
         <View>
           {POPULAR_CITIES.map((city, index) => (
             <TouchableOpacity
@@ -420,21 +379,17 @@ export default function LocationSearchScreen() {
               <Icon name="map-marker-outline" size={20} color={colors.grey2} />
               <View>
                 <Text className="text-foreground">{city.name}</Text>
-                <Text className="text-sm text-muted-foreground">
-                  {city.country}
-                </Text>
+                <Text className="text-sm text-muted-foreground">{city.country}</Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
 
         <View className="border-border/30 mt-8 items-center border-t pt-6">
-          <Text className="text-center text-sm font-medium">
-            First time adding a location?
-          </Text>
+          <Text className="text-center text-sm font-medium">First time adding a location?</Text>
           <Text className="mt-1 px-4 text-center text-xs text-muted-foreground">
-            Search for your city above or select from popular cities to add your
-            first weather location
+            Search for your city above or select from popular cities to add your first weather
+            location
           </Text>
         </View>
       </View>
@@ -464,9 +419,7 @@ export default function LocationSearchScreen() {
           className="flex-1 items-center justify-center"
         >
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text className="mt-4 text-muted-foreground">
-            Searching for locations...
-          </Text>
+          <Text className="mt-4 text-muted-foreground">Searching for locations...</Text>
         </Animated.View>
       ) : (
         <FlatList

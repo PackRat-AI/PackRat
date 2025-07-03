@@ -1,13 +1,13 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
-import axiosInstance, { handleApiError } from "expo-app/lib/api/client";
-import type { PaginatedCatalogItemsResponse } from "../types";
+import { useInfiniteQuery } from '@tanstack/react-query';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import type { PaginatedCatalogItemsResponse } from '../types';
 
 interface GetCatalogItemsParams {
   pageParam?: number;
   query?: string;
   limit: number;
   category?: string;
-  sort: { field: string; order: "asc" | "desc" };
+  sort: { field: string; order: 'asc' | 'desc' };
 }
 
 // API function
@@ -19,7 +19,7 @@ export const getCatalogItems = async ({
   sort,
 }: GetCatalogItemsParams): Promise<PaginatedCatalogItemsResponse> => {
   try {
-    const response = await axiosInstance.get("/api/catalog", {
+    const response = await axiosInstance.get('/api/catalog', {
       params: {
         page: pageParam,
         limit,
@@ -36,16 +36,10 @@ export const getCatalogItems = async ({
 };
 
 // Hook
-export function useCatalogItemsInfinite({
-  query,
-  category,
-  limit,
-  sort,
-}: GetCatalogItemsParams) {
+export function useCatalogItemsInfinite({ query, category, limit, sort }: GetCatalogItemsParams) {
   return useInfiniteQuery({
-    queryKey: ["catalogItems", query, category, limit, sort],
-    queryFn: ({ pageParam }) =>
-      getCatalogItems({ pageParam, query, category, limit, sort }),
+    queryKey: ['catalogItems', query, category, limit, sort],
+    queryFn: ({ pageParam }) => getCatalogItems({ pageParam, query, category, limit, sort }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       if (lastPage.page < lastPage.totalPages) {

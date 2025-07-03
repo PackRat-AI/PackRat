@@ -1,11 +1,7 @@
-import { userStore } from "expo-app/features/auth/store";
-import axiosInstance, { handleApiError } from "expo-app/lib/api/client";
-import {
-  computeCategorySummaries,
-  convertFromGrams,
-  convertToGrams,
-} from "../utils";
-import { usePackDetailsFromStore } from "./usePackDetailsFromStore";
+import { userStore } from 'expo-app/features/auth/store';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { computeCategorySummaries, convertFromGrams, convertToGrams } from '../utils';
+import { usePackDetailsFromStore } from './usePackDetailsFromStore';
 
 export const getPackWeightAnalysis = async (packId: string): Promise<any> => {
   try {
@@ -23,7 +19,7 @@ export function usePackWeightAnalysis(packId: string) {
   const consumableWeightInGrams = pack.items
     .filter((item) => item.consumable)
     .reduce((sum, item) => {
-      const unit = item.weightUnit || "g";
+      const unit = item.weightUnit || 'g';
       const weight = item.weight || 0;
       return sum + convertToGrams(weight * item.quantity, unit);
     }, 0);
@@ -31,7 +27,7 @@ export function usePackWeightAnalysis(packId: string) {
   const wornWeightInGrams = pack.items
     .filter((item) => item.worn)
     .reduce((sum, item) => {
-      const unit = item.weightUnit || "g";
+      const unit = item.weightUnit || 'g';
       const weight = item.weight || 0;
       return sum + convertToGrams(weight * item.quantity, unit);
     }, 0);
@@ -43,12 +39,9 @@ export function usePackWeightAnalysis(packId: string) {
       baseWeight: pack.baseWeight,
       consumableWeight: convertFromGrams(
         consumableWeightInGrams,
-        userStore.preferredWeightUnit.peek() ?? "g"
+        userStore.preferredWeightUnit.peek() ?? 'g',
       ),
-      wornWeight: convertFromGrams(
-        wornWeightInGrams,
-        userStore.preferredWeightUnit.peek() ?? "g"
-      ),
+      wornWeight: convertFromGrams(wornWeightInGrams, userStore.preferredWeightUnit.peek() ?? 'g'),
       totalWeight: pack.totalWeight,
       categories: categorySummaries,
     },

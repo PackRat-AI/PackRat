@@ -1,100 +1,92 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "expo-app/components/nativewindui/Avatar";
-import { LargeTitleHeader } from "expo-app/components/nativewindui/LargeTitleHeader";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { cn } from "expo-app/lib/cn";
-import { ScrollView, View } from "react-native";
+import { Avatar, AvatarFallback, AvatarImage } from 'expo-app/components/nativewindui/Avatar';
+import { LargeTitleHeader } from 'expo-app/components/nativewindui/LargeTitleHeader';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { cn } from 'expo-app/lib/cn';
+import { ScrollView, View } from 'react-native';
 
 // Mock data for shared packs
 const SHARED_PACKS = [
   {
-    id: "1",
-    name: "Colorado Trail 2024",
-    owner: "Sarah Johnson",
-    ownerAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
+    id: '1',
+    name: 'Colorado Trail 2024',
+    owner: 'Sarah Johnson',
+    ownerAvatar: 'https://randomuser.me/api/portraits/women/44.jpg',
     members: [
       {
-        id: "1",
-        name: "You",
-        avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+        id: '1',
+        name: 'You',
+        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
       },
       {
-        id: "2",
-        name: "Mike Chen",
-        avatar: "https://randomuser.me/api/portraits/men/22.jpg",
+        id: '2',
+        name: 'Mike Chen',
+        avatar: 'https://randomuser.me/api/portraits/men/22.jpg',
       },
       {
-        id: "3",
-        name: "Lisa Wong",
-        avatar: "https://randomuser.me/api/portraits/women/17.jpg",
+        id: '3',
+        name: 'Lisa Wong',
+        avatar: 'https://randomuser.me/api/portraits/women/17.jpg',
       },
     ],
-    lastUpdated: "2 days ago",
-    totalWeight: "32.6 lbs",
+    lastUpdated: '2 days ago',
+    totalWeight: '32.6 lbs',
     sharedItems: 12,
   },
   {
-    id: "2",
-    name: "Grand Canyon Trip",
-    owner: "You",
-    ownerAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
+    id: '2',
+    name: 'Grand Canyon Trip',
+    owner: 'You',
+    ownerAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
     members: [
       {
-        id: "1",
-        name: "Alex Rodriguez",
-        avatar: "https://randomuser.me/api/portraits/men/67.jpg",
+        id: '1',
+        name: 'Alex Rodriguez',
+        avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
       },
       {
-        id: "2",
-        name: "Emma Wilson",
-        avatar: "https://randomuser.me/api/portraits/women/22.jpg",
+        id: '2',
+        name: 'Emma Wilson',
+        avatar: 'https://randomuser.me/api/portraits/women/22.jpg',
       },
     ],
-    lastUpdated: "1 week ago",
-    totalWeight: "28.4 lbs",
+    lastUpdated: '1 week ago',
+    totalWeight: '28.4 lbs',
     sharedItems: 8,
   },
   {
-    id: "3",
-    name: "John Muir Trail",
-    owner: "David Lee",
-    ownerAvatar: "https://randomuser.me/api/portraits/men/52.jpg",
+    id: '3',
+    name: 'John Muir Trail',
+    owner: 'David Lee',
+    ownerAvatar: 'https://randomuser.me/api/portraits/men/52.jpg',
     members: [
       {
-        id: "1",
-        name: "You",
-        avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+        id: '1',
+        name: 'You',
+        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
       },
       {
-        id: "2",
-        name: "Rachel Green",
-        avatar: "https://randomuser.me/api/portraits/women/45.jpg",
+        id: '2',
+        name: 'Rachel Green',
+        avatar: 'https://randomuser.me/api/portraits/women/45.jpg',
       },
       {
-        id: "3",
-        name: "Tom Wilson",
-        avatar: "https://randomuser.me/api/portraits/men/62.jpg",
+        id: '3',
+        name: 'Tom Wilson',
+        avatar: 'https://randomuser.me/api/portraits/men/62.jpg',
       },
       {
-        id: "4",
-        name: "Sophia Martinez",
-        avatar: "https://randomuser.me/api/portraits/women/28.jpg",
+        id: '4',
+        name: 'Sophia Martinez',
+        avatar: 'https://randomuser.me/api/portraits/women/28.jpg',
       },
     ],
-    lastUpdated: "3 weeks ago",
-    totalWeight: "45.2 lbs",
+    lastUpdated: '3 weeks ago',
+    totalWeight: '45.2 lbs',
     sharedItems: 15,
   },
 ];
 
-function MemberAvatars({
-  members,
-}: {
-  members: { id: string; name: string; avatar: string }[];
-}) {
+function MemberAvatars({ members }: { members: { id: string; name: string; avatar: string }[] }) {
   // Only show first 3 members
   const displayMembers = members.slice(0, 3);
   const remainingCount = members.length - 3;
@@ -104,10 +96,7 @@ function MemberAvatars({
       {displayMembers.map((member, index) => (
         <Avatar
           key={member.id}
-          className={cn(
-            "h-6 w-6 border border-background",
-            index > 0 && "-ml-2"
-          )}
+          className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}
         >
           <AvatarImage source={{ uri: member.avatar }} />
           <AvatarFallback>
@@ -169,10 +158,7 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
             <MemberAvatars members={pack.members} />
           </View>
           <View>
-            <Text
-              variant="caption1"
-              className="text-right text-muted-foreground"
-            >
+            <Text variant="caption1" className="text-right text-muted-foreground">
               Last updated
             </Text>
             <Text variant="footnote">{pack.lastUpdated}</Text>
@@ -205,8 +191,7 @@ export default function SharedPacksScreen() {
             Sharing Benefits
           </Text>
           <Text variant="body" className="mb-2">
-            • Distribute group gear among members to reduce individual pack
-            weight
+            • Distribute group gear among members to reduce individual pack weight
           </Text>
           <Text variant="body" className="mb-2">
             • Coordinate meal planning and shared food items
@@ -214,9 +199,7 @@ export default function SharedPacksScreen() {
           <Text variant="body" className="mb-2">
             • Track who's bringing what to avoid duplicates
           </Text>
-          <Text variant="body">
-            • Collaborate on pack optimization in real-time
-          </Text>
+          <Text variant="body">• Collaborate on pack optimization in real-time</Text>
         </View>
       </ScrollView>
     </>

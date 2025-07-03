@@ -1,21 +1,17 @@
 // CreatePackTemplateItemForm.tsx
 
-import { useActionSheet } from "@expo/react-native-action-sheet";
-import { Icon } from "@roninoss/icons";
-import { useForm } from "@tanstack/react-form";
-import {
-  Form,
-  FormItem,
-  FormSection,
-} from "expo-app/components/nativewindui/Form";
-import { SegmentedControl } from "expo-app/components/nativewindui/SegmentedControl";
-import { TextField } from "expo-app/components/nativewindui/TextField";
-import { useImageUpload } from "expo-app/features/packs/hooks/useImageUpload";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import ImageCacheManager from "expo-app/lib/utils/ImageCacheManager";
-import type { WeightUnit } from "expo-app/types";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Icon } from '@roninoss/icons';
+import { useForm } from '@tanstack/react-form';
+import { Form, FormItem, FormSection } from 'expo-app/components/nativewindui/Form';
+import { SegmentedControl } from 'expo-app/components/nativewindui/SegmentedControl';
+import { TextField } from 'expo-app/components/nativewindui/TextField';
+import { useImageUpload } from 'expo-app/features/packs/hooks/useImageUpload';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import type { WeightUnit } from 'expo-app/types';
+import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -27,23 +23,17 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from "react-native";
-import { z } from "zod";
-import { useCreatePackTemplateItem } from "../hooks/useCreatePackTemplateItem";
-import { useUpdatePackTemplateItem } from "../hooks/useUpdatePackTemplateItem";
+} from 'react-native';
+import { z } from 'zod';
+import { useCreatePackTemplateItem } from '../hooks/useCreatePackTemplateItem';
+import { useUpdatePackTemplateItem } from '../hooks/useUpdatePackTemplateItem';
 
 const itemFormSchema = z.object({
-  name: z.string().min(1, "Item name is required"),
+  name: z.string().min(1, 'Item name is required'),
   description: z.string(),
-  weight: z.preprocess(
-    (val) => (val === "" ? 0 : Number(val)),
-    z.number().min(0)
-  ),
-  weightUnit: z.enum(["g", "oz", "kg", "lb"]),
-  quantity: z.preprocess(
-    (val) => (val === "" ? 1 : Number(val)),
-    z.number().int().min(1)
-  ),
+  weight: z.preprocess((val) => (val === '' ? 0 : Number(val)), z.number().min(0)),
+  weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
+  quantity: z.preprocess((val) => (val === '' ? 1 : Number(val)), z.number().int().min(1)),
   category: z.string(),
   consumable: z.boolean(),
   worn: z.boolean(),
@@ -53,7 +43,7 @@ const itemFormSchema = z.object({
 
 type ItemFormValues = z.infer<typeof itemFormSchema>;
 
-const WEIGHT_UNITS: WeightUnit[] = ["g", "oz", "kg", "lb"];
+const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];
 
 export const CreatePackTemplateItemForm = ({
   packTemplateId,
@@ -82,15 +72,15 @@ export const CreatePackTemplateItemForm = ({
 
   const form = useForm({
     defaultValues: existingItem || {
-      name: "",
-      description: "",
+      name: '',
+      description: '',
       weight: 0,
-      weightUnit: "g",
+      weightUnit: 'g',
       quantity: 0,
-      category: "",
+      category: '',
       consumable: false,
       worn: false,
-      notes: "",
+      notes: '',
       image: null,
     },
     validators: {
@@ -104,10 +94,7 @@ export const CreatePackTemplateItemForm = ({
         if (selectedImage) {
           imageUrl = await permanentlyPersistImageLocally();
           if (!imageUrl) {
-            Alert.alert(
-              "Error",
-              "Failed to save item image. Please try again."
-            );
+            Alert.alert('Error', 'Failed to save item image. Please try again.');
             return;
           }
           value.image = imageUrl;
@@ -125,14 +112,14 @@ export const CreatePackTemplateItemForm = ({
 
         router.back();
       } catch (err) {
-        console.error("Error submitting form:", err);
-        Alert.alert("Error", "Failed to save item. Please try again.");
+        console.error('Error submitting form:', err);
+        Alert.alert('Error', 'Failed to save item. Please try again.');
       }
     },
   });
 
   const handleAddImage = async () => {
-    const options = ["Take Photo", "Choose from Library", "Cancel"];
+    const options = ['Take Photo', 'Choose from Library', 'Cancel'];
     const cancelButtonIndex = 2;
 
     showActionSheetWithOptions(
@@ -140,7 +127,7 @@ export const CreatePackTemplateItemForm = ({
         options,
         cancelButtonIndex,
         containerStyle: {
-          backgroundColor: colorScheme === "dark" ? "black" : "white",
+          backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
         },
         textStyle: { color: colors.foreground },
       },
@@ -150,36 +137,36 @@ export const CreatePackTemplateItemForm = ({
           else if (selectedIndex === 1) await pickImage();
           if (selectedIndex === 0 || selectedIndex === 1) setImageChanged(true);
         } catch (err) {
-          console.error("Image error:", err);
-          Alert.alert("Error", "Failed to process image.");
+          console.error('Image error:', err);
+          Alert.alert('Error', 'Failed to process image.');
         }
-      }
+      },
     );
   };
 
   const handleRemoveImage = () => {
     if (selectedImage) clearSelectedImage();
-    if (form.getFieldValue("image")) {
-      form.setFieldValue("image", null);
+    if (form.getFieldValue('image')) {
+      form.setFieldValue('image', null);
       setImageChanged(true);
     }
   };
 
   const displayImage = selectedImage
     ? { uri: selectedImage.uri }
-    : form.getFieldValue("image")
-      ? { uri: ImageCacheManager.cacheDirectory + form.getFieldValue("image") }
+    : form.getFieldValue('image')
+      ? { uri: ImageCacheManager.cacheDirectory + form.getFieldValue('image') }
       : null;
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
     >
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
-            ios={{ title: "Item Details" }}
+            ios={{ title: 'Item Details' }}
             footnote="Enter the basic information about your item"
           >
             <form.Field name="name">
@@ -215,11 +202,7 @@ export const CreatePackTemplateItemForm = ({
                     textAlignVertical="top"
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon
-                          name="information"
-                          size={16}
-                          color={colors.grey3}
-                        />
+                        <Icon name="information" size={16} color={colors.grey3} />
                       </View>
                     }
                   />
@@ -246,10 +229,7 @@ export const CreatePackTemplateItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection
-            ios={{ title: "Weight & Quantity" }}
-            footnote="Specify the weight details"
-          >
+          <FormSection ios={{ title: 'Weight & Quantity' }} footnote="Specify the weight details">
             <form.Field name="weight">
               {(field) => (
                 <FormItem>
@@ -274,9 +254,7 @@ export const CreatePackTemplateItemForm = ({
               {(field) => (
                 <FormItem>
                   <View className="px-2 py-2">
-                    <Text className="text-foreground/70 mb-2 text-sm">
-                      Unit
-                    </Text>
+                    <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
                     <SegmentedControl
                       values={WEIGHT_UNITS}
                       selectedIndex={WEIGHT_UNITS.indexOf(field.state.value)}
@@ -294,25 +272,17 @@ export const CreatePackTemplateItemForm = ({
                 <FormItem>
                   <TextField
                     placeholder="Quantity"
-                    value={
-                      field.state.value === 0
-                        ? ""
-                        : field.state.value.toString()
-                    }
+                    value={field.state.value === 0 ? '' : field.state.value.toString()}
                     onBlur={field.handleBlur}
                     onChangeText={(text) => {
-                      const intValue = text === "" ? 0 : parseInt(text, 10);
+                      const intValue = text === '' ? 0 : parseInt(text, 10);
                       field.handleChange(intValue);
                     }}
                     keyboardType="numeric"
                     errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon
-                          name="circle-outline"
-                          size={16}
-                          color={colors.grey3}
-                        />
+                        <Icon name="circle-outline" size={16} color={colors.grey3} />
                       </View>
                     }
                   />
@@ -321,30 +291,21 @@ export const CreatePackTemplateItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection
-            ios={{ title: "Properties" }}
-            footnote="Special item properties"
-          >
+          <FormSection ios={{ title: 'Properties' }} footnote="Special item properties">
             <form.Field name="consumable">
               {(field) => (
                 <FormItem>
                   <View className="flex-row items-center justify-between p-4">
                     <View className="flex-row items-center">
-                      <Icon
-                        name="silverware-fork-knife"
-                        size={18}
-                        color={colors.foreground}
-                      />
-                      <Text className="ml-2 font-medium text-foreground">
-                        Consumable
-                      </Text>
+                      <Icon name="silverware-fork-knife" size={18} color={colors.foreground} />
+                      <Text className="ml-2 font-medium text-foreground">Consumable</Text>
                     </View>
                     <Switch
                       value={field.state.value}
                       onValueChange={field.handleChange}
                       trackColor={{
-                        false: "hsl(var(--muted))",
-                        true: "hsl(var(--primary))",
+                        false: 'hsl(var(--muted))',
+                        true: 'hsl(var(--primary))',
                       }}
                       ios_backgroundColor="hsl(var(--muted))"
                     />
@@ -358,21 +319,15 @@ export const CreatePackTemplateItemForm = ({
                 <FormItem>
                   <View className="flex-row items-center justify-between p-4">
                     <View className="flex-row items-center">
-                      <Icon
-                        name="account-circle"
-                        size={18}
-                        color={colors.foreground}
-                      />
-                      <Text className="ml-2 font-medium text-foreground">
-                        Worn (not carried)
-                      </Text>
+                      <Icon name="account-circle" size={18} color={colors.foreground} />
+                      <Text className="ml-2 font-medium text-foreground">Worn (not carried)</Text>
                     </View>
                     <Switch
                       value={field.state.value}
                       onValueChange={field.handleChange}
                       trackColor={{
-                        false: "hsl(var(--muted))",
-                        true: "hsl(var(--primary))",
+                        false: 'hsl(var(--muted))',
+                        true: 'hsl(var(--primary))',
                       }}
                       ios_backgroundColor="hsl(var(--muted))"
                     />
@@ -382,10 +337,7 @@ export const CreatePackTemplateItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection
-            ios={{ title: "Image" }}
-            footnote="Add an image of your item (optional)"
-          >
+          <FormSection ios={{ title: 'Image' }} footnote="Add an image of your item (optional)">
             <form.Field name="image">
               {(field) => (
                 <FormItem>
@@ -409,9 +361,7 @@ export const CreatePackTemplateItemForm = ({
                       onPress={handleAddImage}
                     >
                       <Icon name="camera" size={32} color={colors.foreground} />
-                      <Text className="mt-2 text-muted-foreground">
-                        Tap to add an image
-                      </Text>
+                      <Text className="mt-2 text-muted-foreground">Tap to add an image</Text>
                     </TouchableOpacity>
                   )}
                 </FormItem>
@@ -419,10 +369,7 @@ export const CreatePackTemplateItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection
-            ios={{ title: "Notes" }}
-            footnote="Additional information"
-          >
+          <FormSection ios={{ title: 'Notes' }} footnote="Additional information">
             <form.Field name="notes">
               {(field) => (
                 <FormItem>
@@ -436,11 +383,7 @@ export const CreatePackTemplateItemForm = ({
                     textAlignVertical="top"
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
-                        <Icon
-                          name="note-text-outline"
-                          size={16}
-                          color={colors.grey3}
-                        />
+                        <Icon name="note-text-outline" size={16} color={colors.grey3} />
                       </View>
                     }
                   />
@@ -450,23 +393,21 @@ export const CreatePackTemplateItemForm = ({
           </FormSection>
         </Form>
 
-        <form.Subscribe
-          selector={(state) => [state.canSubmit, state.isSubmitting]}
-        >
+        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
               onPress={form.handleSubmit}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${
-                !canSubmit || isSubmitting ? "bg-primary/70" : "bg-primary"
+                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
               }`}
             >
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting
-                  ? "Saving..."
+                  ? 'Saving...'
                   : isEditing
-                    ? "Update Template Item"
-                    : "Add Template Item"}
+                    ? 'Update Template Item'
+                    : 'Add Template Item'}
               </Text>
             </Pressable>
           )}

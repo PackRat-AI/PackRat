@@ -1,12 +1,12 @@
-import { Icon } from "@roninoss/icons";
-import { Alert } from "expo-app/components/nativewindui/Alert";
-import type { AlertRef } from "expo-app/components/nativewindui/Alert/types";
-import { ListItem } from "expo-app/components/nativewindui/List";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { type Href, useRouter } from "expo-router";
-import { useRef } from "react";
-import { View } from "react-native";
-import { usePacks } from "../hooks";
+import { Icon } from '@roninoss/icons';
+import { Alert } from 'expo-app/components/nativewindui/Alert';
+import type { AlertRef } from 'expo-app/components/nativewindui/Alert/types';
+import { ListItem } from 'expo-app/components/nativewindui/List';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { type Href, useRouter } from 'expo-router';
+import { useRef } from 'react';
+import { View } from 'react-native';
+import { usePacks } from '../hooks';
 
 export function PackStatsTile() {
   const router = useRouter();
@@ -16,9 +16,7 @@ export function PackStatsTile() {
 
   const alertRef = useRef<AlertRef>(null);
 
-  const route: Href | null = currentPack
-    ? `/pack-stats/${currentPack.id}`
-    : null;
+  const route: Href | null = currentPack ? `/pack-stats/${currentPack.id}` : null;
 
   const handlePress = () => {
     if (!currentPack) {
@@ -46,7 +44,7 @@ export function PackStatsTile() {
           </View>
         }
         item={{
-          title: "Pack Stats",
+          title: 'Pack Stats',
         }}
         onPress={handlePress}
         target="Cell"
@@ -55,12 +53,12 @@ export function PackStatsTile() {
       <Alert
         title="No Packs Yet"
         message="Create a pack to start tracking stats."
-        materialIcon={{ name: "information-outline" }}
+        materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: "Got it",
-            style: "default",
+            text: 'Got it',
+            style: 'default',
           },
         ]}
         ref={alertRef}

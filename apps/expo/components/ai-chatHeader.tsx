@@ -1,16 +1,16 @@
-import { Icon } from "@roninoss/icons";
-import { Button } from "expo-app/components/nativewindui/Button";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { BlurView } from "expo-blur";
-import { router } from "expo-router";
-import { Platform, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Icon } from '@roninoss/icons';
+import { Button } from 'expo-app/components/nativewindui/Button';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { BlurView } from 'expo-blur';
+import { router } from 'expo-router';
+import { Platform, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 
 const HEADER_POSITION_STYLE = {
-  position: "absolute",
+  position: 'absolute',
   zIndex: 50,
   top: 0,
   left: 0,
@@ -21,11 +21,8 @@ export function AiChatHeader() {
   const insets = useSafeAreaInsets();
   const { colors } = useColorScheme();
 
-  return Platform.OS === "ios" ? (
-    <BlurView
-      intensity={100}
-      style={[HEADER_POSITION_STYLE, { paddingTop: insets.top }]}
-    >
+  return Platform.OS === 'ios' ? (
+    <BlurView intensity={100} style={[HEADER_POSITION_STYLE, { paddingTop: insets.top }]}>
       <View className="flex-row items-center justify-between px-4 pb-2">
         <View className="flex-row items-center">
           <Button variant="plain" size="icon" onPress={router.back}>
@@ -55,17 +52,12 @@ export function AiChatHeader() {
         className="flex-row items-center justify-between gap-2 px-3 pb-2"
       >
         <View className="flex-row items-center">
-          <Button
-            variant="plain"
-            size="icon"
-            className="opacity-70"
-            onPress={router.back}
-          >
+          <Button variant="plain" size="icon" className="opacity-70" onPress={router.back}>
             <Icon
               color={colors.foreground}
               name={Platform.select({
-                ios: "chevron-left",
-                default: "arrow-left",
+                ios: 'chevron-left',
+                default: 'arrow-left',
               })}
             />
           </Button>

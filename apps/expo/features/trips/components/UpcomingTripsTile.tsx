@@ -1,13 +1,13 @@
-import { Icon } from "@roninoss/icons";
-import { Alert } from "expo-app/components/nativewindui/Alert";
-import type { AlertRef } from "expo-app/components/nativewindui/Alert/types";
-import { ListItem } from "expo-app/components/nativewindui/List";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { featureFlags } from "expo-app/config";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { useRouter } from "expo-router";
-import { useRef } from "react";
-import { View } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { Alert } from 'expo-app/components/nativewindui/Alert';
+import type { AlertRef } from 'expo-app/components/nativewindui/Alert/types';
+import { ListItem } from 'expo-app/components/nativewindui/List';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { featureFlags } from 'expo-app/config';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useRouter } from 'expo-router';
+import { useRef } from 'react';
+import { View } from 'react-native';
 
 export function UpcomingTripsTile() {
   const router = useRouter();
@@ -16,7 +16,7 @@ export function UpcomingTripsTile() {
 
   const handlePress = () => {
     // if (!currentPack) return alertRef.current?.show();
-    router.push("/upcoming-trips");
+    router.push('/upcoming-trips');
   };
 
   if (!featureFlags.enableTrips) return null;
@@ -24,7 +24,7 @@ export function UpcomingTripsTile() {
   return (
     <>
       <ListItem
-        className={"ios:pl-0 pl-2"}
+        className={'ios:pl-0 pl-2'}
         titleClassName="text-lg"
         leftView={
           <View className="px-3">
@@ -36,10 +36,7 @@ export function UpcomingTripsTile() {
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
             <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
-              <Text
-                variant="footnote"
-                className="font-bold leading-4 text-primary-foreground"
-              >
+              <Text variant="footnote" className="font-bold leading-4 text-primary-foreground">
                 {0}
               </Text>
             </View>
@@ -47,7 +44,7 @@ export function UpcomingTripsTile() {
           </View>
         }
         item={{
-          title: "Upcoming Trips",
+          title: 'Upcoming Trips',
         }}
         onPress={handlePress}
         target="Cell"
@@ -56,12 +53,12 @@ export function UpcomingTripsTile() {
       <Alert
         title="No Trips Yet"
         message="Create trips, see which ones are near the corner!"
-        materialIcon={{ name: "information-outline" }}
+        materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: "Got it",
-            style: "default",
+            text: 'Got it',
+            style: 'default',
           },
         ]}
         ref={alertRef}

@@ -1,5 +1,5 @@
-import { CreatePackItemForm } from "expo-app/features/packs/screens/CreatePackItemForm";
-import { useLocalSearchParams } from "expo-router";
+import { CreatePackItemForm } from 'expo-app/features/packs/screens/CreatePackItemForm';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function NewItemScreen() {
   const { packId } = useLocalSearchParams();

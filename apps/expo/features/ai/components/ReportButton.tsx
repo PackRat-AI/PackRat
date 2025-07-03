@@ -1,9 +1,9 @@
-import { Icon } from "@roninoss/icons";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { useState } from "react";
-import { TouchableOpacity, View } from "react-native";
-import { ReportModal } from "./ReportModal";
+import { Icon } from '@roninoss/icons';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useState } from 'react';
+import { TouchableOpacity, View } from 'react-native';
+import { ReportModal } from './ReportModal';
 
 type ReportButtonProps = {
   messageId: string;
@@ -11,11 +11,7 @@ type ReportButtonProps = {
   userQuery: string;
 };
 
-export function ReportButton({
-  messageId,
-  aiResponse,
-  userQuery,
-}: ReportButtonProps) {
+export function ReportButton({ messageId, aiResponse, userQuery }: ReportButtonProps) {
   const { colors } = useColorScheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [reported, setReported] = useState(false);

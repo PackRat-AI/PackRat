@@ -1,5 +1,5 @@
-import { use$ } from "@legendapp/state/react";
-import { packItemsStore } from "expo-app/features/packs/store";
+import { use$ } from '@legendapp/state/react';
+import { packItemsStore } from 'expo-app/features/packs/store';
 
 /**
  * Retrieves item from store.

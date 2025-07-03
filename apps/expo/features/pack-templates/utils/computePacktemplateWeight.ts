@@ -1,12 +1,9 @@
-import {
-  convertFromGrams,
-  convertToGrams,
-} from "expo-app/features/packs/utils";
-import type { PackTemplate, WeightUnit } from "../types";
+import { convertFromGrams, convertToGrams } from 'expo-app/features/packs/utils';
+import type { PackTemplate, WeightUnit } from '../types';
 
 export const computePackTemplateWeights = (
-  template: Omit<PackTemplate, "baseWeight" | "totalWeight">,
-  preferredUnit: WeightUnit = "g"
+  template: Omit<PackTemplate, 'baseWeight' | 'totalWeight'>,
+  preferredUnit: WeightUnit = 'g',
 ): PackTemplate => {
   // Initialize weights
   let baseWeightGrams = 0;
@@ -15,8 +12,7 @@ export const computePackTemplateWeights = (
   // Calculate weights based on items
   template.items.forEach((item) => {
     const itemWeightInGrams =
-      convertToGrams(item.weight, item.weightUnit as WeightUnit) *
-      item.quantity;
+      convertToGrams(item.weight, item.weightUnit as WeightUnit) * item.quantity;
 
     // Add to total weight
     totalWeightGrams += itemWeightInGrams;

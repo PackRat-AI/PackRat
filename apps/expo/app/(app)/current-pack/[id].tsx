@@ -1,19 +1,15 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "expo-app/components/nativewindui/Avatar";
-import { LargeTitleHeader } from "expo-app/components/nativewindui/LargeTitleHeader";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { userStore } from "expo-app/features/auth/store";
-import { usePackDetailsFromStore } from "expo-app/features/packs/hooks/usePackDetailsFromStore";
-import { computeCategorySummaries } from "expo-app/features/packs/utils";
-import { cn } from "expo-app/lib/cn";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { getRelativeTime } from "expo-app/lib/utils/getRelativeTime";
-import { useLocalSearchParams } from "expo-router";
-import type React from "react";
-import { SafeAreaView, ScrollView, View } from "react-native";
+import { Avatar, AvatarFallback, AvatarImage } from 'expo-app/components/nativewindui/Avatar';
+import { LargeTitleHeader } from 'expo-app/components/nativewindui/LargeTitleHeader';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { userStore } from 'expo-app/features/auth/store';
+import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
+import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
+import { useLocalSearchParams } from 'expo-router';
+import type React from 'react';
+import { SafeAreaView, ScrollView, View } from 'react-native';
 
 function WeightCard({
   title,
@@ -25,7 +21,7 @@ function WeightCard({
   className?: string;
 }) {
   return (
-    <View className={cn("flex-1 rounded-lg bg-card p-4", className)}>
+    <View className={cn('flex-1 rounded-lg bg-card p-4', className)}>
       <Text variant="subhead" className="text-muted-foreground">
         {title}
       </Text>
@@ -55,20 +51,20 @@ function CustomList({
 }
 function CategoryItem({ category, index }: { category: any; index: number }) {
   const { colors } = useColorScheme();
-  const itemLabel = category.items === 1 ? "item" : "items";
+  const itemLabel = category.items === 1 ? 'item' : 'items';
 
   return (
     <View
       className={cn(
-        "flex-row items-center justify-between p-4",
-        index > 0 ? "border-border/25 dark:border-border/80 border-t" : ""
+        'flex-row items-center justify-between p-4',
+        index > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
       )}
     >
       <View>
         <Text>{category.name}</Text>
         <Text variant="footnote" className="text-muted-foreground">
-          {category.weight} {userStore.preferredWeightUnit.peek() ?? "g"} •{" "}
-          {category.items} {itemLabel}
+          {category.weight} {userStore.preferredWeightUnit.peek() ?? 'g'} • {category.items}{' '}
+          {itemLabel}
         </Text>
       </View>
       <View
@@ -87,8 +83,8 @@ function ItemRow({ item, index }: { item: any; index: number }) {
   return (
     <View
       className={cn(
-        "flex-row items-center justify-between p-4",
-        index > 0 ? "border-border/25 dark:border-border/80 border-t" : ""
+        'flex-row items-center justify-between p-4',
+        index > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
       )}
     >
       <View>
@@ -167,9 +163,7 @@ export default function CurrentPackScreen() {
           <CustomList
             data={uniqueCategories}
             keyExtractor={(item) => item.name}
-            renderItem={(item, index) => (
-              <CategoryItem category={item} index={index} />
-            )}
+            renderItem={(item, index) => <CategoryItem category={item} index={index} />}
           />
         </View>
 

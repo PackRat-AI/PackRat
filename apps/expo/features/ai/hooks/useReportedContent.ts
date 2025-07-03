@@ -1,13 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
-import { useUser } from "expo-app/features/auth/hooks/useUser";
-import type { User } from "expo-app/features/profile/types";
-import axiosInstance, { handleApiError } from "expo-app/lib/api/client";
-import { useAuthenticatedQueryToolkit } from "expo-app/lib/hooks/useAuthenticatedQueryToolkit";
+import { useQuery } from '@tanstack/react-query';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import type { User } from 'expo-app/features/profile/types';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 type ReportedContentResponse = {
   reportedItems: Array<{
     id: string;
-    status: "pending" | "resolved" | "dismissed";
+    status: 'pending' | 'resolved' | 'dismissed';
     messageId: string;
     userQuery: string;
     aiResponse: string;
@@ -24,16 +24,15 @@ type ReportedContentCount = {
 };
 
 // API function for fetching reported content
-export const getReportedContent =
-  async (): Promise<ReportedContentResponse> => {
-    try {
-      const response = await axiosInstance.get("/api/chat/reports");
-      return response.data;
-    } catch (error) {
-      const { message } = handleApiError(error);
-      throw new Error(`Failed to fetch reported content: ${message}`);
-    }
-  };
+export const getReportedContent = async (): Promise<ReportedContentResponse> => {
+  try {
+    const response = await axiosInstance.get('/api/chat/reports');
+    return response.data;
+  } catch (error) {
+    const { message } = handleApiError(error);
+    throw new Error(`Failed to fetch reported content: ${message}`);
+  }
+};
 
 // Hook for fetching reported content count
 export function useReportedContentCount() {
@@ -41,13 +40,12 @@ export function useReportedContentCount() {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
-    queryKey: ["reportedContent", "count"],
-    enabled: isQueryEnabledWithAccessToken && user?.role === "ADMIN",
+    queryKey: ['reportedContent', 'count'],
+    enabled: isQueryEnabledWithAccessToken && user?.role === 'ADMIN',
     queryFn: async (): Promise<ReportedContentCount> => {
       const data = await getReportedContent();
       return {
-        count: data.reportedItems.filter((item) => item.status === "pending")
-          .length,
+        count: data.reportedItems.filter((item) => item.status === 'pending').length,
         total: data.reportedItems.length,
       };
     },
@@ -60,8 +58,8 @@ export function useReportedContent() {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
-    queryKey: ["reportedContent"],
-    enabled: isQueryEnabledWithAccessToken && user?.role === "ADMIN",
+    queryKey: ['reportedContent'],
+    enabled: isQueryEnabledWithAccessToken && user?.role === 'ADMIN',
     queryFn: () => getReportedContent().then((data) => data.reportedItems),
   });
 }

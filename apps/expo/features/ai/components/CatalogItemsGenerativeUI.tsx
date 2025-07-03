@@ -1,9 +1,9 @@
-import { Icon } from "@roninoss/icons";
-import { Button } from "expo-app/components/nativewindui/Button";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { useRouter } from "expo-router";
-import { Alert, Pressable, ScrollView, View } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { Button } from 'expo-app/components/nativewindui/Button';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useRouter } from 'expo-router';
+import { Alert, Pressable, ScrollView, View } from 'react-native';
 
 interface CatalogItem {
   id: number;
@@ -33,36 +33,32 @@ const getCategoryIcon = (category: string): string => {
     // Cooking: 'flame',
     // Water: 'droplet',
     // 'Sleep System': 'moon',
-    Shelter: "home",
-    Backpack: "backpack",
+    Shelter: 'home',
+    Backpack: 'backpack',
     // Clothing: 'shirt',
     // Navigation: 'compass',
     // Safety: 'shield',
     // Tools: 'wrench',
   };
-  return categoryMap[category] || "archive";
+  return categoryMap[category] || 'archive';
 };
 
 const formatWeight = (weight: number, unit: string): string => {
-  if (unit === "kg" && weight < 1) {
+  if (unit === 'kg' && weight < 1) {
     return `${(weight * 1000).toFixed(0)}g`;
   }
   return `${weight}${unit}`;
 };
 
 const formatPrice = (price: number, currency: string): string => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
     currency: currency,
     minimumFractionDigits: 0,
   }).format(price);
 };
 
-export function CatalogItemsGenerativeUI({
-  items,
-  total,
-  limit,
-}: CatalogItemsGenerativeUIProps) {
+export function CatalogItemsGenerativeUI({ items, total, limit }: CatalogItemsGenerativeUIProps) {
   const { colors } = useColorScheme();
   const router = useRouter();
 
@@ -71,26 +67,26 @@ export function CatalogItemsGenerativeUI({
       catalogItem.name,
       `${catalogItem.description}\n\nPrice: $${catalogItem.price}\nWeight: ${catalogItem.defaultWeight}${catalogItem.defaultWeightUnit}`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "View Details",
+          text: 'View Details',
           onPress: () =>
             router.push({
-              pathname: "/catalog/[id]",
+              pathname: '/catalog/[id]',
               params: { id: catalogItem.id },
             }),
         },
         {
-          text: "Add to Pack",
+          text: 'Add to Pack',
           onPress: () => handleAddToPack(catalogItem),
         },
-      ]
+      ],
     );
   };
 
   const handleAddToPack = (item: CatalogItem) => {
     router.push({
-      pathname: "/catalog/add-to-pack",
+      pathname: '/catalog/add-to-pack',
       params: { catalogItemId: item.id },
     });
   };
@@ -125,11 +121,7 @@ export function CatalogItemsGenerativeUI({
               <View className="mb-3 flex-row items-start justify-between">
                 <View className="mr-3 flex-1">
                   <View className="mb-1 flex-row items-center gap-2">
-                    <Icon
-                      name={getCategoryIcon(item.category)}
-                      size={16}
-                      color={colors.primary}
-                    />
+                    <Icon name={getCategoryIcon(item.category)} size={16} color={colors.primary} />
                     <Text className="text-xs font-medium uppercase tracking-wide text-primary">
                       {item.category}
                     </Text>
@@ -145,9 +137,7 @@ export function CatalogItemsGenerativeUI({
                 {/* Rating */}
                 <View className="bg-muted/50 flex-row items-center gap-1 rounded-full px-2 py-1">
                   <Icon name="star" size={12} color="#FFD700" />
-                  <Text className="text-xs font-medium text-foreground">
-                    {item.ratingValue}
-                  </Text>
+                  <Text className="text-xs font-medium text-foreground">{item.ratingValue}</Text>
                 </View>
               </View>
 
@@ -166,19 +156,14 @@ export function CatalogItemsGenerativeUI({
                   </View>
                   {item.material && (
                     <View className="bg-muted/30 rounded-md px-2 py-1">
-                      <Text className="text-xs text-foreground">
-                        {item.material}
-                      </Text>
+                      <Text className="text-xs text-foreground">{item.material}</Text>
                     </View>
                   )}
                   {item.techs &&
                     Object.entries(item.techs)
                       .slice(0, 2)
                       .map(([key, value]) => (
-                        <View
-                          key={key}
-                          className="bg-muted/30 rounded-md px-2 py-1"
-                        >
+                        <View key={key} className="bg-muted/30 rounded-md px-2 py-1">
                           <Text className="text-xs text-foreground">
                             {key}: {value}
                           </Text>
@@ -193,11 +178,7 @@ export function CatalogItemsGenerativeUI({
                   {formatPrice(item.price, item.currency)}
                 </Text>
 
-                <Button
-                  size="sm"
-                  onPress={() => handleAddToPack(item)}
-                  className="ml-auto px-3"
-                >
+                <Button size="sm" onPress={() => handleAddToPack(item)} className="ml-auto px-3">
                   <Icon name="plus" size={14} color="white" />
                 </Button>
               </View>

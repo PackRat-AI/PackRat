@@ -1,24 +1,14 @@
-import { Icon } from "@roninoss/icons";
-import { Button } from "expo-app/components/nativewindui/Button";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { cn } from "expo-app/lib/cn";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { useState } from "react";
-import {
-  Modal,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { KeyboardStickyView } from "react-native-keyboard-controller";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useReportContent } from "../hooks/useReportContent";
-import {
-  type ReportReason,
-  reportReasonLabels,
-  reportReasons,
-} from "../lib/reportReasons";
+import { Icon } from '@roninoss/icons';
+import { Button } from 'expo-app/components/nativewindui/Button';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useState } from 'react';
+import { Modal, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReportContent } from '../hooks/useReportContent';
+import { type ReportReason, reportReasonLabels, reportReasons } from '../lib/reportReasons';
 
 type ReportModalProps = {
   isVisible: boolean;
@@ -38,10 +28,8 @@ export function ReportModal({
   onSuccess,
 }: ReportModalProps) {
   const { colors } = useColorScheme();
-  const [selectedReason, setSelectedReason] = useState<ReportReason | null>(
-    null
-  );
-  const [comment, setComment] = useState("");
+  const [selectedReason, setSelectedReason] = useState<ReportReason | null>(null);
+  const [comment, setComment] = useState('');
   const reportContentMutation = useReportContent();
   const insets = useSafeAreaInsets();
 
@@ -61,16 +49,13 @@ export function ReportModal({
           onSuccess();
           onClose();
         },
-      }
+      },
     );
   };
 
   return (
     <Modal visible={isVisible} transparent animationType="slide">
-      <KeyboardStickyView
-        offset={{ opened: insets.bottom }}
-        style={{ flex: 1 }}
-      >
+      <KeyboardStickyView offset={{ opened: insets.bottom }} style={{ flex: 1 }}>
         <View className="flex-1 justify-end">
           <TouchableOpacity
             activeOpacity={1}
@@ -91,25 +76,19 @@ export function ReportModal({
                   key={reason}
                   onPress={() => setSelectedReason(reason)}
                   className={cn(
-                    "mb-2 flex-row items-center rounded-md border border-border p-3",
-                    selectedReason === reason && "bg-primary/10 border-primary"
+                    'mb-2 flex-row items-center rounded-md border border-border p-3',
+                    selectedReason === reason && 'bg-primary/10 border-primary',
                   )}
                 >
                   <View
                     className={cn(
-                      "mr-3 h-5 w-5 items-center justify-center rounded-full border",
-                      selectedReason === reason
-                        ? "border-primary bg-primary"
-                        : "border-muted"
+                      'mr-3 h-5 w-5 items-center justify-center rounded-full border',
+                      selectedReason === reason ? 'border-primary bg-primary' : 'border-muted',
                     )}
                   >
-                    {selectedReason === reason && (
-                      <Icon name="check" size={12} color="white" />
-                    )}
+                    {selectedReason === reason && <Icon name="check" size={12} color="white" />}
                   </View>
-                  <Text
-                    className={cn(selectedReason === reason && "font-medium")}
-                  >
+                  <Text className={cn(selectedReason === reason && 'font-medium')}>
                     {reportReasonLabels[reason]}
                   </Text>
                 </TouchableOpacity>
@@ -124,24 +103,18 @@ export function ReportModal({
               numberOfLines={3}
               value={comment}
               onChangeText={setComment}
-              style={{ textAlignVertical: "top" }}
+              style={{ textAlignVertical: 'top' }}
             />
 
             <View className="flex-row justify-end gap-2">
-              <Button
-                variant="tonal"
-                onPress={onClose}
-                disabled={reportContentMutation.isPending}
-              >
+              <Button variant="tonal" onPress={onClose} disabled={reportContentMutation.isPending}>
                 <Text>Cancel</Text>
               </Button>
               <Button
                 onPress={handleSubmit}
                 disabled={!selectedReason || reportContentMutation.isPending}
               >
-                <Text>
-                  {reportContentMutation.isPending ? "Submitting..." : "Submit"}
-                </Text>
+                <Text>{reportContentMutation.isPending ? 'Submitting...' : 'Submit'}</Text>
               </Button>
             </View>
           </View>

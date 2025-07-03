@@ -1,21 +1,18 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axiosInstance, { handleApiError } from "expo-app/lib/api/client";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 
 type UpdateReportStatusPayload = {
   id: string;
-  status: "reviewed" | "dismissed";
+  status: 'reviewed' | 'dismissed';
 };
 
 export const updateReportStatus = async (
-  payload: UpdateReportStatusPayload
+  payload: UpdateReportStatusPayload,
 ): Promise<{ success: boolean }> => {
   try {
-    const response = await axiosInstance.patch(
-      `/api/chat/reports/${payload.id}`,
-      {
-        status: payload.status,
-      }
-    );
+    const response = await axiosInstance.patch(`/api/chat/reports/${payload.id}`, {
+      status: payload.status,
+    });
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
@@ -27,14 +24,13 @@ export function useUpdateReportStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: UpdateReportStatusPayload) =>
-      updateReportStatus(payload),
+    mutationFn: (payload: UpdateReportStatusPayload) => updateReportStatus(payload),
     onSuccess: () => {
       // Invalidate reported content queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ["reportedContent"] });
+      queryClient.invalidateQueries({ queryKey: ['reportedContent'] });
     },
     onError: (error) => {
-      console.error("Error updating report status:", error);
+      console.error('Error updating report status:', error);
     },
   });
 }

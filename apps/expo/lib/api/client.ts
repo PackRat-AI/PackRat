@@ -4,14 +4,11 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
   type InternalAxiosRequestConfig,
-} from "axios";
-import { store } from "expo-app/atoms/store";
-import { clientEnvs } from "expo-app/env/clientEnvs";
-import {
-  refreshTokenAtom,
-  tokenAtom,
-} from "expo-app/features/auth/atoms/authAtoms";
-import * as SecureStore from "expo-secure-store";
+} from 'axios';
+import { store } from 'expo-app/atoms/store';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { refreshTokenAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import * as SecureStore from 'expo-secure-store';
 
 // Define base API URL based on environment
 export const API_URL = clientEnvs.EXPO_PUBLIC_API_URL;
@@ -21,8 +18,8 @@ const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_URL,
   timeout: 15000,
   headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
   },
 });
 
@@ -51,11 +48,9 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 
 // Request interceptor to attach auth token
 axiosInstance.interceptors.request.use(
-  async (
-    config: InternalAxiosRequestConfig
-  ): Promise<InternalAxiosRequestConfig> => {
+  async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
     try {
-      const token = await SecureStore.getItemAsync("access_token");
+      const token = await SecureStore.getItemAsync('access_token');
 
       // If token exists, attach it to the request
       if (token && config.headers) {
@@ -64,13 +59,13 @@ axiosInstance.interceptors.request.use(
 
       return config;
     } catch (error) {
-      console.error("Error attaching auth token:", error);
+      console.error('Error attaching auth token:', error);
       return config;
     }
   },
   (error: AxiosError) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor for error handling
@@ -96,12 +91,12 @@ axiosInstance.interceptors.response.use(
       try {
         // Get refresh token
         // const refreshToken = await store.get(refreshTokenAtom);
-        const refreshToken = await SecureStore.getItemAsync("refresh_token");
+        const refreshToken = await SecureStore.getItemAsync('refresh_token');
 
         if (!refreshToken) {
           // No refresh token, logout user
           // You could dispatch a logout action here
-          processQueue(new Error("No refresh token"));
+          processQueue(new Error('No refresh token'));
           return Promise.reject(error);
         }
 
@@ -128,14 +123,14 @@ axiosInstance.interceptors.response.use(
         } else {
           // Refresh failed, logout user
           // You could dispatch a logout action here
-          processQueue(new Error("Token refresh failed"));
+          processQueue(new Error('Token refresh failed'));
           return Promise.reject(error);
         }
       } catch (refreshError) {
         // Refresh failed, logout user
         // Clear tokens
-        await SecureStore.deleteItemAsync("access_token");
-        await SecureStore.deleteItemAsync("refresh_token");
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
         await store.set(tokenAtom, null);
         await store.set(refreshTokenAtom, null);
         // Dispatch logout action
@@ -148,13 +143,11 @@ axiosInstance.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // Helper function to handle API errors
-export const handleApiError = (
-  error: unknown
-): { message: string; status?: number } => {
+export const handleApiError = (error: unknown): { message: string; status?: number } => {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status;
     const message = error.response?.data?.error || error.message;
@@ -162,8 +155,7 @@ export const handleApiError = (
   }
 
   return {
-    message:
-      error instanceof Error ? error.message : "An unknown error occurred",
+    message: error instanceof Error ? error.message : 'An unknown error occurred',
   };
 };
 

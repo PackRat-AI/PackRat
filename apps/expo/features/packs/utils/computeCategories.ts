@@ -1,7 +1,7 @@
-import { userStore } from "expo-app/features/auth/store";
-import type { Pack } from "../types";
-import { convertFromGrams } from "./convertFromGrams";
-import { convertToGrams } from "./convertToGrams";
+import { userStore } from 'expo-app/features/auth/store';
+import type { Pack } from '../types';
+import { convertFromGrams } from './convertFromGrams';
+import { convertToGrams } from './convertToGrams';
 
 export function computeCategorySummaries(pack: Pack) {
   const items = pack.items;
@@ -15,7 +15,7 @@ export function computeCategorySummaries(pack: Pack) {
   > = {};
 
   items.forEach((item) => {
-    const category = item.category?.trim() || "Other";
+    const category = item.category?.trim() || 'Other';
     const weight = item.weight;
     const unit = item.weightUnit;
     const convertedWeight = convertToGrams(weight, unit) * item.quantity;
@@ -35,20 +35,14 @@ export function computeCategorySummaries(pack: Pack) {
     const percentage =
       totalWeight > 0
         ? (data.weightInGrams /
-            convertToGrams(
-              totalWeight,
-              userStore.preferredWeightUnit.peek() ?? "g"
-            )) *
+            convertToGrams(totalWeight, userStore.preferredWeightUnit.peek() ?? 'g')) *
           100
         : 0;
 
     return {
       name,
       items: data.items,
-      weight: convertFromGrams(
-        data.weightInGrams,
-        userStore.preferredWeightUnit.peek() ?? "g"
-      ),
+      weight: convertFromGrams(data.weightInGrams, userStore.preferredWeightUnit.peek() ?? 'g'),
       percentage: Number(percentage.toFixed(1)),
     };
   });

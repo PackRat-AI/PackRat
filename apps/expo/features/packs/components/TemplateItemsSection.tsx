@@ -1,9 +1,9 @@
-import { Icon } from "@roninoss/icons";
-import { cn } from "expo-app/lib/cn";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import type { WeightUnit } from "expo-app/types";
-import { ScrollView, Text, View } from "react-native";
-import { CachedImage } from "./CachedImage";
+import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import type { WeightUnit } from 'expo-app/types';
+import { ScrollView, Text, View } from 'react-native';
+import { CachedImage } from './CachedImage';
 
 export interface PackTemplateItem {
   id: string;
@@ -32,10 +32,10 @@ interface TemplateItemsSectionProps {
 
 // Helper function to format weight
 const formatWeight = (weight: number, unit: string) => {
-  if (weight < 1 && unit === "kg") {
+  if (weight < 1 && unit === 'kg') {
     return `${(weight * 1000).toFixed(0)}g`;
   }
-  if (weight < 1 && unit === "lb") {
+  if (weight < 1 && unit === 'lb') {
     return `${(weight * 16).toFixed(1)}oz`;
   }
   return `${weight}${unit}`;
@@ -48,30 +48,20 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
   return (
     <View className="mr-3 w-48 rounded-xl border border-border bg-card p-4 shadow-sm">
       <View className="mb-3 h-20 w-full overflow-hidden rounded-lg bg-muted">
-        <CachedImage
-          localFileName={item.image}
-          className="h-full w-full"
-          resizeMode="cover"
-        />
+        <CachedImage localFileName={item.image} className="h-full w-full" resizeMode="cover" />
       </View>
 
       {/* Item name */}
-      <Text
-        className="mb-2 text-sm font-semibold text-foreground"
-        numberOfLines={2}
-      >
+      <Text className="mb-2 text-sm font-semibold text-foreground" numberOfLines={2}>
         {item.name}
       </Text>
 
       {/* Description */}
       <Text
-        className={cn(
-          "mb-3 text-xs text-muted-foreground",
-          !item.description && "italic"
-        )}
+        className={cn('mb-3 text-xs text-muted-foreground', !item.description && 'italic')}
         numberOfLines={2}
       >
-        {item.description || "No description"}
+        {item.description || 'No description'}
       </Text>
 
       {/* Weight and quantity */}
@@ -84,9 +74,7 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
         </View>
         <View className="flex-row items-center">
           <Icon name="format-list-bulleted" size={12} color={colors.grey2} />
-          <Text className="ml-1 text-xs font-medium text-foreground">
-            {item.quantity}
-          </Text>
+          <Text className="ml-1 text-xs font-medium text-foreground">{item.quantity}</Text>
         </View>
       </View>
       <View className="flex-row">
@@ -97,9 +85,7 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
         )}
         {item.consumable && (
           <View className="rounded-full bg-orange-100 px-2 py-0.5">
-            <Text className="text-xs font-medium text-orange-700">
-              Consumable
-            </Text>
+            <Text className="text-xs font-medium text-orange-700">Consumable</Text>
           </View>
         )}
       </View>
@@ -116,9 +102,9 @@ export const TemplateItemsSection = ({
     (acc, item) => ({
       totalWeight: acc.totalWeight + item.weight * item.quantity,
       totalItems: acc.totalItems + item.quantity,
-      categories: acc.categories.add(item.category || "uncategorized"),
+      categories: acc.categories.add(item.category || 'uncategorized'),
     }),
-    { totalWeight: 0, totalItems: 0, categories: new Set<string>() }
+    { totalWeight: 0, totalItems: 0, categories: new Set<string>() },
   );
 
   if (templateItems.length === 0) {
@@ -130,8 +116,7 @@ export const TemplateItemsSection = ({
       <View className="mb-4">
         <Text className="text-lg font-bold text-foreground">Items</Text>
         <Text className="text-sm text-muted-foreground">
-          {templateStats.totalItems} items •{" "}
-          {formatWeight(templateStats.totalWeight, "kg")} •{" "}
+          {templateStats.totalItems} items • {formatWeight(templateStats.totalWeight, 'kg')} •{' '}
           {templateStats.categories.size} categories
         </Text>
       </View>

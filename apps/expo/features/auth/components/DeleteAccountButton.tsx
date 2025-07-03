@@ -1,13 +1,13 @@
-import { Icon } from "@roninoss/icons";
-import { ActivityIndicator } from "expo-app/components/nativewindui/ActivityIndicator";
-import { Alert } from "expo-app/components/nativewindui/Alert";
-import type { AlertRef } from "expo-app/components/nativewindui/Alert/types";
-import { Button } from "expo-app/components/nativewindui/Button";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { useAuth } from "expo-app/features/auth/hooks/useAuth";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import React from "react";
-import { View } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { ActivityIndicator } from 'expo-app/components/nativewindui/ActivityIndicator';
+import { Alert } from 'expo-app/components/nativewindui/Alert';
+import type { AlertRef } from 'expo-app/components/nativewindui/Alert/types';
+import { Button } from 'expo-app/components/nativewindui/Button';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import React from 'react';
+import { View } from 'react-native';
 
 export function DeleteAccountButton() {
   const { colors } = useColorScheme();
@@ -22,35 +22,35 @@ export function DeleteAccountButton() {
         disabled={isLoading}
         onPress={() =>
           alertRef.current?.prompt({
-            title: "Delete Account?",
+            title: 'Delete Account?',
             message: 'Type "DELETE" to confirm.',
-            materialIcon: { name: "trash-can" },
+            materialIcon: { name: 'trash-can' },
             materialWidth: 370,
             prompt: {
-              type: "plain-text",
-              keyboardType: "default",
+              type: 'plain-text',
+              keyboardType: 'default',
             },
             buttons: [
               {
-                text: "Cancel",
-                style: "cancel",
+                text: 'Cancel',
+                style: 'cancel',
               },
               {
-                text: "Delete",
-                style: "destructive",
+                text: 'Delete',
+                style: 'destructive',
                 onPress: async (text) => {
-                  if (text === "DELETE") {
+                  if (text === 'DELETE') {
                     try {
                       await deleteAccount(); // redirection is handled in the hook
                     } catch (error) {
                       setTimeout(() => {
                         alertRef.current?.alert({
-                          title: "Error",
-                          message: "Failed to delete account.",
+                          title: 'Error',
+                          message: 'Failed to delete account.',
                           buttons: [
                             {
-                              text: "OK",
-                              style: "default",
+                              text: 'OK',
+                              style: 'default',
                             },
                           ],
                         });
@@ -59,12 +59,12 @@ export function DeleteAccountButton() {
                   } else {
                     setTimeout(() => {
                       alertRef.current?.alert({
-                        title: "Error",
-                        message: "Invalid confirmation text.",
+                        title: 'Error',
+                        message: 'Invalid confirmation text.',
                         buttons: [
                           {
-                            text: "OK",
-                            style: "default",
+                            text: 'OK',
+                            style: 'default',
                           },
                         ],
                       });

@@ -1,10 +1,10 @@
-import { Icon } from "@roninoss/icons";
-import { Chip } from "expo-app/components/initial/Chip";
-import { WeightBadge } from "expo-app/components/initial/WeightBadge";
-import { ActivityIndicator } from "expo-app/components/nativewindui/ActivityIndicator";
-import { Button } from "expo-app/components/nativewindui/Button";
-import { isAuthed } from "expo-app/features/auth/store";
-import { CachedImage } from "expo-app/features/packs/components/CachedImage";
+import { Icon } from '@roninoss/icons';
+import { Chip } from 'expo-app/components/initial/Chip';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { ActivityIndicator } from 'expo-app/components/nativewindui/ActivityIndicator';
+import { Button } from 'expo-app/components/nativewindui/Button';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import {
   calculateTotalWeight,
   getNotes,
@@ -13,15 +13,15 @@ import {
   isConsumable,
   isWorn,
   shouldShowQuantity,
-} from "expo-app/lib/utils/itemCalculations";
-import { router, useLocalSearchParams } from "expo-router";
-import { SafeAreaView, ScrollView, Text, View } from "react-native";
+} from 'expo-app/lib/utils/itemCalculations';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 import {
   usePackItemDetailsFromApi,
   usePackItemDetailsFromStore,
   usePackItemOwnershipCheck,
-} from "../hooks";
-import type { PackItem } from "../types";
+} from '../hooks';
+import type { PackItem } from '../types';
 
 export function ItemDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -64,7 +64,7 @@ export function ItemDetailScreen() {
             Failed to load item details
           </Text>
           <Text className="mb-6 text-center text-muted-foreground">
-            {error?.message || "Something went wrong. Please try again."}
+            {error?.message || 'Something went wrong. Please try again.'}
           </Text>
           <View className="flex-row justify-center gap-2">
             <Button variant="primary" onPress={() => refetch()}>
@@ -94,26 +94,26 @@ export function ItemDetailScreen() {
   const navigateToChat = () => {
     if (!isAuthed.peek()) {
       return router.push({
-        pathname: "/auth",
+        pathname: '/auth',
         params: {
           redirectTo: JSON.stringify({
-            pathname: "/ai-chat",
+            pathname: '/ai-chat',
             params: {
               itemId: item.id,
               itemName: item.name,
-              contextType: "item",
+              contextType: 'item',
             },
           }),
-          showSignInCopy: "true",
+          showSignInCopy: 'true',
         },
       });
     }
     router.push({
-      pathname: "/ai-chat",
+      pathname: '/ai-chat',
       params: {
         itemId: item.id,
         itemName: item.name,
-        contextType: "item",
+        contextType: 'item',
       },
     });
   };
@@ -121,37 +121,25 @@ export function ItemDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        <CachedImage
-          localFileName={item.image}
-          className="h-64 w-full"
-          resizeMode="cover"
-        />
+        <CachedImage localFileName={item.image} className="h-64 w-full" resizeMode="cover" />
 
         <View className="mb-4 bg-card p-4">
-          <Text className="mb-1 text-2xl font-bold text-foreground">
-            {item.name}
-          </Text>
+          <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>
           <Text className="mb-3 text-muted-foreground">{item.category}</Text>
 
           {item.description && (
-            <Text className="mb-4 text-muted-foreground">
-              {item.description}
-            </Text>
+            <Text className="mb-4 text-muted-foreground">{item.description}</Text>
           )}
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">
-                WEIGHT (EACH)
-              </Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">WEIGHT (EACH)</Text>
               <WeightBadge weight={item.weight} unit={item.weightUnit} />
             </View>
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">
-                  QUANTITY
-                </Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">QUANTITY</Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
                   {quantity}
                 </Chip>
@@ -160,9 +148,7 @@ export function ItemDetailScreen() {
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">
-                  TOTAL WEIGHT
-                </Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
                 <WeightBadge weight={totalWeight} unit={weightUnit} />
               </View>
             )}
@@ -201,9 +187,7 @@ export function ItemDetailScreen() {
               className="flex-row items-center justify-center rounded-full bg-primary px-4 py-3"
             >
               <Icon name="message" size={20} color="white" />
-              <Text className="font-semibold text-white">
-                Ask AI About This Item
-              </Text>
+              <Text className="font-semibold text-white">Ask AI About This Item</Text>
             </Button>
           </View>
         )}

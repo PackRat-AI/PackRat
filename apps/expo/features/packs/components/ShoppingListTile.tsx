@@ -1,15 +1,15 @@
-import { Icon } from "@roninoss/icons";
-import { ListItem } from "expo-app/components/nativewindui/List";
-import { Text } from "expo-app/components/nativewindui/Text";
-import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
-import { useRouter } from "expo-router";
-import { View } from "react-native";
+import { Icon } from '@roninoss/icons';
+import { ListItem } from 'expo-app/components/nativewindui/List';
+import { Text } from 'expo-app/components/nativewindui/Text';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useRouter } from 'expo-router';
+import { View } from 'react-native';
 
 export function ShoppingListTile() {
   const router = useRouter();
 
   const handlePress = () => {
-    router.push("/shopping-list");
+    router.push('/shopping-list');
   };
 
   const shoppingList = 10;
@@ -28,10 +28,7 @@ export function ShoppingListTile() {
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
           <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
-            <Text
-              variant="footnote"
-              className="font-bold leading-4 text-primary-foreground"
-            >
+            <Text variant="footnote" className="font-bold leading-4 text-primary-foreground">
               {shoppingList}
             </Text>
           </View>
@@ -39,7 +36,7 @@ export function ShoppingListTile() {
         </View>
       }
       item={{
-        title: "Shopping List",
+        title: 'Shopping List',
       }}
       onPress={handlePress}
       target="Cell"
