@@ -13,6 +13,8 @@
       "!**/dist",
       "!**/build",
       "!**/out",
+      "!**/ios",
+      "!**/android",
       "!**/public",
       "!**/.next",
       "!**/.wrangler",
