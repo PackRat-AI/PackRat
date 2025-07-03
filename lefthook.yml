@@ -3,6 +3,7 @@ pre-push:
   commands:
     format:
       run: bun format
+      skip: false
     
     # Ready for when you add linting
     # lint:
