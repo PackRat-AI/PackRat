@@ -1,7 +1,7 @@
-import type { AutoRAG } from '@cloudflare/workers-types';
-import type { Env } from '@packrat/api/types/env';
-import type { Context } from 'hono';
-import { env } from 'hono/adapter';
+import type { AutoRAG } from "@cloudflare/workers-types";
+import type { Env } from "@packrat/api/types/env";
+import type { Context } from "hono";
+import { env } from "hono/adapter";
 
 export class AIService {
   private env: Env;
@@ -14,10 +14,10 @@ export class AIService {
 
   async searchPackratOutdoorGuidesRAG(
     query: string,
-    limit: number = 5,
+    limit: number = 5
   ): Promise<
-    Omit<AutoRagSearchResponse, 'data'> & {
-      data: (AutoRagSearchResponse['data'][0] & { url: string })[];
+    Omit<AutoRagSearchResponse, "data"> & {
+      data: (AutoRagSearchResponse["data"][0] & { url: string })[];
     }
   > {
     const response = await this.guidesRAG.search({
@@ -44,9 +44,8 @@ export class AIService {
    * @returns
    */
   private filenameToUrl(filename: string): string {
-    const slug = filename.replace(/\.mdx$/, '').trim();
+    const slug = filename.replace(/\.mdx$/, "").trim();
     const baseUrl = this.env.PACKRAT_GUIDES_BASE_URL;
-    const url = (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') + slug;
-    return url;
+    return new URL(`guide/${slug}`, baseUrl).toString();
   }
 }
