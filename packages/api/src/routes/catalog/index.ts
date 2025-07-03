@@ -5,7 +5,7 @@ import * as getCatalogItemRoute from './getCatalogItemRoute';
 import * as deleteCatalogItemRoute from './deleteCatalogItemRoute';
 import * as updateCatalogItemRoute from './updateCatalogItemRoute';
 import * as queueCatalogEtlRoute from './queueCatalogEtlRoute';
-import { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/types/env';
 
 const catalogRoutes = new OpenAPIHono<{ Bindings: Env }>();
 

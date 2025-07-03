@@ -2,7 +2,7 @@ import { createRoute } from '@hono/zod-openapi';
 import { authMiddleware } from '@packrat/api/middleware';
 import { queueCatalogETL } from '@packrat/api/services/queue';
 import type { Env } from '@packrat/api/types/env';
-import { RouteHandler } from '@packrat/api/types/routeHandler';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 

@@ -2,7 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
 import { CatalogService } from '@packrat/api/services';
-import { RouteHandler } from '@packrat/api/types/routeHandler';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { eq } from 'drizzle-orm';
 
