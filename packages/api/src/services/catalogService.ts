@@ -12,6 +12,7 @@ import {
   getTableColumns,
   gt,
   ilike,
+  isNotNull,
   or,
   sql,
 } from 'drizzle-orm';
@@ -170,5 +171,19 @@ export class CatalogService {
       offset,
       nextOffset: offset + limit,
     };
+  }
+
+  async getCategories(limit = 10) {
+    const rows = await this.db
+      .select({
+        category: catalogItems.category,
+      })
+      .from(catalogItems)
+      .where(isNotNull(catalogItems.category))
+      .groupBy(catalogItems.category)
+      .orderBy(desc(count(catalogItems.id)))
+      .limit(limit);
+
+    return rows.map((row) => row.category);
   }
 }
