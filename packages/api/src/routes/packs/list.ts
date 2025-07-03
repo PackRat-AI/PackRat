@@ -1,56 +1,20 @@
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { packs, packWeightHistory } from '@packrat/api/db/schema';
+import { packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { computePacksWeights } from '@packrat/api/utils/compute-pack';
-import { eq, or, and, ne } from 'drizzle-orm';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { and, eq, or } from 'drizzle-orm';
 
 const packsListRoutes = new OpenAPIHono();
-
-async function getPacks({
-  db,
-  userId,
-  includePublic = false,
-}: {
-  db: ReturnType<typeof createDb>;
-  userId: number;
-  includePublic?: boolean;
-}) {
-  const where = includePublic
-    ? or(eq(packs.userId, userId), and(ne(packs.userId, userId), eq(packs.isPublic, true)))
-    : eq(packs.userId, userId);
-
-  const result = await db.query.packs.findMany({
-    where,
-    with: { items: true },
-  });
-
-  return computePacksWeights(result);
-}
-
-const allPacksRoute = createRoute({
-  method: 'get',
-  path: '/all',
-  responses: { 200: { description: 'Get all user + public packs' } },
-});
-
-packsListRoutes.openapi(allPacksRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return unauthorizedResponse();
-
-  const db = createDb(c);
-  const result = await getPacks({
-    db,
-    userId: auth.userId,
-    includePublic: true,
-  });
-
-  return c.json(result);
-});
 
 const listGetRoute = createRoute({
   method: 'get',
   path: '/',
+  request: {
+    query: z.object({
+      includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
+    }),
+  },
   responses: { 200: { description: 'Get user packs' } },
 });
 
@@ -58,10 +22,22 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) return unauthorizedResponse();
 
-  const db = createDb(c);
-  const result = await getPacks({ db, userId: auth.userId });
+  const { includePublic } = c.req.valid('query');
+  const includePublicBool = Boolean(includePublic).valueOf();
 
-  return c.json(result);
+  const db = createDb(c);
+  const where = includePublicBool
+    ? and(or(eq(packs.userId, auth.userId), eq(packs.isPublic, true)), eq(packs.deleted, false))
+    : eq(packs.userId, auth.userId);
+
+  const result = await db.query.packs.findMany({
+    where,
+    with: {
+      items: includePublicBool ? { where: eq(packItems.deleted, false) } : true,
+    },
+  });
+
+  return c.json(computePacksWeights(result));
 });
 
 const listPostRoute = createRoute({

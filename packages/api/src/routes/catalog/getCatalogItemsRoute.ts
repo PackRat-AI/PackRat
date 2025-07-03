@@ -3,10 +3,7 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
 import { CatalogService } from '@packrat/api/services';
 import { RouteHandler } from '@packrat/api/types/routeHandler';
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from '@packrat/api/utils/api-middleware';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
