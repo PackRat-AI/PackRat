@@ -1,5 +1,5 @@
-import { View } from 'react-native';
 import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
+import { View } from 'react-native';
 
 export function LoadingSpinnerScreen() {
   return (

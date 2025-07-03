@@ -1,8 +1,8 @@
 'use client';
 
 import { cn } from 'landing-app/lib/utils';
-import { useTheme } from 'next-themes';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 interface DeviceMockupProps {

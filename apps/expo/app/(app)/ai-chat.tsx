@@ -1,6 +1,7 @@
 import { useChat } from '@ai-sdk/react';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { fetch as expoFetch } from 'expo/fetch';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
@@ -10,7 +11,6 @@ import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { fetch as expoFetch } from 'expo/fetch';
 import { useAtomValue } from 'jotai';
 import { Button } from 'nativewindui/Button';
 import { Text } from 'nativewindui/Text';

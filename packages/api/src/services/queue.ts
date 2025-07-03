@@ -1,8 +1,8 @@
 import type { Queue } from '@cloudflare/workers-types';
 import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
-import { getTableColumns, sql } from 'drizzle-orm';
 import { parse } from 'csv-parse/sync';
+import { getTableColumns, sql } from 'drizzle-orm';
 import { createDbClient } from '../db';
 
 export enum QueueType {

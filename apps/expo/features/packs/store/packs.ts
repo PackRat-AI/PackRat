@@ -5,7 +5,7 @@ import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { isAuthed } from 'expo-app/features/auth/store';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import Storage from 'expo-sqlite/kv-store';
-import { type PackInStore } from '../types';
+import type { PackInStore } from '../types';
 
 const listPacks = async () => {
   try {
