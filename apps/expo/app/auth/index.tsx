@@ -1,18 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { featureFlags } from 'expo-app/config';
-import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
-import { Link, router, useLocalSearchParams } from 'expo-router';
+import { Link, Route, router, useLocalSearchParams } from 'expo-router';
 import { useSetAtom } from 'jotai';
-import { AlertAnchor } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
+import { AlertAnchor } from '~/components/nativewindui/Alert';
+import type { AlertRef } from '~/components/nativewindui/Alert/types';
+import { Button } from '~/components/nativewindui/Button';
+import { Text } from '~/components/nativewindui/Text';
+import { featureFlags } from '~/config';
+import { redirectToAtom } from '~/features/auth/atoms/authAtoms';
+import { useAuth } from '~/features/auth/hooks/useAuth';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
 const GOOGLE_SOURCE = {
   uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',
@@ -21,7 +22,7 @@ const GOOGLE_SOURCE = {
 type RouteParams = { redirectTo: string; showSignInCopy?: string; showSkipLoginBtn?: string };
 
 export default function AuthIndexScreen() {
-  const { signInWithGoogle, signInWithApple } = useAuthActions();
+  const { signInWithGoogle, signInWithApple, isLoading } = useAuth();
   const alertRef = React.useRef<AlertRef>(null);
   const {
     redirectTo = '/',
@@ -30,7 +31,7 @@ export default function AuthIndexScreen() {
   } = useLocalSearchParams<RouteParams>();
   const handleSkipLogin = async () => {
     await AsyncStorage.setItem('skipped_login', 'true');
-    router.replace('/packs');
+    router.replace('/');
   };
 
   const setRedirectTo = useSetAtom(redirectToAtom);
@@ -38,6 +39,14 @@ export default function AuthIndexScreen() {
   React.useEffect(() => {
     setRedirectTo(redirectTo as string);
   }, [redirectTo]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <>

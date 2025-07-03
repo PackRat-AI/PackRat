@@ -1,15 +1,15 @@
 import { Icon } from '@roninoss/icons';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
-import type { CatalogItem } from 'expo-app/types';
 import { nanoid } from 'nanoid/non-secure';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
+import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
+import { Button } from '~/components/nativewindui/Button';
+import { Text } from '~/components/nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import { getImageExtension } from '~/lib/utils/imageUtils';
+import type { CatalogItem } from '~/types';
 import { useCreatePackItem } from '../hooks';
 import type { PackItemInput } from '../types';
 
@@ -30,7 +30,6 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
       try {
         const extension = await getImageExtension(item.image);
         const fileName = `${nanoid()}.${extension}`;
-        console.log('item.image', item.image);
         await ImageCacheManager.cacheRemoteImage(fileName, item.image);
         item.image = fileName;
       } catch (err) {

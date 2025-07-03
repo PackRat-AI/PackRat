@@ -1,13 +1,13 @@
-import { usePackDetails } from 'expo-app/features/packs';
-import { PackForm } from 'expo-app/features/packs/components/PackForm';
 import { useLocalSearchParams } from 'expo-router';
+import { usePackDetailsFromStore } from '~/features/packs';
+import { PackForm } from '~/features/packs/components/PackForm';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 
 export function EditPackScreen() {
   const { id } = useLocalSearchParams();
   const effectiveId = Array.isArray(id) ? id[0] : id;
 
-  const pack = usePackDetails(effectiveId);
+  const pack = usePackDetailsFromStore(effectiveId);
 
   if (!pack) {
     return (

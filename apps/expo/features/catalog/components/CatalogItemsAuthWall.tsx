@@ -1,9 +1,9 @@
 import { Icon } from '@roninoss/icons';
 import { usePathname, useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { SafeAreaView, View } from 'react-native';
+import { Button } from '~/components/nativewindui/Button';
+import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
+import { Text } from '~/components/nativewindui/Text';
 
 export function CatalogItemsAuthWall() {
   const router = useRouter();

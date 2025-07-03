@@ -1,22 +1,20 @@
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useRouter } from 'expo-router';
-import { ListItem } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
+import { ListItem } from '~/components/nativewindui/List';
+import { Text } from '~/components/nativewindui/Text';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import { usePackTemplates } from '../hooks';
 
 export function PackTemplatesTile() {
   const router = useRouter();
+  const packTemplates = usePackTemplates();
 
   const handlePress = () => {
-    // if (!currentPack) {
-    //   alertRef.current?.show();
-    //   return;
-    // }
     router.push('/pack-templates');
   };
 
-  const packTemplateCount = 10;
+  const packTemplateCount = packTemplates.length;
 
   return (
     <ListItem

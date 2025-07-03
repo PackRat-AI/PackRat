@@ -1,15 +1,15 @@
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useRouter } from 'expo-router';
-import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
-import { ListItem } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/nativewindui/Avatar';
+import { ListItem } from '~/components/nativewindui/List';
+import { Text } from '~/components/nativewindui/Text';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { useCurrentPack } from '../hooks';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
-export function CurrentPackTile() {
+export function CurrentPackTile({ ...props }: any) {
   const currentPack = useCurrentPack();
 
   const router = useRouter();
@@ -25,6 +25,7 @@ export function CurrentPackTile() {
 
   return (
     <ListItem
+      {...props}
       className={'ios:pl-0 pl-2'}
       titleClassName="text-lg"
       leftView={

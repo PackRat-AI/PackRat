@@ -1,7 +1,7 @@
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export default function SyncBanner() {
   const router = useRouter();

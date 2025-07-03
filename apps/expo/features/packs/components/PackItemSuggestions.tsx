@@ -1,22 +1,20 @@
 import { Icon } from '@roninoss/icons';
-import { isAuthed } from 'expo-app/features/auth/store';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import type { PackItem } from 'expo-app/types';
 import { useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
+import { Button } from '~/components/nativewindui/Button';
+import { Text } from '~/components/nativewindui/Text';
+import { isAuthed } from '~/features/auth/store';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { usePackItemSuggestions } from '../hooks';
 import { ItemSuggestionCard } from './ItemSuggestionCard';
 import { PackItemSuggestionSkeleton } from './PackItemSuggestionSkeleton';
 
 interface AISuggestionsProps {
   packId: string;
-  packItems: PackItem[];
 }
 
-export function PackItemSuggestions({ packId, packItems }: AISuggestionsProps) {
+export function PackItemSuggestions({ packId }: AISuggestionsProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const router = useRouter();
 
@@ -25,7 +23,7 @@ export function PackItemSuggestions({ packId, packItems }: AISuggestionsProps) {
     isLoading,
     refetch,
     isError,
-  } = usePackItemSuggestions(packId, packItems, showSuggestions);
+  } = usePackItemSuggestions(packId, showSuggestions);
 
   const { colors } = useColorScheme();
 

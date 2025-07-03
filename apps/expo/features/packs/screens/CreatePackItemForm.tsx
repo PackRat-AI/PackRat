@@ -1,13 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { SegmentedControl } from 'nativewindui/SegmentedControl';
-import { TextField } from 'nativewindui/TextField';
 import { useRef, useState } from 'react';
 import {
   Alert,
@@ -22,6 +16,12 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
+import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
+import { SegmentedControl } from '~/components/nativewindui/SegmentedControl';
+import { TextField } from '~/components/nativewindui/TextField';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import ImageCacheManager from '~/lib/utils/ImageCacheManager';
+import type { WeightUnit } from '~/types';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
 
@@ -85,7 +85,7 @@ export const CreatePackItemForm = ({
       description: '',
       weight: 0,
       weightUnit: 'g',
-      quantity: '',
+      quantity: 0,
       category: '',
       consumable: false,
       worn: false,
@@ -302,9 +302,12 @@ export const CreatePackItemForm = ({
                 <FormItem>
                   <TextField
                     placeholder="Quantity"
-                    value={field.state.value?.toString()}
+                    value={field.state.value === 0 ? '' : field.state.value.toString()}
                     onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
+                    onChangeText={(text) => {
+                      const intValue = text === '' ? 0 : parseInt(text, 10);
+                      field.handleChange(intValue);
+                    }}
                     keyboardType="numeric"
                     errorMessage={field.state.meta.errors[0]?.message}
                     leftView={

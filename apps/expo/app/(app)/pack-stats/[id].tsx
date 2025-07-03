@@ -1,18 +1,20 @@
-import { featureFlags } from 'expo-app/config';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
-import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
-import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useLocalSearchParams } from 'expo-router';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
-import { ScrollView, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
+
+import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
+import { Text } from '~/components/nativewindui/Text';
+import { featureFlags } from '~/config';
+import { userStore } from '~/features/auth/store';
+import { usePackDetailsFromStore } from '~/features/packs/hooks/usePackDetailsFromStore';
+import { usePackWeightHistory } from '~/features/packs/hooks/usePackWeightHistory';
+import { computeCategorySummaries } from '~/features/packs/utils';
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();
   const packId = params.id;
 
-  const pack = usePackDetails(params.id as string);
+  const pack = usePackDetailsFromStore(params.id as string);
   const weightHistory = usePackWeightHistory(packId as string);
 
   const categories = computeCategorySummaries(pack);

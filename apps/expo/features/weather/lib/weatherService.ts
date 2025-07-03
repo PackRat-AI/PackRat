@@ -1,5 +1,5 @@
-import type { LocationSearchResult } from 'expo-app/features/weather/types';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import type { LocationSearchResult } from '~/features/weather/types';
+import axiosInstance, { handleApiError } from '~/lib/api/client';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**

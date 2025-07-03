@@ -1,29 +1,21 @@
 'use client';
 
 import { Icon } from '@roninoss/icons';
-import { usePacks } from 'expo-app/features/packs';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import type { Pack } from 'expo-app/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { SearchInput } from 'nativewindui/SearchInput';
-import { Text } from 'nativewindui/Text';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  FlatList,
-  Image,
-  SafeAreaView,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Animated, FlatList, Image, SafeAreaView, TouchableOpacity, View } from 'react-native';
+import { Button } from '~/components/nativewindui/Button';
+import { SearchInput } from '~/components/nativewindui/SearchInput';
+import { Text } from '~/components/nativewindui/Text';
+import { usePacks } from '~/features/packs';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import type { Pack } from '~/types';
 import { useCatalogItemDetails } from '../hooks';
 
 export function PackSelectionScreen() {
   const router = useRouter();
   const { catalogItemId } = useLocalSearchParams();
-  const { data: packs, isLoading } = usePacks();
+  const packs = usePacks();
   const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
     catalogItemId as string,
   );
@@ -68,14 +60,6 @@ export function PackSelectionScreen() {
   const handleCreatePack = () => {
     router.push('/pack/new');
   };
-
-  if (isLoading || isLoadingItem) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator size="large" color="text-primary" />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -144,13 +128,13 @@ export function PackSelectionScreen() {
                             <View className="mr-3 flex-row items-center">
                               <Icon name="basket-outline" size={14} color={colors.grey2} />
                               <Text variant="caption2" className="ml-1">
-                                {item.items.length} {item.items.length === 1 ? 'item' : 'items'}
+                                {item.items?.length} {item.items?.length === 1 ? 'item' : 'items'}
                               </Text>
                             </View>
                             <View className="mr-3 flex-row items-center">
                               <Icon name="dumbbell" size={14} color={colors.grey2} />
                               <Text variant="caption2" className="ml-1">
-                                {item.baseWeight.toFixed(2)} g
+                                {item.baseWeight?.toFixed(2)} g
                               </Text>
                             </View>
                             <View className="flex-row items-center">

@@ -1,21 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
-import type { PackItem } from '../types';
+
+import type { CatalogItem } from '~/features/catalog/types';
+import axiosInstance, { handleApiError } from '~/lib/api/client';
+import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
 
 // API function
 export const getPackItemSuggestions = async (
   packId: string,
-  packItems: PackItem[],
   location?: string,
 ): Promise<CatalogItem[]> => {
   try {
-    // Extract categories from existing items to help with suggestions
-    const categories = Array.from(new Set(packItems.map((item) => item.category).filter(Boolean)));
-
     const response = await axiosInstance.post(`/api/packs/${packId}/item-suggestions`, {
-      packId,
-      categories,
       location,
     });
 
@@ -30,14 +25,15 @@ export const getPackItemSuggestions = async (
 // Hook
 export function usePackItemSuggestions(
   packId: string | undefined,
-  packItems: PackItem[] = [],
   enabled = true,
   location?: string,
 ) {
+  const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
+
   return useQuery({
-    queryKey: ['packItemSuggestions', packId, packItems.length],
-    queryFn: () => getPackItemSuggestions(packId as string, packItems, location),
-    enabled: !!packId && enabled,
+    queryKey: ['packItemSuggestions', packId],
+    queryFn: () => getPackItemSuggestions(packId as string, location),
+    enabled: isQueryEnabledWithAccessToken && !!packId && enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });

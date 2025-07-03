@@ -1,10 +1,10 @@
 import { Icon } from '@roninoss/icons';
-import { isAuthed } from 'expo-app/features/auth/store';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { type Href, useRouter } from 'expo-router';
-import { ListItem } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
+import { ListItem } from '~/components/nativewindui/List';
+import { Text } from '~/components/nativewindui/Text';
+import { isAuthed } from '~/features/auth/store';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export function AIChatTile() {
   const router = useRouter();

@@ -1,19 +1,6 @@
 import { Icon } from '@roninoss/icons';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { Checkbox } from 'nativewindui/Checkbox';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
-import { Toolbar } from 'nativewindui/Toolbar';
 import * as React from 'react';
 import {
   Dimensions,
@@ -36,6 +23,20 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+
+import { Avatar, AvatarFallback } from '~/components/nativewindui/Avatar';
+import { Button } from '~/components/nativewindui/Button';
+import { Checkbox } from '~/components/nativewindui/Checkbox';
+import { ContextMenu } from '~/components/nativewindui/ContextMenu';
+import { createContextItem } from '~/components/nativewindui/ContextMenu/utils';
+import { DropdownMenu } from '~/components/nativewindui/DropdownMenu';
+import { createDropdownItem } from '~/components/nativewindui/DropdownMenu/utils';
+import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
+import { List, ListItem, type ListRenderItemInfo } from '~/components/nativewindui/List';
+import { Text } from '~/components/nativewindui/Text';
+import { Toolbar } from '~/components/nativewindui/Toolbar';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export default function ConversationsIosScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();

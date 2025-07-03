@@ -1,11 +1,11 @@
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '~/components/nativewindui/Button';
+import { Text } from '~/components/nativewindui/Text';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 

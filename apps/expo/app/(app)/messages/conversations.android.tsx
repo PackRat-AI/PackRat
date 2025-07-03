@@ -1,19 +1,7 @@
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from '@roninoss/icons';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
-import { Toolbar, ToolbarCTA } from 'nativewindui/Toolbar';
 import * as React from 'react';
 import { Dimensions, Platform, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -28,6 +16,19 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { AdaptiveSearchHeader } from '~/components/nativewindui/AdaptiveSearchHeader';
+import { Avatar, AvatarFallback } from '~/components/nativewindui/Avatar';
+import { Button } from '~/components/nativewindui/Button';
+import { ContextMenu } from '~/components/nativewindui/ContextMenu';
+import { createContextItem } from '~/components/nativewindui/ContextMenu/utils';
+import { DropdownMenu } from '~/components/nativewindui/DropdownMenu';
+import { createDropdownItem } from '~/components/nativewindui/DropdownMenu/utils';
+import { List, ListItem, type ListRenderItemInfo } from '~/components/nativewindui/List';
+import { Text } from '~/components/nativewindui/Text';
+import { Toolbar, ToolbarCTA } from '~/components/nativewindui/Toolbar';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export default function ConversationsAndroidScreen() {
   const { colors, isDarkColorScheme } = useColorScheme();

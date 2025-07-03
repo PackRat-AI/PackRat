@@ -1,8 +1,9 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { Text } from 'nativewindui/Text';
 import { Pressable, View } from 'react-native';
+
+import { Text } from '~/components/nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import type { WeatherLocation } from '../types';
 
 interface LocationCardProps {

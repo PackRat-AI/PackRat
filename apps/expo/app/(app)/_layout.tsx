@@ -1,12 +1,15 @@
 import { Icon } from '@roninoss/icons';
-import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
-import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import 'expo-dev-client';
 import { Stack, useRouter } from 'expo-router';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
 import { Pressable, View } from 'react-native';
+import { AiChatHeader } from '~/components/ai-chatHeader';
+import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
+import { ThemeToggle } from '~/components/ThemeToggle';
+import { useAuthInit } from '~/features/auth/hooks/useAuthInit';
+import { usePackItemDetailsFromStore } from '~/features/packs';
+import { usePackItemOwnershipCheck } from '~/features/packs/hooks/usePackItemOwnershipCheck';
+import { usePackOwnershipCheck } from '~/features/packs/hooks/usePackOwnershipCheck';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -34,15 +37,22 @@ export default function AppLayout() {
       />
       <Stack.Screen name="pack/[id]/edit" options={PACK_EDIT_OPTIONS} />
       <Stack.Screen name="pack/new" options={PACK_NEW_OPTIONS} />
-      <Stack.Screen name="item/[id]/index" options={ITEM_DETAIL_OPTIONS} />
+      <Stack.Screen
+        name="item/[id]/index"
+        options={({ route }) => getPackItemDetailOptions({ route })}
+      />
       <Stack.Screen name="item/[id]/edit" options={ITEM_EDIT_OPTIONS} />
       <Stack.Screen name="item/new" options={ITEM_NEW_OPTIONS} />
       <Stack.Screen name="catalog/add-to-pack/index" options={PACK_SELECTION_OPTIONS} />
-      <Stack.Screen name="catalog/add-to-pack/details" options={ITEM_DETAILS_OPTIONS} />
+      <Stack.Screen
+        name="catalog/add-to-pack/details"
+        options={CATALOG_ADD_TO_PACK_ITEM_DETAILS_OPTIONS}
+      />
       <Stack.Screen name="ai-chat" options={AI_CHAT_OPTIONS} />
       <Stack.Screen name="catalog/index" options={CATALOG_LIST_OPTIONS} />
       <Stack.Screen name="catalog/[id]" options={CATALOG_ITEM_DETAIL_OPTIONS} />
       <Stack.Screen name="weather" options={{ headerShown: false }} />
+
       <Stack.Screen
         name="current-pack"
         options={{
@@ -132,9 +142,47 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
-        name="pack-templates"
+        name="pack-templates/index"
         options={{
           headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="pack-templates/new"
+        options={{
+          headerTitle: 'Create New Pack Template',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="pack-templates/[id]/index"
+        options={{
+          headerTitle: 'Pack Template Details',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="templateItem/new"
+        options={{
+          headerTitle: 'Create Template item',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="templateItem/[id]/edit"
+        options={{
+          headerTitle: 'Edit Template Item',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="templateItem/[id]/index"
+        options={{
+          headerTitle: 'Template item details',
           presentation: 'modal',
           animation: 'slide_from_bottom',
         }}
@@ -189,27 +237,23 @@ const PACK_SELECTION_OPTIONS = {
   animation: 'fade_from_bottom', // for android
 } as const;
 
-const ITEM_DETAILS_OPTIONS = {
+const CATALOG_ADD_TO_PACK_ITEM_DETAILS_OPTIONS = {
   title: 'Item Details',
   animation: 'fade_from_bottom', // for android
 } as const;
 
 // DETAIL SCREENS
-function getPackDetailOptions({
-  route,
-}: {
-  route: {
-    params?: {
-      id?: string;
-    };
-  };
-}) {
+export function getPackDetailOptions({ route }: { route: { params?: { id?: string } } }) {
   return {
     title: 'Pack Details',
     headerRight: () => {
       const { colors } = useColorScheme();
       const router = useRouter();
       const id = route.params?.id;
+
+      const isOwner = usePackOwnershipCheck(id as string);
+
+      if (!isOwner) return null;
 
       return (
         <View className="flex-row items-center gap-2">
@@ -225,12 +269,38 @@ function getPackDetailOptions({
   };
 }
 
+export function getPackItemDetailOptions({ route }: { route: { params?: { id?: string } } }) {
+  return {
+    title: 'Item Details',
+    headerRight: () => {
+      const { colors } = useColorScheme();
+      const router = useRouter();
+      const id = route.params?.id as string;
+
+      const isOwner = usePackItemOwnershipCheck(id);
+      const item = usePackItemDetailsFromStore(id);
+
+      if (!isOwner) return null;
+
+      return (
+        <View className="flex-row items-center">
+          <Pressable
+            onPress={() =>
+              router.push({ pathname: '/item/[id]/edit', params: { id, packId: item.packId } })
+            }
+          >
+            <Icon name="pencil-box-outline" color={colors.foreground} />
+          </Pressable>
+        </View>
+      );
+    },
+  };
+}
+
 const PACK_EDIT_OPTIONS = {
   title: 'Edit Pack',
-} as const;
-
-const ITEM_DETAIL_OPTIONS = {
-  title: 'Item Details',
+  presentation: 'modal',
+  animation: 'slide_from_bottom',
 } as const;
 
 const ITEM_EDIT_OPTIONS = {

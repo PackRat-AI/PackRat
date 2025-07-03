@@ -1,15 +1,7 @@
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import type { ContextMenuRef } from 'nativewindui/ContextMenu/types';
-import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { Text } from 'nativewindui/Text';
 import * as React from 'react';
 import {
   Dimensions,
@@ -38,6 +30,15 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Avatar, AvatarFallback } from '~/components/nativewindui/Avatar';
+import { Button } from '~/components/nativewindui/Button';
+import { ContextMenu } from '~/components/nativewindui/ContextMenu';
+import type { ContextMenuRef } from '~/components/nativewindui/ContextMenu/types';
+import { createContextItem } from '~/components/nativewindui/ContextMenu/utils';
+import { Text } from '~/components/nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 const ME = 'Alice';
 

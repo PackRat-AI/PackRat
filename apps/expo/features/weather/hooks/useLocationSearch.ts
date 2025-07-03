@@ -1,10 +1,10 @@
+import { useState } from 'react';
 import {
   formatWeatherData,
   getWeatherData,
   searchLocations,
   searchLocationsByCoordinates,
-} from 'expo-app/features/weather/lib/weatherService';
-import { useState } from 'react';
+} from '~/features/weather/lib/weatherService';
 import type { LocationSearchResult, WeatherLocation } from '../types';
 import { useLocations } from './useLocations';
 

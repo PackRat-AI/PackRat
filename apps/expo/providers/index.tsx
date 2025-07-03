@@ -1,10 +1,10 @@
-import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { PortalHost } from '@rn-primitives/portal';
-import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
-import 'expo-app/utils/polyfills';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { ErrorBoundary } from '~/components/initial/ErrorBoundary';
+import '~/utils/polyfills';
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { JotaiProvider } from './JotaiProvider';
 import { TanstackProvider } from './TanstackProvider';
 

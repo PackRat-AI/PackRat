@@ -1,10 +1,5 @@
 import { useForm } from '@tanstack/react-form';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { Text } from 'nativewindui/Text';
-import { TextField } from 'nativewindui/TextField';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
 import {
@@ -15,7 +10,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+import { Button } from '~/components/nativewindui/Button';
+import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
+import { Text } from '~/components/nativewindui/Text';
+import { TextField } from '~/components/nativewindui/TextField';
+import { useAuth } from '~/features/auth/hooks/useAuth';
+
+const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for login validation
 const loginFormSchema = z.object({
@@ -44,7 +45,7 @@ export default function LoginScreen() {
     onSubmit: async ({ value }) => {
       try {
         setIsLoading(true);
-        await signIn(value.email, value.password, redirectTo);
+        await signIn(value.email, value.password);
         // Navigation is handled in function after successful login
       } catch (error) {
         setIsLoading(false);

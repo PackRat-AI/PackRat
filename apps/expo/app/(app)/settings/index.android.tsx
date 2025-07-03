@@ -1,20 +1,21 @@
 import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
-import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
+import { Platform, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { AdaptiveSearchHeader } from '~/components/nativewindui/AdaptiveSearchHeader';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/nativewindui/Avatar';
+import { Button } from '~/components/nativewindui/Button';
+import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
 import {
   List,
   type ListDataItem,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
-import { Platform, View } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from '~/components/nativewindui/List';
+import { Text } from '~/components/nativewindui/Text';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export default function SettingsAndroidStyleScreen() {
   const insets = useSafeAreaInsets();

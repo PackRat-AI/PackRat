@@ -1,12 +1,7 @@
 'use client';
 
 import { Icon } from '@roninoss/icons';
-import { useCreatePackItem, usePackDetails } from 'expo-app/features/packs';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import type { WeightUnit } from 'expo-app/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -20,6 +15,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Button } from '~/components/nativewindui/Button';
+import { Text } from '~/components/nativewindui/Text';
+import { useCreatePackItem, usePackDetailsFromStore } from '~/features/packs';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import type { WeightUnit } from '~/types';
 import { useCatalogItemDetails } from '../hooks';
 
 export function AddCatalogItemDetailsScreen() {
@@ -28,7 +28,7 @@ export function AddCatalogItemDetailsScreen() {
   const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
     catalogItemId as string,
   );
-  const { data: pack, isLoading: isLoadingPack } = usePackDetails(packId as string);
+  const { data: pack, isLoading: isLoadingPack } = usePackDetailsFromStore(packId as string);
   const { mutate: createItem, isPending: isCreating } = useCreatePackItem();
   const fadeAnim = useState(new Animated.Value(0))[0];
 

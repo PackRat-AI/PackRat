@@ -1,132 +1,227 @@
 import { Icon } from '@roninoss/icons';
-import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
-import { withAuthWall } from 'expo-app/features/auth/hocs';
-import { CatalogItemCard } from 'expo-app/features/catalog/components/CatalogItemCard';
-import { useHeaderSearchBar } from 'expo-app/lib/useHeaderSearchBar';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useDebounce } from 'use-debounce';
+import { searchValueAtom } from '~/atoms/itemListAtoms';
+import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
+import { Text } from '~/components/nativewindui/Text';
+import { withAuthWall } from '~/features/auth/hocs';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { CatalogItemsAuthWall } from '../components';
-import { useCatalogItems } from '../hooks';
+import { CatalogCategoriesFilter } from '../components/CatalogCategoriesFilter';
+import { CatalogItemCard } from '../components/CatalogItemCard';
+import { useCatalogItemsInfinite } from '../hooks';
+import { useVectorSearch } from '../hooks/useVectorSearch';
 import type { CatalogItem } from '../types';
-
-type FilterOption = {
-  label: string;
-  value: string | 'all';
-};
-
-const filterOptions: FilterOption[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Shelter', value: 'shelter' },
-  { label: 'Sleep', value: 'sleep' },
-  { label: 'Kitchen', value: 'kitchen' },
-  { label: 'Electronics', value: 'electronics' },
-  { label: 'Clothing', value: 'clothing' },
-  { label: 'Footwear', value: 'footwear' },
-  { label: 'Accessories', value: 'accessories' },
-  { label: 'Miscellaneous', value: 'miscellaneous' },
-];
 
 function CatalogItemsScreen() {
   const router = useRouter();
-  const { data: catalogItems, isLoading, isError, refetch } = useCatalogItems();
+  const { colors } = useColorScheme();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
-  const [activeFilter, setActiveFilter] = useState<string | 'all'>('all');
+  const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
+  const [debouncedSearchValue] = useDebounce(searchValue, 150);
 
-  useHeaderSearchBar({
-    hideWhenScrolling: false,
-    onChangeText: (text) => setSearchValue(String(text)),
+  const isSearching = debouncedSearchValue.length > 0;
+
+  const {
+    data: paginatedData,
+    isLoading: isPaginatedLoading,
+    isRefetching,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    error: paginatedError,
+  } = useCatalogItemsInfinite({
+    query: debouncedSearchValue,
+    category: activeFilter === 'All' ? undefined : activeFilter,
+    limit: 20,
+    sort: { field: 'createdAt', order: 'asc' },
   });
 
+  // Disabled for now
+  const {
+    data: vectorResults,
+    isLoading: isVectorLoading,
+    isFetching: isVectorFetching,
+    error: vectorError,
+  } = useVectorSearch('');
+
+  const paginatedItems: CatalogItem[] = (
+    paginatedData?.pages.flatMap((page) => page.items) ?? []
+  ).filter((item) => Boolean(item?.id));
+
+  const results = vectorResults ?? paginatedItems;
+
+  const isLoading = isPaginatedLoading;
+  const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;
+
+  const totalItemsText = `${Number(totalItems).toLocaleString()} ${
+    totalItems === 1 ? 'item' : 'items'
+  }`;
+  const showingText = `Showing ${paginatedItems.length} of ${Number(totalItems).toLocaleString()} items`;
+
   const handleItemPress = (item: CatalogItem) => {
-    // Navigate to catalog item detail screen
     router.push({ pathname: '/catalog/[id]', params: { id: item.id } });
   };
 
-  const filteredItems = catalogItems
-    ? catalogItems.filter((item) => {
-        const matchesSearch =
-          item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-          item.description?.toLowerCase().includes(searchValue.toLowerCase()) ||
-          item.brand?.toLowerCase().includes(searchValue.toLowerCase()); // TODO: resolve bug here that cause matchesSearch to be false after navigating back from details screen
-
-        const matchesCategory =
-          activeFilter === 'all' || item.category?.toLocaleLowerCase() === activeFilter;
-
-        // return !!(matchesSearch && matchesCategory);
-        return !!matchesCategory;
-      })
-    : [];
-
-  const renderFilterChip = ({ label, value }: FilterOption) => (
-    <TouchableOpacity
-      key={value}
-      onPress={() => setActiveFilter(value)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === value ? 'bg-primary' : 'bg-card'}`}
-    >
-      <Text
-        className={`text-sm font-medium ${activeFilter === value ? 'text-primary-foreground' : 'text-foreground'}`}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
+  const loadMore = () => {
+    if (!isSearching && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
         title="Catalog"
         backVisible={false}
-        searchBar={{ iosHideWhenScrolling: true }}
+        searchBar={{
+          iosHideWhenScrolling: true,
+          onChangeText: setSearchValue,
+          placeholder: 'Search catalog items...',
+          content: isSearching ? (
+            isLoading ? (
+              <View className="flex-1 items-center justify-center p-6">
+                <ActivityIndicator className="text-primary" size="large" />
+              </View>
+            ) : (
+              <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+                <View className="px-4 pt-2">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-muted-foreground">{totalItemsText}</Text>
+                    {results.length > 0 && (
+                      <Text className="text-xs text-muted-foreground">
+                        {results.length} results
+                      </Text>
+                    )}
+                  </View>
+                </View>
+                {results.map((item) => (
+                  <View className="px-4 pt-4" key={item.id}>
+                    <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
+                  </View>
+                ))}
+                {results.length === 0 && (
+                  <View className="flex-1 items-center justify-center p-8">
+                    {vectorError ? (
+                      <>
+                        <View className="bg-destructive/10 mb-4 rounded-full p-4">
+                          <Icon name="close-circle" size={32} color="text-destructive" />
+                        </View>
+                        <Text className="mb-1 text-lg font-medium text-foreground">
+                          Search error
+                        </Text>
+                        <Text className="text-center text-muted-foreground">
+                          Unable to search. Please try again.
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <View className="mb-4 rounded-full bg-muted p-4">
+                          <Icon name="magnify" size={32} color="text-muted-foreground" />
+                        </View>
+                        <Text className="mb-1 text-lg font-medium text-foreground">No results</Text>
+                        <Text className="text-center text-muted-foreground">
+                          Try adjusting your search or filters.
+                        </Text>
+                      </>
+                    )}
+                  </View>
+                )}
+              </ScrollView>
+            )
+          ) : (
+            <View className="flex-1 items-center justify-center p-4">
+              <Text className="text-muted-foreground">Search catalog</Text>
+            </View>
+          ),
+        }}
       />
 
-      <View className="bg-background px-4 py-2">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
-          {filterOptions.map(renderFilterChip)}
-        </ScrollView>
-      </View>
+      <CatalogCategoriesFilter onFilter={setActiveFilter} activeFilter={activeFilter} />
 
-      {isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator className="text-primary" size="large" />
-        </View>
-      ) : (
+      {!isSearching && (
         <FlatList
-          data={filteredItems}
+          key={activeFilter}
+          data={paginatedItems}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View className="px-4 pt-4">
               <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
             </View>
           )}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            <View className="py-4">
+              {isFetchingNextPage ? (
+                <ActivityIndicator className="text-primary" size="large" />
+              ) : hasNextPage ? (
+                <Text className="text-center text-xs text-muted-foreground">
+                  Scroll to load more items
+                </Text>
+              ) : paginatedItems.length > 0 ? (
+                <Text className="text-center text-xs text-muted-foreground">
+                  You've reached the end of the catalog
+                </Text>
+              ) : null}
+            </View>
+          }
           ListHeaderComponent={
             <View className="px-4 pb-0 pt-2">
-              <Text className="text-muted-foreground">
-                {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
-              </Text>
+              <View className="flex-row items-center justify-between">
+                <Text className="text-muted-foreground">{totalItemsText}</Text>
+              </View>
+              {paginatedItems.length > 0 && (
+                <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
+              )}
             </View>
           }
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center p-8">
-              <View className="mb-4 rounded-full bg-muted p-4">
-                <Icon name="search-outline" size={32} color="text-muted-foreground" />
-              </View>
-              <Text className="mb-1 text-lg font-medium text-foreground">No items found</Text>
-              <Text className="mb-6 text-center text-muted-foreground">
-                {activeFilter === 'all'
-                  ? 'Try adjusting your search terms.'
-                  : `No ${activeFilter} items match your search.`}
-              </Text>
+              {isPaginatedLoading ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : paginatedError ? (
+                <>
+                  <View className="bg-destructive/10 mb-4 rounded-full p-4">
+                    <Icon name="close-circle" size={32} color="text-destructive" />
+                  </View>
+                  <Text className="mb-1 text-lg font-medium text-foreground">
+                    Error loading items
+                  </Text>
+                  <Text className="text-center text-muted-foreground">
+                    {paginatedError.message || 'Something went wrong. Please try again.'}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => refetch()}
+                    className="mt-4 rounded-lg bg-primary px-4 py-2"
+                  >
+                    <Text className="font-medium text-primary-foreground">Retry</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <View className="mb-4 rounded-full bg-muted p-4">
+                    <Icon name="magnify" size={32} color="text-muted-foreground" />
+                  </View>
+                  <Text className="mb-1 text-lg font-medium text-foreground">No items found</Text>
+                  <Text className="text-center text-muted-foreground">
+                    Try a different category or refresh.
+                  </Text>
+                </>
+              )}
             </View>
           }
           contentContainerStyle={{ flexGrow: 1 }}

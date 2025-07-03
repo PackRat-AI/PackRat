@@ -1,12 +1,12 @@
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { type Href, useRouter } from 'expo-router';
-import { Alert } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { ListItem } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
 import { useRef } from 'react';
 import { View } from 'react-native';
+import { Alert } from '~/components/nativewindui/Alert';
+import type { AlertRef } from '~/components/nativewindui/Alert/types';
+import { ListItem } from '~/components/nativewindui/List';
+import { Text } from '~/components/nativewindui/Text';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { useCurrentPack } from '../hooks';
 
 export function WeightAnalysisTile() {

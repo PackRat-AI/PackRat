@@ -1,5 +1,5 @@
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
+import { Text } from '~/components/nativewindui/Text';
 
 export function Card({ children, title }: { children: React.ReactNode; title: string }) {
   return (

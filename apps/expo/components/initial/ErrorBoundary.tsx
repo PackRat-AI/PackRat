@@ -1,21 +1,19 @@
-'use client';
-
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
 import type React from 'react';
 import type { ErrorInfo } from 'react';
-import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { Pressable, Text, View } from 'react-native';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 type ErrorBoundaryProps = {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   onReset?: () => void;
-  onError?: (error: Error, info: { componentStack: string }) => void;
+  onError?: (error: unknown, info: { componentStack: string }) => void;
 };
 
-const DefaultFallback = ({ resetErrorBoundary }: { resetErrorBoundary: () => void }) => {
+const DefaultFallback = () => {
   const { colors } = useColorScheme();
 
   return (
@@ -35,16 +33,8 @@ const DefaultFallback = ({ resetErrorBoundary }: { resetErrorBoundary: () => voi
           </Text>
         </View>
 
-        {/* Actions */}
+        {/* Action */}
         <View className="mt-10 w-full max-w-sm">
-          <Pressable
-            onPress={resetErrorBoundary}
-            className="mb-4 w-full items-center justify-center rounded-lg bg-primary py-3.5"
-            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Text className="font-medium text-primary-foreground">Try Again</Text>
-          </Pressable>
-
           <Pressable
             onPress={() => router.replace('/')}
             className="w-full items-center justify-center rounded-lg border border-border py-3.5"
@@ -59,7 +49,7 @@ const DefaultFallback = ({ resetErrorBoundary }: { resetErrorBoundary: () => voi
 };
 
 export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBoundaryProps) {
-  const handleError = (error: Error, info: { componentStack: string }) => {
+  const handleError = (error: unknown, info: { componentStack: string }) => {
     // Log the error to your preferred logging service
     console.error('Error caught by ErrorBoundary:', error);
     console.error('Component stack:', info.componentStack);
@@ -71,14 +61,14 @@ export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBou
   };
 
   return (
-    <ReactErrorBoundary
-      FallbackComponent={fallback ? () => <>{fallback}</> : DefaultFallback}
+    <Sentry.ErrorBoundary
+      fallback={fallback ? <>{fallback}</> : DefaultFallback}
       onReset={onReset}
-      onError={(error: Error, info: ErrorInfo) =>
-        handleError(error, { componentStack: info.componentStack || '' })
+      onError={(error: unknown, componentStack: ErrorInfo['componentStack']) =>
+        handleError(error, { componentStack: componentStack || '' })
       }
     >
       {children}
-    </ReactErrorBoundary>
+    </Sentry.ErrorBoundary>
   );
 }

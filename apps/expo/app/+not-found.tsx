@@ -1,6 +1,7 @@
 import { Link, Stack } from 'expo-router';
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
+
+import { Text } from '~/components/nativewindui/Text';
 
 export default function NotFoundScreen() {
   return (

@@ -1,5 +1,6 @@
 import { use$ } from '@legendapp/state/react';
-import { packsStore } from 'expo-app/features/packs/store';
+
+import { packsStore } from '~/features/packs/store';
 
 export function usePacks() {
   const packs = use$(() => {

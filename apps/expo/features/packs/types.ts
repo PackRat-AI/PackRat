@@ -13,8 +13,8 @@ export interface PackItem {
   notes?: string;
   image?: string | null;
   packId: string;
-  catalogItemId?: string;
-  userId?: string;
+  catalogItemId?: number;
+  userId?: number;
   deleted: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -31,7 +31,7 @@ export interface PackItemInput {
   worn: boolean;
   notes?: string;
   image?: string | null;
-  catalogItemId?: string;
+  catalogItemId?: number;
 }
 
 export type PackCategory =
@@ -62,7 +62,7 @@ export interface Pack {
   name: string;
   description?: string;
   category: PackCategory;
-  userId?: string;
+  userId?: number;
   isPublic: boolean;
   image?: string;
   tags?: string[];
@@ -76,16 +76,17 @@ export interface Pack {
   updatedAt?: string;
 }
 
+export type PackWeightHistoryEntry = {
+  id: string;
+  packId: string;
+  weight: number;
+  createdAt?: string; // server timestamp, optional if local only
+  localCreatedAt?: string; // used for optimistic UI or offline support
+};
+
 export type PackInStore = Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>;
 
 export type PackInput = Omit<
   PackInStore,
   'id' | 'userId' | 'deleted' | 'createdAt' | 'updatedAt' | 'localCreatedAt' | 'localUpdatedAt'
 >;
-
-export interface PackWeightHistoryEntry {
-  id: string;
-  packId: string;
-  weight: number;
-  localCreatedAt: string;
-}

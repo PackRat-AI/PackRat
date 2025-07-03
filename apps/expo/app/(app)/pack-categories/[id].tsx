@@ -1,12 +1,13 @@
 import { Icon } from '@roninoss/icons';
-import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
-import { computeCategorySummaries } from 'expo-app/features/packs/utils';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useLocalSearchParams } from 'expo-router';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { ScrollView, View } from 'react-native';
+
+import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
+import { Text } from '~/components/nativewindui/Text';
+import { userStore } from '~/features/auth/store';
+import { usePackDetailsFromStore } from '~/features/packs/hooks/usePackDetailsFromStore';
+import { computeCategorySummaries } from '~/features/packs/utils';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 function CategoryCard({
   category,
@@ -54,7 +55,7 @@ function CategoryCard({
 
 export default function PackCategoriesScreen() {
   const params = useLocalSearchParams();
-  const pack = usePackDetails(params.id as string);
+  const pack = usePackDetailsFromStore(params.id as string);
 
   const categories = computeCategorySummaries(pack);
 

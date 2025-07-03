@@ -1,12 +1,12 @@
 import { Icon } from '@roninoss/icons';
-import { featureFlags } from 'expo-app/config';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { useRouter } from 'expo-router';
-import { Alert } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { ListItem } from 'nativewindui/List';
 import { useRef } from 'react';
 import { View } from 'react-native';
+import { Alert } from '~/components/nativewindui/Alert';
+import type { AlertRef } from '~/components/nativewindui/Alert/types';
+import { ListItem } from '~/components/nativewindui/List';
+import { featureFlags } from '~/config';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export function TrailConditionsTile() {
   const router = useRouter();

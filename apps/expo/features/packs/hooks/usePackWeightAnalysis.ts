@@ -1,7 +1,7 @@
-import { userStore } from 'expo-app/features/auth/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { userStore } from '~/features/auth/store';
+import axiosInstance, { handleApiError } from '~/lib/api/client';
 import { computeCategorySummaries, convertFromGrams, convertToGrams } from '../utils';
-import { usePackDetails } from './usePackDetails';
+import { usePackDetailsFromStore } from './usePackDetailsFromStore';
 
 export const getPackWeightAnalysis = async (packId: string): Promise<any> => {
   try {
@@ -14,7 +14,7 @@ export const getPackWeightAnalysis = async (packId: string): Promise<any> => {
 };
 
 export function usePackWeightAnalysis(packId: string) {
-  const pack = usePackDetails(packId);
+  const pack = usePackDetailsFromStore(packId);
 
   const consumableWeightInGrams = pack.items
     .filter((item) => item.consumable)

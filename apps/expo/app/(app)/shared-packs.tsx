@@ -1,9 +1,9 @@
-import { cn } from 'expo-app/lib/cn';
-
-import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { ScrollView, View } from 'react-native';
+
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/nativewindui/Avatar';
+import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
+import { Text } from '~/components/nativewindui/Text';
+import { cn } from '~/lib/cn';
 
 // Mock data for shared packs
 const SHARED_PACKS = [

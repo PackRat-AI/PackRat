@@ -1,34 +1,37 @@
 'use client';
 
 import { Icon } from '@roninoss/icons';
-import { featureFlags } from 'expo-app/config';
-import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
-import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
-import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
-import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
-import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
-import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
-import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
-import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
-import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
-import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
-import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
-import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
-import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
-import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
 import { Link } from 'expo-router';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
+import { useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
+
+import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
+import type { LargeTitleSearchBarRef } from '~/components/nativewindui/LargeTitleHeader/types';
 import {
   ESTIMATED_ITEM_HEIGHT,
   List,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from 'nativewindui/List';
-import { useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+} from '~/components/nativewindui/List';
+import { featureFlags } from '~/config';
+import { clientEnvs } from '~/env/clientEnvs';
+import { AIChatTile } from '~/features/ai/components/AIChatTile';
+import { ReportedContentTile } from '~/features/ai/components/ReportedContentTile';
+import { PackTemplatesTile } from '~/features/pack-templates/components/PackTemplatesTile';
+import { CurrentPackTile } from '~/features/packs/components/CurrentPackTile';
+import { GearInventoryTile } from '~/features/packs/components/GearInventoryTile';
+import { PackCategoriesTile } from '~/features/packs/components/PackCategoriesTile';
+import { PackStatsTile } from '~/features/packs/components/PackStatsTile';
+import { RecentPacksTile } from '~/features/packs/components/RecentPacksTile';
+import { SharedPacksTile } from '~/features/packs/components/SharedPacksTile';
+import { ShoppingListTile } from '~/features/packs/components/ShoppingListTile';
+import { WeightAnalysisTile } from '~/features/packs/components/WeightAnalysisTile';
+import { TrailConditionsTile } from '~/features/trips/components/TrailConditionsTile';
+import { UpcomingTripsTile } from '~/features/trips/components/UpcomingTripsTile';
+import { WeatherAlertsTile } from '~/features/weather/components/WeatherAlertsTile';
+import { WeatherTile } from '~/features/weather/components/WeatherTile';
+import { cn } from '~/lib/cn';
+import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 // Define tile metadata for search functionality
 const tileMetadata = {
@@ -66,6 +69,8 @@ const tileMetadata = {
   'pack-templates': { title: 'Pack Templates', keywords: ['templates', 'preset', 'pattern'] },
 };
 
+type TileName = keyof typeof tileMetadata;
+
 function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
@@ -84,7 +89,7 @@ function SettingsIcon() {
 function DemoIcon() {
   const { colors } = useColorScheme();
 
-  if (process.env.NODE_ENV !== 'development') {
+  if (clientEnvs.NODE_ENV !== 'development') {
     return null;
   }
 
@@ -110,6 +115,7 @@ export default function DashboardScreen() {
     { id: 'recent-packs', component: RecentPacksTile },
     'gap 1',
     { id: 'ask-packrat-ai', component: AIChatTile },
+    { id: 'reported-ai-content', component: ReportedContentTile },
     'gap 1.5',
     { id: 'pack-stats', component: PackStatsTile },
     { id: 'weight-analysis', component: WeightAnalysisTile },
@@ -145,12 +151,12 @@ export default function DashboardScreen() {
 
     return dashboardLayout.filter((item) => {
       if (typeof item === 'object' && item.id) {
-        const metadata = tileMetadata[item.id];
+        const metadata = tileMetadata[item.id as TileName];
         if (metadata) {
           // Check if title or any keywords match
           return (
             metadata.title.toLowerCase().includes(searchLower) ||
-            metadata.keywords.some((keyword) => keyword.toLowerCase().includes(searchLower))
+            metadata.keywords.some((keyword: string) => keyword.toLowerCase().includes(searchLower))
           );
         }
       }
@@ -251,7 +257,7 @@ function renderDashboardItem(info: ListRenderItemInfo<any>) {
   }
 
   const Component = item.component;
-  return <Component />;
+  return <Component {...info} />;
 }
 
 function keyExtractor(item: any) {
