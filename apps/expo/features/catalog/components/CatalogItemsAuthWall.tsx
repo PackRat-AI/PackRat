@@ -1,9 +1,9 @@
-import { Icon } from '@roninoss/icons';
-import { usePathname, useRouter } from 'expo-router';
-import { SafeAreaView, View } from 'react-native';
-import { Button } from '~/components/nativewindui/Button';
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { Text } from '~/components/nativewindui/Text';
+import { Icon } from "@roninoss/icons";
+import { Button } from "expo-app/components/nativewindui/Button";
+import { LargeTitleHeader } from "expo-app/components/nativewindui/LargeTitleHeader";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { usePathname, useRouter } from "expo-router";
+import { SafeAreaView, View } from "react-native";
 
 export function CatalogItemsAuthWall() {
   const router = useRouter();
@@ -21,14 +21,22 @@ export function CatalogItemsAuthWall() {
           <Text variant="title1" className="text-center">
             Create Your Perfect Pack
           </Text>
-          <Text variant="body" className="mb-6 text-center text-muted-foreground">
-            Sign in to browse our complete items catalog and create personalized packs for all your
-            adventures.
+          <Text
+            variant="body"
+            className="mb-6 text-center text-muted-foreground"
+          >
+            Sign in to browse our complete items catalog and create personalized
+            packs for all your adventures.
           </Text>
         </View>
 
         <Button
-          onPress={() => router.push({ pathname: '/auth', params: { redirectTo: currentRoute } })}
+          onPress={() =>
+            router.push({
+              pathname: "/auth",
+              params: { redirectTo: currentRoute },
+            })
+          }
           size="lg"
           variant="primary"
           className="mb-4 w-full"

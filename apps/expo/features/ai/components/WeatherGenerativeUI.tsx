@@ -1,6 +1,6 @@
-import { Icon } from '@roninoss/icons';
-import { Text, View } from 'react-native';
-import { getWeatherIconByCondition } from '~/features/weather/lib/weatherIcons';
+import { Icon } from "@roninoss/icons";
+import { getWeatherIconByCondition } from "expo-app/features/weather/lib/weatherIcons";
+import { Text, View } from "react-native";
 
 interface WeatherData {
   success: boolean;
@@ -16,13 +16,18 @@ interface WeatherGenerativeUIProps {
   weatherData: WeatherData;
 }
 
-export function WeatherGenerativeUI({ location, weatherData }: WeatherGenerativeUIProps) {
+export function WeatherGenerativeUI({
+  location,
+  weatherData,
+}: WeatherGenerativeUIProps) {
   if (!weatherData.success) {
     return (
       <View className="mx-4 my-2 rounded-xl border border-red-200 bg-red-50 p-4">
         <View className="flex-row items-center">
           <Icon name="exclamation" size={20} color="#ef4444" />
-          <Text className="font-medium text-red-700">Unable to get weather for {location}</Text>
+          <Text className="font-medium text-red-700">
+            Unable to get weather for {location}
+          </Text>
         </View>
       </View>
     );
@@ -30,25 +35,25 @@ export function WeatherGenerativeUI({ location, weatherData }: WeatherGenerative
 
   const getWeatherIcon = (conditions: string) => {
     const condition = conditions.toLowerCase();
-    if (condition.includes('clear') || condition.includes('sunny')) {
-      return 'sun';
-    } else if (condition.includes('cloud')) {
-      return 'cloud';
-    } else if (condition.includes('rain')) {
-      return 'cloud-rain';
-    } else if (condition.includes('snow')) {
-      return 'cloud-snow';
-    } else if (condition.includes('storm')) {
-      return 'cloud-lightning';
+    if (condition.includes("clear") || condition.includes("sunny")) {
+      return "sun";
+    } else if (condition.includes("cloud")) {
+      return "cloud";
+    } else if (condition.includes("rain")) {
+      return "cloud-rain";
+    } else if (condition.includes("snow")) {
+      return "cloud-snow";
+    } else if (condition.includes("storm")) {
+      return "cloud-lightning";
     }
-    return 'cloud';
+    return "cloud";
   };
 
   const getTemperatureColor = (temp: number) => {
-    if (temp >= 80) return 'text-red-600';
-    if (temp >= 60) return 'text-orange-500';
-    if (temp >= 40) return 'text-blue-500';
-    return 'text-blue-700';
+    if (temp >= 80) return "text-red-600";
+    if (temp >= 60) return "text-orange-500";
+    if (temp >= 40) return "text-blue-500";
+    return "text-blue-700";
   };
 
   return (
@@ -78,7 +83,9 @@ export function WeatherGenerativeUI({ location, weatherData }: WeatherGenerative
               >
                 {weatherData.temperature}°
               </Text>
-              <Text className="mt-1 text-base text-gray-600">{weatherData.conditions}</Text>
+              <Text className="mt-1 text-base text-gray-600">
+                {weatherData.conditions}
+              </Text>
             </View>
           </View>
         </View>
@@ -89,9 +96,13 @@ export function WeatherGenerativeUI({ location, weatherData }: WeatherGenerative
             <View className="flex-1 items-center">
               <View className="mb-1 flex-row items-center">
                 <Icon name="water" size={16} color="#3b82f6" />
-                <Text className="text-sm font-medium text-gray-500">Humidity</Text>
+                <Text className="text-sm font-medium text-gray-500">
+                  Humidity
+                </Text>
               </View>
-              <Text className="text-lg font-semibold text-gray-900">{weatherData.humidity}%</Text>
+              <Text className="text-lg font-semibold text-gray-900">
+                {weatherData.humidity}%
+              </Text>
             </View>
 
             <View className="mx-3 w-px bg-gray-200" />

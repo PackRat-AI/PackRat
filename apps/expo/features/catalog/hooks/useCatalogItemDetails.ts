@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
-import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
-import type { CatalogItem } from '../types';
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance, { handleApiError } from "expo-app/lib/api/client";
+import { useAuthenticatedQueryToolkit } from "expo-app/lib/hooks/useAuthenticatedQueryToolkit";
+import type { CatalogItem } from "../types";
 
 // API function
 export const getCatalogItem = async (id: string): Promise<CatalogItem> => {
@@ -19,7 +19,7 @@ export function useCatalogItemDetails(id: string) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
-    queryKey: ['catalogItem', id],
+    queryKey: ["catalogItem", id],
     queryFn: () => getCatalogItem(id),
     enabled: isQueryEnabledWithAccessToken && !!id,
   });

@@ -1,11 +1,10 @@
-import { Icon } from '@roninoss/icons';
-import { Image, ScrollView, View } from 'react-native';
-
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { Text } from '~/components/nativewindui/Text';
-import { useRecentPacks } from '~/features/packs/hooks/useRecentPacks';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import { getRelativeTime } from '~/lib/utils/getRelativeTime';
+import { Icon } from "@roninoss/icons";
+import { LargeTitleHeader } from "expo-app/components/nativewindui/LargeTitleHeader";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { useRecentPacks } from "expo-app/features/packs/hooks/useRecentPacks";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { getRelativeTime } from "expo-app/lib/utils/getRelativeTime";
+import { Image, ScrollView, View } from "react-native";
 
 function RecentPackCard({ pack }: { pack: any }) {
   const { colors } = useColorScheme();
@@ -13,7 +12,11 @@ function RecentPackCard({ pack }: { pack: any }) {
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
       {pack.image && (
-        <Image source={{ uri: pack.image }} className="h-40 w-full bg-red-950" resizeMode="cover" />
+        <Image
+          source={{ uri: pack.image }}
+          className="h-40 w-full bg-red-950"
+          resizeMode="cover"
+        />
       )}
       <View className="p-4">
         <View className="flex-row items-start justify-between">

@@ -1,34 +1,39 @@
-import { Stack, useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { Platform, View } from 'react-native';
-
-import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
-import { Alert } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { Avatar, AvatarFallback } from '~/components/nativewindui/Avatar';
-import { Button } from '~/components/nativewindui/Button';
+import { ActivityIndicator } from "expo-app/components/nativewindui/ActivityIndicator";
+import { Alert } from "expo-app/components/nativewindui/Alert";
+import type { AlertRef } from "expo-app/components/nativewindui/Alert/types";
+import {
+  Avatar,
+  AvatarFallback,
+} from "expo-app/components/nativewindui/Avatar";
+import { Button } from "expo-app/components/nativewindui/Button";
 import {
   ESTIMATED_ITEM_HEIGHT,
   List,
   ListItem,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from '~/components/nativewindui/List';
-import { Text } from '~/components/nativewindui/Text';
-import { withAuthWall } from '~/features/auth/hocs';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-import { useUser } from '~/features/auth/hooks/useUser';
-import { packItemsSyncState, packsSyncState } from '~/features/packs/store';
-import { ProfileAuthWall } from '~/features/profile/components';
-import { cn } from '~/lib/cn';
+} from "expo-app/components/nativewindui/List";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { withAuthWall } from "expo-app/features/auth/hocs";
+import { useAuth } from "expo-app/features/auth/hooks/useAuth";
+import { useUser } from "expo-app/features/auth/hooks/useUser";
+import {
+  packItemsSyncState,
+  packsSyncState,
+} from "expo-app/features/packs/store";
+import { ProfileAuthWall } from "expo-app/features/profile/components";
+import { cn } from "expo-app/lib/cn";
+import { Stack } from "expo-router";
+import { useRef } from "react";
+import { Platform, View } from "react-native";
 
 const SCREEN_OPTIONS = {
-  title: 'Profile',
+  title: "Profile",
   headerShown: false,
 } as const;
 
 const ESTIMATED_ITEM_SIZE =
-  ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
+  ESTIMATED_ITEM_HEIGHT[Platform.OS === "ios" ? "titleOnly" : "withSubTitle"];
 
 function Profile() {
   const user = useUser();
@@ -37,22 +42,24 @@ function Profile() {
   const displayName =
     user?.firstName && user?.lastName
       ? `${user.firstName} ${user.lastName}`
-      : user?.email?.split('@')[0] || 'User';
+      : user?.email?.split("@")[0] || "User";
 
-  const email = user?.email || '';
+  const email = user?.email || "";
 
   // Create data array with user information
   const DATA: DataItem[] = [
-    ...(Platform.OS !== 'ios' ? ['Account Information'] : []),
+    ...(Platform.OS !== "ios" ? ["Account Information"] : []),
     {
-      id: 'name',
-      title: 'Name',
-      ...(Platform.OS === 'ios' ? { value: displayName } : { subTitle: displayName }),
+      id: "name",
+      title: "Name",
+      ...(Platform.OS === "ios"
+        ? { value: displayName }
+        : { subTitle: displayName }),
     },
     {
-      id: 'email',
-      title: 'Email',
-      ...(Platform.OS === 'ios' ? { value: email } : { subTitle: email }),
+      id: "email",
+      title: "Email",
+      ...(Platform.OS === "ios" ? { value: email } : { subTitle: email }),
     },
   ];
 
@@ -63,7 +70,7 @@ function Profile() {
       <List
         variant="insets"
         data={DATA}
-        sectionHeaderAsGap={Platform.OS === 'ios'}
+        sectionHeaderAsGap={Platform.OS === "ios"}
         estimatedItemSize={ESTIMATED_ITEM_SIZE}
         renderItem={renderItem}
         ListHeaderComponent={<ListHeaderComponent />}
@@ -80,7 +87,7 @@ function renderItem(info: ListRenderItemInfo<DataItem>) {
 }
 
 function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
-  if (typeof info.item === 'string') {
+  if (typeof info.item === "string") {
     return <ListSectionHeader {...info} />;
   }
   return (
@@ -88,7 +95,9 @@ function Item({ info }: { info: ListRenderItemInfo<DataItem> }) {
       titleClassName="text-lg"
       rightView={
         <View className="flex-1 flex-row items-center gap-0.5 px-2">
-          {!!info.item.value && <Text className="text-muted-foreground">{info.item.value}</Text>}
+          {!!info.item.value && (
+            <Text className="text-muted-foreground">{info.item.value}</Text>
+          )}
         </View>
       }
       {...info}
@@ -101,14 +110,14 @@ function ListHeaderComponent() {
   const initials =
     user?.firstName && user?.lastName
       ? `${user.firstName[0]}${user.lastName[0]}`
-      : user?.email?.substring(0, 2).toUpperCase() || 'U';
+      : user?.email?.substring(0, 2).toUpperCase() || "U";
 
   const displayName =
     user?.firstName && user?.lastName
       ? `${user.firstName} ${user.lastName}`
-      : user?.email?.split('@')[0] || 'User';
+      : user?.email?.split("@")[0] || "User";
 
-  const username = user?.email || '';
+  const username = user?.email || "";
 
   return (
     <View className="ios:pb-8 items-center pb-4 pt-8">
@@ -117,8 +126,8 @@ function ListHeaderComponent() {
           <Text
             variant="largeTitle"
             className={cn(
-              'font-medium text-white dark:text-background',
-              Platform.OS === 'ios' && 'dark:text-foreground',
+              "font-medium text-white dark:text-background",
+              Platform.OS === "ios" && "dark:text-foreground"
             )}
           >
             {initials}
@@ -137,7 +146,8 @@ function ListFooterComponent() {
 
   const alertRef = useRef<AlertRef>(null);
 
-  const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
+  const isEmpty = (obj: Record<string, unknown>): boolean =>
+    Object.keys(obj).length === 0;
 
   return (
     <View className="ios:px-0 px-4 pt-8">
@@ -154,7 +164,7 @@ function ListFooterComponent() {
           signOut();
         }}
         size="lg"
-        variant={Platform.select({ ios: 'primary', default: 'secondary' })}
+        variant={Platform.select({ ios: "primary", default: "secondary" })}
         className="border-border bg-card"
       >
         {isLoading ? (
@@ -166,16 +176,16 @@ function ListFooterComponent() {
       <Alert
         title="Sync in progress"
         message="Some data is still syncing. You may lose them if you proceed to log out."
-        materialIcon={{ name: 'repeat' }}
+        materialIcon={{ name: "repeat" }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Cancel',
-            style: 'cancel',
+            text: "Cancel",
+            style: "cancel",
           },
           {
-            text: 'Log out',
-            style: 'destructive',
+            text: "Log out",
+            style: "destructive",
             onPress: () => {
               signOut();
             },

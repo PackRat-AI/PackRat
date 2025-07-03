@@ -1,7 +1,13 @@
-import { Icon } from '@roninoss/icons';
-import { router, useNavigation } from 'expo-router';
-import { useAtom } from 'jotai';
-import { useEffect, useRef, useState } from 'react';
+import { Icon } from "@roninoss/icons";
+import { LargeTitleHeader } from "expo-app/components/nativewindui/LargeTitleHeader";
+import { SearchInput } from "expo-app/components/nativewindui/SearchInput";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { withAuthWall } from "expo-app/features/auth/hocs";
+import { cn } from "expo-app/lib/cn";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { router, useNavigation } from "expo-router";
+import { useAtom } from "jotai";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,20 +18,13 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
-} from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { SearchInput } from '~/components/nativewindui/SearchInput';
-import { Text } from '~/components/nativewindui/Text';
-import { withAuthWall } from '~/features/auth/hocs';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import { searchQueryAtom } from '../atoms/locationsAtoms';
-import { LocationCard } from '../components/LocationCard';
-import { WeatherAuthWall } from '../components/WeatherAuthWall';
-import { useActiveLocation, useLocationRefresh, useLocations } from '../hooks';
+} from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { searchQueryAtom } from "../atoms/locationsAtoms";
+import { LocationCard } from "../components/LocationCard";
+import { WeatherAuthWall } from "../components/WeatherAuthWall";
+import { useActiveLocation, useLocationRefresh, useLocations } from "../hooks";
 
 function LocationsScreen() {
   const { colors } = useColorScheme();
@@ -40,14 +39,15 @@ function LocationsScreen() {
   const { removeLocation } = useLocations();
 
   // Determine if we're loading
-  const isLoading = locationsState.state === 'loading';
+  const isLoading = locationsState.state === "loading";
 
   // Get the locations array safely
-  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
+  const locations =
+    locationsState.state === "hasData" ? locationsState.data : [];
 
   // Filter locations based on search query
   const filteredLocations = locations.filter((location) =>
-    location.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    location.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Handle search query change
@@ -57,7 +57,7 @@ function LocationsScreen() {
 
   // Clear search and dismiss keyboard
   const clearSearch = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     Keyboard.dismiss();
     setIsSearchFocused(false);
   };
@@ -71,14 +71,14 @@ function LocationsScreen() {
 
   // Clear search when navigating to this screen -> https://github.com/PackRat-AI/PackRat/issues/1424
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
+    const unsubscribe = navigation.addListener("focus", () => {
       clearSearch();
     });
 
     // Also clear when navigating away (cleanup)
     return () => {
       unsubscribe();
-      setSearchQuery('');
+      setSearchQuery("");
     };
   }, [navigation]);
 
@@ -93,12 +93,12 @@ function LocationsScreen() {
     const location = locations.find((loc) => loc.id === locationId);
     if (location) {
       Alert.alert(
-        'Location Set',
+        "Location Set",
         `${location.name} is now your active location.`,
-        [{ text: 'OK' }],
+        [{ text: "OK" }],
         {
           cancelable: true,
-        },
+        }
       );
     }
   };
@@ -108,13 +108,15 @@ function LocationsScreen() {
   };
 
   const handleAddLocation = () => {
-    router.push('/weather/search');
+    router.push("/weather/search");
   };
 
   // Determine which state to show
-  const showEmptyState = locations.length === 0 && !isLoading && !isSearchFocused;
+  const showEmptyState =
+    locations.length === 0 && !isLoading && !isSearchFocused;
   const showSearchResults = isSearchFocused && searchQuery.length > 0;
-  const showNoSearchResults = showSearchResults && filteredLocations.length === 0;
+  const showNoSearchResults =
+    showSearchResults && filteredLocations.length === 0;
   const showLocationsList = filteredLocations.length > 0;
 
   return (
@@ -125,7 +127,7 @@ function LocationsScreen() {
           <View className="flex-row items-center pr-2">
             <Pressable className="opacity-80" onPress={handleAddLocation}>
               {({ pressed }) => (
-                <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
+                <View className={cn(pressed ? "opacity-50" : "opacity-90")}>
                   <Icon name="plus" color={colors.foreground} />
                 </View>
               )}
@@ -157,10 +159,14 @@ function LocationsScreen() {
           exiting={FadeOut.duration(200)}
           className="px-4 py-2"
         >
-          <Text className="mb-2 text-xs uppercase text-muted-foreground">SEARCH RESULTS</Text>
+          <Text className="mb-2 text-xs uppercase text-muted-foreground">
+            SEARCH RESULTS
+          </Text>
           <View className="bg-muted/30 items-center rounded-lg p-4">
             <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
-            <Text className="mt-2 text-muted-foreground">No locations match "{searchQuery}"</Text>
+            <Text className="mt-2 text-muted-foreground">
+              No locations match "{searchQuery}"
+            </Text>
             <View className="mt-4 flex-row">
               <TouchableOpacity
                 className="bg-primary/10 mr-2 rounded-full px-4 py-2"
@@ -182,7 +188,9 @@ function LocationsScreen() {
       {isLoading ? (
         <View className="flex-1 items-center justify-center py-12">
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text className="mt-4 text-muted-foreground">Loading weather data...</Text>
+          <Text className="mt-4 text-muted-foreground">
+            Loading weather data...
+          </Text>
         </View>
       ) : (
         <ScrollView
@@ -207,8 +215,8 @@ function LocationsScreen() {
               {showSearchResults && (
                 <View className="mb-2">
                   <Text className="text-xs uppercase text-muted-foreground">
-                    {filteredLocations.length}{' '}
-                    {filteredLocations.length === 1 ? 'RESULT' : 'RESULTS'}
+                    {filteredLocations.length}{" "}
+                    {filteredLocations.length === 1 ? "RESULT" : "RESULTS"}
                   </Text>
                 </View>
               )}
@@ -233,17 +241,25 @@ function LocationsScreen() {
 
           {showEmptyState && (
             <View className="flex-1 items-center justify-center">
-              <Icon name="map-marker-radius-outline" size={64} color={colors.grey2} />
-              <Text className="mt-4 text-center text-lg font-medium">No saved locations</Text>
+              <Icon
+                name="map-marker-radius-outline"
+                size={64}
+                color={colors.grey2}
+              />
+              <Text className="mt-4 text-center text-lg font-medium">
+                No saved locations
+              </Text>
               <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
-                Add locations to track weather conditions for your hiking trips and get personalized
-                recommendations
+                Add locations to track weather conditions for your hiking trips
+                and get personalized recommendations
               </Text>
               <TouchableOpacity
                 className="mt-2 rounded-full bg-primary px-6 py-3"
                 onPress={handleAddLocation}
               >
-                <Text className="font-medium text-white">Add Your First Location</Text>
+                <Text className="font-medium text-white">
+                  Add Your First Location
+                </Text>
               </TouchableOpacity>
               <Text className="mt-4 text-xs text-muted-foreground">
                 Location data helps PackRat AI provide better advice

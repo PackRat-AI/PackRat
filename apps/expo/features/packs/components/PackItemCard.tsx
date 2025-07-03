@@ -1,18 +1,18 @@
-import { Icon } from '@roninoss/icons';
-import { useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { Alert } from '~/components/nativewindui/Alert';
-import { Button } from '~/components/nativewindui/Button';
-import { CachedImage } from '~/features/packs/components/CachedImage';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import { Icon } from "@roninoss/icons";
+import { WeightBadge } from "expo-app/components/initial/WeightBadge";
+import { Alert } from "expo-app/components/nativewindui/Alert";
+import { Button } from "expo-app/components/nativewindui/Button";
+import { CachedImage } from "expo-app/features/packs/components/CachedImage";
+import { cn } from "expo-app/lib/cn";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { useRouter } from "expo-router";
+import { Pressable, Text, View } from "react-native";
 import {
   useDeletePackItem,
   usePackItemDetailsFromStore,
   usePackItemOwnershipCheck,
-} from '../hooks';
-import type { PackItem } from '../types';
+} from "../hooks";
+import type { PackItem } from "../types";
 
 type PackItemCardProps = {
   item: PackItem;
@@ -33,22 +33,37 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
       className="mb-3 flex-row overflow-hidden rounded-lg bg-card shadow-sm"
       onPress={() => onPress(item)}
     >
-      <CachedImage localFileName={item.image} className="w-28" resizeMode="cover" />
+      <CachedImage
+        localFileName={item.image}
+        className="w-28"
+        resizeMode="cover"
+      />
 
       <View className="flex-1 p-3">
         <View className="flex-row items-start justify-between">
           <View className="mr-2 flex-1">
-            <Text className="text-base font-medium text-foreground" numberOfLines={1}>
+            <Text
+              className="text-base font-medium text-foreground"
+              numberOfLines={1}
+            >
               {item.name}
             </Text>
-            <Text className="mb-1 text-xs text-muted-foreground">{item.category}</Text>
+            <Text className="mb-1 text-xs text-muted-foreground">
+              {item.category}
+            </Text>
           </View>
 
-          <WeightBadge weight={item.weight * item.quantity} unit={item.weightUnit} />
+          <WeightBadge
+            weight={item.weight * item.quantity}
+            unit={item.weightUnit}
+          />
         </View>
 
         {item.description && (
-          <Text className="mt-1 text-sm text-muted-foreground" numberOfLines={2}>
+          <Text
+            className="mt-1 text-sm text-muted-foreground"
+            numberOfLines={2}
+          >
             {item.description}
           </Text>
         )}
@@ -57,19 +72,25 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
           <View className="mt-2 flex-row items-center gap-2">
             {item.quantity > 1 && (
               <View className="rounded-full bg-muted px-2 py-0.5">
-                <Text className="text-xs text-muted-foreground">Qty: {item.quantity}</Text>
+                <Text className="text-xs text-muted-foreground">
+                  Qty: {item.quantity}
+                </Text>
               </View>
             )}
 
             {item.consumable && (
-              <View className={cn('rounded-full px-2 py-0.5', 'bg-amber-100')}>
-                <Text className={cn('text-xs', 'text-amber-600')}>Consumable</Text>
+              <View className={cn("rounded-full px-2 py-0.5", "bg-amber-100")}>
+                <Text className={cn("text-xs", "text-amber-600")}>
+                  Consumable
+                </Text>
               </View>
             )}
 
             {item.worn && (
-              <View className={cn('rounded-full px-2 py-0.5', 'bg-emerald-100')}>
-                <Text className={cn('text-xs', 'text-emerald-600')}>Worn</Text>
+              <View
+                className={cn("rounded-full px-2 py-0.5", "bg-emerald-100")}
+              >
+                <Text className={cn("text-xs", "text-emerald-600")}>Worn</Text>
               </View>
             )}
           </View>
@@ -80,11 +101,11 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
                 message="Are you sure you want to delete this item?"
                 buttons={[
                   {
-                    text: 'Cancel',
-                    style: 'cancel',
+                    text: "Cancel",
+                    style: "cancel",
                   },
                   {
-                    text: 'OK',
+                    text: "OK",
                     onPress: () => {
                       deleteItem(item.id);
                     },
@@ -100,12 +121,16 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
                 size="icon"
                 onPress={() =>
                   router.push({
-                    pathname: '/item/[id]/edit',
+                    pathname: "/item/[id]/edit",
                     params: { id: item.id, packId: item.packId },
                   })
                 }
               >
-                <Icon name="pencil-box-outline" size={21} color={colors.grey2} />
+                <Icon
+                  name="pencil-box-outline"
+                  size={21}
+                  color={colors.grey2}
+                />
               </Button>
             </View>
           )}

@@ -1,51 +1,55 @@
-import { Icon } from '@roninoss/icons';
-import { useForm } from '@tanstack/react-form';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import * as React from 'react';
-import { Alert, Image, Platform, View } from 'react-native';
+import { Icon } from "@roninoss/icons";
+import { useForm } from "@tanstack/react-form";
+import { AlertAnchor } from "expo-app/components/nativewindui/Alert";
+import type { AlertRef } from "expo-app/components/nativewindui/Alert/types";
+import { Button } from "expo-app/components/nativewindui/Button";
+import { Checkbox } from "expo-app/components/nativewindui/Checkbox";
+import {
+  Form,
+  FormItem,
+  FormSection,
+} from "expo-app/components/nativewindui/Form";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { TextField } from "expo-app/components/nativewindui/TextField";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import * as React from "react";
+import { Alert, Image, Platform, View } from "react-native";
 import {
   KeyboardAwareScrollView,
   KeyboardController,
   KeyboardStickyView,
-} from 'react-native-keyboard-controller';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { z } from 'zod';
-import { AlertAnchor } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { Button } from '~/components/nativewindui/Button';
-import { Checkbox } from '~/components/nativewindui/Checkbox';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { Text } from '~/components/nativewindui/Text';
-import { TextField } from '~/components/nativewindui/TextField';
+} from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require("expo-app/assets/packrat-app-icon-gradient.png");
 
 // Enhanced password validation schema
 const passwordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters')
+  .min(8, "Password must be at least 8 characters")
   .refine((password) => /[A-Z]/.test(password), {
-    message: 'Password must contain at least one uppercase letter',
+    message: "Password must contain at least one uppercase letter",
   })
   .refine((password) => /[a-z]/.test(password), {
-    message: 'Password must contain at least one lowercase letter',
+    message: "Password must contain at least one lowercase letter",
   })
   .refine((password) => /[0-9]/.test(password), {
-    message: 'Password must contain at least one number',
+    message: "Password must contain at least one number",
   })
   .refine((password) => /[^A-Za-z0-9]/.test(password), {
-    message: 'Password must contain at least one special character',
+    message: "Password must contain at least one special character",
   });
 
 // Define Zod schema for password reset validation
 const resetPasswordFormSchema = z
   .object({
     password: passwordSchema,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
-    path: ['confirmPassword'],
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
 // Type inference
@@ -70,24 +74,24 @@ const getPasswordStrength = (password: string) => {
     strength++;
   }
 
-  let label = 'Very Weak';
-  let color = 'bg-red-500';
+  let label = "Very Weak";
+  let color = "bg-red-500";
 
   if (strength === 1) {
-    label = 'Weak';
-    color = 'bg-red-500';
+    label = "Weak";
+    color = "bg-red-500";
   } else if (strength === 2) {
-    label = 'Fair';
-    color = 'bg-orange-500';
+    label = "Fair";
+    color = "bg-orange-500";
   } else if (strength === 3) {
-    label = 'Good';
-    color = 'bg-yellow-500';
+    label = "Good";
+    color = "bg-yellow-500";
   } else if (strength === 4) {
-    label = 'Strong';
-    color = 'bg-green-500';
+    label = "Strong";
+    color = "bg-green-500";
   } else if (strength === 5) {
-    label = 'Very Strong';
-    color = 'bg-green-700';
+    label = "Very Strong";
+    color = "bg-green-700";
   }
 
   return { strength, label, color };
@@ -98,7 +102,7 @@ export default function ResetPasswordScreen() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [passwordVisible, setPasswordVisible] = React.useState(false);
   const [focusedTextField, setFocusedTextField] = React.useState<
-    'password' | 'confirm-password' | null
+    "password" | "confirm-password" | null
   >(null);
   const alertRef = React.useRef<AlertRef>(null);
 
@@ -110,8 +114,8 @@ export default function ResetPasswordScreen() {
 
   const form = useForm({
     defaultValues: {
-      password: '',
-      confirmPassword: '',
+      password: "",
+      confirmPassword: "",
     },
     validators: {
       onChange: resetPasswordFormSchema,
@@ -121,10 +125,10 @@ export default function ResetPasswordScreen() {
         setIsLoading(true);
 
         // Call the API to reset the password
-        const response = await fetch('/api/auth/reset-password', {
-          method: 'POST',
+        const response = await fetch("/api/auth/reset-password", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             email: params.email,
@@ -135,18 +139,21 @@ export default function ResetPasswordScreen() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to reset password');
+          throw new Error(errorData.error || "Failed to reset password");
         }
 
         // Show success message and navigate to login
-        Alert.alert('Success', 'Your password has been reset successfully', [
+        Alert.alert("Success", "Your password has been reset successfully", [
           {
-            text: 'Login',
-            onPress: () => router.replace('/auth'),
+            text: "Login",
+            onPress: () => router.replace("/auth"),
           },
         ]);
       } catch (error) {
-        Alert.alert('Error', error instanceof Error ? error.message : 'Failed to reset password');
+        Alert.alert(
+          "Error",
+          error instanceof Error ? error.message : "Failed to reset password"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -154,10 +161,13 @@ export default function ResetPasswordScreen() {
   });
 
   return (
-    <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
+    <View
+      className="ios:bg-card flex-1"
+      style={{ paddingBottom: insets.bottom }}
+    >
       <Stack.Screen
         options={{
-          title: 'Reset Password',
+          title: "Reset Password",
           headerShadowVisible: false,
         }}
       />
@@ -175,11 +185,15 @@ export default function ResetPasswordScreen() {
               className="ios:h-12 ios:w-12 h-8 w-8 rounded-md"
               resizeMode="contain"
             />
-            <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
+            <Text
+              variant="title1"
+              className="ios:font-bold pb-1 pt-4 text-center"
+            >
               Create New Password
             </Text>
             <Text className="px-4 pt-2 text-center text-muted-foreground">
-              Your new password must be different from previously used passwords.
+              Your new password must be different from previously used
+              passwords.
             </Text>
           </View>
           <View className="ios:pt-4 pt-6">
@@ -188,14 +202,24 @@ export default function ResetPasswordScreen() {
                 <FormItem>
                   <form.Field name="password">
                     {(field) => {
-                      const passwordStrength = getPasswordStrength(field.state.value);
+                      const passwordStrength = getPasswordStrength(
+                        field.state.value
+                      );
                       return (
                         <View>
                           <TextField
-                            placeholder={Platform.select({ ios: 'New Password', default: '' })}
-                            label={Platform.select({ ios: undefined, default: 'New Password' })}
-                            onSubmitEditing={() => KeyboardController.setFocusTo('next')}
-                            onFocus={() => setFocusedTextField('password')}
+                            placeholder={Platform.select({
+                              ios: "New Password",
+                              default: "",
+                            })}
+                            label={Platform.select({
+                              ios: undefined,
+                              default: "New Password",
+                            })}
+                            onSubmitEditing={() =>
+                              KeyboardController.setFocusTo("next")
+                            }
+                            onFocus={() => setFocusedTextField("password")}
                             onBlur={() => {
                               setFocusedTextField(null);
                               field.handleBlur();
@@ -213,7 +237,9 @@ export default function ResetPasswordScreen() {
                           {field.state.value ? (
                             <View className="mt-2 px-1">
                               <View className="mb-1 flex-row justify-between">
-                                <Text className="text-xs text-gray-500">Password strength:</Text>
+                                <Text className="text-xs text-gray-500">
+                                  Password strength:
+                                </Text>
                                 <Text className="text-xs font-medium">
                                   {passwordStrength.label}
                                 </Text>
@@ -221,7 +247,9 @@ export default function ResetPasswordScreen() {
                               <View className="h-1 overflow-hidden rounded-full bg-gray-200">
                                 <View
                                   className={`h-full ${passwordStrength.color}`}
-                                  style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                                  style={{
+                                    width: `${(passwordStrength.strength / 5) * 100}%`,
+                                  }}
                                 />
                               </View>
 
@@ -229,9 +257,17 @@ export default function ResetPasswordScreen() {
                               <View className="mt-2 space-y-1">
                                 <View className="flex-row items-center">
                                   <Icon
-                                    name={field.state.value.length >= 8 ? 'check-circle' : 'circle'}
+                                    name={
+                                      field.state.value.length >= 8
+                                        ? "check-circle"
+                                        : "circle"
+                                    }
                                     size={14}
-                                    color={field.state.value.length >= 8 ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      field.state.value.length >= 8
+                                        ? "#10B981"
+                                        : "#9CA3AF"
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     At least 8 characters
@@ -240,10 +276,16 @@ export default function ResetPasswordScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[A-Z]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      /[A-Z]/.test(field.state.value)
+                                        ? "check-circle"
+                                        : "circle"
                                     }
                                     size={14}
-                                    color={/[A-Z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      /[A-Z]/.test(field.state.value)
+                                        ? "#10B981"
+                                        : "#9CA3AF"
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     At least 1 uppercase letter
@@ -252,10 +294,16 @@ export default function ResetPasswordScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[a-z]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      /[a-z]/.test(field.state.value)
+                                        ? "check-circle"
+                                        : "circle"
                                     }
                                     size={14}
-                                    color={/[a-z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      /[a-z]/.test(field.state.value)
+                                        ? "#10B981"
+                                        : "#9CA3AF"
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     At least 1 lowercase letter
@@ -264,10 +312,16 @@ export default function ResetPasswordScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[0-9]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      /[0-9]/.test(field.state.value)
+                                        ? "check-circle"
+                                        : "circle"
                                     }
                                     size={14}
-                                    color={/[0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      /[0-9]/.test(field.state.value)
+                                        ? "#10B981"
+                                        : "#9CA3AF"
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     At least 1 number
@@ -277,12 +331,14 @@ export default function ResetPasswordScreen() {
                                   <Icon
                                     name={
                                       /[^A-Za-z0-9]/.test(field.state.value)
-                                        ? 'check-circle'
-                                        : 'circle'
+                                        ? "check-circle"
+                                        : "circle"
                                     }
                                     size={14}
                                     color={
-                                      /[^A-Za-z0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'
+                                      /[^A-Za-z0-9]/.test(field.state.value)
+                                        ? "#10B981"
+                                        : "#9CA3AF"
                                     }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
@@ -301,9 +357,15 @@ export default function ResetPasswordScreen() {
                   <form.Field name="confirmPassword">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Confirm password', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Confirm password' })}
-                        onFocus={() => setFocusedTextField('confirm-password')}
+                        placeholder={Platform.select({
+                          ios: "Confirm password",
+                          default: "",
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: "Confirm password",
+                        })}
+                        onFocus={() => setFocusedTextField("confirm-password")}
                         onBlur={() => {
                           setFocusedTextField(null);
                           field.handleBlur();
@@ -327,7 +389,9 @@ export default function ResetPasswordScreen() {
                     onCheckedChange={setPasswordVisible}
                     id="show-password"
                   />
-                  <Text className="ml-2 text-sm text-gray-700">Show password</Text>
+                  <Text className="ml-2 text-sm text-gray-700">
+                    Show password
+                  </Text>
                 </View>
               </FormSection>
             </Form>
@@ -335,29 +399,33 @@ export default function ResetPasswordScreen() {
         </View>
       </KeyboardAwareScrollView>
       <KeyboardStickyView offset={{ closed: 0, opened: insets.bottom }}>
-        {Platform.OS === 'ios' ? (
+        {Platform.OS === "ios" ? (
           <View className="px-12 py-4">
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
               {([canSubmit, isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || isLoading}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{isLoading ? 'Resetting...' : 'Reset Password'}</Text>
+                  <Text>{isLoading ? "Resetting..." : "Reset Password"}</Text>
                 </Button>
               )}
             </form.Subscribe>
           </View>
         ) : (
           <View className="flex-row justify-end py-4 pl-6 pr-8">
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
               {([canSubmit, isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || isLoading}
                   onPress={() => {
-                    if (focusedTextField !== 'confirm-password') {
-                      KeyboardController.setFocusTo('next');
+                    if (focusedTextField !== "confirm-password") {
+                      KeyboardController.setFocusTo("next");
                       return;
                     }
                     KeyboardController.dismiss();
@@ -366,10 +434,10 @@ export default function ResetPasswordScreen() {
                 >
                   <Text className="text-sm">
                     {isLoading
-                      ? 'Resetting...'
-                      : focusedTextField !== 'confirm-password'
-                        ? 'Next'
-                        : 'Reset Password'}
+                      ? "Resetting..."
+                      : focusedTextField !== "confirm-password"
+                        ? "Next"
+                        : "Reset Password"}
                   </Text>
                 </Button>
               )}

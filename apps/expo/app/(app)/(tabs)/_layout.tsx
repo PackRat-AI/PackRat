@@ -1,7 +1,12 @@
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Icon, type IconProps } from '@roninoss/icons';
-import { Tabs } from 'expo-router';
-import type * as React from 'react';
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { Icon, type IconProps } from "@roninoss/icons";
+import { Badge } from "expo-app/components/nativewindui/Badge";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { clientEnvs } from "expo-app/env/clientEnvs";
+import { cn } from "expo-app/lib/cn";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { Tabs } from "expo-router";
+import type * as React from "react";
 import {
   Platform,
   Pressable,
@@ -9,15 +14,13 @@ import {
   type StyleProp,
   View,
   type ViewStyle,
-} from 'react-native';
-import Animated, { useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { Badge } from '~/components/nativewindui/Badge';
-import { Text } from '~/components/nativewindui/Text';
-import { clientEnvs } from '~/env/clientEnvs';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useDerivedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
   const { colors } = useColorScheme();
@@ -25,7 +28,10 @@ export default function TabLayout() {
     <>
       <Tabs
         tabBar={TAB_BAR}
-        screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.primary }}
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
+        }}
       >
         <Tabs.Screen name="(home)" options={INDEX_OPTIONS} />
         <Tabs.Screen name="packs" options={PACK_LIST_OPTIONS} />
@@ -33,7 +39,7 @@ export default function TabLayout() {
         <Tabs.Screen name="profile" options={PROFILE_OPTIONS} />
         <Tabs.Screen
           name="sqlite-debug"
-          options={clientEnvs.NODE_ENV === 'development' ? {} : { href: null }}
+          options={clientEnvs.NODE_ENV === "development" ? {} : { href: null }}
         />
       </Tabs>
     </>
@@ -41,28 +47,28 @@ export default function TabLayout() {
 }
 
 const INDEX_OPTIONS = {
-  title: 'Dashboard',
+  title: "Dashboard",
   tabBarIcon(props) {
     return <Icon name="home" {...props} size={27} />;
   },
 } as const;
 
 const PACK_LIST_OPTIONS = {
-  title: 'Packs',
+  title: "Packs",
   tabBarIcon(props) {
     return <Icon name="backpack" {...props} size={27} />;
   },
 } as const;
 
 const ITEMS_CATALOG_OPTIONS = {
-  title: 'Catalog',
+  title: "Catalog",
   tabBarIcon(props) {
     return <Icon name="clipboard-list" {...props} size={27} />;
   },
 } as const;
 
 const PROFILE_OPTIONS = {
-  title: 'Profile',
+  title: "Profile",
   tabBarIcon(props) {
     return <Icon name="account-circle" {...props} size={27} />;
   },
@@ -74,10 +80,10 @@ const TAB_BAR = Platform.select({
 });
 
 const TAB_ICON = {
-  '(home)': 'home',
-  packs: 'backpack',
-  catalog: 'clipboard-list',
-  profile: 'account-circle',
+  "(home)": "home",
+  packs: "backpack",
+  catalog: "clipboard-list",
+  profile: "account-circle",
 } as const;
 
 function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -103,7 +109,7 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
         const onPress = () => {
           const event = navigation.emit({
-            type: 'tabPress',
+            type: "tabPress",
             target: route.key,
             canPreventDefault: true,
           });
@@ -115,7 +121,7 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
         const onLongPress = () => {
           navigation.emit({
-            type: 'tabLongPress',
+            type: "tabLongPress",
             target: route.key,
           });
         };
@@ -133,12 +139,12 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             isFocused={isFocused}
             badge={options.tabBarBadge}
             label={
-              typeof label === 'function'
+              typeof label === "function"
                 ? label({
                     focused: isFocused,
                     color: isFocused ? colors.foreground : colors.grey2,
-                    children: options.title ?? route.name ?? '',
-                    position: options.tabBarLabelPosition ?? 'below-icon',
+                    children: options.title ?? route.name ?? "",
+                    position: options.tabBarLabelPosition ?? "below-icon",
                   })
                 : label
             }
@@ -152,7 +158,7 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 
 function MaterialTabItem({
   isFocused,
-  name = 'star',
+  name = "star",
   badge,
   className,
   label,
@@ -160,17 +166,21 @@ function MaterialTabItem({
   ...pressableProps
 }: {
   isFocused: boolean;
-  name: IconProps<'material'>['name'];
+  name: IconProps<"material">["name"];
   label: string | React.ReactNode;
   tabBarItemStyle?: StyleProp<ViewStyle>;
   badge?: number | string;
-} & Omit<PressableProps, 'children'>) {
+} & Omit<PressableProps, "children">) {
   const { colors } = useColorScheme();
   const isFocusedDerived = useDerivedValue(() => isFocused);
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      position: 'absolute',
-      transform: [{ scaleX: withTiming(isFocusedDerived.value ? 1 : 0, { duration: 200 }) }],
+      position: "absolute",
+      transform: [
+        {
+          scaleX: withTiming(isFocusedDerived.value ? 1 : 0, { duration: 200 }),
+        },
+      ],
       opacity: withTiming(isFocusedDerived.value ? 1 : 0, { duration: 200 }),
       bottom: 0,
       top: 0,
@@ -181,12 +191,15 @@ function MaterialTabItem({
   });
   return (
     <Pressable
-      className={cn('flex-1 items-center', className)}
+      className={cn("flex-1 items-center", className)}
       {...pressableProps}
       style={tabBarItemStyle}
     >
       <View className="h-8 w-16 items-center justify-center overflow-hidden rounded-full ">
-        <Animated.View style={animatedStyle} className="bg-secondary/70 dark:bg-secondary" />
+        <Animated.View
+          style={animatedStyle}
+          className="bg-secondary/70 dark:bg-secondary"
+        />
         <View>
           <Icon
             ios={{ useMaterialIcon: true }}
@@ -197,7 +210,10 @@ function MaterialTabItem({
           {!!badge && <Badge>{badge}</Badge>}
         </View>
       </View>
-      <Text variant="caption2" className={cn('pt-1', !isFocused && 'text-muted-foreground')}>
+      <Text
+        variant="caption2"
+        className={cn("pt-1", !isFocused && "text-muted-foreground")}
+      >
         {label}
       </Text>
     </Pressable>

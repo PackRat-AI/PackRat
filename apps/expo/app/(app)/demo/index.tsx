@@ -1,34 +1,37 @@
-import { useHeaderHeight } from '@react-navigation/elements';
-import { Icon } from '@roninoss/icons';
-import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
-import { cssInterop } from 'nativewind';
-import type * as React from 'react';
-import { useState } from 'react';
-import { Linking, useWindowDimensions, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card } from '~/components/Card';
-
-import { Button } from '~/components/nativewindui/Button';
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { Text } from '~/components/nativewindui/Text';
-import { ThemeToggle } from '~/components/ThemeToggle';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import { useHeaderSearchBar } from '~/lib/hooks/useHeaderSearchBar';
+import { useHeaderHeight } from "@react-navigation/elements";
+import { Icon } from "@roninoss/icons";
+import { FlashList } from "@shopify/flash-list";
+import { Card } from "expo-app/components/Card";
+import { Button } from "expo-app/components/nativewindui/Button";
+import { LargeTitleHeader } from "expo-app/components/nativewindui/LargeTitleHeader";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { ThemeToggle } from "expo-app/components/ThemeToggle";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { useHeaderSearchBar } from "expo-app/lib/hooks/useHeaderSearchBar";
+import { useRouter } from "expo-router";
+import { cssInterop } from "nativewind";
+import type * as React from "react";
+import { useState } from "react";
+import { Linking, useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 cssInterop(FlashList, {
-  className: 'style',
-  contentContainerClassName: 'contentContainerStyle',
+  className: "style",
+  contentContainerClassName: "contentContainerStyle",
 });
 
 export default function Screen() {
   const [hasSeenConsent, setHasSeenConsent] = useState(false);
 
-  const searchValue = useHeaderSearchBar({ hideWhenScrolling: COMPONENTS.length === 0 });
+  const searchValue = useHeaderSearchBar({
+    hideWhenScrolling: COMPONENTS.length === 0,
+  });
   // const [searchValue, setSearchValue] = useState('');
 
   const data = searchValue
-    ? COMPONENTS.filter((c) => c.name.toLowerCase().includes(searchValue.toLowerCase()))
+    ? COMPONENTS.filter((c) =>
+        c.name.toLowerCase().includes(searchValue.toLowerCase())
+      )
     : COMPONENTS;
 
   if (!hasSeenConsent) {
@@ -54,7 +57,9 @@ export default function Screen() {
         keyExtractor={keyExtractor}
         ItemSeparatorComponent={renderItemSeparator}
         renderItem={renderItem}
-        ListEmptyComponent={COMPONENTS.length === 0 ? ListEmptyComponent : undefined}
+        ListEmptyComponent={
+          COMPONENTS.length === 0 ? ListEmptyComponent : undefined
+        }
       />
     </>
   );
@@ -68,21 +73,24 @@ function ListEmptyComponent() {
   const height = dimensions.height - headerHeight - insets.bottom - insets.top;
 
   return (
-    <View style={{ height }} className="flex-1 items-center justify-center gap-1 px-12">
+    <View
+      style={{ height }}
+      className="flex-1 items-center justify-center gap-1 px-12"
+    >
       <Icon name="file-plus-outline" size={42} color={colors.grey} />
       <Text variant="title3" className="pb-1 text-center font-semibold">
         No Components Installed
       </Text>
       <Text color="tertiary" variant="subhead" className="pb-4 text-center">
-        You can install any of the free components from the{' '}
+        You can install any of the free components from the{" "}
         <Text
-          onPress={() => Linking.openURL('https://nativewindui.com')}
+          onPress={() => Linking.openURL("https://nativewindui.com")}
           variant="subhead"
           className="text-primary"
         >
           NativeWindUI
         </Text>
-        {' website.'}
+        {" website."}
       </Text>
     </View>
   );
@@ -108,7 +116,7 @@ function renderItem({ item }: { item: ComponentItem }) {
 
 const COMPONENTS: ComponentItem[] = [
   {
-    name: 'Links',
+    name: "Links",
     component: function LinksExample() {
       const router = useRouter();
       return (
@@ -117,16 +125,16 @@ const COMPONENTS: ComponentItem[] = [
             <Text>
               <Text>Main Screens</Text>
             </Text>
-            <Button onPress={() => router.push('/')}>
+            <Button onPress={() => router.push("/")}>
               <Text>Dashboard</Text>
             </Button>
-            <Button onPress={() => router.push('/packs')}>
+            <Button onPress={() => router.push("/packs")}>
               <Text>Packs</Text>
             </Button>
-            <Button onPress={() => router.push('/items')}>
+            <Button onPress={() => router.push("/items")}>
               <Text>Items</Text>
             </Button>
-            <Button onPress={() => router.push('/catalog')}>
+            <Button onPress={() => router.push("/catalog")}>
               <Text>Catalog</Text>
             </Button>
           </View>
@@ -134,34 +142,34 @@ const COMPONENTS: ComponentItem[] = [
             <Text>
               <Text>Modals</Text>
             </Text>
-            <Button onPress={() => router.push('/pack/new')}>
+            <Button onPress={() => router.push("/pack/new")}>
               <Text>New Pack</Text>
             </Button>
-            <Button onPress={() => router.push('/item/new')}>
+            <Button onPress={() => router.push("/item/new")}>
               <Text>New Item</Text>
             </Button>
           </View>
           <View className="gap-2">
             <Text>Additional Screens</Text>
-            <Button onPress={() => router.push('/settings')}>
+            <Button onPress={() => router.push("/settings")}>
               <Text>Settings</Text>
             </Button>
-            <Button onPress={() => router.push('/auth/one-time-password')}>
+            <Button onPress={() => router.push("/auth/one-time-password")}>
               <Text>OTP</Text>
             </Button>
-            <Button onPress={() => router.push('/auth')}>
+            <Button onPress={() => router.push("/auth")}>
               <Text>Login</Text>
             </Button>
-            <Button onPress={() => router.push('/messages/conversations')}>
+            <Button onPress={() => router.push("/messages/conversations")}>
               <Text>Messages (Conversations)</Text>
             </Button>
-            <Button onPress={() => router.push('/messages/chat')}>
+            <Button onPress={() => router.push("/messages/chat")}>
               <Text>Messages (Chat)</Text>
             </Button>
-            <Button onPress={() => router.push('/ai-chat')}>
+            <Button onPress={() => router.push("/ai-chat")}>
               <Text>AI Chat</Text>
             </Button>
-            <Button onPress={() => router.push('/ai-chat')}>
+            <Button onPress={() => router.push("/ai-chat")}>
               <Text>AI Chat (Better UI)</Text>
             </Button>
           </View>
@@ -170,7 +178,7 @@ const COMPONENTS: ComponentItem[] = [
     },
   },
   {
-    name: 'Text',
+    name: "Text",
     component: function TextExample() {
       return (
         <View className="gap-2">
@@ -212,7 +220,7 @@ const COMPONENTS: ComponentItem[] = [
     },
   },
   {
-    name: 'Selectable Text',
+    name: "Selectable Text",
     component: function SelectableTextExample() {
       return (
         <Text uiTextView selectable>
@@ -222,7 +230,7 @@ const COMPONENTS: ComponentItem[] = [
     },
   },
   {
-    name: 'Button',
+    name: "Button",
     component: function ButtonExample() {
       return (
         <View className="gap-4">

@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { packItemsStore } from '~/features/packs/store';
+import { packItemsStore } from "expo-app/features/packs/store";
+import { useCallback } from "react";
 
 export function useDeletePackItem() {
   const deletePackItem = useCallback((id: string) => {

@@ -1,11 +1,11 @@
-import type { CatalogItem } from '~/features/catalog/types';
-import type { PackItem, WeightUnit } from '~/features/packs';
+import type { CatalogItem } from "expo-app/features/catalog/types";
+import type { PackItem, WeightUnit } from "expo-app/features/packs";
 
 /**
  * Checks if an item is a pack item
  */
 export function isPackItem(item: CatalogItem | PackItem): item is PackItem {
-  return 'packId' in item && item.packId !== undefined;
+  return "packId" in item && item.packId !== undefined;
 }
 
 /**
@@ -29,7 +29,7 @@ export function getQuantity(item: CatalogItem | PackItem): number {
  * Gets the weight unit of an item
  */
 export function getWeightUnit(item: CatalogItem | PackItem): WeightUnit {
-  return isPackItem(item) ? item.weightUnit : 'g';
+  return isPackItem(item) ? item.weightUnit : "g";
 }
 
 /** Gets the notes of an item */
@@ -48,26 +48,26 @@ export function calculateTotalWeight(item: CatalogItem | PackItem): number {
  * Checks if an item is consumable
  */
 export function isConsumable(item: CatalogItem | PackItem): boolean {
-  return 'consumable' in item && item.consumable;
+  return "consumable" in item && item.consumable;
 }
 
 /**
  * Checks if quantity should be shown for an item
  */
 export function shouldShowQuantity(item: CatalogItem | PackItem): boolean {
-  return isPackItem(item) && 'quantity' in item;
+  return isPackItem(item) && "quantity" in item;
 }
 
 /**
  * Checks if an item is worn
  */
 export function isWorn(item: CatalogItem | PackItem): boolean {
-  return 'worn' in item && item.worn;
+  return "worn" in item && item.worn;
 }
 
 /**
  * Check if the item has a notes field
  */
 export function hasNotes(item: CatalogItem | PackItem): boolean {
-  return 'notes' in item && item.notes !== undefined;
+  return "notes" in item && item.notes !== undefined;
 }

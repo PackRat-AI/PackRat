@@ -1,5 +1,5 @@
-import { atom } from 'jotai';
-import type { PackCategory } from '~/types';
+import type { PackCategory } from "expo-app/types";
+import { atom } from "jotai";
 
-export const activeTemplateFilterAtom = atom<PackCategory | 'all'>('all');
-export const templateSearchValueAtom = atom<string>('');
+export const activeTemplateFilterAtom = atom<PackCategory | "all">("all");
+export const templateSearchValueAtom = atom<string>("");

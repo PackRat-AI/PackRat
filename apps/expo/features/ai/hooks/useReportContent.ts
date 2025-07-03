@@ -1,6 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
-import type { ReportReason } from '../lib/reportReasons';
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance, { handleApiError } from "expo-app/lib/api/client";
+import type { ReportReason } from "../lib/reportReasons";
 
 type ReportContentPayload = {
   messageId: string;
@@ -17,10 +17,10 @@ type ReportContentResponse = {
 
 // API function
 export const reportContent = async (
-  payload: ReportContentPayload,
+  payload: ReportContentPayload
 ): Promise<ReportContentResponse> => {
   try {
-    const response = await axiosInstance.post('/api/chat/reports', payload);
+    const response = await axiosInstance.post("/api/chat/reports", payload);
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
@@ -33,7 +33,7 @@ export function useReportContent() {
   return useMutation({
     mutationFn: (payload: ReportContentPayload) => reportContent(payload),
     onError: (error) => {
-      console.error('Error reporting content:', error);
+      console.error("Error reporting content:", error);
     },
   });
 }

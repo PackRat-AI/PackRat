@@ -1,14 +1,17 @@
-import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
-import 'expo-dev-client';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import '../global.css';
+import { ThemeProvider as NavThemeProvider } from "@react-navigation/native";
+import "expo-dev-client";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import "../global.css";
 
-import * as Sentry from '@sentry/react-native';
-import { userStore } from '~/features/auth/store';
-import { useColorScheme, useInitialAndroidBarSync } from '~/lib/hooks/useColorScheme';
-import { Providers } from '~/providers';
-import { NAV_THEME } from '~/theme';
+import * as Sentry from "@sentry/react-native";
+import { userStore } from "expo-app/features/auth/store";
+import {
+  useColorScheme,
+  useInitialAndroidBarSync,
+} from "expo-app/lib/hooks/useColorScheme";
+import { Providers } from "expo-app/providers";
+import { NAV_THEME } from "expo-app/theme";
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -25,7 +28,7 @@ if (user) {
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
-} from 'expo-router';
+} from "expo-router";
 
 function RootLayout() {
   useInitialAndroidBarSync();
@@ -34,8 +37,8 @@ function RootLayout() {
   return (
     <>
       <StatusBar
-        key={`root-status-bar-${isDarkColorScheme ? 'light' : 'dark'}`}
-        style={isDarkColorScheme ? 'light' : 'dark'}
+        key={`root-status-bar-${isDarkColorScheme ? "light" : "dark"}`}
+        style={isDarkColorScheme ? "light" : "dark"}
       />
       <Providers>
         <NavThemeProvider value={NAV_THEME[colorScheme]}>
@@ -53,5 +56,5 @@ export default Sentry.wrap(RootLayout);
 
 const SCREEN_OPTIONS = {
   headerShown: false,
-  animation: 'ios_from_right', // for android
+  animation: "ios_from_right", // for android
 } as const;

@@ -1,15 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { useAtomValue } from 'jotai';
-import { tokenAtom } from '~/features/auth/atoms/authAtoms';
-import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
+import { useQuery } from "@tanstack/react-query";
+import { tokenAtom } from "expo-app/features/auth/atoms/authAtoms";
+import { useAuthenticatedQueryToolkit } from "expo-app/lib/hooks/useAuthenticatedQueryToolkit";
+import { useAtomValue } from "jotai";
 
 export const useVectorSearch = (query: string) => {
   const token = useAtomValue(tokenAtom);
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
-    queryKey: ['vectorSearch', query],
-    enabled: isQueryEnabledWithAccessToken && !!query && query.length > 0 && !!token,
+    queryKey: ["vectorSearch", query],
+    enabled:
+      isQueryEnabledWithAccessToken && !!query && query.length > 0 && !!token,
 
     queryFn: async () => {
       const response = await fetch(
@@ -18,12 +19,12 @@ export const useVectorSearch = (query: string) => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        },
+        }
       );
 
       if (!response.ok) {
         const errMsg = await response.text();
-        throw new Error('Vector search failed');
+        throw new Error("Vector search failed");
       }
 
       const data = await response.json();

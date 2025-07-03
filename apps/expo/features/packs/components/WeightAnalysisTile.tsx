@@ -1,13 +1,13 @@
-import { Icon } from '@roninoss/icons';
-import { type Href, useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { View } from 'react-native';
-import { Alert } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { ListItem } from '~/components/nativewindui/List';
-import { Text } from '~/components/nativewindui/Text';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import { useCurrentPack } from '../hooks';
+import { Icon } from "@roninoss/icons";
+import { Alert } from "expo-app/components/nativewindui/Alert";
+import type { AlertRef } from "expo-app/components/nativewindui/Alert/types";
+import { ListItem } from "expo-app/components/nativewindui/List";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { type Href, useRouter } from "expo-router";
+import { useRef } from "react";
+import { View } from "react-native";
+import { useCurrentPack } from "../hooks";
 
 export function WeightAnalysisTile() {
   const router = useRouter();
@@ -15,7 +15,9 @@ export function WeightAnalysisTile() {
   const alertRef = useRef<AlertRef>(null);
 
   const packWeight = currentPack?.totalWeight ?? 0;
-  const route: Href | null = currentPack ? `/weight-analysis/${currentPack.id}` : null;
+  const route: Href | null = currentPack
+    ? `/weight-analysis/${currentPack.id}`
+    : null;
 
   const handlePress = () => {
     if (!currentPack) {
@@ -44,7 +46,7 @@ export function WeightAnalysisTile() {
           </View>
         }
         item={{
-          title: 'Weight Analysis',
+          title: "Weight Analysis",
         }}
         onPress={handlePress}
         target="Cell"
@@ -53,12 +55,12 @@ export function WeightAnalysisTile() {
       <Alert
         title="No Packs Yet"
         message="Create a pack to get weight analysis."
-        materialIcon={{ name: 'information-outline' }}
+        materialIcon={{ name: "information-outline" }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
-            style: 'default',
+            text: "Got it",
+            style: "default",
           },
         ]}
         ref={alertRef}

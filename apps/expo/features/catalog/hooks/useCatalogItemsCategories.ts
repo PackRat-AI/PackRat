@@ -1,18 +1,18 @@
-import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
-import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance, { handleApiError } from "expo-app/lib/api/client";
+import { useAuthenticatedQueryToolkit } from "expo-app/lib/hooks/useAuthenticatedQueryToolkit";
 
 const FALLBACK_CATEGORIES = [
-  'Clothing',
-  'Bike',
-  'Footwear',
-  'Accessories',
-  'Kids',
-  'Hike & Camp',
-  'Ski',
-  'Climb',
-  'Snowboard',
-  'Fishing',
+  "Clothing",
+  "Bike",
+  "Footwear",
+  "Accessories",
+  "Kids",
+  "Hike & Camp",
+  "Ski",
+  "Climb",
+  "Snowboard",
+  "Fishing",
 ];
 
 const getCategories = async (): Promise<string[]> => {
@@ -32,10 +32,10 @@ export function useCatalogItemsCategories() {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
-    queryKey: ['catalogCategories'],
+    queryKey: ["catalogCategories"],
     queryFn: async () => {
       const cats = await getCategories();
-      return ['All', ...cats];
+      return ["All", ...cats];
     },
     staleTime: Infinity,
     gcTime: Infinity,

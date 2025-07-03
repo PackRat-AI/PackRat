@@ -1,15 +1,23 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import * as AppleAuthentication from 'expo-apple-authentication';
-import { type Href, router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { useAtomValue, useSetAtom } from 'jotai';
-import { clientEnvs } from '~/env/clientEnvs';
-import { isAuthed, userStore } from '~/features/auth/store';
-import { packItemsStore, packsStore } from '~/features/packs/store';
-import { packWeigthHistoryStore } from '~/features/packs/store/packWeightHistory';
-import axiosInstance from '~/lib/api/client';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
-import { isLoadingAtom, redirectToAtom, refreshTokenAtom, tokenAtom } from '../atoms/authAtoms';
+import {
+  GoogleSignin,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
+import { clientEnvs } from "expo-app/env/clientEnvs";
+import { isAuthed, userStore } from "expo-app/features/auth/store";
+import { packItemsStore, packsStore } from "expo-app/features/packs/store";
+import { packWeigthHistoryStore } from "expo-app/features/packs/store/packWeightHistory";
+import axiosInstance from "expo-app/lib/api/client";
+import ImageCacheManager from "expo-app/lib/utils/ImageCacheManager";
+import * as AppleAuthentication from "expo-apple-authentication";
+import { type Href, router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import { useAtomValue, useSetAtom } from "jotai";
+import {
+  isLoadingAtom,
+  redirectToAtom,
+  refreshTokenAtom,
+  tokenAtom,
+} from "../atoms/authAtoms";
 
 function redirect(route: string) {
   try {
@@ -28,8 +36,8 @@ export function useAuthActions() {
 
   const clearLocalData = async () => {
     // Clear tokens from secure storage
-    await SecureStore.deleteItemAsync('access_token');
-    await SecureStore.deleteItemAsync('refresh_token');
+    await SecureStore.deleteItemAsync("access_token");
+    await SecureStore.deleteItemAsync("refresh_token");
 
     // Clear state
     await setToken(null);
@@ -45,31 +53,34 @@ export function useAuthActions() {
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to sign in');
+        throw new Error(data.error || "Failed to sign in");
       }
 
       console.log(data.accessToken, data.refreshToken);
       // Store both tokens
-      await SecureStore.setItemAsync('access_token', data.accessToken);
-      await SecureStore.setItemAsync('refresh_token', data.refreshToken);
+      await SecureStore.setItemAsync("access_token", data.accessToken);
+      await SecureStore.setItemAsync("refresh_token", data.refreshToken);
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
       redirect(redirectTo);
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error("Sign in error:", error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -90,27 +101,30 @@ export function useAuthActions() {
       const { idToken } = await GoogleSignin.getTokens();
 
       if (!idToken) {
-        throw new Error('No ID token received from Google');
+        throw new Error("No ID token received from Google");
       }
 
       // Send the token to backend
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken }),
-      });
+      const response = await fetch(
+        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/google`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ idToken }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to sign in with Google');
+        throw new Error(data.error || "Failed to sign in with Google");
       }
 
       // Store both tokens
-      await SecureStore.setItemAsync('access_token', data.accessToken);
-      await SecureStore.setItemAsync('refresh_token', data.refreshToken);
+      await SecureStore.setItemAsync("access_token", data.accessToken);
+      await SecureStore.setItemAsync("refresh_token", data.refreshToken);
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
@@ -120,13 +134,13 @@ export function useAuthActions() {
       setIsLoading(false);
 
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log('User cancelled the login flow');
+        console.log("User cancelled the login flow");
       } else if (error.code === statusCodes.IN_PROGRESS) {
-        console.log('Sign in is in progress');
+        console.log("Sign in is in progress");
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Play services not available');
+        console.log("Play services not available");
       } else {
-        console.error('Google sign in error:', error);
+        console.error("Google sign in error:", error);
       }
 
       throw error;
@@ -144,57 +158,68 @@ export function useAuthActions() {
       });
 
       // Send the identity token to your backend
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/apple`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          identityToken: credential.identityToken,
-          authorizationCode: credential.authorizationCode,
-        }),
-      });
+      const response = await fetch(
+        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/apple`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            identityToken: credential.identityToken,
+            authorizationCode: credential.authorizationCode,
+          }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to sign in with Apple');
+        throw new Error(data.error || "Failed to sign in with Apple");
       }
 
       // Store both tokens
-      await SecureStore.setItemAsync('access_token', data.accessToken);
-      await SecureStore.setItemAsync('refresh_token', data.refreshToken);
+      await SecureStore.setItemAsync("access_token", data.accessToken);
+      await SecureStore.setItemAsync("refresh_token", data.refreshToken);
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
       redirect(redirectTo);
     } catch (error) {
-      console.error('Apple sign in error:', error);
+      console.error("Apple sign in error:", error);
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    firstName?: string,
+    lastName?: string
+  ) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, firstName, lastName }),
-      });
+      const response = await fetch(
+        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password, firstName, lastName }),
+        }
+      );
 
       const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(responseData.error || 'Registration failed');
+        throw new Error(responseData.error || "Registration failed");
       }
     } catch (error: any) {
-      console.error('Registration error:', error.message);
+      console.error("Registration error:", error.message);
       throw error;
     } finally {
       setIsLoading(false);
@@ -211,23 +236,23 @@ export function useAuthActions() {
       }
 
       // Get the refresh token
-      const refreshToken = await SecureStore.getItemAsync('refresh_token');
+      const refreshToken = await SecureStore.getItemAsync("refresh_token");
 
       if (refreshToken) {
         // Call the logout endpoint to revoke the refresh token
         await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/logout`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ refreshToken }),
         });
       }
 
       clearLocalData();
-      router.replace('/');
+      router.replace("/");
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error("Sign out error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -235,70 +260,83 @@ export function useAuthActions() {
 
   const forgotPassword = async (email: string) => {
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await fetch(
+        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/forgot-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to process request');
+        throw new Error(data.error || "Failed to process request");
       }
 
       return data;
     } catch (error) {
-      console.error('Forgot password error:', error);
+      console.error("Forgot password error:", error);
       throw error;
     }
   };
 
-  const resetPassword = async (email: string, code: string, newPassword: string) => {
+  const resetPassword = async (
+    email: string,
+    code: string,
+    newPassword: string
+  ) => {
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code, newPassword }),
-      });
+      const response = await fetch(
+        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, code, newPassword }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to reset password');
+        throw new Error(data.error || "Failed to reset password");
       }
 
       return data;
     } catch (error) {
-      console.error('Reset password error:', error);
+      console.error("Reset password error:", error);
       throw error;
     }
   };
 
   const verifyEmail = async (email: string, code: string) => {
     try {
-      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/verify-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, code }),
-      });
+      const response = await fetch(
+        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/verify-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, code }),
+        }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to verify email');
+        throw new Error(data.error || "Failed to verify email");
       }
 
       // If verification is successful, set the user and tokens
       if (data.accessToken && data.refreshToken && data.user) {
-        await SecureStore.setItemAsync('access_token', data.accessToken);
-        await SecureStore.setItemAsync('refresh_token', data.refreshToken);
+        await SecureStore.setItemAsync("access_token", data.accessToken);
+        await SecureStore.setItemAsync("refresh_token", data.refreshToken);
 
         await setToken(data.accessToken);
         await setRefreshToken(data.refreshToken);
@@ -308,7 +346,7 @@ export function useAuthActions() {
 
       return data;
     } catch (error) {
-      console.error('Email verification error:', error);
+      console.error("Email verification error:", error);
       throw error;
     }
   };
@@ -318,23 +356,23 @@ export function useAuthActions() {
       const response = await fetch(
         `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/resend-verification`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ email }),
-        },
+        }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to resend verification email');
+        throw new Error(data.error || "Failed to resend verification email");
       }
 
       return data;
     } catch (error) {
-      console.error('Resend verification email error:', error);
+      console.error("Resend verification email error:", error);
       throw error;
     }
   };
@@ -342,17 +380,17 @@ export function useAuthActions() {
   const deleteAccount = async () => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.delete('/api/auth');
+      const response = await axiosInstance.delete("/api/auth");
 
       if (response.status !== 200) {
-        throw new Error(response.data?.error || 'Failed to delete account');
+        throw new Error(response.data?.error || "Failed to delete account");
       }
 
       // Clear tokens and user data
       await clearLocalData();
-      router.replace('/');
+      router.replace("/");
     } catch (error) {
-      console.error('Delete account error:', error);
+      console.error("Delete account error:", error);
       throw error;
     } finally {
       setIsLoading(false);

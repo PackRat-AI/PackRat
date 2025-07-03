@@ -1,12 +1,12 @@
-import { Icon } from '@roninoss/icons';
-import { useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { View } from 'react-native';
-import { Alert } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { ListItem } from '~/components/nativewindui/List';
-import { Text } from '~/components/nativewindui/Text';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import { Icon } from "@roninoss/icons";
+import { Alert } from "expo-app/components/nativewindui/Alert";
+import type { AlertRef } from "expo-app/components/nativewindui/Alert/types";
+import { ListItem } from "expo-app/components/nativewindui/List";
+import { Text } from "expo-app/components/nativewindui/Text";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { useRouter } from "expo-router";
+import { useRef } from "react";
+import { View } from "react-native";
 
 export function WeatherAlertsTile() {
   const router = useRouter();
@@ -17,7 +17,7 @@ export function WeatherAlertsTile() {
     //   alertRef.current?.show();
     //   return;
     // }
-    router.push('/weather-alerts');
+    router.push("/weather-alerts");
   };
 
   const weatherAlertCount = 10;
@@ -41,7 +41,7 @@ export function WeatherAlertsTile() {
           </View>
         }
         item={{
-          title: 'Weather Alerts',
+          title: "Weather Alerts",
         }}
         onPress={handlePress}
         target="Cell"
@@ -50,12 +50,12 @@ export function WeatherAlertsTile() {
       <Alert
         title="No Trips Yet"
         message="Create a trip see weather alerts for your destination."
-        materialIcon={{ name: 'information-outline' }}
+        materialIcon={{ name: "information-outline" }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
-            style: 'default',
+            text: "Got it",
+            style: "default",
           },
         ]}
         ref={alertRef}

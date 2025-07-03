@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import axiosInstance from '~/lib/api/client';
-import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
-import type { Pack } from '../types';
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "expo-app/lib/api/client";
+import { useAuthenticatedQueryToolkit } from "expo-app/lib/hooks/useAuthenticatedQueryToolkit";
+import type { Pack } from "../types";
 
 const fetchPackById = async (id: string): Promise<Pack> => {
   const res = await axiosInstance.get(`/api/packs/${id}`);
@@ -19,11 +19,17 @@ const fetchPackById = async (id: string): Promise<Pack> => {
  *  - pack: The fetched pack data
  *  - Additional React Query state and helper methods
  */
-export function usePackDetailsFromApi({ id, enabled }: { id: string; enabled: boolean }) {
+export function usePackDetailsFromApi({
+  id,
+  enabled,
+}: {
+  id: string;
+  enabled: boolean;
+}) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   const { data, ...rest } = useQuery({
-    queryKey: ['pack', id],
+    queryKey: ["pack", id],
     queryFn: () => fetchPackById(id),
     enabled: isQueryEnabledWithAccessToken && !!id && enabled,
   });

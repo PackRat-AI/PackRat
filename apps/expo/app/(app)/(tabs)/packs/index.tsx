@@ -1,8 +1,7 @@
-import { StatusBar } from 'expo-status-bar';
-import { Platform } from 'react-native';
-
-import { PackListScreen } from '~/features/packs/screens/PackListScreen';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import { PackListScreen } from "expo-app/features/packs/screens/PackListScreen";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { StatusBar } from "expo-status-bar";
+import { Platform } from "react-native";
 
 export default function PacksScreen() {
   const { colorScheme } = useColorScheme();
@@ -10,7 +9,13 @@ export default function PacksScreen() {
   return (
     <>
       <StatusBar
-        style={Platform.OS === 'ios' ? 'light' : colorScheme === 'dark' ? 'light' : 'dark'}
+        style={
+          Platform.OS === "ios"
+            ? "light"
+            : colorScheme === "dark"
+              ? "light"
+              : "dark"
+        }
       />
       <PackListScreen />
     </>

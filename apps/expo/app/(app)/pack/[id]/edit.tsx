@@ -1,4 +1,4 @@
-import { EditPackScreen } from '~/features/packs/screens/EditPackScreen';
+import { EditPackScreen } from "expo-app/features/packs/screens/EditPackScreen";
 
 export default function EditPackScreenRoute() {
   return <EditPackScreen />;

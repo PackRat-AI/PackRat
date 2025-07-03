@@ -1,8 +1,8 @@
-import { nanoid } from 'nanoid/non-secure';
-import { useCallback } from 'react';
-import { packItemsStore, packsStore } from '~/features/packs/store';
-import { recordPackWeight } from '../store/packWeightHistory';
-import type { PackItem, PackItemInput } from '../types';
+import { packItemsStore, packsStore } from "expo-app/features/packs/store";
+import { nanoid } from "nanoid/non-secure";
+import { useCallback } from "react";
+import { recordPackWeight } from "../store/packWeightHistory";
+import type { PackItem, PackItemInput } from "../types";
 
 export function useCreatePackItem() {
   const createPackItem = useCallback(
@@ -20,7 +20,7 @@ export function useCreatePackItem() {
       packsStore[packId].localUpdatedAt.set(new Date().toISOString());
       recordPackWeight(packId);
     },
-    [],
+    []
   );
 
   return createPackItem;

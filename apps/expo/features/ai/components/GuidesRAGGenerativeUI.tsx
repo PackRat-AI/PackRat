@@ -1,7 +1,14 @@
-import { Icon } from '@roninoss/icons';
-import { useRef, useState } from 'react';
-import { Dimensions, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
+import { Icon } from "@roninoss/icons";
+import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { useRef, useState } from "react";
+import {
+  Dimensions,
+  Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface GuideSearchResult {
   file_id: string;
@@ -33,52 +40,55 @@ interface GuidesRAGGenerativeUIProps {
   results: GuidesSearchResultsData;
 }
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 const CARD_WIDTH = screenWidth * 0.75; // 75% of screen width
 const CARD_SPACING = 16;
 
-export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerativeUIProps) {
+export function GuidesRAGGenerativeUI({
+  searchQuery,
+  results,
+}: GuidesRAGGenerativeUIProps) {
   const { colors } = useColorScheme();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const formatGuideTitle = (filename: string) => {
     return filename
-      .replace('.mdx', '')
-      .split('-')
+      .replace(".mdx", "")
+      .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .join(" ");
   };
 
   const truncateText = (text: string, maxLength = 120) => {
     if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength).trim() + '...';
+    return text.substring(0, maxLength).trim() + "...";
   };
 
   const handleGuidePress = async (url: string) => {
     try {
       await Linking.openURL(url);
     } catch (error) {
-      console.error('Failed to open URL:', error);
+      console.error("Failed to open URL:", error);
     }
   };
 
   const getRelevanceColor = (score: number) => {
-    if (score >= 0.7) return 'text-green-600';
-    if (score >= 0.5) return 'text-yellow-600';
-    return 'text-gray-500';
+    if (score >= 0.7) return "text-green-600";
+    if (score >= 0.5) return "text-yellow-600";
+    return "text-gray-500";
   };
 
   const getRelevanceText = (score: number) => {
-    if (score >= 0.7) return 'Highly Relevant';
-    if (score >= 0.5) return 'Relevant';
-    return 'Somewhat Relevant';
+    if (score >= 0.7) return "Highly Relevant";
+    if (score >= 0.5) return "Relevant";
+    return "Somewhat Relevant";
   };
 
   const getRelevanceBadgeColor = (score: number) => {
-    if (score >= 0.7) return 'bg-green-100 border-green-200';
-    if (score >= 0.5) return 'bg-yellow-100 border-yellow-200';
-    return 'bg-gray-100 border-gray-200';
+    if (score >= 0.7) return "bg-green-100 border-green-200";
+    if (score >= 0.5) return "bg-yellow-100 border-yellow-200";
+    return "bg-gray-100 border-gray-200";
   };
 
   const handleScroll = (event: any) => {
@@ -100,7 +110,9 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
       <View className="mb-4 px-4">
         <View className="flex-row items-center gap-2">
           <Icon name="magnify" size={16} color={colors.primary} />
-          <Text className="text-sm font-medium text-gray-900">Guide Search Results</Text>
+          <Text className="text-sm font-medium text-gray-900">
+            Guide Search Results
+          </Text>
         </View>
         <Text className="mt-1 text-xs text-gray-600">
           Found {results.data.length} guides for "{searchQuery}"
@@ -140,8 +152,14 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
                 className={`rounded-full border px-2 py-1 ${getRelevanceBadgeColor(guide.score)}`}
               >
                 <View className="flex-row items-center gap-1">
-                  <Icon name="target" size={10} className={getRelevanceColor(guide.score)} />
-                  <Text className={`text-xs font-medium ${getRelevanceColor(guide.score)}`}>
+                  <Icon
+                    name="target"
+                    size={10}
+                    className={getRelevanceColor(guide.score)}
+                  />
+                  <Text
+                    className={`text-xs font-medium ${getRelevanceColor(guide.score)}`}
+                  >
                     {getRelevanceText(guide.score)}
                   </Text>
                 </View>
@@ -150,13 +168,19 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
             </View>
 
             {/* Guide Title */}
-            <Text className="mb-3 text-lg font-bold leading-6 text-gray-900" numberOfLines={2}>
+            <Text
+              className="mb-3 text-lg font-bold leading-6 text-gray-900"
+              numberOfLines={2}
+            >
               {formatGuideTitle(guide.filename)}
             </Text>
 
             {/* Content Preview */}
             {guide.content[0] && (
-              <Text className="mb-4 text-sm leading-5 text-gray-700" numberOfLines={4}>
+              <Text
+                className="mb-4 text-sm leading-5 text-gray-700"
+                numberOfLines={4}
+              >
                 {truncateText(guide.content[0].text.trim())}
               </Text>
             )}
@@ -168,7 +192,9 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
                 <Text className="text-xs text-gray-500">PackRat Guides</Text>
               </View>
               <View className="flex-row items-center gap-1">
-                <Text className="text-xs font-medium text-blue-600">Read More</Text>
+                <Text className="text-xs font-medium text-blue-600">
+                  Read More
+                </Text>
                 <Icon name="chevron-right" size={12} color={colors.primary} />
               </View>
             </View>
@@ -184,7 +210,7 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
               key={index}
               onPress={() => scrollToIndex(index)}
               className={`h-2 rounded-full transition-all duration-200 ${
-                index === currentIndex ? 'w-6 bg-blue-600' : 'w-2 bg-gray-300'
+                index === currentIndex ? "w-6 bg-blue-600" : "w-2 bg-gray-300"
               }`}
               activeOpacity={0.7}
             />
