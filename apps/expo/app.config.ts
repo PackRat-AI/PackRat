@@ -23,6 +23,8 @@ export default ({ config }: ConfigContext): ExpoConfig =>
               'com.googleusercontent.apps.993694750638-97t0vhfml04u2avrlbve22jbs9qcinbc',
           },
         ],
+        'expo-secure-store',
+        'expo-web-browser',
       ],
       experiments: {
         typedRoutes: true,
