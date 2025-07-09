@@ -8,8 +8,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
-import { Alert } from '../../../components/nativewindui/Alert';
-import { Button } from '../../../components/nativewindui/Button';
+import { Alert, Button } from '@packrat/ui/nativewindui';
 import { useDeletePackTemplateItem } from '../hooks/useDeletePackTemplateItem';
 import type { PackTemplateItem } from '../types';
 
