@@ -1,5 +1,4 @@
-import { SearchInput } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { SearchInput, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';

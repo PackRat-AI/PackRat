@@ -1,8 +1,8 @@
 import { useChat } from '@ai-sdk/react';
-import { Button } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
@@ -12,7 +12,6 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { fetch as expoFetch } from 'expo/fetch';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import {
@@ -44,14 +43,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const USER = 'User';
 const AI = 'PackRat AI';
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
-const dimensions = Dimensions.get('window');
+const _dimensions = Dimensions.get('window');
 
 const ROOT_STYLE: ViewStyle = {
   flex: 1,
   minHeight: 2,
 };
 
-const SPRING_CONFIG = {
+const _SPRING_CONFIG = {
   damping: 15,
   stiffness: 150,
   mass: 0.5,
@@ -66,7 +65,7 @@ type Message = {
   content: string;
 };
 
-const HEADER_POSITION_STYLE: ViewStyle = {
+const _HEADER_POSITION_STYLE: ViewStyle = {
   position: 'absolute',
   zIndex: 50,
   top: 0,
@@ -149,7 +148,7 @@ export default function AIChat() {
       return [];
     }
 
-    const formattedMessages = messages.map((message, index) => {
+    const formattedMessages = messages.map((message, _index) => {
       const now = new Date();
       const formattedMessage = {
         sender: message.role === 'user' ? USER : AI,
@@ -188,7 +187,7 @@ export default function AIChat() {
     return () => {
       keyboardListener.remove();
     };
-  }, [chatMessages]);
+  }, []);
 
   return (
     <>
@@ -268,9 +267,9 @@ export default function AIChat() {
           }}
           isLoading={isLoading}
           placeholder={
-            context.contextType == 'general'
+            context.contextType === 'general'
               ? 'Ask anything outdoors'
-              : `Ask about this ${context.contextType == 'item' ? 'item' : 'pack'}...`
+              : `Ask about this ${context.contextType === 'item' ? 'item' : 'pack'}...`
           }
         />
       </KeyboardStickyView>
@@ -288,7 +287,7 @@ function DateSeparator({ date }: { date: string }) {
   );
 }
 
-const BORDER_CURVE: ViewStyle = {
+const _BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',
 };
 

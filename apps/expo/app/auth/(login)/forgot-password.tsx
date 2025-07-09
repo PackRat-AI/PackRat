@@ -1,9 +1,13 @@
-import { AlertAnchor } from '@packrat/ui/nativewindui';
 import type { AlertRef } from '@packrat/ui/nativewindui';
-import { Button } from '@packrat/ui/nativewindui';
-import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
-import { TextField } from '@packrat/ui/nativewindui';
+import {
+  AlertAnchor,
+  Button,
+  Form,
+  FormItem,
+  FormSection,
+  Text,
+  TextField,
+} from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { router, Stack } from 'expo-router';
@@ -132,7 +136,7 @@ export default function ForgotPasswordScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   onPress={() => form.handleSubmit()}
@@ -155,7 +159,7 @@ export default function ForgotPasswordScreen() {
               <Text className="text-sm text-primary">Create Account</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
                   <Text className="text-sm">{isLoading ? 'Sending...' : 'Send Code'}</Text>
                 </Button>

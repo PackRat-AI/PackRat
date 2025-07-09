@@ -95,7 +95,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
   const latitude = Number.parseFloat(c.req.query('lat') || '');
   const longitude = Number.parseFloat(c.req.query('lon') || '');
 
-  if (isNaN(latitude) || isNaN(longitude)) {
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
     return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
   }
 
@@ -126,7 +126,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
       const currentData = await currentResponse.json();
 
-      if (currentData && currentData.location) {
+      if (currentData?.location) {
         // Create a single result from the current conditions response
         return c.json([
           {
@@ -190,7 +190,7 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
   const latitude = Number.parseFloat(c.req.query('lat') || '');
   const longitude = Number.parseFloat(c.req.query('lon') || '');
 
-  if (isNaN(latitude) || isNaN(longitude)) {
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
     return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
   }
 

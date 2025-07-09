@@ -1,6 +1,10 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui';
-import { LargeTitleHeader } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  LargeTitleHeader,
+  Text,
+} from '@packrat/ui/nativewindui';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';

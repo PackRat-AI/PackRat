@@ -107,7 +107,7 @@ function getRandomAuthor(): string {
 function extractJsonFromText(text: string): string {
   // Look for JSON content between code blocks
   const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-  if (jsonMatch && jsonMatch[1]) {
+  if (jsonMatch?.[1]) {
     return jsonMatch[1].trim();
   }
 

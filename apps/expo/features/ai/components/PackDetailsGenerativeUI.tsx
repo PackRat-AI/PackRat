@@ -152,7 +152,7 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
           </View>
         ) : (
           <View className="space-y-2">
-            {pack.items.slice(0, 3).map((item, index) => (
+            {pack.items.slice(0, 3).map((item, _index) => (
               <View key={item.id} className="flex-row items-center py-2">
                 <View className="mr-3 h-6 w-6 items-center justify-center rounded bg-gray-100">
                   <Icon name="archive" size={12} color="#6B7280" />

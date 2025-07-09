@@ -1,7 +1,4 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { Alert } from '@packrat/ui/nativewindui';
-import { Button } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
 import { Chip } from 'expo-app/components/initial/Chip';
@@ -59,7 +56,6 @@ export function PackDetailScreen() {
         return pack.items.filter((item) => item.worn);
       case 'consumable':
         return pack.items.filter((item) => item.consumable);
-      case 'all':
       default:
         return pack.items;
     }

@@ -1,5 +1,5 @@
 import { use$ } from '@legendapp/state/react';
-import { getPackItems, packItemsStore } from '../store';
+import { getPackItems } from '../store';
 import { computePackWeights } from '../utils/computePackWeights';
 import { usePacks } from './usePacks';
 

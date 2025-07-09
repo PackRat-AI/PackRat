@@ -1,5 +1,5 @@
 import { createDb } from '@packrat/api/db';
-import { catalogItems, packItems, packs, users } from '@packrat/api/db/schema';
+import { catalogItems, packs } from '@packrat/api/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import type { Context } from 'hono';
 

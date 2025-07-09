@@ -109,7 +109,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
   );
 }
 
-function getCardColor(location: WeatherLocation, colors: any) {
+function getCardColor(location: WeatherLocation, _colors: any) {
   // Color based on condition and time
   const conditions: Record<string, string> = {
     clear: '#4287f5',

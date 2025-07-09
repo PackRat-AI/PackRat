@@ -1,7 +1,4 @@
-import { Button } from '@packrat/ui/nativewindui';
-import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
-import { Toggle } from '@packrat/ui/nativewindui';
+import { Button, Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';

@@ -11,7 +11,7 @@ const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 adminRoutes.use(
   '*',
-  (c, next) => {
+  (_c, next) => {
     console.log('adminRoutes');
     return next();
   },
@@ -401,7 +401,7 @@ adminRoutes.get('/users-table', async (c) => {
       <tr class="hover:bg-gray-50">
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.id}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(user.firstName || '') + ' ' + (user.lastName || '')}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${`${user.firstName || ''} ${user.lastName || ''}`}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <span class="px-2 py-1 text-xs font-semibold rounded-full ${
             user.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
@@ -507,10 +507,10 @@ adminRoutes.get('/catalog-table', async (c) => {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.brand || 'Unknown'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.category || 'Uncategorized'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.defaultWeight ? item.defaultWeight + ' ' + (item.defaultWeightUnit || 'g') : 'N/A'
+          item.defaultWeight ? `${item.defaultWeight} ${item.defaultWeightUnit || 'g'}` : 'N/A'
         }</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.price ? '$' + item.price : 'N/A'
+          item.price ? `$${item.price}` : 'N/A'
         }</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <button class="text-blue-600 hover:text-blue-900 mr-2" onclick="editItem(${item.id})">Edit</button>
@@ -568,7 +568,7 @@ adminRoutes.get('/users-search', async (c) => {
       <tr class="hover:bg-gray-50">
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${user.id}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.email}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(user.firstName || '') + ' ' + (user.lastName || '')}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${`${user.firstName || ''} ${user.lastName || ''}`}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <span class="px-2 py-1 text-xs font-semibold rounded-full ${
             user.role === 'ADMIN' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
@@ -698,10 +698,10 @@ adminRoutes.get('/catalog-search', async (c) => {
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.brand || 'Unknown'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.category || 'Uncategorized'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.defaultWeight ? item.defaultWeight + ' ' + (item.defaultWeightUnit || 'g') : 'N/A'
+          item.defaultWeight ? `${item.defaultWeight} ${item.defaultWeightUnit || 'g'}` : 'N/A'
         }</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.price ? '$' + item.price : 'N/A'
+          item.price ? `$${item.price}` : 'N/A'
         }</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <button class="text-blue-600 hover:text-blue-900 mr-2" onclick="editItem(${item.id})">Edit</button>

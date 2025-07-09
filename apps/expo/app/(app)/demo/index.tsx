@@ -1,6 +1,4 @@
-import { Button } from '@packrat/ui/nativewindui';
-import { LargeTitleHeader } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
@@ -21,7 +19,7 @@ cssInterop(FlashList, {
 });
 
 export default function Screen() {
-  const [hasSeenConsent, setHasSeenConsent] = useState(false);
+  const [hasSeenConsent, _setHasSeenConsent] = useState(false);
 
   const searchValue = useHeaderSearchBar({
     hideWhenScrolling: COMPONENTS.length === 0,

@@ -56,7 +56,7 @@ export function useAuthInit() {
     };
 
     initializeAuth();
-  }, [setIsLoading]);
+  }, []);
 
   return isLoading;
 }

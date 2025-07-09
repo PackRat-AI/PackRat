@@ -1,9 +1,5 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { AlertAnchor } from '@packrat/ui/nativewindui';
 import type { AlertRef } from '@packrat/ui/nativewindui';
-import { Button } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
-import { TextField } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packrat/ui/nativewindui';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -57,7 +53,7 @@ export default function OneTimePasswordScreen() {
         clearInterval(countdownInterval.current);
       }
     };
-  }, []);
+  }, [startCountdown]);
 
   function startCountdown() {
     if (countdownInterval.current) {

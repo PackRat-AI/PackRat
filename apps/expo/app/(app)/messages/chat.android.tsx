@@ -1,9 +1,12 @@
-import { Avatar, AvatarFallback } from '@packrat/ui/nativewindui';
-import { Button } from '@packrat/ui/nativewindui';
-import { ContextMenu } from '@packrat/ui/nativewindui';
-import { DropdownMenu } from '@packrat/ui/nativewindui';
-import { createDropdownItem } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import {
+  Avatar,
+  AvatarFallback,
+  Button,
+  ContextMenu,
+  createDropdownItem,
+  DropdownMenu,
+  Text,
+} from '@packrat/ui/nativewindui';
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
@@ -332,7 +335,7 @@ function ChatBubble({
         </Button>
       </View>
     );
-  }, [colors, item.reactions]);
+  }, [item.reactions]);
 
   function initSelectedMessages() {
     setSelectedMessages([item.id]);

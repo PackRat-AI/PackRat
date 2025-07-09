@@ -22,7 +22,7 @@ export const useVectorSearch = (query: string) => {
       );
 
       if (!response.ok) {
-        const errMsg = await response.text();
+        const _errMsg = await response.text();
         throw new Error('Vector search failed');
       }
 

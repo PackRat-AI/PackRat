@@ -1,5 +1,4 @@
-import { Button } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { ItemLinks } from 'expo-app/components/catalog/ItemLinks';
 import { ItemReviews } from 'expo-app/components/catalog/ItemReviews';

@@ -1,14 +1,19 @@
-import { Avatar, AvatarFallback } from '@packrat/ui/nativewindui';
-import { Button } from '@packrat/ui/nativewindui';
-import { Checkbox } from '@packrat/ui/nativewindui';
-import { ContextMenu } from '@packrat/ui/nativewindui';
-import { createContextItem } from '@packrat/ui/nativewindui';
-import { DropdownMenu } from '@packrat/ui/nativewindui';
-import { createDropdownItem } from '@packrat/ui/nativewindui';
-import { LargeTitleHeader } from '@packrat/ui/nativewindui';
-import { List, ListItem, type ListRenderItemInfo } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
-import { Toolbar } from '@packrat/ui/nativewindui';
+import {
+  Avatar,
+  AvatarFallback,
+  Button,
+  Checkbox,
+  ContextMenu,
+  createContextItem,
+  createDropdownItem,
+  DropdownMenu,
+  LargeTitleHeader,
+  List,
+  ListItem,
+  type ListRenderItemInfo,
+  Text,
+  Toolbar,
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -61,7 +66,7 @@ export default function ConversationsIosScreen() {
         />
       );
     },
-    [isSelecting, selectedMessages],
+    [isSelecting, selectedMessages, checkboxContainerStyle],
   );
 
   function onIsSelectingChange(value: boolean) {
@@ -334,11 +339,9 @@ function MessageRow({
           titleClassName="font-medium text-lg"
           subTitleClassName="pt-0.5"
           rightView={
-            <>
-              <View className="pr-3">
-                {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
-              </View>
-            </>
+            <View className="pr-3">
+              {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
+            </View>
           }
         />
       </ContextMenu>

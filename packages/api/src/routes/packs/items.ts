@@ -1,4 +1,3 @@
-import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packItems, packs } from '@packrat/api/db/schema';
