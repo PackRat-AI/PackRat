@@ -61,8 +61,8 @@ export function PackCard({ pack: packArg, onPress }: PackCardProps) {
         <View className="flex-row items-baseline justify-between">
           {pack.tags && isArray(pack.tags) && pack.tags.length > 0 ? (
             <View className="mt-3 flex-row flex-wrap">
-              {pack.tags.map((tag, index) => (
-                <View key={index} className="mb-1 mr-2 rounded-full bg-background px-2 py-1">
+              {pack.tags.map((tag) => (
+                <View key={tag} className="mb-1 mr-2 rounded-full bg-background px-2 py-1">
                   <Text className="text-xs text-foreground">#{tag}</Text>
                 </View>
               ))}

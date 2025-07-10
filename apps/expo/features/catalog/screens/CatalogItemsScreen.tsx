@@ -51,8 +51,8 @@ function CatalogItemsScreen() {
   // Disabled for now
   const {
     data: vectorResults,
-    isLoading: isVectorLoading,
-    isFetching: isVectorFetching,
+    // isLoading: isVectorLoading,
+    // isFetching: isVectorFetching,
     error: vectorError,
   } = useVectorSearch('');
 

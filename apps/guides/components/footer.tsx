@@ -73,8 +73,8 @@ export default function Footer() {
         <div>
           <h3 className="mb-4 text-sm font-semibold">Company</h3>
           <ul className="space-y-3 text-sm">
-            {footerConfig.mainSections[1].links.map((link, index) => (
-              <li key={index}>
+            {footerConfig.mainSections[1].links.map((link) => (
+              <li key={link.title}>
                 <Link
                   href={link.href}
                   className="text-gray-500 hover:text-apple-blue transition-colors"

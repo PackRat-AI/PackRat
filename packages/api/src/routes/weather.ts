@@ -48,14 +48,23 @@ weatherRoutes.openapi(searchRoute, async (c) => {
     const data = await response.json();
 
     // Transform API response to our LocationSearchResult type
-    const locations = data.map((item: any) => ({
-      id: `${item.id || item.lat}_${item.lon}`,
-      name: item.name,
-      region: item.region,
-      country: item.country,
-      lat: item.lat,
-      lon: item.lon,
-    }));
+    const locations = data.map(
+      (item: {
+        id: string;
+        lat: string;
+        lon: string;
+        name: string;
+        region: string;
+        country: string;
+      }) => ({
+        id: `${item.id || item.lat}_${item.lon}`,
+        name: item.name,
+        region: item.region,
+        country: item.country,
+        lat: item.lat,
+        lon: item.lon,
+      }),
+    );
 
     return c.json(locations);
   } catch (error) {
@@ -142,14 +151,23 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
     }
 
     // Transform API response to our LocationSearchResult type
-    const locations = data.map((item: any) => ({
-      id: `${item.id || item.lat}_${item.lon}`,
-      name: item.name,
-      region: item.region,
-      country: item.country,
-      lat: Number.parseFloat(item.lat),
-      lon: Number.parseFloat(item.lon),
-    }));
+    const locations = data.map(
+      (item: {
+        id: string;
+        lat: string;
+        lon: string;
+        name: string;
+        region: string;
+        country: string;
+      }) => ({
+        id: `${item.id || item.lat}_${item.lon}`,
+        name: item.name,
+        region: item.region,
+        country: item.country,
+        lat: Number.parseFloat(item.lat),
+        lon: Number.parseFloat(item.lon),
+      }),
+    );
 
     return c.json(locations);
   } catch (error) {

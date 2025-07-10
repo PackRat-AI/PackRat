@@ -5,7 +5,7 @@ import { reportedContent } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import { streamText } from 'ai';
+import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { env } from 'hono/adapter';
 
@@ -37,7 +37,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
   }
 
   let body: {
-    messages?: any[];
+    messages?: CoreMessage[] | Omit<MessageType, 'id'>[] | undefined;
     contextType?: string;
     itemId?: string;
     packId?: string;
@@ -120,7 +120,7 @@ chatRoutes.post('/reports', async (c) => {
 
   const db = createDb(c);
 
-  const { messageId, userQuery, aiResponse, reason, userComment } = await c.req.json();
+  const { userQuery, aiResponse, reason, userComment } = await c.req.json();
 
   // Insert the reported content into the database
   await db.insert(reportedContent).values({

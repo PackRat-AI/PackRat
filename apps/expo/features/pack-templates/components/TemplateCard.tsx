@@ -56,8 +56,8 @@ export function TemplateCard({ templateId, onPress }: TemplateCardProps) {
         <View className="flex-row items-baseline justify-between">
           {template.tags && isArray(template.tags) && template.tags.length > 0 ? (
             <View className="mt-3 flex-row flex-wrap">
-              {template.tags.map((tag, index) => (
-                <View key={index} className="mb-1 mr-2 rounded-full bg-background px-2 py-1">
+              {template.tags.map((tag) => (
+                <View key={tag} className="mb-1 mr-2 rounded-full bg-background px-2 py-1">
                   <Text className="text-xs text-foreground">#{tag}</Text>
                 </View>
               ))}

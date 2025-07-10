@@ -99,6 +99,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       {/* Guide Content - Apple style */}
       <div className="container py-12 md:py-16">
         <article className="prose prose-slate dark:prose-invert mx-auto max-w-3xl">
+          {/** biome-ignore lint/security/noDangerouslySetInnerHtml: ignore */}
           <div dangerouslySetInnerHTML={{ __html: content }} />
         </article>
 

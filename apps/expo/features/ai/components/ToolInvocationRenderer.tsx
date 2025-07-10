@@ -1,16 +1,9 @@
+import type { ToolInvocation } from '@ai-sdk/ui-utils';
 import { CatalogItemsGenerativeUI } from './CatalogItemsGenerativeUI';
 import { GuidesRAGGenerativeUI } from './GuidesRAGGenerativeUI';
 import { PackDetailsGenerativeUI } from './PackDetailsGenerativeUI';
 import { PackItemDetailsGenerativeUI } from './PackItemDetailsGenerativeUI';
 import { WeatherGenerativeUI } from './WeatherGenerativeUI';
-
-interface ToolInvocation {
-  state: 'partial-call' | 'call' | 'result';
-  toolCallId: string;
-  toolName: string;
-  args: any;
-  result?: any;
-}
 
 interface ToolInvocationRendererProps {
   toolInvocation: ToolInvocation;

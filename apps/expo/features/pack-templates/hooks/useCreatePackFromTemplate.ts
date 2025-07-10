@@ -30,14 +30,16 @@ export function useCreatePackFromTemplate() {
     );
 
     for (const item of templateItems) {
+      // biome-ignore lint/correctness/noUnusedVariables: aim is to remove `packTemplateId`
+      const { packTemplateId, ...restItem } = item;
       const newItemId = nanoid();
       const newItem = {
-        ...item,
+        ...restItem,
         id: newItemId,
         packId: newPackId,
         deleted: false,
       };
-      delete (newItem as any).packTemplateId;
+
       packItemsStore[newItemId].set(newItem);
     }
 

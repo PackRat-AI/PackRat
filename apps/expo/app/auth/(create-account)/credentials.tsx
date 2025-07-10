@@ -55,7 +55,7 @@ const credentialsFormSchema = z
   });
 
 // Type inference
-type CredentialsFormValues = z.infer<typeof credentialsFormSchema>;
+// type CredentialsFormValues = z.infer<typeof credentialsFormSchema>;
 
 // Password strength checker function
 const getPasswordStrength = (password: string) => {
@@ -371,11 +371,7 @@ export default function CredentialsScreen() {
 
                 {/* Password visibility checkbox */}
                 <View className="mb-4 mt-2 flex-row items-center">
-                  <Checkbox
-                    checked={passwordVisible}
-                    onCheckedChange={setPasswordVisible}
-                    id="show-password"
-                  />
+                  <Checkbox checked={passwordVisible} onCheckedChange={setPasswordVisible} />
                   <Text className="ml-2 text-sm text-gray-700">Show password</Text>
                 </View>
               </FormSection>

@@ -1,7 +1,16 @@
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRef, useState } from 'react';
-import { Dimensions, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Dimensions,
+  Linking,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface GuideSearchResult {
   file_id: string;
@@ -81,7 +90,7 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
     return 'bg-gray-100 border-gray-200';
   };
 
-  const handleScroll = (event: any) => {
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffset / (CARD_WIDTH + CARD_SPACING));
     setCurrentIndex(index);
@@ -140,7 +149,7 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
                 className={`rounded-full border px-2 py-1 ${getRelevanceBadgeColor(guide.score)}`}
               >
                 <View className="flex-row items-center gap-1">
-                  <Icon name="target" size={10} className={getRelevanceColor(guide.score)} />
+                  <Icon name="target" size={10} />
                   <Text className={`text-xs font-medium ${getRelevanceColor(guide.score)}`}>
                     {getRelevanceText(guide.score)}
                   </Text>
@@ -179,9 +188,9 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
       {/* Pagination Dots */}
       {results.data.length > 1 && (
         <View className="flex-row items-center justify-center gap-2 px-4">
-          {results.data.map((_, index) => (
+          {results.data.map((item, index) => (
             <TouchableOpacity
-              key={index}
+              key={item.file_id}
               onPress={() => scrollToIndex(index)}
               className={`h-2 rounded-full transition-all duration-200 ${
                 index === currentIndex ? 'w-6 bg-blue-600' : 'w-2 bg-gray-300'

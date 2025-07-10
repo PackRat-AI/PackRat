@@ -97,7 +97,7 @@ export default function WeightAnalysisScreen() {
             <View>
               {items.map((item, itemIndex) => (
                 <View
-                  key={`${categoryIndex}-${itemIndex}`}
+                  key={`${categoryIndex}-${item.id}`}
                   className={cn(
                     'flex-row items-center justify-between p-4',
                     itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',

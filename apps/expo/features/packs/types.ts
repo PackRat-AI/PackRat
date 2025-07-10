@@ -80,8 +80,8 @@ export type PackWeightHistoryEntry = {
   id: string;
   packId: string;
   weight: number;
-  createdAt?: string; // server timestamp, optional if local only
-  localCreatedAt?: string; // used for optimistic UI or offline support
+  createdAt?: string;
+  localCreatedAt: string;
 };
 
 export type PackInStore = Omit<Pack, 'items' | 'baseWeight' | 'totalWeight'>;

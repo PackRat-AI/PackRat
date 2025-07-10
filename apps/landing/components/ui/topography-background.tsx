@@ -4,7 +4,6 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 export default function TopographyBackground() {
-  return null;
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [svgData, setSvgData] = useState<string>('');
@@ -53,14 +52,16 @@ export default function TopographyBackground() {
     return null;
   }
 
-  return (
-    <div
-      className="fixed inset-0 -z-10 h-full w-full opacity-60"
-      style={{
-        backgroundImage: `url('data:image/svg+xml;base64,${svgData}')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    />
-  );
+  return null;
+
+  // return (
+  //   <div
+  //     className="fixed inset-0 -z-10 h-full w-full opacity-60"
+  //     style={{
+  //       backgroundImage: `url('data:image/svg+xml;base64,${svgData}')`,
+  //       backgroundSize: 'cover',
+  //       backgroundPosition: 'center',
+  //     }}
+  //   />
+  // );
 }

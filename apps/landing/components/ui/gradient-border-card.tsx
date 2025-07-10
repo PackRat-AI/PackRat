@@ -56,6 +56,7 @@ export default function GradientBorderCard({
   }, [isHovered, interactive]);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: ignore
     <div
       className={cn('relative rounded-xl p-[1px] transition-all duration-300', containerClassName)}
       ref={cardRef}

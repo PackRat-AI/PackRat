@@ -45,14 +45,6 @@ export function PackTemplateDetailScreen() {
     }
   })();
 
-  if (!packTemplate) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center">
-        <NotFoundScreen title="Template not found" message="Please try again later." />
-      </SafeAreaView>
-    );
-  }
-
   const handleItemPress = useCallback(
     (item: PackTemplateItem) => {
       router.push({
@@ -65,6 +57,14 @@ export function PackTemplateDetailScreen() {
     },
     [router, packTemplate.id],
   );
+
+  if (!packTemplate) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center">
+        <NotFoundScreen title="Template not found" message="Please try again later." />
+      </SafeAreaView>
+    );
+  }
 
   const handleCreate = () => {
     router.push({
@@ -102,9 +102,9 @@ export function PackTemplateDetailScreen() {
           <View className="flex-row justify-between">
             {packTemplate.tags && packTemplate.tags.length > 0 && (
               <View className="flex-row flex-wrap">
-                {packTemplate.tags.map((tag, index) => (
+                {packTemplate.tags.map((tag) => (
                   <Chip
-                    key={index}
+                    key={tag}
                     className="mb-1 mr-2"
                     textClassName="text-xs text-center"
                     variant="outline"
@@ -168,8 +168,8 @@ export function PackTemplateDetailScreen() {
             </TouchableOpacity>
           </View>
           {filteredItems.length > 0 ? (
-            filteredItems.map((item, index) => (
-              <View key={index} className="px-4 pt-3">
+            filteredItems.map((item) => (
+              <View key={item.id} className="px-4 pt-3">
                 <PackTemplateItemCard
                   item={item}
                   belongsToFeaturedTemplate={packTemplate.isAppTemplate}

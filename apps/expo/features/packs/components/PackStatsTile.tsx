@@ -18,11 +18,11 @@ export function PackStatsTile() {
   const route: Href | null = currentPack ? `/pack-stats/${currentPack.id}` : null;
 
   const handlePress = () => {
-    if (!currentPack) {
+    if (!route) {
       alertRef.current?.show();
       return;
     }
-    router.push(route!);
+    router.push(route);
   };
 
   return (

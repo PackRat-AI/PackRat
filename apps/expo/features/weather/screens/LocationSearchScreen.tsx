@@ -1,4 +1,4 @@
-import { SearchInput, Text } from '@packrat/ui/nativewindui';
+import { SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
@@ -31,7 +31,7 @@ export default function LocationSearchScreen() {
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
-  const searchInputRef = useRef<any>(null);
+  const searchInputRef = useRef<SearchInputRef>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<string | null>(null);
@@ -353,9 +353,9 @@ export default function LocationSearchScreen() {
           <>
             <Text className="mb-2 text-xs uppercase text-muted-foreground">RECENT SEARCHES</Text>
             <View className="mb-6">
-              {recentSearches.map((search, index) => (
+              {recentSearches.map((search) => (
                 <TouchableOpacity
-                  key={index}
+                  key={search}
                   className="border-border/30 flex-row items-center gap-3 border-b py-3"
                   onPress={() => handlePopularCitySearch(search)}
                 >
@@ -369,9 +369,9 @@ export default function LocationSearchScreen() {
 
         <Text className="mb-2 text-xs uppercase text-muted-foreground">POPULAR CITIES</Text>
         <View>
-          {POPULAR_CITIES.map((city, index) => (
+          {POPULAR_CITIES.map((city) => (
             <TouchableOpacity
-              key={index}
+              key={`${city.country}-${city.name}`}
               className="border-border/30 flex-row items-center gap-3 border-b py-3"
               onPress={() => handlePopularCitySearch(city.name)}
             >

@@ -1,28 +1,5 @@
 import type { MaterialIconName } from '@roninoss/icons';
 
-// List of available weather-related icons
-const AVAILABLE_WEATHER_ICONS = [
-  'cloud',
-  'cloud-outline',
-  'lightning-bolt',
-  'lightning-bolt-outline',
-  'sun-thermometer',
-  'sun-thermometer-outline',
-  'umbrella',
-  'umbrella-outline',
-  'water',
-  'water-circle',
-  'water-outline',
-  'weather-lightning',
-  'weather-night',
-  'weather-rainy',
-  'weather-sunny',
-  'weather-sunny-alert',
-  'weather-tornado',
-] as const;
-
-type AvailableWeatherIcon = (typeof AVAILABLE_WEATHER_ICONS)[number];
-
 /**
  * Maps weather condition codes to available icons
  * @param code The weather condition code

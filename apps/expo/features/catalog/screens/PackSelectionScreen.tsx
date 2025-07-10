@@ -1,10 +1,7 @@
-'use client';
-
 import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { usePacks } from 'expo-app/features/packs';
+import { type Pack, useDetailedPacks } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import type { Pack } from 'expo-app/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, FlatList, Image, SafeAreaView, TouchableOpacity, View } from 'react-native';
@@ -13,10 +10,8 @@ import { useCatalogItemDetails } from '../hooks';
 export function PackSelectionScreen() {
   const router = useRouter();
   const { catalogItemId } = useLocalSearchParams();
-  const packs = usePacks();
-  const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
-    catalogItemId as string,
-  );
+  const packs = useDetailedPacks();
+  const { data: catalogItem } = useCatalogItemDetails(catalogItemId as string);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPacks, setFilteredPacks] = useState<Pack[]>([]);
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -40,7 +35,7 @@ export function PackSelectionScreen() {
           packs.filter(
             (pack) =>
               pack.name.toLowerCase().includes(query) ||
-              pack.description.toLowerCase().includes(query) ||
+              pack.description?.toLowerCase().includes(query) ||
               pack.category.toLowerCase().includes(query),
           ),
         );
@@ -78,7 +73,7 @@ export function PackSelectionScreen() {
                 <View className="mt-1 flex-row items-center">
                   <Icon name="dumbbell" size={14} color={colors.grey2} />
                   <Text variant="caption2" className="ml-1">
-                    {catalogItem.defaultWeight} {catalogItem.weightUnit}
+                    {catalogItem.defaultWeight} {catalogItem.defaultWeightUnit}
                   </Text>
                   {catalogItem.brand && (
                     <>
@@ -159,7 +154,7 @@ export function PackSelectionScreen() {
             </>
           ) : (
             <View className="items-center justify-center rounded-lg bg-card p-8 shadow-sm">
-              <Icon name="backpack-outline" size={48} color="text-muted-foreground" />
+              <Icon name="backpack" size={48} color="text-muted-foreground" />
               <Text variant="title3" color="primary" className="mt-4 text-center">
                 No packs available
               </Text>
@@ -167,12 +162,7 @@ export function PackSelectionScreen() {
                 Create a pack to add items to it
               </Text>
               <Button onPress={handleCreatePack}>
-                <Icon
-                  name="add-outline"
-                  size={18}
-                  color="text-primary-foreground"
-                  className="mr-1"
-                />
+                <Icon name="plus" size={18} color="text-primary-foreground" />
                 <Text variant="body" color="primary">
                   Create Pack
                 </Text>

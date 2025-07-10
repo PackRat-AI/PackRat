@@ -4,6 +4,7 @@ export * from './useCreatePackItem';
 export * from './useCurrentPack';
 export * from './useDeletePack';
 export * from './useDeletePackItem';
+export * from './useDetailedPacks';
 export * from './useImageUpload';
 export * from './usePackDetailsFromApi';
 export * from './usePackDetailsFromStore';

@@ -5,6 +5,7 @@ import { FlashList } from '@shopify/flash-list';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import type { ChatMessage } from 'expo-app/features/ai/types';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
@@ -59,12 +60,6 @@ const _SPRING_CONFIG = {
   restSpeedThreshold: 0.01,
 };
 
-type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
-
 const _HEADER_POSITION_STYLE: ViewStyle = {
   position: 'absolute',
   zIndex: 50,
@@ -82,7 +77,7 @@ export default function AIChat() {
   const params = useLocalSearchParams();
   const [showSuggestions, setShowSuggestions] = React.useState(true);
   const { activeLocation } = useActiveLocation();
-  const listRef = React.useRef<FlashList<any> | null>(null);
+  const listRef = React.useRef<FlashList<string | ChatMessage>>(null);
 
   // Extract context from params
   const context = {
@@ -96,7 +91,7 @@ export default function AIChat() {
 
   const token = useAtomValue(tokenAtom);
   // Call the chat hook at the top level.
-  const { messages, error, handleInputChange, input, setInput, handleSubmit, isLoading } = useChat({
+  const { messages, error, input, setInput, handleSubmit, isLoading } = useChat({
     fetch: expoFetch as unknown as typeof globalThis.fetch,
     api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
     onError: (error: Error) => console.log(error, 'ERROR'),
@@ -217,9 +212,9 @@ export default function AIChat() {
                 <View className="px-4 py-4">
                   <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
                   <View className="flex-row flex-wrap gap-2">
-                    {getContextualSuggestions(context).map((suggestion, index) => (
+                    {getContextualSuggestions(context).map((suggestion) => (
                       <TouchableOpacity
-                        key={index}
+                        key={suggestion}
                         onPress={() => handleSuggestionPress(suggestion)}
                         className="mb-2 rounded-full border border-border bg-card px-3 py-2"
                       >

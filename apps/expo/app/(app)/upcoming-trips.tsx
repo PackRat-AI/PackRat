@@ -295,9 +295,9 @@ export default function UpcomingTripsScreen() {
                 <Text variant="subhead" className="font-medium text-amber-600 dark:text-amber-400">
                   Weather Alerts
                 </Text>
-                {selectedTrip.weather.alerts.map((alert, index) => (
+                {selectedTrip.weather.alerts.map((alert) => (
                   <Text
-                    key={index}
+                    key={alert}
                     variant="footnote"
                     className="mt-1 text-amber-600 dark:text-amber-400"
                   >

@@ -103,8 +103,8 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
         {pack.tags.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2 max-h-8">
             <View className="flex-row space-x-2">
-              {pack.tags.map((tag, index) => (
-                <View key={index} className="rounded-full bg-gray-100 px-3 py-1">
+              {pack.tags.map((tag) => (
+                <View key={tag} className="rounded-full bg-gray-100 px-3 py-1">
                   <Text className="text-xs font-medium text-gray-700">#{tag}</Text>
                 </View>
               ))}

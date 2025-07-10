@@ -10,22 +10,6 @@ import { useReportedContent } from '../hooks/useReportedContent';
 import { useUpdateReportStatus } from '../hooks/useUpdateReportStatus';
 import { reportReasonLabels } from '../lib/reportReasons';
 
-type ReportedItem = {
-  id: number;
-  userQuery: string;
-  aiResponse: string;
-  reason: string;
-  userComment?: string | null;
-  status: 'pending' | 'reviewed' | 'dismissed';
-  createdAt: string;
-  user: {
-    id: number;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-  };
-};
-
 export default function ReportedContentScreen() {
   const { colors } = useColorScheme();
   const [selectedFilter, setSelectedFilter] = useState<

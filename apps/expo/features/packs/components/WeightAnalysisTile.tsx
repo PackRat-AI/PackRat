@@ -16,11 +16,11 @@ export function WeightAnalysisTile() {
   const route: Href | null = currentPack ? `/weight-analysis/${currentPack.id}` : null;
 
   const handlePress = () => {
-    if (!currentPack) {
+    if (!route) {
       alertRef.current?.show();
       return;
     }
-    router.push(route!);
+    router.push(route);
   };
 
   return (

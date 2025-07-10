@@ -46,7 +46,7 @@ const templateFormSchema = z.object({
   tags: z.array(z.string()),
 });
 
-type TemplateFormValues = z.infer<typeof templateFormSchema>;
+// type TemplateFormValues = z.infer<typeof templateFormSchema>;
 
 const CATEGORIES = [
   { value: 'hiking', label: 'Hiking' },
@@ -111,7 +111,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors.map((e) => e.message).join(', ')}
+                    errorMessage={field.state.meta.errors.map((e) => e?.message).join(', ')}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="folder" size={16} color={colors.grey3} />

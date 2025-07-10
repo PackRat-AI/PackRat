@@ -25,6 +25,7 @@ import {
 import { z } from 'zod';
 import { useCreatePackTemplateItem } from '../hooks/useCreatePackTemplateItem';
 import { useUpdatePackTemplateItem } from '../hooks/useUpdatePackTemplateItem';
+import type { PackTemplateItem } from '../types';
 
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
@@ -39,7 +40,7 @@ const itemFormSchema = z.object({
   image: z.string().nullable(),
 });
 
-type ItemFormValues = z.infer<typeof itemFormSchema>;
+// type ItemFormValues = z.infer<typeof itemFormSchema>;
 
 const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];
 
@@ -48,7 +49,7 @@ export const CreatePackTemplateItemForm = ({
   existingItem,
 }: {
   packTemplateId: string;
-  existingItem?: any;
+  existingItem?: PackTemplateItem;
 }) => {
   const router = useRouter();
   const { colorScheme, colors } = useColorScheme();

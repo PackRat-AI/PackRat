@@ -93,10 +93,7 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
   );
 };
 
-export const TemplateItemsSection = ({
-  templateItems,
-  templateName,
-}: TemplateItemsSectionProps) => {
+export const TemplateItemsSection = ({ templateItems }: TemplateItemsSectionProps) => {
   // Calculate total weight and item count for template
   const templateStats = templateItems.reduce(
     (acc, item) => ({

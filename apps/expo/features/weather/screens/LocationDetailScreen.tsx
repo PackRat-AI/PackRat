@@ -48,11 +48,12 @@ export default function LocationDetailScreen() {
   };
 
   // Load weather data on initial render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: need this to only run at initial render
   useEffect(() => {
     if (location) {
       handleRefresh();
     }
-  }, [id]);
+  }, []);
 
   if (!location) {
     return (
@@ -150,7 +151,7 @@ export default function LocationDetailScreen() {
   };
 
   // Determine if we should use light or dark status bar based on gradient colors
-  const isDarkGradient =
+  const _isDarkGradient =
     gradientColors[0].toLowerCase().startsWith('#4') ||
     gradientColors[0].toLowerCase().startsWith('#3') ||
     gradientColors[0].toLowerCase().startsWith('#2') ||
@@ -244,7 +245,7 @@ export default function LocationDetailScreen() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {location.hourlyForecast ? (
                       location.hourlyForecast.map((hour, index) => (
-                        <View key={index} className="mr-4 min-w-[50px] items-center">
+                        <View key={hour.time} className="mr-4 min-w-[50px] items-center">
                           <Text className="text-white">{index === 0 ? 'Now' : hour.time}</Text>
                           <WeatherIcon
                             code={hour.weatherCode}
@@ -273,7 +274,7 @@ export default function LocationDetailScreen() {
                   {location.dailyForecast ? (
                     location.dailyForecast.map((day, index) => (
                       <View
-                        key={index}
+                        key={day.day}
                         className={cn(
                           'flex-row items-center justify-between py-3',
                           index !== (location.dailyForecast?.length || 0) - 1 &&

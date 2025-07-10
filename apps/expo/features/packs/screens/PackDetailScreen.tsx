@@ -144,9 +144,9 @@ export function PackDetailScreen() {
           <View className="flex-row justify-between">
             {pack.tags && pack.tags.length > 0 && (
               <View className="flex-row flex-wrap">
-                {pack.tags.map((tag, index) => (
+                {pack.tags.map((tag) => (
                   <Chip
-                    key={index}
+                    key={tag}
                     className="mb-1 mr-2"
                     textClassName="text-xs text-center"
                     variant="outline"
@@ -239,8 +239,8 @@ export function PackDetailScreen() {
           </View>
 
           {filteredItems.length > 0 ? (
-            filteredItems.map((item, index) => (
-              <View key={index} className="px-4 pt-3">
+            filteredItems.map((item) => (
+              <View key={item.id} className="px-4 pt-3">
                 <PackItemCard item={item} onPress={handleItemPress} />
               </View>
             ))

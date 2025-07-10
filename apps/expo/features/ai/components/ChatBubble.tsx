@@ -1,28 +1,15 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { ReportButton } from 'expo-app/features/ai/components/ReportButton';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import Animated, { interpolate, type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import type { ChatMessage } from '../types';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
 const BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',
 };
-
-interface ChatMessage {
-  id: string;
-  sender: string;
-  text: string;
-  date: string;
-  time: string;
-  parts?: Array<{
-    type: 'text' | 'tool-invocation';
-    text?: string;
-    toolInvocation?: any;
-  }>;
-}
 
 interface ChatBubbleProps {
   item: ChatMessage;
@@ -33,7 +20,6 @@ interface ChatBubbleProps {
 const AI = 'PackRat AI';
 
 export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
-  const { colors } = useColorScheme();
   const rootStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
@@ -102,11 +88,11 @@ export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
                 {/* Render tool invocations */}
                 {isAI && item.parts && (
                   <View className="mt-2">
-                    {item.parts.map((part, index) => {
+                    {item.parts.map((part) => {
                       if (part.type === 'tool-invocation' && part.toolInvocation) {
                         return (
                           <ToolInvocationRenderer
-                            key={index}
+                            key={part.toolInvocation.toolCallId}
                             toolInvocation={part.toolInvocation}
                           />
                         );
