@@ -43,14 +43,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const USER = 'User';
 const AI = 'PackRat AI';
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
-const dimensions = Dimensions.get('window');
+const _dimensions = Dimensions.get('window');
 
 const ROOT_STYLE: ViewStyle = {
   flex: 1,
   minHeight: 2,
 };
 
-const SPRING_CONFIG = {
+const _SPRING_CONFIG = {
   damping: 15,
   stiffness: 150,
   mass: 0.5,
@@ -65,7 +65,7 @@ type Message = {
   content: string;
 };
 
-const HEADER_POSITION_STYLE: ViewStyle = {
+const _HEADER_POSITION_STYLE: ViewStyle = {
   position: 'absolute',
   zIndex: 50,
   top: 0,
@@ -148,7 +148,7 @@ export default function AIChat() {
       return [];
     }
 
-    const formattedMessages = messages.map((message, index) => {
+    const formattedMessages = messages.map((message, _index) => {
       const now = new Date();
       const formattedMessage = {
         sender: message.role === 'user' ? USER : AI,
@@ -187,7 +187,7 @@ export default function AIChat() {
     return () => {
       keyboardListener.remove();
     };
-  }, [chatMessages]);
+  }, []);
 
   return (
     <>
@@ -267,9 +267,9 @@ export default function AIChat() {
           }}
           isLoading={isLoading}
           placeholder={
-            context.contextType == 'general'
+            context.contextType === 'general'
               ? 'Ask anything outdoors'
-              : `Ask about this ${context.contextType == 'item' ? 'item' : 'pack'}...`
+              : `Ask about this ${context.contextType === 'item' ? 'item' : 'pack'}...`
           }
         />
       </KeyboardStickyView>
@@ -287,7 +287,7 @@ function DateSeparator({ date }: { date: string }) {
   );
 }
 
-const BORDER_CURVE: ViewStyle = {
+const _BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',
 };
 

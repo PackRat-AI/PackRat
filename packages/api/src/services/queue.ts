@@ -34,7 +34,7 @@ export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
 }
 
 const BATCH_SIZE = 10; // Process 10 rows at a time to stay under 128KB message limit
-const CHUNK_SIZE = 5 * 1024 * 1024; // Read 5MB chunks from R2
+const _CHUNK_SIZE = 5 * 1024 * 1024; // Read 5MB chunks from R2
 
 export async function sendToQueue({
   queue,
@@ -375,7 +375,7 @@ function mapCsvRowToItem({
 
       // Fallback weight parsing from techs
       if (!item.defaultWeight) {
-        const claimedWeight = parsedTechs['Claimed Weight'] || parsedTechs['weight'];
+        const claimedWeight = parsedTechs['Claimed Weight'] || parsedTechs.weight;
         if (claimedWeight) {
           const { weight, unit } = parseWeight(claimedWeight);
           item.defaultWeight = weight;
@@ -400,7 +400,7 @@ function mapCsvRowToItem({
 function parseJsonOrString(str: string): any {
   try {
     return JSON.parse(str);
-  } catch (e) {
+  } catch (_e) {
     return str;
   }
 }
@@ -421,7 +421,7 @@ function parseWeight(
   if (!weightStr) return { weight: null, unit: null };
 
   const weightVal = parseFloat(weightStr);
-  if (isNaN(weightVal) || weightVal < 0) {
+  if (Number.isNaN(weightVal) || weightVal < 0) {
     return { weight: null, unit: null };
   }
 
@@ -443,7 +443,7 @@ function parseWeight(
 function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
   const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
-  return isNaN(price) ? null : price;
+  return Number.isNaN(price) ? null : price;
 }
 
 async function insertCatalogItems({

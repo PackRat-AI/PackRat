@@ -136,7 +136,7 @@ export default function ForgotPasswordScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   onPress={() => form.handleSubmit()}
@@ -159,7 +159,7 @@ export default function ForgotPasswordScreen() {
               <Text className="text-sm text-primary">Create Account</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
                   <Text className="text-sm">{isLoading ? 'Sending...' : 'Send Code'}</Text>
                 </Button>

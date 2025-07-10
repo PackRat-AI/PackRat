@@ -53,7 +53,7 @@ export default function OneTimePasswordScreen() {
         clearInterval(countdownInterval.current);
       }
     };
-  }, []);
+  }, [startCountdown]);
 
   function startCountdown() {
     if (countdownInterval.current) {

@@ -84,7 +84,7 @@ export function useAuthActions() {
       await GoogleSignin.hasPlayServices();
 
       // Sign in with Google
-      const userInfo = await GoogleSignin.signIn();
+      const _userInfo = await GoogleSignin.signIn();
 
       // Get the ID token
       const { idToken } = await GoogleSignin.getTokens();

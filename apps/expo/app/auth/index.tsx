@@ -39,7 +39,7 @@ export default function AuthIndexScreen() {
 
   React.useEffect(() => {
     setRedirectTo(redirectTo as string);
-  }, [redirectTo]);
+  }, [redirectTo, setRedirectTo]);
 
   if (isLoading) {
     return (

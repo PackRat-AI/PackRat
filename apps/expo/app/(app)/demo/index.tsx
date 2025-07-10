@@ -19,7 +19,7 @@ cssInterop(FlashList, {
 });
 
 export default function Screen() {
-  const [hasSeenConsent, setHasSeenConsent] = useState(false);
+  const [hasSeenConsent, _setHasSeenConsent] = useState(false);
 
   const searchValue = useHeaderSearchBar({
     hideWhenScrolling: COMPONENTS.length === 0,

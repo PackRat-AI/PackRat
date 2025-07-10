@@ -66,7 +66,7 @@ export default function ConversationsIosScreen() {
         />
       );
     },
-    [isSelecting, selectedMessages],
+    [isSelecting, selectedMessages, checkboxContainerStyle],
   );
 
   function onIsSelectingChange(value: boolean) {
@@ -339,11 +339,9 @@ function MessageRow({
           titleClassName="font-medium text-lg"
           subTitleClassName="pt-0.5"
           rightView={
-            <>
-              <View className="pr-3">
-                {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
-              </View>
-            </>
+            <View className="pr-3">
+              {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
+            </View>
           }
         />
       </ContextMenu>

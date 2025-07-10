@@ -56,7 +56,6 @@ export function PackDetailScreen() {
         return pack.items.filter((item) => item.worn);
       case 'consumable':
         return pack.items.filter((item) => item.consumable);
-      case 'all':
       default:
         return pack.items;
     }

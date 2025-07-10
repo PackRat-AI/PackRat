@@ -52,7 +52,7 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
 
   const truncateText = (text: string, maxLength = 120) => {
     if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength).trim() + '...';
+    return `${text.substring(0, maxLength).trim()}...`;
   };
 
   const handleGuidePress = async (url: string) => {
@@ -123,7 +123,7 @@ export function GuidesRAGGenerativeUI({ searchQuery, results }: GuidesRAGGenerat
         scrollEventThrottle={16}
         className="mb-4 max-h-80"
       >
-        {results.data.map((guide, index) => (
+        {results.data.map((guide, _index) => (
           <TouchableOpacity
             key={guide.file_id}
             onPress={() => handleGuidePress(guide.url)}

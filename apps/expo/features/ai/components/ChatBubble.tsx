@@ -30,7 +30,6 @@ interface ChatBubbleProps {
   userQuery?: string;
 }
 
-const USER = 'User';
 const AI = 'PackRat AI';
 
 export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {

@@ -335,7 +335,7 @@ function ChatBubble({
         </Button>
       </View>
     );
-  }, [colors, item.reactions]);
+  }, [item.reactions]);
 
   function initSelectedMessages() {
     setSelectedMessages([item.id]);

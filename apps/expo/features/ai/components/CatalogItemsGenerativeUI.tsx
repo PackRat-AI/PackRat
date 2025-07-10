@@ -110,7 +110,7 @@ export function CatalogItemsGenerativeUI({ items, total, limit }: CatalogItemsGe
         className="max-h-80"
       >
         <View className="flex-row gap-3">
-          {items.map((item, index) => (
+          {items.map((item, _index) => (
             <Pressable
               key={item.id}
               onPress={() => handleItemPress(item)}

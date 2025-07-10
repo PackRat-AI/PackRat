@@ -28,7 +28,7 @@ export function WeatherGenerativeUI({ location, weatherData }: WeatherGenerative
     );
   }
 
-  const getWeatherIcon = (conditions: string) => {
+  const _getWeatherIcon = (conditions: string) => {
     const condition = conditions.toLowerCase();
     if (condition.includes('clear') || condition.includes('sunny')) {
       return 'sun';

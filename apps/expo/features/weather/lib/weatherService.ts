@@ -118,7 +118,7 @@ export function formatWeatherData(data: any) {
 
   // Format alerts if any
   let alertText = null;
-  if (alerts && alerts.alert && alerts.alert.length > 0) {
+  if (alerts?.alert && alerts.alert.length > 0) {
     alertText = alerts.alert[0].headline || 'Weather Alert';
   }
 

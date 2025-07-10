@@ -39,7 +39,7 @@ export function DeleteAccountButton() {
                   if (text === 'DELETE') {
                     try {
                       await deleteAccount(); // redirection is handled in the hook
-                    } catch (error) {
+                    } catch (_error) {
                       setTimeout(() => {
                         alertRef.current?.alert({
                           title: 'Error',

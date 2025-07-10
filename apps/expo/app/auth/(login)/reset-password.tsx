@@ -356,7 +356,7 @@ export default function ResetPasswordScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || isLoading}
@@ -370,7 +370,7 @@ export default function ResetPasswordScreen() {
         ) : (
           <View className="flex-row justify-end py-4 pl-6 pr-8">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || isLoading}
                   onPress={() => {

@@ -179,7 +179,7 @@ export default function LoginScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || loading}
@@ -202,7 +202,7 @@ export default function LoginScreen() {
               <Text className="px-0.5 text-sm text-primary">Create Account</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || loading}
                   onPress={() => {

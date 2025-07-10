@@ -30,7 +30,7 @@ import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 // This ensures the page only works in development
-const isDevelopment = process.env.NODE_ENV === 'development';
+const _isDevelopment = process.env.NODE_ENV === 'development';
 
 // Types
 type ContentCategory =

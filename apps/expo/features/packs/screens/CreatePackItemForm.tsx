@@ -367,7 +367,7 @@ export const CreatePackItemForm = ({
 
           <FormSection ios={{ title: 'Image' }} footnote="Add an image of your item (optional)">
             <form.Field name="image">
-              {(field) => (
+              {(_field) => (
                 <FormItem>
                   {displayImage ? (
                     <View className="relative">

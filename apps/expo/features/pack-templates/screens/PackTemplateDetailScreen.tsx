@@ -40,7 +40,6 @@ export function PackTemplateDetailScreen() {
         return packTemplate.items.filter((item) => item.worn);
       case 'consumable':
         return packTemplate.items.filter((item) => item.consumable);
-      case 'all':
       default:
         return packTemplate.items;
     }

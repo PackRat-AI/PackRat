@@ -1,5 +1,5 @@
+import { resolve } from 'node:path';
 import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
-import { resolve } from 'path';
 import { defineConfig } from 'vitest/config';
 
 const bindings = {

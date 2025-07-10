@@ -41,29 +41,27 @@ export default function PackStatsScreen() {
 
               <View className="mb-2 h-40 flex-row items-end justify-between">
                 {WEIGHT_HISTORY.length ? (
-                  <>
-                    {WEIGHT_HISTORY.map((item, index) => {
-                      const maxWeight = Math.max(...WEIGHT_HISTORY.map((w) => w.weight));
-                      const minWeight = Math.min(...WEIGHT_HISTORY.map((w) => w.weight));
-                      const range = maxWeight - minWeight || 1;
-                      const heightPercentage = ((item.weight - minWeight) / range) * 80 + 20;
+                  WEIGHT_HISTORY.map((item, index) => {
+                    const maxWeight = Math.max(...WEIGHT_HISTORY.map((w) => w.weight));
+                    const minWeight = Math.min(...WEIGHT_HISTORY.map((w) => w.weight));
+                    const range = maxWeight - minWeight || 1;
+                    const heightPercentage = ((item.weight - minWeight) / range) * 80 + 20;
 
-                      return (
-                        <View key={index} className="flex-1 items-center">
-                          <View
-                            className="w-6 rounded-t-md bg-primary"
-                            style={{ height: `${heightPercentage}%` }}
-                          />
-                          <Text variant="caption2" className="mt-1">
-                            {item.month}
-                          </Text>
-                          <Text variant="caption2" className="text-muted-foreground">
-                            {item.weight.toFixed(1)} g
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </>
+                    return (
+                      <View key={index} className="flex-1 items-center">
+                        <View
+                          className="w-6 rounded-t-md bg-primary"
+                          style={{ height: `${heightPercentage}%` }}
+                        />
+                        <Text variant="caption2" className="mt-1">
+                          {item.month}
+                        </Text>
+                        <Text variant="caption2" className="text-muted-foreground">
+                          {item.weight.toFixed(1)} g
+                        </Text>
+                      </View>
+                    );
+                  })
                 ) : (
                   <Text
                     variant="largeTitle"

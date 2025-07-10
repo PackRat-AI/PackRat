@@ -50,7 +50,7 @@ export async function verifyJWT({ token, c }: { token: string; c: Context }): Pr
   try {
     const { JWT_SECRET } = env<Env>(c);
     return await verify(token, JWT_SECRET);
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

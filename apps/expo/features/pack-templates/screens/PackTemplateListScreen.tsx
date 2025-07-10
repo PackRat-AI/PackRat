@@ -78,7 +78,7 @@ export function PackTemplateListScreen() {
           (t) =>
             (selectedTemplateTypeIndex === 0
               ? true
-              : selectedTemplateTypeIndex == 1
+              : selectedTemplateTypeIndex === 1
                 ? t.isAppTemplate
                 : !t.isAppTemplate) && t.name.toLowerCase().includes(searchValue.toLowerCase()),
         )
@@ -86,7 +86,7 @@ export function PackTemplateListScreen() {
           (t) =>
             (selectedTemplateTypeIndex === 0
               ? true
-              : selectedTemplateTypeIndex == 1
+              : selectedTemplateTypeIndex === 1
                 ? t.isAppTemplate
                 : !t.isAppTemplate) &&
             t.category === activeFilter &&

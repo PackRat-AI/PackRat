@@ -62,7 +62,7 @@ export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBou
 
   return (
     <Sentry.ErrorBoundary
-      fallback={fallback ? <>{fallback}</> : DefaultFallback}
+      fallback={fallback ? fallback : DefaultFallback}
       onReset={onReset}
       onError={(error: unknown, componentStack: ErrorInfo['componentStack']) =>
         handleError(error, { componentStack: componentStack || '' })

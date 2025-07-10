@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { $ } from 'bun';
-import { existsSync, readdirSync } from 'fs';
-import { join } from 'path';
 
 interface CleanResult {
   workspace: string;
@@ -68,14 +68,14 @@ async function cleanWorkspace(workspacePath: string, workspaceName: string): Pro
       '.turbo',
     ];
 
-    let hasCleanedSomething = false;
+    let _hasCleanedSomething = false;
     for (const item of itemsToClean) {
       const itemPath = join(workspacePath, item);
       if (existsSync(itemPath)) {
         try {
           await $`bunx rimraf ${itemPath}`.quiet();
           log(`  ✓ Removed ${item}`, 'green');
-          hasCleanedSomething = true;
+          _hasCleanedSomething = true;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           log(`  ✗ Failed to remove ${item}: ${errorMessage}`, 'red');
