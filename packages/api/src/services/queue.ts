@@ -1,13 +1,13 @@
-import type { Queue } from '@cloudflare/workers-types';
-import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
-import { parse } from 'csv-parse/sync';
-import { getTableColumns, sql } from 'drizzle-orm';
-import { createDbClient } from '../db';
+import type { Queue } from "@cloudflare/workers-types";
+import { catalogItems, type NewCatalogItem } from "@packrat/api/db/schema";
+import type { Env } from "@packrat/api/types/env";
+import { parse } from "csv-parse/sync";
+import { eq, getTableColumns, isNull, or, sql } from "drizzle-orm";
+import { createDbClient } from "../db";
 
 export enum QueueType {
-  CATALOG_ETL = 'catalog-etl',
-  CATALOG_ETL_WRITE_BATCH = 'catalog-etl-write-batch',
+  CATALOG_ETL = "catalog-etl",
+  CATALOG_ETL_WRITE_BATCH = "catalog-etl-write-batch",
 }
 
 export interface BaseQueueMessage {
@@ -70,14 +70,20 @@ export async function queueCatalogETL({
   return jobId;
 }
 
-export async function processQueueBatch({ batch, env }: { batch: any; env: Env }): Promise<void> {
+export async function processQueueBatch({
+  batch,
+  env,
+}: {
+  batch: any;
+  env: Env;
+}): Promise<void> {
   for (const message of batch.messages) {
     try {
       const queueMessage: BaseQueueMessage = message.body;
 
       switch (queueMessage.type) {
         case QueueType.CATALOG_ETL:
-          if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
+          if (!env.ETL_QUEUE) throw new Error("ETL_QUEUE is not configured");
           await processCatalogETL({
             message: queueMessage as CatalogETLMessage,
             env,
@@ -95,7 +101,7 @@ export async function processQueueBatch({ batch, env }: { batch: any; env: Env }
           console.warn(`Unknown queue message type: ${queueMessage.type}`);
       }
     } catch (error) {
-      console.error('Error processing queue message:', error);
+      console.error("Error processing queue message:", error);
     }
   }
 }
@@ -167,7 +173,9 @@ async function processCatalogETL({
     totalQueued += batch.length;
   }
 
-  console.log(`ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`);
+  console.log(
+    `ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`,
+  );
 }
 
 async function processCatalogETLWriteBatch({
@@ -187,87 +195,96 @@ function createFieldMap(headers: string[]): Record<string, number> {
 
   const mappings = {
     name: [
-      'name',
-      'item_name',
-      'product_name',
-      'title',
-      'product',
-      'item',
-      'Name',
-      'PRODUCT_NAME',
-      'Title',
+      "name",
+      "item_name",
+      "product_name",
+      "title",
+      "product",
+      "item",
+      "Name",
+      "PRODUCT_NAME",
+      "Title",
     ],
     description: [
-      'description',
-      'desc',
-      'summary',
-      'info',
-      'product_description',
-      'Description',
-      'DESCRIPTION',
+      "description",
+      "desc",
+      "summary",
+      "info",
+      "product_description",
+      "Description",
+      "DESCRIPTION",
     ],
-    weight: ['weight', 'weight_grams', 'weight_oz', 'wt', 'mass'],
-    weightUnit: ['weight_unit'],
+    weight: ["weight", "weight_grams", "weight_oz", "wt", "mass"],
+    weightUnit: ["weight_unit"],
     category: [
-      'category',
-      'type',
-      'category_name',
-      'cat',
-      'product_category',
-      'product_type',
-      'Category',
-      'CATEGORY',
+      "category",
+      "type",
+      "category_name",
+      "cat",
+      "product_category",
+      "product_type",
+      "Category",
+      "CATEGORY",
     ],
     brand: [
-      'brand',
-      'manufacturer',
-      'company',
-      'make',
-      'brand_name',
-      'Brand',
-      'BRAND_NAME',
-      'Manufacturer',
+      "brand",
+      "manufacturer",
+      "company",
+      "make",
+      "brand_name",
+      "Brand",
+      "BRAND_NAME",
+      "Manufacturer",
     ],
-    model: ['model', 'model_number', 'part_number'],
-    sku: ['sku', 'item_number', 'product_id', 'id', 'item_id'],
-    productSku: ['product_sku'],
-    price: ['price', 'cost', 'amount', 'price_usd', 'msrp', 'Price', 'PRICE', 'Cost'],
+    model: ["model", "model_number", "part_number"],
+    sku: ["sku", "item_number", "product_id", "id", "item_id"],
+    productSku: ["product_sku"],
+    price: [
+      "price",
+      "cost",
+      "amount",
+      "price_usd",
+      "msrp",
+      "Price",
+      "PRICE",
+      "Cost",
+    ],
     image: [
-      'image',
-      'image_url',
-      'photo',
-      'picture',
-      'img',
-      'image_urls',
-      'photo_url',
-      'Image',
-      'IMAGE_URL',
+      "image",
+      "image_url",
+      "photo",
+      "picture",
+      "img",
+      "image_urls",
+      "photo_url",
+      "Image",
+      "IMAGE_URL",
     ],
-    url: ['url', 'link', 'website', 'web', 'href', 'URL'],
-    productUrl: ['product_url', 'PRODUCT_URL'],
-    color: ['color', 'colour'],
-    size: ['size'],
-    material: ['material', 'fabric'],
-    condition: ['condition'],
-    seller: ['seller', 'vendor', 'retailer'],
+    url: ["url", "link", "website", "web", "href", "URL"],
+    productUrl: ["product_url", "PRODUCT_URL"],
+    color: ["color", "colour"],
+    size: ["size"],
+    material: ["material", "fabric"],
+    condition: ["condition"],
+    seller: ["seller", "vendor", "retailer"],
     availability: [
-      'availability',
-      'stock',
-      'inventory_status',
-      'in_stock',
-      'quantity',
-      'Availability',
-      'AVAILABILITY',
+      "availability",
+      "stock",
+      "inventory_status",
+      "in_stock",
+      "quantity",
+      "Availability",
+      "AVAILABILITY",
     ],
-    currency: ['currency', 'price_currency'],
-    ratingValue: ['rating', 'rating_value', 'stars', 'average_rating'],
-    techs: ['techs'],
-    details: ['details'],
-    parameters: ['parameters'],
-    site: ['site'],
-    filename: ['filename'],
-    sourceFile: ['source_file'],
-    timestamp: ['cached_at', 'exported_at', 'created_at'],
+    currency: ["currency", "price_currency"],
+    ratingValue: ["rating", "rating_value", "stars", "average_rating"],
+    techs: ["techs"],
+    details: ["details"],
+    parameters: ["parameters"],
+    site: ["site"],
+    filename: ["filename"],
+    sourceFile: ["source_file"],
+    timestamp: ["cached_at", "exported_at", "created_at"],
   };
 
   for (const [dbField, csvVariants] of Object.entries(mappings)) {
@@ -292,7 +309,8 @@ function mapCsvRowToItem({
 }): Partial<NewCatalogItem> | null {
   const item: Partial<NewCatalogItem> = {};
 
-  const name = fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
+  const name =
+    fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
   if (!name) {
     return null; // A name is required
   }
@@ -300,46 +318,52 @@ function mapCsvRowToItem({
 
   const descriptionParts: string[] = [];
   if (fieldMap.description !== undefined && values[fieldMap.description]) {
-    descriptionParts.push(values[fieldMap.description].replace(/^"|"$/g, ''));
+    descriptionParts.push(values[fieldMap.description].replace(/^"|"$/g, ""));
   }
   if (fieldMap.details !== undefined && values[fieldMap.details]) {
-    descriptionParts.push(`Details: ${values[fieldMap.details].replace(/^"|"$/g, '')}`);
+    descriptionParts.push(
+      `Details: ${values[fieldMap.details].replace(/^"|"$/g, "")}`,
+    );
   }
   if (fieldMap.parameters !== undefined && values[fieldMap.parameters]) {
-    descriptionParts.push(`Parameters: ${parseAndFormatMultiString(values[fieldMap.parameters])}`);
+    descriptionParts.push(
+      `Parameters: ${parseAndFormatMultiString(values[fieldMap.parameters])}`,
+    );
   }
   if (descriptionParts.length > 0) {
-    item.description = descriptionParts.join('\n\n');
+    item.description = descriptionParts.join("\n\n");
   }
 
   // --- Direct Mappings ---
   const directMappings: (keyof NewCatalogItem)[] = [
-    'category',
-    'brand',
-    'model',
-    'url',
-    'productUrl',
-    'color',
-    'size',
-    'sku',
-    'productSku',
-    'availability',
-    'seller',
-    'material',
-    'currency',
-    'condition',
+    "category",
+    "brand",
+    "model",
+    "url",
+    "productUrl",
+    "color",
+    "size",
+    "sku",
+    "productSku",
+    "availability",
+    "seller",
+    "material",
+    "currency",
+    "condition",
   ];
   for (const key of directMappings) {
     const fieldIndex = fieldMap[key as string];
     if (fieldIndex !== undefined && values[fieldIndex]) {
       // @ts-expect-error - We are mapping strings to the correct keys
-      item[key] = values[fieldIndex].replace(/^"|"$/g, '').trim();
+      item[key] = values[fieldIndex].replace(/^"|"$/g, "").trim();
     }
   }
 
   // --- Transformed Mappings ---
-  const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
-  const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
+  const weightStr =
+    fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
+  const unitStr =
+    fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
 
   if (weightStr && parseFloat(weightStr) > 0) {
     const { weight, unit } = parseWeight(weightStr, unitStr);
@@ -347,27 +371,33 @@ function mapCsvRowToItem({
     item.defaultWeightUnit = unit;
   }
 
-  const priceStr = fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
+  const priceStr =
+    fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
   if (priceStr) {
     item.price = parsePrice(priceStr);
   }
 
-  const ratingStr = fieldMap.ratingValue !== undefined ? values[fieldMap.ratingValue] : undefined;
+  const ratingStr =
+    fieldMap.ratingValue !== undefined
+      ? values[fieldMap.ratingValue]
+      : undefined;
   if (ratingStr) {
     item.ratingValue = parseFloat(ratingStr) || null;
   }
 
-  const imageUrl = fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
+  const imageUrl =
+    fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
   if (imageUrl) {
     const parsedImage = parseJsonOrString(imageUrl);
     if (Array.isArray(parsedImage)) {
       item.image = parsedImage[0];
     } else {
-      item.image = parsedImage.split(',')[0].trim();
+      item.image = parsedImage.split(",")[0].trim();
     }
   }
 
-  const techsStr = fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
+  const techsStr =
+    fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
   if (techsStr) {
     try {
       const parsedTechs = JSON.parse(techsStr);
@@ -375,7 +405,8 @@ function mapCsvRowToItem({
 
       // Fallback weight parsing from techs
       if (!item.defaultWeight) {
-        const claimedWeight = parsedTechs['Claimed Weight'] || parsedTechs['weight'];
+        const claimedWeight =
+          parsedTechs["Claimed Weight"] || parsedTechs["weight"];
         if (claimedWeight) {
           const { weight, unit } = parseWeight(claimedWeight);
           item.defaultWeight = weight;
@@ -389,8 +420,8 @@ function mapCsvRowToItem({
 
   if (item.description) {
     item.description = item.description
-      .replace(/[\r\n]+/g, ' ')
-      .replace(/Details:\s*Item\s+#\S+/gi, '')
+      .replace(/[\r\n]+/g, " ")
+      .replace(/Details:\s*Item\s+#\S+/gi, "")
       .trim();
   }
 
@@ -406,10 +437,10 @@ function parseJsonOrString(str: string): any {
 }
 
 function parseAndFormatMultiString(str: string): string {
-  if (!str) return '';
+  if (!str) return "";
   const parsed = parseJsonOrString(str);
   if (Array.isArray(parsed)) {
-    return parsed.join(', ');
+    return parsed.join(", ");
   }
   return parsed;
 }
@@ -427,22 +458,22 @@ function parseWeight(
 
   const hint = (unitStr || weightStr).toLowerCase();
 
-  if (hint.includes('oz')) {
-    return { weight: Math.round(weightVal * 28.35), unit: 'oz' };
+  if (hint.includes("oz")) {
+    return { weight: Math.round(weightVal * 28.35), unit: "oz" };
   }
-  if (hint.includes('lb')) {
-    return { weight: Math.round(weightVal * 453.592), unit: 'lb' };
+  if (hint.includes("lb")) {
+    return { weight: Math.round(weightVal * 453.592), unit: "lb" };
   }
-  if (hint.includes('kg')) {
-    return { weight: weightVal * 1000, unit: 'kg' };
+  if (hint.includes("kg")) {
+    return { weight: weightVal * 1000, unit: "kg" };
   }
 
-  return { weight: weightVal, unit: 'g' };
+  return { weight: weightVal, unit: "g" };
 }
 
 function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
-  const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
+  const price = parseFloat(priceStr.replace(/[^0-9.]/g, ""));
   return isNaN(price) ? null : price;
 }
 
@@ -460,7 +491,9 @@ async function insertCatalogItems({
   const db = createDbClient(env);
   console.log(`Job ${jobId}: Inserting ${items.length} catalog items`);
 
-  const validItems = items.filter((i): i is NewCatalogItem => !!i.name);
+  const validItems = items.filter(
+    (i): i is NewCatalogItem => !!i.name && !!i.sku?.trim(),
+  );
   if (validItems.length === 0) {
     console.log(`Job ${jobId}: No valid items to insert.`);
     return;
@@ -470,10 +503,18 @@ async function insertCatalogItems({
   const updateSet: Record<string, any> = {};
   for (const col of Object.values(columns)) {
     const name = col.name as keyof NewCatalogItem;
-    if (!['sku', 'createdAt', 'id'].includes(name)) {
+    if (!["sku", "createdAt", "id"].includes(name)) {
       updateSet[name] = sql.raw(`excluded."${name}"`);
     }
   }
+
+  await db
+    .delete(catalogItems)
+    .where(
+      or(isNull(catalogItems.sku), eq(sql`trim(${catalogItems.sku})`, "")),
+    );
+
+  console.log("🧹 Removed catalog items with null or empty SKU");
 
   await db.insert(catalogItems).values(validItems).onConflictDoUpdate({
     target: catalogItems.sku,
