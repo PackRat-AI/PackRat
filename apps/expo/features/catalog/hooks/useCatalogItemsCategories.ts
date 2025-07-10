@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
-import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 const FALLBACK_CATEGORIES = [
   'Clothing',

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import { useAtomValue } from 'jotai';
-import { tokenAtom } from '~/features/auth/atoms/authAtoms';
-import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
 
 export const useVectorSearch = (query: string) => {
   const token = useAtomValue(tokenAtom);

@@ -1,4 +1,9 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -10,13 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-import { Button } from '~/components/nativewindui/Button';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { Text } from '~/components/nativewindui/Text';
-import { TextField } from '~/components/nativewindui/TextField';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for login validation
 const loginFormSchema = z.object({
@@ -105,8 +104,14 @@ export default function LoginScreen() {
                   <form.Field name="email">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Email', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Email' })}
+                        placeholder={Platform.select({
+                          ios: 'Email',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Email',
+                        })}
                         onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
                         autoFocus
@@ -129,8 +134,14 @@ export default function LoginScreen() {
                   <form.Field name="password">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Password', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Password' })}
+                        placeholder={Platform.select({
+                          ios: 'Password',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Password',
+                        })}
                         onFocus={() => setFocusedTextField('password')}
                         onBlur={() => {
                           setFocusedTextField(null);
@@ -162,7 +173,10 @@ export default function LoginScreen() {
       <KeyboardStickyView
         offset={{
           closed: 0,
-          opened: Platform.select({ ios: insets.bottom + 30, default: insets.bottom }),
+          opened: Platform.select({
+            ios: insets.bottom + 30,
+            default: insets.bottom,
+          }),
         }}
       >
         {Platform.OS === 'ios' ? (
@@ -216,7 +230,10 @@ export default function LoginScreen() {
         <Button
           variant="plain"
           onPress={() => {
-            router.replace({ pathname: '/auth/(create-account)', params: { redirectTo } });
+            router.replace({
+              pathname: '/auth/(create-account)',
+              params: { redirectTo },
+            });
           }}
         >
           <Text className="text-sm text-primary">Create Account</Text>

@@ -1,21 +1,20 @@
-import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { Platform, View } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { AdaptiveSearchHeader } from '~/components/nativewindui/AdaptiveSearchHeader';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/nativewindui/Avatar';
-import { Button } from '~/components/nativewindui/Button';
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
+import { AdaptiveSearchHeader } from '@packrat/ui/nativewindui';
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
 import {
   List,
   type ListDataItem,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from '~/components/nativewindui/List';
-import { Text } from '~/components/nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
+} from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { Platform, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsAndroidStyleScreen() {
   const insets = useSafeAreaInsets();
@@ -172,7 +171,10 @@ type MockData =
   | string;
 
 const DATA: MockData[] = [
-  ...Platform.select({ ios: [], default: ['material-top-header', 'material-search-header'] }),
+  ...Platform.select({
+    ios: [],
+    default: ['material-top-header', 'material-search-header'],
+  }),
   {
     id: '4',
     title: 'Wi-Fi',

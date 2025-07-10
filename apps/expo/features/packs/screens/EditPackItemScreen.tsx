@@ -1,5 +1,5 @@
+import { CreatePackItemForm } from 'expo-app/features/packs/screens/CreatePackItemForm';
 import { useLocalSearchParams } from 'expo-router';
-import { CreatePackItemForm } from '~/features/packs/screens/CreatePackItemForm';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { usePackItemDetailsFromStore } from '../hooks';
 

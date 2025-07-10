@@ -1,12 +1,12 @@
+import { Alert } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { isArray } from 'radash';
 import { Image, Pressable, Text, View } from 'react-native';
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { Alert } from '~/components/nativewindui/Alert';
-import { Button } from '~/components/nativewindui/Button';
-import { useUser } from '~/features/auth/hooks/useUser';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';
 import type { PackTemplate } from '../types';
 
@@ -15,7 +15,7 @@ type TemplateCardProps = {
   onPress: (template: PackTemplate) => void;
 };
 
-const LOGO_SOURCE = require('~/assets/adaptive-icon.png');
+const LOGO_SOURCE = require('expo-app/assets/adaptive-icon.png');
 
 export function TemplateCard({ templateId, onPress }: TemplateCardProps) {
   const template = usePackTemplateDetails(templateId);

@@ -1,15 +1,15 @@
 'use client';
 
+import { Button } from '@packrat/ui/nativewindui';
+import { SearchInput } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { usePacks } from 'expo-app/features/packs';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import type { Pack } from 'expo-app/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, FlatList, Image, SafeAreaView, TouchableOpacity, View } from 'react-native';
-import { Button } from '~/components/nativewindui/Button';
-import { SearchInput } from '~/components/nativewindui/SearchInput';
-import { Text } from '~/components/nativewindui/Text';
-import { usePacks } from '~/features/packs';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import type { Pack } from '~/types';
 import { useCatalogItemDetails } from '../hooks';
 
 export function PackSelectionScreen() {

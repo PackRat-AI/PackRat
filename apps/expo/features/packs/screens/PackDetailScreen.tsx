@@ -1,19 +1,19 @@
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Alert } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { Chip } from 'expo-app/components/initial/Chip';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
+import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { Chip } from '~/components/initial/Chip';
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
-import { Alert } from '~/components/nativewindui/Alert';
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
-import { isAuthed } from '~/features/auth/store';
-import { PackItemCard } from '~/features/packs/components/PackItemCard';
-import { PackItemSuggestions } from '~/features/packs/components/PackItemSuggestions';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { useDeletePack, usePackDetailsFromApi, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
@@ -45,7 +45,10 @@ export function PackDetailScreen() {
 
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
-    router.push({ pathname: `/item/[id]`, params: { id: item.id, packId: item.packId } });
+    router.push({
+      pathname: `/item/[id]`,
+      params: { id: item.id, packId: item.packId },
+    });
   };
 
   const getFilteredItems = () => {
@@ -257,7 +260,12 @@ export function PackDetailScreen() {
           {isOwnedByUser && (
             <Button
               className="m-4"
-              onPress={() => router.push({ pathname: '/item/new', params: { packId: pack.id } })}
+              onPress={() =>
+                router.push({
+                  pathname: '/item/new',
+                  params: { packId: pack.id },
+                })
+              }
             >
               <Text>Add New Item</Text>
             </Button>

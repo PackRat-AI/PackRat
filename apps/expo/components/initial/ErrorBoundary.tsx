@@ -1,10 +1,10 @@
 import { Icon } from '@roninoss/icons';
 import * as Sentry from '@sentry/react-native';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
 import type React from 'react';
 import type { ErrorInfo } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 type ErrorBoundaryProps = {
   children: React.ReactNode;

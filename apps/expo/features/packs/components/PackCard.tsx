@@ -1,11 +1,11 @@
+import { Alert } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { isArray } from 'radash';
 import { Image, Pressable, Text, View } from 'react-native';
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { Alert } from '~/components/nativewindui/Alert';
-import { Button } from '~/components/nativewindui/Button';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { useDeletePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackInStore } from '../types';

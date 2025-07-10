@@ -1,16 +1,17 @@
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import type { ItemLink } from 'expo-app/types';
 import { Linking, TouchableOpacity, View } from 'react-native';
-import { Text } from '~/components/nativewindui/Text';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import type { ItemLink } from '~/types';
 
 type ItemLinksProps = {
   links: ItemLink[];
 };
 
 export function ItemLinks({ links }: ItemLinksProps) {
-  if (!links || links.length === 0) return null;
   const { colors } = useColorScheme();
+
+  if (!links || links.length === 0) return null;
 
   const getIconName = (type: ItemLink['type']) => {
     switch (type) {

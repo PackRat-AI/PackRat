@@ -1,26 +1,25 @@
-import { Stack, useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { Platform, View } from 'react-native';
-
-import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
-import { Alert } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { Avatar, AvatarFallback } from '~/components/nativewindui/Avatar';
-import { Button } from '~/components/nativewindui/Button';
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Alert } from '@packrat/ui/nativewindui';
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { Avatar, AvatarFallback } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
 import {
   ESTIMATED_ITEM_HEIGHT,
   List,
   ListItem,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from '~/components/nativewindui/List';
-import { Text } from '~/components/nativewindui/Text';
-import { withAuthWall } from '~/features/auth/hocs';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-import { useUser } from '~/features/auth/hooks/useUser';
-import { packItemsSyncState, packsSyncState } from '~/features/packs/store';
-import { ProfileAuthWall } from '~/features/profile/components';
-import { cn } from '~/lib/cn';
+} from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { withAuthWall } from 'expo-app/features/auth/hocs';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
+import { ProfileAuthWall } from 'expo-app/features/profile/components';
+import { cn } from 'expo-app/lib/cn';
+import { Stack } from 'expo-router';
+import { useRef } from 'react';
+import { Platform, View } from 'react-native';
 
 const SCREEN_OPTIONS = {
   title: 'Profile',

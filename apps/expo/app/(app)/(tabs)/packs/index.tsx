@@ -1,8 +1,7 @@
+import { PackListScreen } from 'expo-app/features/packs/screens/PackListScreen';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
-
-import { PackListScreen } from '~/features/packs/screens/PackListScreen';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export default function PacksScreen() {
   const { colorScheme } = useColorScheme();

@@ -1,25 +1,29 @@
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { AlertAnchor } from '@packrat/ui/nativewindui';
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Link, Route, router, useLocalSearchParams } from 'expo-router';
+import { featureFlags } from 'expo-app/config';
+import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useSetAtom } from 'jotai';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
-import { AlertAnchor } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
-import { featureFlags } from '~/config';
-import { redirectToAtom } from '~/features/auth/atoms/authAtoms';
-import { useAuth } from '~/features/auth/hooks/useAuth';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 const GOOGLE_SOURCE = {
   uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',
 };
 
-type RouteParams = { redirectTo: string; showSignInCopy?: string; showSkipLoginBtn?: string };
+type RouteParams = {
+  redirectTo: string;
+  showSignInCopy?: string;
+  showSkipLoginBtn?: string;
+};
 
 export default function AuthIndexScreen() {
   const { signInWithGoogle, signInWithApple, isLoading } = useAuth();

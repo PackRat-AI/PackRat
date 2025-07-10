@@ -1,10 +1,10 @@
+import { Text } from '@packrat/ui/nativewindui';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, type ImageProps, View } from 'react-native';
-import { Text } from '~/components/nativewindui/Text';
-import { clientEnvs } from '~/env/clientEnvs';
-import { useUser } from '~/features/auth/hooks/useUser';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
   localFileName?: string;

@@ -1,4 +1,11 @@
+import { AlertAnchor } from '@packrat/ui/nativewindui';
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -6,15 +13,7 @@ import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-import { AlertAnchor } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { Button } from '~/components/nativewindui/Button';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { Text } from '~/components/nativewindui/Text';
-import { TextField } from '~/components/nativewindui/TextField';
-import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
-
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for email validation
 const emailSchema = z.object({
@@ -81,7 +80,10 @@ export default function ForgotPasswordScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: "What's your email?", default: 'Forgot password' })}
+              {Platform.select({
+                ios: "What's your email?",
+                default: 'Forgot password',
+              })}
             </Text>
             {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">
@@ -100,8 +102,14 @@ export default function ForgotPasswordScreen() {
                   <form.Field name="email">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Email', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Email' })}
+                        placeholder={Platform.select({
+                          ios: 'Email',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Email',
+                        })}
                         onSubmitEditing={() => form.handleSubmit()}
                         submitBehavior="submit"
                         autoFocus

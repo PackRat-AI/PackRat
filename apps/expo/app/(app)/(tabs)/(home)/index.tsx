@@ -1,49 +1,63 @@
 'use client';
 
+import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
+import {
+  ESTIMATED_ITEM_HEIGHT,
+  LargeTitleHeader,
+  List,
+  type ListRenderItemInfo,
+  ListSectionHeader,
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { featureFlags } from 'expo-app/config';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
+import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
+import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
+import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
+import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
+import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
+import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
+import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
+import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
+import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
+import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
+import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
+import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
+import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
+import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import type { LargeTitleSearchBarRef } from '~/components/nativewindui/LargeTitleHeader/types';
-import {
-  ESTIMATED_ITEM_HEIGHT,
-  List,
-  type ListRenderItemInfo,
-  ListSectionHeader,
-} from '~/components/nativewindui/List';
-import { featureFlags } from '~/config';
-import { clientEnvs } from '~/env/clientEnvs';
-import { AIChatTile } from '~/features/ai/components/AIChatTile';
-import { ReportedContentTile } from '~/features/ai/components/ReportedContentTile';
-import { PackTemplatesTile } from '~/features/pack-templates/components/PackTemplatesTile';
-import { CurrentPackTile } from '~/features/packs/components/CurrentPackTile';
-import { GearInventoryTile } from '~/features/packs/components/GearInventoryTile';
-import { PackCategoriesTile } from '~/features/packs/components/PackCategoriesTile';
-import { PackStatsTile } from '~/features/packs/components/PackStatsTile';
-import { RecentPacksTile } from '~/features/packs/components/RecentPacksTile';
-import { SharedPacksTile } from '~/features/packs/components/SharedPacksTile';
-import { ShoppingListTile } from '~/features/packs/components/ShoppingListTile';
-import { WeightAnalysisTile } from '~/features/packs/components/WeightAnalysisTile';
-import { TrailConditionsTile } from '~/features/trips/components/TrailConditionsTile';
-import { UpcomingTripsTile } from '~/features/trips/components/UpcomingTripsTile';
-import { WeatherAlertsTile } from '~/features/weather/components/WeatherAlertsTile';
-import { WeatherTile } from '~/features/weather/components/WeatherTile';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-
 // Define tile metadata for search functionality
 const tileMetadata = {
-  'current-pack': { title: 'Current Pack', keywords: ['active', 'current', 'pack'] },
-  'recent-packs': { title: 'Recent Packs', keywords: ['recent', 'packs', 'history'] },
-  'ask-packrat-ai': { title: 'Ask PackRat AI', keywords: ['ai', 'chat', 'assistant', 'help'] },
-  'pack-stats': { title: 'Pack Statistics', keywords: ['stats', 'statistics', 'analytics'] },
+  'current-pack': {
+    title: 'Current Pack',
+    keywords: ['active', 'current', 'pack'],
+  },
+  'recent-packs': {
+    title: 'Recent Packs',
+    keywords: ['recent', 'packs', 'history'],
+  },
+  'ask-packrat-ai': {
+    title: 'Ask PackRat AI',
+    keywords: ['ai', 'chat', 'assistant', 'help'],
+  },
+  'pack-stats': {
+    title: 'Pack Statistics',
+    keywords: ['stats', 'statistics', 'analytics'],
+  },
   'weight-analysis': {
     title: 'Weight Analysis',
     keywords: ['weight', 'analysis', 'heavy', 'light'],
   },
-  'pack-categories': { title: 'Pack Categories', keywords: ['categories', 'organize', 'group'] },
+  'pack-categories': {
+    title: 'Pack Categories',
+    keywords: ['categories', 'organize', 'group'],
+  },
   'upcoming-trips': {
     title: 'Upcoming Trips',
     keywords: ['trips', 'upcoming', 'planned', 'schedule'],
@@ -52,7 +66,10 @@ const tileMetadata = {
     title: 'Trail Conditions',
     keywords: ['trail', 'conditions', 'terrain', 'path'],
   },
-  weather: { title: 'Weather', keywords: ['weather', 'forecast', 'temperature', 'conditions'] },
+  weather: {
+    title: 'Weather',
+    keywords: ['weather', 'forecast', 'temperature', 'conditions'],
+  },
   'weather-alerts': {
     title: 'Weather Alerts',
     keywords: ['weather', 'alerts', 'warnings', 'emergency'],
@@ -61,12 +78,18 @@ const tileMetadata = {
     title: 'Gear Inventory',
     keywords: ['gear', 'inventory', 'equipment', 'items'],
   },
-  'shopping-list': { title: 'Shopping List', keywords: ['shopping', 'list', 'buy', 'purchase'] },
+  'shopping-list': {
+    title: 'Shopping List',
+    keywords: ['shopping', 'list', 'buy', 'purchase'],
+  },
   'shared-packs': {
     title: 'Shared Packs',
     keywords: ['shared', 'packs', 'collaborate', 'friends'],
   },
-  'pack-templates': { title: 'Pack Templates', keywords: ['templates', 'preset', 'pattern'] },
+  'pack-templates': {
+    title: 'Pack Templates',
+    keywords: ['templates', 'preset', 'pattern'],
+  },
 };
 
 type TileName = keyof typeof tileMetadata;

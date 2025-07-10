@@ -1,5 +1,9 @@
+import { SearchInput } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import debounce from 'lodash.debounce';
@@ -16,11 +20,6 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { SearchInput } from '~/components/nativewindui/SearchInput';
-import { Text } from '~/components/nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { useLocationSearch } from '../hooks';
 import type { LocationSearchResult } from '../types';
 

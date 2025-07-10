@@ -1,13 +1,12 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { List, ListItem } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/nativewindui/Avatar';
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { List, ListItem } from '~/components/nativewindui/List';
-import { Text } from '~/components/nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 // Mock data for upcoming trips with hardcoded dates
 const UPCOMING_TRIPS = [
@@ -32,8 +31,16 @@ const UPCOMING_TRIPS = [
       alerts: ['Rain expected on days 3-4'],
     },
     members: [
-      { id: '1', name: 'You', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-      { id: '2', name: 'Mike Chen', avatar: 'https://randomuser.me/api/portraits/men/22.jpg' },
+      {
+        id: '1',
+        name: 'You',
+        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+      },
+      {
+        id: '2',
+        name: 'Mike Chen',
+        avatar: 'https://randomuser.me/api/portraits/men/22.jpg',
+      },
     ],
   },
   {
@@ -57,13 +64,21 @@ const UPCOMING_TRIPS = [
       alerts: [],
     },
     members: [
-      { id: '1', name: 'You', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
+      {
+        id: '1',
+        name: 'You',
+        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+      },
       {
         id: '2',
         name: 'Sarah Johnson',
         avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
       },
-      { id: '3', name: 'Alex Rodriguez', avatar: 'https://randomuser.me/api/portraits/men/67.jpg' },
+      {
+        id: '3',
+        name: 'Alex Rodriguez',
+        avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
+      },
     ],
   },
 ];

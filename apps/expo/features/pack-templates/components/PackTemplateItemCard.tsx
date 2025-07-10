@@ -1,15 +1,14 @@
 // components/PackTemplateItemCard.tsx
 
 import { Icon } from '@roninoss/icons';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { useUser } from '~/features/auth/hooks/useUser';
-import { CachedImage } from '~/features/packs/components/CachedImage';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import { Alert } from '../../../components/nativewindui/Alert';
-import { Button } from '../../../components/nativewindui/Button';
+import { Alert, Button } from '@packrat/ui/nativewindui';
 import { useDeletePackTemplateItem } from '../hooks/useDeletePackTemplateItem';
 import type { PackTemplateItem } from '../types';
 
@@ -101,7 +100,10 @@ export function PackTemplateItemCard({
                 onPress={() =>
                   router.push({
                     pathname: '/templateItem/[id]/edit',
-                    params: { id: item.id, packTemplateId: item.packTemplateId },
+                    params: {
+                      id: item.id,
+                      packTemplateId: item.packTemplateId,
+                    },
                   })
                 }
               >

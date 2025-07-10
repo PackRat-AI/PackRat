@@ -1,14 +1,12 @@
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { featureFlags } from 'expo-app/config';
+import { userStore } from 'expo-app/features/auth/store';
+import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
+import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
+import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
-
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { Text } from '~/components/nativewindui/Text';
-import { featureFlags } from '~/config';
-import { userStore } from '~/features/auth/store';
-import { usePackDetailsFromStore } from '~/features/packs/hooks/usePackDetailsFromStore';
-import { usePackWeightHistory } from '~/features/packs/hooks/usePackWeightHistory';
-import { computeCategorySummaries } from '~/features/packs/utils';
+import { ScrollView, View } from 'react-native';
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();

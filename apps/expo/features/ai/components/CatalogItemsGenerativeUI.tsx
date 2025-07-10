@@ -1,9 +1,9 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 interface CatalogItem {
   id: number;
@@ -70,7 +70,11 @@ export function CatalogItemsGenerativeUI({ items, total, limit }: CatalogItemsGe
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'View Details',
-          onPress: () => router.push({ pathname: '/catalog/[id]', params: { id: catalogItem.id } }),
+          onPress: () =>
+            router.push({
+              pathname: '/catalog/[id]',
+              params: { id: catalogItem.id },
+            }),
         },
         {
           text: 'Add to Pack',

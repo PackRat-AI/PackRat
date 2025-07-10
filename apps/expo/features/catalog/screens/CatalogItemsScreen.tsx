@@ -1,4 +1,9 @@
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
+import { withAuthWall } from 'expo-app/features/auth/hocs';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useState } from 'react';
@@ -12,11 +17,6 @@ import {
   View,
 } from 'react-native';
 import { useDebounce } from 'use-debounce';
-import { searchValueAtom } from '~/atoms/itemListAtoms';
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { Text } from '~/components/nativewindui/Text';
-import { withAuthWall } from '~/features/auth/hocs';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { CatalogItemsAuthWall } from '../components';
 import { CatalogCategoriesFilter } from '../components/CatalogCategoriesFilter';
 import { CatalogItemCard } from '../components/CatalogItemCard';

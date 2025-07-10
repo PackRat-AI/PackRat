@@ -1,6 +1,6 @@
+import { packsStore } from 'expo-app/features/packs/store';
 import { nanoid } from 'nanoid/non-secure';
 import { useCallback } from 'react';
-import { packsStore } from '~/features/packs/store';
 import type { PackInput, PackInStore } from '../types';
 
 // Hook to create a pack

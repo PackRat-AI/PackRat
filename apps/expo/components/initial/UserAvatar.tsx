@@ -1,5 +1,5 @@
+import type { User } from 'expo-app/types';
 import { Image, Text, View } from 'react-native';
-import type { User } from '~/types';
 
 type UserAvatarProps = {
   user: User;

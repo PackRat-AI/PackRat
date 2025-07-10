@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import type { PaginatedCatalogItemsResponse } from '../types';
 
 interface GetCatalogItemsParams {

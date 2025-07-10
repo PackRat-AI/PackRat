@@ -1,10 +1,10 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { Image, SafeAreaView, View } from 'react-native';
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 export function WeatherAuthWall() {
   const router = useRouter();
@@ -42,7 +42,12 @@ export function WeatherAuthWall() {
         </View>
 
         <Button
-          onPress={() => router.push({ pathname: '/auth', params: { redirectTo: currentRoute } })}
+          onPress={() =>
+            router.push({
+              pathname: '/auth',
+              params: { redirectTo: currentRoute },
+            })
+          }
           size="lg"
           variant="primary"
           className="mb-4 w-full"

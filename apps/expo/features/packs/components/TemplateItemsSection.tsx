@@ -1,8 +1,8 @@
 import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import type { WeightUnit } from 'expo-app/types';
 import { ScrollView, Text, View } from 'react-native';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import type { WeightUnit } from '~/types';
 import { CachedImage } from './CachedImage';
 
 export interface PackTemplateItem {

@@ -1,5 +1,5 @@
+import { formatWeatherData, getWeatherData } from 'expo-app/features/weather/lib/weatherService';
 import { useState } from 'react';
-import { formatWeatherData, getWeatherData } from '~/features/weather/lib/weatherService';
 import { useLocations } from './useLocations';
 
 export function useLocationRefresh() {

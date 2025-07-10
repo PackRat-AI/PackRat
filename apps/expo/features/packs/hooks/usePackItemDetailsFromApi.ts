@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
-import type { PackItem } from '~/features/packs/types';
-import axiosInstance from '~/lib/api/client';
-import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
+import type { PackItem } from 'expo-app/features/packs/types';
+import axiosInstance from 'expo-app/lib/api/client';
+import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 export async function fetchPackItemById(id: string): Promise<PackItem> {
   const res = await axiosInstance.get(`/api/packs/items/${id}`);

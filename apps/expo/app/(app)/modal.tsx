@@ -1,10 +1,9 @@
+import { Text } from '@packrat/ui/nativewindui';
+import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, ScrollView, View } from 'react-native';
-
-import { Text } from '~/components/nativewindui/Text';
-import { DeleteAccountButton } from '~/features/auth/components/DeleteAccountButton';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export default function ModalScreen() {
   const { colorScheme } = useColorScheme();

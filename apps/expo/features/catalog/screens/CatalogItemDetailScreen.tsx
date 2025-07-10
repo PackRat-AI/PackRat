@@ -1,12 +1,12 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { ItemLinks } from 'expo-app/components/catalog/ItemLinks';
+import { ItemReviews } from 'expo-app/components/catalog/ItemReviews';
+import { Chip } from 'expo-app/components/initial/Chip';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
-import { ItemLinks } from '~/components/catalog/ItemLinks';
-import { ItemReviews } from '~/components/catalog/ItemReviews';
-import { Chip } from '~/components/initial/Chip';
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { ErrorScreen } from '../../../screens/ErrorScreen';
 import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
@@ -19,7 +19,10 @@ export function CatalogItemDetailScreen() {
   const { colors } = useColorScheme();
 
   const handleAddToPack = () => {
-    router.push({ pathname: '/catalog/add-to-pack', params: { catalogItemId: item?.id } });
+    router.push({
+      pathname: '/catalog/add-to-pack',
+      params: { catalogItemId: item?.id },
+    });
   };
 
   if (isLoading) {

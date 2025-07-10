@@ -1,5 +1,13 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { DropdownMenu } from '@packrat/ui/nativewindui';
+import { createDropdownItem } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import type { PackCategory } from 'expo-app/types';
 import { useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,
@@ -11,14 +19,6 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
-import { Button } from '~/components/nativewindui/Button';
-import { DropdownMenu } from '~/components/nativewindui/DropdownMenu';
-import { createDropdownItem } from '~/components/nativewindui/DropdownMenu/utils';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { TextField } from '~/components/nativewindui/TextField';
-import { useUser } from '~/features/auth/hooks/useUser';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import type { PackCategory } from '~/types';
 import { useCreatePackTemplate } from '../hooks/useCreatePackTemplate';
 import { useUpdatePackTemplate } from '../hooks/useUpdatePacktemplate';
 import type { PackTemplate } from '../types';
@@ -181,7 +181,10 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
                       <Switch
                         value={field.state.value}
                         onValueChange={field.handleChange}
-                        trackColor={{ false: 'hsl(var(--muted))', true: 'hsl(var(--primary))' }}
+                        trackColor={{
+                          false: 'hsl(var(--muted))',
+                          true: 'hsl(var(--primary))',
+                        }}
                         ios_backgroundColor="hsl(var(--muted))"
                       />
                     </View>

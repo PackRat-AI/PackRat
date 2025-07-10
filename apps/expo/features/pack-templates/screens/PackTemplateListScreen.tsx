@@ -1,4 +1,10 @@
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
+import { SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import type { PackCategory } from 'expo-app/features/packs/types';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Link, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
@@ -11,12 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import type { LargeTitleSearchBarRef } from '~/components/nativewindui/LargeTitleHeader/types';
-import { SegmentedControl } from '~/components/nativewindui/SegmentedControl';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-import type { PackCategory } from '~/features/packs/types';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { TemplateCard } from '../components/TemplateCard';
 import { usePackTemplates } from '../hooks';
 import { activeTemplateFilterAtom, templateSearchValueAtom } from '../packTemplateListAtoms';
@@ -61,7 +61,10 @@ export function PackTemplateListScreen() {
 
   const handleTemplatePress = useCallback(
     (template: PackTemplate) => {
-      router.push({ pathname: '/pack-templates/[id]', params: { id: template.id } });
+      router.push({
+        pathname: '/pack-templates/[id]',
+        params: { id: template.id },
+      });
     },
     [router],
   );

@@ -1,6 +1,6 @@
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { View } from 'react-native';
-import { Text } from '~/components/nativewindui/Text';
 
 interface PackItem {
   id: string;

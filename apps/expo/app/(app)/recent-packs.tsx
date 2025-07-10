@@ -1,11 +1,10 @@
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { Image, ScrollView, View } from 'react-native';
-
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { Text } from '~/components/nativewindui/Text';
-import { useRecentPacks } from '~/features/packs/hooks/useRecentPacks';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import { getRelativeTime } from '~/lib/utils/getRelativeTime';
 
 function RecentPackCard({ pack }: { pack: any }) {
   const { colors } = useColorScheme();

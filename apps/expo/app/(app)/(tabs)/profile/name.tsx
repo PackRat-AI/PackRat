@@ -1,14 +1,13 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
+import { cn } from 'expo-app/lib/cn';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { Button } from '~/components/nativewindui/Button';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { Text } from '~/components/nativewindui/Text';
-import { TextField } from '~/components/nativewindui/TextField';
-import { cn } from '~/lib/cn';
 
 export default function NameScreen() {
   const insets = useSafeAreaInsets();
@@ -70,7 +69,9 @@ export default function NameScreen() {
                 autoFocus
                 autoComplete="name-given"
                 label={Platform.select({ ios: undefined, default: 'First' })}
-                leftView={Platform.select({ ios: <LeftLabel>First</LeftLabel> })}
+                leftView={Platform.select({
+                  ios: <LeftLabel>First</LeftLabel>,
+                })}
                 placeholder="required"
                 value={form.first}
                 onChangeText={onChangeText('first')}
@@ -84,7 +85,9 @@ export default function NameScreen() {
                 textContentType="middleName"
                 autoComplete="name-middle"
                 label={Platform.select({ ios: undefined, default: 'Middle' })}
-                leftView={Platform.select({ ios: <LeftLabel>Middle</LeftLabel> })}
+                leftView={Platform.select({
+                  ios: <LeftLabel>Middle</LeftLabel>,
+                })}
                 placeholder="optional"
                 value={form.middle}
                 onChangeText={onChangeText('middle')}

@@ -1,5 +1,9 @@
 'use client';
 
+import { Button } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
 import * as React from 'react';
@@ -12,12 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-import { Button } from '~/components/nativewindui/Button';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { Text } from '~/components/nativewindui/Text';
-import { TextField } from '~/components/nativewindui/TextField';
-
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for name validation
 const nameFormSchema = z.object({
@@ -71,7 +70,10 @@ export default function InfoScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: "What's your name?", default: 'Create your account' })}
+              {Platform.select({
+                ios: "What's your name?",
+                default: 'Create your account',
+              })}
             </Text>
             {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">Welcome back!</Text>
@@ -84,8 +86,14 @@ export default function InfoScreen() {
                   <form.Field name="firstName">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'First Name', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'First Name' })}
+                        placeholder={Platform.select({
+                          ios: 'First Name',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'First Name',
+                        })}
                         onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
                         autoFocus
@@ -107,8 +115,14 @@ export default function InfoScreen() {
                   <form.Field name="lastName">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Last Name', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Last Name' })}
+                        placeholder={Platform.select({
+                          ios: 'Last Name',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Last Name',
+                        })}
                         onFocus={() => setFocusedTextField('last-name')}
                         onBlur={() => {
                           setFocusedTextField(null);
@@ -133,7 +147,10 @@ export default function InfoScreen() {
       <KeyboardStickyView
         offset={{
           closed: 0,
-          opened: Platform.select({ ios: insets.bottom + 30, default: insets.bottom }),
+          opened: Platform.select({
+            ios: insets.bottom + 30,
+            default: insets.bottom,
+          }),
         }}
       >
         {Platform.OS === 'ios' ? (

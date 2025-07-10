@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { clientEnvs } from '~/env/clientEnvs';
 import { isAuthed } from '../store';
 
 export function useAuthInit() {

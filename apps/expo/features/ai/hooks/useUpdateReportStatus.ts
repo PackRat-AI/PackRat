@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 
 type UpdateReportStatusPayload = {
   id: string;

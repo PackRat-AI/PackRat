@@ -1,5 +1,13 @@
+import { AlertAnchor } from '@packrat/ui/nativewindui';
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { Checkbox } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -10,16 +18,8 @@ import {
 } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
-import { AlertAnchor } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { Button } from '~/components/nativewindui/Button';
-import { Checkbox } from '~/components/nativewindui/Checkbox';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { Text } from '~/components/nativewindui/Text';
-import { TextField } from '~/components/nativewindui/TextField';
-import { useAuthActions } from '~/features/auth/hooks/useAuthActions';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Enhanced password validation schema
 const passwordSchema = z
@@ -172,7 +172,10 @@ export default function CredentialsScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: 'Set up your credentials', default: 'Create Account' })}
+              {Platform.select({
+                ios: 'Set up your credentials',
+                default: 'Create Account',
+              })}
             </Text>
             {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">
@@ -187,8 +190,14 @@ export default function CredentialsScreen() {
                   <form.Field name="email">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Email', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Email' })}
+                        placeholder={Platform.select({
+                          ios: 'Email',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Email',
+                        })}
                         onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
                         autoFocus
@@ -215,8 +224,14 @@ export default function CredentialsScreen() {
                       return (
                         <View>
                           <TextField
-                            placeholder={Platform.select({ ios: 'Password', default: '' })}
-                            label={Platform.select({ ios: undefined, default: 'Password' })}
+                            placeholder={Platform.select({
+                              ios: 'Password',
+                              default: '',
+                            })}
+                            label={Platform.select({
+                              ios: undefined,
+                              default: 'Password',
+                            })}
                             onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                             onFocus={() => setFocusedTextField('password')}
                             onBlur={() => {
@@ -243,7 +258,9 @@ export default function CredentialsScreen() {
                               <View className="h-1 overflow-hidden rounded-full bg-gray-200">
                                 <View
                                   className={`h-full ${passwordStrength.color}`}
-                                  style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                                  style={{
+                                    width: `${(passwordStrength.strength / 5) * 100}%`,
+                                  }}
                                 />
                               </View>
 
@@ -323,8 +340,14 @@ export default function CredentialsScreen() {
                   <form.Field name="confirmPassword">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Confirm password', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Confirm password' })}
+                        placeholder={Platform.select({
+                          ios: 'Confirm password',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Confirm password',
+                        })}
                         onFocus={() => setFocusedTextField('confirm-password')}
                         onBlur={() => {
                           setFocusedTextField(null);

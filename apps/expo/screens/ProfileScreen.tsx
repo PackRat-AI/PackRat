@@ -1,8 +1,8 @@
 import { Icon } from '@roninoss/icons';
+import { PackCard } from 'expo-app/components/initial/PackCard';
+import { UserAvatar } from 'expo-app/components/initial/UserAvatar';
+import { usePacks } from 'expo-app/hooks/usePacks';
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { PackCard } from '~/components/initial/PackCard';
-import { UserAvatar } from '~/components/initial/UserAvatar';
-import { usePacks } from '~/hooks/usePacks';
 import { currentUser } from '../data/mockData';
 
 export function ProfileScreen() {
@@ -16,7 +16,11 @@ export function ProfileScreen() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   return (

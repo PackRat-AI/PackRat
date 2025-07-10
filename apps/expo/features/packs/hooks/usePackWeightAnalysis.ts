@@ -1,5 +1,5 @@
-import { userStore } from '~/features/auth/store';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import { userStore } from 'expo-app/features/auth/store';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { computeCategorySummaries, convertFromGrams, convertToGrams } from '../utils';
 import { usePackDetailsFromStore } from './usePackDetailsFromStore';
 

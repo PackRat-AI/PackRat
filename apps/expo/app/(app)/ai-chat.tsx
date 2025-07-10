@@ -1,9 +1,18 @@
 import { useChat } from '@ai-sdk/react';
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
-import { fetch as expoFetch } from 'expo/fetch';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
+import { useActiveLocation } from 'expo-app/features/weather/hooks';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { fetch as expoFetch } from 'expo/fetch';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import {
@@ -31,15 +40,6 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
-import { clientEnvs } from '~/env/clientEnvs';
-import { ChatBubble } from '~/features/ai/components/ChatBubble';
-import { tokenAtom } from '~/features/auth/atoms/authAtoms';
-import { LocationSelector } from '~/features/weather/components/LocationSelector';
-import { useActiveLocation } from '~/features/weather/hooks';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import { getContextualGreeting, getContextualSuggestions } from '~/utils/chatContextHelpers';
 
 const USER = 'User';
 const AI = 'PackRat AI';
@@ -196,7 +196,9 @@ export default function AIChat() {
       <KeyboardAvoidingView
         style={[
           ROOT_STYLE,
-          { backgroundColor: isDarkColorScheme ? colors.background : colors.card },
+          {
+            backgroundColor: isDarkColorScheme ? colors.background : colors.card,
+          },
         ]}
         behavior="padding"
       >
@@ -233,7 +235,10 @@ export default function AIChat() {
           }
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
-          scrollIndicatorInsets={{ bottom: HEADER_HEIGHT + 10, top: insets.bottom + 2 }}
+          scrollIndicatorInsets={{
+            bottom: HEADER_HEIGHT + 10,
+            top: insets.bottom + 2,
+          }}
           data={chatMessages}
           renderItem={({ item, index }) => {
             if (typeof item === 'string') {

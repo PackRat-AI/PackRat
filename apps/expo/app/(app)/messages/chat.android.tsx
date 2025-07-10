@@ -1,6 +1,14 @@
+import { Avatar, AvatarFallback } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { ContextMenu } from '@packrat/ui/nativewindui';
+import { DropdownMenu } from '@packrat/ui/nativewindui';
+import { createDropdownItem } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import {
@@ -29,15 +37,6 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { Avatar, AvatarFallback } from '~/components/nativewindui/Avatar';
-import { Button } from '~/components/nativewindui/Button';
-import { ContextMenu } from '~/components/nativewindui/ContextMenu';
-import { DropdownMenu } from '~/components/nativewindui/DropdownMenu';
-import { createDropdownItem } from '~/components/nativewindui/DropdownMenu/utils';
-import { Text } from '~/components/nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 const ME = 'Alice';
 
@@ -93,7 +92,10 @@ export default function ChatAndroid() {
           ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
-          scrollIndicatorInsets={{ bottom: HEADER_HEIGHT + 10, top: insets.bottom + 2 }}
+          scrollIndicatorInsets={{
+            bottom: HEADER_HEIGHT + 10,
+            top: insets.bottom + 2,
+          }}
           data={messages}
           renderItem={({ item, index }) => {
             if (typeof item === 'string') {
@@ -165,7 +167,10 @@ function Header() {
             <Icon
               size={24}
               color={colors.foreground}
-              name={Platform.select({ ios: 'chevron-left', default: 'arrow-left' })}
+              name={Platform.select({
+                ios: 'chevron-left',
+                default: 'arrow-left',
+              })}
             />
           </Button>
         </View>
@@ -239,7 +244,11 @@ const CONTEXT_MENU_ITEMS = [
     title: 'Sticker',
     icon: { name: 'plus-box-outline' },
   }),
-  createDropdownItem({ actionKey: 'copy', title: 'Copy', icon: { name: 'clipboard-outline' } }),
+  createDropdownItem({
+    actionKey: 'copy',
+    title: 'Copy',
+    icon: { name: 'clipboard-outline' },
+  }),
 ];
 
 function ChatBubble({
@@ -379,7 +388,10 @@ function ChatBubble({
                 style={{ borderRadius: 12 }}
                 auxiliaryPreviewPosition={item.sender === ME ? 'end' : 'start'}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
-                items={Platform.select({ ios: CONTEXT_MENU_ITEMS, default: [] })}
+                items={Platform.select({
+                  ios: CONTEXT_MENU_ITEMS,
+                  default: [],
+                })}
                 materialOverlayClassName="bg-black/0"
                 onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
               >
@@ -439,7 +451,10 @@ function ChatBubble({
               )}
               <ContextMenu
                 auxiliaryPreviewPosition={item.sender === ME ? 'end' : 'start'}
-                items={Platform.select({ ios: CONTEXT_MENU_ITEMS, default: [] })}
+                items={Platform.select({
+                  ios: CONTEXT_MENU_ITEMS,
+                  default: [],
+                })}
                 style={{ borderRadius: 20, marginBottom: 2 }}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
                 materialOverlayClassName="bg-black/0"
@@ -571,7 +586,10 @@ function Composer({
             >
               <Icon
                 ios={{ name: 'plus.circle' }}
-                materialIcon={{ type: 'MaterialCommunityIcons', name: 'plus-circle-outline' }}
+                materialIcon={{
+                  type: 'MaterialCommunityIcons',
+                  name: 'plus-circle-outline',
+                }}
                 color={colors.foreground}
               />
             </Button>
@@ -620,7 +638,10 @@ function Composer({
           <Button size="icon" variant="plain" className="ios:rounded-full rounded-full opacity-60">
             <Icon
               ios={{ name: 'face.smiling' }}
-              materialIcon={{ type: 'MaterialCommunityIcons', name: 'emoticon-happy-outline' }}
+              materialIcon={{
+                type: 'MaterialCommunityIcons',
+                name: 'emoticon-happy-outline',
+              }}
               size={23}
               color={colors.foreground}
             />

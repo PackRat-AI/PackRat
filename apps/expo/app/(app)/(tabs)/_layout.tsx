@@ -1,5 +1,10 @@
+import { Badge } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon, type IconProps } from '@roninoss/icons';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Tabs } from 'expo-router';
 import type * as React from 'react';
 import {
@@ -13,19 +18,16 @@ import {
 import Animated, { useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge } from '~/components/nativewindui/Badge';
-import { Text } from '~/components/nativewindui/Text';
-import { clientEnvs } from '~/env/clientEnvs';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-
 export default function TabLayout() {
   const { colors } = useColorScheme();
   return (
     <>
       <Tabs
         tabBar={TAB_BAR}
-        screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.primary }}
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
+        }}
       >
         <Tabs.Screen name="(home)" options={INDEX_OPTIONS} />
         <Tabs.Screen name="packs" options={PACK_LIST_OPTIONS} />
@@ -170,7 +172,11 @@ function MaterialTabItem({
   const animatedStyle = useAnimatedStyle(() => {
     return {
       position: 'absolute',
-      transform: [{ scaleX: withTiming(isFocusedDerived.value ? 1 : 0, { duration: 200 }) }],
+      transform: [
+        {
+          scaleX: withTiming(isFocusedDerived.value ? 1 : 0, { duration: 200 }),
+        },
+      ],
       opacity: withTiming(isFocusedDerived.value ? 1 : 0, { duration: 200 }),
       bottom: 0,
       top: 0,

@@ -1,9 +1,9 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { usePathname, useRouter } from 'expo-router';
 import { SafeAreaView, View } from 'react-native';
-import { Button } from '~/components/nativewindui/Button';
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { Text } from '~/components/nativewindui/Text';
 
 export function CatalogItemsAuthWall() {
   const router = useRouter();
@@ -28,7 +28,12 @@ export function CatalogItemsAuthWall() {
         </View>
 
         <Button
-          onPress={() => router.push({ pathname: '/auth', params: { redirectTo: currentRoute } })}
+          onPress={() =>
+            router.push({
+              pathname: '/auth',
+              params: { redirectTo: currentRoute },
+            })
+          }
           size="lg"
           variant="primary"
           className="mb-4 w-full"

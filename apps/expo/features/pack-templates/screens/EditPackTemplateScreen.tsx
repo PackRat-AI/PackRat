@@ -1,5 +1,5 @@
+import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams } from 'expo-router';
-import { NotFoundScreen } from '~/screens/NotFoundScreen';
 import { PackTemplateForm } from '../components/PackTemplateForm';
 import { usePackTemplateDetails } from '../hooks/usePackTemplatesDetails';
 

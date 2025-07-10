@@ -5,10 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
 import * as Sentry from '@sentry/react-native';
-import { userStore } from '~/features/auth/store';
-import { useColorScheme, useInitialAndroidBarSync } from '~/lib/hooks/useColorScheme';
-import { Providers } from '~/providers';
-import { NAV_THEME } from '~/theme';
+import { userStore } from 'expo-app/features/auth/store';
+import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
+import { Providers } from 'expo-app/providers';
+import { NAV_THEME } from 'expo-app/theme';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,

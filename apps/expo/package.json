@@ -67,6 +67,7 @@
     "@tanstack/react-form": "^1.0.5",
     "@tanstack/react-query": "^5.67.3",
     "ai": "^4.1.61",
+    "@packrat-ai/nativewindui": "1.0.0",
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

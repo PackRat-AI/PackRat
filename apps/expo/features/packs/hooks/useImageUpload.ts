@@ -1,7 +1,7 @@
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid/non-secure';
 import { useState } from 'react';
-import ImageCacheManager from '~/lib/utils/ImageCacheManager';
 
 export type SelectedImage = {
   uri: string;

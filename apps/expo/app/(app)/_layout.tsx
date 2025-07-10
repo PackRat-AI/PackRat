@@ -1,15 +1,15 @@
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
+import { ThemeToggle } from 'expo-app/components/ThemeToggle';
+import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
+import { usePackItemDetailsFromStore } from 'expo-app/features/packs';
+import { usePackItemOwnershipCheck } from 'expo-app/features/packs/hooks/usePackItemOwnershipCheck';
+import { usePackOwnershipCheck } from 'expo-app/features/packs/hooks/usePackOwnershipCheck';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import 'expo-dev-client';
 import { Stack, useRouter } from 'expo-router';
 import { Pressable, View } from 'react-native';
-import { AiChatHeader } from '~/components/ai-chatHeader';
-import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
-import { ThemeToggle } from '~/components/ThemeToggle';
-import { useAuthInit } from '~/features/auth/hooks/useAuthInit';
-import { usePackItemDetailsFromStore } from '~/features/packs';
-import { usePackItemOwnershipCheck } from '~/features/packs/hooks/usePackItemOwnershipCheck';
-import { usePackOwnershipCheck } from '~/features/packs/hooks/usePackOwnershipCheck';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -286,7 +286,10 @@ export function getPackItemDetailOptions({ route }: { route: { params?: { id?: s
         <View className="flex-row items-center">
           <Pressable
             onPress={() =>
-              router.push({ pathname: '/item/[id]/edit', params: { id, packId: item.packId } })
+              router.push({
+                pathname: '/item/[id]/edit',
+                params: { id, packId: item.packId },
+              })
             }
           >
             <Icon name="pencil-box-outline" color={colors.foreground} />

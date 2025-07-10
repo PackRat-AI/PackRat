@@ -1,5 +1,5 @@
-import type { LocationSearchResult } from '~/features/weather/types';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
+import type { LocationSearchResult } from 'expo-app/features/weather/types';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**
@@ -93,7 +93,10 @@ export function formatWeatherData(data: any) {
     .map((hour: any) => {
       const hourTime = new Date(hour.time);
       return {
-        time: hourTime.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
+        time: hourTime.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          hour12: true,
+        }),
         temp: Math.round(hour.temp_f),
         icon: getIconNameFromCode(hour.condition.code, hour.is_day),
         weatherCode: hour.condition.code,

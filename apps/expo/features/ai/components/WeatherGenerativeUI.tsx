@@ -1,6 +1,6 @@
 import { Icon } from '@roninoss/icons';
+import { getWeatherIconByCondition } from 'expo-app/features/weather/lib/weatherIcons';
 import { Text, View } from 'react-native';
-import { getWeatherIconByCondition } from '~/features/weather/lib/weatherIcons';
 
 interface WeatherData {
   success: boolean;

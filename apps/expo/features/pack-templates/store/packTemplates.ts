@@ -2,9 +2,9 @@ import { observable, syncState } from '@legendapp/state';
 import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-sqlite';
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { isAuthed } from 'expo-app/features/auth/store';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import Storage from 'expo-sqlite/kv-store';
-import { isAuthed } from '~/features/auth/store';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
 import type { PackTemplate, PackTemplateInStore } from '../types';
 
 const listPackTemplates = async () => {

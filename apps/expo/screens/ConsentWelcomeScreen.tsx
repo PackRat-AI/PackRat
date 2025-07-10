@@ -1,11 +1,10 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Link } from 'expo-router';
 import { Platform, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 const ROOT_STYLE: ViewStyle = { flex: 1 };
 

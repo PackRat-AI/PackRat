@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { useUser } from '~/features/auth/hooks/useUser';
-import type { User } from '~/features/profile/types';
-import axiosInstance, { handleApiError } from '~/lib/api/client';
-import { useAuthenticatedQueryToolkit } from '~/lib/hooks/useAuthenticatedQueryToolkit';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import type { User } from 'expo-app/features/profile/types';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 type ReportedContentResponse = {
   reportedItems: Array<{

@@ -1,8 +1,7 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Link, Stack } from 'expo-router';
 import { Platform } from 'react-native';
-
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
 
 export default function AuthLayout() {
   return (

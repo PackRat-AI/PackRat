@@ -1,5 +1,13 @@
+import { Avatar, AvatarFallback } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { ContextMenu } from '@packrat/ui/nativewindui';
+import type { ContextMenuRef } from '@packrat/ui/nativewindui';
+import { createContextItem } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
@@ -30,15 +38,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { Avatar, AvatarFallback } from '~/components/nativewindui/Avatar';
-import { Button } from '~/components/nativewindui/Button';
-import { ContextMenu } from '~/components/nativewindui/ContextMenu';
-import type { ContextMenuRef } from '~/components/nativewindui/ContextMenu/types';
-import { createContextItem } from '~/components/nativewindui/ContextMenu/utils';
-import { Text } from '~/components/nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 const ME = 'Alice';
 
@@ -158,7 +157,10 @@ export default function ChatIos() {
             ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            scrollIndicatorInsets={{ bottom: HEADER_HEIGHT + 10, top: insets.bottom + 2 }}
+            scrollIndicatorInsets={{
+              bottom: HEADER_HEIGHT + 10,
+              top: insets.bottom + 2,
+            }}
             data={messages}
             renderItem={({ item, index }) => {
               if (typeof item === 'string') {
@@ -276,7 +278,10 @@ function Header() {
           >
             <Icon
               color={colors.foreground}
-              name={Platform.select({ ios: 'chevron-left', default: 'arrow-left' })}
+              name={Platform.select({
+                ios: 'chevron-left',
+                default: 'arrow-left',
+              })}
             />
           </Button>
         </View>
@@ -327,7 +332,11 @@ const CONTEXT_MENU_ITEMS = [
     title: 'Sticker',
     icon: { name: 'plus-box-outline' },
   }),
-  createContextItem({ actionKey: 'copy', title: 'Copy', icon: { name: 'clipboard-outline' } }),
+  createContextItem({
+    actionKey: 'copy',
+    title: 'Copy',
+    icon: { name: 'clipboard-outline' },
+  }),
 ];
 
 function ChatBubble({
@@ -533,7 +542,10 @@ function ChatBubble({
             >
               <Icon
                 name="arrow-down"
-                ios={{ name: 'arrow.down.square', renderingMode: 'hierarchical' }}
+                ios={{
+                  name: 'arrow.down.square',
+                  renderingMode: 'hierarchical',
+                }}
                 color={colors.primary}
                 size={Platform.select({ ios: 27, default: 21 })}
               />

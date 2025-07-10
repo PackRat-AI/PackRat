@@ -1,9 +1,9 @@
+import { ListItem } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { ListItem } from '~/components/nativewindui/List';
-import { Text } from '~/components/nativewindui/Text';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { usePackTemplates } from '../hooks';
 
 export function PackTemplatesTile() {

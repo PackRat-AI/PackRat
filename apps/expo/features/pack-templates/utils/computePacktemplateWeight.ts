@@ -1,4 +1,4 @@
-import { convertFromGrams, convertToGrams } from '~/features/packs/utils';
+import { convertFromGrams, convertToGrams } from 'expo-app/features/packs/utils';
 import type { PackTemplate, WeightUnit } from '../types';
 
 export const computePackTemplateWeights = (

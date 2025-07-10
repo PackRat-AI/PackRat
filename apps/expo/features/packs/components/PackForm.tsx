@@ -1,5 +1,14 @@
+import { Button } from '@packrat/ui/nativewindui';
+import { DropdownMenu } from '@packrat/ui/nativewindui';
+import { createDropdownItem } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { useCreatePackFromTemplate } from 'expo-app/features/pack-templates';
+import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-templates/store';
+import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,
@@ -11,15 +20,6 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
-import { Button } from '~/components/nativewindui/Button';
-import { DropdownMenu } from '~/components/nativewindui/DropdownMenu';
-import { createDropdownItem } from '~/components/nativewindui/DropdownMenu/utils';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { TextField } from '~/components/nativewindui/TextField';
-import { useCreatePackFromTemplate } from '~/features/pack-templates';
-import { getTemplateItems, packTemplatesStore } from '~/features/pack-templates/store';
-import { TemplateItemsSection } from '~/features/packs/components/TemplateItemsSection';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { useCreatePack, useUpdatePack } from '../hooks';
 import type { Pack, PackCategory } from '../types';
 
@@ -216,7 +216,10 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     <Switch
                       value={field.state.value}
                       onValueChange={field.handleChange}
-                      trackColor={{ false: 'hsl(var(--muted))', true: 'hsl(var(--primary))' }}
+                      trackColor={{
+                        false: 'hsl(var(--muted))',
+                        true: 'hsl(var(--primary))',
+                      }}
                       ios_backgroundColor="hsl(var(--muted))"
                     />
                   </View>

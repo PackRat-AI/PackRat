@@ -5,10 +5,10 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios';
+import { store } from 'expo-app/atoms/store';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { refreshTokenAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import * as SecureStore from 'expo-secure-store';
-import { store } from '~/atoms/store';
-import { clientEnvs } from '~/env/clientEnvs';
-import { refreshTokenAtom, tokenAtom } from '~/features/auth/atoms/authAtoms';
 
 // Define base API URL based on environment
 export const API_URL = clientEnvs.EXPO_PUBLIC_API_URL;
@@ -72,7 +72,9 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {

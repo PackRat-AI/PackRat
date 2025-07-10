@@ -1,20 +1,20 @@
+import { Alert } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { Chip } from 'expo-app/components/initial/Chip';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { Chip } from '~/components/initial/Chip';
-import { Alert } from '~/components/nativewindui/Alert';
-import { Button } from '~/components/nativewindui/Button';
-import { Text } from '~/components/nativewindui/Text';
-import { useUser } from '~/features/auth/hooks/useUser';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
-import { NotFoundScreen } from '~/screens/NotFoundScreen';
 import { PackTemplateItemCard } from '../components/PackTemplateItemCard';
 import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';
 import type { PackTemplateItem } from '../types';
 
-const LOGO_SOURCE = require('~/assets/adaptive-icon.png');
+const LOGO_SOURCE = require('expo-app/assets/adaptive-icon.png');
 
 export function PackTemplateDetailScreen() {
   const router = useRouter();
@@ -70,7 +70,10 @@ export function PackTemplateDetailScreen() {
   );
 
   const handleCreate = () => {
-    router.push({ pathname: '/pack/new', params: { templateId: packTemplate.id } });
+    router.push({
+      pathname: '/pack/new',
+      params: { templateId: packTemplate.id },
+    });
   };
 
   return (

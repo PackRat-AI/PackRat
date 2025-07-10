@@ -1,3 +1,10 @@
+import { AlertAnchor } from '@packrat/ui/nativewindui';
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { Checkbox } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
+import { TextField } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -10,15 +17,8 @@ import {
 } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
-import { AlertAnchor } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { Button } from '~/components/nativewindui/Button';
-import { Checkbox } from '~/components/nativewindui/Checkbox';
-import { Form, FormItem, FormSection } from '~/components/nativewindui/Form';
-import { Text } from '~/components/nativewindui/Text';
-import { TextField } from '~/components/nativewindui/TextField';
 
-const LOGO_SOURCE = require('~/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 // Enhanced password validation schema
 const passwordSchema = z
@@ -192,8 +192,14 @@ export default function ResetPasswordScreen() {
                       return (
                         <View>
                           <TextField
-                            placeholder={Platform.select({ ios: 'New Password', default: '' })}
-                            label={Platform.select({ ios: undefined, default: 'New Password' })}
+                            placeholder={Platform.select({
+                              ios: 'New Password',
+                              default: '',
+                            })}
+                            label={Platform.select({
+                              ios: undefined,
+                              default: 'New Password',
+                            })}
                             onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                             onFocus={() => setFocusedTextField('password')}
                             onBlur={() => {
@@ -221,7 +227,9 @@ export default function ResetPasswordScreen() {
                               <View className="h-1 overflow-hidden rounded-full bg-gray-200">
                                 <View
                                   className={`h-full ${passwordStrength.color}`}
-                                  style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                                  style={{
+                                    width: `${(passwordStrength.strength / 5) * 100}%`,
+                                  }}
                                 />
                               </View>
 
@@ -301,8 +309,14 @@ export default function ResetPasswordScreen() {
                   <form.Field name="confirmPassword">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Confirm password', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Confirm password' })}
+                        placeholder={Platform.select({
+                          ios: 'Confirm password',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Confirm password',
+                        })}
                         onFocus={() => setFocusedTextField('confirm-password')}
                         onBlur={() => {
                           setFocusedTextField(null);

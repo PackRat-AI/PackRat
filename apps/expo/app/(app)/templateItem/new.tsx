@@ -1,6 +1,5 @@
+import { CreatePackTemplateItemForm } from 'expo-app/features/pack-templates/screens/CreatePackTemplateItemForm';
 import { useLocalSearchParams } from 'expo-router';
-import { View } from 'react-native';
-import { CreatePackTemplateItemForm } from '~/features/pack-templates/screens/CreatePackTemplateItemForm';
 
 export default function NewTemplateItemScreen() {
   const { packTemplateId } = useLocalSearchParams();

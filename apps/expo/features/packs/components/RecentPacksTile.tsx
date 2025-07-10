@@ -1,11 +1,11 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@packrat/ui/nativewindui';
+import { ListItem } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/nativewindui/Avatar';
-import { ListItem } from '~/components/nativewindui/List';
-import { Text } from '~/components/nativewindui/Text';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { useRecentPacks } from '../hooks/useRecentPacks';
 
 export function RecentPacksTile() {

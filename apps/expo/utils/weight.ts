@@ -1,4 +1,4 @@
-import type { PackItem, WeightUnit } from '~/types';
+import type { PackItem, WeightUnit } from 'expo-app/types';
 
 // Convert weight between units
 export const convertWeight = (weight: number, from: WeightUnit, to: WeightUnit): number => {

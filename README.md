@@ -218,6 +218,45 @@ PackRat is a modern monorepo with mobile, web, and API applications. Follow the 
 - [Node.js](https://nodejs.org/) - Required for some tooling
 - [Expo CLI](https://docs.expo.io/workflow/expo-cli/) - For mobile development
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) - For API deployment
+- [GitHub CLI](https://cli.github.com/) - For authenticating with GitHub packages
+
+### GitHub Packages Authentication
+
+PackRat uses private packages from GitHub Package Registry. You need to authenticate to install dependencies:
+
+#### Local Development
+
+1. Install GitHub CLI:
+   ```bash
+   # macOS
+   brew install gh
+   
+   # Windows
+   winget install --id GitHub.cli
+   
+   # Linux - see https://github.com/cli/cli#installation
+   ```
+
+2. Authenticate with GitHub CLI:
+   ```bash
+   gh auth login
+   ```
+
+3. Add the `read:packages` scope to your authentication:
+   ```bash
+   gh auth refresh -h github.com -s read:packages
+   ```
+
+4. Dependencies will now install automatically:
+   ```bash
+   bun install
+   ```
+
+#### CI/CD
+
+GitHub Actions automatically provides a `GITHUB_TOKEN` with the necessary permissions. No additional configuration is needed.
+
+For other CI platforms, set the `GITHUB_TOKEN` environment variable with a personal access token that has `read:packages` scope.
 
 ### Environment Setup
 

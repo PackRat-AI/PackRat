@@ -1,15 +1,14 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StatusBar, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { Text } from '~/components/nativewindui/Text';
-import { getWeatherBackgroundColors } from '~/features/weather/lib/weatherService';
-import { cn } from '~/lib/cn';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { WeatherIcon } from '../components';
 import { useActiveLocation, useLocationRefresh, useLocations } from '../hooks';
 
@@ -181,7 +180,10 @@ export default function LocationDetailScreen() {
         </View>
 
         <ScrollView
-          contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingTop: insets.top + 50 }}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 20,
+            paddingTop: insets.top + 50,
+          }}
           showsVerticalScrollIndicator={false}
         >
           <View className="px-4">

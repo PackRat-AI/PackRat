@@ -1,5 +1,5 @@
+import { Text } from '@packrat/ui/nativewindui';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { Text } from '~/components/nativewindui/Text';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 
 export function CatalogCategoriesFilter({

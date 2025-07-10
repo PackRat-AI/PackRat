@@ -1,5 +1,5 @@
-import type { CatalogItem } from '~/features/catalog/types';
-import type { PackItem, WeightUnit } from '~/features/packs';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
+import type { PackItem, WeightUnit } from 'expo-app/features/packs';
 
 /**
  * Checks if an item is a pack item

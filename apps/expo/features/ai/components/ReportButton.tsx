@@ -1,8 +1,8 @@
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import { Text } from '~/components/nativewindui/Text';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 import { ReportModal } from './ReportModal';
 
 type ReportButtonProps = {

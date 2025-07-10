@@ -1,13 +1,10 @@
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, Text, View } from 'react-native';
-
-import { Chip } from '~/components/initial/Chip';
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
-import { Button } from '~/components/nativewindui/Button';
-import { isAuthed } from '~/features/auth/store';
-import { CachedImage } from '~/features/packs/components/CachedImage';
+import { Chip } from 'expo-app/components/initial/Chip';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { isAuthed } from 'expo-app/features/auth/store';
+import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import {
   calculateTotalWeight,
   getNotes,
@@ -16,7 +13,9 @@ import {
   isConsumable,
   isWorn,
   shouldShowQuantity,
-} from '~/lib/utils/itemCalculations';
+} from 'expo-app/lib/utils/itemCalculations';
+import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 import {
   usePackItemDetailsFromApi,
   usePackItemDetailsFromStore,

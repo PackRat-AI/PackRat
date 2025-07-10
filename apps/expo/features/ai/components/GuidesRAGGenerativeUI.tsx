@@ -1,7 +1,7 @@
 import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRef, useState } from 'react';
 import { Dimensions, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 interface GuideSearchResult {
   file_id: string;

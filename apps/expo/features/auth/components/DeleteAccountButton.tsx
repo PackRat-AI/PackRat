@@ -1,14 +1,13 @@
+import { ActivityIndicator } from '@packrat/ui/nativewindui';
+import { Alert } from '@packrat/ui/nativewindui';
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { Button } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import React from 'react';
 import { View } from 'react-native';
-import { ActivityIndicator } from '~/components/nativewindui/ActivityIndicator';
-import { Alert } from '~/components/nativewindui/Alert';
-import type { AlertRef } from '~/components/nativewindui/Alert/types';
-import { Button } from '~/components/nativewindui/Button';
-
-import { Text } from '~/components/nativewindui/Text';
-import { useAuth } from '~/features/auth/hooks/useAuth';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 export function DeleteAccountButton() {
   const { colors } = useColorScheme();

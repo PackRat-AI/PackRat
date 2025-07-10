@@ -1,13 +1,12 @@
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { userStore } from 'expo-app/features/auth/store';
+import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
+import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
-
-import { LargeTitleHeader } from '~/components/nativewindui/LargeTitleHeader';
-import { Text } from '~/components/nativewindui/Text';
-import { userStore } from '~/features/auth/store';
-import { usePackDetailsFromStore } from '~/features/packs/hooks/usePackDetailsFromStore';
-import { computeCategorySummaries } from '~/features/packs/utils';
-import { useColorScheme } from '~/lib/hooks/useColorScheme';
 
 function CategoryCard({
   category,

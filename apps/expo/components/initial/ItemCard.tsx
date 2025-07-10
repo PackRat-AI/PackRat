@@ -1,8 +1,7 @@
 import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { Image, Pressable, Text, View } from 'react-native';
-import { CategoryBadge } from '~/components/initial/CategoryBadge';
-import { WeightBadge } from '~/components/initial/WeightBadge';
-import { cn } from '~/lib/cn';
+import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
+import { cn } from 'expo-app/lib/cn';
 import {
   calculateTotalWeight,
   getQuantity,
@@ -10,8 +9,9 @@ import {
   isPackItem,
   isWorn,
   shouldShowQuantity,
-} from '~/lib/utils/itemCalculations';
-import type { CatalogItem, PackItem } from '~/types';
+} from 'expo-app/lib/utils/itemCalculations';
+import type { CatalogItem, PackItem } from 'expo-app/types';
+import { Image, Pressable, Text, View } from 'react-native';
 
 type ItemCardProps = {
   item: CatalogItem | PackItem;
