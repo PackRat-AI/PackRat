@@ -1,6 +1,5 @@
-import { LargeTitleHeader } from '@packrat/ui/nativewindui';
 import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
-import { SegmentedControl } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import type { PackCategory } from 'expo-app/features/packs/types';

@@ -1,5 +1,4 @@
-import { LargeTitleHeader } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';

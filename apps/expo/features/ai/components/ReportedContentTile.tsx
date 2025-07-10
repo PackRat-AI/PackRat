@@ -1,5 +1,4 @@
-import { ListItem } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

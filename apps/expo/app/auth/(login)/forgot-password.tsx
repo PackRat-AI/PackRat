@@ -1,9 +1,13 @@
-import { AlertAnchor } from '@packrat/ui/nativewindui';
 import type { AlertRef } from '@packrat/ui/nativewindui';
-import { Button } from '@packrat/ui/nativewindui';
-import { Form, FormItem, FormSection } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
-import { TextField } from '@packrat/ui/nativewindui';
+import {
+  AlertAnchor,
+  Button,
+  Form,
+  FormItem,
+  FormSection,
+  Text,
+  TextField,
+} from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { router, Stack } from 'expo-router';

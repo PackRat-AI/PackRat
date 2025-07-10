@@ -1,8 +1,5 @@
-import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { Alert } from '@packrat/ui/nativewindui';
 import type { AlertRef } from '@packrat/ui/nativewindui';
-import { Button } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

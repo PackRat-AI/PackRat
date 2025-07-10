@@ -1,5 +1,4 @@
-import { LargeTitleHeader } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';

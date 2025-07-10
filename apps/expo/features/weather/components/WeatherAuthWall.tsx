@@ -1,5 +1,4 @@
-import { Button } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { Image, SafeAreaView, View } from 'react-native';

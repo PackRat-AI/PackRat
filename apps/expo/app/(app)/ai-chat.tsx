@@ -1,8 +1,8 @@
 import { useChat } from '@ai-sdk/react';
-import { Button } from '@packrat/ui/nativewindui';
-import { Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
@@ -12,7 +12,6 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { fetch as expoFetch } from 'expo/fetch';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import {
