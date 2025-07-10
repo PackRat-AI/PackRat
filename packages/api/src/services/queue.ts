@@ -2,7 +2,7 @@ import type { Queue } from '@cloudflare/workers-types';
 import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import { parse } from 'csv-parse/sync';
-import { getTableColumns, sql } from 'drizzle-orm';
+import { eq, getTableColumns, isNull, or, sql } from 'drizzle-orm';
 import { createDbClient } from '../db';
 
 export enum QueueType {
@@ -460,7 +460,7 @@ async function insertCatalogItems({
   const db = createDbClient(env);
   console.log(`Job ${jobId}: Inserting ${items.length} catalog items`);
 
-  const validItems = items.filter((i): i is NewCatalogItem => !!i.name);
+  const validItems = items.filter((i): i is NewCatalogItem => !!i.name && !!i.sku?.trim());
   if (validItems.length === 0) {
     console.log(`Job ${jobId}: No valid items to insert.`);
     return;
@@ -474,6 +474,12 @@ async function insertCatalogItems({
       updateSet[name] = sql.raw(`excluded."${name}"`);
     }
   }
+
+  await db
+    .delete(catalogItems)
+    .where(or(isNull(catalogItems.sku), eq(sql`trim(${catalogItems.sku})`, '')));
+
+  console.log('🧹 Removed catalog items with null or empty SKU');
 
   await db.insert(catalogItems).values(validItems).onConflictDoUpdate({
     target: catalogItems.sku,
