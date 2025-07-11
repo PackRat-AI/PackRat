@@ -41,14 +41,14 @@ export default function PackStatsScreen() {
 
               <View className="mb-2 h-40 flex-row items-end justify-between">
                 {WEIGHT_HISTORY.length ? (
-                  WEIGHT_HISTORY.map((item, index) => {
+                  WEIGHT_HISTORY.map((item) => {
                     const maxWeight = Math.max(...WEIGHT_HISTORY.map((w) => w.weight));
                     const minWeight = Math.min(...WEIGHT_HISTORY.map((w) => w.weight));
                     const range = maxWeight - minWeight || 1;
                     const heightPercentage = ((item.weight - minWeight) / range) * 80 + 20;
 
                     return (
-                      <View key={index} className="flex-1 items-center">
+                      <View key={`${item.month}-${item.weight}`} className="flex-1 items-center">
                         <View
                           className="w-6 rounded-t-md bg-primary"
                           style={{ height: `${heightPercentage}%` }}
@@ -86,8 +86,8 @@ export default function PackStatsScreen() {
               </Text>
 
               <View className="mb-4">
-                {CATEGORY_DISTRIBUTION.map((item, index) => (
-                  <View key={index} className="mb-2">
+                {CATEGORY_DISTRIBUTION.map((item) => (
+                  <View key={item.name} className="mb-2">
                     <View className="mb-1 flex-row justify-between">
                       <Text variant="subhead">{item.name}</Text>
                       <Text variant="subhead">

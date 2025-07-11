@@ -1,5 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { View } from 'react-native';
 
 interface PackItem {
@@ -37,7 +38,7 @@ interface PackItem {
     createdAt: string;
     updatedAt: string;
   };
-  catalogItem: any | null;
+  catalogItem: CatalogItem | null;
 }
 
 interface PackItemDetailsGenerativeUIProps {

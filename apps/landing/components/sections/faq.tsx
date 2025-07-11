@@ -29,6 +29,7 @@ export default function FaqSection() {
   });
 
   return (
+    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="faq" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background pattern */}
       <GradientBackground variant="mesh" />
@@ -55,7 +56,7 @@ export default function FaqSection() {
           <GradientBorderCard className="bg-card/80 backdrop-blur-sm">
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
-                <div key={index}>
+                <div key={faq.question}>
                   <AccordionItem value={`item-${index}`} className="border-b border-border">
                     <AccordionTrigger className="text-base md:text-lg font-medium text-foreground hover:text-primary transition-colors py-4 px-1">
                       {faq.question}
@@ -80,7 +81,7 @@ export default function FaqSection() {
                   team.
                 </p>
                 <a
-                  href="#"
+                  href="mailto:support@packratai.com"
                   className="inline-flex items-center text-sm font-medium transition-colors text-primary"
                 >
                   <GradientText gradient="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient">
@@ -92,6 +93,7 @@ export default function FaqSection() {
                     viewBox="0 0 20 20"
                     fill="currentColor"
                   >
+                    <title>Chevron right icon</title>
                     <path
                       fillRule="evenodd"
                       d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"

@@ -22,6 +22,7 @@ import {
 import { z } from 'zod';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
+import type { PackItem } from '../types';
 
 // Define Zod schema
 const itemFormSchema = z.object({
@@ -44,7 +45,7 @@ const itemFormSchema = z.object({
 });
 
 // Type inference
-type ItemFormValues = z.infer<typeof itemFormSchema>;
+// type ItemFormValues = z.infer<typeof itemFormSchema>;
 
 // Weight units
 const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];
@@ -54,7 +55,7 @@ export const CreatePackItemForm = ({
   existingItem,
 }: {
   packId: string;
-  existingItem?: any;
+  existingItem?: PackItem;
 }) => {
   const router = useRouter();
   const { colorScheme, colors } = useColorScheme();
@@ -76,7 +77,6 @@ export const CreatePackItemForm = ({
 
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
-  console.log('existingItem', existingItem);
   const form = useForm({
     defaultValues: existingItem || {
       name: '',
@@ -110,7 +110,7 @@ export const CreatePackItemForm = ({
 
         // Submit the form with the image URL
         if (isEditing) {
-          updatePackItem({ id: existingItem.id, ...value });
+          updatePackItem({ ...existingItem, ...value });
           router.back();
         } else {
           createPackItem({ packId, itemData: value });

@@ -41,6 +41,7 @@ export default function DeviceMockup({
   const notchColor = theme === 'dark' ? '#000000' : '#1E293B';
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: ignore
     <div
       className={cn(
         'relative mx-auto transition-all duration-500',

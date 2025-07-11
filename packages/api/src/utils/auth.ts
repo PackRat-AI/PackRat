@@ -46,7 +46,13 @@ export async function generateJWT({
 }
 
 // Verify a JWT token
-export async function verifyJWT({ token, c }: { token: string; c: Context }): Promise<any> {
+export async function verifyJWT({
+  token,
+  c,
+}: {
+  token: string;
+  c: Context;
+}): Promise<JWTPayload | null> {
   try {
     const { JWT_SECRET } = env<Env>(c);
     return await verify(token, JWT_SECRET);

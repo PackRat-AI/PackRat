@@ -12,6 +12,9 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
+import Entypo from '@expo/vector-icons/Entypo';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Mock data for upcoming trips with hardcoded dates
 const UPCOMING_TRIPS = [
@@ -132,6 +135,7 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
     <View className="flex-row">
       {members.map((member, index) => (
         <Avatar
+          alt={member.name}
           key={member.id}
           className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}
         >
@@ -149,7 +153,7 @@ function TripImage({ uri }: { uri: string }) {
   return (
     <View className="px-3">
       <View className="h-12 w-12 overflow-hidden rounded-md">
-        <Avatar className="h-12 w-12">
+        <Avatar alt="trip image" className="h-12 w-12">
           <AvatarImage source={{ uri }} />
           <AvatarFallback>
             <Icon name="map" size={20} color="white" />
@@ -180,11 +184,11 @@ export default function UpcomingTripsScreen() {
             subTitle: `${trip.location} • ${trip.startDate} to ${trip.endDate}`,
           }))}
           keyExtractor={(_, index) => index.toString()}
-          renderItem={({ item, index }) => {
-            const trip = UPCOMING_TRIPS[index];
+          renderItem={(info) => {
+            const trip = UPCOMING_TRIPS[info.index];
             return (
               <ListItem
-                item={item}
+                {...info}
                 leftView={<TripImage uri={trip.image} />}
                 rightView={
                   <View className="flex-row items-center">
@@ -277,15 +281,25 @@ export default function UpcomingTripsScreen() {
           <View className="p-4">
             <View className="mb-2 flex-row justify-between">
               <View className="flex-row items-center">
-                <Icon name="thermometer" size={16} color={colors.foreground} className="mr-1" />
+                <Entypo name="thermometer" size={16} color={colors.foreground} className="mr-1" />
                 <Text variant="subhead">High: {selectedTrip.weather.highTemp}</Text>
               </View>
               <View className="flex-row items-center">
-                <Icon name="thermometer-low" size={16} color={colors.foreground} className="mr-1" />
+                <FontAwesome
+                  name="thermometer-1"
+                  size={16}
+                  color={colors.foreground}
+                  className="mr-1"
+                />
                 <Text variant="subhead">Low: {selectedTrip.weather.lowTemp}</Text>
               </View>
               <View className="flex-row items-center">
-                <Icon name="water-percent" size={16} color={colors.foreground} className="mr-1" />
+                <Ionicons
+                  name="water-outline"
+                  size={16}
+                  color={colors.foreground}
+                  className="mr-1"
+                />
                 <Text variant="subhead">Precip: {selectedTrip.weather.precipitation}</Text>
               </View>
             </View>
@@ -295,9 +309,9 @@ export default function UpcomingTripsScreen() {
                 <Text variant="subhead" className="font-medium text-amber-600 dark:text-amber-400">
                   Weather Alerts
                 </Text>
-                {selectedTrip.weather.alerts.map((alert, index) => (
+                {selectedTrip.weather.alerts.map((alert) => (
                   <Text
-                    key={index}
+                    key={alert}
                     variant="footnote"
                     className="mt-1 text-amber-600 dark:text-amber-400"
                   >
@@ -322,11 +336,11 @@ export default function UpcomingTripsScreen() {
               subTitle: '',
             }))}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item, index }) => {
-              const checklistItem = TRIP_CHECKLIST[index];
+            renderItem={(info) => {
+              const checklistItem = TRIP_CHECKLIST[info.index];
               return (
                 <ListItem
-                  item={item}
+                  {...info}
                   leftView={
                     <View className="px-3">
                       <View

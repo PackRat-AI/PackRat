@@ -74,7 +74,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
             'border-border/10 mb-4 overflow-hidden rounded-2xl border',
             pressed ? 'opacity-80' : 'opacity-100',
           )}
-          style={{ backgroundColor: getCardColor(location, colors) }}
+          style={{ backgroundColor: getCardColor(location) }}
         >
           <View className="flex-row items-center justify-between p-4">
             <View className="flex-1">
@@ -109,7 +109,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
   );
 }
 
-function getCardColor(location: WeatherLocation, _colors: any) {
+function getCardColor(location: WeatherLocation) {
   // Color based on condition and time
   const conditions: Record<string, string> = {
     clear: '#4287f5',

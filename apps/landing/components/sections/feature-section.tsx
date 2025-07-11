@@ -8,6 +8,7 @@ import { Check } from 'lucide-react';
 
 export default function FeatureSection() {
   return (
+    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="features" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background decorations */}
       <GradientBackground variant="mesh" />
@@ -54,6 +55,7 @@ export default function FeatureSection() {
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
+                      <title>Clipboard icon</title>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -117,6 +119,7 @@ export default function FeatureSection() {
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
+                      <title>Map icon</title>
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"

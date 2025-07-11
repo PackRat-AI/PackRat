@@ -7,7 +7,7 @@ import { useCurrentPack } from '../hooks';
 
 const _LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
-export function CurrentPackTile({ ...props }: any) {
+export function CurrentPackTile() {
   const currentPack = useCurrentPack();
 
   const router = useRouter();
@@ -23,7 +23,6 @@ export function CurrentPackTile({ ...props }: any) {
 
   return (
     <ListItem
-      {...props}
       className={'ios:pl-0 pl-2'}
       titleClassName="text-lg"
       leftView={

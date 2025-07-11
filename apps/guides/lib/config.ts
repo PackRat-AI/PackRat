@@ -1,4 +1,4 @@
-import { Compass, type LucideIcon, Map, MountainSnow } from 'lucide-react';
+import { Compass, type LucideIcon, Map as MapIcon, MountainSnow } from 'lucide-react';
 
 // Site metadata
 export const siteConfig = {
@@ -65,7 +65,7 @@ export const featuresConfig: FeatureItem[] = [
   {
     title: 'Survival Skills',
     description: 'Essential wilderness skills and safety information',
-    icon: Map,
+    icon: MapIcon,
     iconBgClass: 'bg-blue-100 dark:bg-blue-900/20',
     iconClass: 'text-apple-blue dark:text-blue-400',
   },

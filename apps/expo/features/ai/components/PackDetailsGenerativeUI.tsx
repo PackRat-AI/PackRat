@@ -1,4 +1,4 @@
-import { Icon } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -49,7 +49,7 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
     });
   };
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (category: string): MaterialIconName => {
     switch (category.toLowerCase()) {
       case 'camping':
         return 'fire';
@@ -57,8 +57,6 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
         return 'map';
       case 'backpacking':
         return 'backpack';
-      case 'climbing':
-        return 'mountain-snow';
       default:
         return 'backpack';
     }
@@ -103,8 +101,8 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
         {pack.tags.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2 max-h-8">
             <View className="flex-row space-x-2">
-              {pack.tags.map((tag, index) => (
-                <View key={index} className="rounded-full bg-gray-100 px-3 py-1">
+              {pack.tags.map((tag) => (
+                <View key={tag} className="rounded-full bg-gray-100 px-3 py-1">
                   <Text className="text-xs font-medium text-gray-700">#{tag}</Text>
                 </View>
               ))}

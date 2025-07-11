@@ -33,7 +33,7 @@ export default function AppLayout() {
       <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
       <Stack.Screen
         name="pack/[id]/index"
-        options={({ route }) => getPackDetailOptions({ route })}
+        options={({ route }) => getPackDetailOptions((route.params as { id: string })?.id)}
       />
       <Stack.Screen name="pack/[id]/edit" options={PACK_EDIT_OPTIONS} />
       <Stack.Screen name="pack/new" options={PACK_NEW_OPTIONS} />
@@ -243,13 +243,12 @@ const CATALOG_ADD_TO_PACK_ITEM_DETAILS_OPTIONS = {
 } as const;
 
 // DETAIL SCREENS
-export function getPackDetailOptions({ route }: { route: { params?: { id?: string } } }) {
+export function getPackDetailOptions(id: string) {
   return {
     title: 'Pack Details',
     headerRight: () => {
       const { colors } = useColorScheme();
       const router = useRouter();
-      const id = route.params?.id;
 
       const isOwner = usePackOwnershipCheck(id as string);
 

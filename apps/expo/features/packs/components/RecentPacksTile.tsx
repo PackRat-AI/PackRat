@@ -27,7 +27,7 @@ export function RecentPacksTile() {
             const img = pack?.image ?? fallbackImage;
             return (
               <Avatar
-                key={index}
+                key={pack.id}
                 alt={`${pack?.name ?? ''} avatar`}
                 className={cn('h-6 w-6', index > 0 && '-ml-2')}
               >

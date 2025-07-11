@@ -7,10 +7,11 @@ import {
 } from '@packrat/ui/nativewindui';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
-import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { type CategorySummary, computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
+import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
 import { SafeAreaView, ScrollView, View } from 'react-native';
@@ -41,9 +42,9 @@ function CustomList({
   renderItem,
   keyExtractor,
 }: {
-  data: any[];
-  renderItem: (item: any, index: number) => React.ReactNode;
-  keyExtractor: (item: any, index: number) => string;
+  data: unknown[];
+  renderItem: (item: unknown, index: number) => React.ReactNode;
+  keyExtractor: (item: unknown, index: number) => string;
 }) {
   return (
     <View>
@@ -53,7 +54,7 @@ function CustomList({
     </View>
   );
 }
-function CategoryItem({ category, index }: { category: any; index: number }) {
+function CategoryItem({ category, index }: { category: CategorySummary; index: number }) {
   const { colors } = useColorScheme();
   const itemLabel = category.items === 1 ? 'item' : 'items';
 
@@ -83,7 +84,7 @@ function CategoryItem({ category, index }: { category: any; index: number }) {
   );
 }
 
-function ItemRow({ item, index }: { item: any; index: number }) {
+function ItemRow({ item, index }: { item: PackItem; index: number }) {
   return (
     <View
       className={cn(
@@ -166,8 +167,10 @@ export default function CurrentPackScreen() {
 
           <CustomList
             data={uniqueCategories}
-            keyExtractor={(item) => item.name}
-            renderItem={(item, index) => <CategoryItem category={item} index={index} />}
+            keyExtractor={(item) => (item as CategorySummary).name}
+            renderItem={(item, index) => (
+              <CategoryItem category={item as CategorySummary} index={index} />
+            )}
           />
         </View>
 
@@ -182,7 +185,7 @@ export default function CurrentPackScreen() {
           <CustomList
             data={pack.items}
             keyExtractor={(_, index) => index.toString()}
-            renderItem={(item, index) => <ItemRow item={item} index={index} />}
+            renderItem={(item, index) => <ItemRow item={item as PackItem} index={index} />}
           />
         </View>
       </ScrollView>

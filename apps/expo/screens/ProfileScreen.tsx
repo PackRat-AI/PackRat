@@ -1,15 +1,16 @@
 import { Icon } from '@roninoss/icons';
-import { PackCard } from 'expo-app/components/initial/PackCard';
 import { UserAvatar } from 'expo-app/components/initial/UserAvatar';
-import { usePacks } from 'expo-app/hooks/usePacks';
+import type { Pack } from 'expo-app/features/packs';
+import { PackCard } from 'expo-app/features/packs/components/PackCard';
+import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
+import { getPackItems } from 'expo-app/features/packs/store';
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { currentUser } from '../data/mockData';
 
 export function ProfileScreen() {
-  const { data: packs } = usePacks();
-  const userPacks = packs?.filter((pack) => pack.userId === currentUser.id);
+  const packs = usePacks();
 
-  const handlePackPress = (pack: any) => {
+  const handlePackPress = (pack: Pack) => {
     // In a real app, you would navigate to the pack details screen
     console.log('Navigate to pack details:', pack.id);
   };
@@ -63,8 +64,8 @@ export function ProfileScreen() {
             <Text className="text-lg font-semibold text-gray-900">My Packs</Text>
           </View>
 
-          {userPacks && userPacks.length > 0 ? (
-            userPacks.map((pack) => (
+          {packs && packs.length > 0 ? (
+            packs.map((pack) => (
               <View key={pack.id} className="px-4 pt-4 last:pb-4">
                 <PackCard pack={pack} onPress={handlePackPress} />
               </View>
@@ -87,20 +88,20 @@ export function ProfileScreen() {
 
           <View className="flex-row justify-between p-4">
             <View className="items-center">
-              <Text className="text-2xl font-bold text-gray-900">{userPacks?.length}</Text>
+              <Text className="text-2xl font-bold text-gray-900">{packs?.length}</Text>
               <Text className="text-gray-500">Packs</Text>
             </View>
 
             <View className="items-center">
               <Text className="text-2xl font-bold text-gray-900">
-                {userPacks?.reduce((total, pack) => total + (pack.items?.length ?? 0), 0)}
+                {packs?.reduce((total, pack) => total + (getPackItems(pack.id)?.length ?? 0), 0)}
               </Text>
               <Text className="text-gray-500">Items</Text>
             </View>
 
             <View className="items-center">
               <Text className="text-2xl font-bold text-gray-900">
-                {userPacks?.filter((pack) => pack.isPublic).length}
+                {packs?.filter((pack) => pack.isPublic).length}
               </Text>
               <Text className="text-gray-500">Public</Text>
             </View>

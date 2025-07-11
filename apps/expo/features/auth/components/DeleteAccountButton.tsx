@@ -85,7 +85,7 @@ export function DeleteAccountButton() {
         <Icon name="chevron-right" color={colors.destructive} />
       </Button>
 
-      <Alert buttons={[]} ref={alertRef} />
+      <Alert title="" buttons={[]} ref={alertRef} />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
@@ -27,8 +27,8 @@ interface CatalogItemsGenerativeUIProps {
   limit: number;
 }
 
-const getCategoryIcon = (category: string): string => {
-  const categoryMap: Record<string, string> = {
+const getCategoryIcon = (category: string): MaterialIconName => {
+  const categoryMap: Record<string, MaterialIconName> = {
     // Cooking: 'flame',
     // Water: 'droplet',
     // 'Sleep System': 'moon',
@@ -57,7 +57,7 @@ const formatPrice = (price: number, currency: string): string => {
   }).format(price);
 };
 
-export function CatalogItemsGenerativeUI({ items, total, limit }: CatalogItemsGenerativeUIProps) {
+export function CatalogItemsGenerativeUI({ items }: CatalogItemsGenerativeUIProps) {
   const { colors } = useColorScheme();
   const router = useRouter();
 

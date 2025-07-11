@@ -23,7 +23,7 @@ adminRoutes.use(
   }),
 );
 
-const adminLayout = (title: string, content: any) => html`
+const adminLayout = (title: string, content: unknown) => html`
 <!DOCTYPE html>
 <html lang="en">
 <head>

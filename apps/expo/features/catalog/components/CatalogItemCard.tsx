@@ -1,9 +1,9 @@
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import type { CatalogItem } from 'expo-app/types';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import type { CatalogItem } from '../types';
 
 type CatalogItemCardProps = {
   item: CatalogItem;
@@ -61,7 +61,7 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
             <View className="flex-row items-center">
               <Icon name="dumbbell" size={14} color={colors.grey} />
               <Text className="ml-1 text-xs text-muted-foreground">
-                {item.defaultWeight} {item.weightUnit}
+                {item.defaultWeight} {item.defaultWeightUnit}
               </Text>
             </View>
             {item.usageCount && item.usageCount > 0 && (

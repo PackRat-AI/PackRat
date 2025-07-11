@@ -3,7 +3,14 @@ import type { Pack } from '../types';
 import { convertFromGrams } from './convertFromGrams';
 import { convertToGrams } from './convertToGrams';
 
-export function computeCategorySummaries(pack: Pack) {
+export type CategorySummary = {
+  name: string;
+  items: number;
+  weight: number;
+  percentage: number;
+};
+
+export function computeCategorySummaries(pack: Pack): CategorySummary[] {
   const items = pack.items;
   const totalWeight = pack.totalWeight;
   const categoryMap: Record<

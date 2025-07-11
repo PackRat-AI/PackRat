@@ -1,8 +1,8 @@
-import type { Queue } from '@cloudflare/workers-types';
+import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import { parse } from 'csv-parse/sync';
-import { eq, getTableColumns, isNull, or, sql } from 'drizzle-orm';
+import { eq, getTableColumns, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { createDbClient } from '../db';
 
 export enum QueueType {
@@ -28,7 +28,7 @@ export interface CatalogETLMessage extends BaseQueueMessage {
 export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
   type: QueueType.CATALOG_ETL_WRITE_BATCH;
   data: {
-    items: any[];
+    items: Partial<NewCatalogItem>[];
     userId: string;
   };
 }
@@ -70,7 +70,13 @@ export async function queueCatalogETL({
   return jobId;
 }
 
-export async function processQueueBatch({ batch, env }: { batch: any; env: Env }): Promise<void> {
+export async function processQueueBatch({
+  batch,
+  env,
+}: {
+  batch: MessageBatch<BaseQueueMessage>;
+  env: Env;
+}): Promise<void> {
   for (const message of batch.messages) {
     try {
       const queueMessage: BaseQueueMessage = message.body;
@@ -130,7 +136,7 @@ async function processCatalogETL({
 
   let isHeader = true;
   let fieldMap: Record<string, number> = {};
-  let batch: any[] = [];
+  let batch: Partial<NewCatalogItem>[] = [];
   let totalQueued = 0;
 
   for (const row of rows) {
@@ -362,7 +368,7 @@ function mapCsvRowToItem({
     const parsedImage = parseJsonOrString(imageUrl);
     if (Array.isArray(parsedImage)) {
       item.image = parsedImage[0];
-    } else {
+    } else if (typeof parsedImage === 'string') {
       item.image = parsedImage.split(',')[0].trim();
     }
   }
@@ -397,7 +403,7 @@ function mapCsvRowToItem({
   return item;
 }
 
-function parseJsonOrString(str: string): any {
+function parseJsonOrString(str: string): string | object {
   try {
     return JSON.parse(str);
   } catch (_e) {
@@ -410,8 +416,8 @@ function parseAndFormatMultiString(str: string): string {
   const parsed = parseJsonOrString(str);
   if (Array.isArray(parsed)) {
     return parsed.join(', ');
-  }
-  return parsed;
+  } else if (typeof parsed === 'string') return parsed;
+  return '';
 }
 
 function parseWeight(
@@ -449,7 +455,6 @@ function parsePrice(priceStr: string): number | null {
 async function insertCatalogItems({
   env,
   items,
-  userId,
   jobId,
 }: {
   env: Env;
@@ -467,7 +472,7 @@ async function insertCatalogItems({
   }
 
   const columns = getTableColumns(catalogItems);
-  const updateSet: Record<string, any> = {};
+  const updateSet: Record<string, SQL> = {};
   for (const col of Object.values(columns)) {
     const name = col.name as keyof NewCatalogItem;
     if (!['sku', 'createdAt', 'id'].includes(name)) {

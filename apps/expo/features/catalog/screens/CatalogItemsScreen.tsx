@@ -51,8 +51,8 @@ function CatalogItemsScreen() {
   // Disabled for now
   const {
     data: vectorResults,
-    isLoading: isVectorLoading,
-    isFetching: isVectorFetching,
+    // isLoading: isVectorLoading,
+    // isFetching: isVectorFetching,
     error: vectorError,
   } = useVectorSearch('');
 
@@ -106,7 +106,7 @@ function CatalogItemsScreen() {
                     )}
                   </View>
                 </View>
-                {results.map((item) => (
+                {results.map((item: CatalogItem) => (
                   <View className="px-4 pt-4" key={item.id}>
                     <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
                   </View>

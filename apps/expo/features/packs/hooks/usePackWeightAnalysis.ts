@@ -1,17 +1,6 @@
 import { userStore } from 'expo-app/features/auth/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { computeCategorySummaries, convertFromGrams, convertToGrams } from '../utils';
 import { usePackDetailsFromStore } from './usePackDetailsFromStore';
-
-export const getPackWeightAnalysis = async (packId: string): Promise<any> => {
-  try {
-    const response = await axiosInstance.get(`/api/weight-analysis/${packId}`);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to load weight analysis: ${message}`);
-  }
-};
 
 export function usePackWeightAnalysis(packId: string) {
   const pack = usePackDetailsFromStore(packId);

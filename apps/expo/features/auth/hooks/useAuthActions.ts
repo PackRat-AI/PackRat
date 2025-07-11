@@ -1,4 +1,9 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import {
+  GoogleSignin,
+  isErrorWithCode,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+import type { AxiosError } from 'axios';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { isAuthed, userStore } from 'expo-app/features/auth/store';
 import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
@@ -116,14 +121,14 @@ export function useAuthActions() {
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
       redirect(redirectTo);
-    } catch (error: any) {
+    } catch (error) {
       setIsLoading(false);
 
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) {
         console.log('User cancelled the login flow');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
+      } else if (isErrorWithCode(error) && error.code === statusCodes.IN_PROGRESS) {
         console.log('Sign in is in progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      } else if (isErrorWithCode(error) && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         console.log('Play services not available');
       } else {
         console.error('Google sign in error:', error);
@@ -193,8 +198,8 @@ export function useAuthActions() {
       if (!response.ok) {
         throw new Error(responseData.error || 'Registration failed');
       }
-    } catch (error: any) {
-      console.error('Registration error:', error.message);
+    } catch (error) {
+      console.error('Registration error:', (error as AxiosError).message);
       throw error;
     } finally {
       setIsLoading(false);

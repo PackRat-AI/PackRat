@@ -24,7 +24,7 @@ const emailSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
 });
 
-type EmailFormValues = z.infer<typeof emailSchema>;
+// type EmailFormValues = z.infer<typeof emailSchema>;
 
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();

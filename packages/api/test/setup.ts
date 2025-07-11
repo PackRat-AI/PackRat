@@ -15,6 +15,6 @@ process.env.PACKRAT_BUCKET_R2_BUCKET_NAME = 'bucket';
 import { vi } from 'vitest';
 
 vi.mock('hono/adapter', async () => {
-  const actual = await vi.importActual<any>('hono/adapter');
+  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
   return { ...actual, env: () => process.env };
 });

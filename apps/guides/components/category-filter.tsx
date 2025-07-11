@@ -19,8 +19,9 @@ export default function CategoryFilter({ categories }: { categories: string[] })
     }
 
     // Preserve search if it exists
-    if (searchParams.has('search')) {
-      params.set('search', searchParams.get('search')!);
+    const searchParam = searchParams.get('search');
+    if (searchParam !== null) {
+      params.set('search', searchParam);
     }
 
     router.push(`${pathname}?${params.toString()}`);
@@ -36,8 +37,9 @@ export default function CategoryFilter({ categories }: { categories: string[] })
           params.delete('category');
 
           // Preserve search if it exists
-          if (searchParams.has('search')) {
-            params.set('search', searchParams.get('search')!);
+          const searchParam = searchParams.get('search');
+          if (searchParam !== null) {
+            params.set('search', searchParam);
           }
 
           router.push(`${pathname}?${params.toString()}`);

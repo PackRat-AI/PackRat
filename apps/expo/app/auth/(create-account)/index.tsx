@@ -22,7 +22,7 @@ const nameFormSchema = z.object({
 });
 
 // Type inference
-type NameFormValues = z.infer<typeof nameFormSchema>;
+// type NameFormValues = z.infer<typeof nameFormSchema>;
 
 export default function InfoScreen() {
   const insets = useSafeAreaInsets();

@@ -11,7 +11,7 @@ async function runMigrations() {
     throw new Error('NEON_DATABASE_URL is not set');
   }
 
-  const sql = neon(process.env.NEON_DATABASE_URL!);
+  const sql = neon(process.env.NEON_DATABASE_URL);
   const db = drizzle(sql);
 
   console.log('Running migrations...');

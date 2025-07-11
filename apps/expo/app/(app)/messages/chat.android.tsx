@@ -267,7 +267,7 @@ function ChatBubble({
   selectedMessages: string[];
   setSelectedMessages: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
-  const { colors } = useColorScheme();
+  // const { colors } = useColorScheme();
   const [showTime, setShowTime] = React.useState(false);
 
   const renderAuxiliaryPreview = React.useCallback(() => {

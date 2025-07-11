@@ -1,4 +1,7 @@
-import type { LocationSearchResult } from 'expo-app/features/weather/types';
+import type {
+  LocationSearchResult,
+  WeatherApiForecastResponse,
+} from 'expo-app/features/weather/types';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
@@ -65,7 +68,7 @@ export async function getWeatherData(latitude: number, longitude: number) {
 /**
  * Format raw weather data into our application's format
  */
-export function formatWeatherData(data: any) {
+export function formatWeatherData(data: WeatherApiForecastResponse) {
   // Extract location data
   const location = data.location;
   const current = data.current;
@@ -85,12 +88,12 @@ export function formatWeatherData(data: any) {
 
   // Format hourly forecast
   const hourlyForecast = todayForecast.hour
-    .filter((hour: any) => {
+    .filter((hour) => {
       const hourTime = new Date(hour.time);
       return hourTime > localTime;
     })
     .slice(0, 24) // Get next 24 hours
-    .map((hour: any) => {
+    .map((hour) => {
       const hourTime = new Date(hour.time);
       return {
         time: hourTime.toLocaleTimeString('en-US', {
@@ -105,7 +108,7 @@ export function formatWeatherData(data: any) {
     });
 
   // Format daily forecast
-  const dailyForecast = forecast.forecastday.map((day: any) => {
+  const dailyForecast = forecast.forecastday.map((day) => {
     const date = new Date(day.date);
     return {
       day: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -117,7 +120,7 @@ export function formatWeatherData(data: any) {
   });
 
   // Format alerts if any
-  let alertText = null;
+  let alertText: string | undefined;
   if (alerts?.alert && alerts.alert.length > 0) {
     alertText = alerts.alert[0].headline || 'Weather Alert';
   }
@@ -132,8 +135,8 @@ export function formatWeatherData(data: any) {
     highTemp: Math.round(todayForecast.day.maxtemp_f),
     lowTemp: Math.round(todayForecast.day.mintemp_f),
     alerts: alertText,
-    lat: Number.parseFloat(location.lat),
-    lon: Number.parseFloat(location.lon),
+    lat: location.lat,
+    lon: location.lon,
     details: {
       feelsLike: Math.round(current.feelslike_f),
       humidity: current.humidity,
@@ -151,7 +154,10 @@ export function formatWeatherData(data: any) {
 /**
  * Get background gradient colors based on weather condition
  */
-export function getWeatherBackgroundColors(code: number, isNight: boolean): string[] {
+export function getWeatherBackgroundColors(
+  code: number,
+  isNight: boolean,
+): [string, string, string] {
   if (isNight) {
     // Night gradients
     if (code === 1000) return ['#1a2a3a', '#0c1824', '#05101a']; // Clear night

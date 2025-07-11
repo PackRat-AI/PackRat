@@ -264,7 +264,7 @@ function MessageRow({
       setSelectedMessages([...selectedMessages, info.item.id]);
       return;
     }
-    router.push('/messages-ios/chat-ios');
+    router.push('/messages/chat');
   }
 
   function onCheckedChange(isChecked: boolean) {

@@ -99,6 +99,7 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
     <View className="flex-row">
       {displayMembers.map((member, index) => (
         <Avatar
+          alt={member.name}
           key={member.id}
           className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}
         >
@@ -120,7 +121,7 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
 function PackOwner({ name, avatar }: { name: string; avatar: string }) {
   return (
     <View className="flex-row items-center">
-      <Avatar className="mr-1 h-5 w-5">
+      <Avatar alt={name} className="mr-1 h-5 w-5">
         <AvatarImage source={{ uri: avatar }} />
         <AvatarFallback>
           <Text>{name.substring(0, 1)}</Text>

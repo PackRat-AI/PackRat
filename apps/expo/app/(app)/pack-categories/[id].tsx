@@ -1,5 +1,5 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon, type IconProps } from '@roninoss/icons';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
@@ -15,6 +15,7 @@ function CategoryCard({
     items: number;
     weight: number;
     percentage: number;
+    icon?: IconProps<'material'>['name'];
   };
 }) {
   const { colors } = useColorScheme();
@@ -69,7 +70,7 @@ export default function PackCategoriesScreen() {
           </View>
 
           <View className="pb-4">
-            {categories.map((category: any) => (
+            {categories.map((category) => (
               <CategoryCard key={category.name} category={category} />
             ))}
           </View>

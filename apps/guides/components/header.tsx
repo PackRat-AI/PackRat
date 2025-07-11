@@ -75,7 +75,10 @@ export default function Header() {
             {additionalCategories.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="px-3 py-2 text-sm font-medium rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex items-center">
+                  <button
+                    type="button"
+                    className="px-3 py-2 text-sm font-medium rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex items-center"
+                  >
                     More
                     <ChevronDown className="ml-1 h-3.5 w-3.5 opacity-70" />
                   </button>
@@ -102,6 +105,7 @@ export default function Header() {
           <Sheet>
             <SheetTrigger asChild>
               <button
+                type="button"
                 className="md:hidden ml-1 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
                 aria-label="Open menu"
               >
@@ -110,7 +114,9 @@ export default function Header() {
                   height="18"
                   viewBox="0 0 15 15"
                   fill="none"
+                  aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
+                  focusable="false"
                 >
                   <path
                     d="M1.5 3C1.22386 3 1 3.22386 1 3.5C1 3.77614 1.22386 4 1.5 4H13.5C13.7761 4 14 3.77614 14 3.5C14 3.22386 13.7761 3 13.5 3H1.5ZM1.5 7C1.22386 7 1 7.22386 1 7.5C1 7.77614 1.22386 8 1.5 8H13.5C13.7761 8 14 7.77614 14 7.5C14 7.22386 13.7761 7 13.5 7H1.5ZM1 11.5C1 11.2239 1.22386 11 1.5 11H13.5C13.7761 11 14 11.2239 14 11.5C14 11.7761 13.7761 12 13.5 12H1.5C1.22386 12 1 11.7761 1 11.5Z"

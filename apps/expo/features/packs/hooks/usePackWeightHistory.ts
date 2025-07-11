@@ -1,6 +1,7 @@
 import { use$ } from '@legendapp/state/react';
 
 import { packWeigthHistoryStore } from '../store/packWeightHistory';
+import type { PackWeightHistoryEntry } from '../types';
 
 export type PackMonthlyAverage = {
   month: string;
@@ -8,7 +9,7 @@ export type PackMonthlyAverage = {
 };
 
 // Helper: Compute monthly average weights from history
-const getMonthlyWeightAverages = (data: any[]) => {
+const getMonthlyWeightAverages = (data: PackWeightHistoryEntry[]) => {
   const monthNames = [
     'Jan',
     'Feb',
@@ -27,7 +28,7 @@ const getMonthlyWeightAverages = (data: any[]) => {
   const monthData: Record<string, { totalWeight: number; count: number }> = {};
 
   data.forEach((entry) => {
-    const date = new Date(entry.createdAt);
+    const date = new Date(entry.localCreatedAt);
     const key = `${date.getFullYear()}-${date.getMonth()}`; // "YYYY-M"
     if (!monthData[key]) {
       monthData[key] = { totalWeight: 0, count: 0 };
@@ -55,7 +56,7 @@ const getMonthlyWeightAverages = (data: any[]) => {
 };
 
 // Helper: Filter entries within the last 6 months
-const filterLast6Months = (data: any[]) => {
+const filterLast6Months = (data: PackWeightHistoryEntry[]) => {
   const today = new Date();
   const sixMonthsAgo = new Date(today);
   sixMonthsAgo.setMonth(today.getMonth() - 6);

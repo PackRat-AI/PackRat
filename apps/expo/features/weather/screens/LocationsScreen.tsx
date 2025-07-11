@@ -5,7 +5,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router, useNavigation } from 'expo-router';
 import { useAtom } from 'jotai';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -53,13 +53,14 @@ function LocationsScreen() {
   };
 
   // Clear search and dismiss keyboard
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     setSearchQuery('');
     Keyboard.dismiss();
     setIsSearchFocused(false);
-  };
+  }, [setSearchQuery]);
 
   // Load weather data on initial render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: need this effect to just get updated data for locations one time
   useEffect(() => {
     if (locations.length > 0 && !isLoading) {
       refreshAllLocations();
@@ -77,7 +78,7 @@ function LocationsScreen() {
       unsubscribe();
       setSearchQuery('');
     };
-  }, [navigation]);
+  }, [navigation, clearSearch, setSearchQuery]);
 
   const handleLocationPress = (locationId: string) => {
     router.push(`/weather/${locationId}`);

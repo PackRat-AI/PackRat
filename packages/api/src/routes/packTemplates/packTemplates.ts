@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { packTemplates } from '@packrat/api/db/schema';
+import { type PackTemplate, packTemplates } from '@packrat/api/db/schema';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { and, eq, or } from 'drizzle-orm';
 
@@ -123,7 +123,7 @@ packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
   const templateId = c.req.param('templateId');
   const data = await c.req.json();
 
-  const updateData: Record<string, any> = {};
+  const updateData: Partial<PackTemplate> = {};
   if ('name' in data) updateData.name = data.name;
   if ('description' in data) updateData.description = data.description;
   if ('category' in data) updateData.category = data.category;

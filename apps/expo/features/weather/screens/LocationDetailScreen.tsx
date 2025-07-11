@@ -20,7 +20,11 @@ export default function LocationDetailScreen() {
   const { setActiveLocation } = useActiveLocation();
   const { isRefreshing, refreshLocation } = useLocationRefresh();
   const [error, setError] = useState<string | null>(null);
-  const [gradientColors, setGradientColors] = useState(['#4c669f', '#3b5998', '#192f6a']);
+  const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
+    '#4c669f',
+    '#3b5998',
+    '#192f6a',
+  ]);
   const { showActionSheetWithOptions } = useActionSheet();
   const { removeLocation } = useLocations();
 
@@ -48,11 +52,12 @@ export default function LocationDetailScreen() {
   };
 
   // Load weather data on initial render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: need this to only run at initial render
   useEffect(() => {
     if (location) {
       handleRefresh();
     }
-  }, [id]);
+  }, []);
 
   if (!location) {
     return (
@@ -150,7 +155,7 @@ export default function LocationDetailScreen() {
   };
 
   // Determine if we should use light or dark status bar based on gradient colors
-  const isDarkGradient =
+  const _isDarkGradient =
     gradientColors[0].toLowerCase().startsWith('#4') ||
     gradientColors[0].toLowerCase().startsWith('#3') ||
     gradientColors[0].toLowerCase().startsWith('#2') ||
@@ -189,7 +194,7 @@ export default function LocationDetailScreen() {
           <View className="px-4">
             {error ? (
               <View className="items-center justify-center py-20">
-                <Icon name="alert-circle" color="white" size={40} />
+                <Icon name="exclamation" color="white" size={40} />
                 <Text className="mt-4 text-white">{error}</Text>
                 <TouchableOpacity
                   className="mt-4 rounded-full bg-white/20 px-4 py-2"
@@ -234,7 +239,9 @@ export default function LocationDetailScreen() {
                     onPress={handleRefresh}
                     disabled={isRefreshing}
                   >
-                    <Icon name="restart" color="white" size={20} className="mr-2" />
+                    <View className="mr-2">
+                      <Icon name="restart" color="white" size={20} />
+                    </View>
                     <Text className="text-white">{isRefreshing ? 'Refreshing...' : 'Refresh'}</Text>
                   </TouchableOpacity>
                 </View>
@@ -244,7 +251,7 @@ export default function LocationDetailScreen() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {location.hourlyForecast ? (
                       location.hourlyForecast.map((hour, index) => (
-                        <View key={index} className="mr-4 min-w-[50px] items-center">
+                        <View key={hour.time} className="mr-4 min-w-[50px] items-center">
                           <Text className="text-white">{index === 0 ? 'Now' : hour.time}</Text>
                           <WeatherIcon
                             code={hour.weatherCode}
@@ -273,7 +280,7 @@ export default function LocationDetailScreen() {
                   {location.dailyForecast ? (
                     location.dailyForecast.map((day, index) => (
                       <View
-                        key={index}
+                        key={day.day}
                         className={cn(
                           'flex-row items-center justify-between py-3',
                           index !== (location.dailyForecast?.length || 0) - 1 &&

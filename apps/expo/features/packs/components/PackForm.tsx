@@ -47,7 +47,7 @@ const packFormSchema = z.object({
 });
 
 // Type inference
-type PackFormValues = z.infer<typeof packFormSchema>;
+// type PackFormValues = z.infer<typeof packFormSchema>;
 
 // Categories with icons and labels
 const CATEGORIES = [
@@ -143,7 +143,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors.map((err: any) => err.message).join(', ')}
+                    errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="folder" size={16} color={colors.grey3} />

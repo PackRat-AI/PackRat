@@ -28,7 +28,7 @@ let isRefreshing = false;
 // Queue of failed requests to retry after token refresh
 let failedQueue: Array<{
   resolve: (value: unknown) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
   config: AxiosRequestConfig;
 }> = [];
 

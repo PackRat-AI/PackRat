@@ -1,7 +1,7 @@
 import { withSentry } from '@sentry/react-native/expo';
-import type { ConfigContext, ExpoConfig } from 'expo/config';
+import type { ExpoConfig } from 'expo/config';
 
-export default ({ config }: ConfigContext): ExpoConfig =>
+export default (): ExpoConfig =>
   withSentry(
     {
       name: 'PackRat',

@@ -9,8 +9,9 @@ type ItemLinksProps = {
 };
 
 export function ItemLinks({ links }: ItemLinksProps) {
-  if (!links || links.length === 0) return null;
   const { colors } = useColorScheme();
+
+  if (!links || links.length === 0) return null;
 
   const getIconName = (type: ItemLink['type']) => {
     switch (type) {

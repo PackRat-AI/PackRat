@@ -1,5 +1,5 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { Image, SafeAreaView, View } from 'react-native';
 
@@ -63,7 +63,7 @@ function FeatureItem({
   title,
   description,
 }: {
-  icon: string;
+  icon: MaterialIconName;
   title: string;
   description: string;
 }) {

@@ -21,7 +21,7 @@ const loginFormSchema = z.object({
 });
 
 // Type inference
-type LoginFormValues = z.infer<typeof loginFormSchema>;
+// type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();

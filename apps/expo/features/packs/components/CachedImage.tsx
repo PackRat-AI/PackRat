@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, type ImageProps, View } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
-  localFileName?: string;
+  localFileName?: string | null;
   placeholderColor?: string;
 }
 
