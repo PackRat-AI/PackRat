@@ -232,7 +232,7 @@ function MessageRow({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       return;
     }
-    router.push('/messages-android/chat-android');
+    router.push('/messages/chat');
   }
 
   function onListItemLongPress() {

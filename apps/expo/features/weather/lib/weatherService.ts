@@ -120,7 +120,7 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
   });
 
   // Format alerts if any
-  let alertText = null;
+  let alertText: string | undefined;
   if (alerts?.alert && alerts.alert.length > 0) {
     alertText = alerts.alert[0].headline || 'Weather Alert';
   }
@@ -154,7 +154,10 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
 /**
  * Get background gradient colors based on weather condition
  */
-export function getWeatherBackgroundColors(code: number, isNight: boolean): string[] {
+export function getWeatherBackgroundColors(
+  code: number,
+  isNight: boolean,
+): [string, string, string] {
   if (isNight) {
     // Night gradients
     if (code === 1000) return ['#1a2a3a', '#0c1824', '#05101a']; // Clear night

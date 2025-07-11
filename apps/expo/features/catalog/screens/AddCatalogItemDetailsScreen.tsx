@@ -20,15 +20,20 @@ import {
   View,
 } from 'react-native';
 import { useCatalogItemDetails } from '../hooks';
+import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
+import { assertDefined } from 'expo-app/utils/assertDefined';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();
   const { catalogItemId, packId } = useLocalSearchParams();
-  const { data: catalogItem, isLoading: isLoadingItem } = useCatalogItemDetails(
-    catalogItemId as string,
-  );
-  const { data: pack, isLoading: isLoadingPack } = usePackDetailsFromStore(packId as string);
-  const { mutate: createItem, isPending: isCreating } = useCreatePackItem();
+  const {
+    data: catalogItem,
+    isLoading: isLoadingItem,
+    isError,
+    refetch,
+  } = useCatalogItemDetails(catalogItemId as string);
+  const pack = usePackDetailsFromStore(packId as string);
+  const createItem = useCreatePackItem();
   const fadeAnim = useState(new Animated.Value(0))[0];
 
   // Form state
@@ -58,38 +63,31 @@ export function AddCatalogItemDetailsScreen() {
   }, [catalogItem]);
 
   const handleAddToPack = () => {
-    if (!catalogItem || !packId) return;
-
-    createItem(
-      {
-        packId: packId as string,
-        itemData: {
-          name: catalogItem.name,
-          description: catalogItem.description,
-          weight: catalogItem.defaultWeight,
-          weightUnit: catalogItem.defaultWeightUnit as WeightUnit,
-          quantity: Number.parseInt(quantity, 10) || 1,
-          category: catalogItem.category,
-          consumable: isConsumable,
-          worn: isWorn,
-          notes: notes,
-          image: catalogItem.image,
-          catalogItemId: catalogItem.id,
-        },
+    assertDefined(catalogItem);
+    createItem({
+      packId: packId as string,
+      itemData: {
+        name: catalogItem.name,
+        description: catalogItem.description,
+        weight: catalogItem.defaultWeight || 0,
+        weightUnit: catalogItem.defaultWeightUnit as WeightUnit,
+        quantity: Number.parseInt(quantity, 10) || 1,
+        category: catalogItem.category,
+        consumable: isConsumable,
+        worn: isWorn,
+        notes: notes,
+        image: catalogItem.image,
+        catalogItemId: catalogItem.id,
       },
-      {
-        onSuccess: () => {
-          // Navigate back to the catalog item detail screen
-          router.dismissTo({
-            pathname: '/catalog/[id]',
-            params: { id: catalogItemId },
-          });
-        },
-      },
-    );
+    });
+    // Navigate back to the catalog item detail screen
+    router.dismissTo({
+      pathname: '/catalog/[id]',
+      params: { id: catalogItemId as string },
+    });
   };
 
-  if (isLoadingItem || isLoadingPack) {
+  if (isLoadingItem) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator size="large" color="text-primary" />
@@ -97,16 +95,18 @@ export function AddCatalogItemDetailsScreen() {
     );
   }
 
-  if (!catalogItem || !pack) {
+  if (isError) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <Text className="text-foreground">Item or pack not found</Text>
-        <Button className="mt-4" onPress={() => router.back()}>
-          <Text>Go Back</Text>
-        </Button>
-      </SafeAreaView>
+      <ErrorScreen
+        title="Error fetching item"
+        message="Please try again."
+        onRetry={refetch}
+        variant="destructive"
+      />
     );
   }
+
+  assertDefined(catalogItem);
 
   return (
     <KeyboardAvoidingView
@@ -123,7 +123,7 @@ export function AddCatalogItemDetailsScreen() {
                 <View className="flex-row items-center">
                   <Icon name="dumbbell" size={16} color={colors.grey} />
                   <Text className="ml-1 text-muted-foreground">
-                    {catalogItem.defaultWeight} {catalogItem.weightUnit}
+                    {catalogItem.defaultWeight} {catalogItem.defaultWeightUnit}
                   </Text>
                 </View>
                 {catalogItem.brand && (
@@ -233,12 +233,8 @@ export function AddCatalogItemDetailsScreen() {
               </View>
 
               <View className="mb-2 mt-6">
-                <Button onPress={handleAddToPack} disabled={isCreating}>
-                  {isCreating ? (
-                    <ActivityIndicator size="small" color="text-primary-foreground" />
-                  ) : (
-                    <Text>Add to Pack</Text>
-                  )}
+                <Button onPress={handleAddToPack}>
+                  <Text>Add to Pack</Text>
                 </Button>
               </View>
 

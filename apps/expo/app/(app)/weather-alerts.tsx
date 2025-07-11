@@ -1,11 +1,20 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { ScrollView, View } from 'react-native';
 
 // Mock data for weather alerts
-const WEATHER_ALERTS = [
+const WEATHER_ALERTS: {
+  id: string;
+  type: string;
+  location: string;
+  dates: string;
+  severity: 'Moderate' | 'High' | 'Low';
+  details: string;
+  icon: MaterialIconName;
+  color: string;
+}[] = [
   {
     id: '1',
     type: 'Rain',

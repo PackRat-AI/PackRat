@@ -1,4 +1,4 @@
-import { Icon } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -49,7 +49,7 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
     });
   };
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryIcon = (category: string): MaterialIconName => {
     switch (category.toLowerCase()) {
       case 'camping':
         return 'fire';
@@ -57,8 +57,6 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
         return 'map';
       case 'backpacking':
         return 'backpack';
-      case 'climbing':
-        return 'mountain-snow';
       default:
         return 'backpack';
     }

@@ -32,7 +32,11 @@ export default function LocationPreviewScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherLocation | null>(null);
-  const [gradientColors, setGradientColors] = useState(['#4c669f', '#3b5998', '#192f6a']);
+  const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
+    '#4c669f',
+    '#3b5998',
+    '#192f6a',
+  ]);
 
   // Extract location data from params
   const latitude = Number.parseFloat(params.lat as string);

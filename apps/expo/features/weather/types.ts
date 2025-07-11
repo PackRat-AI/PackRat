@@ -1,3 +1,5 @@
+import type { MaterialIconName } from '@roninoss/icons';
+
 export interface WeatherApiForecastResponse {
   location: Location;
   current: CurrentWeather;
@@ -202,7 +204,7 @@ export interface WeatherLocation {
     day: string;
     high: number;
     low: number;
-    icon: string;
+    icon: MaterialIconName;
     weatherCode: number;
   }>;
 }

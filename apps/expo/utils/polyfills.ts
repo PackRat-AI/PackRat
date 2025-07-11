@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 if (Platform.OS !== 'web') {
   const setupPolyfills = async () => {
+    // @ts-ignore
     const { polyfillGlobal } = await import('react-native/Libraries/Utilities/PolyfillFunctions');
 
     const { TextEncoderStream, TextDecoderStream } = await import(

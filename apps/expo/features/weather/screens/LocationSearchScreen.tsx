@@ -294,7 +294,7 @@ export default function LocationSearchScreen() {
     if (error) {
       return (
         <View className="flex-1 items-center justify-center p-8">
-          <Icon name="alert-circle-outline" size={48} color={colors.destructive} />
+          <Icon name="exclamation" size={48} color={colors.destructive} />
           <Text className="mt-4 text-center text-destructive">{error}</Text>
           <TouchableOpacity
             className="mt-6 rounded-full bg-primary px-4 py-2"

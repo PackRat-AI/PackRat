@@ -11,7 +11,7 @@ export interface PackTemplate {
   id: string;
   name: string;
   description?: string;
-  category?: string;
+  category: string;
   userId?: number;
   isAppTemplate: boolean;
   image?: string;
@@ -34,7 +34,7 @@ export interface PackTemplateItem {
   weight: number;
   weightUnit: WeightUnit;
   quantity: number;
-  category?: string;
+  category: string;
   consumable: boolean;
   worn: boolean;
   image?: string | null;
@@ -52,12 +52,12 @@ export interface PackTemplateItemInput {
   weight: number;
   weightUnit: WeightUnit;
   quantity: number;
-  category?: string;
+  category: string;
   consumable: boolean;
   worn: boolean;
   notes?: string;
   image?: string | null;
-  catalogItemId?: string;
+  catalogItemId?: number;
 }
 
 export type PackTemplateInStore = Omit<PackTemplate, 'items' | 'baseWeight' | 'totalWeight'>;

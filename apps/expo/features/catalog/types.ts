@@ -18,13 +18,13 @@ export interface CatalogItemReview {
 }
 
 export interface CatalogItem {
-  id: string;
+  id: number;
   name: string;
   usageCount: number;
   description?: string;
   defaultWeight?: number;
   defaultWeightUnit?: string;
-  category?: string;
+  category: string;
   image?: string;
   brand?: string;
   model?: string;

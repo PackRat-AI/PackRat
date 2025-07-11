@@ -7,7 +7,7 @@ export interface PackItem {
   weight: number;
   weightUnit: WeightUnit;
   quantity: number;
-  category?: string;
+  category: string;
   consumable: boolean;
   worn: boolean;
   notes?: string;
@@ -26,7 +26,7 @@ export interface PackItemInput {
   weight: number;
   weightUnit: WeightUnit;
   quantity: number;
-  category?: string;
+  category: string;
   consumable: boolean;
   worn: boolean;
   notes?: string;
