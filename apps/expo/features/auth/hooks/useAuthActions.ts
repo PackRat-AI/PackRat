@@ -5,7 +5,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import type { AxiosError } from 'axios';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
-import { isAuthed, userStore } from 'expo-app/features/auth/store';
+import { userStore } from 'expo-app/features/auth/store';
 import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
 import { packWeigthHistoryStore } from 'expo-app/features/packs/store/packWeightHistory';
 import axiosInstance from 'expo-app/lib/api/client';
@@ -39,7 +39,6 @@ export function useAuthActions() {
     // Clear state
     await setToken(null);
     await setRefreshToken(null);
-    isAuthed.set(false);
     packsStore.set({});
     packItemsStore.set({});
     userStore.set(null);
@@ -230,7 +229,6 @@ export function useAuthActions() {
       }
 
       clearLocalData();
-      router.replace('/');
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
