@@ -130,7 +130,7 @@ export default function AuthIndexScreen() {
               onPress={handleSkipLogin}
               className="mt-2"
             >
-              <Text>Skip login</Text>
+              <Text>Continue without logging in</Text>
             </Button>
           )}
         </View>
