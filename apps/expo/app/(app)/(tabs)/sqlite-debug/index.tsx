@@ -57,7 +57,7 @@ export default function SQLiteKVDebug() {
         } else {
           parsedValue = newValue;
         }
-      } catch (e) {
+      } catch (_e) {
         parsedValue = newValue;
       }
 
@@ -87,7 +87,7 @@ export default function SQLiteKVDebug() {
         } else {
           parsedValue = editMode.value;
         }
-      } catch (e) {
+      } catch (_e) {
         parsedValue = editMode.value;
       }
 
@@ -150,7 +150,7 @@ export default function SQLiteKVDebug() {
   // Load entries on component mount
   useEffect(() => {
     loadEntries();
-  }, []);
+  }, [loadEntries]);
 
   return (
     <View style={styles.container}>

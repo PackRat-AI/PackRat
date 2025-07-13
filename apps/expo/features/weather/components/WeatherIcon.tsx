@@ -1,5 +1,6 @@
-import { Icon } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { getWeatherIconByCondition, getWeatherIconName } from '../lib/weatherIcons';
+import { View } from 'react-native';
 
 type WeatherIconProps = {
   // Either provide a condition code or text
@@ -20,7 +21,7 @@ export function WeatherIcon({
   className,
 }: WeatherIconProps) {
   // Determine which icon to use
-  let iconName: string;
+  let iconName: MaterialIconName;
 
   if (code !== undefined) {
     // If we have a code, use that for mapping
@@ -33,5 +34,9 @@ export function WeatherIcon({
     iconName = isDay ? 'weather-sunny' : 'weather-night';
   }
 
-  return <Icon name={iconName} size={size} color={color} className={className} />;
+  return (
+    <View className={className}>
+      <Icon name={iconName} size={size} color={color} />
+    </View>
+  );
 }

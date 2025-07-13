@@ -1,7 +1,13 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { isAuthed, userStore, userSyncState } from 'expo-app/features/auth/store';
-import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
-import { packWeigthHistorySyncState } from 'expo-app/features/packs/store/packWeightHistory';
+import {
+  GoogleSignin,
+  isErrorWithCode,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+import type { AxiosError } from 'axios';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { userStore } from 'expo-app/features/auth/store';
+import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
+import { packWeigthHistoryStore } from 'expo-app/features/packs/store/packWeightHistory';
 import axiosInstance from 'expo-app/lib/api/client';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -33,18 +39,17 @@ export function useAuthActions() {
     // Clear state
     await setToken(null);
     await setRefreshToken(null);
-    packsSyncState.clearPersist();
-    packItemsSyncState.clearPersist();
-    userSyncState.clearPersist();
-    packWeigthHistorySyncState.clearPersist();
-    isAuthed.set(false);
+    packsStore.set({});
+    packItemsStore.set({});
+    userStore.set(null);
+    packWeigthHistoryStore.set({});
     ImageCacheManager.clearCache();
   };
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/login`, {
+      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +88,7 @@ export function useAuthActions() {
       await GoogleSignin.hasPlayServices();
 
       // Sign in with Google
-      const userInfo = await GoogleSignin.signIn();
+      const _userInfo = await GoogleSignin.signIn();
 
       // Get the ID token
       const { idToken } = await GoogleSignin.getTokens();
@@ -93,7 +98,7 @@ export function useAuthActions() {
       }
 
       // Send the token to backend
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/google`, {
+      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,14 +120,14 @@ export function useAuthActions() {
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
       redirect(redirectTo);
-    } catch (error: any) {
+    } catch (error) {
       setIsLoading(false);
 
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) {
         console.log('User cancelled the login flow');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
+      } else if (isErrorWithCode(error) && error.code === statusCodes.IN_PROGRESS) {
         console.log('Sign in is in progress');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      } else if (isErrorWithCode(error) && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         console.log('Play services not available');
       } else {
         console.error('Google sign in error:', error);
@@ -143,7 +148,7 @@ export function useAuthActions() {
       });
 
       // Send the identity token to your backend
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/apple`, {
+      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/apple`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,7 +184,7 @@ export function useAuthActions() {
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/register`, {
+      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -192,8 +197,8 @@ export function useAuthActions() {
       if (!response.ok) {
         throw new Error(responseData.error || 'Registration failed');
       }
-    } catch (error: any) {
-      console.error('Registration error:', error.message);
+    } catch (error) {
+      console.error('Registration error:', (error as AxiosError).message);
       throw error;
     } finally {
       setIsLoading(false);
@@ -214,7 +219,7 @@ export function useAuthActions() {
 
       if (refreshToken) {
         // Call the logout endpoint to revoke the refresh token
-        await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/logout`, {
+        await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -224,7 +229,6 @@ export function useAuthActions() {
       }
 
       clearLocalData();
-      router.replace('/');
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
@@ -234,7 +238,7 @@ export function useAuthActions() {
 
   const forgotPassword = async (email: string) => {
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/forgot-password`, {
+      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -257,7 +261,7 @@ export function useAuthActions() {
 
   const resetPassword = async (email: string, code: string, newPassword: string) => {
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/reset-password`, {
+      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +284,7 @@ export function useAuthActions() {
 
   const verifyEmail = async (email: string, code: string) => {
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/verify-email`, {
+      const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -315,7 +319,7 @@ export function useAuthActions() {
   const resendVerificationEmail = async (email: string) => {
     try {
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/resend-verification`,
+        `${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/resend-verification`,
         {
           method: 'POST',
           headers: {

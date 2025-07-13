@@ -79,6 +79,7 @@ export function Search() {
   return (
     <div ref={searchRef} className="relative">
       <button
+        type="button"
         className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
         onClick={() => setIsOpen(true)}
         aria-label="Search"
@@ -101,6 +102,7 @@ export function Search() {
                 />
               </form>
               <button
+                type="button"
                 className="ml-2 p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
                 onClick={() => setIsOpen(false)}
               >

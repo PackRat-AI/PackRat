@@ -6,6 +6,7 @@ import { LucideIcon } from 'landing-app/lib/icons';
 
 export default function IntegrationSection() {
   return (
+    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="integrations" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background pattern */}
       <GradientBackground variant="mesh" />
@@ -62,6 +63,7 @@ export default function IntegrationSection() {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {Array.from({ length: 3 }).map((_, i) => (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: ignore
                       key={i}
                       className="h-6 md:h-8 rounded-full px-2 md:px-3 flex items-center text-xs font-medium"
                       style={{

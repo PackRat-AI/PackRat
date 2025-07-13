@@ -1,10 +1,6 @@
 import type { CatalogItem, PackItem } from '../db/schema';
 
-type ItemForEmbedding =
-  | Partial<CatalogItem>
-  | Partial<PackItem>
-  | (Partial<CatalogItem> & { [key: string]: any })
-  | (Partial<PackItem> & { [key: string]: any });
+type ItemForEmbedding = Partial<CatalogItem> | Partial<PackItem>;
 
 export const getEmbeddingText = (
   item: ItemForEmbedding,

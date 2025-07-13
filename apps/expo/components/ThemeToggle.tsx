@@ -1,6 +1,6 @@
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { COLORS } from 'expo-app/theme/colors';
 import { Pressable, View } from 'react-native';
 import Animated, { LayoutAnimationConfig, ZoomInRotate } from 'react-native-reanimated';

@@ -1,13 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { createDb } from '@packrat/api/db';
-import { catalogItems } from '@packrat/api/db/schema';
 import { CatalogService } from '@packrat/api/services';
-import { RouteHandler } from '@packrat/api/types/routeHandler';
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from '@packrat/api/utils/api-middleware';
-import { eq } from 'drizzle-orm';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -66,8 +60,8 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const sort =
     sortField &&
     sortOrder &&
-    validSortFields.includes(sortField as any) &&
-    validSortOrders.includes(sortOrder as any)
+    validSortFields.includes(sortField as (typeof validSortFields)[number]) &&
+    validSortOrders.includes(sortOrder as (typeof validSortOrders)[number])
       ? {
           field: sortField as (typeof validSortFields)[number],
           order: sortOrder as (typeof validSortOrders)[number],

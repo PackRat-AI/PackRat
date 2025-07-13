@@ -1,7 +1,7 @@
+import { ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { ListItem } from 'nativewindui/List';
 import { View } from 'react-native';
 
 export function SharedPacksTile() {

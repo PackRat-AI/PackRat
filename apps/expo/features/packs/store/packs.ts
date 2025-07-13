@@ -5,7 +5,7 @@ import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { isAuthed } from 'expo-app/features/auth/store';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import Storage from 'expo-sqlite/kv-store';
-import { type PackInStore } from '../types';
+import type { PackInStore } from '../types';
 
 const listPacks = async () => {
   try {
@@ -53,7 +53,7 @@ syncObservable(
     waitFor: isAuthed,
     waitForSet: isAuthed,
     retry: {
-      infinite: true, // Keep retrying until it saves
+      infinite: true,
       backoff: 'exponential',
       maxDelay: 30000,
     },
@@ -64,7 +64,7 @@ syncObservable(
     subscribe: ({ refresh }) => {
       const intervalId = setInterval(() => {
         refresh();
-      }, 30000); // 30 seconds interval
+      }, 30000);
 
       return () => {
         clearInterval(intervalId);

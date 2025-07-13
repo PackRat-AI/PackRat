@@ -11,6 +11,16 @@
   // Environment variables are managed via:
   // - Production: Cloudflare dashboard
   // - Local development: .dev.vars file (not committed to git)
+  "r2_buckets": [
+    {
+      "binding": "PACKRAT_BUCKET",
+      "bucket_name": "packrat-bucket"
+    },
+    {
+      "binding": "PACKRAT_ITEMS_BUCKET",
+      "bucket_name": "packrat-items-bucket"
+    }
+  ],
   "queues": {
     "producers": [
       {

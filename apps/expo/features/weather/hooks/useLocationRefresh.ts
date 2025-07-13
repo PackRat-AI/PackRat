@@ -17,8 +17,6 @@ export function useLocationRefresh() {
     try {
       const weatherData = await getWeatherData(location.lat, location.lon);
 
-      console.log('weatherData', JSON.stringify(weatherData));
-
       if (weatherData) {
         const formattedData = formatWeatherData(weatherData);
 

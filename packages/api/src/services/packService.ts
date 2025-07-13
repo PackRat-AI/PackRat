@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
-import { packs, packItems, type PackWithItems } from '@packrat/api/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { type PackWithItems, packItems, packs } from '@packrat/api/db/schema';
+import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { computePackWeights } from '../utils/compute-pack';
 

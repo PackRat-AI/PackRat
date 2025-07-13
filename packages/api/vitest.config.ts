@@ -1,6 +1,6 @@
+import { resolve } from 'node:path';
 import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
 import { defineConfig } from 'vitest/config';
-import { resolve } from 'path';
 
 const bindings = {
   NEON_DATABASE_URL: 'postgres://user:pass@localhost/db',

@@ -48,14 +48,23 @@ weatherRoutes.openapi(searchRoute, async (c) => {
     const data = await response.json();
 
     // Transform API response to our LocationSearchResult type
-    const locations = data.map((item: any) => ({
-      id: `${item.id || item.lat}_${item.lon}`,
-      name: item.name,
-      region: item.region,
-      country: item.country,
-      lat: item.lat,
-      lon: item.lon,
-    }));
+    const locations = data.map(
+      (item: {
+        id: string;
+        lat: string;
+        lon: string;
+        name: string;
+        region: string;
+        country: string;
+      }) => ({
+        id: `${item.id || item.lat}_${item.lon}`,
+        name: item.name,
+        region: item.region,
+        country: item.country,
+        lat: item.lat,
+        lon: item.lon,
+      }),
+    );
 
     return c.json(locations);
   } catch (error) {
@@ -95,7 +104,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
   const latitude = Number.parseFloat(c.req.query('lat') || '');
   const longitude = Number.parseFloat(c.req.query('lon') || '');
 
-  if (isNaN(latitude) || isNaN(longitude)) {
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
     return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
   }
 
@@ -126,7 +135,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
       const currentData = await currentResponse.json();
 
-      if (currentData && currentData.location) {
+      if (currentData?.location) {
         // Create a single result from the current conditions response
         return c.json([
           {
@@ -142,14 +151,23 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
     }
 
     // Transform API response to our LocationSearchResult type
-    const locations = data.map((item: any) => ({
-      id: `${item.id || item.lat}_${item.lon}`,
-      name: item.name,
-      region: item.region,
-      country: item.country,
-      lat: Number.parseFloat(item.lat),
-      lon: Number.parseFloat(item.lon),
-    }));
+    const locations = data.map(
+      (item: {
+        id: string;
+        lat: string;
+        lon: string;
+        name: string;
+        region: string;
+        country: string;
+      }) => ({
+        id: `${item.id || item.lat}_${item.lon}`,
+        name: item.name,
+        region: item.region,
+        country: item.country,
+        lat: Number.parseFloat(item.lat),
+        lon: Number.parseFloat(item.lon),
+      }),
+    );
 
     return c.json(locations);
   } catch (error) {
@@ -190,7 +208,7 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
   const latitude = Number.parseFloat(c.req.query('lat') || '');
   const longitude = Number.parseFloat(c.req.query('lon') || '');
 
-  if (isNaN(latitude) || isNaN(longitude)) {
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
     return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
   }
 

@@ -1,15 +1,9 @@
-'use client';
-
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packrat/ui/nativewindui';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
-import { AlertAnchor } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
-import { TextField } from 'nativewindui/TextField';
 import * as React from 'react';
 import {
   Alert,
@@ -30,7 +24,11 @@ const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 const COUNTDOWN_SECONDS_TO_RESEND_CODE = 60;
 const NUM_OF_CODE_CHARACTERS = 5;
-const SCREEN_OPTIONS = { headerBackTitle: 'Back', headerTransparent: true, title: '' };
+const SCREEN_OPTIONS = {
+  headerBackTitle: 'Back',
+  headerTransparent: true,
+  title: '',
+};
 
 export default function OneTimePasswordScreen() {
   const insets = useSafeAreaInsets();
@@ -46,16 +44,6 @@ export default function OneTimePasswordScreen() {
   const { verifyEmail, forgotPassword, resendVerificationEmail } = useAuthActions();
 
   const countdownInterval = React.useRef<ReturnType<typeof setInterval> | null>(null);
-
-  React.useEffect(() => {
-    startCountdown();
-
-    return () => {
-      if (countdownInterval.current) {
-        clearInterval(countdownInterval.current);
-      }
-    };
-  }, []);
 
   function startCountdown() {
     if (countdownInterval.current) {
@@ -75,6 +63,17 @@ export default function OneTimePasswordScreen() {
       });
     }, 1000);
   }
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: need to run this on initial render
+  React.useEffect(() => {
+    startCountdown();
+
+    return () => {
+      if (countdownInterval.current) {
+        clearInterval(countdownInterval.current);
+      }
+    };
+  }, []);
 
   async function resendCode() {
     try {
@@ -166,6 +165,7 @@ export default function OneTimePasswordScreen() {
           <View className="flex-row justify-between gap-2 py-3">
             {codeValues.map((value, index) => (
               <OTPField
+                // biome-ignore lint/suspicious/noArrayIndexKey: really no definite id here. code values could repeat.
                 key={index}
                 index={index}
                 value={value}

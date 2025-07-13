@@ -68,8 +68,8 @@ export default function SiteFooter() {
           <div className="lg:ml-auto">
             <h3 className="font-medium text-foreground mb-4">Product</h3>
             <ul className="space-y-3">
-              {siteConfig.footerLinks.product.map((item, index) => (
-                <li key={index}>
+              {siteConfig.footerLinks.product.map((item) => (
+                <li key={item.title}>
                   <Link
                     href={item.href}
                     onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
@@ -85,8 +85,8 @@ export default function SiteFooter() {
           <div>
             <h3 className="font-medium text-foreground mb-4">Company</h3>
             <ul className="space-y-3">
-              {siteConfig.footerLinks.company.map((item, index) => (
-                <li key={index}>
+              {siteConfig.footerLinks.company.map((item) => (
+                <li key={item.title}>
                   <Link
                     href={item.href}
                     onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}
@@ -102,8 +102,8 @@ export default function SiteFooter() {
           <div>
             <h3 className="font-medium text-foreground mb-4">Legal</h3>
             <ul className="space-y-3">
-              {siteConfig.footerLinks.legal.map((item, index) => (
-                <li key={index}>
+              {siteConfig.footerLinks.legal.map((item) => (
+                <li key={item.title}>
                   <Link
                     href={item.href}
                     onClick={(e) => item.href.startsWith('#') && scrollToSection(e, item.href)}

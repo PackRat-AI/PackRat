@@ -1,13 +1,11 @@
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
 import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useSetAtom } from 'jotai';
-import { AlertAnchor } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,10 +16,14 @@ const GOOGLE_SOURCE = {
   uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',
 };
 
-type RouteParams = { redirectTo: string; showSignInCopy?: string; showSkipLoginBtn?: string };
+type RouteParams = {
+  redirectTo: string;
+  showSignInCopy?: string;
+  showSkipLoginBtn?: string;
+};
 
 export default function AuthIndexScreen() {
-  const { signInWithGoogle, signInWithApple } = useAuthActions();
+  const { signInWithGoogle, signInWithApple, isLoading } = useAuth();
   const alertRef = React.useRef<AlertRef>(null);
   const {
     redirectTo = '/',
@@ -30,14 +32,22 @@ export default function AuthIndexScreen() {
   } = useLocalSearchParams<RouteParams>();
   const handleSkipLogin = async () => {
     await AsyncStorage.setItem('skipped_login', 'true');
-    router.replace('/packs');
+    router.replace('/');
   };
 
   const setRedirectTo = useSetAtom(redirectToAtom);
 
   React.useEffect(() => {
     setRedirectTo(redirectTo as string);
-  }, [redirectTo]);
+  }, [redirectTo, setRedirectTo]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <>
@@ -120,7 +130,7 @@ export default function AuthIndexScreen() {
               onPress={handleSkipLogin}
               className="mt-2"
             >
-              <Text>Skip login</Text>
+              <Text>Continue without logging in</Text>
             </Button>
           )}
         </View>

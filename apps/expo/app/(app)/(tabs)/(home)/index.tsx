@@ -1,8 +1,18 @@
 'use client';
 
+import type { LargeTitleSearchBarRef, ListDataItem } from '@packrat/ui/nativewindui';
+import {
+  ESTIMATED_ITEM_HEIGHT,
+  LargeTitleHeader,
+  List,
+  type ListRenderItemInfo,
+  ListSectionHeader,
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
+import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
 import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
@@ -17,54 +27,91 @@ import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTr
 import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Link } from 'expo-router';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import type { LargeTitleSearchBarRef } from 'nativewindui/LargeTitleHeader/types';
-import {
-  ESTIMATED_ITEM_HEIGHT,
-  List,
-  type ListRenderItemInfo,
-  ListSectionHeader,
-} from 'nativewindui/List';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 
-// Define tile metadata for search functionality
-const tileMetadata = {
-  'current-pack': { title: 'Current Pack', keywords: ['active', 'current', 'pack'] },
-  'recent-packs': { title: 'Recent Packs', keywords: ['recent', 'packs', 'history'] },
-  'ask-packrat-ai': { title: 'Ask PackRat AI', keywords: ['ai', 'chat', 'assistant', 'help'] },
-  'pack-stats': { title: 'Pack Statistics', keywords: ['stats', 'statistics', 'analytics'] },
+// Includes tile component and metadata for search functionality
+const tileInfo = {
+  'current-pack': {
+    title: 'Current Pack',
+    keywords: ['active', 'current', 'pack'],
+    component: CurrentPackTile,
+  },
+  'recent-packs': {
+    title: 'Recent Packs',
+    keywords: ['recent', 'packs', 'history'],
+    component: RecentPacksTile,
+  },
+  'ask-packrat-ai': {
+    title: 'Ask PackRat AI',
+    keywords: ['ai', 'chat', 'assistant', 'help'],
+    component: AIChatTile,
+  },
+  'reported-ai-content': {
+    title: 'Reported AI Content',
+    keywords: ['reported', 'ai', 'content', 'flagged'],
+    component: ReportedContentTile,
+  },
+  'pack-stats': {
+    title: 'Pack Statistics',
+    keywords: ['stats', 'statistics', 'analytics'],
+    component: PackStatsTile,
+  },
   'weight-analysis': {
     title: 'Weight Analysis',
     keywords: ['weight', 'analysis', 'heavy', 'light'],
+    component: WeightAnalysisTile,
   },
-  'pack-categories': { title: 'Pack Categories', keywords: ['categories', 'organize', 'group'] },
+  'pack-categories': {
+    title: 'Pack Categories',
+    keywords: ['categories', 'organize', 'group'],
+    component: PackCategoriesTile,
+  },
   'upcoming-trips': {
     title: 'Upcoming Trips',
     keywords: ['trips', 'upcoming', 'planned', 'schedule'],
+    component: UpcomingTripsTile,
   },
   'trail-conditions': {
     title: 'Trail Conditions',
     keywords: ['trail', 'conditions', 'terrain', 'path'],
+    component: TrailConditionsTile,
   },
-  weather: { title: 'Weather', keywords: ['weather', 'forecast', 'temperature', 'conditions'] },
+  weather: {
+    title: 'Weather',
+    keywords: ['weather', 'forecast', 'temperature', 'conditions'],
+    component: WeatherTile,
+  },
   'weather-alerts': {
     title: 'Weather Alerts',
     keywords: ['weather', 'alerts', 'warnings', 'emergency'],
+    component: WeatherAlertsTile,
   },
   'gear-inventory': {
     title: 'Gear Inventory',
     keywords: ['gear', 'inventory', 'equipment', 'items'],
+    component: GearInventoryTile,
   },
-  'shopping-list': { title: 'Shopping List', keywords: ['shopping', 'list', 'buy', 'purchase'] },
+  'shopping-list': {
+    title: 'Shopping List',
+    keywords: ['shopping', 'list', 'buy', 'purchase'],
+    component: ShoppingListTile,
+  },
   'shared-packs': {
     title: 'Shared Packs',
     keywords: ['shared', 'packs', 'collaborate', 'friends'],
+    component: SharedPacksTile,
   },
-  'pack-templates': { title: 'Pack Templates', keywords: ['templates', 'preset', 'pattern'] },
+  'pack-templates': {
+    title: 'Pack Templates',
+    keywords: ['templates', 'preset', 'pattern'],
+    component: PackTemplatesTile,
+  },
 };
+
+type TileName = keyof typeof tileInfo;
 
 function SettingsIcon() {
   const { colors } = useColorScheme();
@@ -84,7 +131,7 @@ function SettingsIcon() {
 function DemoIcon() {
   const { colors } = useColorScheme();
 
-  if (process.env.NODE_ENV !== 'development') {
+  if (clientEnvs.NODE_ENV !== 'development') {
     return null;
   }
 
@@ -106,33 +153,24 @@ export default function DashboardScreen() {
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
 
   const dashboardLayout = useRef([
-    { id: 'current-pack', component: CurrentPackTile },
-    { id: 'recent-packs', component: RecentPacksTile },
+    'current-pack',
+    'recent-packs',
     'gap 1',
-    { id: 'ask-packrat-ai', component: AIChatTile },
+    'ask-packrat-ai',
+    'reported-ai-content',
     'gap 1.5',
-    { id: 'pack-stats', component: PackStatsTile },
-    { id: 'weight-analysis', component: WeightAnalysisTile },
-    { id: 'pack-categories', component: PackCategoriesTile },
-    ...(featureFlags.enableTrips
-      ? [
-          'gap 2',
-          { id: 'upcoming-trips', component: UpcomingTripsTile },
-          { id: 'trail-conditions', component: TrailConditionsTile },
-        ]
-      : []),
+    'pack-stats',
+    'weight-analysis',
+    'pack-categories',
+    ...(featureFlags.enableTrips ? ['gap 2', 'upcoming-trips', 'trail-conditions'] : []),
     'gap 2.5',
-    { id: 'weather', component: WeatherTile },
-    ...(featureFlags.enableTrips ? [{ id: 'weather-alerts', component: WeatherAlertsTile }] : []),
+    'weather',
+    ...(featureFlags.enableTrips ? ['weather-alerts'] : []),
     'gap 3',
-    { id: 'gear-inventory', component: GearInventoryTile },
-    ...(featureFlags.enableShoppingList
-      ? [{ id: 'shopping-list', component: ShoppingListTile }]
-      : []),
-    ...(featureFlags.enableSharedPacks ? [{ id: 'shared-packs', component: SharedPacksTile }] : []),
-    ...(featureFlags.enablePackTemplates
-      ? [{ id: 'pack-templates', component: PackTemplatesTile }]
-      : []),
+    'gear-inventory',
+    ...(featureFlags.enableShoppingList ? ['shopping-list'] : []),
+    ...(featureFlags.enableSharedPacks ? ['shared-packs'] : []),
+    ...(featureFlags.enablePackTemplates ? ['pack-templates'] : []),
   ]).current;
 
   // Filter dashboard tiles based on search value
@@ -144,13 +182,13 @@ export default function DashboardScreen() {
     const searchLower = searchValue.toLowerCase();
 
     return dashboardLayout.filter((item) => {
-      if (typeof item === 'object' && item.id) {
-        const metadata = tileMetadata[item.id];
-        if (metadata) {
+      if (!item.startsWith('gap')) {
+        const info = tileInfo[item as TileName];
+        if (info) {
           // Check if title or any keywords match
           return (
-            metadata.title.toLowerCase().includes(searchLower) ||
-            metadata.keywords.some((keyword) => keyword.toLowerCase().includes(searchLower))
+            info.title.toLowerCase().includes(searchLower) ||
+            info.keywords.some((keyword: string) => keyword.toLowerCase().includes(searchLower))
           );
         }
       }
@@ -175,11 +213,11 @@ export default function DashboardScreen() {
               keyExtractor={keyExtractor}
               className="space-y-4 px-4"
               renderItem={({ item }) => {
-                if (typeof item === 'object' && item.component) {
-                  const Component = item.component;
+                if (!item.startsWith('gap')) {
+                  const Component = tileInfo[item as TileName].component;
                   return (
                     <Pressable
-                      key={item.id}
+                      key={item}
                       className="py-2"
                       onPress={() => {
                         setSearchValue('');
@@ -243,18 +281,18 @@ export default function DashboardScreen() {
   );
 }
 
-function renderDashboardItem(info: ListRenderItemInfo<any>) {
-  const item = info.item;
+function renderDashboardItem<T extends ListDataItem>(info: ListRenderItemInfo<T>) {
+  const item = info.item as string;
 
-  if (typeof item === 'string') {
+  if (item.startsWith('gap')) {
     return <ListSectionHeader {...info} />;
   }
 
-  const Component = item.component;
-  return <Component />;
+  const TileItem = tileInfo[item as TileName].component;
+  return <TileItem />;
 }
 
-function keyExtractor(item: any) {
+function keyExtractor(item: (Omit<ListDataItem, string> & { id: string }) | string) {
   if (typeof item === 'string') {
     return item;
   }

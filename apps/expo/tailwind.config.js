@@ -9,6 +9,7 @@ module.exports = {
     './components/**/*.{js,jsx,ts,tsx}',
     './features/**/components/**/*.{js,jsx,ts,tsx}',
     './features/**/screens/**/*.{js,jsx,ts,tsx}',
+    '../../node_modules/@packrat-ai/nativewindui/**/*.{js,jsx,ts,tsx}',
   ],
   presets: [require('nativewind/preset')],
   theme: {

@@ -1,8 +1,7 @@
-import { Icon } from '@roninoss/icons';
+import { Button, Text } from '@packrat/ui/nativewindui';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
-import { View } from 'react-native';
+import { SafeAreaView, View } from 'react-native';
 
 const SCREEN_OPTIONS = {
   title: 'Profile',
@@ -14,7 +13,7 @@ export function ProfileAuthWall() {
   const currentRoute = usePathname();
 
   return (
-    <>
+    <SafeAreaView className="flex-1">
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <View className="flex-1 px-6 py-8">
@@ -54,7 +53,12 @@ export function ProfileAuthWall() {
         </View>
 
         <Button
-          onPress={() => router.push({ pathname: '/auth', params: { redirectTo: currentRoute } })}
+          onPress={() =>
+            router.push({
+              pathname: '/auth',
+              params: { redirectTo: currentRoute },
+            })
+          }
           size="lg"
           variant="primary"
           className="mb-4 w-full"
@@ -62,7 +66,7 @@ export function ProfileAuthWall() {
           <Text className="font-medium">Sign In</Text>
         </Button>
       </View>
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -71,7 +75,7 @@ function FeatureItem({
   title,
   description,
 }: {
-  icon: string;
+  icon: MaterialIconName;
   title: string;
   description: string;
 }) {

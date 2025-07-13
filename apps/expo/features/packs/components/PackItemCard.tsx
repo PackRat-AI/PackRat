@@ -1,13 +1,16 @@
+import { Alert, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { Alert } from 'nativewindui/Alert';
-import { Button } from 'nativewindui/Button';
 import { Pressable, Text, View } from 'react-native';
-import { useDeletePackItem } from '../hooks';
+import {
+  useDeletePackItem,
+  usePackItemDetailsFromStore,
+  usePackItemOwnershipCheck,
+} from '../hooks';
 import type { PackItem } from '../types';
 
 type PackItemCardProps = {
@@ -15,8 +18,12 @@ type PackItemCardProps = {
   onPress: (item: PackItem) => void;
 };
 
-export function PackItemCard({ item, onPress }: PackItemCardProps) {
+export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
   const router = useRouter();
+  const isOwnedByUser = usePackItemOwnershipCheck(itemArg.id);
+  const itemFromStore = usePackItemDetailsFromStore(itemArg.id); // Use item from store if it's user owned so that component observe changes to it and thus update properly.
+  const item = isOwnedByUser ? itemFromStore : itemArg; // Use passed item if it's not owned by the current user.
+
   const deleteItem = useDeletePackItem();
   const { colors } = useColorScheme();
 
@@ -65,40 +72,42 @@ export function PackItemCard({ item, onPress }: PackItemCardProps) {
               </View>
             )}
           </View>
-          <View className="flex-row gap-[.4]">
-            <Alert
-              title="Delete item?"
-              message="Are you sure you want to delete this item?"
-              buttons={[
-                {
-                  text: 'Cancel',
-                  style: 'cancel',
-                },
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    deleteItem(item.id);
+          {isOwnedByUser && (
+            <View className="flex-row gap-[.4]">
+              <Alert
+                title="Delete item?"
+                message="Are you sure you want to delete this item?"
+                buttons={[
+                  {
+                    text: 'Cancel',
+                    style: 'cancel',
                   },
-                },
-              ]}
-            >
-              <Button variant="plain" size="icon">
-                <Icon name="trash-can" size={21} color={colors.grey2} />
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      deleteItem(item.id);
+                    },
+                  },
+                ]}
+              >
+                <Button variant="plain" size="icon">
+                  <Icon name="trash-can" size={21} color={colors.grey2} />
+                </Button>
+              </Alert>
+              <Button
+                variant="plain"
+                size="icon"
+                onPress={() =>
+                  router.push({
+                    pathname: '/item/[id]/edit',
+                    params: { id: item.id, packId: item.packId },
+                  })
+                }
+              >
+                <Icon name="pencil-box-outline" size={21} color={colors.grey2} />
               </Button>
-            </Alert>
-            <Button
-              variant="plain"
-              size="icon"
-              onPress={() =>
-                router.push({
-                  pathname: '/item/[id]/edit',
-                  params: { id: item.id, packId: item.packId },
-                })
-              }
-            >
-              <Icon name="pencil-box-outline" size={21} color={colors.grey2} />
-            </Button>
-          </View>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>

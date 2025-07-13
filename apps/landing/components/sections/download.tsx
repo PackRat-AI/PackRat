@@ -5,6 +5,7 @@ import { Button } from 'landing-app/components/ui/button';
 import GradientBackground from 'landing-app/components/ui/gradient-background';
 import { siteConfig } from 'landing-app/config/site';
 import { Apple, Check, Store } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import type React from 'react';
 
@@ -21,6 +22,7 @@ export default function DownloadSection() {
   };
 
   return (
+    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="download" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 -z-10 bg-primary/5 dark:bg-primary/10"></div>
@@ -111,7 +113,9 @@ export default function DownloadSection() {
                   >
                     <div className="absolute top-0 left-1/2 z-10 h-4 md:h-6 w-24 md:w-36 -translate-x-1/2 rounded-b-3xl bg-black"></div>
                     <div className="absolute inset-0 overflow-hidden">
-                      <img
+                      <Image
+                        width={522}
+                        height={1024}
                         src={siteConfig.download.image || '/placeholder.svg'}
                         alt="PackRat App"
                         className="object-cover w-full h-full"
@@ -131,6 +135,8 @@ export default function DownloadSection() {
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                     className="opacity-10 text-primary"
+                    aria-hidden="true"
+                    focusable="false"
                   >
                     <circle cx="60" cy="60" r="59.5" stroke="currentColor" strokeDasharray="4 4" />
                   </svg>
@@ -143,6 +149,8 @@ export default function DownloadSection() {
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                     className="opacity-20 text-secondary"
+                    aria-hidden="true"
+                    focusable="false"
                   >
                     <path d="M80 0H0V80H80V0Z" fill="currentColor" />
                   </svg>

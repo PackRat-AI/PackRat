@@ -1,12 +1,11 @@
+import { SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import debounce from 'lodash.debounce';
-import { SearchInput } from 'nativewindui/SearchInput';
-import { Text } from 'nativewindui/Text';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -32,7 +31,7 @@ export default function LocationSearchScreen() {
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
-  const searchInputRef = useRef<any>(null);
+  const searchInputRef = useRef<SearchInputRef>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<string | null>(null);
@@ -223,7 +222,7 @@ export default function LocationSearchScreen() {
       console.error('Error getting location:', err);
 
       // Provide more specific error messages
-      if (err.message === 'Location request timed out') {
+      if (err instanceof Error && err.message === 'Location request timed out') {
         Alert.alert(
           'Location Timeout',
           'Unable to get your location in time. Please try again or search manually.',
@@ -295,7 +294,7 @@ export default function LocationSearchScreen() {
     if (error) {
       return (
         <View className="flex-1 items-center justify-center p-8">
-          <Icon name="alert-circle-outline" size={48} color={colors.destructive} />
+          <Icon name="exclamation" size={48} color={colors.destructive} />
           <Text className="mt-4 text-center text-destructive">{error}</Text>
           <TouchableOpacity
             className="mt-6 rounded-full bg-primary px-4 py-2"
@@ -354,9 +353,9 @@ export default function LocationSearchScreen() {
           <>
             <Text className="mb-2 text-xs uppercase text-muted-foreground">RECENT SEARCHES</Text>
             <View className="mb-6">
-              {recentSearches.map((search, index) => (
+              {recentSearches.map((search) => (
                 <TouchableOpacity
-                  key={index}
+                  key={search}
                   className="border-border/30 flex-row items-center gap-3 border-b py-3"
                   onPress={() => handlePopularCitySearch(search)}
                 >
@@ -370,9 +369,9 @@ export default function LocationSearchScreen() {
 
         <Text className="mb-2 text-xs uppercase text-muted-foreground">POPULAR CITIES</Text>
         <View>
-          {POPULAR_CITIES.map((city, index) => (
+          {POPULAR_CITIES.map((city) => (
             <TouchableOpacity
-              key={index}
+              key={`${city.country}-${city.name}`}
               className="border-border/30 flex-row items-center gap-3 border-b py-3"
               onPress={() => handlePopularCitySearch(city.name)}
             >

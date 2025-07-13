@@ -1,10 +1,8 @@
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { isAuthed } from 'expo-app/features/auth/store';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import type { PackItem } from 'expo-app/types';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
 import { usePackItemSuggestions } from '../hooks';
@@ -13,10 +11,9 @@ import { PackItemSuggestionSkeleton } from './PackItemSuggestionSkeleton';
 
 interface AISuggestionsProps {
   packId: string;
-  packItems: PackItem[];
 }
 
-export function PackItemSuggestions({ packId, packItems }: AISuggestionsProps) {
+export function PackItemSuggestions({ packId }: AISuggestionsProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const router = useRouter();
 
@@ -25,7 +22,7 @@ export function PackItemSuggestions({ packId, packItems }: AISuggestionsProps) {
     isLoading,
     refetch,
     isError,
-  } = usePackItemSuggestions(packId, packItems, showSuggestions);
+  } = usePackItemSuggestions(packId, showSuggestions);
 
   const { colors } = useColorScheme();
 

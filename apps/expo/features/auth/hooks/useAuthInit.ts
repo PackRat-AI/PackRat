@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
@@ -12,8 +13,8 @@ export function useAuthInit() {
   // Initialize Google Sign-In
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-      iosClientId: Platform.OS === 'ios' ? process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID : undefined,
+      webClientId: clientEnvs.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      iosClientId: Platform.OS === 'ios' ? clientEnvs.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID : undefined,
       offlineAccess: false,
       hostedDomain: '',
       forceCodeForRefreshToken: true,
@@ -34,15 +35,11 @@ export function useAuthInit() {
         // Get stored token
         const accessToken = await SecureStore.getItemAsync('access_token');
 
-        // If user has session, continue to app
-        if (accessToken) {
+        // If user has session or hasSkippedLogin before, continue to app
+        if (accessToken || hasSkippedLogin === 'true') {
           if (accessToken) isAuthed.set(true);
           setIsLoading(false);
           return;
-        } else if (hasSkippedLogin === 'true') {
-          // User has skipped login before, redirect to packs screen
-          setIsLoading(false);
-          router.replace('/packs');
         } else {
           // No tokens and hasn't skipped login. It's first time - show auth screen
           router.replace({
@@ -59,7 +56,7 @@ export function useAuthInit() {
     };
 
     initializeAuth();
-  }, [setIsLoading]);
+  }, []);
 
   return isLoading;
 }

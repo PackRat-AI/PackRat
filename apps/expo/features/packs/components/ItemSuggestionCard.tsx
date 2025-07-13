@@ -1,13 +1,11 @@
+import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
 import type { CatalogItem } from 'expo-app/types';
 import { nanoid } from 'nanoid/non-secure';
-import { ActivityIndicator } from 'nativewindui/ActivityIndicator';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useCreatePackItem } from '../hooks';
@@ -30,7 +28,6 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
       try {
         const extension = await getImageExtension(item.image);
         const fileName = `${nanoid()}.${extension}`;
-        console.log('item.image', item.image);
         await ImageCacheManager.cacheRemoteImage(fileName, item.image);
         item.image = fileName;
       } catch (err) {

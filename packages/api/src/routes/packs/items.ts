@@ -1,4 +1,3 @@
-import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packItems, packs } from '@packrat/api/db/schema';
@@ -236,12 +235,6 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
 
   // Delete old image from R2 if we are changing image
   if ('image' in data) {
-    const {
-      R2_ACCESS_KEY_ID,
-      R2_SECRET_ACCESS_KEY,
-      CLOUDFLARE_ACCOUNT_ID,
-      PACKRAT_BUCKET_R2_BUCKET_NAME,
-    } = env<Env>(c);
     let oldImage: string | null = null;
     try {
       const item = await db.query.packItems.findFirst({
@@ -252,21 +245,9 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
 
       // Nothing to delete if old image is null
       if (oldImage) {
-        const s3Client = new S3Client({
-          region: 'auto',
-          endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-          credentials: {
-            accessKeyId: R2_ACCESS_KEY_ID || '',
-            secretAccessKey: R2_SECRET_ACCESS_KEY || '',
-          },
-        });
-
-        const command = new DeleteObjectCommand({
-          Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
-          Key: oldImage,
-        });
-
-        await s3Client.send(command);
+        // Use R2 bucket binding for deletion
+        const { PACKRAT_BUCKET } = env<Env>(c);
+        await PACKRAT_BUCKET.delete(oldImage);
       }
     } catch (error) {
       // Silently fail because this op shouldn't prevent the update
@@ -276,10 +257,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
       sentry.setContext('params', {
         itemId,
         oldImage,
-        bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
-        accountId: CLOUDFLARE_ACCOUNT_ID,
-        r2AccessKeyId: !!R2_ACCESS_KEY_ID,
-        r2SecretAccessKey: !!R2_SECRET_ACCESS_KEY,
+        userId: auth.userId,
       });
       sentry.captureException(error);
     }

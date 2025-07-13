@@ -13,23 +13,23 @@ export type User = {
 
 // Token storage atom
 export const tokenAtom = atomWithStorage<string | null>('access_token', null, {
-  getItem: async (key) => SecureStore.getItemAsync(key),
+  getItem: async (key) => await SecureStore.getItemAsync(key),
   setItem: async (key, value) => {
     if (value === null) {
-      return SecureStore.deleteItemAsync(key);
+      return await SecureStore.deleteItemAsync(key);
     }
-    return SecureStore.setItemAsync(key, value);
+    return await SecureStore.setItemAsync(key, value);
   },
   removeItem: async (key) => SecureStore.deleteItemAsync(key),
 });
 
 export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', null, {
-  getItem: async (key) => SecureStore.getItemAsync(key),
+  getItem: async (key) => await SecureStore.getItemAsync(key),
   setItem: async (key, value) => {
     if (value === null) {
-      return SecureStore.deleteItemAsync(key);
+      return await SecureStore.deleteItemAsync(key);
     }
-    return SecureStore.setItemAsync(key, value);
+    return await SecureStore.setItemAsync(key, value);
   },
   removeItem: async (key) => SecureStore.deleteItemAsync(key),
 });

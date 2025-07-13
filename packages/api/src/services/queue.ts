@@ -1,9 +1,8 @@
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import type { Queue } from '@cloudflare/workers-types';
+import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
-import { getTableColumns, sql } from 'drizzle-orm';
 import { parse } from 'csv-parse/sync';
+import { eq, getTableColumns, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { createDbClient } from '../db';
 
 export enum QueueType {
@@ -29,13 +28,13 @@ export interface CatalogETLMessage extends BaseQueueMessage {
 export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
   type: QueueType.CATALOG_ETL_WRITE_BATCH;
   data: {
-    items: any[];
+    items: Partial<NewCatalogItem>[];
     userId: string;
   };
 }
 
 const BATCH_SIZE = 10; // Process 10 rows at a time to stay under 128KB message limit
-const CHUNK_SIZE = 5 * 1024 * 1024; // Read 5MB chunks from R2
+const _CHUNK_SIZE = 5 * 1024 * 1024; // Read 5MB chunks from R2
 
 export async function sendToQueue({
   queue,
@@ -71,7 +70,13 @@ export async function queueCatalogETL({
   return jobId;
 }
 
-export async function processQueueBatch({ batch, env }: { batch: any; env: Env }): Promise<void> {
+export async function processQueueBatch({
+  batch,
+  env,
+}: {
+  batch: MessageBatch<BaseQueueMessage>;
+  env: Env;
+}): Promise<void> {
   for (const message of batch.messages) {
     try {
       const queueMessage: BaseQueueMessage = message.body;
@@ -113,34 +118,16 @@ async function processCatalogETL({
 
   console.log(`Starting ETL job ${jobId} for file ${filename}`);
 
-  const {
-    CLOUDFLARE_ACCOUNT_ID,
-    R2_ACCESS_KEY_ID,
-    R2_SECRET_ACCESS_KEY,
-    PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
-  } = env;
+  // Use R2 bucket binding instead of S3 client
+  const { PACKRAT_ITEMS_BUCKET } = env;
 
-  const s3Client = new S3Client({
-    region: 'auto',
-    endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: R2_ACCESS_KEY_ID || '',
-      secretAccessKey: R2_SECRET_ACCESS_KEY || '',
-    },
-  });
+  const object = await PACKRAT_ITEMS_BUCKET.get(objectKey);
 
-  const object = await s3Client.send(
-    new GetObjectCommand({
-      Bucket: PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME,
-      Key: objectKey,
-    }),
-  );
-
-  if (!object.Body) {
-    throw new Error(`Object not found or body is empty: ${objectKey}`);
+  if (!object) {
+    throw new Error(`Object not found: ${objectKey}`);
   }
 
-  const text = await new Response(object.Body).text();
+  const text = await object.text();
 
   const rows: string[][] = parse(text, {
     relax_column_count: true,
@@ -149,7 +136,7 @@ async function processCatalogETL({
 
   let isHeader = true;
   let fieldMap: Record<string, number> = {};
-  let batch: any[] = [];
+  let batch: Partial<NewCatalogItem>[] = [];
   let totalQueued = 0;
 
   for (const row of rows) {
@@ -381,7 +368,7 @@ function mapCsvRowToItem({
     const parsedImage = parseJsonOrString(imageUrl);
     if (Array.isArray(parsedImage)) {
       item.image = parsedImage[0];
-    } else {
+    } else if (typeof parsedImage === 'string') {
       item.image = parsedImage.split(',')[0].trim();
     }
   }
@@ -394,7 +381,7 @@ function mapCsvRowToItem({
 
       // Fallback weight parsing from techs
       if (!item.defaultWeight) {
-        const claimedWeight = parsedTechs['Claimed Weight'] || parsedTechs['weight'];
+        const claimedWeight = parsedTechs['Claimed Weight'] || parsedTechs.weight;
         if (claimedWeight) {
           const { weight, unit } = parseWeight(claimedWeight);
           item.defaultWeight = weight;
@@ -416,10 +403,10 @@ function mapCsvRowToItem({
   return item;
 }
 
-function parseJsonOrString(str: string): any {
+function parseJsonOrString(str: string): string | object {
   try {
     return JSON.parse(str);
-  } catch (e) {
+  } catch (_e) {
     return str;
   }
 }
@@ -429,8 +416,8 @@ function parseAndFormatMultiString(str: string): string {
   const parsed = parseJsonOrString(str);
   if (Array.isArray(parsed)) {
     return parsed.join(', ');
-  }
-  return parsed;
+  } else if (typeof parsed === 'string') return parsed;
+  return '';
 }
 
 function parseWeight(
@@ -440,7 +427,7 @@ function parseWeight(
   if (!weightStr) return { weight: null, unit: null };
 
   const weightVal = parseFloat(weightStr);
-  if (isNaN(weightVal) || weightVal < 0) {
+  if (Number.isNaN(weightVal) || weightVal < 0) {
     return { weight: null, unit: null };
   }
 
@@ -462,13 +449,12 @@ function parseWeight(
 function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
   const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
-  return isNaN(price) ? null : price;
+  return Number.isNaN(price) ? null : price;
 }
 
 async function insertCatalogItems({
   env,
   items,
-  userId,
   jobId,
 }: {
   env: Env;
@@ -479,20 +465,26 @@ async function insertCatalogItems({
   const db = createDbClient(env);
   console.log(`Job ${jobId}: Inserting ${items.length} catalog items`);
 
-  const validItems = items.filter((i): i is NewCatalogItem => !!i.name);
+  const validItems = items.filter((i): i is NewCatalogItem => !!i.name && !!i.sku?.trim());
   if (validItems.length === 0) {
     console.log(`Job ${jobId}: No valid items to insert.`);
     return;
   }
 
   const columns = getTableColumns(catalogItems);
-  const updateSet: Record<string, any> = {};
+  const updateSet: Record<string, SQL> = {};
   for (const col of Object.values(columns)) {
     const name = col.name as keyof NewCatalogItem;
     if (!['sku', 'createdAt', 'id'].includes(name)) {
       updateSet[name] = sql.raw(`excluded."${name}"`);
     }
   }
+
+  await db
+    .delete(catalogItems)
+    .where(or(isNull(catalogItems.sku), eq(sql`trim(${catalogItems.sku})`, '')));
+
+  console.log('🧹 Removed catalog items with null or empty SKU');
 
   await db.insert(catalogItems).values(validItems).onConflictDoUpdate({
     target: catalogItems.sku,

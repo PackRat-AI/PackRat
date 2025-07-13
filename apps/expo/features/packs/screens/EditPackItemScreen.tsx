@@ -1,14 +1,14 @@
 import { CreatePackItemForm } from 'expo-app/features/packs/screens/CreatePackItemForm';
 import { useLocalSearchParams } from 'expo-router';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
-import { usePackItem } from '../hooks';
+import { usePackItemDetailsFromStore } from '../hooks';
 
 export function EditPackItemScreen() {
   const { id, packId } = useLocalSearchParams();
   const effectiveItemId = Array.isArray(id) ? id[0] : id;
   const effectivePackId = Array.isArray(packId) ? packId[0] : packId;
 
-  const item = usePackItem(effectiveItemId);
+  const item = usePackItemDetailsFromStore(effectiveItemId);
 
   if (!item) {
     return (

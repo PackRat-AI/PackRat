@@ -73,8 +73,8 @@ function HomeContent() {
           <section className="py-20">
             <div className="container">
               <div className="grid gap-10 md:grid-cols-3">
-                {featuresConfig.map((feature, index) => (
-                  <div key={index} className="flex flex-col items-center text-center">
+                {featuresConfig.map((feature) => (
+                  <div key={feature.title} className="flex flex-col items-center text-center">
                     <div className={`mb-6 rounded-full p-5 ${feature.iconBgClass}`}>
                       <feature.icon className={`h-8 w-8 ${feature.iconClass}`} />
                     </div>
@@ -99,6 +99,7 @@ function HomeContent() {
       )}
 
       {/* All Guides - Apple style */}
+      {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
       <section id="guides" className="py-20">
         <div className="container">
           <h2 className="mb-10 text-3xl font-semibold tracking-tight text-center">{pageTitle}</h2>

@@ -1,9 +1,9 @@
 'use client';
 
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import type { ItemReview } from 'expo-app/types';
-import { Text } from 'nativewindui/Text';
 import { useState } from 'react';
 import { Image, TouchableOpacity, View } from 'react-native';
 

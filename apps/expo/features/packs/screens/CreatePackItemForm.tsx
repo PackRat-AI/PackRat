@@ -1,13 +1,11 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { SegmentedControl } from 'nativewindui/SegmentedControl';
-import { TextField } from 'nativewindui/TextField';
 import { useRef, useState } from 'react';
 import {
   Alert,
@@ -24,6 +22,7 @@ import {
 import { z } from 'zod';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
+import type { PackItem } from '../types';
 
 // Define Zod schema
 const itemFormSchema = z.object({
@@ -46,7 +45,7 @@ const itemFormSchema = z.object({
 });
 
 // Type inference
-type ItemFormValues = z.infer<typeof itemFormSchema>;
+// type ItemFormValues = z.infer<typeof itemFormSchema>;
 
 // Weight units
 const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];
@@ -56,7 +55,7 @@ export const CreatePackItemForm = ({
   existingItem,
 }: {
   packId: string;
-  existingItem?: any;
+  existingItem?: PackItem;
 }) => {
   const router = useRouter();
   const { colorScheme, colors } = useColorScheme();
@@ -78,14 +77,13 @@ export const CreatePackItemForm = ({
 
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
-  console.log('existingItem', existingItem);
   const form = useForm({
     defaultValues: existingItem || {
       name: '',
       description: '',
       weight: 0,
       weightUnit: 'g',
-      quantity: '',
+      quantity: 0,
       category: '',
       consumable: false,
       worn: false,
@@ -112,7 +110,7 @@ export const CreatePackItemForm = ({
 
         // Submit the form with the image URL
         if (isEditing) {
-          updatePackItem({ id: existingItem.id, ...value });
+          updatePackItem({ ...existingItem, ...value });
           router.back();
         } else {
           createPackItem({ packId, itemData: value });
@@ -302,9 +300,12 @@ export const CreatePackItemForm = ({
                 <FormItem>
                   <TextField
                     placeholder="Quantity"
-                    value={field.state.value?.toString()}
+                    value={field.state.value === 0 ? '' : field.state.value.toString()}
                     onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
+                    onChangeText={(text) => {
+                      const intValue = text === '' ? 0 : parseInt(text, 10);
+                      field.handleChange(intValue);
+                    }}
                     keyboardType="numeric"
                     errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
@@ -366,7 +367,7 @@ export const CreatePackItemForm = ({
 
           <FormSection ios={{ title: 'Image' }} footnote="Add an image of your item (optional)">
             <form.Field name="image">
-              {(field) => (
+              {(_field) => (
                 <FormItem>
                   {displayImage ? (
                     <View className="relative">

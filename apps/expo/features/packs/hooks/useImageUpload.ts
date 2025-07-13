@@ -1,4 +1,3 @@
-import axiosInstance from 'expo-app/lib/api/client';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid/non-secure';
@@ -73,26 +72,6 @@ export function useImageUpload() {
     } catch (err) {
       console.error('Error taking photo:', err);
       throw err;
-    }
-  };
-
-  // Function to get a presigned URL for uploading
-  const getPresignedUrl = async (
-    fileName: string,
-    contentType: string,
-  ): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
-    try {
-      const response = await axiosInstance.get(
-        `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`,
-      );
-      return {
-        url: response.data.url,
-        publicUrl: response.data.publicUrl,
-        objectKey: response.data.objectKey,
-      };
-    } catch (err) {
-      console.error('Error getting presigned URL:', err);
-      throw new Error('Failed to get upload URL');
     }
   };
 

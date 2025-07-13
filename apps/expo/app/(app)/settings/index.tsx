@@ -1,17 +1,19 @@
-import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   ESTIMATED_ITEM_HEIGHT,
+  LargeTitleHeader,
   List,
   type ListDataItem,
   ListItem,
   type ListRenderItemInfo,
   ListSectionHeader,
-} from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
+  Text,
+} from '@packrat/ui/nativewindui';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
+import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { View } from 'react-native';
 
 export default function SettingsIosStyleScreen() {

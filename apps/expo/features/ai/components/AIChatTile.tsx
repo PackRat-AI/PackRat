@@ -1,9 +1,8 @@
+import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { isAuthed } from 'expo-app/features/auth/store';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { type Href, useRouter } from 'expo-router';
-import { ListItem } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
 
 export function AIChatTile() {

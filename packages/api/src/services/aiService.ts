@@ -46,7 +46,6 @@ export class AIService {
   private filenameToUrl(filename: string): string {
     const slug = filename.replace(/\.mdx$/, '').trim();
     const baseUrl = this.env.PACKRAT_GUIDES_BASE_URL;
-    const url = (baseUrl.endsWith('/') ? baseUrl : baseUrl + '/') + slug;
-    return url;
+    return new URL(`guide/${slug}`, baseUrl).toString();
   }
 }

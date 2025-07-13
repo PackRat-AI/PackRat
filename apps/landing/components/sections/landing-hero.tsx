@@ -134,8 +134,8 @@ export default function LandingHero() {
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                {siteConfig.hero.stats.map((stat, index) => (
-                  <div key={index} className="text-center">
+                {siteConfig.hero.stats.map((stat) => (
+                  <div key={stat.label} className="text-center">
                     <div className="text-xl font-bold text-primary">{stat.value}</div>
                     <div className="text-xs text-muted-foreground">{stat.label}</div>
                   </div>

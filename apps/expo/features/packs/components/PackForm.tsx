@@ -1,12 +1,19 @@
+import {
+  Button,
+  createDropdownItem,
+  DropdownMenu,
+  Form,
+  FormItem,
+  FormSection,
+  TextField,
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { TextField } from 'nativewindui/TextField';
+import { useCreatePackFromTemplate } from 'expo-app/features/pack-templates';
+import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-templates/store';
+import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -40,7 +47,7 @@ const packFormSchema = z.object({
 });
 
 // Type inference
-type PackFormValues = z.infer<typeof packFormSchema>;
+// type PackFormValues = z.infer<typeof packFormSchema>;
 
 // Categories with icons and labels
 const CATEGORIES = [
@@ -58,23 +65,43 @@ const CATEGORIES = [
 export const PackForm = ({ pack }: { pack?: Pack }) => {
   const router = useRouter();
   const { colors } = useColorScheme();
-  const createPack = useCreatePack(); // TODO show feedback for error
+  const createPack = useCreatePack();
   const updatePack = useUpdatePack();
+  const params = useLocalSearchParams();
+  const isCreatingFromTemplate = !!params.templateId;
   const isEditingExistingPack = !!pack;
 
+  const createPackFromTemplate = useCreatePackFromTemplate();
+  const templateId = params.templateId as string;
+  const templateAtom = isCreatingFromTemplate ? packTemplatesStore[templateId] : null;
+  const template = templateAtom ? templateAtom.get() : null;
+
+  const templateItems = isCreatingFromTemplate ? getTemplateItems(params.templateId as string) : [];
+
   const form = useForm({
-    defaultValues: {
-      name: pack?.name || '',
-      description: pack?.description || '',
-      category: pack?.category || 'hiking',
-      isPublic: pack?.isPublic || false,
-      tags: pack?.tags || ['hiking'],
-    },
+    defaultValues:
+      isCreatingFromTemplate && template
+        ? {
+            name: template.name,
+            description: template.description,
+            category: template.category as PackCategory,
+            isPublic: false,
+            tags: template.tags,
+          }
+        : {
+            name: pack?.name || '',
+            description: pack?.description || '',
+            category: pack?.category || 'hiking',
+            isPublic: pack?.isPublic || false,
+            tags: pack?.tags || ['hiking'],
+          },
     validators: {
       onChange: packFormSchema,
     },
     onSubmit: async ({ value }) => {
-      if (isEditingExistingPack) {
+      if (isCreatingFromTemplate) {
+        createPackFromTemplate(params.templateId as string, value);
+      } else if (isEditingExistingPack) {
         updatePack({
           ...pack,
           ...value,
@@ -88,12 +115,20 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       router.back();
     },
   });
+  if (!packTemplatesStore[templateId]) {
+    console.warn(`No template found for ID: ${templateId}`);
+  }
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
     >
+      {isCreatingFromTemplate && <Stack.Screen options={{ title: 'Enter New Pack Details' }} />}
+      {isCreatingFromTemplate && template && (
+        <View>Creating pack from `${template.name}` template</View>
+      )}
+
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
@@ -108,7 +143,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors.map((err: any) => err.message).join(', ')}
+                    errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="folder" size={16} color={colors.grey3} />
@@ -185,7 +220,10 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     <Switch
                       value={field.state.value}
                       onValueChange={field.handleChange}
-                      trackColor={{ false: 'hsl(var(--muted))', true: 'hsl(var(--primary))' }}
+                      trackColor={{
+                        false: 'hsl(var(--muted))',
+                        true: 'hsl(var(--primary))',
+                      }}
                       ios_backgroundColor="hsl(var(--muted))"
                     />
                   </View>
@@ -194,6 +232,10 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
             </form.Field>
           </FormSection>
         </Form>
+
+        {isCreatingFromTemplate && (
+          <TemplateItemsSection templateItems={templateItems} templateName={template?.name} />
+        )}
 
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (

@@ -1,18 +1,17 @@
+import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { featureFlags } from 'expo-app/config';
 import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
+import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useLocalSearchParams } from 'expo-router';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { ScrollView, View } from 'react-native';
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();
   const packId = params.id;
 
-  const pack = usePackDetails(params.id as string);
+  const pack = usePackDetailsFromStore(params.id as string);
   const weightHistory = usePackWeightHistory(packId as string);
 
   const categories = computeCategorySummaries(pack);
@@ -42,29 +41,27 @@ export default function PackStatsScreen() {
 
               <View className="mb-2 h-40 flex-row items-end justify-between">
                 {WEIGHT_HISTORY.length ? (
-                  <>
-                    {WEIGHT_HISTORY.map((item, index) => {
-                      const maxWeight = Math.max(...WEIGHT_HISTORY.map((w) => w.weight));
-                      const minWeight = Math.min(...WEIGHT_HISTORY.map((w) => w.weight));
-                      const range = maxWeight - minWeight || 1;
-                      const heightPercentage = ((item.weight - minWeight) / range) * 80 + 20;
+                  WEIGHT_HISTORY.map((item) => {
+                    const maxWeight = Math.max(...WEIGHT_HISTORY.map((w) => w.weight));
+                    const minWeight = Math.min(...WEIGHT_HISTORY.map((w) => w.weight));
+                    const range = maxWeight - minWeight || 1;
+                    const heightPercentage = ((item.weight - minWeight) / range) * 80 + 20;
 
-                      return (
-                        <View key={index} className="flex-1 items-center">
-                          <View
-                            className="w-6 rounded-t-md bg-primary"
-                            style={{ height: `${heightPercentage}%` }}
-                          />
-                          <Text variant="caption2" className="mt-1">
-                            {item.month}
-                          </Text>
-                          <Text variant="caption2" className="text-muted-foreground">
-                            {item.weight.toFixed(1)} g
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </>
+                    return (
+                      <View key={`${item.month}-${item.weight}`} className="flex-1 items-center">
+                        <View
+                          className="w-6 rounded-t-md bg-primary"
+                          style={{ height: `${heightPercentage}%` }}
+                        />
+                        <Text variant="caption2" className="mt-1">
+                          {item.month}
+                        </Text>
+                        <Text variant="caption2" className="text-muted-foreground">
+                          {item.weight.toFixed(1)} g
+                        </Text>
+                      </View>
+                    );
+                  })
                 ) : (
                   <Text
                     variant="largeTitle"
@@ -89,8 +86,8 @@ export default function PackStatsScreen() {
               </Text>
 
               <View className="mb-4">
-                {CATEGORY_DISTRIBUTION.map((item, index) => (
-                  <View key={index} className="mb-2">
+                {CATEGORY_DISTRIBUTION.map((item) => (
+                  <View key={item.name} className="mb-2">
                     <View className="mb-1 flex-row justify-between">
                       <Text variant="subhead">{item.name}</Text>
                       <Text variant="subhead">

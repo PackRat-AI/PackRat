@@ -1,19 +1,25 @@
+import {
+  AdaptiveSearchHeader,
+  Avatar,
+  AvatarFallback,
+  Button,
+  ContextMenu,
+  createContextItem,
+  createDropdownItem,
+  DropdownMenu,
+  List,
+  ListItem,
+  type ListRenderItemInfo,
+  Text,
+  Toolbar,
+  ToolbarCTA,
+} from '@packrat/ui/nativewindui';
 import { Portal } from '@rn-primitives/portal';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { AdaptiveSearchHeader } from 'nativewindui/AdaptiveSearchHeader';
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
-import { Toolbar, ToolbarCTA } from 'nativewindui/Toolbar';
 import * as React from 'react';
 import { Dimensions, Platform, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -113,7 +119,10 @@ function LeftView() {
       createDropdownItem({
         actionKey: 'toggle-theme',
         title: 'Toggle Theme',
-        icon: { name: isDarkColorScheme ? 'moon.stars' : 'sun.min', namingScheme: 'sfSymbol' },
+        icon: {
+          name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
+          namingScheme: 'sfSymbol',
+        },
       }),
     ];
   }, [isDarkColorScheme]);
@@ -223,7 +232,7 @@ function MessageRow({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       return;
     }
-    router.push('/messages-android/chat-android');
+    router.push('/messages/chat');
   }
 
   function onListItemLongPress() {
@@ -304,7 +313,11 @@ function IosContextMenu({ children }: { children: React.ReactNode }) {
       style={{ borderRadius: 16 }}
       items={[
         createContextItem({ actionKey: 'archive', title: 'Archive' }),
-        createContextItem({ actionKey: 'delete', title: 'Delete', destructive: true }),
+        createContextItem({
+          actionKey: 'delete',
+          title: 'Delete',
+          destructive: true,
+        }),
       ]}
     >
       {children}
