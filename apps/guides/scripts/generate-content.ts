@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import { format } from 'date-fns';
 import fs from 'fs';
 import matter from 'gray-matter';
+import { assertDefined } from 'guides-app/lib/assertDefined';
 import path from 'path';
 import slugify from 'slugify';
 
@@ -100,7 +101,9 @@ function generateReadingTime(): string {
 
 // Generate a random author if not provided
 function getRandomAuthor(): string {
-  return AUTHORS[Math.floor(Math.random() * AUTHORS.length)];
+  const author = AUTHORS[Math.floor(Math.random() * AUTHORS.length)];
+  assertDefined(author);
+  return author;
 }
 
 // Extract JSON from text that might contain markdown code blocks
@@ -422,6 +425,7 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
     const filePaths: string[] = [];
     for (let i = 0; i < topics.length; i++) {
       const topic = topics[i];
+      assertDefined(topic);
       console.log(chalk.blue(`Processing (${i + 1}/${topics.length}): ${topic.title}`));
 
       const request: ContentRequest = {
@@ -540,7 +544,7 @@ if (require.main === module) {
     process.exit(0);
   }
 
-  const count = Number.parseInt(args[0]) || 5;
+  const count = (args[0] && Number.parseInt(args[0])) || 5;
   const categoryArgs = args.slice(1) as ContentCategory[];
 
   console.log(chalk.blue(`Starting content generation: ${count} posts`));

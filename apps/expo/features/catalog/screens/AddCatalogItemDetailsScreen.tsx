@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { useCatalogItemDetails } from '../hooks';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
-import { assertDefined } from 'expo-app/utils/assertDefined';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();

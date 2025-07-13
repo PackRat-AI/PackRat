@@ -1,6 +1,7 @@
 import { Badge } from 'guides-app/components/ui/badge';
 import { Button } from 'guides-app/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from 'guides-app/components/ui/card';
+import { assertDefined } from 'guides-app/lib/assertDefined';
 import type { Post } from 'guides-app/lib/types';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -9,6 +10,7 @@ export default function FeaturedGuides({ guides }: { guides: Post[] }) {
   if (!guides.length) return null;
 
   const mainGuide = guides[0];
+  assertDefined(mainGuide);
   const secondaryGuides = guides.slice(1);
 
   return (

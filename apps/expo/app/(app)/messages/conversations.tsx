@@ -17,6 +17,7 @@ import {
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as React from 'react';
@@ -378,11 +379,15 @@ const renderIosContextMenuPreview = (info: { item: (typeof ITEMS)[number] }) => 
 
 function getInitials(name: string): string {
   const nameParts = name.trim().split(/\s+/);
-  const firstInitial = nameParts[0].charAt(0).toUpperCase();
+  const firstPart = nameParts[0];
+  assertDefined(firstPart);
+  const firstInitial = firstPart.charAt(0).toUpperCase();
   if (nameParts.length === 1) {
     return firstInitial;
   }
-  const lastInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+  const lastPart = nameParts[nameParts.length - 1];
+  assertDefined(lastPart);
+  const lastInitial = lastPart.charAt(0).toUpperCase();
   return firstInitial + lastInitial;
 }
 
@@ -515,8 +520,10 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
         return;
       }
 
-      const xDiff = Math.abs(evt.changedTouches[0].x - initialTouchLocation.value.x);
-      const yDiff = Math.abs(evt.changedTouches[0].y - initialTouchLocation.value.y);
+      const touchData = evt.changedTouches[0];
+      assertDefined(touchData);
+      const xDiff = Math.abs(touchData.x - initialTouchLocation.value.x);
+      const yDiff = Math.abs(touchData.y - initialTouchLocation.value.y);
       const isHorizontalPanning = xDiff > yDiff;
 
       if (isHorizontalPanning && xDiff > 0.5) {
