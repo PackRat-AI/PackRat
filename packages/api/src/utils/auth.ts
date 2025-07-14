@@ -1,10 +1,10 @@
+import { randomBytes } from 'node:crypto';
 import type { Env } from '@packrat/api/types/env';
 import * as bcrypt from 'bcryptjs';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 import { sign, verify } from 'hono/jwt';
 import type { JWTPayload } from 'hono/utils/jwt/types';
-import { randomBytes } from 'node:crypto';
 
 // Generate a random token
 export function generateToken(length = 32): string {
@@ -46,11 +46,17 @@ export async function generateJWT({
 }
 
 // Verify a JWT token
-export async function verifyJWT({ token, c }: { token: string; c: Context }): Promise<any> {
+export async function verifyJWT({
+  token,
+  c,
+}: {
+  token: string;
+  c: Context;
+}): Promise<JWTPayload | null> {
   try {
     const { JWT_SECRET } = env<Env>(c);
     return await verify(token, JWT_SECRET);
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

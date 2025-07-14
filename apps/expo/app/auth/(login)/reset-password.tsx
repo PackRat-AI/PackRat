@@ -1,15 +1,17 @@
-'use client';
-
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import {
+  AlertAnchor,
+  Button,
+  Checkbox,
+  Form,
+  FormItem,
+  FormSection,
+  Text,
+  TextField,
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { AlertAnchor } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { Button } from 'nativewindui/Button';
-import { Checkbox } from 'nativewindui/Checkbox';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { Text } from 'nativewindui/Text';
-import { TextField } from 'nativewindui/TextField';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
 import {
@@ -51,7 +53,7 @@ const resetPasswordFormSchema = z
   });
 
 // Type inference
-type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>;
+// type ResetPasswordFormValues = z.infer<typeof resetPasswordFormSchema>;
 
 // Password strength checker function
 const getPasswordStrength = (password: string) => {
@@ -194,8 +196,14 @@ export default function ResetPasswordScreen() {
                       return (
                         <View>
                           <TextField
-                            placeholder={Platform.select({ ios: 'New Password', default: '' })}
-                            label={Platform.select({ ios: undefined, default: 'New Password' })}
+                            placeholder={Platform.select({
+                              ios: 'New Password',
+                              default: '',
+                            })}
+                            label={Platform.select({
+                              ios: undefined,
+                              default: 'New Password',
+                            })}
                             onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                             onFocus={() => setFocusedTextField('password')}
                             onBlur={() => {
@@ -223,7 +231,9 @@ export default function ResetPasswordScreen() {
                               <View className="h-1 overflow-hidden rounded-full bg-gray-200">
                                 <View
                                   className={`h-full ${passwordStrength.color}`}
-                                  style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                                  style={{
+                                    width: `${(passwordStrength.strength / 5) * 100}%`,
+                                  }}
                                 />
                               </View>
 
@@ -303,8 +313,14 @@ export default function ResetPasswordScreen() {
                   <form.Field name="confirmPassword">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Confirm password', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Confirm password' })}
+                        placeholder={Platform.select({
+                          ios: 'Confirm password',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Confirm password',
+                        })}
                         onFocus={() => setFocusedTextField('confirm-password')}
                         onBlur={() => {
                           setFocusedTextField(null);
@@ -324,11 +340,7 @@ export default function ResetPasswordScreen() {
 
                 {/* Password visibility checkbox */}
                 <View className="mb-4 mt-2 flex-row items-center">
-                  <Checkbox
-                    checked={passwordVisible}
-                    onCheckedChange={setPasswordVisible}
-                    id="show-password"
-                  />
+                  <Checkbox checked={passwordVisible} onCheckedChange={setPasswordVisible} />
                   <Text className="ml-2 text-sm text-gray-700">Show password</Text>
                 </View>
               </FormSection>
@@ -340,7 +352,7 @@ export default function ResetPasswordScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || isLoading}
@@ -354,7 +366,7 @@ export default function ResetPasswordScreen() {
         ) : (
           <View className="flex-row justify-end py-4 pl-6 pr-8">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || isLoading}
                   onPress={() => {

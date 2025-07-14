@@ -1,12 +1,11 @@
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { ItemLinks } from 'expo-app/components/catalog/ItemLinks';
 import { ItemReviews } from 'expo-app/components/catalog/ItemReviews';
 import { Chip } from 'expo-app/components/initial/Chip';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
-import { Image, Platform, SafeAreaView, ScrollView, View } from 'react-native';
+import { Image, Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
 import { ErrorScreen } from '../../../screens/ErrorScreen';
 import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
@@ -19,7 +18,10 @@ export function CatalogItemDetailScreen() {
   const { colors } = useColorScheme();
 
   const handleAddToPack = () => {
-    router.push({ pathname: '/catalog/add-to-pack', params: { catalogItemId: item?.id } });
+    router.push({
+      pathname: '/catalog/add-to-pack',
+      params: { catalogItemId: item?.id },
+    });
   };
 
   if (isLoading) {
@@ -95,7 +97,13 @@ export function CatalogItemDetailScreen() {
             <View className="mb-2 mr-4">
               <Text className="text-xs uppercase text-muted-foreground">WEIGHT</Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
-                {item.defaultWeight} {item.weightUnit}
+                {item.defaultWeight !== undefined && item.defaultWeightUnit ? (
+                  <>
+                    {item.defaultWeight} {item.defaultWeightUnit}
+                  </>
+                ) : (
+                  'Not specified'
+                )}
               </Chip>
             </View>
 
@@ -166,7 +174,10 @@ export function CatalogItemDetailScreen() {
 
           {item.productUrl && (
             <View className="mt-4">
-              <Button variant="secondary" onPress={() => router.push(item.productUrl as string)}>
+              <Button
+                variant="secondary"
+                onPress={() => Linking.openURL(item.productUrl as string)}
+              >
                 <Text className="text-foreground">View on Retailer Site</Text>
               </Button>
             </View>

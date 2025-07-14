@@ -1,10 +1,7 @@
+import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { Text } from 'nativewindui/Text';
-import { TextField } from 'nativewindui/TextField';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
 import {
@@ -24,7 +21,7 @@ const loginFormSchema = z.object({
 });
 
 // Type inference
-type LoginFormValues = z.infer<typeof loginFormSchema>;
+// type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -44,7 +41,7 @@ export default function LoginScreen() {
     onSubmit: async ({ value }) => {
       try {
         setIsLoading(true);
-        await signIn(value.email, value.password, redirectTo);
+        await signIn(value.email, value.password);
         // Navigation is handled in function after successful login
       } catch (error) {
         setIsLoading(false);
@@ -104,8 +101,14 @@ export default function LoginScreen() {
                   <form.Field name="email">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Email', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Email' })}
+                        placeholder={Platform.select({
+                          ios: 'Email',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Email',
+                        })}
                         onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
                         autoFocus
@@ -128,8 +131,14 @@ export default function LoginScreen() {
                   <form.Field name="password">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Password', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Password' })}
+                        placeholder={Platform.select({
+                          ios: 'Password',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Password',
+                        })}
                         onFocus={() => setFocusedTextField('password')}
                         onBlur={() => {
                           setFocusedTextField(null);
@@ -161,13 +170,16 @@ export default function LoginScreen() {
       <KeyboardStickyView
         offset={{
           closed: 0,
-          opened: Platform.select({ ios: insets.bottom + 30, default: insets.bottom }),
+          opened: Platform.select({
+            ios: insets.bottom + 30,
+            default: insets.bottom,
+          }),
         }}
       >
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   size="lg"
                   disabled={!canSubmit || loading}
@@ -190,7 +202,7 @@ export default function LoginScreen() {
               <Text className="px-0.5 text-sm text-primary">Create Account</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
+              {([canSubmit, _isSubmitting]) => (
                 <Button
                   disabled={!canSubmit || loading}
                   onPress={() => {
@@ -215,7 +227,10 @@ export default function LoginScreen() {
         <Button
           variant="plain"
           onPress={() => {
-            router.replace({ pathname: '/auth/(create-account)', params: { redirectTo } });
+            router.replace({
+              pathname: '/auth/(create-account)',
+              params: { redirectTo },
+            });
           }}
         >
           <Text className="text-sm text-primary">Create Account</Text>

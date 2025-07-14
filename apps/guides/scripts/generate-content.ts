@@ -107,7 +107,7 @@ function getRandomAuthor(): string {
 function extractJsonFromText(text: string): string {
   // Look for JSON content between code blocks
   const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-  if (jsonMatch && jsonMatch[1]) {
+  if (jsonMatch?.[1]) {
     return jsonMatch[1].trim();
   }
 
@@ -253,27 +253,29 @@ async function generateTopicIdeas(
     const ideas = JSON.parse(jsonText);
 
     // Transform the data to match our internal format
-    return ideas.map((idea: any) => {
-      // Map display category names back to our internal keys
-      const categoryKeys = idea.categories.map((displayName: string) => {
-        const entry = Object.entries(CATEGORY_DISPLAY_NAMES).find(
-          ([_, value]) => value.toLowerCase() === displayName.toLowerCase(),
-        );
-        return entry ? (entry[0] as ContentCategory) : 'gear-essentials';
-      });
+    return ideas.map(
+      (idea: { title: string; description: string; categories: string[]; difficulty: string }) => {
+        // Map display category names back to our internal keys
+        const categoryKeys = idea.categories.map((displayName: string) => {
+          const entry = Object.entries(CATEGORY_DISPLAY_NAMES).find(
+            ([_, value]) => value.toLowerCase() === displayName.toLowerCase(),
+          );
+          return entry ? (entry[0] as ContentCategory) : 'gear-essentials';
+        });
 
-      return {
-        title: idea.title,
-        description: idea.description,
-        date: format(new Date(), 'yyyy-MM-dd'),
-        categories: categoryKeys,
-        author: getRandomAuthor(),
-        readingTime: generateReadingTime(),
-        difficulty: idea.difficulty as DifficultyLevel,
-        coverImage: '/placeholder.svg?height=400&width=800',
-        slug: createSlug(idea.title),
-      };
-    });
+        return {
+          title: idea.title,
+          description: idea.description,
+          date: format(new Date(), 'yyyy-MM-dd'),
+          categories: categoryKeys,
+          author: getRandomAuthor(),
+          readingTime: generateReadingTime(),
+          difficulty: idea.difficulty as DifficultyLevel,
+          coverImage: '/placeholder.svg?height=400&width=800',
+          slug: createSlug(idea.title),
+        };
+      },
+    );
   } catch (error) {
     console.error(chalk.red('Error parsing generated topics:'), error);
     console.log(chalk.yellow('Raw response:'), text);

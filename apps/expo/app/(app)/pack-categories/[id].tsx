@@ -1,11 +1,10 @@
-import { Icon } from '@roninoss/icons';
+import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Icon, type IconProps } from '@roninoss/icons';
 import { userStore } from 'expo-app/features/auth/store';
-import { usePackDetails } from 'expo-app/features/packs/hooks/usePackDetails';
+import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams } from 'expo-router';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { ScrollView, View } from 'react-native';
 
 function CategoryCard({
@@ -16,6 +15,7 @@ function CategoryCard({
     items: number;
     weight: number;
     percentage: number;
+    icon?: IconProps<'material'>['name'];
   };
 }) {
   const { colors } = useColorScheme();
@@ -54,7 +54,7 @@ function CategoryCard({
 
 export default function PackCategoriesScreen() {
   const params = useLocalSearchParams();
-  const pack = usePackDetails(params.id as string);
+  const pack = usePackDetailsFromStore(params.id as string);
 
   const categories = computeCategorySummaries(pack);
 
@@ -70,7 +70,7 @@ export default function PackCategoriesScreen() {
           </View>
 
           <View className="pb-4">
-            {categories.map((category: any) => (
+            {categories.map((category) => (
               <CategoryCard key={category.name} category={category} />
             ))}
           </View>

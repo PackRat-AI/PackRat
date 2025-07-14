@@ -1,11 +1,9 @@
 'use client';
 
+import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 

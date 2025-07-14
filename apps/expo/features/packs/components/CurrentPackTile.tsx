@@ -1,13 +1,11 @@
+import { Avatar, AvatarFallback, AvatarImage, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
-import { ListItem } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
 import { useCurrentPack } from '../hooks';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const _LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 export function CurrentPackTile() {
   const currentPack = useCurrentPack();

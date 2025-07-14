@@ -1,12 +1,13 @@
+import { Text } from '@packrat/ui/nativewindui';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import { Text } from 'nativewindui/Text';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, type ImageProps, View } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
-  localFileName?: string;
+  localFileName?: string | null;
   placeholderColor?: string;
 }
 
@@ -21,7 +22,7 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   const user = useUser();
 
   const remoteFileName = `${user?.id}-${localFileName}`;
-  const remoteUrl = `${process.env.EXPO_PUBLIC_R2_PUBLIC_URL}/${remoteFileName}`;
+  const remoteUrl = `${clientEnvs.EXPO_PUBLIC_R2_PUBLIC_URL}/${remoteFileName}`;
 
   useEffect(() => {
     if (!localFileName) return;

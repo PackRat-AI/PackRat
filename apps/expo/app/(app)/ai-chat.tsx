@@ -1,25 +1,26 @@
 import { useChat } from '@ai-sdk/react';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { fetch as expoFetch } from 'expo/fetch';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import type { ChatMessage } from 'expo-app/features/ai/types';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
-import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
-import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { fetch as expoFetch } from 'expo/fetch';
 import { useAtomValue } from 'jotai';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import * as React from 'react';
 import {
+  Alert,
   Dimensions,
+  Keyboard,
   type NativeSyntheticEvent,
   Platform,
-  Pressable,
   TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
@@ -27,33 +28,30 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
   KeyboardAvoidingView,
   KeyboardStickyView,
   useReanimatedKeyboardAnimation,
 } from 'react-native-keyboard-controller';
 import Animated, {
-  clamp,
   interpolate,
   type SharedValue,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const USER = 'User';
 const AI = 'PackRat AI';
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
-const dimensions = Dimensions.get('window');
+const _dimensions = Dimensions.get('window');
 
 const ROOT_STYLE: ViewStyle = {
   flex: 1,
   minHeight: 2,
 };
 
-const SPRING_CONFIG = {
+const _SPRING_CONFIG = {
   damping: 15,
   stiffness: 150,
   mass: 0.5,
@@ -62,13 +60,7 @@ const SPRING_CONFIG = {
   restSpeedThreshold: 0.01,
 };
 
-type Message = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-};
-
-const HEADER_POSITION_STYLE: ViewStyle = {
+const _HEADER_POSITION_STYLE: ViewStyle = {
   position: 'absolute',
   zIndex: 50,
   top: 0,
@@ -82,12 +74,10 @@ export default function AIChat() {
   const { progress } = useReanimatedKeyboardAnimation();
   const textInputHeight = useSharedValue(17);
   const translateX = useSharedValue(0);
-  const previousTranslateX = useSharedValue(0);
-  const initialTouchLocation = useSharedValue<{ x: number; y: number } | null>(null);
   const params = useLocalSearchParams();
   const [showSuggestions, setShowSuggestions] = React.useState(true);
   const { activeLocation } = useActiveLocation();
-  const listRef = React.useRef<FlashList<any> | null>(null);
+  const listRef = React.useRef<FlashList<string | ChatMessage>>(null);
 
   // Extract context from params
   const context = {
@@ -99,19 +89,11 @@ export default function AIChat() {
     location: activeLocation ? activeLocation.name : undefined,
   };
 
-  // Get contextual information
-  const contextName =
-    context.contextType === 'item'
-      ? context.itemName
-      : context.contextType === 'pack'
-        ? context.packName
-        : undefined;
-
   const token = useAtomValue(tokenAtom);
   // Call the chat hook at the top level.
-  const { messages, error, handleInputChange, input, setInput, handleSubmit, isLoading } = useChat({
+  const { messages, error, input, setInput, handleSubmit, isLoading } = useChat({
     fetch: expoFetch as unknown as typeof globalThis.fetch,
-    api: `${process.env.EXPO_PUBLIC_API_URL}/api/chat`,
+    api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
     onError: (error: Error) => console.log(error, 'ERROR'),
     body: {
       contextType: context.contextType,
@@ -135,6 +117,12 @@ export default function AIChat() {
     },
   });
 
+  React.useEffect(() => {
+    if (error) {
+      Alert.alert(error.message);
+    }
+  }, [error]);
+
   const handleSuggestionPress = (suggestion: string) => {
     setInput(suggestion);
     handleSubmit();
@@ -149,63 +137,15 @@ export default function AIChat() {
     ),
   }));
 
-  const pan = Gesture.Pan()
-    .minDistance(10)
-    .onBegin((evt) => {
-      initialTouchLocation.value = { x: evt.x, y: evt.y };
-    })
-    .onStart(() => {
-      previousTranslateX.value = translateX.value;
-    })
-    .onTouchesMove((evt, state) => {
-      if (!initialTouchLocation.value || !evt.changedTouches.length) {
-        state.fail();
-        return;
-      }
-      const xDiff = evt.changedTouches[0].x - initialTouchLocation.value.x;
-      const yDiff = Math.abs(evt.changedTouches[0].y - initialTouchLocation.value.y);
-      const isHorizontalPanning = Math.abs(xDiff) > yDiff;
-      if (isHorizontalPanning && xDiff < 0) {
-        state.activate();
-      } else {
-        state.fail();
-      }
-    })
-    .onUpdate((event) => {
-      translateX.value = clamp(event.translationX / 2 + previousTranslateX.value, -75, 0);
-    })
-    .onEnd((event) => {
-      const right = event.translationX > 0 && translateX.value > 0;
-      const left = event.translationX < 0 && translateX.value < 0;
-      if (right) {
-        if (translateX.value > dimensions.width / 2) {
-          translateX.value = withSpring(dimensions.width, SPRING_CONFIG);
-          return;
-        }
-        translateX.value = withSpring(0, SPRING_CONFIG);
-        return;
-      }
-      if (left) {
-        if (translateX.value < -dimensions.width / 2) {
-          translateX.value = withSpring(-dimensions.width, SPRING_CONFIG);
-          return;
-        }
-        translateX.value = withSpring(0, SPRING_CONFIG);
-        return;
-      }
-      translateX.value = withSpring(0, SPRING_CONFIG);
-    });
-
-  // Format messages for the UI.
+  // Format messages for the UI
   const chatMessages = React.useMemo(() => {
     if (messages.length === 0) {
       return [];
     }
 
-    const formattedMessages = messages.map((message) => {
+    const formattedMessages = messages.map((message, _index) => {
       const now = new Date();
-      return {
-        id: message.id,
+      const formattedMessage = {
         sender: message.role === 'user' ? USER : AI,
         text: message.content,
         date: now.toISOString().split('T')[0],
@@ -213,11 +153,13 @@ export default function AIChat() {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        reactions: {},
-        attachments: [],
+        ...message,
       };
+
+      return formattedMessage;
     });
-    // Add a date separator at the beginning.
+
+    // Add a date separator at the beginning
     const today = new Date().toLocaleDateString('en-US', {
       weekday: 'short',
       day: '2-digit',
@@ -229,80 +171,86 @@ export default function AIChat() {
   }, [messages]);
 
   React.useEffect(() => {
-    setTimeout(() => listRef.current?.scrollToEnd());
-  }, [chatMessages]);
+    const scrollToBottom = () => {
+      listRef.current?.scrollToOffset({ offset: 999999, animated: true });
+    };
+
+    scrollToBottom();
+
+    const keyboardListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
+
+    return () => {
+      keyboardListener.remove();
+    };
+  }, []);
 
   return (
     <>
       <Stack.Screen />
-      <GestureDetector gesture={pan}>
-        <KeyboardAvoidingView
-          style={[
-            ROOT_STYLE,
-            { backgroundColor: isDarkColorScheme ? colors.background : colors.card },
-          ]}
-          behavior="padding"
-        >
-          <FlashList
-            // inverted
-            ref={listRef}
-            estimatedItemSize={70}
-            ListHeaderComponent={
-              <View>
-                <View style={{ height: HEADER_HEIGHT + insets.top }} />
-                <LocationSelector />
-              </View>
-            }
-            ListFooterComponent={
-              <>
-                {showSuggestions && messages.length <= 2 && (
-                  <View className="px-4 py-4">
-                    <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
-                    <View className="flex-row flex-wrap gap-2">
-                      {getContextualSuggestions(context).map((suggestion, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          onPress={() => handleSuggestionPress(suggestion)}
-                          className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                        >
-                          <Text className="text-sm text-foreground">{suggestion}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
-                <Animated.View style={toolbarHeightStyle} />
-              </>
-            }
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="handled"
-            scrollIndicatorInsets={{ bottom: HEADER_HEIGHT + 10, top: insets.bottom + 2 }}
-            data={chatMessages}
-            renderItem={({ item, index }) => {
-              if (typeof item === 'string') {
-                return <DateSeparator date={item} />;
-              }
-              const nextMessage = chatMessages[index - 1];
-              const isSameNextSender =
-                typeof nextMessage !== 'string' ? nextMessage?.sender === item.sender : false;
-              return (
-                <ChatBubble
-                  isSameNextSender={isSameNextSender}
-                  item={item}
-                  translateX={translateX}
-                />
-              );
-            }}
-          />
-          {error && (
-            <View className="absolute bottom-20 left-0 right-0 items-center">
-              <View className="bg-destructive/90 mx-4 rounded-lg px-4 py-2">
-                <Text className="text-center text-white">{error.message}</Text>
-              </View>
+      <KeyboardAvoidingView
+        style={[
+          ROOT_STYLE,
+          {
+            backgroundColor: isDarkColorScheme ? colors.background : colors.card,
+          },
+        ]}
+        behavior="padding"
+      >
+        <FlashList
+          // inverted
+          ref={listRef}
+          estimatedItemSize={70}
+          ListHeaderComponent={
+            <View>
+              <View style={{ height: HEADER_HEIGHT + insets.top }} />
+              <LocationSelector />
             </View>
-          )}
-        </KeyboardAvoidingView>
-      </GestureDetector>
+          }
+          ListFooterComponent={
+            <>
+              {showSuggestions && messages.length <= 2 && (
+                <View className="px-4 py-4">
+                  <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {getContextualSuggestions(context).map((suggestion) => (
+                      <TouchableOpacity
+                        key={suggestion}
+                        onPress={() => handleSuggestionPress(suggestion)}
+                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                      >
+                        <Text className="text-sm text-foreground">{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+              <Animated.View style={toolbarHeightStyle} />
+            </>
+          }
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          scrollIndicatorInsets={{
+            bottom: HEADER_HEIGHT + 10,
+            top: insets.bottom + 2,
+          }}
+          data={chatMessages}
+          renderItem={({ item, index }) => {
+            if (typeof item === 'string') {
+              return <DateSeparator date={item} />;
+            }
+
+            item.parts?.forEach((part) => {
+              console.log('part', JSON.stringify(part));
+            });
+
+            // Get the user query for this AI response
+            const userQuery =
+              item.sender === AI && index > 1 ? messages[index - 1].content : undefined;
+
+            return <ChatBubble item={item} translateX={translateX} userQuery={userQuery} />;
+          }}
+        />
+      </KeyboardAvoidingView>
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <Composer
           textInputHeight={textInputHeight}
@@ -314,9 +262,9 @@ export default function AIChat() {
           }}
           isLoading={isLoading}
           placeholder={
-            context.contextType == 'general'
+            context.contextType === 'general'
               ? 'Ask anything outdoors'
-              : `Ask about this ${context.contextType == 'item' ? 'item' : 'pack'}...`
+              : `Ask about this ${context.contextType === 'item' ? 'item' : 'pack'}...`
           }
         />
       </KeyboardStickyView>
@@ -334,109 +282,9 @@ function DateSeparator({ date }: { date: string }) {
   );
 }
 
-const BORDER_CURVE: ViewStyle = {
+const _BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',
 };
-
-function ChatBubble({
-  item,
-  isSameNextSender,
-  translateX,
-}: {
-  item: {
-    id: string;
-    sender: string;
-    text: string;
-    date: string;
-    time: string;
-    reactions: Record<string, string[] | undefined>;
-    attachments: { type: string; url: string }[];
-  };
-  isSameNextSender: boolean;
-  translateX: SharedValue<number>;
-}) {
-  const { colors } = useColorScheme();
-  const rootStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-  const dateStyle = useAnimatedStyle(() => ({
-    width: 75,
-    position: 'absolute',
-    right: 0,
-    paddingLeft: 8,
-    transform: [{ translateX: interpolate(translateX.value, [-75, 0], [0, 75]) }],
-  }));
-  const isAI = item.sender === AI;
-
-  return (
-    <View
-      className={cn(
-        'justify-center px-2 pb-3.5',
-        isSameNextSender ? 'pb-1' : 'pb-3.5',
-        isAI ? 'items-start pr-16' : 'items-end pl-16',
-      )}
-    >
-      <Animated.View style={!isAI ? rootStyle : undefined}>
-        <View>
-          <View
-            className={cn(
-              'absolute bottom-0 items-center justify-center',
-              isAI ? '-left-2 ' : '-right-2.5',
-            )}
-          >
-            {Platform.OS === 'ios' && (
-              <>
-                <View
-                  className={cn(
-                    'h-5 w-5 rounded-full',
-                    !isAI
-                      ? 'bg-primary'
-                      : Platform.OS === 'ios'
-                        ? 'bg-background dark:bg-muted'
-                        : 'bg-background dark:bg-muted-foreground',
-                  )}
-                />
-                <View
-                  className={cn(
-                    'absolute h-5 w-5 rounded-full bg-card dark:bg-background',
-                    !isAI ? '-right-2' : 'right-2',
-                  )}
-                />
-                <View
-                  className={cn(
-                    'absolute h-5 w-5 -translate-y-1 rounded-full bg-card dark:bg-background',
-                    !isAI ? '-right-2' : 'right-2',
-                  )}
-                />
-              </>
-            )}
-          </View>
-          <View>
-            <Pressable>
-              <View
-                style={BORDER_CURVE}
-                className={cn(
-                  'rounded-2xl bg-background px-3 py-1.5 dark:bg-muted-foreground',
-                  Platform.OS === 'ios' && 'dark:bg-muted',
-                  !isAI && 'bg-primary dark:bg-primary',
-                )}
-              >
-                <Text className={cn(!isAI && 'text-white')}>
-                  {isAI ? formatAIResponse(item.text) : item.text}
-                </Text>
-              </View>
-            </Pressable>
-          </View>
-        </View>
-      </Animated.View>
-      <Animated.View style={dateStyle} className="justify-center">
-        <Text variant="caption1" className="text-muted-foreground">
-          {item.time}
-        </Text>
-      </Animated.View>
-    </View>
-  );
-}
 
 const COMPOSER_STYLE: ViewStyle = {
   position: 'absolute',

@@ -1,11 +1,8 @@
 'use client';
 
+import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { router } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { Text } from 'nativewindui/Text';
-import { TextField } from 'nativewindui/TextField';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import {
@@ -25,7 +22,7 @@ const nameFormSchema = z.object({
 });
 
 // Type inference
-type NameFormValues = z.infer<typeof nameFormSchema>;
+// type NameFormValues = z.infer<typeof nameFormSchema>;
 
 export default function InfoScreen() {
   const insets = useSafeAreaInsets();
@@ -70,7 +67,10 @@ export default function InfoScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: "What's your name?", default: 'Create your account' })}
+              {Platform.select({
+                ios: "What's your name?",
+                default: 'Create your account',
+              })}
             </Text>
             {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">Welcome back!</Text>
@@ -83,8 +83,14 @@ export default function InfoScreen() {
                   <form.Field name="firstName">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'First Name', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'First Name' })}
+                        placeholder={Platform.select({
+                          ios: 'First Name',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'First Name',
+                        })}
                         onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
                         autoFocus
@@ -106,8 +112,14 @@ export default function InfoScreen() {
                   <form.Field name="lastName">
                     {(field) => (
                       <TextField
-                        placeholder={Platform.select({ ios: 'Last Name', default: '' })}
-                        label={Platform.select({ ios: undefined, default: 'Last Name' })}
+                        placeholder={Platform.select({
+                          ios: 'Last Name',
+                          default: '',
+                        })}
+                        label={Platform.select({
+                          ios: undefined,
+                          default: 'Last Name',
+                        })}
                         onFocus={() => setFocusedTextField('last-name')}
                         onBlur={() => {
                           setFocusedTextField(null);
@@ -132,7 +144,10 @@ export default function InfoScreen() {
       <KeyboardStickyView
         offset={{
           closed: 0,
-          opened: Platform.select({ ios: insets.bottom + 30, default: insets.bottom }),
+          opened: Platform.select({
+            ios: insets.bottom + 30,
+            default: insets.bottom,
+          }),
         }}
       >
         {Platform.OS === 'ios' ? (

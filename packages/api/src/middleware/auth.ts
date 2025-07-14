@@ -19,7 +19,7 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
       const payload = await verify(token, JWT_SECRET);
       c.set('user', payload);
       return next();
-    } catch (error) {
+    } catch (_error) {
       return c.json({ error: 'Invalid token' }, 401);
     }
   }

@@ -55,6 +55,7 @@ authRoutes.openapi(loginRoute, async (c) => {
   }
 
   // Verify password
+  // biome-ignore lint/style/noNonNullAssertion: at this point, password hash would definitely not be null
   const isPasswordValid = await verifyPassword(password, userRecord.passwordHash!);
 
   if (!isPasswordValid) {
@@ -726,7 +727,7 @@ authRoutes.openapi(googleRoute, async (c) => {
     const existingUser = await db
       .select()
       .from(users)
-      .where(eq(users.email, payload.email!))
+      .where(eq(users.email, payload.email))
       .limit(1);
 
     if (existingUser.length > 0) {
@@ -743,7 +744,7 @@ authRoutes.openapi(googleRoute, async (c) => {
       const [newUser] = await db
         .insert(users)
         .values({
-          email: payload.email!,
+          email: payload.email,
           firstName: payload.given_name,
           lastName: payload.family_name,
           emailVerified: payload.email_verified || false,

@@ -12,10 +12,17 @@ web-build/
 # expo router
 expo-env.d.ts
 
-
-
+# Native build files
 ios
 android
+
+*.apk
+*.ipa
+*.app
+*.app.zip
+*.app.tar.gz
+*.app.tar.bz2
+*.app.tar.xz
 
 # macOS
 .DS_Store

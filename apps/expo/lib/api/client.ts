@@ -3,13 +3,15 @@ import axios, {
   type AxiosInstance,
   type AxiosRequestConfig,
   type AxiosResponse,
+  type InternalAxiosRequestConfig,
 } from 'axios';
 import { store } from 'expo-app/atoms/store';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { refreshTokenAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import * as SecureStore from 'expo-secure-store';
 
 // Define base API URL based on environment
-export const API_URL = process.env.EXPO_PUBLIC_API_URL;
+export const API_URL = clientEnvs.EXPO_PUBLIC_API_URL;
 
 // Create axios instance with default config
 const axiosInstance: AxiosInstance = axios.create({
@@ -26,7 +28,7 @@ let isRefreshing = false;
 // Queue of failed requests to retry after token refresh
 let failedQueue: Array<{
   resolve: (value: unknown) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
   config: AxiosRequestConfig;
 }> = [];
 
@@ -46,7 +48,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 
 // Request interceptor to attach auth token
 axiosInstance.interceptors.request.use(
-  async (config: AxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
     try {
       const token = await SecureStore.getItemAsync('access_token');
 
@@ -70,7 +72,9 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -124,7 +128,13 @@ axiosInstance.interceptors.response.use(
         }
       } catch (refreshError) {
         // Refresh failed, logout user
-        // You could dispatch a logout action here
+        // Clear tokens
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
+        await store.set(tokenAtom, null);
+        await store.set(refreshTokenAtom, null);
+        // Dispatch logout action
+        // await dispatch(logout());
         processQueue(refreshError as Error);
         return Promise.reject(refreshError);
       } finally {

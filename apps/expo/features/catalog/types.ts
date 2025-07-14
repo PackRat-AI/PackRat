@@ -2,7 +2,7 @@ export interface CatalogItemLink {
   id: string;
   title: string;
   url: string;
-  type: string;
+  type: 'official' | 'review' | 'guide' | 'purchase' | 'other';
 }
 
 export interface CatalogItemReview {
@@ -18,12 +18,13 @@ export interface CatalogItemReview {
 }
 
 export interface CatalogItem {
-  id: string;
+  id: number;
   name: string;
+  usageCount: number;
   description?: string;
   defaultWeight?: number;
   defaultWeightUnit?: string;
-  category?: string;
+  category: string;
   image?: string;
   brand?: string;
   model?: string;
@@ -32,10 +33,10 @@ export interface CatalogItem {
   // New fields
   ratingValue?: number;
   productUrl?: string;
-  color?: string;
-  size?: string;
+  color?: string | null;
+  size?: string | null;
   sku?: string;
-  price?: number;
+  price?: number | null;
   availability?: string;
   seller?: string;
   productSku?: string;
@@ -48,6 +49,14 @@ export interface CatalogItem {
 
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PaginatedCatalogItemsResponse {
+  items: CatalogItem[];
+  totalCount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export interface CatalogItemInput {
@@ -64,10 +73,10 @@ export interface CatalogItemInput {
   // New fields
   ratingValue?: number;
   productUrl?: string;
-  color?: string;
-  size?: string;
+  color?: string | null;
+  size?: string | null;
   sku?: string;
-  price?: number;
+  price?: number | null;
   availability?: string;
   seller?: string;
   productSku?: string;

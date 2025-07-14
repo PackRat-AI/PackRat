@@ -1,3 +1,4 @@
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import {
   formatWeatherData,
@@ -5,11 +6,9 @@ import {
   getWeatherData,
 } from 'expo-app/features/weather/lib/weatherService';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+// import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-
-import { Text } from 'nativewindui/Text';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -26,26 +25,25 @@ import type { WeatherLocation } from '../types';
 
 export default function LocationPreviewScreen() {
   const params = useLocalSearchParams();
-  const { colors, colorScheme } = useColorScheme();
+  // const { colors, colorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const { addLocation } = useLocations();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherLocation | null>(null);
-  const [gradientColors, setGradientColors] = useState(['#4c669f', '#3b5998', '#192f6a']);
+  const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
+    '#4c669f',
+    '#3b5998',
+    '#192f6a',
+  ]);
 
   // Extract location data from params
   const latitude = Number.parseFloat(params.lat as string);
   const longitude = Number.parseFloat(params.lon as string);
-  const locationName = params.name as string;
-  const region = params.region as string;
-  const country = params.country as string;
-
-  // Load weather data on initial render
-  useEffect(() => {
-    loadWeatherData();
-  }, []);
+  // const locationName = params.name as string;
+  // const region = params.region as string;
+  // const country = params.country as string;
 
   const loadWeatherData = async () => {
     setIsLoading(true);
@@ -74,6 +72,12 @@ export default function LocationPreviewScreen() {
     }
   };
 
+  // Load weather data on initial render
+  // biome-ignore lint/correctness/useExhaustiveDependencies: need this to only run on initial render hence the empty deps list
+  useEffect(() => {
+    loadWeatherData();
+  }, []);
+
   const handleSaveLocation = async () => {
     if (!weatherData) return;
 
@@ -101,7 +105,7 @@ export default function LocationPreviewScreen() {
   };
 
   // Determine if we should use light or dark status bar based on gradient colors
-  const isDarkGradient =
+  const _isDarkGradient =
     gradientColors[0].toLowerCase().startsWith('#4') ||
     gradientColors[0].toLowerCase().startsWith('#3') ||
     gradientColors[0].toLowerCase().startsWith('#2') ||
@@ -141,7 +145,10 @@ export default function LocationPreviewScreen() {
         </View>
 
         <ScrollView
-          contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingTop: insets.top + 50 }}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 20,
+            paddingTop: insets.top + 50,
+          }}
           showsVerticalScrollIndicator={false}
         >
           <View className="px-4">
@@ -193,7 +200,7 @@ export default function LocationPreviewScreen() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {weatherData.hourlyForecast ? (
                       weatherData.hourlyForecast.map((hour, index) => (
-                        <View key={index} className="mr-4 min-w-[50px] items-center">
+                        <View key={hour.time} className="mr-4 min-w-[50px] items-center">
                           <Text className="text-white">{index === 0 ? 'Now' : hour.time}</Text>
                           <WeatherIcon
                             code={hour.weatherCode}
@@ -224,7 +231,7 @@ export default function LocationPreviewScreen() {
                   {weatherData.dailyForecast ? (
                     weatherData.dailyForecast.map((day, index) => (
                       <View
-                        key={index}
+                        key={day.day}
                         className={cn(
                           'flex-row items-center justify-between py-3',
                           index !== (weatherData.dailyForecast?.length || 0) - 1 &&

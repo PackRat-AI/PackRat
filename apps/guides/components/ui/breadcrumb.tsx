@@ -58,6 +58,7 @@ const BreadcrumbPage = React.forwardRef<HTMLSpanElement, React.ComponentPropsWit
       aria-disabled="true"
       aria-current="page"
       className={cn('font-normal text-foreground', className)}
+      tabIndex={0}
       {...props}
     />
   ),

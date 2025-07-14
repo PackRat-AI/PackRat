@@ -1,19 +1,24 @@
+import {
+  Avatar,
+  AvatarFallback,
+  Button,
+  Checkbox,
+  ContextMenu,
+  createContextItem,
+  createDropdownItem,
+  DropdownMenu,
+  LargeTitleHeader,
+  List,
+  ListItem,
+  type ListRenderItemInfo,
+  Text,
+  Toolbar,
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { Avatar, AvatarFallback } from 'nativewindui/Avatar';
-import { Button } from 'nativewindui/Button';
-import { Checkbox } from 'nativewindui/Checkbox';
-import { ContextMenu } from 'nativewindui/ContextMenu';
-import { createContextItem } from 'nativewindui/ContextMenu/utils';
-import { DropdownMenu } from 'nativewindui/DropdownMenu';
-import { createDropdownItem } from 'nativewindui/DropdownMenu/utils';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { List, ListItem, type ListRenderItemInfo } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
-import { Toolbar } from 'nativewindui/Toolbar';
 import * as React from 'react';
 import {
   Dimensions,
@@ -61,7 +66,7 @@ export default function ConversationsIosScreen() {
         />
       );
     },
-    [isSelecting, selectedMessages],
+    [isSelecting, selectedMessages, checkboxContainerStyle],
   );
 
   function onIsSelectingChange(value: boolean) {
@@ -118,7 +123,10 @@ function LeftView({
       createDropdownItem({
         actionKey: 'toggle-theme',
         title: 'Toggle Theme',
-        icon: { name: isDarkColorScheme ? 'moon.stars' : 'sun.min', namingScheme: 'sfSymbol' },
+        icon: {
+          name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
+          namingScheme: 'sfSymbol',
+        },
       }),
     ];
   }, [isDarkColorScheme]);
@@ -171,7 +179,10 @@ function RightView() {
       <Icon
         size={24}
         name="pencil-box-outline"
-        color={Platform.select({ ios: colors.primary, default: colors.foreground })}
+        color={Platform.select({
+          ios: colors.primary,
+          default: colors.foreground,
+        })}
       />
     </Button>
   );
@@ -253,7 +264,7 @@ function MessageRow({
       setSelectedMessages([...selectedMessages, info.item.id]);
       return;
     }
-    router.push('/messages-ios/chat-ios');
+    router.push('/messages/chat');
   }
 
   function onCheckedChange(isChecked: boolean) {
@@ -328,11 +339,9 @@ function MessageRow({
           titleClassName="font-medium text-lg"
           subTitleClassName="pt-0.5"
           rightView={
-            <>
-              <View className="pr-3">
-                {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
-              </View>
-            </>
+            <View className="pr-3">
+              {!isSelecting && <Icon name="chevron-right" size={15} color={colors.grey} />}
+            </View>
           }
         />
       </ContextMenu>
@@ -582,7 +591,9 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
               className="absolute bottom-0 right-0 top-0 items-center justify-center"
             >
               <Icon
-                ios={{ name: isUnread ? 'checkmark.message.fill' : 'message.badge.fill' }}
+                ios={{
+                  name: isUnread ? 'checkmark.message.fill' : 'message.badge.fill',
+                }}
                 materialIcon={{
                   type: 'MaterialCommunityIcons',
                   name: isUnread ? 'read' : 'email-mark-as-unread',
@@ -612,7 +623,10 @@ function Swipeable({ children, isUnread }: { children: React.ReactNode; isUnread
           >
             <Icon
               ios={{ name: 'bell.slash.fill' }}
-              materialIcon={{ type: 'MaterialCommunityIcons', name: 'bell-cancel' }}
+              materialIcon={{
+                type: 'MaterialCommunityIcons',
+                name: 'bell-cancel',
+              }}
               size={24}
               color="white"
             />

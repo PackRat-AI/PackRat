@@ -8,6 +8,7 @@ export default function HowItWorksSection() {
   const stepIcons = ['Download', 'Map', 'Backpack'];
 
   return (
+    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section
       id="how-it-works"
       className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted"

@@ -2,6 +2,7 @@
  * Utility to infer image extensions from URLs or fetch them when not available
  */
 
+import * as Sentry from '@sentry/react-native';
 import { getDomainSpecificExtension } from './domain-specific-extensions';
 
 /**
@@ -143,6 +144,13 @@ export const getImageExtension = async (url: string, defaultExt = 'jpg'): Promis
       return fetchedExt;
     }
   } catch (error) {
+    Sentry.captureException(error, {
+      contexts: {
+        data: {
+          url,
+        },
+      },
+    });
     console.warn('Error in getImageUrlWithExtension:', error);
   }
 

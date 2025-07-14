@@ -1,10 +1,8 @@
+import { Avatar, AvatarFallback, AvatarImage, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
-import { ListItem } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
 import { useRecentPacks } from '../hooks/useRecentPacks';
 
@@ -29,7 +27,7 @@ export function RecentPacksTile() {
             const img = pack?.image ?? fallbackImage;
             return (
               <Avatar
-                key={index}
+                key={pack.id}
                 alt={`${pack?.name ?? ''} avatar`}
                 className={cn('h-6 w-6', index > 0 && '-ml-2')}
               >

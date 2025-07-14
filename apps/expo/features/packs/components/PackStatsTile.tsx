@@ -1,9 +1,8 @@
+import type { AlertRef } from '@packrat/ui/nativewindui';
+import { Alert, ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { type Href, useRouter } from 'expo-router';
-import { Alert } from 'nativewindui/Alert';
-import type { AlertRef } from 'nativewindui/Alert/types';
-import { ListItem } from 'nativewindui/List';
 import { useRef } from 'react';
 import { View } from 'react-native';
 import { usePacks } from '../hooks';
@@ -19,11 +18,11 @@ export function PackStatsTile() {
   const route: Href | null = currentPack ? `/pack-stats/${currentPack.id}` : null;
 
   const handlePress = () => {
-    if (!currentPack) {
+    if (!route) {
       alertRef.current?.show();
       return;
     }
-    router.push(route!);
+    router.push(route);
   };
 
   return (

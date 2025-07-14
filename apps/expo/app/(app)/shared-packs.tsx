@@ -1,8 +1,11 @@
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  LargeTitleHeader,
+  Text,
+} from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
-
-import { Avatar, AvatarFallback, AvatarImage } from 'nativewindui/Avatar';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { ScrollView, View } from 'react-native';
 
 // Mock data for shared packs
@@ -13,9 +16,21 @@ const SHARED_PACKS = [
     owner: 'Sarah Johnson',
     ownerAvatar: 'https://randomuser.me/api/portraits/women/44.jpg',
     members: [
-      { id: '1', name: 'You', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-      { id: '2', name: 'Mike Chen', avatar: 'https://randomuser.me/api/portraits/men/22.jpg' },
-      { id: '3', name: 'Lisa Wong', avatar: 'https://randomuser.me/api/portraits/women/17.jpg' },
+      {
+        id: '1',
+        name: 'You',
+        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+      },
+      {
+        id: '2',
+        name: 'Mike Chen',
+        avatar: 'https://randomuser.me/api/portraits/men/22.jpg',
+      },
+      {
+        id: '3',
+        name: 'Lisa Wong',
+        avatar: 'https://randomuser.me/api/portraits/women/17.jpg',
+      },
     ],
     lastUpdated: '2 days ago',
     totalWeight: '32.6 lbs',
@@ -27,8 +42,16 @@ const SHARED_PACKS = [
     owner: 'You',
     ownerAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
     members: [
-      { id: '1', name: 'Alex Rodriguez', avatar: 'https://randomuser.me/api/portraits/men/67.jpg' },
-      { id: '2', name: 'Emma Wilson', avatar: 'https://randomuser.me/api/portraits/women/22.jpg' },
+      {
+        id: '1',
+        name: 'Alex Rodriguez',
+        avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
+      },
+      {
+        id: '2',
+        name: 'Emma Wilson',
+        avatar: 'https://randomuser.me/api/portraits/women/22.jpg',
+      },
     ],
     lastUpdated: '1 week ago',
     totalWeight: '28.4 lbs',
@@ -40,9 +63,21 @@ const SHARED_PACKS = [
     owner: 'David Lee',
     ownerAvatar: 'https://randomuser.me/api/portraits/men/52.jpg',
     members: [
-      { id: '1', name: 'You', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-      { id: '2', name: 'Rachel Green', avatar: 'https://randomuser.me/api/portraits/women/45.jpg' },
-      { id: '3', name: 'Tom Wilson', avatar: 'https://randomuser.me/api/portraits/men/62.jpg' },
+      {
+        id: '1',
+        name: 'You',
+        avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+      },
+      {
+        id: '2',
+        name: 'Rachel Green',
+        avatar: 'https://randomuser.me/api/portraits/women/45.jpg',
+      },
+      {
+        id: '3',
+        name: 'Tom Wilson',
+        avatar: 'https://randomuser.me/api/portraits/men/62.jpg',
+      },
       {
         id: '4',
         name: 'Sophia Martinez',
@@ -64,6 +99,7 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
     <View className="flex-row">
       {displayMembers.map((member, index) => (
         <Avatar
+          alt={member.name}
           key={member.id}
           className={cn('h-6 w-6 border border-background', index > 0 && '-ml-2')}
         >
@@ -85,7 +121,7 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
 function PackOwner({ name, avatar }: { name: string; avatar: string }) {
   return (
     <View className="flex-row items-center">
-      <Avatar className="mr-1 h-5 w-5">
+      <Avatar alt={name} className="mr-1 h-5 w-5">
         <AvatarImage source={{ uri: avatar }} />
         <AvatarFallback>
           <Text>{name.substring(0, 1)}</Text>

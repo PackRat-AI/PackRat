@@ -1,7 +1,5 @@
+import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
-
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import { ScrollView, View } from 'react-native';
 
 // Mock data for trail conditions
@@ -141,8 +139,8 @@ function TrailConditionCard({ trail }: { trail: (typeof TRAIL_CONDITIONS)[0] }) 
           <Text variant="subhead" className="mb-2 font-medium">
             Recent Reports:
           </Text>
-          {trail.reports.map((report, index) => (
-            <View key={index} className="mb-2 rounded-md bg-muted p-3 dark:bg-gray-50/10">
+          {trail.reports.map((report) => (
+            <View key={report.text} className="mb-2 rounded-md bg-muted p-3 dark:bg-gray-50/10">
               <View className="flex-row items-center justify-between">
                 <Text variant="footnote" className="font-medium">
                   {report.user}

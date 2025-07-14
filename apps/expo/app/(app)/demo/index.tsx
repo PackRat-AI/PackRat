@@ -1,15 +1,13 @@
+import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { Card } from 'expo-app/components/Card';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import { useHeaderSearchBar } from 'expo-app/lib/useHeaderSearchBar';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useHeaderSearchBar } from 'expo-app/lib/hooks/useHeaderSearchBar';
 import { useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
-import { Button } from 'nativewindui/Button';
-import { LargeTitleHeader } from 'nativewindui/LargeTitleHeader';
-import { Text } from 'nativewindui/Text';
 import type * as React from 'react';
 import { useState } from 'react';
 import { Linking, useWindowDimensions, View } from 'react-native';
@@ -21,9 +19,11 @@ cssInterop(FlashList, {
 });
 
 export default function Screen() {
-  const [hasSeenConsent, setHasSeenConsent] = useState(false);
+  const [hasSeenConsent, _setHasSeenConsent] = useState(false);
 
-  const searchValue = useHeaderSearchBar({ hideWhenScrolling: COMPONENTS.length === 0 });
+  const searchValue = useHeaderSearchBar({
+    hideWhenScrolling: COMPONENTS.length === 0,
+  });
   // const [searchValue, setSearchValue] = useState('');
 
   const data = searchValue

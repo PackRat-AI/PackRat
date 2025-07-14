@@ -1,9 +1,8 @@
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Text } from 'nativewindui/Text';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -55,7 +54,10 @@ export function AiChatHeader() {
           <Button variant="plain" size="icon" className="opacity-70" onPress={router.back}>
             <Icon
               color={colors.foreground}
-              name={Platform.select({ ios: 'chevron-left', default: 'arrow-left' })}
+              name={Platform.select({
+                ios: 'chevron-left',
+                default: 'arrow-left',
+              })}
             />
           </Button>
         </View>

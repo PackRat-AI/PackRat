@@ -1,9 +1,9 @@
 'use client';
 
+import { Button } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { Button } from 'nativewindui/Button';
 import { Text, View } from 'react-native';
 
 type ErrorScreenProps = {

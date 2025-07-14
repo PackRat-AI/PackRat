@@ -1,22 +1,19 @@
+import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { ListItem } from 'nativewindui/List';
-import { Text } from 'nativewindui/Text';
 import { View } from 'react-native';
+import { usePackTemplates } from '../hooks';
 
 export function PackTemplatesTile() {
   const router = useRouter();
+  const packTemplates = usePackTemplates();
 
   const handlePress = () => {
-    // if (!currentPack) {
-    //   alertRef.current?.show();
-    //   return;
-    // }
     router.push('/pack-templates');
   };
 
-  const packTemplateCount = 10;
+  const packTemplateCount = packTemplates.length;
 
   return (
     <ListItem

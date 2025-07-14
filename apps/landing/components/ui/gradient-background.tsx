@@ -1,8 +1,8 @@
 'use client';
 
+import { cn } from 'landing-app/lib/utils';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { cn } from 'landing-app/lib/utils';
 
 interface GradientBackgroundProps {
   className?: string;

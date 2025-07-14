@@ -1,14 +1,14 @@
+import type { MessageBatch } from '@cloudflare/workers-types';
+import { sentry } from '@hono/sentry';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { routes } from '@packrat/api/routes';
 import { processQueueBatch } from '@packrat/api/services/queue';
 import type { Env } from '@packrat/api/types/env';
-import type { MessageBatch } from '@cloudflare/workers-types';
-import { OpenAPIHono } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
-import { logger } from 'hono/logger';
 import { HTTPException } from 'hono/http-exception';
+import { logger } from 'hono/logger';
 import type { Variables } from './types/variables';
-import { sentry } from '@hono/sentry';
 
 const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 

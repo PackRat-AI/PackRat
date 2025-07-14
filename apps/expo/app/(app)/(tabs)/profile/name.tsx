@@ -1,9 +1,6 @@
+import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
 import { router, Stack } from 'expo-router';
-import { Button } from 'nativewindui/Button';
-import { Form, FormItem, FormSection } from 'nativewindui/Form';
-import { Text } from 'nativewindui/Text';
-import { TextField } from 'nativewindui/TextField';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
@@ -69,7 +66,9 @@ export default function NameScreen() {
                 autoFocus
                 autoComplete="name-given"
                 label={Platform.select({ ios: undefined, default: 'First' })}
-                leftView={Platform.select({ ios: <LeftLabel>First</LeftLabel> })}
+                leftView={Platform.select({
+                  ios: <LeftLabel>First</LeftLabel>,
+                })}
                 placeholder="required"
                 value={form.first}
                 onChangeText={onChangeText('first')}
@@ -83,7 +82,9 @@ export default function NameScreen() {
                 textContentType="middleName"
                 autoComplete="name-middle"
                 label={Platform.select({ ios: undefined, default: 'Middle' })}
-                leftView={Platform.select({ ios: <LeftLabel>Middle</LeftLabel> })}
+                leftView={Platform.select({
+                  ios: <LeftLabel>Middle</LeftLabel>,
+                })}
                 placeholder="optional"
                 value={form.middle}
                 onChangeText={onChangeText('middle')}

@@ -1,8 +1,8 @@
 'use client';
 
 import { cn } from 'landing-app/lib/utils';
-import { useTheme } from 'next-themes';
 import Image from 'next/image';
+import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 interface DeviceMockupProps {
@@ -41,6 +41,7 @@ export default function DeviceMockup({
   const notchColor = theme === 'dark' ? '#000000' : '#1E293B';
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: ignore
     <div
       className={cn(
         'relative mx-auto transition-all duration-500',

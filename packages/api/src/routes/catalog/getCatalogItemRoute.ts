@@ -1,9 +1,9 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import { createDb } from "@packrat/api/db";
-import { catalogItems } from "@packrat/api/db/schema";
-import { RouteHandler } from "@packrat/api/types/routeHandler";
-import { authenticateRequest, unauthorizedResponse } from "@packrat/api/utils/api-middleware";
-import { eq } from "drizzle-orm";
+import { createRoute, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { catalogItems } from '@packrat/api/db/schema';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -15,7 +15,7 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-// Authenticate the request
+  // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
     return unauthorizedResponse();
@@ -26,11 +26,26 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   const item = await db.query.catalogItems.findFirst({
     where: eq(catalogItems.id, itemId),
+    with: {
+      packItems: {
+        columns: {
+          id: true,
+        },
+      },
+    },
   });
 
   if (!item) {
     return c.json({ error: 'Catalog item not found' }, 404);
   }
 
-  return c.json(item);
-}
+  // Calculate usage count from related pack items
+  const usageCount = item.packItems?.length || 0;
+
+  // biome-ignore lint/correctness/noUnusedVariables: removing packItems from result
+  const { packItems, ...itemData } = item;
+  return c.json({
+    ...itemData,
+    usageCount,
+  });
+};

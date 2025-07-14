@@ -1,7 +1,9 @@
 import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/useColorScheme';
-import type { CatalogItem } from 'expo-app/types';
-import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { Image } from 'expo-image';
+import { useState } from 'react';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import type { CatalogItem } from '../types';
 
 type CatalogItemCardProps = {
   item: CatalogItem;
@@ -10,28 +12,33 @@ type CatalogItemCardProps = {
 
 export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
   const { colors } = useColorScheme();
+  const [imageError, setImageError] = useState(false);
+
   return (
     <TouchableOpacity
       onPress={onPress}
       className="mb-3 overflow-hidden rounded-lg bg-card shadow-sm"
     >
       <View className="flex-row">
-        <Image
-          source={{
-            uri: item.image,
-            ...(Platform.OS === 'android'
-              ? {
-                  headers: {
-                    'User-Agent':
-                      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-                    Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
-                  },
-                }
-              : {}),
-          }}
-          className="h-24 w-24 rounded-l-lg"
-          resizeMode="cover"
-        />
+        {item.image && !imageError && (
+          <Image
+            source={{
+              uri: item.image,
+              ...(Platform.OS === 'android'
+                ? {
+                    headers: {
+                      'User-Agent':
+                        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+                      Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
+                    },
+                  }
+                : {}),
+            }}
+            className="h-24 w-24 rounded-l-lg"
+            contentFit="cover"
+            onError={() => setImageError(true)}
+          />
+        )}
         <View className="flex-1 justify-between p-3">
           <View>
             <View className="flex-row items-center justify-between">
@@ -54,10 +61,10 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
             <View className="flex-row items-center">
               <Icon name="dumbbell" size={14} color={colors.grey} />
               <Text className="ml-1 text-xs text-muted-foreground">
-                {item.defaultWeight} {item.weightUnit}
+                {item.defaultWeight} {item.defaultWeightUnit}
               </Text>
             </View>
-            {item.usageCount > 0 && (
+            {item.usageCount && item.usageCount > 0 && (
               <View className="flex-row items-center">
                 <Icon name="backpack" size={14} color={colors.grey} />
                 <Text className="ml-1 text-xs text-muted-foreground">

@@ -1,4 +1,5 @@
-import type { CatalogItem, PackItem, WeightUnit } from 'expo-app/types';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
+import type { PackItem, WeightUnit } from 'expo-app/features/packs';
 
 /**
  * Checks if an item is a pack item
@@ -14,7 +15,7 @@ export function getEffectiveWeight(item: CatalogItem | PackItem): number {
   if (isPackItem(item)) {
     return item.weight;
   }
-  return 'defaultWeight' in item ? item.defaultWeight : 0;
+  return item.defaultWeight ?? 0;
 }
 
 /**
