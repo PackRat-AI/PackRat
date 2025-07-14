@@ -11,6 +11,7 @@ import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
@@ -101,9 +102,11 @@ export default function ChatIos() {
         state.fail();
         return;
       }
+      const touchData = evt.changedTouches[0];
+      assertDefined(touchData);
 
-      const xDiff = evt.changedTouches[0].x - initialTouchLocation.value.x;
-      const yDiff = Math.abs(evt.changedTouches[0].y - initialTouchLocation.value.y);
+      const xDiff = touchData.x - initialTouchLocation.value.x;
+      const yDiff = Math.abs(touchData.y - initialTouchLocation.value.y);
       const isHorizontalPanning = Math.abs(xDiff) > yDiff;
 
       if (isHorizontalPanning && xDiff < 0) {
@@ -479,7 +482,7 @@ function ChatBubble({
       )}
     >
       <Animated.View style={item.sender === ME ? rootStyle : undefined}>
-        {item.attachments.length > 0 ? (
+        {item.attachments[0] ? (
           <View
             className={cn('flex-row items-center gap-4', item.sender === ME && 'flex-row-reverse')}
           >
@@ -703,6 +706,9 @@ function Composer({
   }
 
   function sendMessage() {
+    const date = new Date().toISOString().split('T')[0];
+    assertDefined(date);
+
     setMessages((prev) => [
       {
         attachments: [],
@@ -711,7 +717,7 @@ function Composer({
         readBy: [],
         sender: ME,
         text: message,
-        date: new Date().toISOString().split('T')[0],
+        date,
         time: new Date().toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',

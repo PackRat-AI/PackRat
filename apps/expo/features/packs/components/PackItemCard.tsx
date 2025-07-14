@@ -12,6 +12,7 @@ import {
   usePackItemOwnershipCheck,
 } from '../hooks';
 import type { PackItem } from '../types';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 
 type PackItemCardProps = {
   item: PackItem;
@@ -23,6 +24,7 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
   const isOwnedByUser = usePackItemOwnershipCheck(itemArg.id);
   const itemFromStore = usePackItemDetailsFromStore(itemArg.id); // Use item from store if it's user owned so that component observe changes to it and thus update properly.
   const item = isOwnedByUser ? itemFromStore : itemArg; // Use passed item if it's not owned by the current user.
+  assertDefined(item);
 
   const deleteItem = useDeletePackItem();
   const { colors } = useColorScheme();

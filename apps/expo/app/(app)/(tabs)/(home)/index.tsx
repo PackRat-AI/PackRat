@@ -31,6 +31,7 @@ import { WeatherAlertsTile } from "expo-app/features/weather/components/WeatherA
 import { WeatherTile } from "expo-app/features/weather/components/WeatherTile";
 import { cn } from "expo-app/lib/cn";
 import { useColorScheme } from "expo-app/lib/hooks/useColorScheme";
+import { assertIsString } from "expo-app/utils/typeAssertions";
 import { Link } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
@@ -195,7 +196,7 @@ export default function DashboardScreen() {
       <LargeTitleHeader
         title="Dashboard"
         searchBar={{
-          ref: searchBarRef,
+          ref: searchBarRef as React.RefObject<LargeTitleSearchBarRef>,
           iosHideWhenScrolling: true,
           onChangeText: setSearchValue,
           placeholder: "Search...",
@@ -205,6 +206,7 @@ export default function DashboardScreen() {
               keyExtractor={keyExtractor}
               className="space-y-4 px-4"
               renderItem={({ item }) => {
+                assertIsString(item);
                 if (!item.startsWith("gap")) {
                   const Component = tileInfo[item as TileName].component;
                   return (
