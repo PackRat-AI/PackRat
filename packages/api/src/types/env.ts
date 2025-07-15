@@ -8,6 +8,7 @@ export type Env = {
 
   // Database
   NEON_DATABASE_URL: string;
+  NEON_DATABASE_URL_READONLY: string;
 
   // Authentication & Security
   JWT_SECRET: string;
