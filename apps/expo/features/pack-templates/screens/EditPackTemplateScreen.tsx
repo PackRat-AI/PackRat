@@ -5,7 +5,7 @@ import { usePackTemplateDetails } from '../hooks/usePackTemplatesDetails';
 
 export function EditPackTemplateScreen() {
   const { id } = useLocalSearchParams();
-  const effectiveId = Array.isArray(id) ? id[0] : id;
+  const effectiveId = (Array.isArray(id) ? id[0] : id) as string;
 
   const packTemplate = usePackTemplateDetails(effectiveId);
 

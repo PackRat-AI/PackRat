@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
+import { assertDefined } from 'landing-app/lib/typeAssertions';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
@@ -27,6 +28,8 @@ export default function AppPreview() {
     }, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  assertDefined(screens[currentScreen]);
 
   return (
     <>

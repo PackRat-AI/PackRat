@@ -42,6 +42,7 @@ const getMonthlyWeightAverages = (data: PackWeightHistoryEntry[]) => {
 
   const monthlyAverages = Object.entries(monthData).map(([key, { totalWeight, count }]) => {
     const [year, monthIndex] = key.split('-').map(Number);
+    assertDefined(monthIndex);
     const month = monthNames[monthIndex];
     assertDefined(month);
     return {

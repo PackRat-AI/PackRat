@@ -1,6 +1,7 @@
 'use client';
 
 import { OTPInput, OTPInputContext } from 'input-otp';
+import { assertDefined } from 'landing-app/lib/typeAssertions';
 import { cn } from 'landing-app/lib/utils';
 import { Dot } from 'lucide-react';
 import * as React from 'react';
@@ -34,7 +35,9 @@ const InputOTPSlot = React.forwardRef<
   React.ComponentPropsWithoutRef<'div'> & { index: number }
 >(({ index, className, ...props }, ref) => {
   const inputOTPContext = React.useContext(OTPInputContext);
-  const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index];
+  const slotProps = inputOTPContext.slots[index];
+  assertDefined(slotProps);
+  const { char, hasFakeCaret, isActive } = slotProps;
 
   return (
     <div

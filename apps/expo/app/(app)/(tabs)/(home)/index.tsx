@@ -28,6 +28,7 @@ import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherA
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
@@ -202,7 +203,7 @@ export default function DashboardScreen() {
       <LargeTitleHeader
         title="Dashboard"
         searchBar={{
-          ref: searchBarRef as React.RefObject<LargeTitleSearchBarRef>,
+          ref: asNonNullableRef(searchBarRef),
           iosHideWhenScrolling: true,
           onChangeText(text) {
             setSearchValue(text);
@@ -294,9 +295,6 @@ function renderDashboardItem<T extends ListDataItem>(info: ListRenderItemInfo<T>
   return <TileItem />;
 }
 
-function keyExtractor(item: (Omit<ListDataItem, string> & { id: string }) | string) {
-  if (typeof item === 'string') {
-    return item;
-  }
-  return item.id;
+function keyExtractor(item: string, _index: number) {
+  return item;
 }

@@ -58,7 +58,9 @@ export function PackSelectionScreen() {
           <View className="border-b border-border bg-card px-4 py-3">
             <View className="flex-row items-center">
               <Image
-                source={{ uri: catalogItem.image }}
+                source={{
+                  uri: catalogItem.image || undefined /* `null` isn't assignable to uri */,
+                }}
                 className="h-16 w-16 rounded-md"
                 resizeMode="cover"
               />
