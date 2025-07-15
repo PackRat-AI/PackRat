@@ -140,6 +140,12 @@ export function useAuthActions() {
   const signInWithApple = async () => {
     try {
       setIsLoading(true);
+
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      if (!isAvailable) {
+        throw new Error('Apple Sign-In is not available on this device.');
+      }
+
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
