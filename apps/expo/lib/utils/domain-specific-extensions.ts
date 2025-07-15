@@ -31,7 +31,7 @@ const domainPatterns: DomainPattern[] = [
     pattern: /cloudinary\.com\/.*\/image\/upload\/.*\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//,
     extension: (url) => {
       const match = url.match(/\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//);
-      return match ? match[2].toLowerCase() : 'jpg';
+      return match && match[2] !== undefined ? match[2].toLowerCase() : 'jpg';
     },
   },
 

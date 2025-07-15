@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from 'guides-app/components/
 import { Textarea } from 'guides-app/components/ui/textarea';
 import { Toaster } from 'guides-app/components/ui/toaster';
 import { toast } from 'guides-app/components/ui/use-toast';
+import { assertDefined } from 'guides-app/lib/assertDefined';
 import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -410,7 +411,11 @@ export default function GeneratePage() {
                   max={20}
                   step={1}
                   value={[batchCount]}
-                  onValueChange={(value) => setBatchCount(value[0])}
+                  onValueChange={(value) => {
+                    const count = value[0];
+                    assertDefined(count);
+                    setBatchCount(count);
+                  }}
                 />
               </div>
 

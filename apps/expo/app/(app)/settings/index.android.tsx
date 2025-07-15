@@ -6,7 +6,6 @@ import {
   Button,
   LargeTitleHeader,
   List,
-  type ListDataItem,
   type ListRenderItemInfo,
   ListSectionHeader,
   Text,
@@ -157,7 +156,7 @@ function SearchContent() {
   );
 }
 
-function keyExtractor(item: (Omit<ListDataItem, string> & { id: string }) | string) {
+function keyExtractor(item: MockData, _index: number) {
   return typeof item === 'string' ? item : item.id;
 }
 

@@ -7,7 +7,7 @@ export function useDetailedPacks(): Pack[] {
   const packs = use$(() => {
     const packsArray = Object.values(packsStore.get());
 
-    const filteredPacks = [];
+    const filteredPacks: Pack[] = [];
     for (const pack of packsArray) {
       if (pack.deleted) continue;
       const items = getPackItems(pack.id);

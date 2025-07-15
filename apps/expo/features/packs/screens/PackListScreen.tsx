@@ -27,6 +27,7 @@ import {
 import { useAllPacks } from '../hooks/useAllPacks';
 import { usePacks } from '../hooks/usePacks';
 import type { Pack, PackCategory, PackInStore } from '../types';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 
 type FilterOption = {
   label: string;
@@ -172,7 +173,7 @@ export function PackListScreen() {
         backVisible={false}
         searchBar={{
           iosHideWhenScrolling: true,
-          ref: searchBarRef,
+          ref: asNonNullableRef(searchBarRef),
           onChangeText(text) {
             setSearchValue(text);
           },

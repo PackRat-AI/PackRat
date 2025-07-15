@@ -113,7 +113,7 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
         data={suggestions}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         className="mb-2"
         renderItem={({ item }) => <ItemSuggestionCard item={item} packId={packId} />}
       />

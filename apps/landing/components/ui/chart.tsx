@@ -1,5 +1,6 @@
 'use client';
 
+import { assertDefined } from 'landing-app/lib/typeAssertions';
 import { cn } from 'landing-app/lib/utils';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
@@ -131,6 +132,7 @@ const ChartTooltipContent = React.forwardRef<
       }
 
       const [item] = payload;
+      assertDefined(item);
       const key = `${labelKey || item.dataKey || item.name || 'value'}`;
       const itemConfig = getPayloadConfigFromPayload(config, item, key);
       const value =

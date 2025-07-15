@@ -2,6 +2,7 @@ import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
 import GradientText from 'landing-app/components/ui/gradient-text';
 import { siteConfig } from 'landing-app/config/site';
 import { LucideIcon } from 'landing-app/lib/icons';
+import { assertDefined } from 'landing-app/lib/typeAssertions';
 
 export default function HowItWorksSection() {
   // Icons for each step
@@ -47,7 +48,9 @@ export default function HowItWorksSection() {
 
           <div className="grid gap-8 md:gap-12 lg:gap-16 lg:grid-cols-3">
             {siteConfig.howItWorks.steps.map((step, index) => {
-              const Icon = LucideIcon(stepIcons[index]);
+              const icon = stepIcons[index];
+              assertDefined(icon);
+              const Icon = LucideIcon(icon);
 
               return (
                 <div key={step.number} className="relative flex flex-col items-center text-center">

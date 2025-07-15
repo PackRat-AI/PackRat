@@ -1,5 +1,5 @@
 export function assertDefined<T>(val: T | undefined): asserts val is T {
-  if (val === undefined) throw new Error('Value must be defined');
+  if (val === undefined) throw new Error('Expects value to be defined');
 }
 
 export function assertIsString(value: unknown): asserts value is string {
