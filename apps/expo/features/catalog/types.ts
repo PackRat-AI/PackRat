@@ -27,7 +27,7 @@ export interface CatalogItem {
   defaultWeight?: number;
   defaultWeightUnit?: WeightUnit;
   category: string;
-  image?: string;
+  image?: string | null;
   brand?: string;
   model?: string;
   url?: string;

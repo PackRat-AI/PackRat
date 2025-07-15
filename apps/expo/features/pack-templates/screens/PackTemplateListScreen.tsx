@@ -20,6 +20,7 @@ import { TemplateCard } from '../components/TemplateCard';
 import { usePackTemplates } from '../hooks';
 import { activeTemplateFilterAtom, templateSearchValueAtom } from '../packTemplateListAtoms';
 import type { PackTemplate } from '../types';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 
 type FilterOption = {
   label: string;
@@ -113,7 +114,7 @@ export function PackTemplateListScreen() {
         title="Pack Templates"
         searchBar={{
           iosHideWhenScrolling: true,
-          ref: searchBarRef,
+          ref: asNonNullableRef(searchBarRef),
           onChangeText(text) {
             setSearchValue(text);
           },

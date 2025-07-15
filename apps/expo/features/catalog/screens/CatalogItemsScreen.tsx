@@ -154,7 +154,7 @@ function CatalogItemsScreen() {
         <FlatList
           key={activeFilter}
           data={paginatedItems}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View className="px-4 pt-4">
               <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />

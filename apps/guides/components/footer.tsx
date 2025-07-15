@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { assertDefined } from 'guides-app/lib/assertDefined';
 import { getAllCategories } from 'guides-app/lib/categories';
 import { footerConfig, siteConfig } from 'guides-app/lib/config';
 import { Backpack, Facebook, Github, Instagram, Twitter } from 'lucide-react';
@@ -12,6 +13,9 @@ export default function Footer() {
     queryKey: ['categories'],
     queryFn: getAllCategories,
   });
+
+  const company = footerConfig.mainSections[1];
+  assertDefined(company);
 
   return (
     <footer className="border-t py-16 bg-apple-gray-light dark:bg-gray-900/20">
@@ -73,7 +77,7 @@ export default function Footer() {
         <div>
           <h3 className="mb-4 text-sm font-semibold">Company</h3>
           <ul className="space-y-3 text-sm">
-            {footerConfig.mainSections[1].links.map((link) => (
+            {company.links.map((link) => (
               <li key={link.title}>
                 <Link
                   href={link.href}
