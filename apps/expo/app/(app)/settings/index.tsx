@@ -5,7 +5,6 @@ import {
   ESTIMATED_ITEM_HEIGHT,
   LargeTitleHeader,
   List,
-  type ListDataItem,
   ListItem,
   type ListRenderItemInfo,
   ListSectionHeader,
@@ -84,7 +83,7 @@ function IconView({ className, name }: { className?: string; name: MaterialIconN
   );
 }
 
-function keyExtractor(item: (Omit<ListDataItem, string> & { id: string }) | string) {
+function keyExtractor(item: MockData, _index: number) {
   return typeof item === 'string' ? item : item.id;
 }
 

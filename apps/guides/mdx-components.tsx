@@ -1,11 +1,11 @@
 import type { MDXComponents } from 'mdx/types';
-import Image from 'next/image';
-import Link from 'next/link';
+import Image, { type ImageProps } from 'next/image';
+import Link, { type LinkProps } from 'next/link';
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
     // Use custom components
-    img: (props) => (
+    img: (props: ImageProps) => (
       <Image
         src={props.src || '/placeholder.svg'}
         alt={props.alt || 'Image'}
@@ -14,7 +14,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
         className="rounded-md"
       />
     ),
-    a: (props) => <Link {...props} className="text-primary hover:underline" />,
+    a: (props: LinkProps) => <Link {...props} className="text-primary hover:underline" />,
     // Add default components
     ...components,
   };

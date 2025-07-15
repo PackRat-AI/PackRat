@@ -6,6 +6,7 @@ import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { env } from 'hono/adapter';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
+import { assertAllDefined } from '@packrat/api/utils/typeAssertions';
 
 const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -735,6 +736,8 @@ adminRoutes.get('/stats', async (c) => {
       .from(packs)
       .where(eq(packs.deleted, false));
     const [itemCount] = await db.select({ count: count() }).from(catalogItems);
+
+    assertAllDefined(userCount, packCount, itemCount);
 
     return c.json({
       users: userCount.count,
