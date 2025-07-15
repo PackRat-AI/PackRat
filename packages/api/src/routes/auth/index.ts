@@ -531,10 +531,10 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
       .from(users)
       .where(eq(users.id, token.userId))
       .limit(1);
-      
-      if (!user) {
-        return c.json({ error: 'User not found' }, 404);
-      }
+
+    if (!user) {
+      return c.json({ error: 'User not found' }, 404);
+    }
 
     // Generate new access token
     const accessToken = await generateJWT({
@@ -544,7 +544,6 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
       },
       c,
     });
-
 
     return c.json({
       success: true,
