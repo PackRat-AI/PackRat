@@ -3,8 +3,8 @@ name: Database Migrations
 on:
   push:
     branches:
-      - v2
-      - develop
+      - main
+      - development
     paths:
       - 'packages/api/drizzle/**'
   workflow_dispatch:
@@ -47,7 +47,7 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "TARGET_ENV=${{ inputs.environment }}" >> $GITHUB_ENV
           # For push events, determine from branch
-          elif [[ "$GITHUB_REF" == "refs/heads/v2" ]]; then
+          elif [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
             echo "TARGET_ENV=prod" >> $GITHUB_ENV
           else
             echo "TARGET_ENV=dev" >> $GITHUB_ENV
