@@ -31,13 +31,18 @@ export type Env = {
   WEATHER_API_KEY: string;
 
   // Cloudflare R2 Storage
+  CLOUDFLARE_ACCOUNT_ID: string;
   R2_ACCESS_KEY_ID: string;
   R2_SECRET_ACCESS_KEY: string;
-  CLOUDFLARE_ACCOUNT_ID: string;
+  CLOUDFLARE_ACCOUNT_ID_ORG: string;
+  R2_ACCESS_KEY_ID_ORG: string;
+  R2_SECRET_ACCESS_KEY_ORG: string;
   PACKRAT_BUCKET_R2_BUCKET_NAME: string;
   PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME: string;
-  PACKRAT_BUCKET: R2Bucket;
+  PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: string;
+  PACKRAT_GUIDES_BUCKET: R2Bucket;
   PACKRAT_ITEMS_BUCKET: R2Bucket;
+  PACKRAT_BUCKET: R2Bucket; // general bucket
 
   // Queue & Background Processing
   ETL_QUEUE: Queue;
