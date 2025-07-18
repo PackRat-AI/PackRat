@@ -11,7 +11,7 @@
     "web": "expo start --web",
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
-    "clean": "rimraf .expo node_modules",
+    "clean": "bunx rimraf .expo node_modules ios android",
     "build:preview": "eas build --profile preview --local",
     "build:preview:android": "eas build --profile preview --platform android --local",
     "build:preview:ios": "eas build --profile preview --platform ios --local",
@@ -61,6 +61,7 @@
     "@rn-primitives/portal": "^1.1.0",
     "@rn-primitives/slot": "^1.1.0",
     "@roninoss/icons": "^0.0.4",
+    "@ronradtke/react-native-markdown-display": "^8.1.0",
     "@sentry/react-native": "~6.14.0",
     "@shopify/flash-list": "1.7.6",
     "@stardazed/streams-text-encoding": "^1.0.2",
@@ -118,7 +119,7 @@
     "@babel/core": "^7.20.0",
     "@biomejs/biome": "2.0.4",
     "@types/lodash.debounce": "^4.0.9",
-    "@types/react": "~18.3.12",
+    "@types/react": "~19.0.10",
     "@types/ungap__structured-clone": "^1.2.0",
     "@typescript-eslint/eslint-plugin": "^7.7.0",
     "@typescript-eslint/parser": "^7.7.0",
@@ -129,7 +130,7 @@
     "prettier-plugin-tailwindcss": "^0.5.11",
     "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.0",
-    "typescript": "~5.3.3"
+    "typescript": "~5.8.3"
   },
   "eslintConfig": {
     "extends": "universe/native",
