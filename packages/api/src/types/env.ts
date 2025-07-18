@@ -36,8 +36,10 @@ export type Env = {
   CLOUDFLARE_ACCOUNT_ID: string;
   PACKRAT_BUCKET_R2_BUCKET_NAME: string;
   PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME: string;
+  PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: string;
   PACKRAT_BUCKET: R2Bucket;
   PACKRAT_ITEMS_BUCKET: R2Bucket;
+  PACKRAT_GUIDES_BUCKET: R2Bucket;
 
   // Queue & Background Processing
   ETL_QUEUE: Queue;

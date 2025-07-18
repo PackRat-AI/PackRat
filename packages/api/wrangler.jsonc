@@ -14,11 +14,18 @@
   "r2_buckets": [
     {
       "binding": "PACKRAT_BUCKET",
-      "bucket_name": "packrat-bucket"
+      "bucket_name": "packrat-bucket",
+      "preview_bucket_name": "packrat-bucket"
     },
     {
       "binding": "PACKRAT_ITEMS_BUCKET",
-      "bucket_name": "packrat-items-bucket"
+      "bucket_name": "packrat-items-bucket",
+      "preview_bucket_name": "packrat-items-bucket"
+    },
+    {
+      "binding": "PACKRAT_GUIDES_BUCKET",
+      "bucket_name": "packrat-guides",
+      "preview_bucket_name": "packrat-guides"
     }
   ],
   "queues": {
