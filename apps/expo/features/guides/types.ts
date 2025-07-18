@@ -3,8 +3,12 @@ export interface Guide {
   key: string;
   title: string;
   category: string;
+  categories?: string[];
   description: string;
   content?: string;
+  author?: string;
+  readingTime?: string;
+  difficulty?: string;
   createdAt: string;
   updatedAt: string;
 }

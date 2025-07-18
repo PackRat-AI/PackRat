@@ -11,7 +11,7 @@ export const useSearchGuides = ({ query, category }: UseSearchGuidesParams) => {
   return useInfiniteQuery({
     queryKey: ['guides', 'search', { query, category }],
     queryFn: async ({ pageParam = 1 }) => {
-      const params: Record<string, any> = {
+      const params: Record<string, string | number> = {
         q: query,
         page: pageParam,
         limit: 20,

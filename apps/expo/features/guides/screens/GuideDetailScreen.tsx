@@ -59,11 +59,11 @@ export const GuideDetailScreen = () => {
       marginBottom: 16,
     },
     strong: {
-      fontWeight: '600',
+      fontWeight: '600' as const,
     },
     link: {
       color: colors.primary,
-      textDecorationLine: 'underline',
+      textDecorationLine: 'underline' as const,
     },
     blockquote: {
       backgroundColor: isDarkColorScheme ? '#374151' : '#f3f4f6',
@@ -130,11 +130,35 @@ export const GuideDetailScreen = () => {
         <Text className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           {guide.title}
         </Text>
-        <View className="flex-row items-center gap-2">
-          <View className="bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded">
-            <Text className="text-sm text-gray-700 dark:text-gray-300">{guide.category}</Text>
+        <View className="mb-2">
+          {guide.categories && guide.categories.length > 0 && (
+            <View className="flex-row flex-wrap gap-2 mb-2">
+              {guide.categories.map((category: string) => (
+                <View key={category} className="bg-primary/10 px-3 py-1.5 rounded-full">
+                  <Text className="text-sm font-medium text-primary">
+                    {category
+                      .split('-')
+                      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                      .join(' ')}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+          <View className="flex-row items-center gap-3">
+            {guide.author && (
+              <Text className="text-sm text-gray-600 dark:text-gray-400">By {guide.author}</Text>
+            )}
+            {guide.readingTime && (
+              <Text className="text-sm text-gray-600 dark:text-gray-400">{guide.readingTime}</Text>
+            )}
+            {guide.difficulty && (
+              <View className="bg-secondary/10 px-2 py-0.5 rounded">
+                <Text className="text-xs font-medium text-secondary">{guide.difficulty}</Text>
+              </View>
+            )}
           </View>
-          <Text className="text-sm text-gray-500 dark:text-gray-500">
+          <Text className="text-xs text-gray-500 dark:text-gray-500 mt-1">
             Updated {new Date(guide.updatedAt).toLocaleDateString()}
           </Text>
         </View>

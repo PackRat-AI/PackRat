@@ -14,7 +14,7 @@ export const useGuides = ({ category, sort }: UseGuidesParams = {}) => {
   return useInfiniteQuery({
     queryKey: ['guides', { category, sort }],
     queryFn: async ({ pageParam = 1 }) => {
-      const params: Record<string, any> = {
+      const params: Record<string, string | number> = {
         page: pageParam,
         limit: 20,
       };

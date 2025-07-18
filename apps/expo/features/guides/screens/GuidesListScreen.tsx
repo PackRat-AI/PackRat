@@ -12,23 +12,16 @@ import {
   View,
 } from 'react-native';
 import { GuideCard } from '../components/GuideCard';
-import { useGuides, useSearchGuides } from '../hooks';
+import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
 import type { Guide } from '../types';
-
-const categories = [
-  { id: 'all', label: 'All' },
-  { id: 'getting-started', label: 'Getting Started' },
-  { id: 'gear', label: 'Gear' },
-  { id: 'planning', label: 'Planning' },
-  { id: 'safety', label: 'Safety' },
-  { id: 'tips', label: 'Tips & Tricks' },
-];
 
 export const GuidesListScreen = () => {
   const router = useRouter();
   const { colors } = useColorScheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const { data: categoriesData, isLoading: isLoadingCategories } = useGuideCategories();
 
   const {
     data: guidesData,
@@ -144,25 +137,48 @@ export const GuidesListScreen = () => {
               className="py-3"
               contentContainerStyle={{ paddingRight: 16 }}
             >
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  onPress={() => handleCategoryChange(category.id)}
-                  className={`mr-2 rounded-full px-4 py-2 ${
-                    selectedCategory === category.id ? 'bg-primary' : 'bg-card'
+              <TouchableOpacity
+                onPress={() => handleCategoryChange('all')}
+                className={`mr-2 rounded-full px-4 py-2 ${
+                  selectedCategory === 'all' ? 'bg-primary' : 'bg-card'
+                }`}
+              >
+                <Text
+                  className={`text-sm font-medium ${
+                    selectedCategory === 'all' ? 'text-primary-foreground' : 'text-foreground'
                   }`}
                 >
-                  <Text
-                    className={`text-sm font-medium ${
-                      selectedCategory === category.id
-                        ? 'text-primary-foreground'
-                        : 'text-foreground'
+                  All
+                </Text>
+              </TouchableOpacity>
+              {isLoadingCategories ? (
+                <View className="flex-row items-center px-4">
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : (
+                categoriesData?.categories?.map((category: string) => (
+                  <TouchableOpacity
+                    key={category}
+                    onPress={() => handleCategoryChange(category)}
+                    className={`mr-2 rounded-full px-4 py-2 ${
+                      selectedCategory === category ? 'bg-primary' : 'bg-card'
                     }`}
                   >
-                    {category.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      className={`text-sm font-medium ${
+                        selectedCategory === category
+                          ? 'text-primary-foreground'
+                          : 'text-foreground'
+                      }`}
+                    >
+                      {category
+                        .split('-')
+                        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ')}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
             </ScrollView>
           </>
         }
