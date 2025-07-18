@@ -1,4 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
+import { createR2BucketService } from "@packrat/api/services/r2-factory";
 import type { RouteHandler } from "@packrat/api/types/routeHandler";
 import {
   authenticateRequest,
@@ -30,7 +31,8 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const searchQuery = q.toLowerCase();
 
   try {
-    const bucket = c.env.PACKRAT_GUIDES_BUCKET;
+    // Use the new R2 service instead of the binding
+    const bucket = createR2BucketService(c.env, 'guides');
     const list = await bucket.list({
       limit: 1000,
     });
@@ -38,8 +40,8 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     // Search through guides
     const searchResults = await Promise.all(
       list.objects
-        .filter((obj) => obj.key.endsWith(".mdx"))
-        .map(async (obj) => {
+        .filter((obj: any) => obj.key.endsWith(".mdx"))
+        .map(async (obj: any) => {
           const guide = {
             id: obj.key.replace(".mdx", ""),
             key: obj.key,

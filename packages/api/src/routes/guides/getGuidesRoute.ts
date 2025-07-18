@@ -1,4 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
+import { createR2BucketService } from "@packrat/api/services/r2-factory";
 import type { RouteHandler } from "@packrat/api/types/routeHandler";
 import {
   authenticateRequest,
@@ -59,15 +60,12 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       : undefined;
 
   try {
-    const bucket = c.env.PACKRAT_GUIDES_BUCKET;
-    
-    if (!bucket) {
-      return c.json({ error: "Guides bucket not configured" }, 500);
-    }
-    
+    // Use the new R2 service instead of the binding
+    const bucket = createR2BucketService(c.env, "guides");
+
     const list = await bucket.list();
     console.log("Bucket list returned:", list.objects.length, "objects");
-    
+
     let guides = list.objects.map((obj) => ({
       id: obj.key.replace(/\.(mdx?|md)$/, ""), // Remove .mdx or .md extension
       key: obj.key,
