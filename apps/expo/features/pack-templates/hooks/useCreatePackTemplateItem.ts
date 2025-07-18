@@ -17,7 +17,7 @@ export function useCreatePackTemplateItem() {
         packTemplateId,
         deleted: false,
       };
-      
+
       // @ts-ignore: Safe because Legend-State uses Proxy
       packTemplateItemsStore[id].set(newItem);
       // @ts-ignore: Safe because Legend-State uses Proxy
