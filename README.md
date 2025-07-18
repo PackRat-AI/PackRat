@@ -252,6 +252,12 @@ PackRat uses private packages from GitHub Package Registry. You need to authenti
    bun install
    ```
 
+   > **Note**: The `preinstall` script automatically configures GitHub authentication using the GitHub CLI token. If you encounter authentication errors, you can also manually export the token:
+   > ```bash
+   > export GITHUB_TOKEN=$(gh auth token)
+   > bun install
+   > ```
+
 #### CI/CD
 
 GitHub Actions automatically provides a `GITHUB_TOKEN` with the necessary permissions. No additional configuration is needed.
