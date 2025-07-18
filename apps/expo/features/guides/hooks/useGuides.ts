@@ -1,18 +1,18 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
-import axiosInstance from "expo-app/lib/api/client";
-import type { GuidesListResponse } from "../types";
+import { useInfiniteQuery } from '@tanstack/react-query';
+import axiosInstance from 'expo-app/lib/api/client';
+import type { GuidesListResponse } from '../types';
 
 interface UseGuidesParams {
   category?: string;
   sort?: {
-    field: "title" | "category" | "createdAt" | "updatedAt";
-    order: "asc" | "desc";
+    field: 'title' | 'category' | 'createdAt' | 'updatedAt';
+    order: 'asc' | 'desc';
   };
 }
 
 export const useGuides = ({ category, sort }: UseGuidesParams = {}) => {
   return useInfiniteQuery({
-    queryKey: ["guides", { category, sort }],
+    queryKey: ['guides', { category, sort }],
     queryFn: async ({ pageParam = 1 }) => {
       const params: Record<string, any> = {
         page: pageParam,
@@ -24,11 +24,11 @@ export const useGuides = ({ category, sort }: UseGuidesParams = {}) => {
       }
 
       if (sort) {
-        params["sort[field]"] = sort.field;
-        params["sort[order]"] = sort.order;
+        params['sort[field]'] = sort.field;
+        params['sort[order]'] = sort.order;
       }
 
-      const response = await axiosInstance.get<GuidesListResponse>("/api/guides", {
+      const response = await axiosInstance.get<GuidesListResponse>('/api/guides', {
         params,
       });
 

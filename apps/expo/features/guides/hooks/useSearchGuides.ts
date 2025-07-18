@@ -1,6 +1,6 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
-import axiosInstance from "expo-app/lib/api/client";
-import type { GuidesSearchResponse } from "../types";
+import { useInfiniteQuery } from '@tanstack/react-query';
+import axiosInstance from 'expo-app/lib/api/client';
+import type { GuidesSearchResponse } from '../types';
 
 interface UseSearchGuidesParams {
   query: string;
@@ -9,7 +9,7 @@ interface UseSearchGuidesParams {
 
 export const useSearchGuides = ({ query, category }: UseSearchGuidesParams) => {
   return useInfiniteQuery({
-    queryKey: ["guides", "search", { query, category }],
+    queryKey: ['guides', 'search', { query, category }],
     queryFn: async ({ pageParam = 1 }) => {
       const params: Record<string, any> = {
         q: query,
@@ -21,12 +21,9 @@ export const useSearchGuides = ({ query, category }: UseSearchGuidesParams) => {
         params.category = category;
       }
 
-      const response = await axiosInstance.get<GuidesSearchResponse>(
-        "/api/guides/search",
-        {
-          params,
-        }
-      );
+      const response = await axiosInstance.get<GuidesSearchResponse>('/api/guides/search', {
+        params,
+      });
 
       return response.data;
     },

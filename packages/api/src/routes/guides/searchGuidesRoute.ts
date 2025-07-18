@@ -1,14 +1,11 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import { createR2BucketService } from "@packrat/api/services/r2-factory";
-import type { RouteHandler } from "@packrat/api/types/routeHandler";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
+import { createRoute, z } from '@hono/zod-openapi';
+import { createR2BucketService } from '@packrat/api/services/r2-factory';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 
 export const routeDefinition = createRoute({
-  method: "get",
-  path: "/search",
+  method: 'get',
+  path: '/search',
   request: {
     query: z.object({
       q: z.string().min(1),
@@ -17,7 +14,7 @@ export const routeDefinition = createRoute({
       category: z.string().optional(),
     }),
   },
-  responses: { 200: { description: "Search guides" } },
+  responses: { 200: { description: 'Search guides' } },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
@@ -27,7 +24,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     return unauthorizedResponse();
   }
 
-  const { q, page, limit, category } = c.req.valid("query");
+  const { q, page, limit, category } = c.req.valid('query');
   const searchQuery = q.toLowerCase();
 
   try {
@@ -40,16 +37,14 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     // Search through guides
     const searchResults = await Promise.all(
       list.objects
-        .filter((obj: any) => obj.key.endsWith(".mdx"))
+        .filter((obj: any) => obj.key.endsWith('.mdx'))
         .map(async (obj: any) => {
           const guide = {
-            id: obj.key.replace(".mdx", ""),
+            id: obj.key.replace('.mdx', ''),
             key: obj.key,
-            title:
-              obj.customMetadata?.title ||
-              obj.key.replace(".mdx", "").replace(/-/g, " "),
-            category: obj.customMetadata?.category || "general",
-            description: obj.customMetadata?.description || "",
+            title: obj.customMetadata?.title || obj.key.replace('.mdx', '').replace(/-/g, ' '),
+            category: obj.customMetadata?.category || 'general',
+            description: obj.customMetadata?.description || '',
             createdAt: obj.uploaded.toISOString(),
             updatedAt: obj.uploaded.toISOString(),
             score: 0,
@@ -88,7 +83,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
           }
 
           return null;
-        })
+        }),
     );
 
     // Filter out nulls and sort by score
@@ -112,7 +107,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       query: q,
     });
   } catch (error) {
-    console.error("Error searching guides:", error);
-    return c.json({ error: "Failed to search guides" }, 500);
+    console.error('Error searching guides:', error);
+    return c.json({ error: 'Failed to search guides' }, 500);
   }
 };

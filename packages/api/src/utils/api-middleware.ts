@@ -1,19 +1,19 @@
-import type { User } from "@packrat/api/db/schema";
-import type { Env } from "@packrat/api/types/env";
-import type { Context } from "hono";
-import { env } from "hono/adapter";
-import { verifyJWT } from "./auth";
+import type { User } from '@packrat/api/db/schema';
+import type { Env } from '@packrat/api/types/env';
+import type { Context } from 'hono';
+import { env } from 'hono/adapter';
+import { verifyJWT } from './auth';
 
 export async function authenticateRequest(
-  c: Context
-): Promise<{ userId: User["id"]; role: User["role"] } | null> {
-  const authHeader = c.req.header("Authorization");
+  c: Context,
+): Promise<{ userId: User['id']; role: User['role'] } | null> {
+  const authHeader = c.req.header('Authorization');
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(' ')[1];
 
   if (!token) {
     return null;
@@ -29,11 +29,11 @@ export async function authenticateRequest(
 }
 
 export function unauthorizedResponse() {
-  return Response.json({ error: "Unauthorized" }, { status: 401 });
+  return Response.json({ error: 'Unauthorized' }, { status: 401 });
 }
 
 export function isValidApiKey(c: Context): boolean {
-  const apiKeyHeader = c.req.header("X-API-Key");
+  const apiKeyHeader = c.req.header('X-API-Key');
   if (!apiKeyHeader) return false;
   // Get env
   // Type assertion is safe because Context is typed for Env
