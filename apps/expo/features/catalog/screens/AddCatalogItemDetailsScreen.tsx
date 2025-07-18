@@ -4,7 +4,9 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import type { WeightUnit } from 'expo-app/types';
+import { assertDefined } from 'expo-app/utils/assertDefined';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -20,8 +22,6 @@ import {
   View,
 } from 'react-native';
 import { useCatalogItemDetails } from '../hooks';
-import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
-import { assertDefined } from 'expo-app/utils/assertDefined';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();

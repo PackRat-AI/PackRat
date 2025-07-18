@@ -13,6 +13,7 @@ import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
+import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
 import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
@@ -109,6 +110,11 @@ const tileInfo = {
     keywords: ['templates', 'preset', 'pattern'],
     component: PackTemplatesTile,
   },
+  guides: {
+    title: 'Guides',
+    keywords: ['guides', 'help', 'tutorial', 'documentation', 'learn'],
+    component: GuidesTile,
+  },
 };
 
 type TileName = keyof typeof tileInfo;
@@ -171,6 +177,8 @@ export default function DashboardScreen() {
     ...(featureFlags.enableShoppingList ? ['shopping-list'] : []),
     ...(featureFlags.enableSharedPacks ? ['shared-packs'] : []),
     ...(featureFlags.enablePackTemplates ? ['pack-templates'] : []),
+    'gap 4',
+    'guides',
   ]).current;
 
   // Filter dashboard tiles based on search value
