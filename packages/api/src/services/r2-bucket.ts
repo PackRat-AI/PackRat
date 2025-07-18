@@ -10,43 +10,186 @@ import {
   PutObjectCommand,
   S3Client,
   UploadPartCommand,
-} from '@aws-sdk/client-s3';
-import type {
-  R2Checksums,
-  R2Conditional,
-  R2GetOptions,
-  R2HTTPMetadata,
-  R2ListOptions,
-  R2MultipartOptions,
-  R2MultipartUpload,
-  R2Object,
-  R2ObjectBody,
-  R2Objects,
-  R2PutOptions,
-  R2Range,
-  R2UploadedPart,
-} from '@cloudflare/workers-types';
-import type { Readable } from 'node:stream';
+} from "@aws-sdk/client-s3";
+import type { Env } from "@packrat/api/types/env";
+import type { Readable } from "node:stream";
+
+// Define our own types to avoid conflicts with Cloudflare Workers types
+interface R2HTTPMetadata {
+  contentType?: string;
+  contentLanguage?: string;
+  contentDisposition?: string;
+  contentEncoding?: string;
+  cacheControl?: string;
+  cacheExpiry?: Date;
+}
+
+interface R2Checksums {
+  md5?: ArrayBuffer;
+  sha1?: ArrayBuffer;
+  sha256?: ArrayBuffer;
+  sha384?: ArrayBuffer;
+  sha512?: ArrayBuffer;
+  toJSON(): Record<string, string>;
+}
+
+interface R2Object {
+  key: string;
+  version: string;
+  size: number;
+  etag: string;
+  httpEtag: string;
+  checksums: R2Checksums;
+  uploaded: Date;
+  httpMetadata?: R2HTTPMetadata;
+  customMetadata?: Record<string, string>;
+  range?: { offset: number; length: number };
+  storageClass: string;
+  ssecKeyMd5?: string;
+  writeHttpMetadata(headers: any): void;
+}
+
+interface R2ObjectBody extends R2Object {
+  get body(): ReadableStream;
+  get bodyUsed(): boolean;
+  arrayBuffer(): Promise<ArrayBuffer>;
+  bytes(): Promise<Uint8Array>;
+  text(): Promise<string>;
+  json<T>(): Promise<T>;
+  blob(): Promise<Blob>;
+}
+
+type R2Range =
+  | { offset: number; length?: number }
+  | { offset?: number; length: number }
+  | { suffix: number };
+
+interface R2Conditional {
+  etagMatches?: string;
+  etagDoesNotMatch?: string;
+  uploadedBefore?: Date;
+  uploadedAfter?: Date;
+  secondsGranularity?: boolean;
+}
+
+interface R2GetOptions {
+  onlyIf?: R2Conditional | any;
+  range?: R2Range | any;
+  ssecKey?: ArrayBuffer | string;
+}
+
+interface R2PutOptions {
+  onlyIf?: R2Conditional | any;
+  httpMetadata?: R2HTTPMetadata | any;
+  customMetadata?: Record<string, string>;
+  md5?: (ArrayBuffer | ArrayBufferView) | string;
+  sha1?: (ArrayBuffer | ArrayBufferView) | string;
+  sha256?: (ArrayBuffer | ArrayBufferView) | string;
+  sha384?: (ArrayBuffer | ArrayBufferView) | string;
+  sha512?: (ArrayBuffer | ArrayBufferView) | string;
+  storageClass?: string;
+  ssecKey?: ArrayBuffer | string;
+}
+
+interface R2ListOptions {
+  limit?: number;
+  prefix?: string;
+  cursor?: string;
+  delimiter?: string;
+  startAfter?: string;
+}
+
+interface R2MultipartOptions {
+  httpMetadata?: R2HTTPMetadata | any;
+  customMetadata?: Record<string, string>;
+  storageClass?: string;
+  ssecKey?: ArrayBuffer | string;
+}
+
+interface R2UploadPartOptions {
+  ssecKey?: ArrayBuffer | string;
+}
+
+interface R2UploadedPart {
+  partNumber: number;
+  etag: string;
+}
+
+interface R2MultipartUpload {
+  readonly key: string;
+  readonly uploadId: string;
+  uploadPart(
+    partNumber: number,
+    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
+    options?: R2UploadPartOptions
+  ): Promise<R2UploadedPart>;
+  abort(): Promise<void>;
+  complete(uploadedParts: R2UploadedPart[]): Promise<R2Object>;
+}
+
+type R2Objects = {
+  objects: R2Object[];
+  delimitedPrefixes: string[];
+} & ({ truncated: true; cursor: string } | { truncated: false });
 
 interface R2BucketConfig {
-  accountId: string;
-  accessKeyId: string;
-  secretAccessKey: string;
-  bucketName: string;
+  accountId?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  bucketName?: string;
+  useOrgCredentials?: boolean;
 }
+
+type BucketType = "guides" | "items" | "general";
 
 export class R2BucketService {
   private s3Client: S3Client;
   private bucketName: string;
 
-  constructor(config: R2BucketConfig) {
-    this.bucketName = config.bucketName;
+  constructor({
+    env,
+    bucketType,
+    config,
+  }: {
+    env: Env;
+    bucketType: BucketType;
+    config?: R2BucketConfig;
+  }) {
+    // Determine which credentials to use
+    const useOrg = config?.useOrgCredentials ?? false;
+    const accountId =
+      config?.accountId ||
+      (useOrg ? env.CLOUDFLARE_ACCOUNT_ID_ORG : env.CLOUDFLARE_ACCOUNT_ID);
+    const accessKeyId =
+      config?.accessKeyId ||
+      (useOrg ? env.R2_ACCESS_KEY_ID_ORG : env.R2_ACCESS_KEY_ID);
+    const secretAccessKey =
+      config?.secretAccessKey ||
+      (useOrg ? env.R2_SECRET_ACCESS_KEY_ORG : env.R2_SECRET_ACCESS_KEY);
+
+    // Determine bucket name
+    if (config?.bucketName) {
+      this.bucketName = config.bucketName;
+    } else {
+      switch (bucketType) {
+        case "guides":
+          this.bucketName = env.PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME;
+          break;
+        case "items":
+          this.bucketName = env.PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME;
+          break;
+        case "general":
+          this.bucketName = env.PACKRAT_BUCKET_R2_BUCKET_NAME;
+          break;
+      }
+    }
+
     this.s3Client = new S3Client({
-      region: 'auto',
-      endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+      region: "auto",
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
+        accessKeyId,
+        secretAccessKey,
       },
     });
   }
@@ -62,8 +205,15 @@ export class R2BucketService {
 
       return this.createR2Object(key, response);
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'name' in error) {
-        if (error.name === 'NotFound' || (error as any).$metadata?.httpStatusCode === 404) {
+      if (error && typeof error === "object" && "name" in error) {
+        const errorObj = error as {
+          name: string;
+          $metadata?: { httpStatusCode?: number };
+        };
+        if (
+          errorObj.name === "NotFound" ||
+          errorObj.$metadata?.httpStatusCode === 404
+        ) {
           return null;
         }
       }
@@ -73,10 +223,13 @@ export class R2BucketService {
 
   get(
     key: string,
-    options: R2GetOptions & { onlyIf: R2Conditional | Headers },
+    options: R2GetOptions & { onlyIf: R2Conditional | Headers }
   ): Promise<R2ObjectBody | R2Object | null>;
   get(key: string, options?: R2GetOptions): Promise<R2ObjectBody | null>;
-  async get(key: string, options?: R2GetOptions): Promise<R2ObjectBody | R2Object | null> {
+  async get(
+    key: string,
+    options?: R2GetOptions
+  ): Promise<R2ObjectBody | R2Object | null> {
     try {
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
@@ -98,7 +251,9 @@ export class R2BucketService {
         chunks.push(chunk);
       }
 
-      const bodyArray = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+      const bodyArray = new Uint8Array(
+        chunks.reduce((acc, chunk) => acc + chunk.length, 0)
+      );
       let offset = 0;
       for (const chunk of chunks) {
         bodyArray.set(chunk, offset);
@@ -111,7 +266,7 @@ export class R2BucketService {
       const objectBody: R2ObjectBody = {
         ...r2Object,
         get body(): ReadableStream {
-          return new ReadableStream({
+          return new globalThis.ReadableStream({
             start(controller) {
               controller.enqueue(bodyArray);
               controller.close();
@@ -124,14 +279,22 @@ export class R2BucketService {
         arrayBuffer: async () => bodyArray.buffer,
         bytes: async () => bodyArray,
         text: async () => new TextDecoder().decode(bodyArray),
-        json: async <T>() => JSON.parse(new TextDecoder().decode(bodyArray)) as T,
-        blob: async () => new Blob([bodyArray]),
+        json: async <T>() =>
+          JSON.parse(new TextDecoder().decode(bodyArray)) as T,
+        blob: async () => new globalThis.Blob([bodyArray]),
       };
 
       return objectBody;
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'name' in error) {
-        if (error.name === 'NoSuchKey' || (error as any).$metadata?.httpStatusCode === 404) {
+      if (error && typeof error === "object" && "name" in error) {
+        const errorObj = error as {
+          name: string;
+          $metadata?: { httpStatusCode?: number };
+        };
+        if (
+          errorObj.name === "NoSuchKey" ||
+          errorObj.$metadata?.httpStatusCode === 404
+        ) {
           return null;
         }
       }
@@ -153,12 +316,12 @@ export class R2BucketService {
       const response = await this.s3Client.send(command);
 
       const objects = (response.Contents || []).map((obj) =>
-        this.createR2Object(obj.Key || '', {
+        this.createR2Object(obj.Key || "", {
           ContentLength: obj.Size,
           ETag: obj.ETag,
           LastModified: obj.LastModified,
           StorageClass: obj.StorageClass,
-        }),
+        })
       );
 
       // Return proper R2Objects type
@@ -167,44 +330,64 @@ export class R2BucketService {
           objects,
           truncated: true,
           cursor: response.NextContinuationToken,
-          delimitedPrefixes: response.CommonPrefixes?.map((p) => p.Prefix || '') || [],
+          delimitedPrefixes:
+            response.CommonPrefixes?.map((p) => p.Prefix || "") || [],
         };
       } else {
         return {
           objects,
           truncated: false,
-          delimitedPrefixes: response.CommonPrefixes?.map((p) => p.Prefix || '') || [],
+          delimitedPrefixes:
+            response.CommonPrefixes?.map((p) => p.Prefix || "") || [],
         };
       }
     } catch (error) {
-      console.error('Error listing objects:', error);
+      console.error("Error listing objects:", error);
       throw error;
     }
   }
 
   put(
     key: string,
-    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
-    options?: R2PutOptions & { onlyIf: R2Conditional | Headers },
+    value:
+      | ReadableStream
+      | ArrayBuffer
+      | ArrayBufferView
+      | string
+      | null
+      | Blob,
+    options?: R2PutOptions & { onlyIf: R2Conditional | Headers }
   ): Promise<R2Object | null>;
   put(
     key: string,
-    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
-    options?: R2PutOptions,
+    value:
+      | ReadableStream
+      | ArrayBuffer
+      | ArrayBufferView
+      | string
+      | null
+      | Blob,
+    options?: R2PutOptions
   ): Promise<R2Object>;
   async put(
     key: string,
-    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
-    options?: R2PutOptions,
+    value:
+      | ReadableStream
+      | ArrayBuffer
+      | ArrayBufferView
+      | string
+      | null
+      | Blob,
+    options?: R2PutOptions
   ): Promise<R2Object | null> {
     try {
       if (value === null) {
-        throw new Error('Cannot put null value');
+        throw new Error("Cannot put null value");
       }
 
       let body: Buffer | Uint8Array | string;
 
-      if (value instanceof ReadableStream) {
+      if (value instanceof globalThis.ReadableStream) {
         const reader = value.getReader();
         const chunks: Uint8Array[] = [];
         while (true) {
@@ -217,12 +400,12 @@ export class R2BucketService {
         body = new Uint8Array(value);
       } else if (ArrayBuffer.isView(value)) {
         body = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-      } else if (typeof value === 'string') {
+      } else if (typeof value === "string") {
         body = value;
-      } else if (value instanceof Blob) {
+      } else if (value instanceof globalThis.Blob) {
         body = new Uint8Array(await value.arrayBuffer());
       } else {
-        throw new Error('Unsupported value type');
+        throw new Error("Unsupported value type");
       }
 
       const httpMetadata = this.extractHttpMetadata(options?.httpMetadata);
@@ -238,19 +421,22 @@ export class R2BucketService {
         CacheControl: httpMetadata?.cacheControl,
         Expires: httpMetadata?.cacheExpiry,
         Metadata: options?.customMetadata,
-        ContentMD5: typeof options?.md5 === 'string' ? options.md5 : undefined,
-        ChecksumSHA1: typeof options?.sha1 === 'string' ? options.sha1 : undefined,
-        ChecksumSHA256: typeof options?.sha256 === 'string' ? options.sha256 : undefined,
+        ContentMD5: typeof options?.md5 === "string" ? options.md5 : undefined,
+        ChecksumSHA1:
+          typeof options?.sha1 === "string" ? options.sha1 : undefined,
+        ChecksumSHA256:
+          typeof options?.sha256 === "string" ? options.sha256 : undefined,
       });
 
       const response = await this.s3Client.send(command);
 
       return this.createR2Object(key, {
         ...response,
-        ContentLength: body instanceof Uint8Array ? body.length : Buffer.byteLength(body),
+        ContentLength:
+          body instanceof Uint8Array ? body.length : Buffer.byteLength(body),
       });
     } catch (error) {
-      console.error('Error putting object:', error);
+      console.error("Error putting object:", error);
       throw error;
     }
   }
@@ -275,14 +461,14 @@ export class R2BucketService {
         await this.s3Client.send(command);
       }
     } catch (error) {
-      console.error('Error deleting objects:', error);
+      console.error("Error deleting objects:", error);
       throw error;
     }
   }
 
   async createMultipartUpload(
     key: string,
-    options?: R2MultipartOptions,
+    options?: R2MultipartOptions
   ): Promise<R2MultipartUpload> {
     const httpMetadata = this.extractHttpMetadata(options?.httpMetadata);
 
@@ -299,7 +485,7 @@ export class R2BucketService {
     });
 
     const response = await this.s3Client.send(command);
-    const uploadId = response.UploadId!;
+    const uploadId = response.UploadId || "";
 
     return this.createMultipartUploadObject(key, uploadId);
   }
@@ -308,17 +494,21 @@ export class R2BucketService {
     return this.createMultipartUploadObject(key, uploadId);
   }
 
-  private createMultipartUploadObject(key: string, uploadId: string): R2MultipartUpload {
+  private createMultipartUploadObject(
+    key: string,
+    uploadId: string
+  ): R2MultipartUpload {
     return {
       key,
       uploadId,
       uploadPart: async (
         partNumber: number,
         value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
+        _options?: R2UploadPartOptions
       ) => {
         let body: Buffer | Uint8Array | string;
 
-        if (value instanceof ReadableStream) {
+        if (value instanceof globalThis.ReadableStream) {
           const reader = value.getReader();
           const chunks: Uint8Array[] = [];
           while (true) {
@@ -330,13 +520,17 @@ export class R2BucketService {
         } else if (value instanceof ArrayBuffer) {
           body = new Uint8Array(value);
         } else if (ArrayBuffer.isView(value)) {
-          body = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-        } else if (typeof value === 'string') {
+          body = new Uint8Array(
+            value.buffer,
+            value.byteOffset,
+            value.byteLength
+          );
+        } else if (typeof value === "string") {
           body = value;
-        } else if (value instanceof Blob) {
+        } else if (value instanceof globalThis.Blob) {
           body = new Uint8Array(await value.arrayBuffer());
         } else {
-          throw new Error('Unsupported value type');
+          throw new Error("Unsupported value type");
         }
 
         const uploadCommand = new UploadPartCommand({
@@ -351,7 +545,7 @@ export class R2BucketService {
 
         return {
           partNumber,
-          etag: partResponse.ETag || '',
+          etag: partResponse.ETag || "",
         };
       },
       abort: async () => {
@@ -382,13 +576,13 @@ export class R2BucketService {
     };
   }
 
-  private createR2Object(key: string, response: any): R2Object {
+  private createR2Object(key: string, response: Record<string, any>): R2Object {
     const r2Object = {
       key,
-      version: response.VersionId || '',
+      version: response.VersionId || "",
       size: response.ContentLength || 0,
-      etag: response.ETag?.replace(/"/g, '') || '',
-      httpEtag: response.ETag || '',
+      etag: response.ETag?.replace(/"/g, "") || "",
+      httpEtag: response.ETag || "",
       checksums: this.createChecksums(response),
       uploaded: new Date(response.LastModified || Date.now()),
       httpMetadata: {
@@ -400,8 +594,8 @@ export class R2BucketService {
         cacheExpiry: response.Expires,
       },
       customMetadata: response.Metadata || {},
-      storageClass: response.StorageClass || 'STANDARD',
-      writeHttpMetadata: (_headers: Headers) => {
+      storageClass: response.StorageClass || "STANDARD",
+      writeHttpMetadata: (_headers: any) => {
         // This is a no-op in our implementation
       },
     };
@@ -409,13 +603,14 @@ export class R2BucketService {
     // Add range if present
     if (response.ContentRange) {
       // Parse content range if needed
+      // @ts-ignore - range is optional
       r2Object.range = undefined;
     }
 
     return r2Object as R2Object;
   }
 
-  private createChecksums(response: any): R2Checksums {
+  private createChecksums(response: Record<string, any>): R2Checksums {
     const checksums: R2Checksums = {
       toJSON(): Record<string, string> {
         const result: Record<string, string> = {};
@@ -428,8 +623,8 @@ export class R2BucketService {
       },
       arrayBufferToHex(buffer: ArrayBuffer): string {
         return Array.from(new Uint8Array(buffer))
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('');
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
       },
     } as R2Checksums & { arrayBufferToHex(buffer: ArrayBuffer): string };
 
@@ -447,12 +642,18 @@ export class R2BucketService {
     return checksums;
   }
 
-  private formatRange(range: R2Range | Headers): string | undefined {
-    if (range instanceof Headers) {
-      return range.get('range') || undefined;
+  private formatRange(range: R2Range | any): string | undefined {
+    if (
+      typeof range === "object" &&
+      range &&
+      "get" in range &&
+      typeof range.get === "function"
+    ) {
+      // It's a Headers object
+      return range.get("range") || undefined;
     }
 
-    if ('suffix' in range) {
+    if ("suffix" in range) {
       return `bytes=-${range.suffix}`;
     }
 
@@ -463,17 +664,27 @@ export class R2BucketService {
     return `bytes=${offset}-`;
   }
 
-  private extractHttpMetadata(metadata?: R2HTTPMetadata | Headers): R2HTTPMetadata | undefined {
+  private extractHttpMetadata(
+    metadata?: R2HTTPMetadata | any
+  ): R2HTTPMetadata | undefined {
     if (!metadata) return undefined;
 
-    if (metadata instanceof Headers) {
+    if (
+      typeof metadata === "object" &&
+      metadata &&
+      "get" in metadata &&
+      typeof metadata.get === "function"
+    ) {
+      // It's a Headers object
       return {
-        contentType: metadata.get('content-type') || undefined,
-        contentLanguage: metadata.get('content-language') || undefined,
-        contentDisposition: metadata.get('content-disposition') || undefined,
-        contentEncoding: metadata.get('content-encoding') || undefined,
-        cacheControl: metadata.get('cache-control') || undefined,
-        cacheExpiry: metadata.get('expires') ? new Date(metadata.get('expires')!) : undefined,
+        contentType: metadata.get("content-type") || undefined,
+        contentLanguage: metadata.get("content-language") || undefined,
+        contentDisposition: metadata.get("content-disposition") || undefined,
+        contentEncoding: metadata.get("content-encoding") || undefined,
+        cacheControl: metadata.get("cache-control") || undefined,
+        cacheExpiry: metadata.get("expires")
+          ? new Date(metadata.get("expires"))
+          : undefined,
       };
     }
 
