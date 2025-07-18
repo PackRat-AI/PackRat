@@ -1,5 +1,5 @@
-import * as path from 'node:path';
 import * as fs from 'fs-extra';
+import * as path from 'node:path';
 
 const isCI = process.env.CI === 'true';
 if (isCI) {
@@ -28,12 +28,14 @@ const expoOutputPath = path.join(__dirname, '..', '..', 'apps', 'expo', outputNa
 const expoFileContent = envFileContent
   .split('\n')
   .map((line) => {
+    // Only keep EXPO_PUBLIC_ variables
     if (line.startsWith('PUBLIC_APP=')) {
       return 'EXPO_PUBLIC_APP=expo';
     } else if (line.startsWith('PUBLIC_')) {
       return line.replace(/^PUBLIC_/, 'EXPO_PUBLIC_');
+    } else if (line.startsWith('EXPO_PUBLIC_')) {
+      return line;
     }
-    return line;
   })
   .join('\n');
 const expoNoTelemetry = 'EXPO_NO_TELEMETRY=true';
