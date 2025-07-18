@@ -1,8 +1,7 @@
 import { use$ } from '@legendapp/state/react';
-
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { packWeigthHistoryStore } from '../store/packWeightHistory';
 import type { PackWeightHistoryEntry } from '../types';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 
 export type PackMonthlyAverage = {
   month: string;

@@ -1,6 +1,6 @@
 import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { getWeatherIconByCondition, getWeatherIconName } from '../lib/weatherIcons';
 import { View } from 'react-native';
+import { getWeatherIconByCondition, getWeatherIconName } from '../lib/weatherIcons';
 
 type WeatherIconProps = {
   // Either provide a condition code or text
