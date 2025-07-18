@@ -2,6 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import matter from 'gray-matter';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -54,13 +55,20 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const metadata = headResult?.customMetadata || {};
 
     // Get content
-    const content = await object.text();
+    const rawContent = await object.text();
+
+    // Parse frontmatter
+    const { data: frontmatter, content } = matter(rawContent);
 
     return c.json({
       id,
-      title: metadata.title || id.replace(/-/g, ' '),
+      title: frontmatter.title || metadata.title || id.replace(/-/g, ' '),
       category: metadata.category || 'general',
-      description: metadata.description || '',
+      categories: frontmatter.categories || [],
+      description: frontmatter.description || metadata.description || '',
+      author: frontmatter.author,
+      readingTime: frontmatter.readingTime,
+      difficulty: frontmatter.difficulty,
       content,
       createdAt: object.uploaded.toISOString(),
       updatedAt: object.uploaded.toISOString(),

@@ -2,6 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import matter from 'gray-matter';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -64,24 +65,52 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const list = await bucket.list();
     console.log('Bucket list returned:', list.objects.length, 'objects');
 
-    let guides = list.objects.map((obj) => ({
-      id: obj.key.replace(/\.(mdx?|md)$/, ''), // Remove .mdx or .md extension
-      key: obj.key,
-      title: obj.customMetadata?.title || obj.key.replace(/\.(mdx?|md)$/, '').replace(/-/g, ' '),
-      category: obj.customMetadata?.category || 'general',
-      description: obj.customMetadata?.description || '',
-      createdAt: obj.uploaded.toISOString(),
-      updatedAt: obj.uploaded.toISOString(),
-    }));
+    const guides = await Promise.all(
+      list.objects.map(async (obj) => {
+        // Try to get frontmatter data
+        let frontmatter: any = {};
+        try {
+          const response = await bucket.get(obj.key);
+          if (response) {
+            const text = await response.text();
+            const { data } = matter(text);
+            frontmatter = data;
+          }
+        } catch (error) {
+          console.error(`Error parsing frontmatter for ${obj.key}:`, error);
+        }
+
+        return {
+          id: obj.key.replace(/\.(mdx?|md)$/, ''), // Remove .mdx or .md extension
+          key: obj.key,
+          title:
+            frontmatter.title ||
+            obj.customMetadata?.title ||
+            obj.key.replace(/\.(mdx?|md)$/, '').replace(/-/g, ' '),
+          category: obj.customMetadata?.category || 'general',
+          categories: frontmatter.categories || [],
+          description: frontmatter.description || obj.customMetadata?.description || '',
+          author: frontmatter.author,
+          readingTime: frontmatter.readingTime,
+          difficulty: frontmatter.difficulty,
+          createdAt: obj.uploaded.toISOString(),
+          updatedAt: obj.uploaded.toISOString(),
+        };
+      }),
+    );
 
     // Apply category filter
+    let filteredGuides = guides;
     if (category) {
-      guides = guides.filter((guide) => guide.category === category);
+      filteredGuides = guides.filter(
+        (guide) =>
+          guide.category === category || (guide.categories && guide.categories.includes(category)),
+      );
     }
 
     // Apply sorting
     if (sort) {
-      guides.sort((a, b) => {
+      filteredGuides.sort((a, b) => {
         const aValue = a[sort.field as keyof typeof a];
         const bValue = b[sort.field as keyof typeof b];
 
@@ -93,13 +122,13 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       });
     } else {
       // Default sort by title
-      guides.sort((a, b) => a.title.localeCompare(b.title));
+      filteredGuides.sort((a, b) => a.title.localeCompare(b.title));
     }
 
     // Apply pagination
-    const total = guides.length;
+    const total = filteredGuides.length;
     const offset = (page - 1) * limit;
-    const paginatedGuides = guides.slice(offset, offset + limit);
+    const paginatedGuides = filteredGuides.slice(offset, offset + limit);
     const totalPages = Math.ceil(total / limit);
 
     return c.json({
