@@ -1,14 +1,11 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import { R2BucketService } from "@packrat/api/services/r2-bucket";
-import type { RouteHandler } from "@packrat/api/types/routeHandler";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
+import { createRoute, z } from '@hono/zod-openapi';
+import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 
 export const routeDefinition = createRoute({
-  method: "get",
-  path: "/",
+  method: 'get',
+  path: '/',
   request: {
     query: z.object({
       page: z.coerce.number().int().positive().optional().default(1),
@@ -16,13 +13,13 @@ export const routeDefinition = createRoute({
       category: z.string().optional(),
       sort: z
         .object({
-          field: z.enum(["title", "category", "createdAt", "updatedAt"]),
-          order: z.enum(["asc", "desc"]),
+          field: z.enum(['title', 'category', 'createdAt', 'updatedAt']),
+          order: z.enum(['asc', 'desc']),
         })
         .optional(),
     }),
   },
-  responses: { 200: { description: "Get guides list" } },
+  responses: { 200: { description: 'Get guides list' } },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
@@ -32,21 +29,16 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     return unauthorizedResponse();
   }
 
-  const { page, limit, category } = c.req.valid("query");
+  const { page, limit, category } = c.req.valid('query');
 
   // Manually parse sort parameters from raw query
   const url = new URL(c.req.url);
-  const sortField = url.searchParams.get("sort[field]");
-  const sortOrder = url.searchParams.get("sort[order]");
+  const sortField = url.searchParams.get('sort[field]');
+  const sortOrder = url.searchParams.get('sort[order]');
 
   // Validate sort parameters
-  const validSortFields = [
-    "title",
-    "category",
-    "createdAt",
-    "updatedAt",
-  ] as const;
-  const validSortOrders = ["asc", "desc"] as const;
+  const validSortFields = ['title', 'category', 'createdAt', 'updatedAt'] as const;
+  const validSortOrders = ['asc', 'desc'] as const;
 
   const sort =
     sortField &&
@@ -63,23 +55,21 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     // Use the new R2 service with org credentials
     const bucket = new R2BucketService({
       env: c.env,
-      bucketType: "guides",
+      bucketType: 'guides',
       config: {
         useOrgCredentials: true,
       },
     });
 
     const list = await bucket.list();
-    console.log("Bucket list returned:", list.objects.length, "objects");
+    console.log('Bucket list returned:', list.objects.length, 'objects');
 
     let guides = list.objects.map((obj) => ({
-      id: obj.key.replace(/\.(mdx?|md)$/, ""), // Remove .mdx or .md extension
+      id: obj.key.replace(/\.(mdx?|md)$/, ''), // Remove .mdx or .md extension
       key: obj.key,
-      title:
-        obj.customMetadata?.title ||
-        obj.key.replace(/\.(mdx?|md)$/, "").replace(/-/g, " "),
-      category: obj.customMetadata?.category || "general",
-      description: obj.customMetadata?.description || "",
+      title: obj.customMetadata?.title || obj.key.replace(/\.(mdx?|md)$/, '').replace(/-/g, ' '),
+      category: obj.customMetadata?.category || 'general',
+      description: obj.customMetadata?.description || '',
       createdAt: obj.uploaded.toISOString(),
       updatedAt: obj.uploaded.toISOString(),
     }));
@@ -95,7 +85,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
         const aValue = a[sort.field as keyof typeof a];
         const bValue = b[sort.field as keyof typeof b];
 
-        if (sort.order === "asc") {
+        if (sort.order === 'asc') {
           return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
         } else {
           return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
@@ -120,7 +110,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       totalPages,
     });
   } catch (error) {
-    console.error("Error listing guides:", error);
-    return c.json({ error: "Failed to list guides" }, 500);
+    console.error('Error listing guides:', error);
+    return c.json({ error: 'Failed to list guides' }, 500);
   }
 };
