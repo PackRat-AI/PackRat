@@ -21,6 +21,9 @@
       "bucket_name": "packrat-items-bucket"
     }
   ],
+  "limits": {
+    "cpu_ms": 300000
+  },
   "queues": {
     "producers": [
       {
