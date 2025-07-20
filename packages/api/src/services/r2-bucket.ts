@@ -1,18 +1,30 @@
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
+  CreateBucketCommand,
   CreateMultipartUploadCommand,
+  DeleteBucketCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
+  GetBucketCorsCommand,
+  GetBucketLifecycleConfigurationCommand,
+  GetBucketPolicyCommand,
   GetObjectCommand,
+  HeadBucketCommand,
   HeadObjectCommand,
+  ListBucketsCommand,
   ListObjectsV2Command,
+  PutBucketCorsCommand,
+  PutBucketLifecycleConfigurationCommand,
+  PutBucketPolicyCommand,
   PutObjectCommand,
   S3Client,
+  TransitionStorageClass,
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
 import type { Readable } from 'node:stream';
+import { TextDecoder } from 'util';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -44,7 +56,7 @@ interface R2Object {
   httpMetadata?: R2HTTPMetadata;
   customMetadata?: Record<string, string>;
   range?: { offset: number; length: number };
-  storageClass: string;
+  storageClass: TransitionStorageClass;
   ssecKeyMd5?: string;
   writeHttpMetadata(headers: any): void;
 }
@@ -140,11 +152,65 @@ interface R2BucketConfig {
   useOrgCredentials?: boolean;
 }
 
-type BucketType = 'guides' | 'items' | 'general';
+// Bucket management types
+export interface BucketInfo {
+  name: string;
+  creationDate: Date;
+}
+
+export interface ObjectInfo {
+  key: string;
+  lastModified: Date;
+  size: number;
+  etag: string;
+}
+
+export interface CorsRule {
+  allowedHeaders?: string[];
+  allowedMethods: string[];
+  allowedOrigins: string[];
+  exposeHeaders?: string[];
+  maxAgeSeconds?: number;
+}
+
+export interface CorsConfiguration {
+  corsRules: CorsRule[];
+}
+
+export interface LifecycleRule {
+  id: string;
+  status: 'Enabled' | 'Disabled';
+  filter?: {
+    prefix?: string;
+  };
+  expiration?: {
+    days?: number;
+    date?: Date;
+  };
+  transitions?: Array<{
+    days?: number;
+    date?: Date;
+    storageClass: TransitionStorageClass;
+  }>;
+}
+
+export interface LifecycleConfiguration {
+  rules: LifecycleRule[];
+}
+
+export interface PublicAccessBlockConfiguration {
+  blockPublicAcls: boolean;
+  ignorePublicAcls: boolean;
+  blockPublicPolicy: boolean;
+  restrictPublicBuckets: boolean;
+}
+
+type BucketType = 'guides' | 'items' | 'general' | 'custom';
 
 export class R2BucketService {
   private s3Client: S3Client;
   private bucketName: string;
+  private accountId: string;
 
   constructor({
     env,
@@ -157,7 +223,7 @@ export class R2BucketService {
   }) {
     // Determine which credentials to use
     const useOrg = config?.useOrgCredentials ?? false;
-    const accountId =
+    this.accountId =
       config?.accountId || (useOrg ? env.CLOUDFLARE_ACCOUNT_ID_ORG : env.CLOUDFLARE_ACCOUNT_ID);
     const accessKeyId =
       config?.accessKeyId || (useOrg ? env.R2_ACCESS_KEY_ID_ORG : env.R2_ACCESS_KEY_ID);
@@ -178,12 +244,15 @@ export class R2BucketService {
         case 'general':
           this.bucketName = env.PACKRAT_BUCKET_R2_BUCKET_NAME;
           break;
+        case 'custom':
+          this.bucketName = config?.bucketName || 'default-bucket';
+          break;
       }
     }
 
     this.s3Client = new S3Client({
       region: 'auto',
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      endpoint: `https://${this.accountId}.r2.cloudflarestorage.com`,
       credentials: {
         accessKeyId,
         secretAccessKey,
@@ -191,15 +260,241 @@ export class R2BucketService {
     });
   }
 
-  async head(key: string): Promise<R2Object | null> {
+  // Bucket Management Methods
+  async listBuckets(): Promise<BucketInfo[]> {
     try {
-      const command = new HeadObjectCommand({
-        Bucket: this.bucketName,
-        Key: key,
-      });
-
+      const command = new ListBucketsCommand({});
       const response = await this.s3Client.send(command);
 
+      return (response.Buckets || []).map((bucket) => ({
+        name: bucket.Name || '',
+        creationDate: bucket.CreationDate || new Date(),
+      }));
+    } catch (error) {
+      console.error('Error listing buckets:', error);
+      throw error;
+    }
+  }
+
+  async createBucket(bucketName: string): Promise<void> {
+    try {
+      const command = new CreateBucketCommand({
+        Bucket: bucketName,
+      });
+      await this.s3Client.send(command);
+      console.log(`Successfully created bucket: ${bucketName}`);
+    } catch (error: any) {
+      // Ignore if bucket already exists
+      if (error.name === 'BucketAlreadyExists' || error.name === 'BucketAlreadyOwnedByYou') {
+        console.log(`Bucket ${bucketName} already exists`);
+        return;
+      }
+      console.error(`Error creating bucket ${bucketName}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteBucket(bucketName: string): Promise<void> {
+    try {
+      const command = new DeleteBucketCommand({
+        Bucket: bucketName,
+      });
+      await this.s3Client.send(command);
+      console.log(`Successfully deleted bucket: ${bucketName}`);
+    } catch (error) {
+      console.error(`Error deleting bucket ${bucketName}:`, error);
+      throw error;
+    }
+  }
+
+  async bucketExists(bucketName: string): Promise<boolean> {
+    try {
+      const command = new HeadBucketCommand({
+        Bucket: bucketName,
+      });
+      await this.s3Client.send(command);
+      return true;
+    } catch (error: any) {
+      if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  // Bucket Configuration Methods
+  async getBucketCors(bucketName?: string): Promise<CorsConfiguration | null> {
+    try {
+      const command = new GetBucketCorsCommand({
+        Bucket: bucketName || this.bucketName,
+      });
+      const response = await this.s3Client.send(command);
+
+      if (!response.CORSRules) return null;
+
+      return {
+        corsRules: response.CORSRules.map((rule) => ({
+          allowedHeaders: rule.AllowedHeaders,
+          allowedMethods: rule.AllowedMethods || [],
+          allowedOrigins: rule.AllowedOrigins || [],
+          exposeHeaders: rule.ExposeHeaders,
+          maxAgeSeconds: rule.MaxAgeSeconds,
+        })),
+      };
+    } catch (error: any) {
+      if (error.name === 'NoSuchCORSConfiguration') {
+        return null;
+      }
+      console.error('Error getting CORS configuration:', error);
+      throw error;
+    }
+  }
+
+  async setBucketCors(corsConfig: CorsConfiguration, bucketName?: string): Promise<void> {
+    try {
+      const command = new PutBucketCorsCommand({
+        Bucket: bucketName || this.bucketName,
+        CORSConfiguration: {
+          CORSRules: corsConfig.corsRules.map((rule) => ({
+            AllowedHeaders: rule.allowedHeaders,
+            AllowedMethods: rule.allowedMethods,
+            AllowedOrigins: rule.allowedOrigins,
+            ExposeHeaders: rule.exposeHeaders,
+            MaxAgeSeconds: rule.maxAgeSeconds,
+          })),
+        },
+      });
+      await this.s3Client.send(command);
+      console.log(
+        `Successfully set CORS configuration for bucket: ${bucketName || this.bucketName}`,
+      );
+    } catch (error) {
+      console.error('Error setting CORS configuration:', error);
+      throw error;
+    }
+  }
+
+  async getBucketLifecycle(bucketName?: string): Promise<LifecycleConfiguration | null> {
+    try {
+      const command = new GetBucketLifecycleConfigurationCommand({
+        Bucket: bucketName || this.bucketName,
+      });
+      const response = await this.s3Client.send(command);
+
+      if (!response.Rules) return null;
+
+      return {
+        rules: response.Rules.map((rule) => ({
+          id: rule.ID || '',
+          status: rule.Status as 'Enabled' | 'Disabled',
+          filter: rule.Filter?.Prefix ? { prefix: rule.Filter.Prefix } : undefined,
+          expiration: rule.Expiration
+            ? {
+                days: rule.Expiration.Days,
+                date: rule.Expiration.Date,
+              }
+            : undefined,
+          transitions: rule.Transitions?.map((transition) => ({
+            days: transition.Days,
+            date: transition.Date,
+            storageClass: transition.StorageClass as TransitionStorageClass,
+          })),
+        })),
+      };
+    } catch (error: any) {
+      if (error.name === 'NoSuchLifecycleConfiguration') {
+        return null;
+      }
+      console.error('Error getting lifecycle configuration:', error);
+      throw error;
+    }
+  }
+
+  async setBucketLifecycle(
+    lifecycleConfig: LifecycleConfiguration,
+    bucketName?: string,
+  ): Promise<void> {
+    try {
+      const command = new PutBucketLifecycleConfigurationCommand({
+        Bucket: bucketName || this.bucketName,
+        LifecycleConfiguration: {
+          Rules: lifecycleConfig.rules.map((rule) => ({
+            ID: rule.id,
+            Status: rule.status,
+            Filter: rule.filter?.prefix ? { Prefix: rule.filter.prefix } : {},
+            Expiration: rule.expiration
+              ? {
+                  Days: rule.expiration.days,
+                  Date: rule.expiration.date,
+                }
+              : undefined,
+            Transitions: rule.transitions?.map((transition) => ({
+              Days: transition.days,
+              Date: transition.date,
+              StorageClass: transition.storageClass,
+            })),
+          })),
+        },
+      });
+      await this.s3Client.send(command);
+      console.log(
+        `Successfully set lifecycle configuration for bucket: ${bucketName || this.bucketName}`,
+      );
+    } catch (error) {
+      console.error('Error setting lifecycle configuration:', error);
+      throw error;
+    }
+  }
+
+  async getBucketPolicy(bucketName?: string): Promise<string | null> {
+    try {
+      const command = new GetBucketPolicyCommand({
+        Bucket: bucketName || this.bucketName,
+      });
+      const response = await this.s3Client.send(command);
+      return response.Policy || null;
+    } catch (error: any) {
+      if (error.name === 'NoSuchBucketPolicy') {
+        return null;
+      }
+      console.error('Error getting bucket policy:', error);
+      throw error;
+    }
+  }
+
+  async setBucketPolicy(policy: string, bucketName?: string): Promise<void> {
+    try {
+      const command = new PutBucketPolicyCommand({
+        Bucket: bucketName || this.bucketName,
+        Policy: policy,
+      });
+      await this.s3Client.send(command);
+      console.log(`Successfully set bucket policy for bucket: ${bucketName || this.bucketName}`);
+    } catch (error) {
+      console.error('Error setting bucket policy:', error);
+      throw error;
+    }
+  }
+
+  // Enhanced object listing with more details
+  async listObjects(prefix?: string, bucketName?: string): Promise<ObjectInfo[]> {
+    const result = await this.list({ prefix }, bucketName);
+    return result.objects.map((obj) => ({
+      key: obj.key,
+      lastModified: obj.uploaded,
+      size: obj.size,
+      etag: obj.etag,
+    }));
+  }
+
+  // Original methods with bucket name parameter support
+  async head(key: string, bucketName?: string): Promise<R2Object | null> {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: bucketName || this.bucketName,
+        Key: key,
+      });
+      const response = await this.s3Client.send(command);
       return this.createR2Object(key, response);
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'name' in error) {
@@ -218,16 +513,20 @@ export class R2BucketService {
   get(
     key: string,
     options: R2GetOptions & { onlyIf: R2Conditional | Headers },
+    bucketName?: string,
   ): Promise<R2ObjectBody | R2Object | null>;
-  get(key: string, options?: R2GetOptions): Promise<R2ObjectBody | null>;
-  async get(key: string, options?: R2GetOptions): Promise<R2ObjectBody | R2Object | null> {
+  get(key: string, options?: R2GetOptions, bucketName?: string): Promise<R2ObjectBody | null>;
+  async get(
+    key: string,
+    options?: R2GetOptions,
+    bucketName?: string,
+  ): Promise<R2ObjectBody | R2Object | null> {
     try {
       const command = new GetObjectCommand({
-        Bucket: this.bucketName,
+        Bucket: bucketName || this.bucketName,
         Key: key,
         Range: options?.range ? this.formatRange(options.range) : undefined,
       });
-
       const response = await this.s3Client.send(command);
 
       if (!response.Body) {
@@ -268,7 +567,7 @@ export class R2BucketService {
         arrayBuffer: async () => bodyArray.buffer,
         bytes: async () => bodyArray,
         text: async () => new TextDecoder().decode(bodyArray),
-        json: async <T>() => JSON.parse(new TextDecoder().decode(bodyArray)) as T,
+        json: async () => JSON.parse(new TextDecoder().decode(bodyArray)),
         blob: async () => new globalThis.Blob([bodyArray]),
       };
 
@@ -287,10 +586,10 @@ export class R2BucketService {
     }
   }
 
-  async list(options?: R2ListOptions): Promise<R2Objects> {
+  async list(options?: R2ListOptions, bucketName?: string): Promise<R2Objects> {
     try {
       const command = new ListObjectsV2Command({
-        Bucket: this.bucketName,
+        Bucket: bucketName || this.bucketName,
         MaxKeys: options?.limit || 1000,
         Prefix: options?.prefix,
         ContinuationToken: options?.cursor,
@@ -334,16 +633,19 @@ export class R2BucketService {
     key: string,
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
     options?: R2PutOptions & { onlyIf: R2Conditional | Headers },
+    bucketName?: string,
   ): Promise<R2Object | null>;
   put(
     key: string,
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
     options?: R2PutOptions,
+    bucketName?: string,
   ): Promise<R2Object>;
   async put(
     key: string,
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
     options?: R2PutOptions,
+    bucketName?: string,
   ): Promise<R2Object | null> {
     try {
       if (value === null) {
@@ -376,7 +678,7 @@ export class R2BucketService {
       const httpMetadata = this.extractHttpMetadata(options?.httpMetadata);
 
       const command = new PutObjectCommand({
-        Bucket: this.bucketName,
+        Bucket: bucketName || this.bucketName,
         Key: key,
         Body: body,
         ContentType: httpMetadata?.contentType,
@@ -403,19 +705,19 @@ export class R2BucketService {
     }
   }
 
-  async delete(keys: string | string[]): Promise<void> {
+  async delete(keys: string | string[], bucketName?: string): Promise<void> {
     try {
       const keysArray = Array.isArray(keys) ? keys : [keys];
 
       if (keysArray.length === 1) {
         const command = new DeleteObjectCommand({
-          Bucket: this.bucketName,
+          Bucket: bucketName || this.bucketName,
           Key: keysArray[0],
         });
         await this.s3Client.send(command);
       } else {
         const command = new DeleteObjectsCommand({
-          Bucket: this.bucketName,
+          Bucket: bucketName || this.bucketName,
           Delete: {
             Objects: keysArray.map((key) => ({ Key: key })),
           },
@@ -431,11 +733,12 @@ export class R2BucketService {
   async createMultipartUpload(
     key: string,
     options?: R2MultipartOptions,
+    bucketName?: string,
   ): Promise<R2MultipartUpload> {
     const httpMetadata = this.extractHttpMetadata(options?.httpMetadata);
 
     const command = new CreateMultipartUploadCommand({
-      Bucket: this.bucketName,
+      Bucket: bucketName || this.bucketName,
       Key: key,
       ContentType: httpMetadata?.contentType,
       ContentLanguage: httpMetadata?.contentLanguage,
@@ -449,14 +752,18 @@ export class R2BucketService {
     const response = await this.s3Client.send(command);
     const uploadId = response.UploadId || '';
 
-    return this.createMultipartUploadObject(key, uploadId);
+    return this.createMultipartUploadObject(key, uploadId, bucketName);
   }
 
-  resumeMultipartUpload(key: string, uploadId: string): R2MultipartUpload {
-    return this.createMultipartUploadObject(key, uploadId);
+  resumeMultipartUpload(key: string, uploadId: string, bucketName?: string): R2MultipartUpload {
+    return this.createMultipartUploadObject(key, uploadId, bucketName);
   }
 
-  private createMultipartUploadObject(key: string, uploadId: string): R2MultipartUpload {
+  private createMultipartUploadObject(
+    key: string,
+    uploadId: string,
+    bucketName?: string,
+  ): R2MultipartUpload {
     return {
       key,
       uploadId,
@@ -489,7 +796,7 @@ export class R2BucketService {
         }
 
         const uploadCommand = new UploadPartCommand({
-          Bucket: this.bucketName,
+          Bucket: bucketName || this.bucketName,
           Key: key,
           PartNumber: partNumber,
           UploadId: uploadId,
@@ -505,7 +812,7 @@ export class R2BucketService {
       },
       abort: async () => {
         const abortCommand = new AbortMultipartUploadCommand({
-          Bucket: this.bucketName,
+          Bucket: bucketName || this.bucketName,
           Key: key,
           UploadId: uploadId,
         });
@@ -513,7 +820,7 @@ export class R2BucketService {
       },
       complete: async (uploadedParts: R2UploadedPart[]) => {
         const completeCommand = new CompleteMultipartUploadCommand({
-          Bucket: this.bucketName,
+          Bucket: bucketName || this.bucketName,
           Key: key,
           UploadId: uploadId,
           MultipartUpload: {
@@ -525,7 +832,6 @@ export class R2BucketService {
         });
 
         const completeResponse = await this.s3Client.send(completeCommand);
-
         return this.createR2Object(key, completeResponse);
       },
     };
@@ -611,6 +917,7 @@ export class R2BucketService {
     if (length !== undefined) {
       return `bytes=${offset}-${offset + length - 1}`;
     }
+
     return `bytes=${offset}-`;
   }
 

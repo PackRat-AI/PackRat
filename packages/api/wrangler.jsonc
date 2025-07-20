@@ -26,13 +26,21 @@
       {
         "queue": "packrat-etl-queue",
         "binding": "ETL_QUEUE"
+      },
+      {
+        "queue": "packrat-bucket-tranfer-queue",
+        "binding": "BUCKET_TRANSFER_QUEUE"
       }
     ],
     "consumers": [
       {
         "queue": "packrat-etl-queue",
-        "max_batch_size": 10,
+        "max_batch_size": 100,
         "max_batch_timeout": 5
+      },
+      {
+        "queue": "packrat-bucket-tranfer-queue",
+        "dead_letter_queue": "packrat-dlq"
       }
     ]
   },

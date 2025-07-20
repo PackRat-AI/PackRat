@@ -9,6 +9,9 @@ import { R2BucketService } from './r2-bucket';
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
   CATALOG_ETL_WRITE_BATCH = 'catalog-etl-write-batch',
+  BUCKET_TRANSFER_INIT = 'bucket-transfer-init',
+  BUCKET_TRANSFER_BUCKET = 'bucket-transfer-bucket',
+  BUCKET_TRANSFER_OBJECT = 'bucket-transfer-object',
 }
 
 export interface BaseQueueMessage {
@@ -34,7 +37,55 @@ export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
   };
 }
 
+export interface BucketTransferInitMessage extends BaseQueueMessage {
+  type: QueueType.BUCKET_TRANSFER_INIT;
+  data: {
+    sourceAccountId: string;
+    sourceAccessKeyId: string;
+    sourceSecretAccessKey: string;
+    destinationAccountId: string;
+    destinationAccessKeyId: string;
+    destinationSecretAccessKey: string;
+    bucketNames?: string[]; // If empty, transfer all buckets
+    userId: string;
+  };
+}
+
+export interface BucketTransferBucketMessage extends BaseQueueMessage {
+  type: QueueType.BUCKET_TRANSFER_BUCKET;
+  data: {
+    sourceBucketName: string;
+    destinationBucketName: string;
+    sourceAccountId: string;
+    sourceAccessKeyId: string;
+    sourceSecretAccessKey: string;
+    destinationAccountId: string;
+    destinationAccessKeyId: string;
+    destinationSecretAccessKey: string;
+    userId: string;
+  };
+}
+
+export interface BucketTransferObjectMessage extends BaseQueueMessage {
+  type: QueueType.BUCKET_TRANSFER_OBJECT;
+  data: {
+    sourceBucketName: string;
+    destinationBucketName: string;
+    objectKey: string;
+    sourceAccountId: string;
+    sourceAccessKeyId: string;
+    sourceSecretAccessKey: string;
+    destinationAccountId: string;
+    destinationAccessKeyId: string;
+    destinationSecretAccessKey: string;
+    userId: string;
+  };
+}
+
 const BATCH_SIZE = 10; // Process 10 rows at a time to stay under 128KB message limit
+const OBJECT_BATCH_SIZE = 100; // Process 100 objects at a time for bucket transfers
+const MAX_MESSAGES_PER_SECOND = 5000;
+const DELAY_MS = Math.max(1, Math.ceil((1000 * OBJECT_BATCH_SIZE) / MAX_MESSAGES_PER_SECOND));
 const _CHUNK_SIZE = 5 * 1024 * 1024; // Read 5MB chunks from R2
 
 export async function sendToQueue({
@@ -71,6 +122,49 @@ export async function queueCatalogETL({
   return jobId;
 }
 
+export async function queueBucketTransfer({
+  queue,
+  sourceAccountId,
+  sourceAccessKeyId,
+  sourceSecretAccessKey,
+  destinationAccountId,
+  destinationAccessKeyId,
+  destinationSecretAccessKey,
+  bucketNames,
+  userId,
+}: {
+  queue: Queue;
+  sourceAccountId: string;
+  sourceAccessKeyId: string;
+  sourceSecretAccessKey: string;
+  destinationAccountId: string;
+  destinationAccessKeyId: string;
+  destinationSecretAccessKey: string;
+  bucketNames?: string[];
+  userId: string;
+}): Promise<string> {
+  const jobId = crypto.randomUUID();
+
+  const message: BucketTransferInitMessage = {
+    type: QueueType.BUCKET_TRANSFER_INIT,
+    data: {
+      sourceAccountId,
+      sourceAccessKeyId,
+      sourceSecretAccessKey,
+      destinationAccountId,
+      destinationAccessKeyId,
+      destinationSecretAccessKey,
+      bucketNames,
+      userId,
+    },
+    timestamp: Date.now(),
+    id: jobId,
+  };
+
+  await sendToQueue({ queue, message });
+  return jobId;
+}
+
 export async function processQueueBatch({
   batch,
   env,
@@ -98,12 +192,348 @@ export async function processQueueBatch({
           });
           break;
 
+        case QueueType.BUCKET_TRANSFER_INIT:
+          if (!env.BUCKET_TRANSFER_QUEUE)
+            throw new Error('BUCKET_TRANSFER_QUEUE is not configured');
+          await processBucketTransferInit({
+            message: queueMessage as BucketTransferInitMessage,
+            env,
+          });
+          break;
+
+        case QueueType.BUCKET_TRANSFER_BUCKET:
+          if (!env.BUCKET_TRANSFER_QUEUE)
+            throw new Error('BUCKET_TRANSFER_QUEUE is not configured');
+          await processBucketTransferBucket({
+            message: queueMessage as BucketTransferBucketMessage,
+            env,
+            msgOriginal: message,
+          });
+          break;
+
+        case QueueType.BUCKET_TRANSFER_OBJECT:
+          await processBucketTransferObject({
+            message: queueMessage as BucketTransferObjectMessage,
+            env,
+            msgOriginal: message,
+          });
+          break;
+
         default:
           console.warn(`Unknown queue message type: ${queueMessage.type}`);
       }
     } catch (error) {
       console.error('Error processing queue message:', error);
     }
+  }
+}
+
+async function processBucketTransferInit({
+  message,
+  env,
+}: {
+  message: BucketTransferInitMessage;
+  env: Env;
+}): Promise<void> {
+  const {
+    sourceAccountId,
+    sourceAccessKeyId,
+    sourceSecretAccessKey,
+    destinationAccountId,
+    destinationAccessKeyId,
+    destinationSecretAccessKey,
+    bucketNames,
+    userId,
+  } = message.data;
+  const jobId = message.id;
+
+  console.log(`Starting bucket transfer job ${jobId}`);
+
+  // Create R2 service for source account
+  const sourceR2Service = new R2BucketService({
+    env,
+    bucketType: 'custom',
+    config: {
+      useOrgCredentials: false,
+      accountId: sourceAccountId,
+      accessKeyId: sourceAccessKeyId,
+      secretAccessKey: sourceSecretAccessKey,
+    },
+  });
+
+  let bucketsToTransfer: string[] = [];
+
+  if (bucketNames && bucketNames.length > 0) {
+    bucketsToTransfer = bucketNames;
+    console.log(`Job ${jobId}: Transferring specified buckets:`, bucketsToTransfer);
+  } else {
+    // List all buckets from source account
+    try {
+      const buckets = await sourceR2Service.listBuckets();
+      bucketsToTransfer = buckets.map((bucket) => bucket.name);
+      console.log(
+        `Job ${jobId}: Found ${bucketsToTransfer.length} buckets to transfer:`,
+        bucketsToTransfer,
+      );
+    } catch (error) {
+      console.error(`Job ${jobId}: Error listing buckets:`, error);
+      throw error;
+    }
+  }
+
+  // Queue individual bucket transfer jobs
+  for (const bucketName of bucketsToTransfer) {
+    const bucketTransferMessage: BucketTransferBucketMessage = {
+      type: QueueType.BUCKET_TRANSFER_BUCKET,
+      id: jobId,
+      timestamp: Date.now(),
+      data: {
+        sourceBucketName: bucketName,
+        destinationBucketName: bucketName, // Keep same name
+        sourceAccountId,
+        sourceAccessKeyId,
+        sourceSecretAccessKey,
+        destinationAccountId,
+        destinationAccessKeyId,
+        destinationSecretAccessKey,
+        userId,
+      },
+    };
+
+    await env.BUCKET_TRANSFER_QUEUE.send(bucketTransferMessage);
+  }
+
+  console.log(`Job ${jobId}: Queued ${bucketsToTransfer.length} bucket transfer jobs`);
+}
+
+async function processBucketTransferBucket({
+  message,
+  env,
+  msgOriginal,
+}: {
+  message: BucketTransferBucketMessage;
+  env: Env;
+  msgOriginal: Message<BaseQueueMessage>;
+}): Promise<void> {
+  const {
+    sourceBucketName,
+    destinationBucketName,
+    sourceAccountId,
+    sourceAccessKeyId,
+    sourceSecretAccessKey,
+    destinationAccountId,
+    destinationAccessKeyId,
+    destinationSecretAccessKey,
+    userId,
+  } = message.data;
+  const jobId = message.id;
+
+  console.log(
+    `Job ${jobId}: Starting transfer of bucket ${sourceBucketName} -> ${destinationBucketName}`,
+  );
+
+  // Create R2 services for source and destination
+  const sourceR2Service = new R2BucketService({
+    env,
+    bucketType: 'custom',
+    config: {
+      useOrgCredentials: false,
+      accountId: sourceAccountId,
+      accessKeyId: sourceAccessKeyId,
+      secretAccessKey: sourceSecretAccessKey,
+      bucketName: sourceBucketName,
+    },
+  });
+
+  const destinationR2Service = new R2BucketService({
+    env,
+    bucketType: 'custom',
+    config: {
+      useOrgCredentials: true,
+      accountId: destinationAccountId,
+      accessKeyId: destinationAccessKeyId,
+      secretAccessKey: destinationSecretAccessKey,
+      bucketName: destinationBucketName,
+    },
+  });
+
+  try {
+    // Create destination bucket with same configuration
+    await destinationR2Service.createBucket(destinationBucketName);
+    console.log(`Job ${jobId}: Created destination bucket ${destinationBucketName}`);
+
+    // Copy bucket configuration (CORS, lifecycle, etc.)
+    await copyBucketConfiguration(sourceR2Service, destinationR2Service, jobId);
+
+    // List all objects in source bucket
+    const objects = await sourceR2Service.listObjects();
+    console.log(`Job ${jobId}: Found ${objects.length} objects in bucket ${sourceBucketName}`);
+
+    let batchCount = 0;
+    const totalBatches = Math.ceil(objects.length / OBJECT_BATCH_SIZE);
+
+    for (let i = 0; i < objects.length; i += OBJECT_BATCH_SIZE) {
+      const batch = objects.slice(i, i + OBJECT_BATCH_SIZE);
+
+      // Prepare messages for sendBatch
+      const messages = batch.map((obj) => {
+        const objectTransferMessage: BucketTransferObjectMessage = {
+          type: QueueType.BUCKET_TRANSFER_OBJECT,
+          id: jobId,
+          timestamp: Date.now(),
+          data: {
+            sourceBucketName,
+            destinationBucketName,
+            objectKey: obj.key,
+            sourceAccountId,
+            sourceAccessKeyId,
+            sourceSecretAccessKey,
+            destinationAccountId,
+            destinationAccessKeyId,
+            destinationSecretAccessKey,
+            userId,
+          },
+        };
+        return { body: objectTransferMessage };
+      });
+
+      // Send batch of messages
+      await env.BUCKET_TRANSFER_QUEUE.sendBatch(messages);
+
+      batchCount++;
+      console.log(
+        `Job ${jobId}: Queued batch ${batchCount}/${totalBatches} (${batch.length} objects)`,
+      );
+
+      // Dynamic delay based on throughput limit - only delay if not the last batch
+      if (i + OBJECT_BATCH_SIZE < objects.length) {
+        await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+      }
+    }
+
+    console.log(
+      `Job ${jobId}: Queued ${objects.length} object transfers for bucket ${sourceBucketName}`,
+    );
+  } catch (error) {
+    console.error(`Job ${jobId}: Error transferring bucket ${sourceBucketName}:`, error);
+    msgOriginal.retry();
+  }
+}
+
+async function processBucketTransferObject({
+  message,
+  env,
+  msgOriginal,
+}: {
+  message: BucketTransferObjectMessage;
+  env: Env;
+  msgOriginal: Message<BaseQueueMessage>;
+}): Promise<void> {
+  const {
+    sourceBucketName,
+    destinationBucketName,
+    objectKey,
+    sourceAccountId,
+    sourceAccessKeyId,
+    sourceSecretAccessKey,
+    destinationAccountId,
+    destinationAccessKeyId,
+    destinationSecretAccessKey,
+  } = message.data;
+  const jobId = message.id;
+
+  try {
+    // Create R2 services for source and destination
+    const sourceR2Service = new R2BucketService({
+      env,
+      bucketType: 'custom',
+      config: {
+        useOrgCredentials: false,
+        accountId: sourceAccountId,
+        accessKeyId: sourceAccessKeyId,
+        secretAccessKey: sourceSecretAccessKey,
+        bucketName: sourceBucketName,
+      },
+    });
+
+    const destinationR2Service = new R2BucketService({
+      env,
+      bucketType: 'custom',
+      config: {
+        useOrgCredentials: true,
+        accountId: destinationAccountId,
+        accessKeyId: destinationAccessKeyId,
+        secretAccessKey: destinationSecretAccessKey,
+        bucketName: destinationBucketName,
+      },
+    });
+
+    // Get object from source
+    const sourceObject = await sourceR2Service.get(objectKey);
+    if (!sourceObject) {
+      console.warn(
+        `Job ${jobId}: Object ${objectKey} not found in source bucket ${sourceBucketName}`,
+      );
+      return;
+    }
+
+    // Get object metadata
+    const metadata = {
+      contentType: sourceObject.httpMetadata?.contentType,
+      contentLanguage: sourceObject.httpMetadata?.contentLanguage,
+      contentDisposition: sourceObject.httpMetadata?.contentDisposition,
+      contentEncoding: sourceObject.httpMetadata?.contentEncoding,
+      cacheControl: sourceObject.httpMetadata?.cacheControl,
+      expires: sourceObject.httpMetadata?.expires,
+      customMetadata: sourceObject.customMetadata,
+    };
+
+    // Copy object to destination with same metadata and folder structure
+    await destinationR2Service.put(objectKey, sourceObject.body, {
+      httpMetadata: {
+        contentType: metadata.contentType,
+        contentLanguage: metadata.contentLanguage,
+        contentDisposition: metadata.contentDisposition,
+        contentEncoding: metadata.contentEncoding,
+        cacheControl: metadata.cacheControl,
+        expires: metadata.expires,
+      },
+      customMetadata: metadata.customMetadata,
+    });
+
+    console.log(
+      `Job ${jobId}: Copied object ${objectKey} from ${sourceBucketName} to ${destinationBucketName}`,
+    );
+  } catch (error) {
+    console.error(`Job ${jobId}: Error copying object ${objectKey}:`, error);
+    msgOriginal.retry();
+  }
+}
+
+async function copyBucketConfiguration(
+  sourceR2Service: R2BucketService,
+  destinationR2Service: R2BucketService,
+  jobId: string,
+): Promise<void> {
+  try {
+    // Copy CORS configuration
+    const corsConfig = await sourceR2Service.getBucketCors();
+    if (corsConfig) {
+      await destinationR2Service.setBucketCors(corsConfig);
+      console.log(`Job ${jobId}: Copied CORS configuration`);
+    }
+
+    // Copy lifecycle configuration
+    const lifecycleConfig = await sourceR2Service.getBucketLifecycle();
+    if (lifecycleConfig) {
+      await destinationR2Service.setBucketLifecycle(lifecycleConfig);
+      console.log(`Job ${jobId}: Copied lifecycle configuration`);
+    }
+
+    console.log(`Job ${jobId}: Successfully copied bucket configurations`);
+  } catch (error) {
+    console.warn(`Job ${jobId}: Error copying bucket configuration:`, error);
+    // Don't throw here as this is not critical for the transfer
   }
 }
 
@@ -354,7 +784,7 @@ function mapCsvRowToItem({
   const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
   const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
 
-  if (weightStr && parseFloat(weightStr) > 0) {
+  if (weightStr && Number.parseFloat(weightStr) > 0) {
     const { weight, unit } = parseWeight(weightStr, unitStr);
     item.defaultWeight = weight;
     item.defaultWeightUnit = unit;
@@ -367,7 +797,7 @@ function mapCsvRowToItem({
 
   const ratingStr = fieldMap.ratingValue !== undefined ? values[fieldMap.ratingValue] : undefined;
   if (ratingStr) {
-    item.ratingValue = parseFloat(ratingStr) || null;
+    item.ratingValue = Number.parseFloat(ratingStr) || null;
   }
 
   const imageUrl = fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
@@ -433,7 +863,7 @@ function parseWeight(
 ): { weight: number | null; unit: string | null } {
   if (!weightStr) return { weight: null, unit: null };
 
-  const weightVal = parseFloat(weightStr);
+  const weightVal = Number.parseFloat(weightStr);
   if (Number.isNaN(weightVal) || weightVal < 0) {
     return { weight: null, unit: null };
   }
@@ -455,7 +885,7 @@ function parseWeight(
 
 function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
-  const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
+  const price = Number.parseFloat(priceStr.replace(/[^0-9.]/g, ''));
   return Number.isNaN(price) ? null : price;
 }
 
