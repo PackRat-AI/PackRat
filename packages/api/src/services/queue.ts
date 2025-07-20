@@ -146,7 +146,6 @@ async function processCatalogETL({
       console.log(`Processing ${filename} with field mapping:`, fieldMap);
       continue;
     }
-
     const item = mapCsvRowToItem({ values: row, fieldMap });
     if (item) batch.push(item);
 
@@ -176,7 +175,7 @@ async function processCatalogETL({
   console.log(`ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`);
 }
 
-async function processCatalogETLWriteBatch({
+export async function processCatalogETLWriteBatch({
   message,
   env,
 }: {
@@ -213,8 +212,9 @@ function createFieldMap(headers: string[]): Record<string, number> {
       'DESCRIPTION',
     ],
     weight: ['weight', 'weight_grams', 'weight_oz', 'wt', 'mass'],
-    weightUnit: ['weight_unit'],
-    category: [
+    weightUnit: ['weightUnit', 'weight_unit', 'unit', 'mass_unit'],
+    categories: [
+      'categories',
       'category',
       'type',
       'category_name',
@@ -236,9 +236,10 @@ function createFieldMap(headers: string[]): Record<string, number> {
     ],
     model: ['model', 'model_number', 'part_number'],
     sku: ['sku', 'item_number', 'product_id', 'id', 'item_id'],
-    productSku: ['product_sku'],
+    productSku: ['productSku', 'product_sku'],
     price: ['price', 'cost', 'amount', 'price_usd', 'msrp', 'Price', 'PRICE', 'Cost'],
-    image: [
+    images: [
+      'images',
       'image',
       'image_url',
       'photo',
@@ -250,7 +251,7 @@ function createFieldMap(headers: string[]): Record<string, number> {
       'IMAGE_URL',
     ],
     url: ['url', 'link', 'website', 'web', 'href', 'URL'],
-    productUrl: ['product_url', 'PRODUCT_URL'],
+    productUrl: ['productUrl', 'product_url', 'PRODUCT_URL', 'producturl'],
     color: ['color', 'colour'],
     size: ['size'],
     material: ['material', 'fabric'],
@@ -266,8 +267,14 @@ function createFieldMap(headers: string[]): Record<string, number> {
       'AVAILABILITY',
     ],
     currency: ['currency', 'price_currency'],
-    ratingValue: ['rating', 'rating_value', 'stars', 'average_rating'],
+    ratingValue: ['ratingValue', 'rating', 'rating_value', 'stars', 'average_rating'],
+    reviewCount: ['reviewCount', 'review_count', 'reviews_count', 'num_reviews', 'reviewcount'],
     techs: ['techs'],
+    variants: ['variants'],
+    links: ['links'],
+    reviews: ['reviews'],
+    qas: ['qas', 'questions'],
+    faqs: ['faqs', 'frequently_asked_questions'],
     details: ['details'],
     parameters: ['parameters'],
     site: ['site'],
@@ -298,33 +305,94 @@ function mapCsvRowToItem({
 }): Partial<NewCatalogItem> | null {
   const item: Partial<NewCatalogItem> = {};
 
-  const name = fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
-  if (!name) {
-    return null; // A name is required
-  }
-  item.name = name;
+  item.name = fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
+  if (!item.name) return null; // required and not empty
 
-  const descriptionParts: string[] = [];
-  if (fieldMap.description !== undefined && values[fieldMap.description]) {
-    descriptionParts.push(values[fieldMap.description].replace(/^"|"$/g, ''));
-  }
-  if (fieldMap.details !== undefined && values[fieldMap.details]) {
-    descriptionParts.push(`Details: ${values[fieldMap.details].replace(/^"|"$/g, '')}`);
-  }
-  if (fieldMap.parameters !== undefined && values[fieldMap.parameters]) {
-    descriptionParts.push(`Parameters: ${parseAndFormatMultiString(values[fieldMap.parameters])}`);
-  }
-  if (descriptionParts.length > 0) {
-    item.description = descriptionParts.join('\n\n');
+  item.productUrl =
+    fieldMap.product_url !== undefined ? values[fieldMap.product_url]?.trim() : undefined;
+  if (!item.productUrl) return null; // required and not empty
+
+  item.currency = fieldMap.currency !== undefined ? values[fieldMap.currency]?.trim() : undefined;
+  if (!item.currency) return null; // required and not empty
+
+  // --- Optional Scalars ---
+  item.description =
+    fieldMap.description !== undefined
+      ? values[fieldMap.description]?.replace(/[\r\n]+/g, ' ').trim()
+      : undefined;
+
+  item.weight = fieldMap.weight !== undefined ? parseFloat(values[fieldMap.weight]) : undefined;
+
+  item.weightUnit =
+    fieldMap.weight_unit !== undefined ? values[fieldMap.weight_unit]?.trim() : undefined;
+
+  item.ratingValue =
+    fieldMap.rating_value !== undefined ? parseFloat(values[fieldMap.rating_value]) : undefined;
+
+  item.reviewCount =
+    fieldMap.review_count !== undefined ? parseInt(values[fieldMap.review_count]) : undefined;
+
+  item.price = fieldMap.price !== undefined ? parsePrice(values[fieldMap.price]) : undefined;
+
+  if (fieldMap.categories !== undefined && values[fieldMap.categories]) {
+    try {
+      const val = values[fieldMap.categories].trim();
+      item.categories = val.startsWith('[')
+        ? JSON.parse(val)
+        : val
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean);
+    } catch {
+      item.categories = [];
+    }
   }
 
-  // --- Direct Mappings ---
+  if (fieldMap.variants !== undefined && values[fieldMap.variants]) {
+    let val = values[fieldMap.variants].trim();
+    try {
+      // Try parsing as JSON first
+      item.variants = JSON.parse(val);
+    } catch {
+      // Try to convert single quotes to double quotes and parse again
+      try {
+        val = val.replace(/'/g, '"');
+        item.variants = JSON.parse(val);
+      } catch {
+        item.variants = [];
+      }
+    }
+  }
+
+  if (fieldMap.images !== undefined && values[fieldMap.images]) {
+    try {
+      const val = values[fieldMap.images].trim();
+      item.images = val.startsWith('[')
+        ? JSON.parse(val)
+        : val
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean);
+    } catch {
+      item.images = [];
+    }
+  }
+
+  const jsonFields: (keyof NewCatalogItem)[] = ['links', 'reviews', 'qas', 'faqs'];
+  for (const field of jsonFields) {
+    if (fieldMap[field as string] !== undefined && values[fieldMap[field as string]]) {
+      try {
+        item[field] = JSON.parse(values[fieldMap[field as string]]);
+      } catch {
+        (item as any)[field] = [];
+      }
+    }
+  }
+
   const directMappings: (keyof NewCatalogItem)[] = [
-    'category',
     'brand',
     'model',
     'url',
-    'productUrl',
     'color',
     'size',
     'sku',
@@ -332,44 +400,13 @@ function mapCsvRowToItem({
     'availability',
     'seller',
     'material',
-    'currency',
     'condition',
   ];
   for (const key of directMappings) {
     const fieldIndex = fieldMap[key as string];
     if (fieldIndex !== undefined && values[fieldIndex]) {
-      // @ts-expect-error - We are mapping strings to the correct keys
+      // @ts-expect-error - dynamic assignment is safe here
       item[key] = values[fieldIndex].replace(/^"|"$/g, '').trim();
-    }
-  }
-
-  // --- Transformed Mappings ---
-  const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
-  const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
-
-  if (weightStr && parseFloat(weightStr) > 0) {
-    const { weight, unit } = parseWeight(weightStr, unitStr);
-    item.defaultWeight = weight;
-    item.defaultWeightUnit = unit;
-  }
-
-  const priceStr = fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
-  if (priceStr) {
-    item.price = parsePrice(priceStr);
-  }
-
-  const ratingStr = fieldMap.ratingValue !== undefined ? values[fieldMap.ratingValue] : undefined;
-  if (ratingStr) {
-    item.ratingValue = parseFloat(ratingStr) || null;
-  }
-
-  const imageUrl = fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
-  if (imageUrl) {
-    const parsedImage = parseJsonOrString(imageUrl);
-    if (Array.isArray(parsedImage)) {
-      item.image = parsedImage[0];
-    } else if (typeof parsedImage === 'string') {
-      item.image = parsedImage.split(',')[0].trim();
     }
   }
 
@@ -379,45 +416,20 @@ function mapCsvRowToItem({
       const parsedTechs = JSON.parse(techsStr);
       item.techs = parsedTechs;
 
-      // Fallback weight parsing from techs
-      if (!item.defaultWeight) {
+      if (!item.weight) {
         const claimedWeight = parsedTechs['Claimed Weight'] || parsedTechs.weight;
         if (claimedWeight) {
           const { weight, unit } = parseWeight(claimedWeight);
-          item.defaultWeight = weight;
-          item.defaultWeightUnit = unit;
+          item.weight = weight;
+          item.weightUnit = unit;
         }
       }
     } catch {
-      // Ignore malformed JSON
+      item.techs = {};
     }
   }
 
-  if (item.description) {
-    item.description = item.description
-      .replace(/[\r\n]+/g, ' ')
-      .replace(/Details:\s*Item\s+#\S+/gi, '')
-      .trim();
-  }
-
   return item;
-}
-
-function parseJsonOrString(str: string): string | object {
-  try {
-    return JSON.parse(str);
-  } catch (_e) {
-    return str;
-  }
-}
-
-function parseAndFormatMultiString(str: string): string {
-  if (!str) return '';
-  const parsed = parseJsonOrString(str);
-  if (Array.isArray(parsed)) {
-    return parsed.join(', ');
-  } else if (typeof parsed === 'string') return parsed;
-  return '';
 }
 
 function parseWeight(

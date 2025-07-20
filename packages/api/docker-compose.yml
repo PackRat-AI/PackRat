@@ -1,0 +1,15 @@
+services:
+  db:
+    image: ankane/pgvector:latest  
+    restart: always
+    environment:
+      POSTGRES_USER: packrat
+      POSTGRES_PASSWORD: packrat
+      POSTGRES_DB: testdb
+    ports:
+      - "5455:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

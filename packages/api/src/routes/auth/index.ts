@@ -24,7 +24,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { env } from 'hono/adapter';
 
 const authRoutes = new OpenAPIHono();
-
+console.log('process.env.NEON_DATABASE_URL:', process.env.NEON_DATABASE_URL);
 // Login route
 const loginRoute = createRoute({
   method: 'post',
@@ -63,9 +63,9 @@ authRoutes.openapi(loginRoute, async (c) => {
   }
 
   // Check if email is verified
-  if (!userRecord.emailVerified) {
-    return c.json({ error: 'Please verify your email before logging in' }, 403);
-  }
+  // if (!userRecord.emailVerified) {
+  //   return c.json({ error: 'Please verify your email before logging in' }, 403);
+  // }
 
   // Generate refresh token
   const refreshToken = generateRefreshToken();
