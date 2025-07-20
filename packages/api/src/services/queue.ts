@@ -40,12 +40,12 @@ export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
 export interface BucketTransferInitMessage extends BaseQueueMessage {
   type: QueueType.BUCKET_TRANSFER_INIT;
   data: {
-    sourceAccountId: string;
-    sourceAccessKeyId: string;
-    sourceSecretAccessKey: string;
-    destinationAccountId: string;
-    destinationAccessKeyId: string;
-    destinationSecretAccessKey: string;
+    sourceAccountId?: string;
+    sourceAccessKeyId?: string;
+    sourceSecretAccessKey?: string;
+    destinationAccountId?: string;
+    destinationAccessKeyId?: string;
+    destinationSecretAccessKey?: string;
     bucketNames?: string[]; // If empty, transfer all buckets
     userId: string;
   };
@@ -56,12 +56,12 @@ export interface BucketTransferBucketMessage extends BaseQueueMessage {
   data: {
     sourceBucketName: string;
     destinationBucketName: string;
-    sourceAccountId: string;
-    sourceAccessKeyId: string;
-    sourceSecretAccessKey: string;
-    destinationAccountId: string;
-    destinationAccessKeyId: string;
-    destinationSecretAccessKey: string;
+    sourceAccountId?: string;
+    sourceAccessKeyId?: string;
+    sourceSecretAccessKey?: string;
+    destinationAccountId?: string;
+    destinationAccessKeyId?: string;
+    destinationSecretAccessKey?: string;
     userId: string;
   };
 }
@@ -72,12 +72,12 @@ export interface BucketTransferObjectMessage extends BaseQueueMessage {
     sourceBucketName: string;
     destinationBucketName: string;
     objectKey: string;
-    sourceAccountId: string;
-    sourceAccessKeyId: string;
-    sourceSecretAccessKey: string;
-    destinationAccountId: string;
-    destinationAccessKeyId: string;
-    destinationSecretAccessKey: string;
+    sourceAccountId?: string;
+    sourceAccessKeyId?: string;
+    sourceSecretAccessKey?: string;
+    destinationAccountId?: string;
+    destinationAccessKeyId?: string;
+    destinationSecretAccessKey?: string;
     userId: string;
   };
 }
@@ -134,12 +134,12 @@ export async function queueBucketTransfer({
   userId,
 }: {
   queue: Queue;
-  sourceAccountId: string;
-  sourceAccessKeyId: string;
-  sourceSecretAccessKey: string;
-  destinationAccountId: string;
-  destinationAccessKeyId: string;
-  destinationSecretAccessKey: string;
+  sourceAccountId?: string;
+  sourceAccessKeyId?: string;
+  sourceSecretAccessKey?: string;
+  destinationAccountId?: string;
+  destinationAccessKeyId?: string;
+  destinationSecretAccessKey?: string;
   bucketNames?: string[];
   userId: string;
 }): Promise<string> {

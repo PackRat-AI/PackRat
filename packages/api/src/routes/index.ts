@@ -10,6 +10,7 @@ import { searchRoutes } from './search';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
+import { bucketTransferRoute } from './bucket-transfer';
 
 const publicRoutes = new OpenAPIHono();
 
@@ -30,6 +31,7 @@ protectedRoutes.route('/pack-templates', packTemplatesRoutes);
 protectedRoutes.route('/user', userRoutes);
 protectedRoutes.route('/upload', uploadRoutes);
 protectedRoutes.route('/search', searchRoutes);
+protectedRoutes.route('/', bucketTransferRoute);
 
 const routes = new OpenAPIHono();
 

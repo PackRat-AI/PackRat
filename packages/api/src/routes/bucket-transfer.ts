@@ -1,16 +1,20 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { queueBucketTransfer } from '@packrat/api/services/queue';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import type { Env } from '../types/env';
 
 const bucketTransferSchema = z.object({
-  sourceAccountId: z.string().min(1, 'Source account ID is required'),
-  sourceAccessKeyId: z.string().min(1, 'Source access key ID is required'),
-  sourceSecretAccessKey: z.string().min(1, 'Source secret access key is required'),
-  destinationAccountId: z.string().min(1, 'Destination account ID is required'),
-  destinationAccessKeyId: z.string().min(1, 'Destination access key ID is required'),
-  destinationSecretAccessKey: z.string().min(1, 'Destination secret access key is required'),
+  sourceAccountId: z.string().min(1, 'Source account ID is required').optional(),
+  sourceAccessKeyId: z.string().min(1, 'Source access key ID is required').optional(),
+  sourceSecretAccessKey: z.string().min(1, 'Source secret access key is required').optional(),
+  destinationAccountId: z.string().min(1, 'Destination account ID is required').optional(),
+  destinationAccessKeyId: z.string().min(1, 'Destination access key ID is required').optional(),
+  destinationSecretAccessKey: z
+    .string()
+    .min(1, 'Destination secret access key is required')
+    .optional(),
   bucketNames: z
     .array(z.string())
     .optional()
@@ -100,3 +104,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     bucketsToTransfer: bucketNames || 'all buckets',
   });
 };
+
+export const bucketTransferRoute = new OpenAPIHono<{ Bindings: Env }>();
+
+bucketTransferRoute.openapi(routeDefinition, handler);
