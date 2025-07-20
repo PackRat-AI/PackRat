@@ -36,11 +36,11 @@
       }
     ],
     "consumers": [
-      {
-        "queue": "packrat-etl-queue",
-        "max_batch_size": 100,
-        "max_batch_timeout": 5
-      },
+      // {
+      //   "queue": "packrat-etl-queue",
+      //   "max_batch_size": 100,
+      //   "max_batch_timeout": 5
+      // },
       {
         "queue": "packrat-bucket-tranfer-queue",
         "dead_letter_queue": "packrat-dlq"
