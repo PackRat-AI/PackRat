@@ -42,6 +42,8 @@ export default (): ExpoConfig =>
         bundleIdentifier: 'com.andrewbierman.packrat',
         infoPlist: {
           ITSAppUsesNonExemptEncryption: false,
+          NSLocationWhenInUseUsageDescription:
+            'This app needs access to your location while you are using it.',
         },
         privacyManifests: {
           NSPrivacyCollectedDataTypes: [
