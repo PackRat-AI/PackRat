@@ -670,6 +670,103 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
   return c.json({ success: true });
 });
 
+const appleRoute = createRoute({
+  method: 'post',
+  path: '/apple',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            identityToken: z.string(),
+            authorizationCode: z.string(),
+          }),
+        },
+      },
+    },
+  },
+  responses: { 200: { description: 'Apple authentication' } },
+});
+
+authRoutes.openapi(appleRoute, async (c) => {
+  const { identityToken } = await c.req.json();
+  const db = createDb(c);
+
+  // Decode the identity token (JWT)
+  const payload = JSON.parse(Buffer.from(identityToken.split('.')[1], 'base64').toString());
+
+  const { sub, email, email_verified } = payload;
+  if (!sub || !email) {
+    return c.json({ error: 'Invalid Apple token' }, 400);
+  }
+
+  // Check if user exists with this Apple ID
+  const [existingProvider] = await db
+    .select()
+    .from(authProviders)
+    .where(and(eq(authProviders.provider, 'apple'), eq(authProviders.providerId, sub)))
+    .limit(1);
+
+  let userId: number;
+  if (existingProvider) {
+    userId = existingProvider.userId;
+  } else {
+    // Check if user exists with this email
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+    if (existingUser) {
+      userId = existingUser.id;
+    } else {
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email,
+          emailVerified: email_verified || false,
+        })
+        .returning({ id: users.id });
+      userId = newUser.id;
+    }
+
+    await db.insert(authProviders).values({
+      userId,
+      provider: 'apple',
+      providerId: sub,
+    });
+  }
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      emailVerified: users.emailVerified,
+      role: users.role,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  const refreshToken = generateRefreshToken();
+  await db.insert(refreshTokens).values({
+    userId,
+    token: refreshToken,
+    expiresAt: new Date(Date.now() + 30 * 86400 * 1000),
+  });
+
+  const accessToken = await generateJWT({
+    payload: { userId, role: user.role },
+    c,
+  });
+
+  return c.json({
+    success: true,
+    accessToken,
+    refreshToken,
+    user,
+  });
+});
+
 const googleRoute = createRoute({
   method: 'post',
   path: '/google',

@@ -25,6 +25,7 @@ export default (): ExpoConfig =>
         ],
         'expo-secure-store',
         'expo-web-browser',
+        'expo-apple-authentication',
       ],
       experiments: {
         typedRoutes: true,
@@ -40,8 +41,14 @@ export default (): ExpoConfig =>
       ios: {
         supportsTablet: true,
         bundleIdentifier: 'com.andrewbierman.packrat',
+        usesAppleSignIn: true,
         infoPlist: {
           ITSAppUsesNonExemptEncryption: false,
+          CFBundleURLTypes: [
+            {
+              CFBundleURLSchemes: ['com.andrewbierman.packrat'],
+            },
+          ],
         },
         privacyManifests: {
           NSPrivacyCollectedDataTypes: [
