@@ -49,6 +49,8 @@ export default (): ExpoConfig =>
               CFBundleURLSchemes: ['com.andrewbierman.packrat'],
             },
           ],
+          NSLocationWhenInUseUsageDescription:
+            'This app needs access to your location while you are using it.',
         },
         privacyManifests: {
           NSPrivacyCollectedDataTypes: [
