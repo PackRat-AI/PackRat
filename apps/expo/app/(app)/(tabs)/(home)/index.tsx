@@ -256,7 +256,7 @@ export default function DashboardScreen() {
       />
 
       <List
-        contentContainerClassName="pt-4 pb-18"
+        contentContainerClassName="pt-4 pb-18 mb-4"
         contentInsetAdjustmentBehavior="automatic"
         variant="insets"
         data={dashboardLayout}

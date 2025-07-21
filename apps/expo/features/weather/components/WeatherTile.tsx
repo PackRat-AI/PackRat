@@ -2,7 +2,7 @@ import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useActiveLocation } from '../hooks';
 import { WeatherIcon } from './WeatherIcon';
 
@@ -49,6 +49,7 @@ export function WeatherTile() {
         onPress={handlePress}
         target="Cell"
         index={0}
+        removeSeparator={Platform.OS === 'ios'}
       />
     </View>
   );
