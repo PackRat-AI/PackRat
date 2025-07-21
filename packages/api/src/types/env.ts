@@ -35,6 +35,8 @@ export type Env = {
   R2_ACCESS_KEY_ID: string; // For s3Client which is used for generating presigned URLs
   R2_SECRET_ACCESS_KEY: string; // For s3Client which is used for generating presigned URLs
   PACKRAT_BUCKET_R2_BUCKET_NAME: string; // For s3Client which is used for generating presigned URLs
+  PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: string;
+  PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: string;
   PACKRAT_SCRAPY_BUCKET: R2Bucket;
   PACKRAT_BUCKET: R2Bucket; // general bucket
 
