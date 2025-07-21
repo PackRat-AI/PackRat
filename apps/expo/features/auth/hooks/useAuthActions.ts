@@ -215,7 +215,7 @@ export function useAuthActions() {
     setIsLoading(true);
     try {
       // Sign out from Google if signed in
-      const isSignedIn = GoogleSignin.hasPreviousSignIn();
+      const isSignedIn = await GoogleSignin.hasPreviousSignIn();
       if (isSignedIn) {
         await GoogleSignin.signOut();
       }
