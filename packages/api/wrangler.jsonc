@@ -17,8 +17,8 @@
       "bucket_name": "packrat-bucket"
     },
     {
-      "binding": "PACKRAT_ITEMS_BUCKET",
-      "bucket_name": "packrat-items-bucket"
+      "binding": "PACKRAT_SCRAPY_BUCKET",
+      "bucket_name": "packrat-scrapy-bucket"
     }
   ],
   "queues": {
@@ -38,5 +38,15 @@
   },
   "ai": {
     "binding": "AI"
+  },
+  "env": {
+    "preview": {
+      "r2_buckets": [
+        {
+          "binding": "PACKRAT_BUCKET",
+          "bucket_name": "packrat-bucket-preview"
+        }
+      ]
+    }
   }
 }
