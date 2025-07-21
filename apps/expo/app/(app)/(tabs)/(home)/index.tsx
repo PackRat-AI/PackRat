@@ -256,7 +256,7 @@ export default function DashboardScreen() {
       />
 
       <List
-        contentContainerClassName="pt-4 pb-18 mb-4"
+        contentContainerClassName="pt-4"
         contentInsetAdjustmentBehavior="automatic"
         variant="insets"
         data={dashboardLayout}
@@ -264,6 +264,7 @@ export default function DashboardScreen() {
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
+        ListFooterComponent={<View className="h-12" />} // 👈 Add margin below last item
       />
     </View>
   );
