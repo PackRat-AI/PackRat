@@ -34,6 +34,10 @@
         "queue": "packrat-bucket-tranfer-queue",
         "binding": "BUCKET_TRANSFER_QUEUE"
       }
+      // {
+      //   "queue": "packrat-bucket-tranfer-queue",
+      //   "binding": "BUCKET_TRANSFER_QUEUE"
+      // }
     ],
     "consumers": [
       // {
