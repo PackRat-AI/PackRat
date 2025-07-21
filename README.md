@@ -284,7 +284,7 @@ cd PackRat
 
 3. Set up environment variables:
 
-   This project uses a centralized environment configuration strategy. All environment variables are defined in a single source of truth (e.g., .env, env.ts, or similar) located at the root of the project.
+   This project uses a centralized environment configuration strategy. All environment variables are defined in a single source of truth (e.g. .env.local) located at the root of the project.
 
    A .dev.vars file will be automatically generated for development tools.
 
