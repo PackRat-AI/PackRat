@@ -21,7 +21,7 @@ import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/stor
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { cn } from 'expo-app/lib/cn';
 import { Stack, useRouter } from 'expo-router';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, SafeAreaView, View } from 'react-native';
 
 const SCREEN_OPTIONS = {
@@ -135,39 +135,47 @@ function ListHeaderComponent() {
 }
 
 function ListFooterComponent() {
-  const { signOut, isLoading } = useAuth();
+  const { signOut } = useAuth();
   const router = useRouter();
   const { colors } = useColorScheme();
 
   const alertRef = useRef<AlertRef>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
-    alertRef.current?.alert({
-      title: "You're now logged out!",
-      message: 'What would you like to do?',
-      materialIcon: { name: 'check-circle-outline', color: colors.green },
-      buttons: [
-        {
-          text: 'Stay logged out',
-          style: 'cancel',
-          onPress: () => {
-            router.replace('/');
+    try {
+      setIsSigningOut(true);
+      await signOut();
+      alertRef.current?.alert({
+        title: "You're now logged out!",
+        message: 'What would you like to do?',
+        materialIcon: { name: 'check-circle-outline', color: colors.green },
+        buttons: [
+          {
+            text: 'Stay logged out',
+            style: 'cancel',
+            onPress: () => {
+              router.replace('/');
+            },
           },
-        },
-        {
-          text: 'Sign-in again',
-          style: 'default',
-          onPress: async () => {
-            await AsyncStorage.setItem('skipped_login', 'false');
-            router.replace({
-              pathname: '/auth',
-              params: { showSkipLoginBtn: 'true', redirectTo: '/' },
-            });
+          {
+            text: 'Sign-in again',
+            style: 'default',
+            onPress: async () => {
+              await AsyncStorage.setItem('skipped_login', 'false');
+              router.replace({
+                pathname: '/auth',
+                params: { showSkipLoginBtn: 'true', redirectTo: '/' },
+              });
+            },
           },
-        },
-      ],
-    });
+        ],
+      });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
@@ -175,7 +183,7 @@ function ListFooterComponent() {
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
-        disabled={isLoading}
+        disabled={isSigningOut}
         onPress={() => {
           if (
             !isEmpty(packItemsSyncState.getPendingChanges() || {}) ||
@@ -205,7 +213,7 @@ function ListFooterComponent() {
         variant={Platform.select({ ios: 'primary', default: 'secondary' })}
         className="border-border bg-card"
       >
-        {isLoading ? (
+        {isSigningOut ? (
           <ActivityIndicator className="text-destructive" />
         ) : (
           <Text className="text-destructive">Log Out</Text>
