@@ -32,7 +32,7 @@ import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 
 const tileInfo = {
   'current-pack': {
@@ -278,7 +278,15 @@ function renderDashboardItem<T extends ListDataItem>(info: ListRenderItemInfo<T>
 
   const TileItem = tileInfo[item as TileName].component;
   return (
-    <View className=" rounded-xl overflow-hidden ">
+    <View
+      className={cn(
+        'rounded-xl overflow-hidden',
+        Platform.select({
+          ios: 'mb-1',
+          android: 'mb-0',
+        }),
+      )}
+    >
       <TileItem />
     </View>
   );
