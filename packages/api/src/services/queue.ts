@@ -118,10 +118,7 @@ async function processCatalogETL({
 
   console.log(`Starting ETL job ${jobId} for file ${filename}`);
 
-  // Use R2 bucket binding instead of S3 client
-  const { PACKRAT_ITEMS_BUCKET } = env;
-
-  const object = await PACKRAT_ITEMS_BUCKET.get(objectKey);
+  const object = await env.PACKRAT_SCRAPY_BUCKET.get(objectKey);
 
   if (!object) {
     throw new Error(`Object not found: ${objectKey}`);
