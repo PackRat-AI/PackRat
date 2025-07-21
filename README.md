@@ -227,22 +227,25 @@ PackRat uses private packages from GitHub Package Registry. You need to authenti
 #### Local Development
 
 1. Install GitHub CLI:
+
    ```bash
    # macOS
    brew install gh
-   
+
    # Windows
    winget install --id GitHub.cli
-   
+
    # Linux - see https://github.com/cli/cli#installation
    ```
 
 2. Authenticate with GitHub CLI:
+
    ```bash
    gh auth login
    ```
 
 3. Add the `read:packages` scope to your authentication:
+
    ```bash
    gh auth refresh -h github.com -s read:packages
    ```
@@ -280,14 +283,16 @@ cd PackRat
 ```
 
 3. Set up environment variables:
-   - Copy `.env.example` to `.env.local` and fill in your values
-   - For API deployment, configure your Cloudflare Workers environment variables
 
-```bash
-# Set up Expo environment
-cp .env.example .env.local
-# Edit the file with your API keys (Mapbox, etc.)
-```
+   This project uses a centralized environment configuration strategy. All environment variables are defined in a single source of truth (e.g., .env, env.ts, or similar) located at the root of the project.
+
+   A .dev.vars file will be automatically generated for development tools.
+
+   Run bun install to regenerate .dev.vars whenever environment variables are changed.
+
+   Only variables prefixed with PUBLIC\_ will be bundled into the Expo app (e.g., PUBLIC_API_URL). These are safe to expose in the client environment.
+
+   ⚠️ Do not include secrets (e.g., private API keys) in PUBLIC\_ variables — they may be exposed in the bundled app.
 
 ### Git Hooks Setup
 
