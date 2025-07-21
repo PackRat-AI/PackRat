@@ -13,10 +13,10 @@ import {
   isWorn,
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 
 export function PackTemplateItemDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

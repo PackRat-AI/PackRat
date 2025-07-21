@@ -4,7 +4,7 @@ import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 export function WeatherAlertsTile() {
   const router = useRouter();
@@ -44,6 +44,7 @@ export function WeatherAlertsTile() {
         onPress={handlePress}
         target="Cell"
         index={0}
+        removeSeparator={Platform.OS === 'ios'}
       />
       <Alert
         title="No Trips Yet"

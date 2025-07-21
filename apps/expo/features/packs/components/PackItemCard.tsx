@@ -4,6 +4,7 @@ import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import {
@@ -12,7 +13,6 @@ import {
   usePackItemOwnershipCheck,
 } from '../hooks';
 import type { PackItem } from '../types';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 
 type PackItemCardProps = {
   item: PackItem;

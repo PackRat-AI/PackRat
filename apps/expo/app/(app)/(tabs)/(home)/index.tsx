@@ -32,9 +32,8 @@ import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 
-// Includes tile component and metadata for search functionality
 const tileInfo = {
   'current-pack': {
     title: 'Current Pack',
@@ -132,10 +131,7 @@ function SettingsIcon() {
 
 function DemoIcon() {
   const { colors } = useColorScheme();
-
-  if (clientEnvs.NODE_ENV !== 'development') {
-    return null;
-  }
+  if (clientEnvs.NODE_ENV !== 'development') return null;
 
   return (
     <Link href="/demo" asChild>
@@ -175,24 +171,17 @@ export default function DashboardScreen() {
     ...(featureFlags.enablePackTemplates ? ['pack-templates'] : []),
   ]).current;
 
-  // Filter dashboard tiles based on search value
   const filteredTiles = useMemo(() => {
-    if (!searchValue.trim()) {
-      return [];
-    }
+    if (!searchValue.trim()) return [];
 
     const searchLower = searchValue.toLowerCase();
-
     return dashboardLayout.filter((item) => {
       if (!item.startsWith('gap')) {
         const info = tileInfo[item as TileName];
-        if (info) {
-          // Check if title or any keywords match
-          return (
-            info.title.toLowerCase().includes(searchLower) ||
-            info.keywords.some((keyword: string) => keyword.toLowerCase().includes(searchLower))
-          );
-        }
+        return (
+          info.title.toLowerCase().includes(searchLower) ||
+          info.keywords.some((k) => k.toLowerCase().includes(searchLower))
+        );
       }
       return false;
     });
@@ -205,9 +194,7 @@ export default function DashboardScreen() {
         searchBar={{
           ref: asNonNullableRef(searchBarRef),
           iosHideWhenScrolling: true,
-          onChangeText(text) {
-            setSearchValue(text);
-          },
+          onChangeText: setSearchValue,
           placeholder: 'Search...',
           content: searchValue ? (
             <FlatList
@@ -221,7 +208,7 @@ export default function DashboardScreen() {
                   return (
                     <Pressable
                       key={item}
-                      className="py-2"
+                      className="rounded-2xl overflow-hidden "
                       onPress={() => {
                         setSearchValue('');
                         searchBarRef.current?.clearText();
@@ -244,14 +231,12 @@ export default function DashboardScreen() {
                 <View className="items-center justify-center p-6">
                   <Icon name="file-search-outline" size={48} color="#9ca3af" />
                   <View className="h-4" />
-                  <View className="items-center">
-                    <Text className="text-lg font-medium text-muted-foreground">
-                      No matching tiles found
-                    </Text>
-                    <Text className="mt-1 text-center text-sm text-muted-foreground">
-                      Try different keywords or clear your search
-                    </Text>
-                  </View>
+                  <Text className="text-lg font-medium text-muted-foreground">
+                    No matching tiles found
+                  </Text>
+                  <Text className="mt-1 text-center text-sm text-muted-foreground">
+                    Try different keywords or clear your search
+                  </Text>
                 </View>
               )}
             />
@@ -279,6 +264,7 @@ export default function DashboardScreen() {
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
+        ListFooterComponent={<View className="h-12" />} // 👈 Add margin below last item
       />
     </View>
   );
@@ -292,7 +278,19 @@ function renderDashboardItem<T extends ListDataItem>(info: ListRenderItemInfo<T>
   }
 
   const TileItem = tileInfo[item as TileName].component;
-  return <TileItem />;
+  return (
+    <View
+      className={cn(
+        'rounded-xl overflow-hidden',
+        Platform.select({
+          ios: 'mb-1',
+          android: 'mb-0',
+        }),
+      )}
+    >
+      <TileItem />
+    </View>
+  );
 }
 
 function keyExtractor(item: string, _index: number) {

@@ -58,10 +58,7 @@ const PROFILE_OPTIONS = {
   title: 'Profile',
 } as const;
 
-const TAB_BAR = Platform.select({
-  ios: undefined,
-  android: (props: BottomTabBarProps) => <MaterialTabBar {...props} />,
-});
+const TAB_BAR = (props: BottomTabBarProps) => <MaterialTabBar {...props} />;
 
 const TAB_ICON = {
   '(home)': 'home',
