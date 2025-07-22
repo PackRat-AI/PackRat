@@ -151,34 +151,35 @@ export const GuidesListScreen = () => {
                   All
                 </Text>
               </TouchableOpacity>
-              {isLoadingCategories ? (
-                <View className="flex-row items-center px-4">
-                  <ActivityIndicator size="small" color={colors.primary} />
-                </View>
-              ) : (
-                categoriesData?.categories?.map((category: string) => (
-                  <TouchableOpacity
-                    key={category}
-                    onPress={() => handleCategoryChange(category)}
-                    className={`mr-2 rounded-full px-4 py-2 ${
-                      selectedCategory === category ? 'bg-primary' : 'bg-card'
-                    }`}
-                  >
-                    <Text
-                      className={`text-sm font-medium ${
-                        selectedCategory === category
-                          ? 'text-primary-foreground'
-                          : 'text-foreground'
+              {isLoadingCategories
+                ? Array.from({ length: 6 }).map(() => (
+                    <View
+                      key={Math.random().toString()}
+                      className="h-9 w-24 rounded-full mr-2 bg-neutral-300 dark:bg-neutral-600 animate-pulse"
+                    />
+                  ))
+                : categoriesData?.categories?.map((category: string) => (
+                    <TouchableOpacity
+                      key={category}
+                      onPress={() => handleCategoryChange(category)}
+                      className={`mr-2 rounded-full px-4 py-2 ${
+                        selectedCategory === category ? 'bg-primary' : 'bg-card'
                       }`}
                     >
-                      {category
-                        .split('-')
-                        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(' ')}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              )}
+                      <Text
+                        className={`text-sm font-medium ${
+                          selectedCategory === category
+                            ? 'text-primary-foreground'
+                            : 'text-foreground'
+                        }`}
+                      >
+                        {category
+                          .split('-')
+                          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                          .join(' ')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
             </ScrollView>
           </>
         }
