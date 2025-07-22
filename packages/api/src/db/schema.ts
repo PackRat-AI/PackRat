@@ -91,24 +91,24 @@ export const catalogItems = pgTable(
     description: text('description'),
     weight: real('weight'),
     weightUnit: text('weight_unit'),
-    categories: jsonb('categories').$type<string[]>(),
-    images: jsonb('images').$type<string[]>(),
+    categories: jsonb('categories').$type<string[]>().notNull(),
+    images: jsonb('images').$type<string[]>().notNull(),
     brand: text('brand'),
     model: text('model'),
-    url: text('url'),
     ratingValue: real('rating_value'),
-    productUrl: text('product_url'),
+    productUrl: text('product_url').notNull(),
     color: text('color'),
     size: text('size'),
-    sku: text('sku').unique(),
+    sku: text('sku').unique(), 
     price: real('price'),
-    availability: text('availability'),
+    availability: text('availability').$type<'in_stock' | 'out_of_stock' | 'preorder' | null>(),
     seller: text('seller'),
     productSku: text('product_sku'),
     material: text('material'),
     currency: text('currency').notNull(),
     condition: text('condition'),
     reviewCount: integer('review_count').notNull(),
+
     variants:
       jsonb('variants').$type<
         Array<{
@@ -118,7 +118,7 @@ export const catalogItems = pgTable(
       >(),
 
     techs: jsonb('techs').$type<Record<string, string>>(),
-    
+
     links:
       jsonb('links').$type<
         Array<{
