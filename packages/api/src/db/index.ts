@@ -23,7 +23,7 @@ export const createDbClient = (env: Env) => {
   return drizzle(sql, { schema });
 };
 
-//To test in local Postgres 
+//To test in local Postgres
 // export const createDb = (c: Context) => {
 //   const { NEON_DATABASE_URL } = honoEnv<Env>(c);
 //   const pool = new Pool({ connectionString: NEON_DATABASE_URL });

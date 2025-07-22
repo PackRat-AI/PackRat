@@ -121,8 +121,8 @@ async function processCatalogETL({
   // Use R2 bucket binding instead of S3 client
   const { PACKRAT_ITEMS_BUCKET } = env;
 
-    const object = await PACKRAT_ITEMS_BUCKET.get(objectKey);
-    if (!object) {
+  const object = await PACKRAT_ITEMS_BUCKET.get(objectKey);
+  if (!object) {
     throw new Error(`Object not found: ${objectKey}`);
   }
   const text = await object.text();
@@ -187,7 +187,6 @@ export async function processCatalogETLWriteBatch({
 
 function createFieldMap(headers: string[]): Record<string, number> {
   const fieldMap: Record<string, number> = {};
-  console.log('CSV Headers:', headers);
 
   const mappings = {
     name: [
@@ -362,7 +361,7 @@ function mapCsvRowToItem({
   } else {
     images = [];
   }
-  item.images = images
+  item.images = images;
 
   // Required fields
   if (!name || !productUrl || !currency || images.length === 0)
