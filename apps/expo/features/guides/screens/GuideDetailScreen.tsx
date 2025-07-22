@@ -1,15 +1,25 @@
 import { Text } from '@packrat/ui/nativewindui';
 import Markdown from '@ronradtke/react-native-markdown-display';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLayoutEffect } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { useGuideDetails } from '../hooks';
 
 export const GuideDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, isDarkColorScheme } = useColorScheme();
+  const navigation = useNavigation();
 
   const { data: guide, isLoading, error } = useGuideDetails(id || '');
+
+  useLayoutEffect(() => {
+    if (guide?.title) {
+      navigation.setOptions({
+        title: guide.title,
+      });
+    }
+  }, [navigation, guide?.title]);
 
   if (isLoading) {
     return (
