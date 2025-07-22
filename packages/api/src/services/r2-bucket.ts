@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream';
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -12,7 +13,6 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
-import type { Readable } from 'node:stream';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {

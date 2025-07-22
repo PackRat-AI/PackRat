@@ -12,6 +12,7 @@ import { SearchResults } from 'expo-app/features/packs/components/SearchResults'
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
@@ -27,7 +28,6 @@ import {
 import { useAllPacks } from '../hooks/useAllPacks';
 import { usePacks } from '../hooks/usePacks';
 import type { Pack, PackCategory, PackInStore } from '../types';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 
 type FilterOption = {
   label: string;

@@ -11,6 +11,7 @@ import { LocationSelector } from 'expo-app/features/weather/components/LocationS
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
@@ -40,7 +41,6 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 
 const USER = 'User';
 const AI = 'PackRat AI';

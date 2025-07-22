@@ -1,16 +1,13 @@
-import { createRoute } from "@hono/zod-openapi";
-import { R2BucketService } from "@packrat/api/services/r2-bucket";
-import type { RouteHandler } from "@packrat/api/types/routeHandler";
-import {
-  authenticateRequest,
-  unauthorizedResponse,
-} from "@packrat/api/utils/api-middleware";
-import matter from "gray-matter";
+import { createRoute } from '@hono/zod-openapi';
+import { R2BucketService } from '@packrat/api/services/r2-bucket';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import matter from 'gray-matter';
 
 export const routeDefinition = createRoute({
-  method: "get",
-  path: "/categories",
-  responses: { 200: { description: "Get all unique guide categories" } },
+  method: 'get',
+  path: '/categories',
+  responses: { 200: { description: 'Get all unique guide categories' } },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
@@ -24,7 +21,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     // Use the new R2 service with org credentials
     const bucket = new R2BucketService({
       env: c.env,
-      bucketType: "guides",
+      bucketType: 'guides',
       config: {
         useOrgCredentials: true,
       },
@@ -73,7 +70,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       count: categories.length,
     });
   } catch (error) {
-    console.error("Error getting guide categories:", error);
-    return c.json({ error: "Failed to get guide categories" }, 500);
+    console.error('Error getting guide categories:', error);
+    return c.json({ error: 'Failed to get guide categories' }, 500);
   }
 };

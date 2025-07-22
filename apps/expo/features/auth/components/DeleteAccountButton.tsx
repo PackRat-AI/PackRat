@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 export function DeleteAccountButton() {

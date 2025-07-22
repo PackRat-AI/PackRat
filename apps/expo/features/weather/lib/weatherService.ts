@@ -3,8 +3,8 @@ import type {
   WeatherApiForecastResponse,
 } from 'expo-app/features/weather/types';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
-import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
+import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**
  * Search for locations by name
