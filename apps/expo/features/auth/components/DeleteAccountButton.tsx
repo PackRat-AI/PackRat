@@ -3,20 +3,20 @@ import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 export function DeleteAccountButton() {
   const { colors } = useColorScheme();
-  const { deleteAccount, isLoading } = useAuth();
-
-  const alertRef = React.useRef<AlertRef>(null);
+  const { deleteAccount } = useAuth();
+  const alertRef = useRef<AlertRef>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   return (
     <>
       <Button
         variant="secondary"
-        disabled={isLoading}
+        disabled={isDeleting}
         onPress={() =>
           alertRef.current?.prompt({
             title: 'Delete Account?',
@@ -38,32 +38,25 @@ export function DeleteAccountButton() {
                 onPress: async (text) => {
                   if (text === 'DELETE') {
                     try {
-                      await deleteAccount(); // redirection is handled in the hook
+                      setIsDeleting(true);
+                      await deleteAccount(); // handles redirect
                     } catch (_error) {
                       setTimeout(() => {
                         alertRef.current?.alert({
                           title: 'Error',
                           message: 'Failed to delete account.',
-                          buttons: [
-                            {
-                              text: 'OK',
-                              style: 'default',
-                            },
-                          ],
+                          buttons: [{ text: 'OK', style: 'default' }],
                         });
                       }, 0);
+                    } finally {
+                      setIsDeleting(false);
                     }
                   } else {
                     setTimeout(() => {
                       alertRef.current?.alert({
                         title: 'Error',
                         message: 'Invalid confirmation text.',
-                        buttons: [
-                          {
-                            text: 'OK',
-                            style: 'default',
-                          },
-                        ],
+                        buttons: [{ text: 'OK', style: 'default' }],
                       });
                     }, 0);
                   }
@@ -75,7 +68,7 @@ export function DeleteAccountButton() {
         className="flex-row items-center justify-between p-2"
       >
         <View className="flex-row items-center gap-3">
-          {isLoading ? (
+          {isDeleting ? (
             <ActivityIndicator size={24} color={colors.destructive} />
           ) : (
             <Icon name="trash-can-outline" color={colors.destructive} />

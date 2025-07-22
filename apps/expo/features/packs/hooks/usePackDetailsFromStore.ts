@@ -13,6 +13,7 @@ import { computePackWeights } from '../utils/computePackWeights';
  */
 export function usePackDetailsFromStore(id: string) {
   const pack = use$(() => {
+    // @ts-ignore: Safe because Legend-State uses Proxy
     const pack_ = packsStore[id].get();
     const items = getPackItems(id);
     const packWithWeights = computePackWeights({ ...pack_, items });

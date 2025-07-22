@@ -1,10 +1,10 @@
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
-import type { CatalogItem } from 'expo-app/types';
 import { nanoid } from 'nanoid/non-secure';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
@@ -22,7 +22,7 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
   const createItem = useCreatePackItem();
   const { colors } = useColorScheme();
 
-  const handleAddItem = async (item: Omit<CatalogItem, 'image'> & { image: string | null }) => {
+  const handleAddItem = async (item: CatalogItem) => {
     setIsAdding(true);
     if (item.image) {
       try {
@@ -77,7 +77,7 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
       <View className="flex-row items-center justify-between">
         <Text className="text-xs text-muted-foreground">
           {item.defaultWeight}
-          {item.weightUnit}
+          {item.defaultWeightUnit}
         </Text>
         <Button disabled={isAdding} onPress={() => handleAddItem(item)} variant="tonal" size="icon">
           {isAdding ? (

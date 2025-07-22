@@ -3,6 +3,7 @@ import type {
   WeatherApiForecastResponse,
 } from 'expo-app/features/weather/types';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**
@@ -85,6 +86,7 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
 
   // Get today's forecast
   const todayForecast = forecast.forecastday[0];
+  assertDefined(todayForecast);
 
   // Format hourly forecast
   const hourlyForecast = todayForecast.hour
@@ -121,7 +123,7 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
 
   // Format alerts if any
   let alertText: string | undefined;
-  if (alerts?.alert && alerts.alert.length > 0) {
+  if (alerts?.alert?.[0]) {
     alertText = alerts.alert[0].headline || 'Weather Alert';
   }
 

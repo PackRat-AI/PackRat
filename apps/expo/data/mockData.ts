@@ -1,7 +1,7 @@
 import type { User } from 'expo-app/types';
 
 // --- Users ---
-export const mockUsers: User[] = [
+export const mockUsers: [User, ...User[]] = [
   {
     id: '1',
     name: 'Alex Hiker',

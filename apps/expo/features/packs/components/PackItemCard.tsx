@@ -4,6 +4,7 @@ import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import {
@@ -23,6 +24,7 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
   const isOwnedByUser = usePackItemOwnershipCheck(itemArg.id);
   const itemFromStore = usePackItemDetailsFromStore(itemArg.id); // Use item from store if it's user owned so that component observe changes to it and thus update properly.
   const item = isOwnedByUser ? itemFromStore : itemArg; // Use passed item if it's not owned by the current user.
+  assertDefined(item);
 
   const deleteItem = useDeletePackItem();
   const { colors } = useColorScheme();

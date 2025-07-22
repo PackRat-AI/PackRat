@@ -2,7 +2,7 @@ import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 export function ShoppingListTile() {
   const router = useRouter();
@@ -40,6 +40,7 @@ export function ShoppingListTile() {
       onPress={handlePress}
       target="Cell"
       index={0}
+      removeSeparator={Platform.OS === 'ios'}
     />
   );
 }

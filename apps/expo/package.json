@@ -118,7 +118,7 @@
     "@babel/core": "^7.20.0",
     "@biomejs/biome": "2.0.4",
     "@types/lodash.debounce": "^4.0.9",
-    "@types/react": "~18.3.12",
+    "@types/react": "^19",
     "@types/ungap__structured-clone": "^1.2.0",
     "@typescript-eslint/eslint-plugin": "^7.7.0",
     "@typescript-eslint/parser": "^7.7.0",
@@ -129,7 +129,7 @@
     "prettier-plugin-tailwindcss": "^0.5.11",
     "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.0",
-    "typescript": "~5.3.3"
+    "typescript": "^5.3.3"
   },
   "eslintConfig": {
     "extends": "universe/native",

@@ -31,13 +31,14 @@ export type Env = {
   WEATHER_API_KEY: string;
 
   // Cloudflare R2 Storage
-  R2_ACCESS_KEY_ID: string;
-  R2_SECRET_ACCESS_KEY: string;
-  CLOUDFLARE_ACCOUNT_ID: string;
-  PACKRAT_BUCKET_R2_BUCKET_NAME: string;
-  PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME: string;
-  PACKRAT_BUCKET: R2Bucket;
-  PACKRAT_ITEMS_BUCKET: R2Bucket;
+  CLOUDFLARE_ACCOUNT_ID: string; // For s3Client which is used for generating presigned URLs
+  R2_ACCESS_KEY_ID: string; // For s3Client which is used for generating presigned URLs
+  R2_SECRET_ACCESS_KEY: string; // For s3Client which is used for generating presigned URLs
+  PACKRAT_BUCKET_R2_BUCKET_NAME: string; // For s3Client which is used for generating presigned URLs
+  PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: string;
+  PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: string;
+  PACKRAT_SCRAPY_BUCKET: R2Bucket;
+  PACKRAT_BUCKET: R2Bucket; // general bucket
 
   // Queue & Background Processing
   ETL_QUEUE: Queue;

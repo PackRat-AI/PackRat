@@ -1,3 +1,6 @@
+import Entypo from '@expo/vector-icons/Entypo';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   Avatar,
   AvatarFallback,
@@ -10,11 +13,9 @@ import {
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import Entypo from '@expo/vector-icons/Entypo';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Mock data for upcoming trips with hardcoded dates
 const UPCOMING_TRIPS = [
@@ -166,6 +167,7 @@ function TripImage({ uri }: { uri: string }) {
 
 export default function UpcomingTripsScreen() {
   const { colors } = useColorScheme();
+  assertDefined(UPCOMING_TRIPS[0]);
   const [selectedTrip, setSelectedTrip] = useState(UPCOMING_TRIPS[0]);
 
   return (
@@ -186,6 +188,7 @@ export default function UpcomingTripsScreen() {
           keyExtractor={(_, index) => index.toString()}
           renderItem={(info) => {
             const trip = UPCOMING_TRIPS[info.index];
+            assertDefined(trip);
             return (
               <ListItem
                 {...info}
@@ -338,6 +341,7 @@ export default function UpcomingTripsScreen() {
             keyExtractor={(_, index) => index.toString()}
             renderItem={(info) => {
               const checklistItem = TRIP_CHECKLIST[info.index];
+              assertDefined(checklistItem);
               return (
                 <ListItem
                   {...info}

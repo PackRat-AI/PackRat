@@ -13,7 +13,7 @@ import { getDomainSpecificExtension } from './domain-specific-extensions';
 export const inferImageExtension = (url: string): string | null => {
   // Check if URL already has an extension
   const extensionMatch = url.match(/\.(jpe?g|png|gif|webp|avif|svg)($|\?)/i);
-  if (extensionMatch) {
+  if (extensionMatch && extensionMatch[1] !== undefined) {
     return extensionMatch[1].toLowerCase();
   }
 

@@ -7,8 +7,8 @@ import { cn } from 'expo-app/lib/cn';
 import {
   calculateTotalWeight,
   getQuantity,
+  isCatalogItem,
   isConsumable,
-  isPackItem,
   isWorn,
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
@@ -54,11 +54,11 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
             <View
               className={cn(
                 'rounded-full px-2 py-0.5',
-                isPackItem(item) ? 'bg-primary/20' : 'bg-secondary/20',
+                isCatalogItem(item) ? 'bg-primary/20' : 'bg-secondary/20',
               )}
             >
               <Text className="text-xs text-primary">
-                {isPackItem(item) ? 'Pack Item' : 'Catalog Item'}
+                {isCatalogItem(item) ? 'Pack Item' : 'Catalog Item'}
               </Text>
             </View>
           </View>
