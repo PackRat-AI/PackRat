@@ -71,7 +71,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
                 </View>
               </View>
             </View>
-            <MaterialIcons
+            <Icon
               name="chevron-right"
               size={24}
               className="text-gray-400 dark:text-gray-600"
