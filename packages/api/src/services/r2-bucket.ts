@@ -558,8 +558,11 @@ export class R2BucketService {
     // Add range if present
     if (response.ContentRange) {
       // Parse content range if needed
-      // @ts-ignore - range is optional
-      r2Object.range = undefined;
+      if (response.ContentRange) {
+        r2Object.range = response.ContentRange; // Assign the value if it exists
+      } else {
+        r2Object.range = undefined; // Explicitly set to undefined if not present
+      }
     }
 
     return r2Object as R2Object;
