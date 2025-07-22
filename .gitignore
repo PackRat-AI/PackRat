@@ -32,3 +32,15 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Bun configuration
+bunfig.toml
+
+#docker files for local db
+docker-compose.yml
+
+# Drizzle ORM configuration
+drizzle.config.ts
+
+#mock data
+mock
