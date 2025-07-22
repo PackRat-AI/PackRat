@@ -9,7 +9,6 @@ import {
 } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import {
   generateJWT,
   generateRefreshToken,
@@ -20,6 +19,7 @@ import {
   verifyPassword,
 } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
+import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 import { env } from 'hono/adapter';
