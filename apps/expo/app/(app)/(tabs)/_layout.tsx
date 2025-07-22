@@ -4,6 +4,7 @@ import { Icon, type IconProps } from '@roninoss/icons';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Tabs } from 'expo-router';
 import type * as React from 'react';
 import {
@@ -43,36 +44,21 @@ export default function TabLayout() {
 
 const INDEX_OPTIONS = {
   title: 'Dashboard',
-  tabBarIcon(props) {
-    return <Icon name="home" {...props} size={27} />;
-  },
 } as const;
 
 const PACK_LIST_OPTIONS = {
   title: 'Packs',
-  tabBarIcon(props) {
-    return <Icon name="backpack" {...props} size={27} />;
-  },
 } as const;
 
 const ITEMS_CATALOG_OPTIONS = {
   title: 'Catalog',
-  tabBarIcon(props) {
-    return <Icon name="clipboard-list" {...props} size={27} />;
-  },
 } as const;
 
 const PROFILE_OPTIONS = {
   title: 'Profile',
-  tabBarIcon(props) {
-    return <Icon name="account-circle" {...props} size={27} />;
-  },
 } as const;
 
-const TAB_BAR = Platform.select({
-  ios: undefined,
-  android: (props: BottomTabBarProps) => <MaterialTabBar {...props} />,
-});
+const TAB_BAR = (props: BottomTabBarProps) => <MaterialTabBar {...props} />;
 
 const TAB_ICON = {
   '(home)': 'home',
@@ -92,6 +78,7 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       className="border-t-border/25 flex-row border-t bg-card pb-4 pt-3 dark:border-t-0"
     >
       {state.routes.map((route, index) => {
+        assertDefined(descriptors[route.key]);
         const { options } = descriptors[route.key];
         const label =
           options.tabBarLabel !== undefined
@@ -127,7 +114,6 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={options.tabBarAccessibilityLabel}
-            testID={options.tabBarTestID}
             onPress={onPress}
             onLongPress={onLongPress}
             name={TAB_ICON[route.name as keyof typeof TAB_ICON]}

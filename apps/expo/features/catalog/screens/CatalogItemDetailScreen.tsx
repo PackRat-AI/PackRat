@@ -52,7 +52,7 @@ export function CatalogItemDetailScreen() {
       <ScrollView>
         <Image
           source={{
-            uri: item.image,
+            uri: item.image !== null ? item.image : undefined, // `null` isn't assignable to uri
             ...(Platform.OS === 'android'
               ? {
                   headers: {

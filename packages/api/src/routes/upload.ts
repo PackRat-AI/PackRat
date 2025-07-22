@@ -4,8 +4,9 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { env } from 'hono/adapter';
+import type { Variables } from '../types/variables';
 
-const uploadRoutes = new OpenAPIHono();
+const uploadRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
 // Generate a presigned URL for uploading to R2
 const presignedRoute = createRoute({
@@ -35,12 +36,6 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
   } = env<Env>(c);
 
   try {
-    const {
-      R2_ACCESS_KEY_ID,
-      R2_SECRET_ACCESS_KEY,
-      CLOUDFLARE_ACCOUNT_ID,
-      PACKRAT_BUCKET_R2_BUCKET_NAME,
-    } = env<Env>(c);
     const { fileName, contentType } = c.req.query();
 
     if (!fileName || !contentType) {
@@ -55,7 +50,7 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
         accessKeyId: R2_ACCESS_KEY_ID || '',
         secretAccessKey: R2_SECRET_ACCESS_KEY || '',
       },
-    });
+    }); // Using S3Client because R2 binding doesn't seem to support presigned URLs directly
 
     // Security check: Ensure the filename starts with the user's ID
     // This prevents users from overwriting other users' images

@@ -13,9 +13,9 @@ import {
   isWorn,
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, ScrollView, Text, View } from 'react-native';
-import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
 
 export function PackTemplateItemDetailScreen() {
@@ -23,15 +23,7 @@ export function PackTemplateItemDetailScreen() {
 
   const item = usePackTemplateItem(id as string);
 
-  if (!item) {
-    return (
-      <NotFoundScreen
-        title="Item Not Found"
-        message="The template item you're looking for doesn't exist or has been moved."
-        backButtonLabel="Go Back"
-      />
-    );
-  }
+  assertDefined(item);
 
   const weightUnit = item.weightUnit;
   const totalWeight = calculateTotalWeight(item);

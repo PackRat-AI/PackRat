@@ -1,4 +1,5 @@
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid/non-secure';
 import { useState } from 'react';
@@ -29,11 +30,13 @@ export function useImageUpload() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
+        assertDefined(asset);
         const uri = asset.uri;
 
         // Extract file info
         const uriParts = uri.split('/');
         const fileName = uriParts[uriParts.length - 1];
+        assertDefined(fileName);
         const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
         const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
 
@@ -61,6 +64,7 @@ export function useImageUpload() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
+        assertDefined(asset);
         const uri = asset.uri;
 
         // Create file info

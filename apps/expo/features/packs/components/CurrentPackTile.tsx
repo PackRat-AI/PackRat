@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage, ListItem, Text } from '@packrat/ui
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useCurrentPack } from '../hooks';
 
 const _LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
@@ -50,6 +50,7 @@ export function CurrentPackTile() {
       onPress={handlePress}
       target="Cell"
       index={0}
+      removeSeparator={Platform.OS === 'ios'}
     />
   );
 }

@@ -6,7 +6,7 @@ import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/pa
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import type { WeightUnit } from 'expo-app/types';
-import { assertDefined } from 'expo-app/utils/assertDefined';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {

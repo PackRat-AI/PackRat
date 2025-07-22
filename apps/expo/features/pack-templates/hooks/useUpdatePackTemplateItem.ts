@@ -6,7 +6,9 @@ import type { PackTemplateItem } from '../types';
 
 export function useUpdatePackTemplateItem() {
   const updatePackTemplateItem = useCallback((item: PackTemplateItem) => {
+    // @ts-ignore: Safe because Legend-State uses Proxy
     packTemplateItemsStore[item.id].set(item);
+    // @ts-ignore: Safe because Legend-State uses Proxy
     packTemplatesStore[item.packTemplateId].localUpdatedAt.set(new Date().toISOString());
   }, []);
 

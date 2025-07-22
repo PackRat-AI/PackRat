@@ -167,7 +167,7 @@ export const siteConfig = {
       color: '#10B981',
       image: '/feature-offline.png',
     },
-  ] as Feature[],
+  ] as [Feature, Feature, ...Feature[]],
 
   // How it works section
   howItWorks: {

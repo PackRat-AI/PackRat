@@ -4,6 +4,7 @@ import type { Env } from '@packrat/api/types/env';
 import { parse } from 'csv-parse/sync';
 import { eq, getTableColumns, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { createDbClient } from '../db';
+import { R2BucketService } from './r2-service';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
@@ -118,11 +119,13 @@ async function processCatalogETL({
 
   console.log(`Starting ETL job ${jobId} for file ${filename}`);
 
-  // Use R2 bucket binding instead of S3 client
-  const { PACKRAT_ITEMS_BUCKET } = env;
+  // Use R2BucketService instead of direct binding
+  const r2Service = new R2BucketService({
+    env,
+    bucketType: 'catalog',
+  });
 
-  const object = await PACKRAT_ITEMS_BUCKET.get(objectKey);
-
+  const object = await r2Service.get(objectKey);
   if (!object) {
     throw new Error(`Object not found: ${objectKey}`);
   }

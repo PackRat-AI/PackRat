@@ -68,6 +68,7 @@ syncObservable(
 );
 
 export function recordPackWeight(packId: string) {
+  // @ts-ignore: Safe because Legend-State uses Proxy
   const pack = packsStore[packId].peek();
   const packItems = Object.values(packItemsStore.peek()).filter(
     (item) => item.packId === packId && !item.deleted,
@@ -75,6 +76,7 @@ export function recordPackWeight(packId: string) {
   const { totalWeight } = computePackWeights({ ...pack, items: packItems });
   const id = nanoid();
 
+  // @ts-ignore: Safe because Legend-State uses Proxy
   packWeigthHistoryStore[id].set({
     id,
     packId,

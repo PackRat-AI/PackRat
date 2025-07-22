@@ -3,7 +3,7 @@ import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useRecentPacks } from '../hooks/useRecentPacks';
 
 export function RecentPacksTile() {
@@ -56,6 +56,7 @@ export function RecentPacksTile() {
       onPress={handlePress}
       target="Cell"
       index={0}
+      removeSeparator={Platform.OS === 'ios'}
     />
   );
 }
