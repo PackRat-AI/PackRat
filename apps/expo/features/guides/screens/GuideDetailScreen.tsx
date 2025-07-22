@@ -41,7 +41,6 @@ export const GuideDetailScreen = () => {
     body: {
       color: isDarkColorScheme ? '#e5e7eb' : '#1f2937',
       fontSize: 16,
-      lineHeight: 24,
     },
     heading1: {
       color: isDarkColorScheme ? '#f3f4f6' : '#111827',
@@ -175,7 +174,7 @@ export const GuideDetailScreen = () => {
       </View>
 
       {guide.description && (
-        <Text className="text-gray-600 dark:text-gray-400 mb-6 text-base">{guide.description}</Text>
+        <Text className="text-gray-600 dark:text-gray-400 mb-2 text-base">{guide.description}</Text>
       )}
 
       <Markdown style={markdownStyles}>{guide.content || ''}</Markdown>
