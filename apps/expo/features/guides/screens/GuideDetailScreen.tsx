@@ -8,7 +8,7 @@ import { useGuideDetails } from '../hooks';
 
 export const GuideDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, isDarkColorScheme } = useColorScheme();
+  const { colors } = useColorScheme();
   const navigation = useNavigation();
 
   const { data: guide, isLoading, error } = useGuideDetails(id || '');
@@ -39,25 +39,25 @@ export const GuideDetailScreen = () => {
 
   const markdownStyles = {
     body: {
-      color: isDarkColorScheme ? '#e5e7eb' : '#1f2937',
+      color: colors.foreground,
       fontSize: 16,
     },
     heading1: {
-      color: isDarkColorScheme ? '#f3f4f6' : '#111827',
+      color: colors.foreground,
       fontSize: 28,
       fontWeight: '700',
       marginTop: 24,
       marginBottom: 16,
     },
     heading2: {
-      color: isDarkColorScheme ? '#f3f4f6' : '#111827',
+      color: colors.foreground,
       fontSize: 24,
       fontWeight: '600',
       marginTop: 20,
       marginBottom: 12,
     },
     heading3: {
-      color: isDarkColorScheme ? '#f3f4f6' : '#111827',
+      color: colors.foreground,
       fontSize: 20,
       fontWeight: '600',
       marginTop: 16,
@@ -75,7 +75,7 @@ export const GuideDetailScreen = () => {
       textDecorationLine: 'underline' as const,
     },
     blockquote: {
-      backgroundColor: isDarkColorScheme ? '#374151' : '#f3f4f6',
+      backgroundColor: colors.grey6,
       borderLeftColor: colors.primary,
       borderLeftWidth: 4,
       paddingLeft: 16,
@@ -83,8 +83,8 @@ export const GuideDetailScreen = () => {
       marginVertical: 16,
     },
     code_inline: {
-      backgroundColor: isDarkColorScheme ? '#374151' : '#f3f4f6',
-      color: isDarkColorScheme ? '#fbbf24' : '#dc2626',
+      backgroundColor: colors.grey6,
+      color: colors.primary,
       paddingHorizontal: 6,
       paddingVertical: 2,
       borderRadius: 4,
@@ -92,8 +92,8 @@ export const GuideDetailScreen = () => {
       fontSize: 14,
     },
     code_block: {
-      backgroundColor: isDarkColorScheme ? '#1f2937' : '#f3f4f6',
-      color: isDarkColorScheme ? '#e5e7eb' : '#1f2937',
+      backgroundColor: colors.card,
+      color: colors.foreground,
       padding: 16,
       borderRadius: 8,
       marginVertical: 16,
@@ -110,23 +110,23 @@ export const GuideDetailScreen = () => {
       marginBottom: 16,
     },
     hr: {
-      backgroundColor: isDarkColorScheme ? '#4b5563' : '#e5e7eb',
+      backgroundColor: colors.grey5,
       height: 1,
       marginVertical: 24,
     },
     table: {
-      borderColor: isDarkColorScheme ? '#4b5563' : '#e5e7eb',
+      borderColor: colors.grey5,
       marginVertical: 16,
     },
     th: {
-      backgroundColor: isDarkColorScheme ? '#374151' : '#f3f4f6',
-      color: isDarkColorScheme ? '#f3f4f6' : '#111827',
+      backgroundColor: colors.grey6,
+      color: colors.foreground,
       fontWeight: '600',
       padding: 12,
     },
     td: {
       padding: 12,
-      borderColor: isDarkColorScheme ? '#4b5563' : '#e5e7eb',
+      borderColor: colors.grey5,
     },
   };
 
