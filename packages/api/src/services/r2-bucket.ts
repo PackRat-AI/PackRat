@@ -137,10 +137,9 @@ interface R2BucketConfig {
   accessKeyId?: string;
   secretAccessKey?: string;
   bucketName?: string;
-  useOrgCredentials?: boolean;
 }
 
-type BucketType = 'guides' | 'items' | 'general';
+type BucketType = 'guides' | 'catalog' | 'general';
 
 export class R2BucketService {
   private s3Client: S3Client;
@@ -156,13 +155,9 @@ export class R2BucketService {
     config?: R2BucketConfig;
   }) {
     // Determine which credentials to use
-    const useOrg = config?.useOrgCredentials ?? false;
-    const accountId =
-      config?.accountId || (useOrg ? env.CLOUDFLARE_ACCOUNT_ID_ORG : env.CLOUDFLARE_ACCOUNT_ID);
-    const accessKeyId =
-      config?.accessKeyId || (useOrg ? env.R2_ACCESS_KEY_ID_ORG : env.R2_ACCESS_KEY_ID);
-    const secretAccessKey =
-      config?.secretAccessKey || (useOrg ? env.R2_SECRET_ACCESS_KEY_ORG : env.R2_SECRET_ACCESS_KEY);
+    const accountId = config?.accountId || env.CLOUDFLARE_ACCOUNT_ID;
+    const accessKeyId = config?.accessKeyId || env.R2_ACCESS_KEY_ID;
+    const secretAccessKey = config?.secretAccessKey || env.R2_SECRET_ACCESS_KEY;
 
     // Determine bucket name
     if (config?.bucketName) {
@@ -172,8 +167,8 @@ export class R2BucketService {
         case 'guides':
           this.bucketName = env.PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME;
           break;
-        case 'items':
-          this.bucketName = env.PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME;
+        case 'catalog':
+          this.bucketName = env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME;
           break;
         case 'general':
           this.bucketName = env.PACKRAT_BUCKET_R2_BUCKET_NAME;
@@ -557,12 +552,11 @@ export class R2BucketService {
 
     // Add range if present
     if (response.ContentRange) {
-      // Parse content range if needed
-      if (response.ContentRange) {
-        r2Object.range = response.ContentRange; // Assign the value if it exists
-      } else {
-        r2Object.range = undefined; // Explicitly set to undefined if not present
-      }
+      // @ts-ignore - ignore
+      r2Object.range = response.ContentRange; // Assign the value if it exists
+    } else {
+      // @ts-ignore - ignore
+      r2Object.range = undefined; // Explicitly set to undefined if not present
     }
 
     return r2Object as R2Object;

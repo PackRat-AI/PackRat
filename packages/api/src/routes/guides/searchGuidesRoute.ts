@@ -32,9 +32,6 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const bucket = new R2BucketService({
       env: c.env,
       bucketType: 'guides',
-      config: {
-        useOrgCredentials: true,
-      },
     });
     const list = await bucket.list({
       limit: 1000,

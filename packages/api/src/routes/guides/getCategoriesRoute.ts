@@ -18,13 +18,9 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   }
 
   try {
-    // Use the new R2 service with org credentials
     const bucket = new R2BucketService({
       env: c.env,
       bucketType: 'guides',
-      config: {
-        useOrgCredentials: true,
-      },
     });
 
     const list = await bucket.list();

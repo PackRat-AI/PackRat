@@ -28,13 +28,9 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const { id } = c.req.valid('param');
 
   try {
-    // Use the new R2 service with org credentials
     const bucket = new R2BucketService({
       env: c.env,
       bucketType: 'guides',
-      config: {
-        useOrgCredentials: true,
-      },
     });
 
     // Try .mdx first, then .md
