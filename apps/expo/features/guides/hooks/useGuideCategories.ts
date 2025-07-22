@@ -14,5 +14,6 @@ export const useGuideCategories = () => {
       return response.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnMount: false,
   });
 };

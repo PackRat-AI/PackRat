@@ -10,7 +10,7 @@ interface GuideCardProps {
 
 export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} className="pt-4">
       <Card className="mb-3">
         <CardContent className="p-4">
           <View className="flex-row items-start justify-between">
