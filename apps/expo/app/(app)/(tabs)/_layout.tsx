@@ -7,14 +7,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Tabs } from 'expo-router';
 import type * as React from 'react';
-import {
-  Platform,
-  Pressable,
-  type PressableProps,
-  type StyleProp,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { Pressable, type PressableProps, type StyleProp, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

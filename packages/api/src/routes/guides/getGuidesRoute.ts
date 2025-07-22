@@ -68,7 +68,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const guides = await Promise.all(
       list.objects.map(async (obj) => {
         // Try to get frontmatter data
-        let frontmatter: any = {};
+        let frontmatter: Record<string, unknown> = {};
         try {
           const response = await bucket.get(obj.key);
           if (response) {
@@ -103,8 +103,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     let filteredGuides = guides;
     if (category) {
       filteredGuides = guides.filter(
-        (guide) =>
-          guide.category === category || (guide.categories && guide.categories.includes(category)),
+        (guide) => guide.category === category || guide.categories?.includes(category),
       );
     }
 

@@ -43,8 +43,8 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     // Search through guides
     const searchResults = await Promise.all(
       list.objects
-        .filter((obj: any) => obj.key.endsWith('.mdx'))
-        .map(async (obj: any) => {
+        .filter((obj) => obj.key.endsWith('.mdx'))
+        .map(async (obj) => {
           const guide = {
             id: obj.key.replace('.mdx', ''),
             key: obj.key,
