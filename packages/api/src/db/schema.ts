@@ -99,7 +99,7 @@ export const catalogItems = pgTable(
     productUrl: text('product_url').notNull(),
     color: text('color'),
     size: text('size'),
-    sku: text('sku').unique(), 
+    sku: text('sku').unique(),
     price: real('price'),
     availability: text('availability').$type<'in_stock' | 'out_of_stock' | 'preorder' | null>(),
     seller: text('seller'),

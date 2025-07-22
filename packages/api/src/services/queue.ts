@@ -191,7 +191,6 @@ export async function processCatalogETLWriteBatch({
 
 function createFieldMap(headers: string[]): Record<string, number> {
   const fieldMap: Record<string, number> = {};
-  console.log('CSV Headers:', headers);
 
   const mappings = {
     name: [
