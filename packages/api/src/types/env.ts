@@ -39,6 +39,7 @@ export type Env = {
   PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: string;
   PACKRAT_SCRAPY_BUCKET: R2Bucket;
   PACKRAT_BUCKET: R2Bucket; // general bucket
+  PACKRAT_GUIDES_BUCKET: R2Bucket;
 
   // Queue & Background Processing
   ETL_QUEUE: Queue;

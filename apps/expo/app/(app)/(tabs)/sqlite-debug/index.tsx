@@ -1,5 +1,5 @@
 import Storage from 'expo-sqlite/kv-store';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -13,13 +13,13 @@ import {
 
 export default function SQLiteKVDebug() {
   const [isLoading, setIsLoading] = useState(true);
-  const [entries, setEntries] = useState<Array<{ key: string; value: any }>>([]);
+  const [entries, setEntries] = useState<Array<{ key: string; value: unknown }>>([]);
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
   const [editMode, setEditMode] = useState<{ key: string; value: string } | null>(null);
 
   // Load all entries from the KV store
-  const loadEntries = async () => {
+  const loadEntries = useCallback(async () => {
     setIsLoading(true);
     try {
       const allKeys = await Storage.getAllKeys();
@@ -36,7 +36,7 @@ export default function SQLiteKVDebug() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Add a new entry to the KV store
   const addEntry = async () => {
@@ -46,7 +46,7 @@ export default function SQLiteKVDebug() {
     }
 
     try {
-      let parsedValue;
+      let parsedValue: unknown;
       try {
         // Try to parse as JSON if it looks like an object or array
         if (
@@ -61,7 +61,7 @@ export default function SQLiteKVDebug() {
         parsedValue = newValue;
       }
 
-      await Storage.setItem(newKey, parsedValue);
+      await Storage.setItem(newKey, parsedValue as string);
       setNewKey('');
       setNewValue('');
       loadEntries();
@@ -76,7 +76,7 @@ export default function SQLiteKVDebug() {
     if (!editMode) return;
 
     try {
-      let parsedValue;
+      let parsedValue: unknown;
       try {
         // Try to parse as JSON if it looks like an object or array
         if (
@@ -91,7 +91,7 @@ export default function SQLiteKVDebug() {
         parsedValue = editMode.value;
       }
 
-      await Storage.setItem(editMode.key, parsedValue);
+      await Storage.setItem(editMode.key, parsedValue as string);
       setEditMode(null);
       loadEntries();
     } catch (error) {
@@ -137,7 +137,7 @@ export default function SQLiteKVDebug() {
   };
 
   // Format value for display
-  const formatValue = (value: any): string => {
+  const formatValue = (value: unknown): string => {
     if (value === null || value === undefined) {
       return String(value);
     }

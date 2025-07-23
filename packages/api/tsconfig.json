@@ -3,6 +3,7 @@
     "strict": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
+    "esModuleInterop": true,
     "baseUrl": ".",
     "paths": {
       "@packrat/api/*": ["src/*"]
