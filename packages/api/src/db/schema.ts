@@ -4,6 +4,7 @@ import {
   index,
   integer,
   jsonb,
+  pgEnum,
   pgTable,
   real,
   serial,
@@ -12,6 +13,8 @@ import {
   varchar,
   vector,
 } from 'drizzle-orm/pg-core';
+
+const availabilityEnum = pgEnum('availability', ['in_stock', 'out_of_stock', 'preorder']);
 
 // User table
 export const users = pgTable('users', {
@@ -89,49 +92,82 @@ export const catalogItems = pgTable(
     id: serial('id').primaryKey(),
     name: text('name').notNull(),
     description: text('description'),
-    defaultWeight: real('default_weight'),
-    defaultWeightUnit: text('default_weight_unit'),
-    category: text('category'),
-    image: text('image'),
+    weight: real('weight'),
+    weightUnit: text('weight_unit'),
+    categories: jsonb('categories').$type<string[]>().notNull(),
+    images: jsonb('images').$type<string[]>().notNull(),
     brand: text('brand'),
     model: text('model'),
-    url: text('url'),
     ratingValue: real('rating_value'),
-    productUrl: text('product_url'),
+    productUrl: text('product_url').notNull(),
     color: text('color'),
     size: text('size'),
     sku: text('sku').unique(),
     price: real('price'),
-    availability: text('availability'),
+    availability: availabilityEnum('availability'),
     seller: text('seller'),
     productSku: text('product_sku'),
     material: text('material'),
-    currency: text('currency'),
+    currency: text('currency').notNull(),
     condition: text('condition'),
+    reviewCount: integer('review_count').notNull(),
+
+    variants:
+      jsonb('variants').$type<
+        Array<{
+          attribute: string;
+          values: string[];
+        }>
+      >(),
+
     techs: jsonb('techs').$type<Record<string, string>>(),
+
     links:
       jsonb('links').$type<
         Array<{
-          id: string;
           title: string;
           url: string;
-          type: string;
         }>
       >(),
+
     reviews:
       jsonb('reviews').$type<
         Array<{
-          id: string;
-          userId: string;
-          userName: string;
-          userAvatar: string;
+          user_name: string;
+          user_avatar?: string | null;
+          context?: Record<string, string> | null;
+          recommends?: boolean | null;
           rating: number;
+          title: string;
           text: string;
           date: string;
-          helpful: number;
-          verified: boolean;
+          images?: string[] | null;
+          upvotes?: number | null;
+          downvotes?: number | null;
+          verified?: boolean | null;
         }>
       >(),
+
+    qas: jsonb('qas').$type<
+      Array<{
+        question: string;
+        user?: string | null;
+        date: string;
+        answers: Array<{
+          a: string;
+          date: string;
+          user?: string | null;
+          upvotes?: number | null;
+        }>;
+      }>
+    >(),
+
+    faqs: jsonb('faqs').$type<
+      Array<{
+        question: string;
+        answer: string;
+      }>
+    >(),
     embedding: vector('embedding', { dimensions: 1536 }),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
