@@ -129,6 +129,7 @@ async function processCatalogETL({
   if (!object) {
     throw new Error(`Object not found: ${objectKey}`);
   }
+
   const text = await object.text();
 
   const rows: string[][] = parse(text, {
@@ -143,7 +144,13 @@ async function processCatalogETL({
 
   for (const row of rows) {
     if (isHeader) {
-      fieldMap = createFieldMap(row.map((h) => h.trim().toLowerCase()));
+      fieldMap = row.reduce(
+        (acc, header, idx) => {
+          acc[header.trim()] = idx;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
       isHeader = false;
       console.log(`Processing ${filename} with field mapping:`, fieldMap);
       continue;
@@ -187,122 +194,6 @@ export async function processCatalogETLWriteBatch({
   const { items, userId } = message.data;
   const jobId = message.id;
   await insertCatalogItems({ env, items, userId, jobId });
-}
-
-function createFieldMap(headers: string[]): Record<string, number> {
-  const fieldMap: Record<string, number> = {};
-
-  const mappings = {
-    name: [
-      'name',
-      'item_name',
-      'product_name',
-      'title',
-      'product',
-      'item',
-      'Name',
-      'PRODUCT_NAME',
-      'Title',
-    ],
-    description: [
-      'description',
-      'desc',
-      'summary',
-      'info',
-      'product_description',
-      'Description',
-      'DESCRIPTION',
-    ],
-    weight: ['weight', 'weight_grams', 'weight_oz', 'wt', 'mass'],
-    weightUnit: ['weightUnit', 'weightunit', 'weight_unit', 'unit', 'mass_unit'],
-    categories: [
-      'categories',
-      'category',
-      'type',
-      'category_name',
-      'cat',
-      'product_category',
-      'product_type',
-      'Category',
-      'CATEGORY',
-    ],
-    brand: [
-      'brand',
-      'manufacturer',
-      'company',
-      'make',
-      'brand_name',
-      'Brand',
-      'BRAND_NAME',
-      'Manufacturer',
-    ],
-    model: ['model', 'model_number', 'part_number'],
-    sku: ['sku', 'item_number', 'product_id', 'id', 'item_id'],
-    productSku: ['productSku', 'productsku', 'product_sku'],
-    price: ['price', 'cost', 'amount', 'price_usd', 'msrp', 'Price', 'PRICE', 'Cost'],
-    images: [
-      'images',
-      'image',
-      'image_url',
-      'photo',
-      'picture',
-      'img',
-      'image_urls',
-      'photo_url',
-      'Image',
-      'IMAGE_URL',
-    ],
-    url: ['url', 'link', 'website', 'web', 'href', 'URL'],
-    productUrl: ['productUrl', 'producturl', 'product_url', 'PRODUCT_URL'],
-    color: ['color', 'colour'],
-    size: ['size'],
-    material: ['material', 'fabric'],
-    condition: ['condition'],
-    seller: ['seller', 'vendor', 'retailer'],
-    availability: [
-      'availability',
-      'stock',
-      'inventory_status',
-      'in_stock',
-      'quantity',
-      'Availability',
-      'AVAILABILITY',
-    ],
-    currency: ['currency', 'price_currency'],
-    ratingValue: [
-      'ratingValue',
-      'ratingvalue',
-      'rating',
-      'rating_value',
-      'stars',
-      'average_rating',
-    ],
-    reviewCount: ['reviewCount', 'reviewcount', 'review_count', 'reviews_count', 'num_reviews'],
-    techs: ['techs'],
-    variants: ['variants'],
-    links: ['links'],
-    reviews: ['reviews'],
-    qas: ['qas', 'questions'],
-    faqs: ['faqs', 'frequently_asked_questions'],
-    details: ['details'],
-    parameters: ['parameters'],
-    site: ['site'],
-    filename: ['filename'],
-    sourceFile: ['source_file'],
-    timestamp: ['cached_at', 'exported_at', 'created_at'],
-  };
-
-  for (const [dbField, csvVariants] of Object.entries(mappings)) {
-    for (const variant of csvVariants) {
-      const index = headers.findIndex((h) => h.toLowerCase() === variant);
-      if (index !== -1) {
-        fieldMap[dbField] = index;
-        break;
-      }
-    }
-  }
-
-  return fieldMap;
 }
 
 function mapCsvRowToItem({
@@ -368,8 +259,15 @@ function mapCsvRowToItem({
   item.images = images;
 
   // Required fields
-  if (!name || !productUrl || !currency || images.length === 0)
-    throw new Error('Missing required fields: name, productUrl, currency, or images');
+  if (!name || !productUrl || !currency || !images || images.length === 0) {
+    console.warn('Skipping item due to missing fields:', {
+      name,
+      productUrl,
+      currency,
+      images,
+    });
+    return null;
+  }
 
   // Scalars
   const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
@@ -409,13 +307,17 @@ function mapCsvRowToItem({
   }
 
   // JSON fields
-  const jsonFields: (keyof NewCatalogItem)[] = ['links', 'reviews', 'qas'];
+  const jsonFields: Extract<'links' | 'reviews' | 'qas', keyof NewCatalogItem>[] = [
+    'links',
+    'reviews',
+    'qas',
+  ];
   for (const field of jsonFields) {
     if (fieldMap[field as string] !== undefined && values[fieldMap[field as string]]) {
       try {
         item[field] = safeJsonParse(values[fieldMap[field as string]]);
       } catch {
-        (item as any)[field] = [];
+        item[field] = [];
       }
     }
   }
@@ -540,7 +442,11 @@ function safeJsonParse(value: string): any {
   try {
     return JSON.parse(normalized);
   } catch (err) {
-    console.warn('❌ Failed to parse JSON:\n', err);
+    console.warn('❌ Failed to parse JSON:', {
+      error: err,
+      originalInput: value,
+      normalizedInput: normalized,
+    });
     return [];
   }
 }
