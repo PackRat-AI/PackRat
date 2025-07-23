@@ -4,7 +4,7 @@ import type { Env } from '@packrat/api/types/env';
 import { parse } from 'csv-parse/sync';
 import { eq, getTableColumns, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { createDbClient } from '../db';
-import { R2BucketService } from './r2-service';
+import { R2BucketService } from './r2-bucket';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',

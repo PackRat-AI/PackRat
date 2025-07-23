@@ -46,7 +46,7 @@ interface R2Object {
   range?: { offset: number; length: number };
   storageClass: string;
   ssecKeyMd5?: string;
-  writeHttpMetadata(headers: any): void;
+  writeHttpMetadata(headers: Record<string, string>): void;
 }
 
 interface R2ObjectBody extends R2Object {
@@ -73,14 +73,14 @@ interface R2Conditional {
 }
 
 interface R2GetOptions {
-  onlyIf?: R2Conditional | any;
-  range?: R2Range | any;
+  onlyIf?: R2Conditional | Headers;
+  range?: R2Range | Headers;
   ssecKey?: ArrayBuffer | string;
 }
 
 interface R2PutOptions {
-  onlyIf?: R2Conditional | any;
-  httpMetadata?: R2HTTPMetadata | any;
+  onlyIf?: R2Conditional | Headers;
+  httpMetadata?: R2HTTPMetadata | Headers;
   customMetadata?: Record<string, string>;
   md5?: (ArrayBuffer | ArrayBufferView) | string;
   sha1?: (ArrayBuffer | ArrayBufferView) | string;
@@ -100,7 +100,7 @@ interface R2ListOptions {
 }
 
 interface R2MultipartOptions {
-  httpMetadata?: R2HTTPMetadata | any;
+  httpMetadata?: R2HTTPMetadata | Headers;
   customMetadata?: Record<string, string>;
   storageClass?: string;
   ssecKey?: ArrayBuffer | string;
@@ -526,7 +526,7 @@ export class R2BucketService {
     };
   }
 
-  private createR2Object(key: string, response: Record<string, any>): R2Object {
+  private createR2Object(key: string, response: Record<string, unknown>): R2Object {
     const r2Object = {
       key,
       version: response.VersionId || '',
@@ -545,22 +545,24 @@ export class R2BucketService {
       },
       customMetadata: response.Metadata || {},
       storageClass: response.StorageClass || 'STANDARD',
-      writeHttpMetadata: (_headers: any) => {
+      writeHttpMetadata: (_headers: Record<string, string>) => {
         // This is a no-op in our implementation
       },
     };
 
     // Add range if present
     if (response.ContentRange) {
-      // Parse content range if needed
-      // @ts-ignore - range is optional
-      r2Object.range = undefined;
+      // @ts-ignore - ignore
+      r2Object.range = response.ContentRange; // Assign the value if it exists
+    } else {
+      // @ts-ignore - ignore
+      r2Object.range = undefined; // Explicitly set to undefined if not present
     }
 
     return r2Object as R2Object;
   }
 
-  private createChecksums(response: Record<string, any>): R2Checksums {
+  private createChecksums(response: Record<string, unknown>): R2Checksums {
     const checksums: R2Checksums = {
       toJSON(): Record<string, string> {
         const result: Record<string, string> = {};
@@ -592,7 +594,7 @@ export class R2BucketService {
     return checksums;
   }
 
-  private formatRange(range: R2Range | any): string | undefined {
+  private formatRange(range: R2Range | Headers): string | undefined {
     if (typeof range === 'object' && range && 'get' in range && typeof range.get === 'function') {
       // It's a Headers object
       return range.get('range') || undefined;
@@ -609,7 +611,7 @@ export class R2BucketService {
     return `bytes=${offset}-`;
   }
 
-  private extractHttpMetadata(metadata?: R2HTTPMetadata | any): R2HTTPMetadata | undefined {
+  private extractHttpMetadata(metadata?: R2HTTPMetadata | Headers): R2HTTPMetadata | undefined {
     if (!metadata) return undefined;
 
     if (
