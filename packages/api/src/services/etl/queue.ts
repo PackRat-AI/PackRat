@@ -279,17 +279,6 @@ function mapCsvRowToItem({
   }
   item.images = images;
 
-  // Required fields
-  if (!name || !productUrl || !currency || !images || images.length === 0) {
-    console.warn('Skipping item due to missing fields:', {
-      name,
-      productUrl,
-      currency,
-      images,
-    });
-    return null;
-  }
-
   // Scalars
   const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
   const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
