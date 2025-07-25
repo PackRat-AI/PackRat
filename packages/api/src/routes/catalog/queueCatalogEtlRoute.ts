@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 const catalogETLSchema = z.object({
   objectKey: z.string().min(1, 'R2 object key is required'),
-  filepath: z.string().min(1, 'File path is required'),
+  filename: z.string().min(1, 'File path is required'),
 });
 
 export const routeDefinition = createRoute({
@@ -53,7 +53,7 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const { objectKey, filepath } = c.req.valid('json');
+  const { objectKey, filename } = c.req.valid('json');
   const userId = c.get('jwtPayload')?.userId;
 
   if (!c.env.ETL_QUEUE) {
@@ -66,7 +66,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     queue: c.env.ETL_QUEUE,
     objectKey,
     userId,
-    filepath,
+    filename,
   });
 
   return c.json({

@@ -364,7 +364,9 @@ export const packTemplateItemsRelations = relations(packTemplateItems, ({ one })
 
 export const invalidItemLogs = pgTable('invalid_item_logs', {
   id: serial('id').primaryKey(),
-  jobId: text('job_id').notNull(),
+  jobId: text('job_id')
+    .references(() => etlJobs.id)
+    .notNull(),
   errors: jsonb('errors').notNull().$type<ValidationError[]>(),
   rawData: jsonb('raw_data').notNull(),
   rowIndex: integer('row_index').notNull(),
@@ -373,6 +375,34 @@ export const invalidItemLogs = pgTable('invalid_item_logs', {
 
 export type InvalidItemLog = typeof invalidItemLogs.$inferSelect;
 export type NewInvalidItemLog = typeof invalidItemLogs.$inferInsert;
+
+const etlJobStatusEnum = pgEnum('etl_job_status', ['running', 'completed', 'failed']);
+
+export const etlJobs = pgTable('etl_jobs', {
+  id: text('id').primaryKey(),
+  status: etlJobStatusEnum('status').notNull(),
+  source: text('source').notNull(),
+  objectKey: text('object_key').notNull(),
+  startedAt: timestamp('started_at').notNull(),
+  completedAt: timestamp('completed_at'),
+  totalProcessed: integer('total_processed'),
+  totalValid: integer('total_valid'),
+  totalInvalid: integer('total_invalid'),
+});
+
+export type ETLJob = typeof etlJobs.$inferSelect;
+export type NewETLJob = typeof etlJobs.$inferInsert;
+
+export const etlJobsRelations = relations(etlJobs, ({ many }) => ({
+  logs: many(invalidItemLogs),
+}));
+
+export const invalidItemLogsRelations = relations(invalidItemLogs, ({ one }) => ({
+  job: one(etlJobs, {
+    fields: [invalidItemLogs.jobId],
+    references: [etlJobs.id],
+  }),
+}));
 
 // Infer models from tables
 export type User = InferSelectModel<typeof users>;
