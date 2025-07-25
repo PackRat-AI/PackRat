@@ -1,6 +1,5 @@
 import type { Env } from '@packrat/api/types/env';
 import type { InvalidItemLog, ValidatedCatalogItem } from '@packrat/api/types/etl';
-import { R2BucketService } from '../r2-bucket';
 
 function getDateTimeString() {
   const now = new Date();
@@ -17,62 +16,33 @@ function getDateTimeString() {
 export class ETLLoggingService {
   private env: Env;
   private timestamp: string = getDateTimeString();
-  private r2Service: R2BucketService;
+  private logsDestination: string;
 
-  constructor(env: Env) {
+  constructor(env: Env, etlSource: string, jobId: string) {
     this.env = env;
-    this.r2Service = new R2BucketService({
-      env,
-      bucketType: 'catalog',
-    });
+    this.logsDestination = `${etlSource}_${this.timestamp}-${jobId}.jsonl`;
   }
 
-  async logInvalidItems(
-    invalidItems: ValidatedCatalogItem[],
-    filepath: string,
-    importId: string,
-  ): Promise<void> {
+  async logInvalidItems(invalidItems: ValidatedCatalogItem[]): Promise<void> {
     if (invalidItems.length === 0) return;
 
     const logs: InvalidItemLog[] = invalidItems.map((item) => ({
-      importId,
       errors: item.errors,
       rawData: item.item,
       timestamp: Date.now(),
       rowIndex: item.rowIndex,
     }));
 
-    const logKey = `${filepath}_${this.timestamp}.jsonl`;
-
     try {
-      await this.r2Service.put(
-        logKey,
-        JSON.stringify(
-          {
-            importId,
-            totalInvalidItems: logs.length,
-            timestamp: Date.now(),
-            logs,
-          },
-          null,
-          2,
-        ),
-        {
-          httpMetadata: {
-            contentType: 'application/json',
-          },
-        },
-      );
+      const message = {
+        logsDestination: this.logsDestination,
+        logs,
+      };
+      await this.env.LOGS_QUEUE.send(message);
 
-      console.log(`📝 Logged ${logs.length} invalid items to ${logKey}`);
+      console.log(`📝 Logged ${logs.length} invalid items to ${this.logsDestination}`);
     } catch (error) {
       console.error('Failed to log invalid items:', error);
     }
-
-    // Also log summary to console for immediate visibility
-    console.warn(`❌ Validation failed for ${logs.length} items:`);
-    logs.forEach((log) => {
-      console.warn(`  - ${log.rowIndex}: ${log.errors.map((e) => e.reason).join(', ')}`);
-    });
   }
 }

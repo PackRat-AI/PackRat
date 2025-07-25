@@ -1,12 +1,12 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import type { NewCatalogItem } from '@packrat/api/db/schema';
+import { ETLLoggingService } from '@packrat/api/services/etl/ETLLoggingService';
 import type { Env } from '@packrat/api/types/env';
+import type { ValidatedCatalogItem } from '@packrat/api/types/etl';
 import { parse } from 'csv-parse/sync';
+import { CatalogService } from '../catalogService';
 import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
-import { ETLLoggingService } from '@packrat/api/services/etl/ETLLoggingService';
-import type { ValidatedCatalogItem } from '@packrat/api/types/etl';
-import { CatalogService } from '../catalogService';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
@@ -133,7 +133,7 @@ async function processCatalogETL({
   let totalInvalid = 0;
 
   const validator = new CatalogItemValidator();
-  const logger = new ETLLoggingService(env);
+  const logger = new ETLLoggingService(env, filepath, jobId);
 
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
     const row = rows[rowIndex];
@@ -177,7 +177,7 @@ async function processCatalogETL({
     }
 
     if (invalidItemsBatch.length >= BATCH_SIZE) {
-      await logger.logInvalidItems(invalidItemsBatch, filepath, jobId);
+      await logger.logInvalidItems(invalidItemsBatch);
       invalidItemsBatch = [];
     }
   }
@@ -192,7 +192,7 @@ async function processCatalogETL({
   }
 
   if (invalidItemsBatch.length > 0) {
-    await logger.logInvalidItems(invalidItemsBatch, filepath, jobId);
+    await logger.logInvalidItems(invalidItemsBatch);
   }
 
   console.log(
@@ -212,9 +212,9 @@ async function processCatalogETLWriteBatch({
 
   const catalogService = new CatalogService(env, false);
 
-    await catalogService.upsertCatalogItems(items as NewCatalogItem[]);
+  await catalogService.upsertCatalogItems(items as NewCatalogItem[]);
 
-    console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);
+  console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);
 }
 
 function mapCsvRowToItem({

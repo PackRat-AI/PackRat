@@ -7,7 +7,6 @@ export interface ValidationError {
 }
 
 export interface InvalidItemLog {
-  importId: string;
   errors: ValidationError[];
   rawData: Record<string, any>;
   timestamp: number;
