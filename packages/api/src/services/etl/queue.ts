@@ -1,12 +1,12 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import type { NewCatalogItem } from '@packrat/api/db/schema';
-import { ETLLoggingService } from '@packrat/api/services/etl/ETLLoggingService';
 import type { Env } from '@packrat/api/types/env';
-import type { ValidatedCatalogItem } from '@packrat/api/types/etl';
 import { parse } from 'csv-parse/sync';
-import { CatalogService } from '../catalogService';
 import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
+import { ETLLoggingService } from '@packrat/api/services/etl/ETLLoggingService';
+import type { ValidatedCatalogItem } from '@packrat/api/types/etl';
+import { CatalogService } from '../catalogService';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
@@ -31,8 +31,7 @@ export interface CatalogETLMessage extends BaseQueueMessage {
 export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
   type: QueueType.CATALOG_ETL_WRITE_BATCH;
   data: {
-    validatedItems: ValidatedCatalogItem[];
-    filepath: string;
+    items: Partial<NewCatalogItem>[];
   };
 }
 
@@ -127,12 +126,14 @@ async function processCatalogETL({
 
   let isHeader = true;
   let fieldMap: Record<string, number> = {};
-  let batch: ValidatedCatalogItem[] = [];
+  let validItemsBatch: Partial<NewCatalogItem>[] = [];
+  let invalidItemsBatch: ValidatedCatalogItem[] = [];
   let totalProcessed = 0;
   let totalValid = 0;
   let totalInvalid = 0;
 
   const validator = new CatalogItemValidator();
+  const logger = new ETLLoggingService(env);
 
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
     const row = rows[rowIndex];
@@ -153,35 +154,45 @@ async function processCatalogETL({
     const item = mapCsvRowToItem({ values: row, fieldMap });
     if (item) {
       const validatedItem = validator.validateItem(item, rowIndex);
-      batch.push(validatedItem);
       totalProcessed++;
 
       if (validatedItem.isValid) {
+        validItemsBatch.push(validatedItem.item);
         totalValid++;
       } else {
+        invalidItemsBatch.push(validatedItem);
         totalInvalid++;
       }
     }
 
-    if (batch.length >= BATCH_SIZE) {
+    if (validItemsBatch.length >= BATCH_SIZE) {
       await env.ETL_QUEUE.send({
         type: QueueType.CATALOG_ETL_WRITE_BATCH,
         id: jobId,
         timestamp: Date.now(),
-        data: { validatedItems: batch, filepath },
+        data: { items: validItemsBatch },
       });
-      batch = [];
+      validItemsBatch = [];
       await new Promise((r) => setTimeout(r, 1));
+    }
+
+    if (invalidItemsBatch.length >= BATCH_SIZE) {
+      await logger.logInvalidItems(invalidItemsBatch, filepath, jobId);
+      invalidItemsBatch = [];
     }
   }
 
-  if (batch.length > 0) {
+  if (validItemsBatch.length > 0) {
     await env.ETL_QUEUE.send({
       type: QueueType.CATALOG_ETL_WRITE_BATCH,
       id: jobId,
       timestamp: Date.now(),
-      data: { validatedItems: batch, filepath },
+      data: { items: validItemsBatch },
     });
+  }
+
+  if (invalidItemsBatch.length > 0) {
+    await logger.logInvalidItems(invalidItemsBatch, filepath, jobId);
   }
 
   console.log(
@@ -197,27 +208,13 @@ async function processCatalogETLWriteBatch({
   env: Env;
 }): Promise<void> {
   const jobId = message.id;
-  const { validatedItems, filepath } = message.data;
+  const { items } = message.data;
 
-  const logger = new ETLLoggingService(env);
   const catalogService = new CatalogService(env, false);
 
-  // Separate valid and invalid items
-  const validItems = validatedItems.filter((item) => item.isValid);
-  const invalidItems = validatedItems.filter((item) => !item.isValid);
+    await catalogService.upsertCatalogItems(items as NewCatalogItem[]);
 
-  if (invalidItems.length > 0) {
-    // Log invalid items
-    await logger.logInvalidItems(invalidItems, filepath, jobId);
-  }
-
-  if (validItems.length > 0) {
-    // Process valid items with upsert logic
-    const itemsToUpsert = validItems.map((item) => item.item as NewCatalogItem);
-    await catalogService.upsertCatalogItems(itemsToUpsert);
-
-    console.log(`📦 Batch ${jobId}: Processed ${validItems.length} valid items`);
-  }
+    console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);
 }
 
 function mapCsvRowToItem({
