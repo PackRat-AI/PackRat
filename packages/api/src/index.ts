@@ -2,7 +2,7 @@ import type { MessageBatch } from '@cloudflare/workers-types';
 import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { routes } from '@packrat/api/routes';
-import { processQueueBatch } from '@packrat/api/services/queue';
+import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
 import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';

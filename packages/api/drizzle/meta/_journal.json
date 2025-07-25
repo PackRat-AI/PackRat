@@ -134,6 +134,13 @@
       "when": 1753016371027,
       "tag": "0017_flaky_preak",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1753438348793,
+      "tag": "0018_elite_joystick",
+      "breakpoints": true
     }
   ]
 }

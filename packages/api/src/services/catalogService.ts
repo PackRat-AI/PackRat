@@ -1,5 +1,5 @@
-import { createDb } from '@packrat/api/db';
-import { type CatalogItem, catalogItems } from '@packrat/api/db/schema';
+import { createDb, createDbClient } from '@packrat/api/db';
+import { type CatalogItem, catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
 import {
@@ -18,14 +18,23 @@ import {
 } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
+import { filterNonEmptyFields } from '../utils/filterNonEmptyFields';
+
+const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
+  isContext;
 
 export class CatalogService {
   private db;
   private env;
 
-  constructor(c: Context) {
-    this.db = createDb(c);
-    this.env = env<Env>(c);
+  constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
+    if (isContext(contextOrEnv, isHonoContext)) {
+      this.db = createDb(contextOrEnv);
+      this.env = env<Env>(contextOrEnv);
+    } else {
+      this.db = createDbClient(contextOrEnv);
+      this.env = contextOrEnv;
+    }
   }
 
   async getCatalogItems(params: {
@@ -185,5 +194,21 @@ export class CatalogService {
       .limit(limit);
 
     return rows.map((row) => row.category);
+  }
+
+  /**
+   * Batch upsert catalog items:
+   * - For each item, insert or update only non-empty fields
+   */
+  async upsertCatalogItems(items: NewCatalogItem[]): Promise<void> {
+    for (const item of items) {
+      const insertData = item;
+      const updateData = filterNonEmptyFields(item);
+
+      await this.db.insert(catalogItems).values(insertData).onConflictDoUpdate({
+        target: catalogItems.sku,
+        set: updateData,
+      });
+    }
   }
 }

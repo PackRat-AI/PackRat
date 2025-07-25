@@ -95,7 +95,7 @@ export const catalogItems = pgTable(
     weight: real('weight'),
     weightUnit: text('weight_unit'),
     categories: jsonb('categories').$type<string[]>().notNull(),
-    images: jsonb('images').$type<string[]>().notNull(),
+    images: jsonb('images').$type<string[]>().default([]),
     brand: text('brand'),
     model: text('model'),
     ratingValue: real('rating_value'),

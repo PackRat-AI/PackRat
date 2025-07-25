@@ -1,10 +1,12 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
-import { catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
+import type { NewCatalogItem } from '@packrat/api/db/schema';
+import { ETLLoggingService } from '@packrat/api/services/etl/ETLLoggingService';
 import type { Env } from '@packrat/api/types/env';
+import type { ValidatedCatalogItem } from '@packrat/api/types/etl';
 import { parse } from 'csv-parse/sync';
-import { eq, getTableColumns, isNull, or, type SQL, sql } from 'drizzle-orm';
-import { createDbClient } from '../db';
-import { R2BucketService } from './r2-bucket';
+import { CatalogService } from '../catalogService';
+import { R2BucketService } from '../r2-bucket';
+import { CatalogItemValidator } from './CatalogItemValidator';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
@@ -14,7 +16,7 @@ export enum QueueType {
 export interface BaseQueueMessage {
   type: QueueType;
   timestamp: number;
-  id: string; // Original Job ID
+  id: string;
 }
 
 export interface CatalogETLMessage extends BaseQueueMessage {
@@ -22,52 +24,41 @@ export interface CatalogETLMessage extends BaseQueueMessage {
   data: {
     objectKey: string;
     userId: string;
-    filename: string;
+    filepath: string;
   };
 }
 
 export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
   type: QueueType.CATALOG_ETL_WRITE_BATCH;
   data: {
-    items: Partial<NewCatalogItem>[];
-    userId: string;
+    validatedItems: ValidatedCatalogItem[];
+    filepath: string;
   };
 }
 
-const BATCH_SIZE = 10; // Process 10 rows at a time to stay under 128KB message limit
-const _CHUNK_SIZE = 5 * 1024 * 1024; // Read 5MB chunks from R2
-
-export async function sendToQueue({
-  queue,
-  message,
-}: {
-  queue: Queue;
-  message: BaseQueueMessage;
-}): Promise<void> {
-  await queue.send(message);
-}
+const BATCH_SIZE = 10;
 
 export async function queueCatalogETL({
   queue,
   objectKey,
   userId,
-  filename,
+  filepath,
 }: {
   queue: Queue;
   objectKey: string;
   userId: string;
-  filename: string;
+  filepath: string;
 }): Promise<string> {
   const jobId = crypto.randomUUID();
 
   const message: CatalogETLMessage = {
     type: QueueType.CATALOG_ETL,
-    data: { objectKey, userId, filename },
+    data: { objectKey, userId, filepath },
     timestamp: Date.now(),
     id: jobId,
   };
 
-  await sendToQueue({ queue, message });
+  await queue.send(message);
   return jobId;
 }
 
@@ -84,7 +75,6 @@ export async function processQueueBatch({
 
       switch (queueMessage.type) {
         case QueueType.CATALOG_ETL:
-          if (!env.ETL_QUEUE) throw new Error('ETL_QUEUE is not configured');
           await processCatalogETL({
             message: queueMessage as CatalogETLMessage,
             env,
@@ -114,12 +104,11 @@ async function processCatalogETL({
   message: CatalogETLMessage;
   env: Env;
 }): Promise<void> {
-  const { objectKey, userId, filename } = message.data;
+  const { objectKey, filepath } = message.data;
   const jobId = message.id;
 
-  console.log(`Starting ETL job ${jobId} for file ${filename}`);
+  console.log(`🚀 Starting ETL job ${jobId} for file ${filepath}`);
 
-  // Use R2BucketService instead of direct binding
   const r2Service = new R2BucketService({
     env,
     bucketType: 'catalog',
@@ -131,7 +120,6 @@ async function processCatalogETL({
   }
 
   const text = await object.text();
-
   const rows: string[][] = parse(text, {
     relax_column_count: true,
     skip_empty_lines: true,
@@ -139,10 +127,16 @@ async function processCatalogETL({
 
   let isHeader = true;
   let fieldMap: Record<string, number> = {};
-  let batch: Partial<NewCatalogItem>[] = [];
-  let totalQueued = 0;
+  let batch: ValidatedCatalogItem[] = [];
+  let totalProcessed = 0;
+  let totalValid = 0;
+  let totalInvalid = 0;
 
-  for (const row of rows) {
+  const validator = new CatalogItemValidator();
+
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex];
+
     if (isHeader) {
       fieldMap = row.reduce(
         (acc, header, idx) => {
@@ -152,20 +146,30 @@ async function processCatalogETL({
         {} as Record<string, number>,
       );
       isHeader = false;
-      console.log(`Processing ${filename} with field mapping:`, fieldMap);
+      console.log(`📋 Processing ${filepath} with field mapping:`, Object.keys(fieldMap));
       continue;
     }
+
     const item = mapCsvRowToItem({ values: row, fieldMap });
-    if (item) batch.push(item);
+    if (item) {
+      const validatedItem = validator.validateItem(item, rowIndex);
+      batch.push(validatedItem);
+      totalProcessed++;
+
+      if (validatedItem.isValid) {
+        totalValid++;
+      } else {
+        totalInvalid++;
+      }
+    }
 
     if (batch.length >= BATCH_SIZE) {
       await env.ETL_QUEUE.send({
         type: QueueType.CATALOG_ETL_WRITE_BATCH,
         id: jobId,
         timestamp: Date.now(),
-        data: { items: batch, userId },
+        data: { validatedItems: batch, filepath },
       });
-      totalQueued += batch.length;
       batch = [];
       await new Promise((r) => setTimeout(r, 1));
     }
@@ -176,24 +180,44 @@ async function processCatalogETL({
       type: QueueType.CATALOG_ETL_WRITE_BATCH,
       id: jobId,
       timestamp: Date.now(),
-      data: { items: batch, userId },
+      data: { validatedItems: batch, filepath },
     });
-    totalQueued += batch.length;
   }
 
-  console.log(`ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`);
+  console.log(
+    `✅ ETL job ${jobId} completed: Processed ${totalProcessed} items (${totalValid} valid, ${totalInvalid} invalid)`,
+  );
 }
 
-export async function processCatalogETLWriteBatch({
+async function processCatalogETLWriteBatch({
   message,
   env,
 }: {
   message: CatalogETLWriteBatchMessage;
   env: Env;
-}) {
-  const { items, userId } = message.data;
+}): Promise<void> {
   const jobId = message.id;
-  await insertCatalogItems({ env, items, userId, jobId });
+  const { validatedItems, filepath } = message.data;
+
+  const logger = new ETLLoggingService(env);
+  const catalogService = new CatalogService(env, false);
+
+  // Separate valid and invalid items
+  const validItems = validatedItems.filter((item) => item.isValid);
+  const invalidItems = validatedItems.filter((item) => !item.isValid);
+
+  if (invalidItems.length > 0) {
+    // Log invalid items
+    await logger.logInvalidItems(invalidItems, filepath, jobId);
+  }
+
+  if (validItems.length > 0) {
+    // Process valid items with upsert logic
+    const itemsToUpsert = validItems.map((item) => item.item as NewCatalogItem);
+    await catalogService.upsertCatalogItems(itemsToUpsert);
+
+    console.log(`📦 Batch ${jobId}: Processed ${validItems.length} valid items`);
+  }
 }
 
 function mapCsvRowToItem({
@@ -484,46 +508,4 @@ function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
   const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
   return Number.isNaN(price) ? null : price;
-}
-
-async function insertCatalogItems({
-  env,
-  items,
-  jobId,
-}: {
-  env: Env;
-  items: Partial<NewCatalogItem>[];
-  userId: string;
-  jobId: string;
-}): Promise<void> {
-  const db = createDbClient(env);
-  console.log(`Job ${jobId}: Inserting ${items.length} catalog items`);
-
-  const validItems = items.filter((i): i is NewCatalogItem => !!i.name && !!i.sku?.trim());
-  if (validItems.length === 0) {
-    console.log(`Job ${jobId}: No valid items to insert.`);
-    return;
-  }
-
-  const columns = getTableColumns(catalogItems);
-  const updateSet: Record<string, SQL> = {};
-  for (const col of Object.values(columns)) {
-    const name = col.name as keyof NewCatalogItem;
-    if (!['sku', 'createdAt', 'id'].includes(name)) {
-      updateSet[name] = sql.raw(`excluded."${name}"`);
-    }
-  }
-
-  await db
-    .delete(catalogItems)
-    .where(or(isNull(catalogItems.sku), eq(sql`trim(${catalogItems.sku})`, '')));
-
-  console.log('🧹 Removed catalog items with null or empty SKU');
-
-  await db.insert(catalogItems).values(validItems).onConflictDoUpdate({
-    target: catalogItems.sku,
-    set: updateSet,
-  });
-
-  console.log(`Job ${jobId}: Inserted/updated ${validItems.length} items.`);
 }
