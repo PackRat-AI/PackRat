@@ -6,16 +6,8 @@ export interface ValidationError {
   value?: any;
 }
 
-export interface InvalidItemLog {
-  errors: ValidationError[];
-  rawData: Record<string, any>;
-  timestamp: number;
-  rowIndex: number;
-}
-
 export interface ValidatedCatalogItem {
   item: Partial<NewCatalogItem>;
   isValid: boolean;
   errors: ValidationError[];
-  rowIndex: number;
 }

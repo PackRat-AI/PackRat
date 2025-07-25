@@ -2,7 +2,7 @@ import type { NewCatalogItem } from '@packrat/api/db/schema';
 import type { ValidatedCatalogItem, ValidationError } from '@packrat/api/types/etl';
 
 export class CatalogItemValidator {
-  validateItem(item: Partial<NewCatalogItem>, rowIndex: number): ValidatedCatalogItem {
+  validateItem(item: Partial<NewCatalogItem>): ValidatedCatalogItem {
     const errors: ValidationError[] = [];
 
     // Required field validations
@@ -86,7 +86,6 @@ export class CatalogItemValidator {
       item,
       isValid: errors.length === 0,
       errors,
-      rowIndex,
     };
   }
 

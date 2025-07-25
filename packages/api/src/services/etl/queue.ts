@@ -1,6 +1,5 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
-import type { NewCatalogItem } from '@packrat/api/db/schema';
-import { ETLLoggingService } from '@packrat/api/services/etl/ETLLoggingService';
+import type { NewCatalogItem, NewInvalidItemLog } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import type { ValidatedCatalogItem } from '@packrat/api/types/etl';
 import { parse } from 'csv-parse/sync';
@@ -127,13 +126,12 @@ async function processCatalogETL({
   let isHeader = true;
   let fieldMap: Record<string, number> = {};
   let validItemsBatch: Partial<NewCatalogItem>[] = [];
-  let invalidItemsBatch: ValidatedCatalogItem[] = [];
+  let invalidItemsBatch: NewInvalidItemLog[] = [];
   let totalProcessed = 0;
   let totalValid = 0;
   let totalInvalid = 0;
 
   const validator = new CatalogItemValidator();
-  const logger = new ETLLoggingService(env, filepath, jobId);
 
   for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
     const row = rows[rowIndex];
@@ -153,14 +151,20 @@ async function processCatalogETL({
 
     const item = mapCsvRowToItem({ values: row, fieldMap });
     if (item) {
-      const validatedItem = validator.validateItem(item, rowIndex);
+      const validatedItem = validator.validateItem(item);
       totalProcessed++;
 
       if (validatedItem.isValid) {
         validItemsBatch.push(validatedItem.item);
         totalValid++;
       } else {
-        invalidItemsBatch.push(validatedItem);
+        const invalidItemLog = {
+          jobId,
+          errors: validatedItem.errors,
+          rawData: validatedItem.item,
+          rowIndex,
+        };
+        invalidItemsBatch.push(invalidItemLog);
         totalInvalid++;
       }
     }
@@ -177,7 +181,7 @@ async function processCatalogETL({
     }
 
     if (invalidItemsBatch.length >= BATCH_SIZE) {
-      await logger.logInvalidItems(invalidItemsBatch);
+      await env.LOGS_QUEUE.send(invalidItemsBatch);
       invalidItemsBatch = [];
     }
   }
@@ -192,7 +196,7 @@ async function processCatalogETL({
   }
 
   if (invalidItemsBatch.length > 0) {
-    await logger.logInvalidItems(invalidItemsBatch);
+    await env.LOGS_QUEUE.send(invalidItemsBatch);
   }
 
   console.log(

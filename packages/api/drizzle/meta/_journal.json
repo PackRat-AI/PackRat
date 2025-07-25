@@ -141,6 +141,13 @@
       "when": 1753438348793,
       "tag": "0018_elite_joystick",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1753454343681,
+      "tag": "0019_cuddly_thing",
+      "breakpoints": true
     }
   ]
 }

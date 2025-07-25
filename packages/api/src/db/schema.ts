@@ -13,6 +13,7 @@ import {
   varchar,
   vector,
 } from 'drizzle-orm/pg-core';
+import type { ValidationError } from '../types/etl';
 
 const availabilityEnum = pgEnum('availability', ['in_stock', 'out_of_stock', 'preorder']);
 
@@ -360,6 +361,18 @@ export const packTemplateItemsRelations = relations(packTemplateItems, ({ one })
     references: [catalogItems.id],
   }),
 }));
+
+export const invalidItemLogs = pgTable('invalid_item_logs', {
+  id: serial('id').primaryKey(),
+  jobId: text('job_id').notNull(),
+  errors: jsonb('errors').notNull().$type<ValidationError[]>(),
+  rawData: jsonb('raw_data').notNull(),
+  rowIndex: integer('row_index').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export type InvalidItemLog = typeof invalidItemLogs.$inferSelect;
+export type NewInvalidItemLog = typeof invalidItemLogs.$inferInsert;
 
 // Infer models from tables
 export type User = InferSelectModel<typeof users>;
