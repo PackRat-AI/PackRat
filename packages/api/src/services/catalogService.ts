@@ -1,5 +1,10 @@
-import { createDb } from '@packrat/api/db';
-import { type CatalogItem, catalogItems } from '@packrat/api/db/schema';
+import { createDb, createDbClient } from '@packrat/api/db';
+import {
+  type CatalogItem,
+  catalogItemEtlJobs,
+  catalogItems,
+  type NewCatalogItem,
+} from '@packrat/api/db/schema';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
 import {
@@ -14,18 +19,27 @@ import {
   ilike,
   isNotNull,
   or,
+  type SQL,
   sql,
 } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 
+const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
+  isContext;
+
 export class CatalogService {
   private db;
   private env;
 
-  constructor(c: Context) {
-    this.db = createDb(c);
-    this.env = env<Env>(c);
+  constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
+    if (isContext(contextOrEnv, isHonoContext)) {
+      this.db = createDb(contextOrEnv);
+      this.env = env<Env>(contextOrEnv);
+    } else {
+      this.db = createDbClient(contextOrEnv);
+      this.env = contextOrEnv;
+    }
   }
 
   async getCatalogItems(params: {
@@ -185,5 +199,36 @@ export class CatalogService {
       .limit(limit);
 
     return rows.map((row) => row.category);
+  }
+
+  /**
+   * Batch upsert catalog items:
+   * - For each item, insert or update only non-empty fields
+   */
+  async upsertCatalogItems(items: NewCatalogItem[], etlJobId: string): Promise<void> {
+    const columns = getTableColumns(catalogItems);
+
+    const insertedItems = await this.db
+      .insert(catalogItems)
+      .values(items)
+      .onConflictDoUpdate({
+        target: catalogItems.sku,
+        set: Object.values(columns).reduce(
+          (acc, col) => {
+            acc[col.name] = sql.raw(`COALESCE(${col.name}, excluded."${col.name}")`);
+            return acc;
+          },
+          {} as Record<string, SQL>,
+        ),
+      })
+      .returning({ id: catalogItems.id });
+
+    // Track which items were processed in this ETL job
+    await this.db.insert(catalogItemEtlJobs).values(
+      insertedItems.map((item) => ({
+        catalogItemId: item.id,
+        etlJobId,
+      })),
+    );
   }
 }

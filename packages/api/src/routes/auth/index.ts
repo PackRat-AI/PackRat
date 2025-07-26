@@ -25,7 +25,6 @@ import { OAuth2Client } from 'google-auth-library';
 import { env } from 'hono/adapter';
 
 const authRoutes = new OpenAPIHono();
-
 // Login route
 const loginRoute = createRoute({
   method: 'post',

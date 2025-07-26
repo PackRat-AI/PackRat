@@ -1,13 +1,13 @@
 import { createRoute } from '@hono/zod-openapi';
 import { authMiddleware } from '@packrat/api/middleware';
-import { queueCatalogETL } from '@packrat/api/services/queue';
+import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 
 const catalogETLSchema = z.object({
   objectKey: z.string().min(1, 'R2 object key is required'),
-  filename: z.string().min(1, 'Filename is required'),
+  filename: z.string().min(1, 'File path is required'),
 });
 
 export const routeDefinition = createRoute({
