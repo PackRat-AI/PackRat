@@ -71,17 +71,6 @@ export class CatalogItemValidator {
       });
     }
 
-    if (
-      item.ratingValue !== undefined &&
-      (typeof item.ratingValue !== 'number' || item.ratingValue < 0 || item.ratingValue > 5)
-    ) {
-      errors.push({
-        field: 'ratingValue',
-        reason: 'Rating value must be between 0 and 5',
-        value: item.ratingValue,
-      });
-    }
-
     return {
       item,
       isValid: errors.length === 0,

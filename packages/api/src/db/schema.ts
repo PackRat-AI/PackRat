@@ -110,9 +110,9 @@ export const catalogItems = pgTable(
     seller: text('seller'),
     productSku: text('product_sku'),
     material: text('material'),
-    currency: text('currency').notNull(),
+    currency: text('currency'),
     condition: text('condition'),
-    reviewCount: integer('review_count').notNull(),
+    reviewCount: integer('review_count'),
 
     variants:
       jsonb('variants').$type<

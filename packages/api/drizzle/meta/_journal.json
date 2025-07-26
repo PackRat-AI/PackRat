@@ -169,6 +169,13 @@
       "when": 1753526357679,
       "tag": "0022_melodic_wrecker",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1753551654417,
+      "tag": "0023_left_wither",
+      "breakpoints": true
     }
   ]
 }
