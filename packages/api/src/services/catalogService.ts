@@ -19,11 +19,11 @@ import {
   ilike,
   isNotNull,
   or,
+  type SQL,
   sql,
 } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
-import { filterNonEmptyFields } from '../utils/filterNonEmptyFields';
 
 const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
   isContext;
@@ -206,25 +206,29 @@ export class CatalogService {
    * - For each item, insert or update only non-empty fields
    */
   async upsertCatalogItems(items: NewCatalogItem[], etlJobId: string): Promise<void> {
-    for (const item of items) {
-      const insertData = item;
-      const updateData = filterNonEmptyFields(item);
+    const columns = getTableColumns(catalogItems);
 
-      // Insert or update the catalog item
-      const [catalogItem] = await this.db
-        .insert(catalogItems)
-        .values(insertData)
-        .onConflictDoUpdate({
-          target: catalogItems.sku,
-          set: updateData,
-        })
-        .returning({ id: catalogItems.id });
+    const insertedItems = await this.db
+      .insert(catalogItems)
+      .values(items)
+      .onConflictDoUpdate({
+        target: catalogItems.sku,
+        set: Object.values(columns).reduce(
+          (acc, col) => {
+            acc[col.name] = sql.raw(`COALESCE(${col.name}, excluded."${col.name}")`);
+            return acc;
+          },
+          {} as Record<string, SQL>,
+        ),
+      })
+      .returning({ id: catalogItems.id });
 
-      // Associate the catalog item with the ETL job
-      await this.db.insert(catalogItemEtlJobs).values({
-        catalogItemId: catalogItem.id,
+    // Track which items were processed in this ETL job
+    await this.db.insert(catalogItemEtlJobs).values(
+      insertedItems.map((item) => ({
+        catalogItemId: item.id,
         etlJobId,
-      });
-    }
+      })),
+    );
   }
 }
