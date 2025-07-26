@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   real,
   serial,
   text,
@@ -302,6 +303,7 @@ export const packItemsRelations = relations(packItems, ({ one }) => ({
 
 export const catalogItemsRelations = relations(catalogItems, ({ many }) => ({
   packItems: many(packItems),
+  etlJobs: many(catalogItemEtlJobs),
 }));
 
 export const packWeightHistoryRelations = relations(packWeightHistory, ({ one }) => ({
@@ -395,11 +397,39 @@ export type NewETLJob = typeof etlJobs.$inferInsert;
 
 export const etlJobsRelations = relations(etlJobs, ({ many }) => ({
   logs: many(invalidItemLogs),
+  catalogItems: many(catalogItemEtlJobs),
 }));
 
 export const invalidItemLogsRelations = relations(invalidItemLogs, ({ one }) => ({
   job: one(etlJobs, {
     fields: [invalidItemLogs.jobId],
+    references: [etlJobs.id],
+  }),
+}));
+
+export const catalogItemEtlJobs = pgTable(
+  'catalog_item_etl_jobs',
+  {
+    catalogItemId: integer('catalog_item_id')
+      .references(() => catalogItems.id, { onDelete: 'cascade' })
+      .notNull(),
+    etlJobId: text('etl_job_id')
+      .references(() => etlJobs.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.catalogItemId, table.etlJobId] }),
+  }),
+);
+
+export const catalogItemEtlJobsRelations = relations(catalogItemEtlJobs, ({ one }) => ({
+  catalogItem: one(catalogItems, {
+    fields: [catalogItemEtlJobs.catalogItemId],
+    references: [catalogItems.id],
+  }),
+  etlJob: one(etlJobs, {
+    fields: [catalogItemEtlJobs.etlJobId],
     references: [etlJobs.id],
   }),
 }));

@@ -155,6 +155,13 @@
       "when": 1753463035125,
       "tag": "0020_goofy_nico_minoru",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1753524670390,
+      "tag": "0021_last_jasper_sitwell",
+      "breakpoints": true
     }
   ]
 }

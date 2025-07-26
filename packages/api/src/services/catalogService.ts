@@ -1,5 +1,10 @@
 import { createDb, createDbClient } from '@packrat/api/db';
-import { type CatalogItem, catalogItems, type NewCatalogItem } from '@packrat/api/db/schema';
+import {
+  type CatalogItem,
+  catalogItemEtlJobs,
+  catalogItems,
+  type NewCatalogItem,
+} from '@packrat/api/db/schema';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
 import {
@@ -200,14 +205,25 @@ export class CatalogService {
    * Batch upsert catalog items:
    * - For each item, insert or update only non-empty fields
    */
-  async upsertCatalogItems(items: NewCatalogItem[]): Promise<void> {
+  async upsertCatalogItems(items: NewCatalogItem[], etlJobId: string): Promise<void> {
     for (const item of items) {
       const insertData = item;
       const updateData = filterNonEmptyFields(item);
 
-      await this.db.insert(catalogItems).values(insertData).onConflictDoUpdate({
-        target: catalogItems.sku,
-        set: updateData,
+      // Insert or update the catalog item
+      const [catalogItem] = await this.db
+        .insert(catalogItems)
+        .values(insertData)
+        .onConflictDoUpdate({
+          target: catalogItems.sku,
+          set: updateData,
+        })
+        .returning({ id: catalogItems.id });
+
+      // Associate the catalog item with the ETL job
+      await this.db.insert(catalogItemEtlJobs).values({
+        catalogItemId: catalogItem.id,
+        etlJobId,
       });
     }
   }

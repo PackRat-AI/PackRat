@@ -246,7 +246,7 @@ async function processCatalogETLWriteBatch({
 
   const catalogService = new CatalogService(env, false);
 
-  await catalogService.upsertCatalogItems(items as NewCatalogItem[]);
+  await catalogService.upsertCatalogItems(items as NewCatalogItem[], jobId);
 
   console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);
 }
