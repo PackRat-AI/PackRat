@@ -1,3 +1,4 @@
+CREATE TYPE "etl_job_status" AS ENUM ('running', 'completed', 'failed');--> statement-breakpoint
 CREATE TABLE "etl_jobs" (
 	"id" text PRIMARY KEY NOT NULL,
 	"status" "etl_job_status" NOT NULL,
