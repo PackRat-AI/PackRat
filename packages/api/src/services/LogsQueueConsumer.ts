@@ -1,19 +1,14 @@
-import type { Message, MessageBatch } from '@cloudflare/workers-types';
+import type { MessageBatch } from '@cloudflare/workers-types';
 import type { Env } from '@packrat/api/types/env';
 import { createDbClient } from '../db';
 import { invalidItemLogs, type NewInvalidItemLog } from '../db/schema';
-import type { BaseQueueMessage } from './etl/queue';
-
-interface LogQueueMessage extends BaseQueueMessage {
-  logs: Array<NewInvalidItemLog>;
-}
 
 export class LogsQueueConsumer {
-  async handle(batch: MessageBatch<BaseQueueMessage>, env: Env): Promise<void> {
+  async handle(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     const db = createDbClient(env);
 
     for (const message of batch.messages) {
-      const { logs } = (message as Message<LogQueueMessage>).body;
+      const logs = message.body as NewInvalidItemLog[];
 
       try {
         await db.insert(invalidItemLogs).values(logs);
