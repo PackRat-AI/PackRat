@@ -205,7 +205,8 @@ export class CatalogService {
    * Batch upsert catalog items:
    * - For each item, insert or update only non-empty fields
    */
-  async upsertCatalogItems(items: NewCatalogItem[], etlJobId: string): Promise<void> {
+
+  async upsertCatalogItems(items: NewCatalogItem[]): Promise<Pick<CatalogItem, 'id'>[]> {
     const columns = getTableColumns(catalogItems);
 
     const insertedItems = await this.db
@@ -215,7 +216,7 @@ export class CatalogService {
         target: catalogItems.sku,
         set: Object.values(columns).reduce(
           (acc, col) => {
-            acc[col.name] = sql.raw(`COALESCE(${col.name}, excluded."${col.name}")`);
+            acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
             return acc;
           },
           {} as Record<string, SQL>,
@@ -223,11 +224,14 @@ export class CatalogService {
       })
       .returning({ id: catalogItems.id });
 
-    // Track which items were processed in this ETL job
+    return insertedItems;
+  }
+
+  async trackEtlJob(itemIds: Pick<CatalogItem, 'id'>[], jobId: string): Promise<void> {
     await this.db.insert(catalogItemEtlJobs).values(
-      insertedItems.map((item) => ({
+      itemIds.map((item) => ({
         catalogItemId: item.id,
-        etlJobId,
+        etlJobId: jobId,
       })),
     );
   }

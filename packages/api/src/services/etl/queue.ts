@@ -107,15 +107,15 @@ async function processCatalogETL({
   const jobId = message.id;
 
   const db = createDbClient(env);
-  await db.insert(etlJobs).values({
-    id: jobId,
-    status: 'running',
-    source: filename,
-    objectKey,
-    startedAt: new Date(),
-  });
-
   try {
+    await db.insert(etlJobs).values({
+      id: jobId,
+      status: 'running',
+      source: filename,
+      objectKey,
+      startedAt: new Date(),
+    });
+
     console.log(`🚀 Starting ETL job ${jobId} for file ${filename}`);
 
     const r2Service = new R2BucketService({
@@ -246,7 +246,9 @@ async function processCatalogETLWriteBatch({
 
   const catalogService = new CatalogService(env, false);
 
-  await catalogService.upsertCatalogItems(items as NewCatalogItem[], jobId);
+  const result = await catalogService.upsertCatalogItems(items as NewCatalogItem[]);
+  // Track the ETL job that processed these items
+  await catalogService.trackEtlJob(result, jobId);
 
   console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);
 }
