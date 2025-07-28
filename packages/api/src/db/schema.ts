@@ -407,21 +407,16 @@ export const invalidItemLogsRelations = relations(invalidItemLogs, ({ one }) => 
   }),
 }));
 
-export const catalogItemEtlJobs = pgTable(
-  'catalog_item_etl_jobs',
-  {
-    catalogItemId: integer('catalog_item_id')
-      .references(() => catalogItems.id, { onDelete: 'cascade' })
-      .notNull(),
-    etlJobId: text('etl_job_id')
-      .references(() => etlJobs.id, { onDelete: 'cascade' })
-      .notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.catalogItemId, table.etlJobId] }),
-  }),
-);
+export const catalogItemEtlJobs = pgTable('catalog_item_etl_jobs', {
+  id: serial('id').primaryKey(),
+  catalogItemId: integer('catalog_item_id')
+    .references(() => catalogItems.id, { onDelete: 'cascade' })
+    .notNull(),
+  etlJobId: text('etl_job_id')
+    .references(() => etlJobs.id, { onDelete: 'cascade' })
+    .notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
 
 export const catalogItemEtlJobsRelations = relations(catalogItemEtlJobs, ({ one }) => ({
   catalogItem: one(catalogItems, {
