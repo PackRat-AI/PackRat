@@ -51,6 +51,10 @@ export default (): ExpoConfig =>
           ],
           NSLocationWhenInUseUsageDescription:
             'This app needs access to your location while you are using it.',
+          NSCameraUsageDescription:
+            'This app requires access to your camera to let you take photos or scan items.',
+          NSPhotoLibraryUsageDescription:
+            'This app needs access to your photo library to let you upload or choose photos.',
         },
         privacyManifests: {
           NSPrivacyCollectedDataTypes: [
