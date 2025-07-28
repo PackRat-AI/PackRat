@@ -176,6 +176,13 @@
       "when": 1753551654417,
       "tag": "0023_left_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1753684432761,
+      "tag": "0024_next_expediter",
+      "breakpoints": true
     }
   ]
 }

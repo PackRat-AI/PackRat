@@ -291,10 +291,10 @@ function mapCsvRowToItem({
             .map((v) => v.trim())
             .filter(Boolean);
     } catch {
-      item.categories = [val || 'Uncategorized'];
+      item.categories = val ? [val] : [];
     }
   } else {
-    item.categories = ['Uncategorized'];
+    item.categories = [];
   }
 
   let images: string[] = [];
