@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { CatalogService } from '../catalogService';
 import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
+import { mergeItemsBySku } from './mergeItemsBySku';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
@@ -246,7 +247,9 @@ async function processCatalogETLWriteBatch({
 
   const catalogService = new CatalogService(env, false);
 
-  const result = await catalogService.upsertCatalogItems(items as NewCatalogItem[]);
+  // Consolidate items with identical SKUs before upserting to avoid conflicting duplicate upserts.
+  const mergedItems = mergeItemsBySku(items as NewCatalogItem[]);
+  const result = await catalogService.upsertCatalogItems(mergedItems);
   // Track the ETL job that processed these items
   await catalogService.trackEtlJob(result, jobId);
 
