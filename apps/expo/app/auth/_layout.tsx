@@ -1,5 +1,5 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Link, Stack } from 'expo-router';
+import { Link, router, Stack } from 'expo-router';
 import { Platform } from 'react-native';
 
 export default function AuthLayout() {
@@ -27,11 +27,15 @@ const CREATE_ACCOUNT_MODAL_OPTIONS = {
   headerShadowVisible: false,
   headerLeft() {
     return (
-      <Link asChild href="/auth">
-        <Button variant="plain" className="ios:px-0">
-          <Text className="text-primary">Cancel</Text>
-        </Button>
-      </Link>
+      <Button
+        variant="plain"
+        className="ios:px-0"
+        onPress={() => {
+          router.back();
+        }}
+      >
+        <Text className="text-primary">Cancel</Text>
+      </Button>
     );
   },
 } as const;
