@@ -291,13 +291,13 @@ function mapCsvRowToItem({
             .map((v) => v.trim())
             .filter(Boolean);
     } catch {
-      item.categories = val ? [val] : [];
+      item.categories = val ? [val] : undefined;
     }
   } else {
-    item.categories = [];
+    item.categories = undefined;
   }
 
-  let images: string[] = [];
+  let images: string[] | undefined;
   if (fieldMap.images !== undefined && values[fieldMap.images]) {
     try {
       const val = values[fieldMap.images].trim();
@@ -308,10 +308,10 @@ function mapCsvRowToItem({
             .map((v) => v.trim())
             .filter(Boolean);
     } catch {
-      images = [];
+      images = undefined;
     }
   } else {
-    images = [];
+    images = undefined;
   }
   item.images = images;
 
