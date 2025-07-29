@@ -144,12 +144,17 @@ async function processCatalogETL({
 
   for (const row of rows) {
     if (isHeader) {
-      fieldMap = createFieldMap(row.map((h) => h.trim().toLowerCase()));
+      fieldMap = row.reduce(
+        (acc, header, idx) => {
+          acc[header.trim()] = idx;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
       isHeader = false;
       console.log(`Processing ${filename} with field mapping:`, fieldMap);
       continue;
     }
-
     const item = mapCsvRowToItem({ values: row, fieldMap });
     if (item) batch.push(item);
 
@@ -179,7 +184,7 @@ async function processCatalogETL({
   console.log(`ETL job ${jobId} completed: Queued ${totalQueued} total items for writing.`);
 }
 
-async function processCatalogETLWriteBatch({
+export async function processCatalogETLWriteBatch({
   message,
   env,
 }: {
@@ -191,107 +196,6 @@ async function processCatalogETLWriteBatch({
   await insertCatalogItems({ env, items, userId, jobId });
 }
 
-function createFieldMap(headers: string[]): Record<string, number> {
-  const fieldMap: Record<string, number> = {};
-
-  const mappings = {
-    name: [
-      'name',
-      'item_name',
-      'product_name',
-      'title',
-      'product',
-      'item',
-      'Name',
-      'PRODUCT_NAME',
-      'Title',
-    ],
-    description: [
-      'description',
-      'desc',
-      'summary',
-      'info',
-      'product_description',
-      'Description',
-      'DESCRIPTION',
-    ],
-    weight: ['weight', 'weight_grams', 'weight_oz', 'wt', 'mass'],
-    weightUnit: ['weight_unit'],
-    category: [
-      'category',
-      'type',
-      'category_name',
-      'cat',
-      'product_category',
-      'product_type',
-      'Category',
-      'CATEGORY',
-    ],
-    brand: [
-      'brand',
-      'manufacturer',
-      'company',
-      'make',
-      'brand_name',
-      'Brand',
-      'BRAND_NAME',
-      'Manufacturer',
-    ],
-    model: ['model', 'model_number', 'part_number'],
-    sku: ['sku', 'item_number', 'product_id', 'id', 'item_id'],
-    productSku: ['product_sku'],
-    price: ['price', 'cost', 'amount', 'price_usd', 'msrp', 'Price', 'PRICE', 'Cost'],
-    image: [
-      'image',
-      'image_url',
-      'photo',
-      'picture',
-      'img',
-      'image_urls',
-      'photo_url',
-      'Image',
-      'IMAGE_URL',
-    ],
-    url: ['url', 'link', 'website', 'web', 'href', 'URL'],
-    productUrl: ['product_url', 'PRODUCT_URL'],
-    color: ['color', 'colour'],
-    size: ['size'],
-    material: ['material', 'fabric'],
-    condition: ['condition'],
-    seller: ['seller', 'vendor', 'retailer'],
-    availability: [
-      'availability',
-      'stock',
-      'inventory_status',
-      'in_stock',
-      'quantity',
-      'Availability',
-      'AVAILABILITY',
-    ],
-    currency: ['currency', 'price_currency'],
-    ratingValue: ['rating', 'rating_value', 'stars', 'average_rating'],
-    techs: ['techs'],
-    details: ['details'],
-    parameters: ['parameters'],
-    site: ['site'],
-    filename: ['filename'],
-    sourceFile: ['source_file'],
-    timestamp: ['cached_at', 'exported_at', 'created_at'],
-  };
-
-  for (const [dbField, csvVariants] of Object.entries(mappings)) {
-    for (const variant of csvVariants) {
-      const index = headers.findIndex((h) => h.toLowerCase() === variant);
-      if (index !== -1) {
-        fieldMap[dbField] = index;
-        break;
-      }
-    }
-  }
-
-  return fieldMap;
-}
-
 function mapCsvRowToItem({
   values,
   fieldMap,
@@ -300,34 +204,148 @@ function mapCsvRowToItem({
   fieldMap: Record<string, number>;
 }): Partial<NewCatalogItem> | null {
   const item: Partial<NewCatalogItem> = {};
+  // --- Optional Scalars ---
+  item.description =
+    fieldMap.description !== undefined
+      ? values[fieldMap.description]?.replace(/[\r\n]+/g, ' ').trim()
+      : undefined;
 
   const name = fieldMap.name !== undefined ? values[fieldMap.name]?.trim() : undefined;
-  if (!name) {
-    return null; // A name is required
-  }
   item.name = name;
 
-  const descriptionParts: string[] = [];
-  if (fieldMap.description !== undefined && values[fieldMap.description]) {
-    descriptionParts.push(values[fieldMap.description].replace(/^"|"$/g, ''));
-  }
-  if (fieldMap.details !== undefined && values[fieldMap.details]) {
-    descriptionParts.push(`Details: ${values[fieldMap.details].replace(/^"|"$/g, '')}`);
-  }
-  if (fieldMap.parameters !== undefined && values[fieldMap.parameters]) {
-    descriptionParts.push(`Parameters: ${parseAndFormatMultiString(values[fieldMap.parameters])}`);
-  }
-  if (descriptionParts.length > 0) {
-    item.description = descriptionParts.join('\n\n');
+  const productUrl =
+    fieldMap.productUrl !== undefined ? values[fieldMap.productUrl]?.trim() : undefined;
+  item.productUrl = productUrl;
+
+  const currency = fieldMap.currency !== undefined ? values[fieldMap.currency]?.trim() : undefined;
+  item.currency = currency;
+
+  const reviewCountStr =
+    fieldMap.reviewCount !== undefined ? values[fieldMap.reviewCount] : undefined;
+  item.reviewCount = reviewCountStr ? parseInt(reviewCountStr) || 0 : 0;
+
+  if (fieldMap.categories !== undefined && values[fieldMap.categories]) {
+    const val = values[fieldMap.categories].trim();
+    try {
+      item.categories = val.startsWith('[')
+        ? JSON.parse(val)
+        : val
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean);
+    } catch {
+      item.categories = [val || 'Uncategorized'];
+    }
+  } else {
+    item.categories = ['Uncategorized'];
   }
 
-  // --- Direct Mappings ---
-  const directMappings: (keyof NewCatalogItem)[] = [
-    'category',
+  let images: string[] = [];
+  if (fieldMap.images !== undefined && values[fieldMap.images]) {
+    try {
+      const val = values[fieldMap.images].trim();
+      images = val.startsWith('[')
+        ? JSON.parse(val)
+        : val
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean);
+    } catch {
+      images = [];
+    }
+  } else {
+    images = [];
+  }
+  item.images = images;
+
+  // Required fields
+  if (!name || !productUrl || !currency || !images || images.length === 0) {
+    console.warn('Skipping item due to missing fields:', {
+      name,
+      productUrl,
+      currency,
+      images,
+    });
+    return null;
+  }
+
+  // Scalars
+  const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
+  const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
+  if (weightStr && parseFloat(weightStr) > 0) {
+    const { weight, unit } = parseWeight(weightStr, unitStr);
+    item.weight = weight;
+    item.weightUnit = unit;
+  }
+
+  const priceStr = fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
+  if (priceStr) item.price = parsePrice(priceStr);
+
+  const ratingStr = fieldMap.ratingValue !== undefined ? values[fieldMap.ratingValue] : undefined;
+  if (ratingStr) item.ratingValue = parseFloat(ratingStr) || null;
+
+  if (fieldMap.variants !== undefined && values[fieldMap.variants]) {
+    const val = values[fieldMap.variants].trim();
+    try {
+      item.variants = JSON.parse(val);
+    } catch {
+      try {
+        item.variants = JSON.parse(val.replace(/'/g, '"'));
+      } catch {
+        item.variants = [];
+      }
+    }
+  }
+
+  if (fieldMap.faqs !== undefined && values[fieldMap.faqs]) {
+    const val = values[fieldMap.faqs].trim();
+    try {
+      item.faqs = parseFaqs(val);
+    } catch {
+      item.faqs = [];
+    }
+  }
+
+  // JSON fields
+  const jsonFields: Extract<'links' | 'reviews' | 'qas', keyof NewCatalogItem>[] = [
+    'links',
+    'reviews',
+    'qas',
+  ];
+  for (const field of jsonFields) {
+    if (fieldMap[field as string] !== undefined && values[fieldMap[field as string]]) {
+      try {
+        item[field] = safeJsonParse(values[fieldMap[field as string]]);
+      } catch {
+        item[field] = [];
+      }
+    }
+  }
+
+  // Techs + fallback for weight
+  const techsStr = fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
+  if (techsStr) {
+    try {
+      const parsed = safeJsonParse(techsStr);
+      item.techs = parsed;
+
+      if (!item.weight) {
+        const claimedWeight = parsed['Claimed Weight'] || parsed.weight;
+        if (claimedWeight) {
+          const { weight, unit } = parseWeight(claimedWeight);
+          item.weight = weight;
+          item.weightUnit = unit;
+        }
+      }
+    } catch {
+      item.techs = {};
+    }
+  }
+
+  // Direct mappings
+  const directFields: (keyof NewCatalogItem)[] = [
     'brand',
     'model',
-    'url',
-    'productUrl',
     'color',
     'size',
     'sku',
@@ -335,92 +353,16 @@ function mapCsvRowToItem({
     'availability',
     'seller',
     'material',
-    'currency',
     'condition',
   ];
-  for (const key of directMappings) {
-    const fieldIndex = fieldMap[key as string];
-    if (fieldIndex !== undefined && values[fieldIndex]) {
-      // @ts-expect-error - We are mapping strings to the correct keys
-      item[key] = values[fieldIndex].replace(/^"|"$/g, '').trim();
+  for (const field of directFields) {
+    const index = fieldMap[field as string];
+    if (index !== undefined && values[index]) {
+      (item as any)[field] = values[index].replace(/^"|"$/g, '').trim();
     }
-  }
-
-  // --- Transformed Mappings ---
-  const weightStr = fieldMap.weight !== undefined ? values[fieldMap.weight] : undefined;
-  const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
-
-  if (weightStr && parseFloat(weightStr) > 0) {
-    const { weight, unit } = parseWeight(weightStr, unitStr);
-    item.defaultWeight = weight;
-    item.defaultWeightUnit = unit;
-  }
-
-  const priceStr = fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
-  if (priceStr) {
-    item.price = parsePrice(priceStr);
-  }
-
-  const ratingStr = fieldMap.ratingValue !== undefined ? values[fieldMap.ratingValue] : undefined;
-  if (ratingStr) {
-    item.ratingValue = parseFloat(ratingStr) || null;
-  }
-
-  const imageUrl = fieldMap.image !== undefined ? values[fieldMap.image] : undefined;
-  if (imageUrl) {
-    const parsedImage = parseJsonOrString(imageUrl);
-    if (Array.isArray(parsedImage)) {
-      item.image = parsedImage[0];
-    } else if (typeof parsedImage === 'string') {
-      item.image = parsedImage.split(',')[0].trim();
-    }
-  }
-
-  const techsStr = fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
-  if (techsStr) {
-    try {
-      const parsedTechs = JSON.parse(techsStr);
-      item.techs = parsedTechs;
-
-      // Fallback weight parsing from techs
-      if (!item.defaultWeight) {
-        const claimedWeight = parsedTechs['Claimed Weight'] || parsedTechs.weight;
-        if (claimedWeight) {
-          const { weight, unit } = parseWeight(claimedWeight);
-          item.defaultWeight = weight;
-          item.defaultWeightUnit = unit;
-        }
-      }
-    } catch {
-      // Ignore malformed JSON
-    }
-  }
-
-  if (item.description) {
-    item.description = item.description
-      .replace(/[\r\n]+/g, ' ')
-      .replace(/Details:\s*Item\s+#\S+/gi, '')
-      .trim();
   }
 
   return item;
-}
-
-function parseJsonOrString(str: string): string | object {
-  try {
-    return JSON.parse(str);
-  } catch (_e) {
-    return str;
-  }
-}
-
-function parseAndFormatMultiString(str: string): string {
-  if (!str) return '';
-  const parsed = parseJsonOrString(str);
-  if (Array.isArray(parsed)) {
-    return parsed.join(', ');
-  } else if (typeof parsed === 'string') return parsed;
-  return '';
 }
 
 function parseWeight(
@@ -447,6 +389,95 @@ function parseWeight(
   }
 
   return { weight: weightVal, unit: 'g' };
+}
+
+/**
+ * Normalizes a messy JSON-like string to make it more parseable by JSON.parse.
+ * Handles Python values, smart quotes, invalid escapes, trailing commas, and more.
+ */
+function normalizeJsonString(value: string): string {
+  return (
+    value
+      .trim()
+
+      // Replace Python-style null/booleans with JS equivalents
+      .replace(/\bNone\b/g, 'null')
+      .replace(/\bTrue\b/g, 'true')
+      .replace(/\bFalse\b/g, 'false')
+
+      // Normalize smart/special quotes to standard quotes
+      .replace(/[‘’‛‹›]/g, "'")
+      .replace(/[“”„‟«»]/g, '"')
+      .replace(/[`]/g, '')
+
+      // Convert object keys from 'key': to "key":
+      .replace(/([{,]\s*)'([^']+?)'\s*:/g, '$1"$2":')
+
+      // Convert string values from 'value' to "escaped value"
+      .replace(/:\s*'(.*?)'(?=\s*[},])/g, (_, val) => {
+        const escaped = val
+          .replace(/\\/g, '\\\\') // Escape backslashes
+          .replace(/"/g, '\\"') // Escape double quotes
+          .replace(/\\n|\\r|\\b|\\t|\\f|\r?\n|\r|\b|\t|\f/g, '') // Remove newlines/control chars
+          .replace(/\u2028|\u2029/g, ''); // Remove special Unicode line separators
+        return `: "${escaped}"`;
+      })
+
+      // Decode \xNN hex escapes to characters
+      .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+
+      // Escape lone backslashes (e.g., \ not followed by valid escape)
+      .replace(/([^\\])\\(?![\\/"'bfnrtu])/g, '$1\\\\')
+
+      // Remove trailing commas before closing braces/brackets
+      .replace(/,\s*([}\]])/g, '$1')
+  );
+}
+
+function safeJsonParse(value: string): any {
+  if (!value || value === 'undefined' || value === 'null') return [];
+
+  const normalized = normalizeJsonString(value);
+
+  try {
+    return JSON.parse(normalized);
+  } catch (err) {
+    console.warn('❌ Failed to parse JSON:', {
+      error: err,
+      originalInput: value,
+      normalizedInput: normalized,
+    });
+    return [];
+  }
+}
+
+export function parseFaqs(input: string): Array<{ question: string; answer: string }> {
+  if (!input || typeof input !== 'string') return [];
+
+  const results: Array<{ question: string; answer: string }> = [];
+
+  // Remove outer quotes
+  let cleaned = input.trim();
+  if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+    cleaned = cleaned.slice(1, -1).replace(/\\"/g, '"');
+  }
+
+  // Replace smart quotes
+  cleaned = normalizeJsonString(cleaned);
+
+  // Use a global regex to extract each question-answer block
+  const regex =
+    /{[^{}]*?['"]question['"]\s*:\s*['"](.+?)['"]\s*,\s*['"]answer['"]\s*:\s*['"](.+?)['"]\s*}/g;
+
+  let match = regex.exec(cleaned);
+  while (match !== null) {
+    const question = match[1].trim();
+    const answer = match[2].trim();
+    results.push({ question, answer });
+
+    match = regex.exec(cleaned);
+  }
+  return results;
 }
 
 function parsePrice(priceStr: string): number | null {

@@ -29,6 +29,7 @@
     "hono": "^4.7.5",
     "hono-openapi": "^0.4.6",
     "nodemailer": "^6.10.0",
+    "pg": "^8.16.3",
     "resend": "^4.2.0",
     "workers-ai-provider": "^0.7.0",
     "ws": "^8.18.1",
