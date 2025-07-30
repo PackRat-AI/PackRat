@@ -96,7 +96,7 @@ export default function WeightAnalysisScreen() {
             {/* Items */}
             <View>
               {items
-                .filter((item) => item.category.trim() === category.name)
+                .filter((item) => item.category.trim() === category.name.trim())
                 .map((item, itemIndex) => (
                   <View
                     key={`${categoryIndex}-${item.id}`}
