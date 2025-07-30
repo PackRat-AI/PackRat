@@ -26,6 +26,8 @@ on:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # Only proceed if confirmation is given for manual runs
     if: github.event_name != 'workflow_dispatch' || inputs.confirm == 'yes'
