@@ -4,7 +4,9 @@ import {
   index,
   integer,
   jsonb,
+  pgEnum,
   pgTable,
+  primaryKey,
   real,
   serial,
   text,
@@ -12,6 +14,9 @@ import {
   varchar,
   vector,
 } from 'drizzle-orm/pg-core';
+import type { ValidationError } from '../types/etl';
+
+const availabilityEnum = pgEnum('availability', ['in_stock', 'out_of_stock', 'preorder']);
 
 // User table
 export const users = pgTable('users', {
@@ -88,50 +93,83 @@ export const catalogItems = pgTable(
   {
     id: serial('id').primaryKey(),
     name: text('name').notNull(),
+    productUrl: text('product_url').notNull(),
+    sku: text('sku').unique(),
+    weight: real('weight').notNull(),
+    weightUnit: text('weight_unit').notNull(),
     description: text('description'),
-    defaultWeight: real('default_weight'),
-    defaultWeightUnit: text('default_weight_unit'),
-    category: text('category'),
-    image: text('image'),
+    categories: jsonb('categories').$type<string[]>(),
+    images: jsonb('images').$type<string[]>(),
     brand: text('brand'),
     model: text('model'),
-    url: text('url'),
     ratingValue: real('rating_value'),
-    productUrl: text('product_url'),
     color: text('color'),
     size: text('size'),
-    sku: text('sku').unique(),
     price: real('price'),
-    availability: text('availability'),
+    availability: availabilityEnum('availability'),
     seller: text('seller'),
     productSku: text('product_sku'),
     material: text('material'),
     currency: text('currency'),
     condition: text('condition'),
+    reviewCount: integer('review_count'),
+
+    variants:
+      jsonb('variants').$type<
+        Array<{
+          attribute: string;
+          values: string[];
+        }>
+      >(),
+
     techs: jsonb('techs').$type<Record<string, string>>(),
+
     links:
       jsonb('links').$type<
         Array<{
-          id: string;
           title: string;
           url: string;
-          type: string;
         }>
       >(),
+
     reviews:
       jsonb('reviews').$type<
         Array<{
-          id: string;
-          userId: string;
-          userName: string;
-          userAvatar: string;
+          user_name: string;
+          user_avatar?: string | null;
+          context?: Record<string, string> | null;
+          recommends?: boolean | null;
           rating: number;
+          title: string;
           text: string;
           date: string;
-          helpful: number;
-          verified: boolean;
+          images?: string[] | null;
+          upvotes?: number | null;
+          downvotes?: number | null;
+          verified?: boolean | null;
         }>
       >(),
+
+    qas: jsonb('qas').$type<
+      Array<{
+        question: string;
+        user?: string | null;
+        date: string;
+        answers: Array<{
+          a: string;
+          date: string;
+          user?: string | null;
+          upvotes?: number | null;
+        }>;
+      }>
+    >(),
+
+    faqs: jsonb('faqs').$type<
+      Array<{
+        question: string;
+        answer: string;
+      }>
+    >(),
     embedding: vector('embedding', { dimensions: 1536 }),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -265,6 +303,7 @@ export const packItemsRelations = relations(packItems, ({ one }) => ({
 
 export const catalogItemsRelations = relations(catalogItems, ({ many }) => ({
   packItems: many(packItems),
+  etlJobs: many(catalogItemEtlJobs),
 }));
 
 export const packWeightHistoryRelations = relations(packWeightHistory, ({ one }) => ({
@@ -322,6 +361,71 @@ export const packTemplateItemsRelations = relations(packTemplateItems, ({ one })
   catalogItem: one(catalogItems, {
     fields: [packTemplateItems.catalogItemId],
     references: [catalogItems.id],
+  }),
+}));
+
+export const invalidItemLogs = pgTable('invalid_item_logs', {
+  id: serial('id').primaryKey(),
+  jobId: text('job_id')
+    .references(() => etlJobs.id)
+    .notNull(),
+  errors: jsonb('errors').notNull().$type<ValidationError[]>(),
+  rawData: jsonb('raw_data').notNull(),
+  rowIndex: integer('row_index').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export type InvalidItemLog = typeof invalidItemLogs.$inferSelect;
+export type NewInvalidItemLog = typeof invalidItemLogs.$inferInsert;
+
+const etlJobStatusEnum = pgEnum('etl_job_status', ['running', 'completed', 'failed']);
+
+export const etlJobs = pgTable('etl_jobs', {
+  id: text('id').primaryKey(),
+  status: etlJobStatusEnum('status').notNull(),
+  source: text('source').notNull(),
+  objectKey: text('object_key').notNull(),
+  startedAt: timestamp('started_at').notNull(),
+  completedAt: timestamp('completed_at'),
+  totalProcessed: integer('total_processed'),
+  totalValid: integer('total_valid'),
+  totalInvalid: integer('total_invalid'),
+});
+
+export type ETLJob = typeof etlJobs.$inferSelect;
+export type NewETLJob = typeof etlJobs.$inferInsert;
+
+export const etlJobsRelations = relations(etlJobs, ({ many }) => ({
+  logs: many(invalidItemLogs),
+  catalogItems: many(catalogItemEtlJobs),
+}));
+
+export const invalidItemLogsRelations = relations(invalidItemLogs, ({ one }) => ({
+  job: one(etlJobs, {
+    fields: [invalidItemLogs.jobId],
+    references: [etlJobs.id],
+  }),
+}));
+
+export const catalogItemEtlJobs = pgTable('catalog_item_etl_jobs', {
+  id: serial('id').primaryKey(),
+  catalogItemId: integer('catalog_item_id')
+    .references(() => catalogItems.id, { onDelete: 'cascade' })
+    .notNull(),
+  etlJobId: text('etl_job_id')
+    .references(() => etlJobs.id, { onDelete: 'cascade' })
+    .notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const catalogItemEtlJobsRelations = relations(catalogItemEtlJobs, ({ one }) => ({
+  catalogItem: one(catalogItems, {
+    fields: [catalogItemEtlJobs.catalogItemId],
+    references: [catalogItems.id],
+  }),
+  etlJob: one(etlJobs, {
+    fields: [catalogItemEtlJobs.etlJobId],
+    references: [etlJobs.id],
   }),
 }));
 

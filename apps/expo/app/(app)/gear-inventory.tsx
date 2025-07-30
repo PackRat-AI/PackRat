@@ -4,7 +4,7 @@ import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems
 import type { PackItem } from 'expo-app/features/packs/types';
 import { cn } from 'expo-app/lib/cn';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, View } from 'react-native'; // 👈 import ActivityIndicator
 
 function CategorySection({ category, items }: { category: string; items: PackItem[] }) {
@@ -48,7 +48,6 @@ export default function GearInventoryScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <LargeTitleHeader title="Gear Inventory" />
       <ScrollView className="flex-1">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">
