@@ -1,5 +1,5 @@
 import { use$ } from '@legendapp/state/react';
-
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { packWeigthHistoryStore } from '../store/packWeightHistory';
 import type { PackWeightHistoryEntry } from '../types';
 
@@ -33,6 +33,7 @@ const getMonthlyWeightAverages = (data: PackWeightHistoryEntry[]) => {
     if (!monthData[key]) {
       monthData[key] = { totalWeight: 0, count: 0 };
     }
+    assertDefined(monthData[key]);
     monthData[key].totalWeight += entry.weight;
 
     monthData[key].count += 1;
@@ -40,9 +41,12 @@ const getMonthlyWeightAverages = (data: PackWeightHistoryEntry[]) => {
 
   const monthlyAverages = Object.entries(monthData).map(([key, { totalWeight, count }]) => {
     const [year, monthIndex] = key.split('-').map(Number);
+    assertDefined(monthIndex);
+    const month = monthNames[monthIndex];
+    assertDefined(month);
     return {
       year,
-      month: monthNames[monthIndex],
+      month,
       average_weight: parseFloat((totalWeight / count).toFixed(2)),
     };
   });

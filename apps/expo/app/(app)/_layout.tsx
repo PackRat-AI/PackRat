@@ -7,6 +7,7 @@ import { usePackItemDetailsFromStore } from 'expo-app/features/packs';
 import { usePackItemOwnershipCheck } from 'expo-app/features/packs/hooks/usePackItemOwnershipCheck';
 import { usePackOwnershipCheck } from 'expo-app/features/packs/hooks/usePackOwnershipCheck';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import 'expo-dev-client';
 import { Stack, useRouter } from 'expo-router';
 import { Pressable, View } from 'react-native';
@@ -139,6 +140,19 @@ export default function AppLayout() {
           headerShown: false,
           presentation: 'modal',
           animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="guides/index"
+        options={{
+          title: 'Guides',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="guides/[id]"
+        options={{
+          title: 'Guide',
         }}
       />
       <Stack.Screen
@@ -280,6 +294,7 @@ export function getPackItemDetailOptions({ route }: { route: { params?: { id?: s
       const item = usePackItemDetailsFromStore(id);
 
       if (!isOwner) return null;
+      assertDefined(item);
 
       return (
         <View className="flex-row items-center">

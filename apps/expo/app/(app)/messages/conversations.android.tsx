@@ -18,6 +18,7 @@ import { Portal } from '@rn-primitives/portal';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as React from 'react';
@@ -484,8 +485,10 @@ function Swipeable({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const xDiff = Math.abs(evt.changedTouches[0].x - initialTouchLocation.value.x);
-      const yDiff = Math.abs(evt.changedTouches[0].y - initialTouchLocation.value.y);
+      const touchData = evt.changedTouches[0];
+      assertDefined(touchData);
+      const xDiff = Math.abs(touchData.x - initialTouchLocation.value.x);
+      const yDiff = Math.abs(touchData.y - initialTouchLocation.value.y);
       const isHorizontalPanning = xDiff > yDiff;
       if (isHorizontalPanning && xDiff > 0.5) {
         state.activate();

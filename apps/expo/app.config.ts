@@ -25,6 +25,7 @@ export default (): ExpoConfig =>
         ],
         'expo-secure-store',
         'expo-web-browser',
+        'expo-apple-authentication',
       ],
       experiments: {
         typedRoutes: true,
@@ -40,8 +41,20 @@ export default (): ExpoConfig =>
       ios: {
         supportsTablet: true,
         bundleIdentifier: 'com.andrewbierman.packrat',
+        usesAppleSignIn: true,
         infoPlist: {
           ITSAppUsesNonExemptEncryption: false,
+          CFBundleURLTypes: [
+            {
+              CFBundleURLSchemes: ['com.andrewbierman.packrat'],
+            },
+          ],
+          NSLocationWhenInUseUsageDescription:
+            'This app needs access to your location while you are using it.',
+          NSCameraUsageDescription:
+            'This app requires access to your camera to let you take photos or scan items.',
+          NSPhotoLibraryUsageDescription:
+            'This app needs access to your photo library to let you upload or choose photos.',
         },
         privacyManifests: {
           NSPrivacyCollectedDataTypes: [

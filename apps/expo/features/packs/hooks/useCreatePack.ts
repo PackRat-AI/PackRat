@@ -17,6 +17,7 @@ export function useCreatePack() {
       deleted: false,
     };
 
+    // @ts-ignore: Safe because Legend-State uses Proxy
     packsStore[id].set(newPack);
   }, []);
 

@@ -1,6 +1,7 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
+import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
@@ -17,9 +18,9 @@ import {
 } from 'react-native';
 import { useDebounce } from 'use-debounce';
 import { CatalogItemsAuthWall } from '../components';
-import { CatalogCategoriesFilter } from '../components/CatalogCategoriesFilter';
 import { CatalogItemCard } from '../components/CatalogItemCard';
 import { useCatalogItemsInfinite } from '../hooks';
+import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 import { useVectorSearch } from '../hooks/useVectorSearch';
 import type { CatalogItem } from '../types';
 
@@ -31,6 +32,8 @@ function CatalogItemsScreen() {
   const [debouncedSearchValue] = useDebounce(searchValue, 150);
 
   const isSearching = debouncedSearchValue.length > 0;
+
+  const { data: categories } = useCatalogItemsCategories();
 
   const {
     data: paginatedData,
@@ -148,13 +151,13 @@ function CatalogItemsScreen() {
         }}
       />
 
-      <CatalogCategoriesFilter onFilter={setActiveFilter} activeFilter={activeFilter} />
+      <CategoriesFilter data={categories} onFilter={setActiveFilter} activeFilter={activeFilter} />
 
       {!isSearching && (
         <FlatList
           key={activeFilter}
           data={paginatedItems}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View className="px-4 pt-4">
               <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />

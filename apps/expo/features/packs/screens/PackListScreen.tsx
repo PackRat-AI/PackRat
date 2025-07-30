@@ -12,6 +12,7 @@ import { SearchResults } from 'expo-app/features/packs/components/SearchResults'
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
@@ -172,7 +173,7 @@ export function PackListScreen() {
         backVisible={false}
         searchBar={{
           iosHideWhenScrolling: true,
-          ref: searchBarRef,
+          ref: asNonNullableRef(searchBarRef),
           onChangeText(text) {
             setSearchValue(text);
           },

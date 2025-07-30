@@ -1,3 +1,5 @@
+import type { WeightUnit } from 'expo-app/types';
+
 export interface CatalogItemLink {
   id: string;
   title: string;
@@ -23,9 +25,9 @@ export interface CatalogItem {
   usageCount: number;
   description?: string;
   defaultWeight?: number;
-  defaultWeightUnit?: string;
+  defaultWeightUnit?: WeightUnit;
   category: string;
-  image?: string;
+  image?: string | null;
   brand?: string;
   model?: string;
   url?: string;

@@ -66,6 +66,8 @@ async function cleanWorkspace(workspacePath: string, workspaceName: string): Pro
       'build',
       '.wrangler',
       '.turbo',
+      'ios',
+      'android',
     ];
 
     let _hasCleanedSomething = false;

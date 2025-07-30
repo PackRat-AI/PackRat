@@ -1,8 +1,8 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { ItemLinks } from 'expo-app/components/catalog/ItemLinks';
-import { ItemReviews } from 'expo-app/components/catalog/ItemReviews';
 import { Chip } from 'expo-app/components/initial/Chip';
+import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
+import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
@@ -52,7 +52,7 @@ export function CatalogItemDetailScreen() {
       <ScrollView>
         <Image
           source={{
-            uri: item.image,
+            uri: item.image !== null ? item.image : undefined, // `null` isn't assignable to uri
             ...(Platform.OS === 'android'
               ? {
                   headers: {

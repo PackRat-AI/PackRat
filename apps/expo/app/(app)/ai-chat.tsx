@@ -1,4 +1,4 @@
-import { useChat } from '@ai-sdk/react';
+import { type Message, useChat } from '@ai-sdk/react';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
@@ -11,6 +11,7 @@ import { LocationSelector } from 'expo-app/features/weather/components/LocationS
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
@@ -148,7 +149,7 @@ export default function AIChat() {
       const formattedMessage = {
         sender: message.role === 'user' ? USER : AI,
         text: message.content,
-        date: now.toISOString().split('T')[0],
+        date: now.toISOString().split('T')[0] as string,
         time: now.toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
@@ -244,8 +245,12 @@ export default function AIChat() {
             });
 
             // Get the user query for this AI response
-            const userQuery =
-              item.sender === AI && index > 1 ? messages[index - 1].content : undefined;
+            let userQuery: Message['content'] | undefined;
+            if (item.sender === AI && index > 1) {
+              const userMessage = messages[index - 1];
+              assertDefined(userMessage);
+              userQuery = userMessage.content;
+            }
 
             return <ChatBubble item={item} translateX={translateX} userQuery={userQuery} />;
           }}

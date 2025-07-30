@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
+import { assertAllDefined } from '@packrat/api/utils/typeAssertions';
 import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
 import { env } from 'hono/adapter';
 import { basicAuth } from 'hono/basic-auth';
@@ -735,6 +736,8 @@ adminRoutes.get('/stats', async (c) => {
       .from(packs)
       .where(eq(packs.deleted, false));
     const [itemCount] = await db.select({ count: count() }).from(catalogItems);
+
+    assertAllDefined(userCount, packCount, itemCount);
 
     return c.json({
       users: userCount.count,

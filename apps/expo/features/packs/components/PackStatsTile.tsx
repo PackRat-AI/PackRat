@@ -4,7 +4,7 @@ import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { type Href, useRouter } from 'expo-router';
 import { useRef } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { usePacks } from '../hooks';
 
 export function PackStatsTile() {
@@ -48,6 +48,7 @@ export function PackStatsTile() {
         onPress={handlePress}
         target="Cell"
         index={0}
+        removeSeparator={Platform.OS === 'ios'}
       />
       <Alert
         title="No Packs Yet"

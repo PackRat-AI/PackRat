@@ -1,4 +1,5 @@
 import { userStore } from 'expo-app/features/auth/store';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import type { Pack } from '../types';
 import { convertFromGrams } from './convertFromGrams';
 import { convertToGrams } from './convertToGrams';
@@ -33,6 +34,7 @@ export function computeCategorySummaries(pack: Pack): CategorySummary[] {
         items: 0,
       };
     }
+    assertDefined(categoryMap[category]);
 
     categoryMap[category].weightInGrams += convertedWeight;
     categoryMap[category].items += 1;

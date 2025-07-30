@@ -373,7 +373,7 @@ function ChatBubble({
       )}
     >
       <View>
-        {item.attachments.length > 0 ? (
+        {item.attachments[0] ? (
           <View
             className={cn('flex-row items-center gap-2', item.sender === ME && 'flex-row-reverse')}
           >
@@ -556,7 +556,7 @@ function Composer({
         readBy: [],
         sender: ME,
         text: message,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0] as string,
         time: new Date().toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',

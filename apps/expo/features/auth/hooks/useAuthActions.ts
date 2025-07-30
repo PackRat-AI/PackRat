@@ -140,6 +140,12 @@ export function useAuthActions() {
   const signInWithApple = async () => {
     try {
       setIsLoading(true);
+
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      if (!isAvailable) {
+        throw new Error('Apple Sign-In is not available on this device.');
+      }
+
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -209,7 +215,7 @@ export function useAuthActions() {
     setIsLoading(true);
     try {
       // Sign out from Google if signed in
-      const isSignedIn = GoogleSignin.hasPreviousSignIn();
+      const isSignedIn = await GoogleSignin.hasPreviousSignIn();
       if (isSignedIn) {
         await GoogleSignin.signOut();
       }

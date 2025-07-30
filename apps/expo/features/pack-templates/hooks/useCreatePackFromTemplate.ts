@@ -21,6 +21,7 @@ export function useCreatePackFromTemplate() {
       deleted: false,
     };
 
+    // @ts-ignore: Safe because Legend-State uses Proxy
     packsStore[newPackId].set(newPack);
 
     // Copy each item
@@ -40,6 +41,7 @@ export function useCreatePackFromTemplate() {
         deleted: false,
       };
 
+      // @ts-ignore: Safe because Legend-State uses Proxy
       packItemsStore[newItemId].set(newItem);
     }
 

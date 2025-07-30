@@ -64,11 +64,15 @@ export default function LoginScreen() {
           headerShadowVisible: false,
           headerLeft() {
             return (
-              <Link asChild href="/auth">
-                <Button variant="plain" className="ios:px-0">
-                  <Text className="text-primary">Cancel</Text>
-                </Button>
-              </Link>
+              <Button
+                variant="plain"
+                className="ios:px-0"
+                onPress={() => {
+                  router.back();
+                }}
+              >
+                <Text className="text-primary">Cancel</Text>
+              </Button>
             );
           },
         }}
