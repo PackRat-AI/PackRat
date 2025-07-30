@@ -1,2 +1,0 @@
-[install.scopes]
-"@packrat-ai" = { url = "https://npm.pkg.github.com", token = "$GITHUB_TOKEN" }
