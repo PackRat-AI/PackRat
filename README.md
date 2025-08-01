@@ -255,17 +255,23 @@ PackRat uses private packages from GitHub Package Registry. You need to authenti
    bun install
    ```
 
-   > **Note**: The `preinstall` script automatically configures GitHub authentication using the GitHub CLI token. If you encounter authentication errors, you can also manually export the token:
-   > ```bash
-   > export GITHUB_TOKEN=$(gh auth token)
-   > bun install
-   > ```
+   > **Note**: The `preinstall` script automatically configures GitHub authentication using the GitHub CLI token. The script maps your GitHub CLI token to `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` which is used by `bunfig.toml` for package authentication.
 
 #### CI/CD
 
-GitHub Actions automatically provides a `GITHUB_TOKEN` with the necessary permissions. No additional configuration is needed.
+For GitHub Actions and other CI platforms:
 
-For other CI platforms, set the `GITHUB_TOKEN` environment variable with a personal access token that has `read:packages` scope.
+1. Create a Personal Access Token (PAT) with `read:packages` scope
+2. Add it as a secret named `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` in your repository settings
+3. Pass it as an environment variable in your workflow:
+   ```yaml
+   - name: Install dependencies
+     env:
+       PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+     run: bun install
+   ```
+
+> **Note**: The default `GITHUB_TOKEN` provided by GitHub Actions does not have access to packages in other repositories, even within the same organization. A custom PAT is required.
 
 ### Environment Setup
 

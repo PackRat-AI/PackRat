@@ -1,10 +1,10 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';
 import { cn } from 'expo-app/lib/cn';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, View } from 'react-native'; // 👈 import ActivityIndicator
 
 function CategorySection({ category, items }: { category: string; items: PackItem[] }) {

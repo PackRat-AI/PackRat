@@ -3,7 +3,7 @@ import type { NewCatalogItem } from '@packrat/api/db/schema';
 export interface ValidationError {
   field: string;
   reason: string;
-  value?: any;
+  value?: string | number | boolean | null | undefined;
 }
 
 export interface ValidatedCatalogItem {
