@@ -16,8 +16,6 @@ jobs:
         with:
           bun-version: latest
       - name: Install dependencies
-        env:
-          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
       - name: Run Biome check
         run: bun biome check
