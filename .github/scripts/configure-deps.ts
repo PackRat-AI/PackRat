@@ -14,7 +14,7 @@
  */
 
 import { $ } from 'bun';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync } from 'fs-extra';
 
 async function configureDeps() {
   try {
