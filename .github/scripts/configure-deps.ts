@@ -10,10 +10,11 @@
  *
  * Requirements:
  * - Local development: GitHub CLI must be installed and authenticated with `read:packages` scope
- * - CI/CD: GITHUB_TOKEN environment variable must be set
+ * - CI/CD: PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN environment variable must be set
  */
 
 import { $ } from 'bun';
+import { writeFileSync } from 'node:fs';
 
 async function configureDeps() {
   try {
@@ -21,13 +22,19 @@ async function configureDeps() {
     const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
     if (isCI) {
-      // In CI, the GITHUB_TOKEN should already be set
-      if (!process.env.GITHUB_TOKEN) {
-        console.error('❌ GITHUB_TOKEN environment variable is not set in CI');
-        console.error('Please ensure GITHUB_TOKEN is available in your CI environment');
+      // In CI, we need to use PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
+      if (!process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN) {
+        console.error('❌ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN not found in CI');
+        console.error('Please ensure PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN is set in your CI secrets');
         process.exit(1);
       }
-      console.log('✓ Using CI-provided GITHUB_TOKEN for authentication');
+
+      // Create a temporary .npmrc with the CI token
+      const npmrcContent = `@packrat-ai:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN}
+`;
+      writeFileSync('.npmrc', npmrcContent);
+      console.log('✓ Created .npmrc with PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN for CI');
       return;
     }
 
