@@ -8,6 +8,11 @@
  *
  * It runs automatically before `bun install` via the preinstall hook.
  *
+ * Token Usage Pattern:
+ * - Local development: GitHub CLI token (from `gh auth token`) → PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
+ * - CI/CD: Uses PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN directly from secrets
+ * - The token is used by bunfig.toml to authenticate with npm.pkg.github.com
+ *
  * Requirements:
  * - Local development: GitHub CLI must be installed and authenticated with `read:packages` scope
  * - CI/CD: PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN environment variable must be set
