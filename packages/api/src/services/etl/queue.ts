@@ -323,8 +323,8 @@ function mapCsvRowToItem({
   const unitStr = fieldMap.weightUnit !== undefined ? values[fieldMap.weightUnit] : undefined;
   if (weightStr && parseFloat(weightStr) > 0) {
     const { weight, unit } = parseWeight(weightStr, unitStr);
-    item.weight = weight;
-    item.weightUnit = unit;
+    item.weight = weight || undefined;
+    item.weightUnit = unit || undefined;
   }
 
   const priceStr = fieldMap.price !== undefined ? values[fieldMap.price] : undefined;
@@ -375,15 +375,15 @@ function mapCsvRowToItem({
   const techsStr = fieldMap.techs !== undefined ? values[fieldMap.techs] : undefined;
   if (techsStr) {
     try {
-      const parsed = safeJsonParse(techsStr);
-      item.techs = parsed;
+      const parsed = safeJsonParse<Record<string, string>>(techsStr);
+      item.techs = Array.isArray(parsed) ? {} : parsed;
 
-      if (!item.weight) {
+      if (!item.weight && !Array.isArray(parsed)) {
         const claimedWeight = parsed['Claimed Weight'] || parsed.weight;
         if (claimedWeight) {
           const { weight, unit } = parseWeight(claimedWeight);
-          item.weight = weight;
-          item.weightUnit = unit;
+          item.weight = weight || undefined;
+          item.weightUnit = unit || undefined;
         }
       }
     } catch {
@@ -391,24 +391,30 @@ function mapCsvRowToItem({
     }
   }
 
-  // Direct mappings
-  const directFields: (keyof NewCatalogItem)[] = [
+  // Direct mappings for string fields
+  const stringFields = [
     'brand',
     'model',
     'color',
     'size',
     'sku',
     'productSku',
-    'availability',
     'seller',
     'material',
     'condition',
-  ];
-  for (const field of directFields) {
-    const index = fieldMap[field as string];
+  ] as const;
+  for (const field of stringFields) {
+    const index = fieldMap[field];
     if (index !== undefined && values[index]) {
-      (item as any)[field] = values[index].replace(/^"|"$/g, '').trim();
+      item[field] = values[index].replace(/^"|"$/g, '').trim();
     }
+  }
+
+  // Handle availability enum separately
+  if (fieldMap.availability !== undefined && values[fieldMap.availability]) {
+    item.availability = values[fieldMap.availability]
+      .replace(/^"|"$/g, '')
+      .trim() as NewCatalogItem['availability'];
   }
 
   return item;
@@ -483,13 +489,13 @@ function normalizeJsonString(value: string): string {
   );
 }
 
-function safeJsonParse(value: string): any {
+function safeJsonParse<T = unknown>(value: string): T | [] {
   if (!value || value === 'undefined' || value === 'null') return [];
 
   const normalized = normalizeJsonString(value);
 
   try {
-    return JSON.parse(normalized);
+    return JSON.parse(normalized) as T;
   } catch (err) {
     console.warn('❌ Failed to parse JSON:', {
       error: err,
