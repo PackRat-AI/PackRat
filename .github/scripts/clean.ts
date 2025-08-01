@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
+import { join } from 'node:path';
 import { $ } from 'bun';
 import { existsSync, readdirSync } from 'fs-extra';
-import { join } from 'node:path';
 
 interface CleanResult {
   workspace: string;
