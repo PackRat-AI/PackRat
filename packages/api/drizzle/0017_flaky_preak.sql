@@ -15,7 +15,7 @@ BEGIN
         SELECT 1 
         FROM information_schema.columns 
         WHERE table_name = 'catalog_items' 
-        AND column_name = 'default_weight'
+        AND column_name = 'default_weight_unit'
     ) THEN
         ALTER TABLE "catalog_items" RENAME COLUMN "default_weight_unit" TO "weight_unit";
     END IF;
