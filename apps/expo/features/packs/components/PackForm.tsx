@@ -164,8 +164,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
                     multiline
-                    onContentSizeChange={(e) => {
-                      const h = e.nativeEvent.contentSize.height;
+                    onLayout={(e) => {
+                      const h = e.nativeEvent.layout.height;
                       if (h !== descriptionHeight) {
                         setDescriptionHeight(h);
                       }
