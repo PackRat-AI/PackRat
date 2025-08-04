@@ -2,14 +2,14 @@ import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import { createDbClient } from '@packrat/api/db';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { parse } from 'csv-parse/sync';
 import { eq } from 'drizzle-orm';
 import { CatalogService } from '../catalogService';
+import { generateManyEmbeddings } from '../embeddingService';
 import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
 import { mergeItemsBySku } from './mergeItemsBySku';
-import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import { generateManyEmbeddings } from '../embeddingService';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
