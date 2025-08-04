@@ -8,13 +8,22 @@ export const getEmbeddingText = (
 ): string => {
   const name = item.name || existingItem?.name || '';
   const description = item.description || existingItem?.description || '';
-  const category = item.category || existingItem?.category || '';
-
-  // Catalog-item specific field
+  const category =
+    'category' in item
+      ? item.category
+      : existingItem && 'category' in existingItem
+        ? existingItem.category
+        : '';
+  const categories =
+    'categories' in item
+      ? item.categories?.join(', ')
+      : existingItem && 'categories' in existingItem
+        ? existingItem.categories?.join(' ')
+        : '';
   const brand =
     'brand' in item && item.brand
       ? item.brand
       : (existingItem && 'brand' in existingItem ? existingItem.brand : '') || '';
 
-  return `${name} ${description} ${category} ${brand}`.trim().replace(/\s+/g, ' ');
+  return `${name} ${description} ${category} ${categories} ${brand}`.trim().replace(/\s+/g, ' ');
 };
