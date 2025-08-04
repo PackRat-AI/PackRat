@@ -1,0 +1,2 @@
+[install.scopes]
+"@packrat-ai" = { url = "https://npm.pkg.github.com", token = "$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN" }

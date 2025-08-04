@@ -95,27 +95,29 @@ export default function WeightAnalysisScreen() {
 
             {/* Items */}
             <View>
-              {items.map((item, itemIndex) => (
-                <View
-                  key={`${categoryIndex}-${item.id}`}
-                  className={cn(
-                    'flex-row items-center justify-between p-4',
-                    itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
-                  )}
-                >
-                  <View>
-                    <Text>{item.name}</Text>
-                    {item.notes && (
-                      <Text variant="footnote" className="text-muted-foreground">
-                        {item.notes}
-                      </Text>
+              {items
+                .filter((item) => item.category.trim() === category.name.trim())
+                .map((item, itemIndex) => (
+                  <View
+                    key={`${categoryIndex}-${item.id}`}
+                    className={cn(
+                      'flex-row items-center justify-between p-4',
+                      itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
                     )}
+                  >
+                    <View>
+                      <Text>{item.name}</Text>
+                      {item.notes && (
+                        <Text variant="footnote" className="text-muted-foreground">
+                          {item.notes}
+                        </Text>
+                      )}
+                    </View>
+                    <Text variant="subhead" className="text-muted-foreground">
+                      {item.weight} {item.weightUnit}
+                    </Text>
                   </View>
-                  <Text variant="subhead" className="text-muted-foreground">
-                    {item.weight} {item.weightUnit}
-                  </Text>
-                </View>
-              ))}
+                ))}
             </View>
           </View>
         ))}
