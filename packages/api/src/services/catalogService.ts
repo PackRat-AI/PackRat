@@ -211,7 +211,7 @@ export class CatalogService {
   async upsertCatalogItems(items: NewCatalogItem[]): Promise<Pick<CatalogItem, 'id'>[]> {
     const columns = getTableColumns(catalogItems);
 
-    const insertedItems = await this.db
+    const upsertedItems = await this.db
       .insert(catalogItems)
       .values(items)
       .onConflictDoUpdate({
@@ -224,9 +224,46 @@ export class CatalogService {
           {} as Record<string, SQL>,
         ),
       })
-      .returning({ id: catalogItems.id });
+      .returning();
 
-    return insertedItems;
+    // Check if any embedding-related fields have changed
+    const embeddingFields: Array<keyof CatalogItem> = [
+      'name',
+      'description',
+      'categories',
+      'brand',
+    ];
+
+    const itemsToUpdate = upsertedItems.filter((item) => {
+      const inputItem = items.find((i) => i.sku === item.sku);
+      if (!inputItem) return false;
+
+      return embeddingFields.some(
+        (field) =>
+          inputItem[field] && JSON.stringify(inputItem[field]) !== JSON.stringify(item[field]),
+      );
+    });
+
+    if (itemsToUpdate.length > 0) {
+      // Regenerate embeddings for updated items
+      const embeddingTexts = itemsToUpdate.map((item) => getEmbeddingText(item));
+      const embeddings = await generateManyEmbeddings({
+        openAiApiKey: this.env.OPENAI_API_KEY,
+        values: embeddingTexts,
+      });
+
+      // Update items with new embeddings
+      const updatePromises = itemsToUpdate.map((item, index) =>
+        this.db
+          .update(catalogItems)
+          .set({ embedding: embeddings[index] })
+          .where(eq(catalogItems.sku, item.sku)),
+      );
+
+      await Promise.all(updatePromises);
+    }
+
+    return upsertedItems;
   }
 
   async trackEtlJob(itemIds: Pick<CatalogItem, 'id'>[], jobId: string): Promise<void> {
