@@ -26,6 +26,7 @@ import {
 import { z } from 'zod';
 import { useCreatePack, useUpdatePack } from '../hooks';
 import type { Pack, PackCategory } from '../types';
+import { useState } from 'react';
 
 // Define Zod schema
 const packFormSchema = z.object({
@@ -77,7 +78,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
   const template = templateAtom ? templateAtom.get() : null;
 
   const templateItems = isCreatingFromTemplate ? getTemplateItems(params.templateId as string) : [];
-
+  const [descriptionHeight, setDescriptionHeight] = useState(40); //To force layout update
   const form = useForm({
     defaultValues:
       isCreatingFromTemplate && template
@@ -163,6 +164,12 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
                     multiline
+                    onLayout={(e) => {
+                      const h = e.nativeEvent.layout.height;
+                      if (h !== descriptionHeight) {
+                        setDescriptionHeight(h);
+                      }
+                    }}
                     numberOfLines={4}
                     textAlignVertical="top"
                     leftView={
@@ -191,8 +198,10 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                   >
                     <Button className="my-2 w-full" variant="plain">
                       <View className="w-full flex-row items-center justify-between capitalize">
-                        <Text>{field.state.value || 'Select Category'}</Text>
-                        <Icon name="chevron-down" size={16} color={colors.grey3} />
+                        <Text className="text-zinc-800 dark:text-zinc-200">
+                          {field.state.value || 'Select Category'}
+                        </Text>
+                        <Icon name="chevron-down" size={16} color={colors.grey2} />
                       </View>
                     </Button>
                   </DropdownMenu>
