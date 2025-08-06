@@ -6,7 +6,6 @@ import {
   jsonb,
   pgEnum,
   pgTable,
-  primaryKey,
   real,
   serial,
   text,

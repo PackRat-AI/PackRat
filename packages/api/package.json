@@ -1,7 +1,7 @@
 {
   "name": "packrat-v2-api",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev -e=dev",
     "deploy": "wrangler deploy --minify",
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
