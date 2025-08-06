@@ -26,7 +26,7 @@ import {
 import { z } from 'zod';
 import { useCreatePack, useUpdatePack } from '../hooks';
 import type { Pack, PackCategory } from '../types';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Define Zod schema
 const packFormSchema = z.object({
@@ -76,9 +76,18 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
   const templateId = params.templateId as string;
   const templateAtom = isCreatingFromTemplate ? packTemplatesStore[templateId] : null;
   const template = templateAtom ? templateAtom.get() : null;
-
   const templateItems = isCreatingFromTemplate ? getTemplateItems(params.templateId as string) : [];
-  const [descriptionHeight, setDescriptionHeight] = useState(40); //To force layout update
+
+  const [descriptionHeight, setDescriptionHeight] = useState(40);
+  const hasMounted = useRef(false);
+
+  useEffect(() => {
+    hasMounted.current = true;
+    return () => {
+      hasMounted.current = false;
+    };
+  }, []);
+
   const form = useForm({
     defaultValues:
       isCreatingFromTemplate && template
@@ -103,19 +112,15 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       if (isCreatingFromTemplate) {
         createPackFromTemplate(params.templateId as string, value);
       } else if (isEditingExistingPack) {
-        updatePack({
-          ...pack,
-          ...value,
-        });
-      } else
-        createPack({
-          ...value,
-          category: value.category as PackCategory,
-        });
+        updatePack({ ...pack, ...value });
+      } else {
+        createPack({ ...value, category: value.category as PackCategory });
+      }
 
       router.back();
     },
   });
+
   if (!packTemplatesStore[templateId]) {
     console.warn(`No template found for ID: ${templateId}`);
   }
@@ -127,7 +132,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
     >
       {isCreatingFromTemplate && <Stack.Screen options={{ title: 'Enter New Pack Details' }} />}
       {isCreatingFromTemplate && template && (
-        <View>Creating pack from `${template.name}` template</View>
+        <View>Creating pack from `{template.name}` template</View>
       )}
 
       <ScrollView contentContainerClassName="p-8">
@@ -166,7 +171,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     multiline
                     onLayout={(e) => {
                       const h = e.nativeEvent.layout.height;
-                      if (h !== descriptionHeight) {
+                      if (hasMounted.current && h !== descriptionHeight) {
                         setDescriptionHeight(h);
                       }
                     }}
@@ -251,7 +256,9 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
             <Pressable
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${!canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'}`}
+              className={`mt-6 rounded-lg px-4 py-3.5 ${
+                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
+              }`}
             >
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting
