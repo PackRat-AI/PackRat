@@ -1,5 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { embed, embedMany } from 'ai';
+import { DEFAULT_MODELS } from '../utils/ai/models';
 
 type GenerateEmbeddingBaseParams = {
   openAiApiKey: string;
@@ -21,7 +22,7 @@ export const generateEmbedding = async ({
   const input = value.replace(/\n/g, ' ');
 
   const { embedding } = await embed({
-    model: openai.embedding('text-embedding-3-small'),
+    model: openai.embedding(DEFAULT_MODELS.EMBEDDING.NAME),
     value: input,
   });
 
@@ -41,7 +42,7 @@ export const generateManyEmbeddings = async ({
   });
 
   const { embeddings } = await embedMany({
-    model: openai.embedding('text-embedding-3-small'),
+    model: openai.embedding(DEFAULT_MODELS.EMBEDDING.NAME),
     values,
   });
 

@@ -8,6 +8,7 @@ import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/ap
 import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { env } from 'hono/adapter';
+import { DEFAULT_MODELS } from '../utils/ai/models';
 
 const chatRoutes = new OpenAPIHono();
 
@@ -83,7 +84,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     // Stream the AI response
     const result = streamText({
-      model: customOpenAI('gpt-4o'),
+      model: customOpenAI(DEFAULT_MODELS.CHAT),
       system: systemPrompt,
       messages,
       tools,

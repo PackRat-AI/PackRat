@@ -1,11 +1,12 @@
 import { encoding_for_model } from 'tiktoken';
 import type { CatalogItem, PackItem } from '../db/schema';
+import { DEFAULT_MODELS } from './ai/models';
 
 type ItemForEmbedding = Partial<CatalogItem> | Partial<PackItem>;
 
-const MAX_TOKENS = 8192; // For OpenAI's embedding models
+const MAX_TOKENS = DEFAULT_MODELS.EMBEDDING.MAX_TOKENS;
 
-const encoder = encoding_for_model('text-embedding-3-small'); // or ada-002
+const encoder = encoding_for_model(DEFAULT_MODELS.EMBEDDING.NAME);
 
 export const getEmbeddingText = (
   item: ItemForEmbedding,

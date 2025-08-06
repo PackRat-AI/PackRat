@@ -24,8 +24,6 @@ export enum OpenAIModels {
 
 // Default models for each use case
 export const DEFAULT_MODELS = {
-  CHAT: CloudflareAIModels.LLAMA_2_7B_CHAT_INT8,
-  EMBEDDING: CloudflareAIModels.BGE_BASE_EN_V1_5,
-  OPENAI_CHAT: OpenAIModels.GPT_4O,
-  OPENAI_EMBEDDING: OpenAIModels.TEXT_EMBEDDING_3_SMALL,
+  CHAT: OpenAIModels.GPT_4O,
+  EMBEDDING: { NAME: OpenAIModels.TEXT_EMBEDDING_3_SMALL, MAX_TOKENS: 8192 },
 } as const;
