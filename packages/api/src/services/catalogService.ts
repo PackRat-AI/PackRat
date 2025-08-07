@@ -5,7 +5,7 @@ import {
   catalogItems,
   type NewCatalogItem,
 } from '@packrat/api/db/schema';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
 import {
   and,
@@ -13,7 +13,6 @@ import {
   cosineDistance,
   count,
   desc,
-  eq,
   getTableColumns,
   gt,
   ilike,
@@ -48,7 +47,7 @@ export class CatalogService {
     offset?: number;
     category?: string;
     sort?: {
-      field: 'name' | 'brand' | 'category' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
+      field: 'name' | 'brand' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
       order: 'asc' | 'desc';
     };
   }): Promise<{
@@ -59,7 +58,6 @@ export class CatalogService {
     nextOffset: number;
   }> {
     const { q, limit = 10, offset = 0, category, sort } = params;
-    console.log(params);
 
     if (limit < 1) {
       throw new Error('Limit must be at least 1');
@@ -77,13 +75,18 @@ export class CatalogService {
           ilike(catalogItems.description, `%${q}%`),
           ilike(catalogItems.brand, `%${q}%`),
           ilike(catalogItems.model, `%${q}%`),
-          ilike(catalogItems.category, `%${q}%`),
+          sql`
+              EXISTS (
+                SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat
+                WHERE cat ILIKE '%' || ${q} || '%'
+              )
+            `,
         ),
       );
     }
 
     if (category) {
-      conditions.push(eq(catalogItems.category, category));
+      conditions.push(sql`${category} = ANY(categories)`);
     }
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -96,7 +99,6 @@ export class CatalogService {
         orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn)];
       }
     }
-    console.log(orderBy);
 
     if (!limit) {
       const items = await this.db.query.catalogItems.findMany({
@@ -187,18 +189,55 @@ export class CatalogService {
     };
   }
 
+  async batchSemanticSearch(
+    queries: string[],
+    limit: number = 5,
+  ): Promise<{
+    items: (CatalogItem & { similarity: number })[][];
+  }> {
+    if (!queries || queries.length === 0) {
+      return {
+        items: [],
+      };
+    }
+
+    const embeddings = await generateManyEmbeddings({
+      values: queries,
+      openAiApiKey: this.env.OPENAI_API_KEY,
+    });
+
+    const searchTasks = embeddings.map((embedding) => {
+      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+      return this.db
+        .select({
+          ...getTableColumns(catalogItems),
+          similarity,
+        })
+        .from(catalogItems)
+        .where(gt(similarity, 0.1))
+        .orderBy(desc(similarity))
+        .limit(limit);
+    });
+
+    const items = await Promise.all(searchTasks);
+
+    return {
+      items,
+    };
+  }
+
   async getCategories(limit = 10) {
     const rows = await this.db
       .select({
-        category: catalogItems.category,
+        category: sql`unnest(categories)`,
       })
       .from(catalogItems)
-      .where(isNotNull(catalogItems.category))
-      .groupBy(catalogItems.category)
+      .where(isNotNull(catalogItems.categories))
+      .groupBy(sql`unnest(categories)`)
       .orderBy(desc(count(catalogItems.id)))
       .limit(limit);
 
-    return rows.map((row) => row.category);
+    return rows.map((row) => row.category as string);
   }
 
   /**
