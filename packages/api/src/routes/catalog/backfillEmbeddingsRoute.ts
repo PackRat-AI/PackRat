@@ -1,10 +1,17 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, z } from '@hono/zod-openapi';
 import { CatalogService } from '@packrat/api/services';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 
 export const routeDefinition = createRoute({
   method: 'post',
   path: '/backfill-embeddings',
+  request: {
+    body: {
+      content: {
+        'application/json': { schema: z.object({ batchSize: z.number().optional() }) },
+      },
+    },
+  },
   responses: {
     200: { description: 'Backfill embeddings for catalog items' },
     500: { description: 'Internal server error' },
@@ -12,8 +19,9 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
+  const { batchSize } = await c.req.json();
   const catalogService = new CatalogService(c);
-  const result = await catalogService.backfillEmbeddings();
+  const result = await catalogService.backfillEmbeddings(batchSize);
 
   return c.json({
     success: true,

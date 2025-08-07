@@ -275,7 +275,7 @@ export class CatalogService {
     );
   }
 
-  async backfillEmbeddings(): Promise<{
+  async backfillEmbeddings(batchSize: number = 100): Promise<{
     processed: number;
   }> {
     // Get count of items without embeddings
@@ -294,7 +294,8 @@ export class CatalogService {
     const itemsWithoutEmbeddings = await this.db
       .select()
       .from(catalogItems)
-      .where(isNull(catalogItems.embedding));
+      .where(isNull(catalogItems.embedding))
+      .limit(batchSize);
 
     if (itemsWithoutEmbeddings.length === 0) {
       return { processed: 0 };
