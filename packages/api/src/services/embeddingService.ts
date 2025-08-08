@@ -1,20 +1,18 @@
+import { type AIProvider, createAIProvider } from '@packrat/api/utils/ai/provider';
 import { embed, embedMany } from 'ai';
-import { createAIProvider, type AIProvider } from '@packrat/api/utils/ai/provider';
 
 type GenerateEmbeddingBaseParams = {
   openAiApiKey: string;
-  provider?: AIProvider;
-  cloudflareAccountId?: string;
-  cloudflareGatewayId?: string;
+  provider: AIProvider;
+  cloudflareAccountId: string;
+  cloudflareGatewayId: string;
 };
 
 type GenerateEmbeddingParams = GenerateEmbeddingBaseParams & {
   value: string;
 };
 
-export const generateEmbedding = async (
-  params: GenerateEmbeddingParams
-): Promise<number[]> => {
+export const generateEmbedding = async (params: GenerateEmbeddingParams): Promise<number[]> => {
   const { value, ...providerConfig } = params;
   const aiProvider = createAIProvider(providerConfig);
 
@@ -34,7 +32,7 @@ type GenerateManyEmbeddingsParams = GenerateEmbeddingBaseParams & {
 };
 
 export const generateManyEmbeddings = async (
-  params: GenerateManyEmbeddingsParams
+  params: GenerateManyEmbeddingsParams,
 ): Promise<number[][]> => {
   const { values, ...providerConfig } = params;
   const aiProvider = createAIProvider(providerConfig);
