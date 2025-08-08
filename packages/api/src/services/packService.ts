@@ -1,6 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import { type PackWithItems, packItems, packs } from '@packrat/api/db/schema';
+import { type CatalogItem, type PackWithItems, packItems, packs } from '@packrat/api/db/schema';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
@@ -9,6 +9,22 @@ import { env } from 'hono/adapter';
 import { z } from 'zod';
 import { computePackWeights } from '../utils/compute-pack';
 import { CatalogService } from './catalogService';
+
+const packConceptSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  category: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  items: z.array(z.string()),
+});
+
+type PackConcept = z.infer<typeof packConceptSchema>;
+
+type SemanticSearchResult = (CatalogItem & { similarity: number })[][];
+
+type ConstructedPack = Omit<PackConcept, 'items'> & {
+  items: CatalogItem[];
+};
 
 export class PackService {
   private db;
@@ -59,13 +75,7 @@ export class PackService {
     return constructedPacks;
   }
 
-  private async generatePackConcepts(count: number): Promise<
-    {
-      name: string;
-      description: string;
-      items: string[];
-    }[]
-  > {
+  private async generatePackConcepts(count: number): Promise<PackConcept[]> {
     const openai = createOpenAI({
       apiKey: env(this.c).OPENAI_API_KEY,
     });
@@ -73,15 +83,7 @@ export class PackService {
     const { object } = await generateObject({
       model: openai(DEFAULT_MODELS.CHAT),
       schema: z.object({
-        packs: z.array(
-          z.object({
-            name: z.string(),
-            description: z.string(),
-            category: z.string().optional(),
-            tags: z.array(z.string()).optional(),
-            items: z.array(z.string()),
-          }),
-        ),
+        packs: z.array(packConceptSchema),
       }),
       prompt: `Generate ${count} creative concepts for a pack. Each concept should include a name, a description, category, tags and a list of complete logical items.`,
     });
@@ -89,18 +91,19 @@ export class PackService {
     return object.packs;
   }
 
-  private async searchCatalog(items: string[]): Promise<any[]> {
+  private async searchCatalog(items: string[]): Promise<SemanticSearchResult> {
     const catalogService = new CatalogService(this.c, true);
     const searchResults = await catalogService.batchSemanticSearch(items);
     return searchResults.items;
   }
 
-  private constructPack(concept: any, searchResults: any[]): any {
-    // Construct the final pack using the items it found.
+  private constructPack(
+    concept: PackConcept,
+    searchResults: SemanticSearchResult,
+  ): ConstructedPack {
     return {
-      name: concept.name,
-      description: concept.description,
-      items: searchResults.flat().map((item) => item.id),
+      ...concept,
+      items: searchResults.flat(),
     };
   }
 }
