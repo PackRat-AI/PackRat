@@ -25,6 +25,8 @@ export type Env = {
   // AI & External APIs
   OPENAI_API_KEY: string;
   AI: Ai;
+  CLOUDFLARE_AI_GATEWAY_ID_ORG?: string;
+  AI_PROVIDER?: 'openai' | 'cloudflare-workers-ai'; // Which AI provider to use (all go through gateway)
 
   // Weather Services
   OPENWEATHER_KEY: string;
@@ -32,6 +34,7 @@ export type Env = {
 
   // Cloudflare R2 Storage
   CLOUDFLARE_ACCOUNT_ID: string; // For s3Client which is used for generating presigned URLs
+  CLOUDFLARE_ACCOUNT_ID_ORG: string; // For Cloudflare AI Gateway
   R2_ACCESS_KEY_ID: string; // For s3Client which is used for generating presigned URLs
   R2_SECRET_ACCESS_KEY: string; // For s3Client which is used for generating presigned URLs
   PACKRAT_BUCKET_R2_BUCKET_NAME: string; // For s3Client which is used for generating presigned URLs
