@@ -1,4 +1,5 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { adminMiddleware } from '@packrat/api/middleware/adminMiddleware';
 import { PackService } from '@packrat/api/services/packService';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
@@ -31,6 +32,8 @@ const route = createRoute({
     },
   },
 });
+
+generatePacksRoute.use('*', adminMiddleware);
 
 generatePacksRoute.openapi(route, async (c) => {
   const { count } = c.req.valid('json');
