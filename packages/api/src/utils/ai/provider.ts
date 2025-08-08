@@ -1,16 +1,34 @@
+import type { OpenAIProvider } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
+import type { Ai } from '@cloudflare/workers-types';
+import type { createWorkersAI } from 'workers-ai-provider';
 
 export type AIProvider = 'openai' | 'cloudflare-workers-ai';
 
-export interface AIProviderConfig {
+interface BaseProviderConfig {
   openAiApiKey: string;
-  provider?: AIProvider;
-  cloudflareAccountId?: string;
-  cloudflareGatewayId?: string;
+  cloudflareAccountId: string;
+  cloudflareGatewayId: string;
+  cloudflareAiBinding: Ai;
 }
 
-export function createAIProvider(config: AIProviderConfig) {
-  const { openAiApiKey, provider = 'openai', cloudflareAccountId, cloudflareGatewayId } = config;
+interface OpenAIProviderConfig extends BaseProviderConfig {
+  provider: 'openai';
+}
+
+interface WorkersAIProviderConfig extends BaseProviderConfig {
+  provider: 'cloudflare-workers-ai';
+}
+
+export type AIProviderConfig = OpenAIProviderConfig | WorkersAIProviderConfig;
+
+// Define return type for Workers AI
+type WorkersAIProvider = ReturnType<typeof createWorkersAI>;
+
+// Function to create an AI provider based on the config
+export function createAIProvider(config: AIProviderConfig): OpenAIProvider | WorkersAIProvider {
+  const { openAiApiKey, provider, cloudflareAccountId, cloudflareGatewayId, cloudflareAiBinding } =
+    config;
 
   // All providers go through Cloudflare Gateway if configured
   if (!cloudflareAccountId || !cloudflareGatewayId) {
@@ -32,6 +50,10 @@ export function createAIProvider(config: AIProviderConfig) {
   }
 
   // OpenAI through Cloudflare Gateway
+  if (!openAiApiKey) {
+    throw new Error('OpenAI API key is required for OpenAI provider');
+  }
+
   return createOpenAI({
     apiKey: openAiApiKey,
     baseURL: `https://gateway.ai.cloudflare.com/v1/${cloudflareAccountId}/${cloudflareGatewayId}/openai`,

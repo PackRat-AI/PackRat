@@ -38,7 +38,13 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
 
   const db = createDb(c);
   const { q } = c.req.query();
-  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID_ORG, CLOUDFLARE_AI_GATEWAY_ID_ORG } = env<Env>(c);
+  const {
+    OPENAI_API_KEY,
+    AI_PROVIDER,
+    CLOUDFLARE_ACCOUNT_ID_ORG,
+    CLOUDFLARE_AI_GATEWAY_ID_ORG,
+    AI,
+  } = env<Env>(c);
 
   const embedding = await generateEmbedding({
     value: q,
@@ -46,6 +52,7 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
     provider: AI_PROVIDER,
     cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
     cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+    cloudflareAiBinding: AI,
   });
 
   if (!embedding) {
