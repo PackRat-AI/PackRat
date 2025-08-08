@@ -18,12 +18,67 @@ const packConceptSchema = z.object({
   items: z.array(z.string()),
 });
 
+const itemSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  weight: z.number(),
+  weightUnit: z.string(),
+  description: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  size: z.string().optional(),
+  price: z.number().optional(),
+  material: z.string().optional(),
+  condition: z.string().optional(),
+  variants: z
+    .array(
+      z.object({
+        attribute: z.string(),
+        values: z.array(z.string()),
+      }),
+    )
+    .optional(),
+  techs: z.record(z.string()).optional(),
+  qas: z
+    .array(
+      z.object({
+        question: z.string(),
+        user: z.string().nullable().optional(),
+        date: z.string(),
+        answers: z.array(
+          z.object({
+            a: z.string(),
+            date: z.string(),
+            user: z.string().nullable().optional(),
+            upvotes: z.number().nullable().optional(),
+          }),
+        ),
+      }),
+    )
+    .optional(),
+  faqs: z
+    .array(
+      z.object({
+        question: z.string(),
+        answer: z.string(),
+      }),
+    )
+    .optional(),
+});
+
 type PackConcept = z.infer<typeof packConceptSchema>;
 
 type SemanticSearchResult = (CatalogItem & { similarity: number })[][];
 
-type ConstructedPack = Omit<PackConcept, 'items'> & {
-  items: CatalogItem[];
+type PackConceptWithRealItemMatches = Omit<PackConcept, 'items'> & {
+  items: {
+    requestedItem: string;
+    candidateItems: (Omit<CatalogItem, 'reviews' | 'embedding'> & { similarity: number })[];
+  }[];
+};
+
+type FinalGeneratedPack = Omit<PackConcept, 'items'> & {
+  items: Omit<Partial<CatalogItem>, 'reviews' | 'embedding'> &
+    { id: number; name: string; weight: number; weightUnit: string }[];
 };
 
 export class PackService {
@@ -64,15 +119,28 @@ export class PackService {
     // 1. Generate pack concepts
     const concepts = await this.generatePackConcepts(count);
 
-    // 2. Search and Construct
-    const constructedPacks = await Promise.all(
+    // 2. Search catalog for candidate items
+    const packConceptsWithRealItemMatches = await Promise.all(
       concepts.map(async (concept) => {
         const searchResults = await this.searchCatalog(concept.items);
-        return this.constructPack(concept, searchResults);
+        return {
+          ...concept,
+          items: concept.items.map((item, idx) => ({
+            requestedItem: item,
+            candidateItems: searchResults[idx].map((item) => {
+              // biome-ignore lint/correctness/noUnusedVariables: removing those fields
+              const { reviews, embedding, ...rest } = item;
+              return rest;
+            }),
+          })),
+        };
       }),
     );
 
-    return constructedPacks;
+    // 3. Select best items for each concept
+    const finalPacks = await this.constructPacks(packConceptsWithRealItemMatches);
+
+    return finalPacks;
   }
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
@@ -82,28 +150,47 @@ export class PackService {
 
     const { object } = await generateObject({
       model: openai(DEFAULT_MODELS.CHAT),
-      schema: z.object({
-        packs: z.array(packConceptSchema),
-      }),
-      prompt: `Generate ${count} creative concepts for a pack. Each concept should include a name, a description, category, tags and a list of complete logical items.`,
+      output: 'array',
+      schema: packConceptSchema,
+      system: `You are an expert Adventure Planner. Given a count, you generate unique and compelling concepts for those number of packs based on varied scenarios. Each concept should include a name, a description, category, tags and a list of rich descriptive strings for the logical items needed. These descriptions should be optimized for a vector search against an items catalog to find the most suitable real-world item.`,
+      prompt: `Generate concepts for ${count} pack${count > 1 ? 's' : ''}.`,
     });
 
-    return object.packs;
+    return object;
   }
 
   private async searchCatalog(items: string[]): Promise<SemanticSearchResult> {
-    const catalogService = new CatalogService(this.c, true);
+    const catalogService = new CatalogService(this.c);
     const searchResults = await catalogService.batchSemanticSearch(items);
     return searchResults.items;
   }
 
-  private constructPack(
-    concept: PackConcept,
-    searchResults: SemanticSearchResult,
-  ): ConstructedPack {
-    return {
-      ...concept,
-      items: searchResults.flat(),
-    };
+  private async constructPacks(
+    packConceptsWithRealItemMatches: PackConceptWithRealItemMatches[],
+  ): Promise<FinalGeneratedPack[]> {
+    const openai = createOpenAI({
+      apiKey: env(this.c).OPENAI_API_KEY,
+    });
+
+    const { object } = await generateObject({
+      model: openai(DEFAULT_MODELS.CHAT),
+      output: 'array',
+      schema: z.object({
+        name: z.string(),
+        description: z.string(),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        items: z.array(itemSchema),
+      }),
+      system: `You are an expert Adventure Planner. Your task is to turn a rough concept for a pack into a finalize pack with real items.
+              I'll provide you with pack concepts where each includes:
+              A pack name and a description.
+              A list of items, where each has a requestedItem description.
+              A list of candidateItems for each request, with details like price, weight, rating, tech specs, etc.
+              Your job is to select the best candidate items for each requested item, ensuring the final pack meets the concept.`,
+      prompt: JSON.stringify(packConceptsWithRealItemMatches),
+    });
+
+    return object;
   }
 }
