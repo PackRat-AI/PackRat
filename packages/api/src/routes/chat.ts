@@ -75,15 +75,21 @@ chatRoutes.openapi(chatRoute, async (c) => {
       systemPrompt += `\n\nContext: The current location of the user is: ${location}.`;
     }
 
-    const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID_ORG, CLOUDFLARE_AI_GATEWAY_ID_ORG } =
-      env<Env>(c);
+    const {
+      AI_PROVIDER,
+      OPENAI_API_KEY,
+      CLOUDFLARE_ACCOUNT_ID_ORG,
+      CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      AI,
+    } = env<Env>(c);
 
     // Create AI provider based on configuration
     const aiProvider = createAIProvider({
       openAiApiKey: OPENAI_API_KEY,
-      provider: AI_PROVIDER || 'openai',
+      provider: AI_PROVIDER,
       cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
       cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAiBinding: AI,
     });
 
     // Stream the AI response
