@@ -25,8 +25,8 @@ export type Env = {
   // AI & External APIs
   OPENAI_API_KEY: string;
   AI: Ai;
-  CLOUDFLARE_AI_GATEWAY_ID_ORG?: string;
-  AI_PROVIDER?: 'openai' | 'cloudflare-workers-ai'; // Which AI provider to use (all go through gateway)
+  CLOUDFLARE_AI_GATEWAY_ID_ORG: string;
+  AI_PROVIDER: 'openai' | 'cloudflare-workers-ai'; // Which AI provider to use (all go through gateway)
 
   // Weather Services
   OPENWEATHER_KEY: string;
