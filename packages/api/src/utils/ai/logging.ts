@@ -14,7 +14,7 @@ export interface AIRequestLog {
 export function logAIRequest(
   env: Env,
   headers: Headers,
-  options: Partial<AIRequestLog>
+  options: Partial<AIRequestLog>,
 ): AIRequestLog {
   const log: AIRequestLog = {
     provider: env.AI_PROVIDER || 'openai',
