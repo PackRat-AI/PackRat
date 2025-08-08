@@ -27,8 +27,7 @@ type WorkersAIProvider = ReturnType<typeof createWorkersAI>;
 
 // Function to create an AI provider based on the config
 export function createAIProvider(config: AIProviderConfig): OpenAIProvider | WorkersAIProvider {
-  const { openAiApiKey, provider, cloudflareAccountId, cloudflareGatewayId, cloudflareAiBinding } =
-    config;
+  const { openAiApiKey, provider, cloudflareAccountId, cloudflareGatewayId } = config;
 
   // All providers go through Cloudflare Gateway if configured
   if (!cloudflareAccountId || !cloudflareGatewayId) {
