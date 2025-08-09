@@ -5,6 +5,7 @@
   "compatibility_date": "2024-09-23",
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
+  "logpush": true,
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
   },
@@ -23,7 +24,8 @@
     },
     {
       "binding": "PACKRAT_SCRAPY_BUCKET",
-      "bucket_name": "packrat-scrapy-bucket"
+      "bucket_name": "packrat-scrapy-bucket",
+      "preview_bucket_name": "packrat-scrapy-bucket"
     },
     {
       "binding": "PACKRAT_GUIDES_BUCKET",
@@ -59,13 +61,54 @@
     "binding": "AI"
   },
   "env": {
-    "preview": {
+    "dev": {
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      },
       "r2_buckets": [
         {
           "binding": "PACKRAT_BUCKET",
-          "bucket_name": "packrat-bucket-preview"
+          "bucket_name": "packrat-bucket-preview",
+          "preview_bucket_name": "packrat-bucket-preview"
+        },
+        {
+          "binding": "PACKRAT_SCRAPY_BUCKET",
+          "bucket_name": "packrat-scrapy-bucket",
+          "preview_bucket_name": "packrat-scrapy-bucket"
+        },
+        {
+          "binding": "PACKRAT_GUIDES_BUCKET",
+          "bucket_name": "packrat-guides",
+          "preview_bucket_name": "packrat-guides"
         }
-      ]
+      ],
+      "queues": {
+        "producers": [
+          {
+            "queue": "packrat-etl-queue-dev",
+            "binding": "ETL_QUEUE"
+          },
+          {
+            "queue": "packrat-logs-queue-dev",
+            "binding": "LOGS_QUEUE"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "packrat-etl-queue-dev",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5
+          },
+          {
+            "queue": "packrat-logs-queue-dev",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5
+          }
+        ]
+      },
+      "ai": {
+        "binding": "AI"
+      }
     }
   }
 }
