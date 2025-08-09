@@ -4,9 +4,9 @@ import { usePackDetailsFromStore } from './usePackDetailsFromStore';
 export function useCategoriesCount() {
   const currentPack = useCurrentPack();
 
-  const currentPackDetails = usePackDetailsFromStore(currentPack?.id);
+  const currentPackDetails = usePackDetailsFromStore(currentPack?.id || '');
 
-  const categoriesCount = currentPack
+  const categoriesCount = currentPack && currentPackDetails
     ? new Set(currentPackDetails.items.map((item) => item.category)).size
     : 0;
 
