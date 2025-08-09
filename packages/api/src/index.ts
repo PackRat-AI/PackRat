@@ -3,7 +3,8 @@ import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { routes } from '@packrat/api/routes';
 import { type BaseQueueMessage, processQueueBatch } from '@packrat/api/services/etl/queue';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
@@ -17,8 +18,8 @@ const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 app
   .use((c, next) => {
     return sentry({
-      environment: c.env.ENVIRONMENT,
-      release: c.env.CF_VERSION_METADATA.id,
+      environment: getEnv(c).ENVIRONMENT,
+      release: getEnv(c).CF_VERSION_METADATA.id,
       // Adds request headers and IP for users, for more info visit:
       // https://docs.sentry.io/platforms/javascript/guides/cloudflare/configuration/options/#sendDefaultPii
       sendDefaultPii: true,

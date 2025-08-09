@@ -1,9 +1,9 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import { env } from 'hono/adapter';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Variables } from '../types/variables';
 
 const uploadRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
@@ -33,7 +33,7 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
     R2_SECRET_ACCESS_KEY,
     CLOUDFLARE_ACCOUNT_ID,
     PACKRAT_BUCKET_R2_BUCKET_NAME,
-  } = env<Env>(c);
+  } = getEnv(c);
 
   try {
     const { fileName, contentType } = c.req.query();

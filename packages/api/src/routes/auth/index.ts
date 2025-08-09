@@ -7,7 +7,6 @@ import {
   refreshTokens,
   users,
 } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import {
   generateJWT,
@@ -19,10 +18,10 @@ import {
   verifyPassword,
 } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
-import { env } from 'hono/adapter';
 
 const authRoutes = new OpenAPIHono();
 // Login route
@@ -784,7 +783,7 @@ const googleRoute = createRoute({
 });
 
 authRoutes.openapi(googleRoute, async (c) => {
-  const { GOOGLE_CLIENT_ID } = env<Env>(c);
+  const { GOOGLE_CLIENT_ID } = getEnv(c);
   const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
   const { idToken } = await c.req.json();

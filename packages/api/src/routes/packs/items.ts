@@ -2,11 +2,10 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packItems, packs } from '@packrat/api/db/schema';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { and, eq } from 'drizzle-orm';
-import { env } from 'hono/adapter';
 
 const packItemsRoutes = new OpenAPIHono();
 
@@ -125,7 +124,7 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
   const db = createDb(c);
   const packId = c.req.param('packId');
   const data = await c.req.json();
-  const { OPENAI_API_KEY } = env<Env>(c);
+  const { OPENAI_API_KEY } = getEnv(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
@@ -193,7 +192,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
 
   const itemId = c.req.param('itemId');
   const data = await c.req.json();
-  const { OPENAI_API_KEY } = env<Env>(c);
+  const { OPENAI_API_KEY } = getEnv(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
@@ -246,7 +245,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
       // Nothing to delete if old image is null
       if (oldImage) {
         // Use R2 bucket binding for deletion
-        const { PACKRAT_BUCKET } = env<Env>(c);
+        const { PACKRAT_BUCKET } = getEnv(c);
         await PACKRAT_BUCKET.delete(oldImage);
       }
     } catch (error) {

@@ -1,10 +1,10 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
-import { env } from 'hono/adapter';
 import { createDb } from '../db';
 import { catalogItems } from '../db/schema';
 import { generateEmbedding } from '../services/embeddingService';
-import type { Env } from '../types/env';
 import { authenticateRequest, unauthorizedResponse } from '../utils/api-middleware';
 
 const searchRoutes = new OpenAPIHono<{ Bindings: Env }>();
@@ -38,7 +38,7 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
 
   const db = createDb(c);
   const { q } = c.req.query();
-  const { OPENAI_API_KEY } = env<Env>(c);
+  const { OPENAI_API_KEY } = getEnv(c);
 
   const embedding = await generateEmbedding({
     value: q,

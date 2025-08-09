@@ -2,12 +2,11 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { reportedContent } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
 import { eq } from 'drizzle-orm';
-import { env } from 'hono/adapter';
 
 const chatRoutes = new OpenAPIHono();
 
@@ -75,7 +74,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
       systemPrompt += `\n\nContext: The current location of the user is: ${location}.`;
     }
 
-    const { OPENAI_API_KEY } = env<Env>(c);
+    const { OPENAI_API_KEY } = getEnv(c);
 
     const customOpenAI = createOpenAI({
       apiKey: OPENAI_API_KEY,
@@ -105,7 +104,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
   } catch (error) {
     c.get('sentry').setContext('chat', {
       body,
-      openAiApiKey: !!env<Env>(c).OPENAI_API_KEY,
+      openAiApiKey: !!getEnv(c).OPENAI_API_KEY,
     });
 
     throw error;
