@@ -1,0 +1,21 @@
+name: Merge main into development
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  merge-main-into-development:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          ref: development
+      - name: Merge main into development
+        uses: devmasx/merge-branch@v1.4.0
+        with:
+          type: now
+          from_branch: main
+          target_branch: development
+          github_token: ${{ secrets.GITHUB_TOKEN }}
