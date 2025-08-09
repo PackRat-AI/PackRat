@@ -78,7 +78,6 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
   const template = templateAtom ? templateAtom.get() : null;
   const templateItems = isCreatingFromTemplate ? getTemplateItems(params.templateId as string) : [];
 
-  const [descriptionHeight, setDescriptionHeight] = useState(40);
   const hasMounted = useRef(false);
 
   useEffect(() => {
