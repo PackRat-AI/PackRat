@@ -14,16 +14,18 @@ if (!arg) {
   process.exit(1);
 }
 
-// Use npm version to bump the root package.json and get the new version
+// Use bun pm version to bump the root package.json and get the new version
 let newVersion: string;
 try {
-  const output = execSync(`npm version ${arg} --no-git-tag-version`, {
+  // Bun pm version outputs the new version directly
+  const output = execSync(`bun pm version ${arg}`, {
     encoding: 'utf-8',
-    stdio: ['pipe', 'pipe', 'ignore'], // Suppress npm's stderr output
   });
+  // Extract version from output (it prints "v2.0.3" or similar)
   newVersion = output.trim().replace('v', '');
-} catch (_error) {
-  console.error('Failed to bump version. Make sure you provide a valid version argument.');
+} catch (error: any) {
+  console.error('Failed to bump version:', error.message);
+  console.error('Note: bun pm version requires a clean git working directory');
   process.exit(1);
 }
 
