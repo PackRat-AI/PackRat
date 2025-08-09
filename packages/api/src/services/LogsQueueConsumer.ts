@@ -1,5 +1,5 @@
 import type { MessageBatch } from '@cloudflare/workers-types';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { createDbClient } from '../db';
 import { invalidItemLogs, type NewInvalidItemLog } from '../db/schema';
 

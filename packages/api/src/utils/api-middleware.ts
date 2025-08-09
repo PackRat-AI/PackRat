@@ -1,7 +1,6 @@
 import type { User } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 import { verifyJWT } from './auth';
 
 export async function authenticateRequest(
@@ -37,7 +36,7 @@ export function isValidApiKey(c: Context): boolean {
   if (!apiKeyHeader) return false;
   // Get env
   // Type assertion is safe because Context is typed for Env
-  const { PACKRAT_API_KEY } = env<Env>(c);
+  const { PACKRAT_API_KEY } = getEnv(c);
   if (!PACKRAT_API_KEY) return false;
   return apiKeyHeader === PACKRAT_API_KEY;
 }

@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { Readability } from '@mozilla/readability';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { parseHTML } from 'linkedom';
 
 const readerRoutes = new OpenAPIHono<{ Bindings: Env }>();

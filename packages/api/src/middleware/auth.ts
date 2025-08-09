@@ -1,7 +1,6 @@
-import type { Env } from '@packrat/api/types/env';
 import { isValidApiKey } from '@packrat/api/utils/api-middleware';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import type { MiddlewareHandler } from 'hono';
-import { env } from 'hono/adapter';
 import { verify } from 'hono/jwt';
 
 export const authMiddleware: MiddlewareHandler = async (c, next) => {
@@ -14,7 +13,7 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
       return c.json({ error: 'No token provided' }, 401);
     }
 
-    const { JWT_SECRET } = env<Env>(c);
+    const { JWT_SECRET } = getEnv(c);
 
     try {
       const payload = await verify(token, JWT_SECRET);

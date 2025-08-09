@@ -1,6 +1,6 @@
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 
 type WeatherData = {
   location: string;
@@ -14,7 +14,7 @@ export class WeatherService {
   private env: Env;
 
   constructor(c: Context) {
-    this.env = env<Env>(c);
+    this.env = getEnv(c);
   }
 
   async getWeatherForLocation(location: string): Promise<WeatherData> {

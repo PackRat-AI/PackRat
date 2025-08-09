@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 import * as getCategoriesRoute from './getCategoriesRoute';
 import * as getGuideRoute from './getGuideRoute';
 import * as getGuidesRoute from './getGuidesRoute';

@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
 import * as createCatalogItemRoute from './createCatalogItemRoute';
 import * as deleteCatalogItemRoute from './deleteCatalogItemRoute';
 import * as getCatalogItemRoute from './getCatalogItemRoute';

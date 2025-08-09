@@ -1,14 +1,14 @@
 import type { AutoRAG } from '@cloudflare/workers-types';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 
 export class AIService {
   private env: Env;
   private guidesRAG: AutoRAG;
 
   constructor(c: Context) {
-    this.env = env<Env>(c);
+    this.env = getEnv(c);
     this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);
   }
 

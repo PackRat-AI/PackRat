@@ -1,6 +1,5 @@
-import type { Env } from '@packrat/api/types/env';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 import { Resend } from 'resend';
 
 export async function sendEmail({
@@ -14,7 +13,7 @@ export async function sendEmail({
   html: string;
   c: Context;
 }): Promise<void> {
-  const { RESEND_API_KEY, EMAIL_FROM } = env<Env>(c);
+  const { RESEND_API_KEY, EMAIL_FROM } = getEnv(c);
   const resendClient = new Resend(RESEND_API_KEY);
 
   const options = {
