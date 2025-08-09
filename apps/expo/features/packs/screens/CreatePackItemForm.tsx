@@ -6,7 +6,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -77,6 +77,16 @@ export const CreatePackItemForm = ({
 
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
+
+  const hasMounted = useRef(false);
+
+  useEffect(() => {
+    hasMounted.current = true;
+    return () => {
+      hasMounted.current = false;
+    };
+  }, []);
+
   const form = useForm({
     defaultValues: existingItem || {
       name: '',
@@ -226,6 +236,12 @@ export const CreatePackItemForm = ({
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
                     multiline
+                    onLayout={(e) => {
+                      const h = e.nativeEvent.layout.height;
+                      if (hasMounted.current && h !== descriptionHeight) {
+                        setDescriptionHeight(h);
+                      }
+                    }}
                     numberOfLines={3}
                     textAlignVertical="top"
                     leftView={

@@ -19,6 +19,7 @@ import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
+import { useLocations } from 'expo-app/features/weather/hooks/useLocations'; // adjust path if needed
 import { cn } from 'expo-app/lib/cn';
 import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -137,6 +138,7 @@ function ListHeaderComponent() {
 function ListFooterComponent() {
   const { signOut } = useAuth();
   const router = useRouter();
+  const { resetLocations } = useLocations();
   const { colors } = useColorScheme();
 
   const alertRef = useRef<AlertRef>(null);
@@ -145,6 +147,7 @@ function ListFooterComponent() {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
+      resetLocations();
       await signOut();
       alertRef.current?.alert({
         title: "You're now logged out!",

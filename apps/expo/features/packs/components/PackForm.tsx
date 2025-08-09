@@ -14,6 +14,7 @@ import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-tem
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -75,8 +76,16 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
   const templateId = params.templateId as string;
   const templateAtom = isCreatingFromTemplate ? packTemplatesStore[templateId] : null;
   const template = templateAtom ? templateAtom.get() : null;
-
   const templateItems = isCreatingFromTemplate ? getTemplateItems(params.templateId as string) : [];
+
+  const hasMounted = useRef(false);
+
+  useEffect(() => {
+    hasMounted.current = true;
+    return () => {
+      hasMounted.current = false;
+    };
+  }, []);
 
   const form = useForm({
     defaultValues:
@@ -102,19 +111,15 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       if (isCreatingFromTemplate) {
         createPackFromTemplate(params.templateId as string, value);
       } else if (isEditingExistingPack) {
-        updatePack({
-          ...pack,
-          ...value,
-        });
-      } else
-        createPack({
-          ...value,
-          category: value.category as PackCategory,
-        });
+        updatePack({ ...pack, ...value });
+      } else {
+        createPack({ ...value, category: value.category as PackCategory });
+      }
 
       router.back();
     },
   });
+
   if (!packTemplatesStore[templateId]) {
     console.warn(`No template found for ID: ${templateId}`);
   }
@@ -126,7 +131,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
     >
       {isCreatingFromTemplate && <Stack.Screen options={{ title: 'Enter New Pack Details' }} />}
       {isCreatingFromTemplate && template && (
-        <View>Creating pack from `${template.name}` template</View>
+        <View>Creating pack from `{template.name}` template</View>
       )}
 
       <ScrollView contentContainerClassName="p-8">
@@ -163,6 +168,12 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
                     multiline
+                    onLayout={(e) => {
+                      const h = e.nativeEvent.layout.height;
+                      if (hasMounted.current && h !== descriptionHeight) {
+                        setDescriptionHeight(h);
+                      }
+                    }}
                     numberOfLines={4}
                     textAlignVertical="top"
                     leftView={
@@ -191,8 +202,10 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                   >
                     <Button className="my-2 w-full" variant="plain">
                       <View className="w-full flex-row items-center justify-between capitalize">
-                        <Text>{field.state.value || 'Select Category'}</Text>
-                        <Icon name="chevron-down" size={16} color={colors.grey3} />
+                        <Text className="text-zinc-800 dark:text-zinc-200">
+                          {field.state.value || 'Select Category'}
+                        </Text>
+                        <Icon name="chevron-down" size={16} color={colors.grey2} />
                       </View>
                     </Button>
                   </DropdownMenu>
@@ -242,7 +255,9 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
             <Pressable
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${!canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'}`}
+              className={`mt-6 rounded-lg px-4 py-3.5 ${
+                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
+              }`}
             >
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting
