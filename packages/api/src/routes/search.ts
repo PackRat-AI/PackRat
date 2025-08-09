@@ -44,7 +44,7 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
     CLOUDFLARE_ACCOUNT_ID_ORG,
     CLOUDFLARE_AI_GATEWAY_ID_ORG,
     AI,
-  } = env<Env>(c);
+  } = getEnv(c);
 
   const embedding = await generateEmbedding({
     value: q,

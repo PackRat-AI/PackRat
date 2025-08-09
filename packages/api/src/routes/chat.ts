@@ -81,7 +81,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
       CLOUDFLARE_ACCOUNT_ID_ORG,
       CLOUDFLARE_AI_GATEWAY_ID_ORG,
       AI,
-    } = env<Env>(c);
+    } = getEnv(c);
 
     // Create AI provider based on configuration
     const aiProvider = createAIProvider({
@@ -125,7 +125,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     return response;
   } catch (error) {
-    const { OPENAI_API_KEY, AI_PROVIDER } = env<Env>(c);
+    const { OPENAI_API_KEY, AI_PROVIDER } = getEnv(c);
     c.get('sentry').setContext('chat', {
       body,
       openAiApiKey: !!OPENAI_API_KEY,

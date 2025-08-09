@@ -130,7 +130,7 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
     CLOUDFLARE_ACCOUNT_ID_ORG,
     CLOUDFLARE_AI_GATEWAY_ID_ORG,
     AI,
-  } = env<Env>(c);
+  } = getEnv(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
@@ -208,7 +208,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
     CLOUDFLARE_ACCOUNT_ID_ORG,
     CLOUDFLARE_AI_GATEWAY_ID_ORG,
     AI,
-  } = env<Env>(c);
+  } = getEnv(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
