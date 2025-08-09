@@ -783,7 +783,7 @@ const googleRoute = createRoute({
 });
 
 authRoutes.openapi(googleRoute, async (c) => {
-  const { EXPO_PUBLIC_GOOGLE_CLIENT_ID, GOOGLE_CLIENT_ID } = getEnv(c);
+  const { GOOGLE_CLIENT_ID } = getEnv(c);
   const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
   const { idToken } = await c.req.json();
@@ -797,7 +797,7 @@ authRoutes.openapi(googleRoute, async (c) => {
   // Verify Google ID token
   const ticket = await googleClient.verifyIdToken({
     idToken,
-    audience: EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+    audience: GOOGLE_CLIENT_ID,
   });
 
   const payload = ticket.getPayload();
