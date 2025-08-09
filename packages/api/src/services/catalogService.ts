@@ -155,6 +155,9 @@ export class CatalogService {
     const embedding = await generateEmbedding({
       value: q,
       openAiApiKey: this.env.OPENAI_API_KEY,
+      provider: this.env.AI_PROVIDER,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID_ORG,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
     });
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
