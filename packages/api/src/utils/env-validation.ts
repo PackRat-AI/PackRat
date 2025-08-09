@@ -6,11 +6,11 @@ import { z } from 'zod';
 // Define the Zod schema for all environment variables
 export const apiEnvSchema = z.object({
   // Environment & Deployment
-  ENVIRONMENT: z.string(),
-  SENTRY_DSN: z.string(),
+  ENVIRONMENT: z.enum(['development', 'production']).default('production'),
+  SENTRY_DSN: z.string().url(),
 
   // Database
-  NEON_DATABASE_URL: z.string(),
+  NEON_DATABASE_URL: z.string().url(),
 
   // Authentication & Security
   JWT_SECRET: z.string(),
@@ -21,12 +21,13 @@ export const apiEnvSchema = z.object({
   PACKRAT_API_KEY: z.string(),
 
   // Email Configuration
-  EMAIL_PROVIDER: z.string(),
+  EMAIL_PROVIDER: z.enum(['resend', 'sendgrid', 'ses']),
   RESEND_API_KEY: z.string(),
-  EMAIL_FROM: z.string(),
+  EMAIL_FROM: z.string().email(),
 
   // AI & External APIs
-  OPENAI_API_KEY: z.string(),
+  OPENAI_API_KEY: z.string().startsWith('sk-'),
+  AI_PROVIDER: z.enum(['openai', 'cloudflare-workers-ai']),
 
   // Weather Services
   OPENWEATHER_KEY: z.string(),
@@ -34,6 +35,8 @@ export const apiEnvSchema = z.object({
 
   // Cloudflare R2 Storage (config values)
   CLOUDFLARE_ACCOUNT_ID: z.string(),
+  CLOUDFLARE_ACCOUNT_ID_ORG: z.string(),
+  CLOUDFLARE_AI_GATEWAY_ID_ORG: z.string(),
   R2_ACCESS_KEY_ID: z.string(),
   R2_SECRET_ACCESS_KEY: z.string(),
   PACKRAT_BUCKET_R2_BUCKET_NAME: z.string(),
@@ -42,7 +45,7 @@ export const apiEnvSchema = z.object({
 
   // Content & Guides
   PACKRAT_GUIDES_RAG_NAME: z.string(),
-  PACKRAT_GUIDES_BASE_URL: z.string(),
+  PACKRAT_GUIDES_BASE_URL: z.string().url(),
 
   // Cloudflare bindings - validated as any, typed properly below
   CF_VERSION_METADATA: z.unknown(),
@@ -93,14 +96,19 @@ export function getEnv(c: Context): Env {
   }
 
   // Get raw environment
-  const rawEnv = env(c);
+  const rawEnv = env<Env>(c);
 
   // Validate all environment variables with Zod
   // This ensures all required fields exist, including CF bindings
-  const validated = apiEnvSchema.parse(rawEnv) as Env;
+  const validated = apiEnvSchema.safeParse(rawEnv);
+  if (!validated.success) {
+    throw new Error(`Invalid environment variables: ${validated.error.message}`);
+  }
+
+  const data = validated.data as Env;
 
   // Cache the result
-  envCache.set(c, validated);
+  envCache.set(c, data);
 
-  return validated;
+  return data;
 }
