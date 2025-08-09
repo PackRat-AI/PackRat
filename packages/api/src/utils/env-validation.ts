@@ -58,13 +58,14 @@ export const apiEnvSchema = z.object({
 type ValidatedAppEnv = z.infer<typeof apiEnvSchema>;
 
 // Override Cloudflare binding types with proper TypeScript types
-export type Env = Omit<ValidatedAppEnv, 
-  | 'CF_VERSION_METADATA' 
-  | 'AI' 
-  | 'PACKRAT_SCRAPY_BUCKET' 
-  | 'PACKRAT_BUCKET' 
-  | 'PACKRAT_GUIDES_BUCKET' 
-  | 'ETL_QUEUE' 
+export type Env = Omit<
+  ValidatedAppEnv,
+  | 'CF_VERSION_METADATA'
+  | 'AI'
+  | 'PACKRAT_SCRAPY_BUCKET'
+  | 'PACKRAT_BUCKET'
+  | 'PACKRAT_GUIDES_BUCKET'
+  | 'ETL_QUEUE'
   | 'LOGS_QUEUE'
 > & {
   // Properly typed Cloudflare bindings
