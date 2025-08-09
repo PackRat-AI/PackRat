@@ -1,0 +1,1 @@
+ALTER TABLE "catalog_items" ALTER COLUMN "sku" SET NOT NULL;

@@ -5,7 +5,7 @@ import {
   catalogItems,
   type NewCatalogItem,
 } from '@packrat/api/db/schema';
-import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
 import {
   and,
@@ -18,12 +18,14 @@ import {
   gt,
   ilike,
   isNotNull,
+  isNull,
   or,
   type SQL,
   sql,
 } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
+import { getEmbeddingText } from '../utils/embeddingHelper';
 
 const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
   isContext;
@@ -213,7 +215,7 @@ export class CatalogService {
   async upsertCatalogItems(items: NewCatalogItem[]): Promise<Pick<CatalogItem, 'id'>[]> {
     const columns = getTableColumns(catalogItems);
 
-    const insertedItems = await this.db
+    const upsertedItems = await this.db
       .insert(catalogItems)
       .values(items)
       .onConflictDoUpdate({
@@ -226,9 +228,46 @@ export class CatalogService {
           {} as Record<string, SQL>,
         ),
       })
-      .returning({ id: catalogItems.id });
+      .returning();
 
-    return insertedItems;
+    // Check if any embedding-related fields have changed
+    const embeddingFields: Array<keyof CatalogItem> = [
+      'name',
+      'description',
+      'categories',
+      'brand',
+    ];
+
+    const itemsToUpdate = upsertedItems.filter((item) => {
+      const inputItem = items.find((i) => i.sku === item.sku);
+      if (!inputItem) return false;
+
+      return embeddingFields.some(
+        (field) =>
+          inputItem[field] && JSON.stringify(inputItem[field]) !== JSON.stringify(item[field]),
+      );
+    });
+
+    if (itemsToUpdate.length > 0) {
+      // Regenerate embeddings for updated items
+      const embeddingTexts = itemsToUpdate.map((item) => getEmbeddingText(item));
+      const embeddings = await generateManyEmbeddings({
+        openAiApiKey: this.env.OPENAI_API_KEY,
+        values: embeddingTexts,
+      });
+
+      // Update items with new embeddings
+      const updatePromises = itemsToUpdate.map((item, index) =>
+        this.db
+          .update(catalogItems)
+          .set({ embedding: embeddings[index] })
+          .where(eq(catalogItems.sku, item.sku)),
+      );
+
+      await Promise.all(updatePromises);
+    }
+
+    return upsertedItems;
   }
 
   async trackEtlJob(itemIds: Pick<CatalogItem, 'id'>[], jobId: string): Promise<void> {
@@ -238,5 +277,59 @@ export class CatalogService {
         etlJobId: jobId,
       })),
     );
+  }
+
+  async backfillEmbeddings(): Promise<{
+    processed: number;
+  }> {
+    // Get count of items without embeddings
+    const [{ totalCount }] = await this.db
+      .select({ totalCount: count() })
+      .from(catalogItems)
+      .where(isNull(catalogItems.embedding));
+
+    const total = Number(totalCount);
+
+    if (total === 0) {
+      return { processed: 0 };
+    }
+
+    // Get items without embeddings
+    const itemsWithoutEmbeddings = await this.db
+      .select()
+      .from(catalogItems)
+      .where(isNull(catalogItems.embedding));
+
+    if (itemsWithoutEmbeddings.length === 0) {
+      return { processed: 0 };
+    }
+
+    // Prepare texts for batch embedding
+    const embeddingTexts = itemsWithoutEmbeddings.map((item) => getEmbeddingText(item));
+
+    try {
+      // Generate embeddings in batch
+      const embeddings = await generateManyEmbeddings({
+        openAiApiKey: this.env.OPENAI_API_KEY,
+        values: embeddingTexts,
+      });
+
+      // Update items with embeddings
+      for (let i = 0; i < itemsWithoutEmbeddings.length; i++) {
+        await this.db
+          .update(catalogItems)
+          .set({ embedding: embeddings[i] })
+          .where(eq(catalogItems.id, itemsWithoutEmbeddings[i].id));
+      }
+
+      return {
+        processed: itemsWithoutEmbeddings.length,
+      };
+    } catch (error) {
+      console.error('Error generating embeddings:', error);
+      throw new Error(
+        `Failed to generate embeddings: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 }
