@@ -22,14 +22,19 @@
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
-    "api": "bun run --cwd packages/api dev"
+    "api": "bun run --cwd packages/api dev",
+    "version": "changeset version && bun run scripts/sync-app-version.ts",
+    "version:patch": "changeset add --empty && bun run version",
+    "version:minor": "changeset add --empty && bun run version",
+    "version:major": "changeset add --empty && bun run version"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.4",
+    "@changesets/cli": "^2.29.5",
     "@manypkg/cli": "^0.24.0",
     "@types/bun": "^1.2.17",
+    "@types/fs-extra": "^11.0.4",
     "fs-extra": "^11.3.0",
-    "lefthook": "^1.11.14",
-    "@types/fs-extra": "^11.0.4"
+    "lefthook": "^1.11.14"
   }
 }
