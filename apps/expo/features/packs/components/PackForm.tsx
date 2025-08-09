@@ -14,6 +14,7 @@ import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-tem
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -26,7 +27,6 @@ import {
 import { z } from 'zod';
 import { useCreatePack, useUpdatePack } from '../hooks';
 import type { Pack, PackCategory } from '../types';
-import { useEffect, useRef, useState } from 'react';
 
 // Define Zod schema
 const packFormSchema = z.object({
