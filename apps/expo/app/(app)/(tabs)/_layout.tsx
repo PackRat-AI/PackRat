@@ -71,8 +71,9 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       className="border-t-border/25 flex-row border-t bg-card pb-4 pt-3 dark:border-t-0"
     >
       {state.routes.map((route, index) => {
-        assertDefined(descriptors[route.key]);
-        const { options } = descriptors[route.key];
+        const descriptor = descriptors[route.key];
+        assertDefined(descriptor);
+        const { options } = descriptor;
         const label =
           options.tabBarLabel !== undefined
             ? options.tabBarLabel
