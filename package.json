@@ -23,7 +23,7 @@
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
     "api": "bun run --cwd packages/api dev",
-    "bump": "bun scripts/bump.ts"
+    "bump": "bun .github/scripts/bump.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.4",
