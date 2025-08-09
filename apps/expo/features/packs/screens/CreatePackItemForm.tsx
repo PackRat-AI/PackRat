@@ -77,7 +77,6 @@ export const CreatePackItemForm = ({
 
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
-  const [descriptionHeight, setDescriptionHeight] = useState(40);
 
   const hasMounted = useRef(false);
 
