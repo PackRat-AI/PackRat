@@ -354,7 +354,7 @@ export class CatalogService {
       for (let i = 0; i < itemsToEmbed.length; i++) {
         await this.db
           .update(catalogItems)
-          .set({ embedding: embeddings[i] })
+          .set({ embedding: embeddings[i], updatedAt: new Date() })
           .where(eq(catalogItems.id, itemsToEmbed[i].id));
       }
 
