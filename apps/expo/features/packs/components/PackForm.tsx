@@ -14,6 +14,7 @@ import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-tem
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -24,9 +25,9 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
+
 import { useCreatePack, useUpdatePack } from '../hooks';
 import type { Pack, PackCategory } from '../types';
-import { useState } from 'react';
 
 // Define Zod schema
 const packFormSchema = z.object({
@@ -78,7 +79,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
   const template = templateAtom ? templateAtom.get() : null;
 
   const templateItems = isCreatingFromTemplate ? getTemplateItems(params.templateId as string) : [];
-  const [descriptionHeight, setDescriptionHeight] = useState(40); //To force layout update
+  const [descriptionHeight, setDescriptionHeight] = useState(40);
   const form = useForm({
     defaultValues:
       isCreatingFromTemplate && template
