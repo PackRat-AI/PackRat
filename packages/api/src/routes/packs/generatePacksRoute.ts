@@ -38,8 +38,8 @@ generatePacksRoute.use('*', adminMiddleware);
 generatePacksRoute.openapi(route, async (c) => {
   const { count } = c.req.valid('json');
   const user = c.get('user');
-  const packGenerator = new PackService(c, user.id);
-  const generatedPacks = await packGenerator.generatePacks(count);
+  const packService = new PackService(c, user.id);
+  const generatedPacks = await packService.generatePacks(count);
 
   return c.json(generatedPacks);
 });

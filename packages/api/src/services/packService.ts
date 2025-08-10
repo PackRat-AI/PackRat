@@ -1,6 +1,13 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
-import { type CatalogItem, type PackWithItems, packItems, packs } from '@packrat/api/db/schema';
+import {
+  type CatalogItem,
+  type NewPack,
+  type NewPackItem,
+  type PackWithItems,
+  packItems,
+  packs,
+} from '@packrat/api/db/schema';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
@@ -13,73 +20,45 @@ import { CatalogService } from './catalogService';
 const packConceptSchema = z.object({
   name: z.string(),
   description: z.string(),
-  category: z.string().optional(),
+  category: z.string(),
   tags: z.array(z.string()).optional(),
   items: z.array(z.string()),
 });
 
-const itemSchema = z.object({
-  id: z.number().int(),
-  name: z.string(),
-  weight: z.number(),
-  weightUnit: z.string(),
-  description: z.string().optional(),
-  categories: z.array(z.string()).optional(),
-  size: z.string().optional(),
-  price: z.number().optional(),
-  material: z.string().optional(),
-  condition: z.string().optional(),
-  variants: z
-    .array(
-      z.object({
-        attribute: z.string(),
-        values: z.array(z.string()),
-      }),
-    )
-    .optional(),
-  techs: z.record(z.string()).optional(),
-  qas: z
-    .array(
-      z.object({
-        question: z.string(),
-        user: z.string().nullable().optional(),
-        date: z.string(),
-        answers: z.array(
-          z.object({
-            a: z.string(),
-            date: z.string(),
-            user: z.string().nullable().optional(),
-            upvotes: z.number().nullable().optional(),
-          }),
-        ),
-      }),
-    )
-    .optional(),
-  faqs: z
-    .array(
-      z.object({
-        question: z.string(),
-        answer: z.string(),
-      }),
-    )
-    .optional(),
-});
-
 type PackConcept = z.infer<typeof packConceptSchema>;
 
-type SemanticSearchResult = (CatalogItem & { similarity: number })[][];
-
-type PackConceptWithRealItemMatches = Omit<PackConcept, 'items'> & {
+type PackConceptWithCandidateItems = Omit<PackConcept, 'items'> & {
   items: {
     requestedItem: string;
     candidateItems: (Omit<CatalogItem, 'reviews' | 'embedding'> & { similarity: number })[];
   }[];
 };
 
-type FinalGeneratedPack = Omit<PackConcept, 'items'> & {
-  items: Omit<Partial<CatalogItem>, 'reviews' | 'embedding'> &
-    { id: number; name: string; weight: number; weightUnit: string }[];
-};
+const itemSchema = z.object({
+  catalogItemId: z.number().int(),
+  name: z.string(),
+  description: z.string().optional(),
+  weight: z.number().nonnegative(),
+  weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
+  quantity: z.number().int().positive().default(1),
+  category: z.string(),
+  consumable: z.boolean().optional().describe('Whether the item is consumable'),
+  worn: z.boolean().optional().describe('Whether the item is worn'),
+  notes: z.string().optional(),
+  image: z.string().optional(),
+});
+
+const finalPackSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  category: z.string(),
+  tags: z.array(z.string()).optional(),
+  items: z.array(itemSchema),
+});
+
+type FinalPack = z.infer<typeof finalPackSchema>;
+
+type SemanticSearchResult = (CatalogItem & { similarity: number })[][];
 
 export class PackService {
   private db;
@@ -116,11 +95,12 @@ export class PackService {
     if (count <= 0) {
       throw new Error('Count must be a positive integer');
     }
+
     // 1. Generate pack concepts
     const concepts = await this.generatePackConcepts(count);
 
     // 2. Search catalog for candidate items
-    const packConceptsWithRealItemMatches = await Promise.all(
+    const packConceptsWithCandidateItems = await Promise.all(
       concepts.map(async (concept) => {
         const searchResults = await this.searchCatalog(concept.items);
         return {
@@ -129,7 +109,7 @@ export class PackService {
             requestedItem: item,
             candidateItems: searchResults[idx].map((item) => {
               // biome-ignore lint/correctness/noUnusedVariables: removing those fields
-              const { reviews, embedding, ...rest } = item;
+              const { reviews, embedding, ...rest } = item; // remove unhelpful fields to manage context
               return rest;
             }),
           })),
@@ -138,9 +118,43 @@ export class PackService {
     );
 
     // 3. Select best items for each concept
-    const finalPacks = await this.constructPacks(packConceptsWithRealItemMatches);
+    const finalPacks = await this.constructPacks(packConceptsWithCandidateItems);
 
-    return finalPacks;
+    // 4. Save the packs to db
+    const createdPacks = await this.db.transaction(async (tx) => {
+      const packsToInsert: NewPack[] = [];
+      const itemsToInsert: NewPackItem[] = [];
+      for (const pack of finalPacks) {
+        const packId = crypto.randomUUID();
+        packsToInsert.push({
+          id: packId,
+          userId: this.userId,
+          name: pack.name,
+          description: pack.description,
+          category: pack.category,
+          tags: pack.tags,
+          isPublic: true,
+          localCreatedAt: new Date(),
+          localUpdatedAt: new Date(),
+        });
+
+        itemsToInsert.push(
+          ...pack.items.map((item) => ({
+            ...item,
+            id: crypto.randomUUID(),
+            packId,
+            userId: this.userId,
+          })),
+        );
+      }
+      const createdPacks = await tx.insert(packs).values(packsToInsert).returning();
+
+      await tx.insert(packItems).values(itemsToInsert);
+
+      return createdPacks;
+    });
+
+    return createdPacks;
   }
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
@@ -166,8 +180,8 @@ export class PackService {
   }
 
   private async constructPacks(
-    packConceptsWithRealItemMatches: PackConceptWithRealItemMatches[],
-  ): Promise<FinalGeneratedPack[]> {
+    packConceptsWithCandidateItems: PackConceptWithCandidateItems[],
+  ): Promise<FinalPack[]> {
     const openai = createOpenAI({
       apiKey: env(this.c).OPENAI_API_KEY,
     });
@@ -175,20 +189,14 @@ export class PackService {
     const { object } = await generateObject({
       model: openai(DEFAULT_MODELS.CHAT),
       output: 'array',
-      schema: z.object({
-        name: z.string(),
-        description: z.string(),
-        category: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        items: z.array(itemSchema),
-      }),
+      schema: finalPackSchema,
       system: `You are an expert Adventure Planner. Your task is to turn a rough concept for a pack into a finalize pack with real items.
               I'll provide you with pack concepts where each includes:
-              A pack name and a description.
-              A list of items, where each has a requestedItem description.
-              A list of candidateItems for each request, with details like price, weight, rating, tech specs, etc.
+              - A pack name and a description.
+              - A list of items, where each has a requestedItem description.
+              - A list of candidateItems for each request, with details like price, weight, rating, tech specs, etc.
               Your job is to select the best candidate items for each requested item, ensuring the final pack meets the concept.`,
-      prompt: JSON.stringify(packConceptsWithRealItemMatches),
+      prompt: JSON.stringify(packConceptsWithCandidateItems),
     });
 
     return object;
