@@ -290,6 +290,11 @@ export class CatalogService {
       .where(isNull(catalogItems.embedding));
 
     const total = Number(totalCount);
+    console.log(`Queuing ${total} items for embeddings`);
+
+    if (total === 0) {
+      return { count: 0 };
+    }
 
     // Get items without embeddings
     const itemsWithoutEmbeddings = await this.db
@@ -297,19 +302,31 @@ export class CatalogService {
       .from(catalogItems)
       .where(isNull(catalogItems.embedding));
 
-    for (let i = 0; i < Math.ceil(itemsWithoutEmbeddings.length / BATCH_SIZE); i++) {
-      // Send batch of items to the embeddings queue
-      await this.env.EMBEDDINGS_QUEUE.sendBatch(
-        itemsWithoutEmbeddings
-          .slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE)
-          .map((item) => ({ body: item })),
-      );
+    const totalBatches = Math.ceil(itemsWithoutEmbeddings.length / BATCH_SIZE);
+
+    for (let i = 0; i < totalBatches; i++) {
+      const currentBatch = itemsWithoutEmbeddings.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
+
+      try {
+        // Send batch of items to the embeddings queue
+        await this.env.EMBEDDINGS_QUEUE.sendBatch(currentBatch.map((item) => ({ body: item })));
+        console.log(`Queued batch ${i + 1}/${totalBatches}`);
+      } catch (error) {
+        console.error(`Failed to queue batch ${i + 1}/${totalBatches}:`, error);
+        throw new Error(
+          `Failed to queue batch ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        );
+      }
     }
 
+    console.log(`Completed queuing ${total} items in ${totalBatches} batches`);
     return { count: total };
   }
 
   async handleEmbeddingsBatch(batch: MessageBatch): Promise<void> {
+    const batchSize = batch.messages.length;
+    console.log(`Processing batch: ${batchSize} items`);
+
     const itemsToEmbed = await this.db
       .select()
       .from(catalogItems)
@@ -340,8 +357,10 @@ export class CatalogService {
           .set({ embedding: embeddings[i] })
           .where(eq(catalogItems.id, itemsToEmbed[i].id));
       }
+
+      console.log(`Completed batch: ${itemsToEmbed.length} embeddings generated`);
     } catch (error) {
-      console.error('Error generating embeddings:', error);
+      console.error('Embeddings batch failed:', error);
       throw new Error(
         `Failed to generate embeddings: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
