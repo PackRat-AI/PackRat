@@ -163,11 +163,11 @@ export class PackService {
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.CHAT),
+      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: packConceptSchema,
-      system: `You are an expert Adventure Planner. Given a count, you generate unique and compelling concepts for those number of packs based on varied scenarios. Each concept should include a name, a description, category, tags and a list of rich descriptive strings for the logical items needed. These descriptions should be optimized for a vector search against an items catalog to find the most suitable real-world item.`,
-      prompt: `Generate concepts for ${count} pack${count > 1 ? 's' : ''}.`,
+      system: `You are an expert Adventure Planner specializing in real-world outdoor and travel experiences. When given a specific count, generate that exact number of unique, practical adventure concepts that people can actually undertake. Each concept should include a name, a description, category, tags and a list of rich descriptive strings for the logical items needed. These descriptions should be optimized for a vector search against an items catalog to find the most suitable real-world item.`,
+      prompt: `${count}`,
     });
 
     return object;
@@ -187,7 +187,7 @@ export class PackService {
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.CHAT),
+      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: finalPackSchema,
       system: `You are an expert Adventure Planner. Your task is to turn a rough concept for a pack into a finalize pack with real items.
