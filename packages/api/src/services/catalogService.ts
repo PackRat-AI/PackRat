@@ -75,12 +75,7 @@ export class CatalogService {
           ilike(catalogItems.description, `%${q}%`),
           ilike(catalogItems.brand, `%${q}%`),
           ilike(catalogItems.model, `%${q}%`),
-          sql`
-              EXISTS (
-                SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat
-                WHERE cat ILIKE '%' || ${q} || '%'
-              )
-            `,
+          ilike(catalogItems.categories, `%${q}%`),
         ),
       );
     }
@@ -157,6 +152,9 @@ export class CatalogService {
     const embedding = await generateEmbedding({
       value: q,
       openAiApiKey: this.env.OPENAI_API_KEY,
+      provider: this.env.AI_PROVIDER,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID_ORG,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
     });
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;

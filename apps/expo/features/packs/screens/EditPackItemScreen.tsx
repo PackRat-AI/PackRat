@@ -8,9 +8,9 @@ export function EditPackItemScreen() {
   const effectiveItemId = Array.isArray(id) ? id[0] : id;
   const effectivePackId = Array.isArray(packId) ? packId[0] : packId;
 
-  const item = usePackItemDetailsFromStore(effectiveItemId);
+  const item = usePackItemDetailsFromStore(effectiveItemId || '');
 
-  if (!item) {
+  if (!item || !effectivePackId || !effectiveItemId) {
     return (
       <NotFoundScreen
         title="Pack not found"
