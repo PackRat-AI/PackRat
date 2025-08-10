@@ -25,5 +25,5 @@ export enum OpenAIModels {
 // Default models for each use case
 export const DEFAULT_MODELS = {
   CHAT: OpenAIModels.GPT_4O,
-  EMBEDDING: { NAME: OpenAIModels.TEXT_EMBEDDING_3_SMALL, MAX_TOKENS: 8192 },
+  EMBEDDING: OpenAIModels.TEXT_EMBEDDING_3_SMALL,
 } as const;

@@ -17,6 +17,7 @@ import {
   getTableColumns,
   gt,
   ilike,
+  inArray,
   isNotNull,
   isNull,
   or,
@@ -279,9 +280,9 @@ export class CatalogService {
     );
   }
 
-  async backfillEmbeddings(batchSize: number = 100): Promise<{
-    processed: number;
-  }> {
+  async queueEmbeddingJobs(): Promise<{ count: number }> {
+    const BATCH_SIZE = 100;
+
     // Get count of items without embeddings
     const [{ totalCount }] = await this.db
       .select({ totalCount: count() })
@@ -290,42 +291,55 @@ export class CatalogService {
 
     const total = Number(totalCount);
 
-    if (total === 0) {
-      return { processed: 0 };
-    }
-
     // Get items without embeddings
     const itemsWithoutEmbeddings = await this.db
-      .select()
+      .select({ id: catalogItems.id })
       .from(catalogItems)
-      .where(isNull(catalogItems.embedding))
-      .limit(batchSize);
+      .where(isNull(catalogItems.embedding));
 
-    if (itemsWithoutEmbeddings.length === 0) {
-      return { processed: 0 };
+    for (let i = 0; i < Math.ceil(itemsWithoutEmbeddings.length / BATCH_SIZE); i++) {
+      // Send batch of items to the embeddings queue
+      await this.env.EMBEDDINGS_QUEUE.sendBatch(
+        itemsWithoutEmbeddings
+          .slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE)
+          .map((item) => ({ body: item })),
+      );
     }
 
+    return { count: total };
+  }
+
+  async handleEmbeddingsBatch(batch: MessageBatch): Promise<void> {
+    const itemsToEmbed = await this.db
+      .select()
+      .from(catalogItems)
+      .where(
+        inArray(
+          catalogItems.id,
+          batch.messages.map((message) => (message.body as { id: number }).id),
+        ),
+      );
+
     // Prepare texts for batch embedding
-    const embeddingTexts = itemsWithoutEmbeddings.map((item) => getEmbeddingText(item));
+    const embeddingTexts = itemsToEmbed.map((item) => getEmbeddingText(item));
 
     try {
       // Generate embeddings in batch
       const embeddings = await generateManyEmbeddings({
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,
+        cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+        provider: this.env.AI_PROVIDER,
       });
 
       // Update items with embeddings
-      for (let i = 0; i < itemsWithoutEmbeddings.length; i++) {
+      for (let i = 0; i < itemsToEmbed.length; i++) {
         await this.db
           .update(catalogItems)
           .set({ embedding: embeddings[i] })
-          .where(eq(catalogItems.id, itemsWithoutEmbeddings[i].id));
+          .where(eq(catalogItems.id, itemsToEmbed[i].id));
       }
-
-      return {
-        processed: itemsWithoutEmbeddings.length,
-      };
     } catch (error) {
       console.error('Error generating embeddings:', error);
       throw new Error(

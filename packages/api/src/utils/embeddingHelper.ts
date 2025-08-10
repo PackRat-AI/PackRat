@@ -1,18 +1,12 @@
-import { encoding_for_model } from 'tiktoken';
 import type { CatalogItem, PackItem } from '../db/schema';
-import { DEFAULT_MODELS } from './ai/models';
 
 type ItemForEmbedding = Partial<CatalogItem> | Partial<PackItem>;
-
-const MAX_TOKENS = DEFAULT_MODELS.EMBEDDING.MAX_TOKENS;
-
-const encoder = encoding_for_model(DEFAULT_MODELS.EMBEDDING.NAME);
 
 export const getEmbeddingText = (
   item: ItemForEmbedding,
   existingItem?: Partial<CatalogItem> | Partial<PackItem>,
 ): string => {
-  let embeddingInput = [
+  const embeddingInput = [
     item.name,
     item.description,
     ('brand' in item && item.brand) ||
@@ -61,16 +55,6 @@ export const getEmbeddingText = (
   ]
     .filter(Boolean)
     .join('\n');
-
-  let tokens = encoder.encode(embeddingInput);
-
-  if (tokens.length > MAX_TOKENS) {
-    // Truncate if necessary
-    tokens = tokens.slice(0, MAX_TOKENS);
-    embeddingInput = new TextDecoder().decode(encoder.decode(tokens));
-  }
-
-  encoder.free();
 
   return embeddingInput;
 };

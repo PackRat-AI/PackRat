@@ -95,7 +95,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     // Stream the AI response
     const result = streamText({
-      model: aiProvider('gpt-4o'),
+      model: aiProvider(DEFAULT_MODELS.CHAT),
       system: systemPrompt,
       messages,
       tools,

@@ -1,31 +1,27 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { apiKeyAuthMiddleware } from '@packrat/api/middleware';
 import { CatalogService } from '@packrat/api/services';
-import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import type { Env } from '@packrat/api/types/env';
 
-export const routeDefinition = createRoute({
+export const backfillEmbeddingsRoute = new OpenAPIHono<{ Bindings: Env }>();
+
+const routeDefinition = createRoute({
   method: 'post',
   path: '/backfill-embeddings',
-  request: {
-    body: {
-      content: {
-        'application/json': { schema: z.object({ batchSize: z.number().optional() }) },
-      },
-    },
-  },
   responses: {
     200: { description: 'Backfill embeddings for catalog items' },
     500: { description: 'Internal server error' },
   },
 });
 
-export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const { batchSize } = await c.req.json();
+backfillEmbeddingsRoute.use('*', apiKeyAuthMiddleware);
+
+backfillEmbeddingsRoute.openapi(routeDefinition, async (c) => {
   const catalogService = new CatalogService(c);
-  const result = await catalogService.backfillEmbeddings(batchSize);
+  const { count } = await catalogService.queueEmbeddingJobs();
 
   return c.json({
     success: true,
-    message: `Processed ${result.processed} items`,
-    ...result,
+    message: `Queued ${count} items`,
   });
-};
+});

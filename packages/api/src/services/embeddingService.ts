@@ -21,7 +21,7 @@ export const generateEmbedding = async (params: GenerateEmbeddingParams): Promis
   const input = value.replace(/\n/g, ' ');
 
   const { embedding } = await embed({
-    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING.NAME),
+    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING),
     value: input,
   });
 
@@ -39,7 +39,7 @@ export const generateManyEmbeddings = async (
   const aiProvider = createAIProvider(providerConfig);
 
   const { embeddings } = await embedMany({
-    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING.NAME),
+    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING),
     values,
   });
 
