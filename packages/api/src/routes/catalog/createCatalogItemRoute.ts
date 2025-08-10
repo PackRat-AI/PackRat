@@ -29,7 +29,8 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   const db = createDb(c);
   const data = await c.req.json();
-  const { OPENAI_API_KEY } = env<Env>(c);
+  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID_ORG, CLOUDFLARE_AI_GATEWAY_ID_ORG } =
+    env<Env>(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
@@ -40,6 +41,9 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const embedding = await generateEmbedding({
     openAiApiKey: OPENAI_API_KEY,
     value: embeddingText,
+    provider: AI_PROVIDER,
+    cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
+    cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
   });
 
   const [newItem] = await db

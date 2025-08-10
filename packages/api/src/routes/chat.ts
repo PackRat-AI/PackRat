@@ -1,8 +1,8 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { reportedContent } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
@@ -76,15 +76,26 @@ chatRoutes.openapi(chatRoute, async (c) => {
       systemPrompt += `\n\nContext: The current location of the user is: ${location}.`;
     }
 
-    const { OPENAI_API_KEY } = env<Env>(c);
+    const {
+      AI_PROVIDER,
+      OPENAI_API_KEY,
+      CLOUDFLARE_ACCOUNT_ID_ORG,
+      CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      AI,
+    } = env<Env>(c);
 
-    const customOpenAI = createOpenAI({
-      apiKey: OPENAI_API_KEY,
+    // Create AI provider based on configuration
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAiBinding: AI,
     });
 
     // Stream the AI response
     const result = streamText({
-      model: customOpenAI(DEFAULT_MODELS.CHAT),
+      model: aiProvider('gpt-4o'),
       system: systemPrompt,
       messages,
       tools,
@@ -97,16 +108,29 @@ chatRoutes.openapi(chatRoute, async (c) => {
         c.get('sentry').setContext('params', {
           body,
           openAiApiKey: !!OPENAI_API_KEY,
+          aiProvider: AI_PROVIDER || 'openai',
         });
         c.get('sentry').captureException(error);
       },
     });
 
-    return result.toDataStreamResponse();
+    // Get the response with proper headers
+    const response = result.toDataStreamResponse();
+
+    // Add CORS headers for streaming when using Cloudflare Gateway
+    if (CLOUDFLARE_ACCOUNT_ID_ORG && CLOUDFLARE_AI_GATEWAY_ID_ORG) {
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+    }
+
+    return response;
   } catch (error) {
+    const { OPENAI_API_KEY, AI_PROVIDER } = env<Env>(c);
     c.get('sentry').setContext('chat', {
       body,
-      openAiApiKey: !!env<Env>(c).OPENAI_API_KEY,
+      openAiApiKey: !!OPENAI_API_KEY,
+      aiProvider: AI_PROVIDER,
     });
 
     throw error;

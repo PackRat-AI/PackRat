@@ -79,13 +79,13 @@ export class CatalogService {
           ilike(catalogItems.description, `%${q}%`),
           ilike(catalogItems.brand, `%${q}%`),
           ilike(catalogItems.model, `%${q}%`),
-          ilike(catalogItems.category, `%${q}%`),
+          ilike(catalogItems.categories, `%${q}%`),
         ),
       );
     }
 
     if (category) {
-      conditions.push(eq(catalogItems.category, category));
+      conditions.push(eq(catalogItems.categories, category));
     }
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -157,6 +157,9 @@ export class CatalogService {
     const embedding = await generateEmbedding({
       value: q,
       openAiApiKey: this.env.OPENAI_API_KEY,
+      provider: this.env.AI_PROVIDER,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID_ORG,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
     });
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
@@ -192,11 +195,12 @@ export class CatalogService {
   async getCategories(limit = 10) {
     const rows = await this.db
       .select({
-        category: catalogItems.category,
+        category: catalogItems.categories,
+        count: count(catalogItems.id).as('count'),
       })
       .from(catalogItems)
-      .where(isNotNull(catalogItems.category))
-      .groupBy(catalogItems.category)
+      .where(isNotNull(catalogItems.categories))
+      .groupBy(catalogItems.categories)
       .orderBy(desc(count(catalogItems.id)))
       .limit(limit);
 
