@@ -82,7 +82,7 @@ export default {
       if (!env.EMBEDDINGS_QUEUE) {
         throw new Error('EMBEDDINGS_QUEUE is not configured');
       }
-      await new CatalogService(env).handleEmbeddingsBatch(batch);
+      await new CatalogService(env, false).handleEmbeddingsBatch(batch);
     } else {
       throw new Error(`Unknown queue: ${batch.queue}`);
     }
