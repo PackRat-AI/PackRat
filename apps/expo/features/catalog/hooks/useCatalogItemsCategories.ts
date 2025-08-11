@@ -19,7 +19,7 @@ const getCategories = async (): Promise<string[]> => {
   try {
     const response = await axiosInstance.get(`/api/catalog/categories`);
     const rawData = response.data;
-    const data = rawData.filter((arr) => arr.length > 0);
+    const data = rawData.filter((arr) => Array.isArray(arr) && arr.length > 0);
     if (data.length > 0) return data;
     return FALLBACK_CATEGORIES;
   } catch (error) {
