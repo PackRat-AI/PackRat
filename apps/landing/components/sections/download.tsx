@@ -118,7 +118,7 @@ export default function DownloadSection() {
                         height={1024}
                         src={siteConfig.download.image || '/placeholder.svg'}
                         alt="PackRat App"
-                        className="object-cover w-full h-full"
+                        className="object-cover w-full"
                       />
                       <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-80"></div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
