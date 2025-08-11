@@ -5,9 +5,9 @@ import {
   catalogItems,
   type NewCatalogItem,
 } from '@packrat/api/db/schema';
+import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
 import {
   and,
   asc,

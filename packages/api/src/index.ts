@@ -9,9 +9,9 @@ import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { logger } from 'hono/logger';
+import { CatalogService } from './services';
 import { LogsQueueConsumer } from './services/LogsQueueConsumer';
 import type { Variables } from './types/variables';
-import { CatalogService } from './services';
 
 const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
