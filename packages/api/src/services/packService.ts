@@ -17,6 +17,15 @@ import { z } from 'zod';
 import { computePackWeights } from '../utils/compute-pack';
 import { CatalogService } from './catalogService';
 
+const PACK_CONCEPTS_SYSTEM_PROMPT = `You are an expert Adventure Planner specializing in real-world outdoor and travel experiences. When given a specific count, generate that exact number of unique, practical adventure concepts that people can actually undertake. Each concept should include a name, a description, category, tags and a list of rich descriptive strings for the logical items needed. These descriptions should be optimized for a vector search against an items catalog to find the most suitable real-world item.`;
+
+const PACKS_CONSTRUCTION_SYSTEM_PROMPT = `You are an expert Adventure Planner. Your task is to turn a rough concept for a pack into a finalize pack with real items.
+              I'll provide you with pack concepts where each includes:
+              - A pack name and a description.
+              - A list of items, where each has a requestedItem description.
+              - A list of candidate items for each request, with details like price, weight, rating, tech specs, etc.
+              Your job is to select the best candidate items for each requested item, ensuring the final pack meets the concept.`;
+
 const packConceptSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -108,8 +117,7 @@ export class PackService {
           items: concept.items.map((item, idx) => ({
             requestedItem: item,
             candidateItems: searchResults[idx].map((item) => {
-              // biome-ignore lint/correctness/noUnusedVariables: removing those fields
-              const { reviews, embedding, ...rest } = item; // remove unhelpful fields to manage context
+              const { reviews: _reviews, embedding: _embedding, ...rest } = item; // remove unhelpful fields to manage context
               return rest;
             }),
           })),
@@ -166,7 +174,7 @@ export class PackService {
       model: openai(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: packConceptSchema,
-      system: `You are an expert Adventure Planner specializing in real-world outdoor and travel experiences. When given a specific count, generate that exact number of unique, practical adventure concepts that people can actually undertake. Each concept should include a name, a description, category, tags and a list of rich descriptive strings for the logical items needed. These descriptions should be optimized for a vector search against an items catalog to find the most suitable real-world item.`,
+      system: PACK_CONCEPTS_SYSTEM_PROMPT,
       prompt: `${count}`,
     });
 
@@ -190,12 +198,7 @@ export class PackService {
       model: openai(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: finalPackSchema,
-      system: `You are an expert Adventure Planner. Your task is to turn a rough concept for a pack into a finalize pack with real items.
-              I'll provide you with pack concepts where each includes:
-              - A pack name and a description.
-              - A list of items, where each has a requestedItem description.
-              - A list of candidateItems for each request, with details like price, weight, rating, tech specs, etc.
-              Your job is to select the best candidate items for each requested item, ensuring the final pack meets the concept.`,
+      system: PACKS_CONSTRUCTION_SYSTEM_PROMPT,
       prompt: JSON.stringify(packConceptsWithCandidateItems),
     });
 
