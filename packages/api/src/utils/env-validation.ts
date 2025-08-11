@@ -105,7 +105,17 @@ export function getEnv(c: Context): Env {
     throw new Error(`Invalid environment variables: ${validated.error.message}`);
   }
 
-  const data = validated.data as Env;
+  // Merge validated data with correctly typed Cloudflare bindings from rawEnv
+  const data: Env = {
+    ...validated.data,
+    CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA,
+    AI: rawEnv.AI,
+    PACKRAT_SCRAPY_BUCKET: rawEnv.PACKRAT_SCRAPY_BUCKET,
+    PACKRAT_BUCKET: rawEnv.PACKRAT_BUCKET,
+    PACKRAT_GUIDES_BUCKET: rawEnv.PACKRAT_GUIDES_BUCKET,
+    ETL_QUEUE: rawEnv.ETL_QUEUE,
+    LOGS_QUEUE: rawEnv.LOGS_QUEUE,
+  };
 
   // Cache the result
   envCache.set(c, data);
