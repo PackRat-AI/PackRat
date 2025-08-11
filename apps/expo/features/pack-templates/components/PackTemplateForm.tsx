@@ -159,8 +159,11 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
                   >
                     <Button className="my-2 w-full" variant="plain">
                       <View className="w-full flex-row items-center justify-between capitalize">
-                        <Text>{field.state.value || 'Select Category'}</Text>
-                        <Icon name="chevron-down" size={16} color={colors.grey3} />
+                        <Text className="text-zinc-800 dark:text-zinc-200">
+                          {field.state.value || 'Select Category'}
+                        </Text>
+
+                        <Icon name="chevron-down" size={16} color={colors.grey2} />
                       </View>
                     </Button>
                   </DropdownMenu>
