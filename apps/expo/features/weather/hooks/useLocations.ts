@@ -40,10 +40,15 @@ export function useLocations() {
     );
   };
 
+  const resetLocations = () => {
+    setBaseLocations([]); // Clear all locations
+  };
+
   return {
     locationsState,
     addLocation,
     removeLocation,
     updateLocation,
+    resetLocations,
   };
 }
