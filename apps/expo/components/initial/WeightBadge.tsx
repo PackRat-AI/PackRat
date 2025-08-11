@@ -21,7 +21,7 @@ export function WeightBadge({ weight, unit = 'g', type = 'item' }: WeightBadgePr
     }
   };
 
-  const safeWeight = typeof weight === 'number' ? weight : 0;
+  const safeWeight = Number(weight) || 0;
   const safeUnit = typeof unit === 'string' ? unit : 'g';
   const formattedWeight = formatWeight(safeWeight, safeUnit);
 
