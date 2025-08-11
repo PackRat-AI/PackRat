@@ -55,6 +55,7 @@ export const apiEnvSchema = z.object({
   PACKRAT_GUIDES_BUCKET: z.unknown(),
   ETL_QUEUE: z.unknown(),
   LOGS_QUEUE: z.unknown(),
+  EMBEDDINGS_QUEUE: z.unknown(),
 });
 
 // Infer the base type from Zod schema
@@ -70,6 +71,7 @@ export type Env = Omit<
   | 'PACKRAT_GUIDES_BUCKET'
   | 'ETL_QUEUE'
   | 'LOGS_QUEUE'
+  | 'EMBEDDINGS_QUEUE'
 > & {
   // Properly typed Cloudflare bindings
   CF_VERSION_METADATA: WorkerVersionMetadata;
@@ -79,6 +81,7 @@ export type Env = Omit<
   PACKRAT_GUIDES_BUCKET: R2Bucket;
   ETL_QUEUE: Queue;
   LOGS_QUEUE: Queue;
+  EMBEDDINGS_QUEUE: Queue;
 };
 
 // Cache for validated environments per request
@@ -115,6 +118,7 @@ export function getEnv(c: Context): Env {
     PACKRAT_GUIDES_BUCKET: rawEnv.PACKRAT_GUIDES_BUCKET,
     ETL_QUEUE: rawEnv.ETL_QUEUE,
     LOGS_QUEUE: rawEnv.LOGS_QUEUE,
+    EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE,
   };
 
   // Cache the result
