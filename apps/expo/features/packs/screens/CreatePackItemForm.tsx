@@ -86,6 +86,7 @@ export const CreatePackItemForm = ({
       hasMounted.current = false;
     };
   }, []);
+  const [descriptionHeight, setDescriptionHeight] = useState(40);
 
   const form = useForm({
     defaultValues: existingItem || {
