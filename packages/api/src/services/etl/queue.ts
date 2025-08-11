@@ -1,8 +1,8 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import { createDbClient } from '@packrat/api/db';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { parse } from 'csv-parse/sync';
 import { eq } from 'drizzle-orm';
 import { CatalogService } from '../catalogService';
