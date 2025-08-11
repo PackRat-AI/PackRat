@@ -1,5 +1,5 @@
 {
-  "name": "packrat-v2-api",
+  "name": "@packrat/api",
   "scripts": {
     "dev": "wrangler dev -e=dev",
     "deploy": "wrangler deploy --minify",

@@ -6,7 +6,8 @@ import {
   type NewCatalogItem,
 } from '@packrat/api/db/schema';
 import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import {
   and,
   asc,
@@ -25,7 +26,6 @@ import {
   sql,
 } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 import { getEmbeddingText } from '../utils/embeddingHelper';
 
 const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
@@ -38,7 +38,7 @@ export class CatalogService {
   constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
     if (isContext(contextOrEnv, isHonoContext)) {
       this.db = createDb(contextOrEnv);
-      this.env = env<Env>(contextOrEnv);
+      this.env = getEnv(contextOrEnv);
     } else {
       this.db = createDbClient(contextOrEnv);
       this.env = contextOrEnv;
