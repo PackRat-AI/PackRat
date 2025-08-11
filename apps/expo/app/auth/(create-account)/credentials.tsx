@@ -383,15 +383,21 @@ export default function CredentialsScreen() {
         {Platform.OS === 'ios' ? (
           <View className="px-12 py-4">
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, _isSubmitting]) => (
-                <Button
-                  size="lg"
-                  disabled={!canSubmit || isLoading}
-                  onPress={() => form.handleSubmit()}
-                >
-                  <Text>{isLoading ? 'Loading...' : 'Submit'}</Text>
-                </Button>
-              )}
+              {([canSubmit, _isSubmitting]) => {
+                const disabled = !canSubmit || isLoading;
+                return (
+                  <Button
+                    size="lg"
+                    disabled={disabled}
+                    className="opacity-100"
+                    onPress={() => form.handleSubmit()}
+                  >
+                    <Text className={disabled ? 'opacity-50' : 'opacity-100'}>
+                      {isLoading ? 'Loading...' : 'Submit'}
+                    </Text>
+                  </Button>
+                );
+              }}
             </form.Subscribe>
           </View>
         ) : (
