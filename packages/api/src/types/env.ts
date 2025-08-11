@@ -47,6 +47,7 @@ export type Env = {
   // Queue & Background Processing
   ETL_QUEUE: Queue;
   LOGS_QUEUE: Queue;
+  EMBEDDINGS_QUEUE: Queue;
 
   // Content & Guides
   PACKRAT_GUIDES_RAG_NAME: string;
