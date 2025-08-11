@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '@packrat/api/utils/env-validation';
+import { backfillEmbeddingsRoute } from './backfillEmbeddingsRoute';
 import * as createCatalogItemRoute from './createCatalogItemRoute';
 import * as deleteCatalogItemRoute from './deleteCatalogItemRoute';
 import * as getCatalogItemRoute from './getCatalogItemRoute';
@@ -20,5 +21,6 @@ catalogRoutes.openapi(getCatalogItemRoute.routeDefinition, getCatalogItemRoute.h
 catalogRoutes.openapi(deleteCatalogItemRoute.routeDefinition, deleteCatalogItemRoute.handler);
 catalogRoutes.openapi(updateCatalogItemRoute.routeDefinition, updateCatalogItemRoute.handler);
 catalogRoutes.openapi(queueCatalogEtlRoute.routeDefinition, queueCatalogEtlRoute.handler);
+catalogRoutes.route('/', backfillEmbeddingsRoute);
 
 export { catalogRoutes };

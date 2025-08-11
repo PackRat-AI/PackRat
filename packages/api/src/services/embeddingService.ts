@@ -1,5 +1,6 @@
 import { type AIProvider, createAIProvider } from '@packrat/api/utils/ai/provider';
 import { embed, embedMany } from 'ai';
+import { DEFAULT_MODELS } from '../utils/ai/models';
 
 type GenerateEmbeddingBaseParams = {
   openAiApiKey: string;
@@ -20,7 +21,7 @@ export const generateEmbedding = async (params: GenerateEmbeddingParams): Promis
   const input = value.replace(/\n/g, ' ');
 
   const { embedding } = await embed({
-    model: aiProvider.embedding('text-embedding-3-small'),
+    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING),
     value: input,
   });
 
@@ -38,7 +39,7 @@ export const generateManyEmbeddings = async (
   const aiProvider = createAIProvider(providerConfig);
 
   const { embeddings } = await embedMany({
-    model: aiProvider.embedding('text-embedding-3-small'),
+    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING),
     values,
   });
 
