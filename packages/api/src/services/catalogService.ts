@@ -156,8 +156,8 @@ export class CatalogService {
       value: q,
       openAiApiKey: this.env.OPENAI_API_KEY,
       provider: this.env.AI_PROVIDER,
-      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID_ORG,
-      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
     });
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
@@ -379,7 +379,7 @@ export class CatalogService {
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
         provider: this.env.AI_PROVIDER,
       });
 

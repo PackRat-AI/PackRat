@@ -35,8 +35,7 @@ export const apiEnvSchema = z.object({
 
   // Cloudflare R2 Storage (config values)
   CLOUDFLARE_ACCOUNT_ID: z.string(),
-  CLOUDFLARE_ACCOUNT_ID_ORG: z.string(),
-  CLOUDFLARE_AI_GATEWAY_ID_ORG: z.string(),
+  CLOUDFLARE_AI_GATEWAY_ID: z.string(),
   R2_ACCESS_KEY_ID: z.string(),
   R2_SECRET_ACCESS_KEY: z.string(),
   PACKRAT_BUCKET_R2_BUCKET_NAME: z.string(),

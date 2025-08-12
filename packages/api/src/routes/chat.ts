@@ -75,20 +75,15 @@ chatRoutes.openapi(chatRoute, async (c) => {
       systemPrompt += `\n\nContext: The current location of the user is: ${location}.`;
     }
 
-    const {
-      AI_PROVIDER,
-      OPENAI_API_KEY,
-      CLOUDFLARE_ACCOUNT_ID_ORG,
-      CLOUDFLARE_AI_GATEWAY_ID_ORG,
-      AI,
-    } = getEnv(c);
+    const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
+      getEnv(c);
 
     // Create AI provider based on configuration
     const aiProvider = createAIProvider({
       openAiApiKey: OPENAI_API_KEY,
       provider: AI_PROVIDER,
-      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
-      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
       cloudflareAiBinding: AI,
     });
 
@@ -117,7 +112,6 @@ chatRoutes.openapi(chatRoute, async (c) => {
     const response = result.toDataStreamResponse();
 
     // Add CORS headers for streaming when using Cloudflare Gateway
-    if (CLOUDFLARE_ACCOUNT_ID_ORG && CLOUDFLARE_AI_GATEWAY_ID_ORG) {
       response.headers.set('Access-Control-Allow-Origin', '*');
       response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
       response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
