@@ -7,7 +7,7 @@ export const adminMiddleware: MiddlewareHandler = async (c, next) => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  if (user.role !== 'ADMIN') {
+  if (user.role !== 'admin') {
     return c.json({ error: 'Forbidden' }, 403);
   }
 
