@@ -14,7 +14,7 @@ import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-tem
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -77,6 +77,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
   const templateAtom = isCreatingFromTemplate ? packTemplatesStore[templateId] : null;
   const template = templateAtom ? templateAtom.get() : null;
   const templateItems = isCreatingFromTemplate ? getTemplateItems(params.templateId as string) : [];
+  const [descriptionHeight, setDescriptionHeight] = useState(40);
 
   const hasMounted = useRef(false);
 
