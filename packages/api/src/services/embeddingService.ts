@@ -21,7 +21,7 @@ export const generateEmbedding = async (params: GenerateEmbeddingParams): Promis
   const input = value.replace(/\n/g, ' ');
 
   const { embedding } = await embed({
-    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING),
+    model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),
     value: input,
   });
 

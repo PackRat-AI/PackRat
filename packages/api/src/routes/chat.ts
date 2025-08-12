@@ -89,7 +89,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     // Stream the AI response
     const result = streamText({
-      model: aiProvider(DEFAULT_MODELS.CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       system: systemPrompt,
       messages,
       tools,
@@ -112,6 +112,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
     const response = result.toDataStreamResponse();
 
     // Add CORS headers for streaming when using Cloudflare Gateway
+    if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_AI_GATEWAY_ID) {
       response.headers.set('Access-Control-Allow-Origin', '*');
       response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
       response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
