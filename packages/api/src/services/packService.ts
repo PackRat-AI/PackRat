@@ -171,7 +171,7 @@ export class PackService {
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: openai(DEFAULT_MODELS.CHAT),
       output: 'array',
       schema: packConceptSchema,
       system: PACK_CONCEPTS_SYSTEM_PROMPT,
@@ -195,7 +195,7 @@ export class PackService {
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: openai(DEFAULT_MODELS.CHAT),
       output: 'array',
       schema: finalPackSchema,
       system: PACKS_CONSTRUCTION_SYSTEM_PROMPT,

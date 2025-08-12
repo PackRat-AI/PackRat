@@ -1,6 +1,11 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
+import {
+  CatalogItemSchema,
+  ErrorResponseSchema,
+  UpdateCatalogItemRequestSchema,
+} from '@packrat/api/schemas/catalog';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
@@ -11,13 +16,58 @@ import { eq } from 'drizzle-orm';
 export const routeDefinition = createRoute({
   method: 'put',
   path: '/{id}',
+  tags: ['Catalog'],
+  summary: 'Update catalog item',
+  description: 'Update an existing catalog item with automatic embedding regeneration if needed',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ id: z.string() }),
+    params: z.object({
+      id: z.string().openapi({
+        example: '123',
+        description: 'Catalog item ID',
+      }),
+    }),
     body: {
-      content: { 'application/json': { schema: z.any() } },
+      content: {
+        'application/json': { schema: UpdateCatalogItemRequestSchema },
+      },
+      required: true,
     },
   },
-  responses: { 200: { description: 'Update catalog item' } },
+  responses: {
+    200: {
+      description: 'Catalog item updated successfully',
+      content: {
+        'application/json': {
+          schema: CatalogItemSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Catalog item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {

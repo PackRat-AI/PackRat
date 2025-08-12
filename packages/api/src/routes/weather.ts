@@ -1,4 +1,11 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import {
+  ErrorResponseSchema,
+  LocationSearchResponseSchema,
+  WeatherCoordinateQuerySchema,
+  WeatherForecastSchema,
+  WeatherSearchQuerySchema,
+} from '@packrat/api/schemas/weather';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 
@@ -10,13 +17,46 @@ const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 const searchRoute = createRoute({
   method: 'get',
   path: '/search',
+  tags: ['Weather'],
+  summary: 'Search locations',
+  description: 'Search for locations by name to get weather data',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      q: z.string().optional(),
-    }),
+    query: WeatherSearchQuerySchema,
   },
   responses: {
-    200: { description: 'Search locations' },
+    200: {
+      description: 'Location search results',
+      content: {
+        'application/json': {
+          schema: LocationSearchResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Query parameter required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
   },
 });
 
@@ -80,14 +120,46 @@ weatherRoutes.openapi(searchRoute, async (c) => {
 const searchByCoordRoute = createRoute({
   method: 'get',
   path: '/search-by-coordinates',
+  tags: ['Weather'],
+  summary: 'Search locations by coordinates',
+  description: 'Find location information using latitude and longitude coordinates',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      lat: z.string().optional(),
-      lon: z.string().optional(),
-    }),
+    query: WeatherCoordinateQuerySchema,
   },
   responses: {
-    200: { description: 'Search locations by coordinates' },
+    200: {
+      description: 'Location search results by coordinates',
+      content: {
+        'application/json': {
+          schema: LocationSearchResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Valid latitude and longitude required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
   },
 });
 
@@ -184,14 +256,47 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 const forecastRoute = createRoute({
   method: 'get',
   path: '/forecast',
+  tags: ['Weather'],
+  summary: 'Get weather forecast',
+  description:
+    'Retrieve detailed weather forecast data including current conditions, daily forecasts, and alerts',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      lat: z.string().optional(),
-      lon: z.string().optional(),
-    }),
+    query: WeatherCoordinateQuerySchema,
   },
   responses: {
-    200: { description: 'Get weather forecast' },
+    200: {
+      description: 'Weather forecast data',
+      content: {
+        'application/json': {
+          schema: WeatherForecastSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Valid latitude and longitude required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
   },
 });
 

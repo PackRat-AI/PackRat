@@ -1,4 +1,9 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import {
+  ErrorResponseSchema,
+  VectorSearchQuerySchema,
+  VectorSearchResponseSchema,
+} from '@packrat/api/schemas/search';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
@@ -12,20 +17,45 @@ const searchRoutes = new OpenAPIHono<{ Bindings: Env }>();
 const searchVectorRoute = createRoute({
   method: 'get',
   path: '/vector',
+  tags: ['Search'],
+  summary: 'Vector similarity search',
+  description: 'Search for similar catalog items using AI embeddings and vector similarity',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      q: z.string().min(1),
-    }),
+    query: VectorSearchQuerySchema,
   },
   responses: {
     200: {
-      description: 'Search similar catalog items',
+      description: 'List of similar items with similarity scores',
+      content: {
+        'application/json': {
+          schema: VectorSearchResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Invalid search query',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     401: {
-      description: 'Unauthorized',
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     500: {
-      description: 'Internal Server Error',
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
     },
   },
 });
@@ -37,7 +67,7 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
   }
 
   const db = createDb(c);
-  const { q } = c.req.query();
+  const { q } = c.req.valid('query');
   const {
     OPENAI_API_KEY,
     AI_PROVIDER,

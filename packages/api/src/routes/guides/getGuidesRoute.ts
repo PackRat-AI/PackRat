@@ -1,4 +1,9 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+import {
+  ErrorResponseSchema,
+  GuidesQuerySchema,
+  GuidesResponseSchema,
+} from '@packrat/api/schemas/guides';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
@@ -8,20 +13,40 @@ import matter from 'gray-matter';
 export const routeDefinition = createRoute({
   method: 'get',
   path: '/',
+  tags: ['Guides'],
+  summary: 'Get all guides',
+  description:
+    'Retrieve a paginated list of all available guides with optional filtering and sorting',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      page: z.coerce.number().int().positive().optional().default(1),
-      limit: z.coerce.number().int().nonnegative().optional().default(20),
-      category: z.string().optional(),
-      sort: z
-        .object({
-          field: z.enum(['title', 'category', 'createdAt', 'updatedAt']),
-          order: z.enum(['asc', 'desc']),
-        })
-        .optional(),
-    }),
+    query: GuidesQuerySchema,
   },
-  responses: { 200: { description: 'Get guides list' } },
+  responses: {
+    200: {
+      description: 'Guides retrieved successfully',
+      content: {
+        'application/json': {
+          schema: GuidesResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {

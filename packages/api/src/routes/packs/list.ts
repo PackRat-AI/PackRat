@@ -1,6 +1,8 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
+import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
+import { CreatePackRequestSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { computePacksWeights } from '@packrat/api/utils/compute-pack';
 import { and, eq, or } from 'drizzle-orm';
@@ -10,12 +12,37 @@ const packsListRoutes = new OpenAPIHono();
 const listGetRoute = createRoute({
   method: 'get',
   path: '/',
+  tags: ['Packs'],
+  summary: 'List user packs',
+  description:
+    'Get all packs belonging to the authenticated user, optionally including public packs',
+  security: [{ bearerAuth: [] }],
   request: {
     query: z.object({
-      includePublic: z.coerce.number().int().min(0).max(1).optional().default(0),
+      includePublic: z.coerce.number().int().min(0).max(1).optional().default(0).openapi({
+        example: 0,
+        description: 'Include public packs from other users (0 = false, 1 = true)',
+      }),
     }),
   },
-  responses: { 200: { description: 'Get user packs' } },
+  responses: {
+    200: {
+      description: 'Packs retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(PackWithWeightsSchema),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packsListRoutes.openapi(listGetRoute, async (c) => {
@@ -43,8 +70,52 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
 const listPostRoute = createRoute({
   method: 'post',
   path: '/',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Create pack' } },
+  tags: ['Packs'],
+  summary: 'Create new pack',
+  description: 'Create a new pack for the authenticated user',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: CreatePackRequestSchema.extend({
+            id: z
+              .string()
+              .openapi({ example: 'p_123456', description: 'Client-generated pack ID' }),
+            localCreatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
+            localUpdatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Pack created successfully',
+      content: {
+        'application/json': {
+          schema: PackWithWeightsSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - missing pack ID',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packsListRoutes.openapi(listPostRoute, async (c) => {
@@ -82,7 +153,38 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
 const weightHistoryRoute = createRoute({
   method: 'get',
   path: '/weight-history',
-  responses: { 200: { description: 'Get weight history' } },
+  tags: ['Packs'],
+  summary: 'Get user weight history',
+  description: 'Retrieve all weight history entries for the authenticated user across all packs',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Weight history retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({
+              id: z.string(),
+              packId: z.string(),
+              userId: z.number(),
+              weight: z.number().openapi({ description: 'Weight in grams' }),
+              localCreatedAt: z.string().datetime(),
+              createdAt: z.string().datetime(),
+              updatedAt: z.string().datetime(),
+            }),
+          ),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packsListRoutes.openapi(weightHistoryRoute, async (c) => {

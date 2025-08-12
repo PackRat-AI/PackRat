@@ -1,6 +1,13 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { type PackTemplate, packTemplates } from '@packrat/api/db/schema';
+import {
+  CreatePackTemplateRequestSchema,
+  ErrorResponseSchema,
+  PackTemplateWithItemsSchema,
+  SuccessResponseSchema,
+  UpdatePackTemplateRequestSchema,
+} from '@packrat/api/schemas/packTemplates';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { and, eq, or } from 'drizzle-orm';
 
@@ -10,7 +17,37 @@ const packTemplateRoutes = new OpenAPIHono();
 const getTemplatesRoute = createRoute({
   method: 'get',
   path: '/',
-  responses: { 200: { description: 'Get all pack templates' } },
+  tags: ['Pack Templates'],
+  summary: 'Get all pack templates',
+  description:
+    'Retrieve all pack templates accessible to the authenticated user (own templates and app templates)',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Pack templates retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(PackTemplateWithItemsSchema),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packTemplateRoutes.openapi(getTemplatesRoute, async (c) => {
@@ -33,12 +70,54 @@ packTemplateRoutes.openapi(getTemplatesRoute, async (c) => {
 const createTemplateRoute = createRoute({
   method: 'post',
   path: '/',
+  tags: ['Pack Templates'],
+  summary: 'Create a new pack template',
+  description: 'Create a new pack template for the authenticated user',
+  security: [{ bearerAuth: [] }],
   request: {
     body: {
-      content: { 'application/json': { schema: z.any() } },
+      content: {
+        'application/json': {
+          schema: CreatePackTemplateRequestSchema,
+        },
+      },
+      required: true,
     },
   },
-  responses: { 201: { description: 'Create a new pack template' } },
+  responses: {
+    201: {
+      description: 'Pack template created successfully',
+      content: {
+        'application/json': {
+          schema: PackTemplateWithItemsSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Invalid input data',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
@@ -73,10 +152,60 @@ packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
 const getTemplateRoute = createRoute({
   method: 'get',
   path: '/{templateId}',
+  tags: ['Pack Templates'],
+  summary: 'Get a specific pack template',
+  description: 'Retrieve a specific pack template by ID with all its items',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ templateId: z.string() }),
+    params: z.object({
+      templateId: z.string().openapi({
+        example: 'pt_123456',
+        description: 'The unique identifier of the pack template',
+      }),
+    }),
   },
-  responses: { 200: { description: 'Get a specific pack template' } },
+  responses: {
+    200: {
+      description: 'Pack template retrieved successfully',
+      content: {
+        'application/json': {
+          schema: PackTemplateWithItemsSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Access denied to this template',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Template not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
@@ -106,13 +235,76 @@ packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
 const updateTemplateRoute = createRoute({
   method: 'put',
   path: '/{templateId}',
+  tags: ['Pack Templates'],
+  summary: 'Update a pack template',
+  description: 'Update a specific pack template by ID',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ templateId: z.string() }),
+    params: z.object({
+      templateId: z.string().openapi({
+        example: 'pt_123456',
+        description: 'The unique identifier of the pack template',
+      }),
+    }),
     body: {
-      content: { 'application/json': { schema: z.any() } },
+      content: {
+        'application/json': {
+          schema: UpdatePackTemplateRequestSchema,
+        },
+      },
+      required: true,
     },
   },
-  responses: { 200: { description: 'Update a pack template' } },
+  responses: {
+    200: {
+      description: 'Pack template updated successfully',
+      content: {
+        'application/json': {
+          schema: PackTemplateWithItemsSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Invalid input data',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Access denied to this template',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Template not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
@@ -160,10 +352,60 @@ packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
 const deleteTemplateRoute = createRoute({
   method: 'delete',
   path: '/{templateId}',
+  tags: ['Pack Templates'],
+  summary: 'Delete a pack template',
+  description: 'Delete a specific pack template by ID',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ templateId: z.string() }),
+    params: z.object({
+      templateId: z.string().openapi({
+        example: 'pt_123456',
+        description: 'The unique identifier of the pack template',
+      }),
+    }),
   },
-  responses: { 200: { description: 'Delete a pack template' } },
+  responses: {
+    200: {
+      description: 'Pack template deleted successfully',
+      content: {
+        'application/json': {
+          schema: SuccessResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Access denied to this template',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Template not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packTemplateRoutes.openapi(deleteTemplateRoute, async (c) => {

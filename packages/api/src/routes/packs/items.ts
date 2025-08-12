@@ -1,6 +1,12 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packItems, packs } from '@packrat/api/db/schema';
+import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
+import {
+  CreatePackItemRequestSchema,
+  PackItemSchema,
+  UpdatePackItemRequestSchema,
+} from '@packrat/api/schemas/packs';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
@@ -13,8 +19,50 @@ const packItemsRoutes = new OpenAPIHono();
 const getItemsRoute = createRoute({
   method: 'get',
   path: '/{packId}/items',
-  request: { params: z.object({ packId: z.string() }) },
-  responses: { 200: { description: 'Get pack items' } },
+  tags: ['Pack Items'],
+  summary: 'Get pack items',
+  description:
+    'Retrieve all items in a pack. Users can access items from their own packs or public packs.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Pack items retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(PackItemSchema),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - pack is private',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packItemsRoutes.openapi(getItemsRoute, async (c) => {
@@ -69,8 +117,70 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
 const getItemRoute = createRoute({
   method: 'get',
   path: '/items/{itemId}',
-  request: { params: z.object({ itemId: z.string() }) },
-  responses: { 200: { description: 'Get pack item' } },
+  tags: ['Pack Items'],
+  summary: 'Get pack item by ID',
+  description:
+    'Retrieve a specific pack item by its ID. Users can access items from their own packs or public packs.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      itemId: z.string().openapi({ example: 'pi_123456' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Pack item retrieved successfully',
+      content: {
+        'application/json': {
+          schema: PackItemSchema.extend({
+            catalogItem: z
+              .object({
+                id: z.string(),
+                name: z.string(),
+                brand: z.string().nullable(),
+                category: z.string().nullable(),
+                description: z.string().nullable(),
+                price: z.number().nullable(),
+                weight: z.number().nullable(),
+                image: z.string().nullable(),
+              })
+              .nullable(),
+            pack: z
+              .object({
+                id: z.string(),
+                name: z.string(),
+                isPublic: z.boolean(),
+              })
+              .nullable(),
+          }),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - item is private',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packItemsRoutes.openapi(getItemRoute, async (c) => {
@@ -108,11 +218,69 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
 const addItemRoute = createRoute({
   method: 'post',
   path: '/{packId}/items',
+  tags: ['Pack Items'],
+  summary: 'Add item to pack',
+  description: 'Add a new item to a pack with automatic embedding generation for AI features',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
-    body: { content: { 'application/json': { schema: z.any() } } },
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: CreatePackItemRequestSchema.extend({
+            id: z
+              .string()
+              .openapi({ example: 'pi_123456', description: 'Client-generated item ID' }),
+            catalogItemId: z
+              .number()
+              .optional()
+              .openapi({ example: 12345, description: 'Reference to catalog item' }),
+            consumable: z.boolean().optional().default(false),
+            worn: z.boolean().optional().default(false),
+            notes: z.string().optional(),
+            weightUnit: z.string().optional().default('g'),
+          }),
+        },
+      },
+      required: true,
+    },
   },
-  responses: { 200: { description: 'Add item to pack' } },
+  responses: {
+    200: {
+      description: 'Item added to pack successfully',
+      content: {
+        'application/json': {
+          schema: PackItemSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - missing required fields',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error - embedding generation failed',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packItemsRoutes.openapi(addItemRoute, async (c) => {
@@ -185,11 +353,62 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
 const updateItemRoute = createRoute({
   method: 'patch',
   path: '/items/{itemId}',
+  tags: ['Pack Items'],
+  summary: 'Update pack item',
+  description: 'Update pack item details with automatic embedding regeneration when text changes',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ itemId: z.string() }),
-    body: { content: { 'application/json': { schema: z.any() } } },
+    params: z.object({
+      itemId: z.string().openapi({ example: 'pi_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: UpdatePackItemRequestSchema.extend({
+            consumable: z.boolean().optional(),
+            worn: z.boolean().optional(),
+            notes: z.string().optional(),
+            weightUnit: z.string().optional(),
+          }),
+        },
+      },
+      required: true,
+    },
   },
-  responses: { 200: { description: 'Update pack item' } },
+  responses: {
+    200: {
+      description: 'Item updated successfully',
+      content: {
+        'application/json': {
+          schema: PackItemSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error - embedding generation failed',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packItemsRoutes.openapi(updateItemRoute, async (c) => {
@@ -302,10 +521,44 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
 const deleteItemRoute = createRoute({
   method: 'delete',
   path: '/items/{itemId}',
+  tags: ['Pack Items'],
+  summary: 'Delete pack item',
+  description: 'Permanently remove an item from a pack',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ itemId: z.string() }),
+    params: z.object({
+      itemId: z.string().openapi({ example: 'pi_123456' }),
+    }),
   },
-  responses: { 200: { description: 'Delete pack item' } },
+  responses: {
+    200: {
+      description: 'Item deleted successfully',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean().openapi({ example: true }),
+            itemId: z.string().openapi({ example: 'pi_123456' }),
+          }),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packItemsRoutes.openapi(deleteItemRoute, async (c) => {

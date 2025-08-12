@@ -8,7 +8,12 @@ import {
   packs,
   packWeightHistory,
 } from '@packrat/api/db/schema';
-
+import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
+import {
+  ItemSuggestionsRequestSchema,
+  PackWithWeightsSchema,
+  UpdatePackRequestSchema,
+} from '@packrat/api/schemas/packs';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
@@ -20,10 +25,49 @@ const packRoutes = new OpenAPIHono();
 const getPackRoute = createRoute({
   method: 'get',
   path: '/{packId}',
+  tags: ['Packs'],
+  summary: 'Get pack by ID',
+  description: 'Retrieve a specific pack by its ID with all items',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
   },
-  responses: { 200: { description: 'Get pack' } },
+  responses: {
+    200: {
+      description: 'Pack retrieved successfully',
+      content: {
+        'application/json': {
+          schema: PackWithWeightsSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(getPackRoute, async (c) => {
@@ -58,13 +102,57 @@ packRoutes.openapi(getPackRoute, async (c) => {
 const updatePackRoute = createRoute({
   method: 'put',
   path: '/{packId}',
+  tags: ['Packs'],
+  summary: 'Update pack',
+  description: 'Update pack information such as name, description, category, and visibility',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
     body: {
-      content: { 'application/json': { schema: z.any() } },
+      content: {
+        'application/json': {
+          schema: UpdatePackRequestSchema,
+        },
+      },
+      required: true,
     },
   },
-  responses: { 200: { description: 'Update pack' } },
+  responses: {
+    200: {
+      description: 'Pack updated successfully',
+      content: {
+        'application/json': {
+          schema: PackWithWeightsSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(updatePackRoute, async (c) => {
@@ -120,8 +208,43 @@ packRoutes.openapi(updatePackRoute, async (c) => {
 const deletePackRoute = createRoute({
   method: 'delete',
   path: '/{packId}',
-  request: { params: z.object({ packId: z.string() }) },
-  responses: { 200: { description: 'Delete pack' } },
+  tags: ['Packs'],
+  summary: 'Delete pack',
+  description: 'Permanently delete a pack and all its items',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Pack deleted successfully',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean().openapi({ example: true }),
+          }),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(deletePackRoute, async (c) => {
@@ -144,11 +267,66 @@ packRoutes.openapi(deletePackRoute, async (c) => {
 const itemSuggestionsRoute = createRoute({
   method: 'post',
   path: '/{packId}/item-suggestions',
+  tags: ['Packs'],
+  summary: 'Get item suggestions for pack',
+  description:
+    'Get AI-powered item suggestions based on existing pack items using similarity matching',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
-    body: { content: { 'application/json': { schema: z.any() } } },
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: ItemSuggestionsRequestSchema,
+        },
+      },
+      required: true,
+    },
   },
-  responses: { 200: { description: 'Pack item suggestions' } },
+  responses: {
+    200: {
+      description: 'Item suggestions retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              image: z.string().nullable(),
+              category: z.string().nullable(),
+              similarity: z.number(),
+            }),
+          ),
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - no embeddings found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(itemSuggestionsRoute, async (c) => {
@@ -205,11 +383,63 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
 const weightHistoryRoute = createRoute({
   method: 'post',
   path: '/{packId}/weight-history',
+  tags: ['Packs'],
+  summary: 'Create pack weight history entry',
+  description: 'Record a weight history entry for pack tracking over time',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
-    body: { content: { 'application/json': { schema: z.any() } } },
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            id: z.string().openapi({ example: 'pwh_123456' }),
+            weight: z.number().openapi({ example: 5500, description: 'Weight in grams' }),
+            localCreatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
+          }),
+        },
+      },
+      required: true,
+    },
   },
-  responses: { 200: { description: 'Create pack weight history' } },
+  responses: {
+    200: {
+      description: 'Weight history entry created successfully',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({
+              id: z.string(),
+              packId: z.string(),
+              userId: z.number(),
+              weight: z.number(),
+              localCreatedAt: z.string().datetime(),
+              createdAt: z.string().datetime(),
+              updatedAt: z.string().datetime(),
+            }),
+          ),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(weightHistoryRoute, async (c) => {

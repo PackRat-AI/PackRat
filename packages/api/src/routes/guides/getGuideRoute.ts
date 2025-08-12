@@ -1,4 +1,5 @@
 import { createRoute, z } from '@hono/zod-openapi';
+import { ErrorResponseSchema, GuideDetailSchema } from '@packrat/api/schemas/guides';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
@@ -8,14 +9,51 @@ import matter from 'gray-matter';
 export const routeDefinition = createRoute({
   method: 'get',
   path: '/{id}',
+  tags: ['Guides'],
+  summary: 'Get a specific guide',
+  description: 'Retrieve detailed content for a specific guide by its ID',
+  security: [{ bearerAuth: [] }],
   request: {
     params: z.object({
-      id: z.string(),
+      id: z.string().openapi({
+        example: 'ultralight-backpacking',
+        description: 'The unique identifier of the guide',
+      }),
     }),
   },
   responses: {
-    200: { description: 'Get guide content' },
-    404: { description: 'Guide not found' },
+    200: {
+      description: 'Guide retrieved successfully',
+      content: {
+        'application/json': {
+          schema: GuideDetailSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized - Invalid or missing authentication token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Guide not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
   },
 });
 

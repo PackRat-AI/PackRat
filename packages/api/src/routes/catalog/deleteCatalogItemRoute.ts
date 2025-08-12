@@ -1,6 +1,7 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
+import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { eq } from 'drizzle-orm';
@@ -8,8 +9,46 @@ import { eq } from 'drizzle-orm';
 export const routeDefinition = createRoute({
   method: 'delete',
   path: '/{id}',
-  request: { params: z.object({ id: z.string() }) },
-  responses: { 200: { description: 'Delete catalog item' } },
+  tags: ['Catalog'],
+  summary: 'Delete catalog item',
+  description: 'Delete a catalog item by ID (admin only)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      id: z.string().openapi({
+        example: '123',
+        description: 'Catalog item ID',
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Catalog item deleted successfully',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean().openapi({ example: true }),
+          }),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Catalog item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {

@@ -1,6 +1,11 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
+import {
+  CatalogItemSchema,
+  CreateCatalogItemRequestSchema,
+  ErrorResponseSchema,
+} from '@packrat/api/schemas/catalog';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
@@ -10,14 +15,44 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 export const routeDefinition = createRoute({
   method: 'post',
   path: '/',
+  tags: ['Catalog'],
+  summary: 'Create catalog item',
+  description: 'Create a new catalog item with automatic embedding generation',
+  security: [{ bearerAuth: [] }],
   request: {
     body: {
       content: {
-        'application/json': { schema: z.any() },
+        'application/json': { schema: CreateCatalogItemRequestSchema },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Catalog item created successfully',
+      content: {
+        'application/json': {
+          schema: CatalogItemSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
       },
     },
   },
-  responses: { 200: { description: 'Create catalog item' } },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
@@ -28,8 +63,13 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   const db = createDb(c);
   const data = await c.req.json();
-  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID_ORG, CLOUDFLARE_AI_GATEWAY_ID_ORG } =
-    getEnv(c);
+  const {
+    OPENAI_API_KEY,
+    AI_PROVIDER,
+    CLOUDFLARE_ACCOUNT_ID_ORG,
+    CLOUDFLARE_AI_GATEWAY_ID_ORG,
+    AI,
+  } = getEnv(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
@@ -43,6 +83,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     provider: AI_PROVIDER,
     cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
     cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+    cloudflareAiBinding: AI,
   });
 
   const [newItem] = await db

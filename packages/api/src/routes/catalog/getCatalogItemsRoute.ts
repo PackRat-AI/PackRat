@@ -1,4 +1,9 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+import {
+  CatalogItemsQuerySchema,
+  CatalogItemsResponseSchema,
+  ErrorResponseSchema,
+} from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
@@ -6,29 +11,31 @@ import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/ap
 export const routeDefinition = createRoute({
   method: 'get',
   path: '/',
+  tags: ['Catalog'],
+  summary: 'Get catalog items',
+  description: 'Retrieve a paginated list of catalog items with optional filtering and sorting',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      page: z.coerce.number().int().positive().optional().default(1),
-      limit: z.coerce.number().int().nonnegative().optional().default(20),
-      q: z.string().optional(),
-      category: z.string().optional(),
-      sort: z
-        .object({
-          field: z.enum([
-            'name',
-            'brand',
-            'category',
-            'price',
-            'ratingValue',
-            'createdAt',
-            'updatedAt',
-          ]),
-          order: z.enum(['asc', 'desc']),
-        })
-        .optional(),
-    }),
+    query: CatalogItemsQuerySchema,
   },
-  responses: { 200: { description: 'Get catalog items' } },
+  responses: {
+    200: {
+      description: 'List of catalog items',
+      content: {
+        'application/json': {
+          schema: CatalogItemsResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
