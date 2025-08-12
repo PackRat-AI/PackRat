@@ -1,6 +1,6 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.0",
+  "version": "2.0.2",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -22,14 +22,17 @@
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
-    "api": "bun run --cwd packages/api dev"
+    "api": "bun run --cwd packages/api dev",
+    "bump": "bun .github/scripts/bump.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.4",
     "@manypkg/cli": "^0.24.0",
     "@types/bun": "^1.2.17",
+    "@types/fs-extra": "^11.0.4",
+    "@types/glob": "^9.0.0",
     "fs-extra": "^11.3.0",
-    "lefthook": "^1.11.14",
-    "@types/fs-extra": "^11.0.4"
+    "glob": "^11.0.3",
+    "lefthook": "^1.11.14"
   }
 }
