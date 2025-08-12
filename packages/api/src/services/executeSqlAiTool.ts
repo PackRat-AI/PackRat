@@ -1,5 +1,5 @@
-import type { Context } from 'hono';
 import { sql } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { createReadOnlyDb } from '../db';
 
 interface Params {
