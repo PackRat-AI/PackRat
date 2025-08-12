@@ -30,14 +30,6 @@ export const routeDefinition = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'Guide not found',
       content: {

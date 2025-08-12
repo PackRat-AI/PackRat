@@ -48,14 +48,6 @@ const searchRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     500: {
       description: 'Internal server error',
       content: {
@@ -246,14 +238,6 @@ const forecastRoute = createRoute({
     },
     400: {
       description: 'Bad request - Valid latitude and longitude required',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,

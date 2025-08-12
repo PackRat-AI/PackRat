@@ -754,14 +754,7 @@ const getStatsRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Admin access required',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
+
     500: {
       description: 'Internal server error',
       content: {
@@ -829,14 +822,7 @@ const getUsersListRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Admin access required',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
+
     500: {
       description: 'Internal server error',
       content: {
@@ -908,14 +894,6 @@ const getPacksListRoute = createRoute({
               userEmail: z.string().nullable(),
             }),
           ),
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Admin access required',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },
@@ -993,14 +971,6 @@ const getCatalogListRoute = createRoute({
               createdAt: z.string().nullable(),
             }),
           ),
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Admin access required',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },

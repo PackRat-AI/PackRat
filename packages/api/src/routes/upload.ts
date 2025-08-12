@@ -40,14 +40,6 @@ const presignedRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     403: {
       description: 'Forbidden - File name must start with user ID',
       content: {

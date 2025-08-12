@@ -41,14 +41,6 @@ const route = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     403: {
       description: 'Forbidden - admin access required',
       content: {

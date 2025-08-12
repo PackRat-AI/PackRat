@@ -43,14 +43,6 @@ const getItemsRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     403: {
       description: 'Forbidden - Access denied to this template',
       content: {
@@ -137,14 +129,6 @@ const addItemRoute = createRoute({
     },
     400: {
       description: 'Bad request - Invalid input data',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
@@ -264,14 +248,6 @@ const updateItemRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     403: {
       description: 'Forbidden - Access denied to this template or item',
       content: {
@@ -372,14 +348,6 @@ const deleteItemRoute = createRoute({
       content: {
         'application/json': {
           schema: SuccessResponseSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },

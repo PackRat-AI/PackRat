@@ -41,9 +41,6 @@ const extractContentRoute = createRoute({
     400: {
       description: 'Bad Request',
     },
-    401: {
-      description: 'Unauthorized',
-    },
     500: {
       description: 'Internal Server Error',
     },

@@ -79,14 +79,6 @@ const loginRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Invalid credentials',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     403: {
       description: 'Email not verified',
       content: {
@@ -751,14 +743,6 @@ const refreshTokenRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Invalid or expired refresh token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
   },
 });
 
@@ -938,14 +922,6 @@ const meRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'User not found',
       content: {
@@ -1015,14 +991,6 @@ const deleteAccountRoute = createRoute({
       content: {
         'application/json': {
           schema: z.object({ success: z.boolean() }),
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },

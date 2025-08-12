@@ -1,9 +1,5 @@
 import { createRoute } from '@hono/zod-openapi';
-import {
-  CatalogItemsQuerySchema,
-  CatalogItemsResponseSchema,
-  ErrorResponseSchema,
-} from '@packrat/api/schemas/catalog';
+import { CatalogItemsQuerySchema, CatalogItemsResponseSchema } from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { authenticateRequest } from '@packrat/api/utils/api-middleware';
@@ -24,14 +20,6 @@ export const routeDefinition = createRoute({
       content: {
         'application/json': {
           schema: CatalogItemsResponseSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },

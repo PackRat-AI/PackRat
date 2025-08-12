@@ -35,14 +35,6 @@ const getTemplatesRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     500: {
       description: 'Internal server error',
       content: {
@@ -99,14 +91,6 @@ const createTemplateRoute = createRoute({
     },
     400: {
       description: 'Bad request - Invalid input data',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
@@ -174,14 +158,6 @@ const getTemplateRoute = createRoute({
       content: {
         'application/json': {
           schema: PackTemplateWithItemsSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },
@@ -270,14 +246,6 @@ const updateTemplateRoute = createRoute({
     },
     400: {
       description: 'Bad request - Invalid input data',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
@@ -374,14 +342,6 @@ const deleteTemplateRoute = createRoute({
       content: {
         'application/json': {
           schema: SuccessResponseSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },
