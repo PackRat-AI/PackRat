@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { $ } from 'bun';
+import { existsSync, readdirSync } from 'fs-extra';
 
 interface CleanResult {
   workspace: string;
@@ -66,6 +66,8 @@ async function cleanWorkspace(workspacePath: string, workspaceName: string): Pro
       'build',
       '.wrangler',
       '.turbo',
+      'ios',
+      'android',
     ];
 
     let _hasCleanedSomething = false;

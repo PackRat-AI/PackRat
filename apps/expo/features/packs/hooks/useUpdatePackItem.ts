@@ -5,12 +5,12 @@ import type { PackItem } from '../types';
 
 export function useUpdatePackItem() {
   const updatePackItem = useCallback((item: PackItem) => {
-    const prevItem = packItemsStore[item.id].peek();
-    packItemsStore[item.id].set(item);
-    packsStore[item.packId].localUpdatedAt.set(new Date().toISOString());
+    const prevItem = packItemsStore[item.id]?.peek();
+    packItemsStore[item.id]?.set(item);
+    packsStore[item.packId]?.localUpdatedAt?.set(new Date().toISOString());
 
     // only record weight when it's changed
-    if (prevItem.weight !== item.weight || prevItem.weightUnit !== item.weightUnit)
+    if (prevItem && (prevItem.weight !== item.weight || prevItem.weightUnit !== item.weightUnit))
       recordPackWeight(item.packId);
   }, []);
 

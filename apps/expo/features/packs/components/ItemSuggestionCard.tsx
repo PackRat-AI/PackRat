@@ -1,5 +1,6 @@
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
@@ -9,7 +10,6 @@ import { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useCreatePackItem } from '../hooks';
 import type { PackItemInput } from '../types';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
 
 interface ItemSuggestionCardProps {
   packId: string;

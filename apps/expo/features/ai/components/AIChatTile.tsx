@@ -3,7 +3,7 @@ import { Icon } from '@roninoss/icons';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { type Href, useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 export function AIChatTile() {
   const router = useRouter();
@@ -54,6 +54,7 @@ export function AIChatTile() {
       onPress={handlePress}
       target="Cell"
       index={0}
+      removeSeparator={Platform.OS === 'ios'}
     />
   );
 }

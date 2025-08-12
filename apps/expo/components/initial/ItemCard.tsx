@@ -7,8 +7,8 @@ import { cn } from 'expo-app/lib/cn';
 import {
   calculateTotalWeight,
   getQuantity,
-  isConsumable,
   isCatalogItem,
+  isConsumable,
   isWorn,
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';

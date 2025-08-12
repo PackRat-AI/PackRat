@@ -44,24 +44,36 @@ export default function TabLayout() {
 
 const INDEX_OPTIONS = {
   title: 'Dashboard',
+  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+    <Icon name="home" size={size} color={color} />
+  ),
 } as const;
 
 const PACK_LIST_OPTIONS = {
   title: 'Packs',
+  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+    <Icon name="backpack" size={size} color={color} />
+  ),
 } as const;
 
 const ITEMS_CATALOG_OPTIONS = {
   title: 'Catalog',
+  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+    <Icon name="clipboard-list" size={size} color={color} />
+  ),
 } as const;
 
 const PROFILE_OPTIONS = {
   title: 'Profile',
+  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+    <Icon name="account-circle" size={size} color={color} />
+  ),
 } as const;
 
 const TAB_BAR = Platform.select({
   ios: undefined,
   android: (props: BottomTabBarProps) => <MaterialTabBar {...props} />,
-});
+}) as (props: BottomTabBarProps) => React.ReactNode;
 
 const TAB_ICON = {
   '(home)': 'home',
@@ -81,8 +93,9 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
       className="border-t-border/25 flex-row border-t bg-card pb-4 pt-3 dark:border-t-0"
     >
       {state.routes.map((route, index) => {
-        assertDefined(descriptors[route.key]);
-        const { options } = descriptors[route.key];
+        const descriptor = descriptors[route.key];
+        assertDefined(descriptor);
+        const { options } = descriptor;
         const label =
           options.tabBarLabel !== undefined
             ? options.tabBarLabel

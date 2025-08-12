@@ -1,4 +1,5 @@
 import type { Env } from '@packrat/api/types/env';
+import { isValidApiKey } from '@packrat/api/utils/api-middleware';
 import type { MiddlewareHandler } from 'hono';
 import { env } from 'hono/adapter';
 import { verify } from 'hono/jwt';
@@ -25,12 +26,8 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
   }
 
   // API Key Auth
-  const apiKeyHeader = c.req.header('X-API-Key');
-  if (apiKeyHeader) {
-    const { PACKRAT_API_KEY } = env<Env>(c);
-    if (apiKeyHeader === PACKRAT_API_KEY) {
-      return next();
-    }
+  if (isValidApiKey(c)) {
+    return next();
   }
 
   return c.json({ error: 'Unauthorized' }, 401);

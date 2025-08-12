@@ -4,6 +4,7 @@ import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import type { PackCategory } from 'expo-app/features/packs/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
@@ -20,7 +21,6 @@ import { TemplateCard } from '../components/TemplateCard';
 import { usePackTemplates } from '../hooks';
 import { activeTemplateFilterAtom, templateSearchValueAtom } from '../packTemplateListAtoms';
 import type { PackTemplate } from '../types';
-import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 
 type FilterOption = {
   label: string;

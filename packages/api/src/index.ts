@@ -2,12 +2,13 @@ import type { MessageBatch } from '@cloudflare/workers-types';
 import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { routes } from '@packrat/api/routes';
-import { processQueueBatch } from '@packrat/api/services/queue';
+import { type BaseQueueMessage, processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
 import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { logger } from 'hono/logger';
+import { LogsQueueConsumer } from './services/LogsQueueConsumer';
 import type { Variables } from './types/variables';
 
 const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
@@ -61,10 +62,20 @@ app.get('/', (c) => {
 
 export default {
   fetch: app.fetch,
-  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
-    if (!env.ETL_QUEUE) {
-      throw new Error('ETL_QUEUE is not configured');
+  async queue(batch: MessageBatch<BaseQueueMessage>, env: Env): Promise<void> {
+    if (batch.queue === 'packrat-etl-queue') {
+      if (!env.ETL_QUEUE) {
+        throw new Error('ETL_QUEUE is not configured');
+      }
+      await processQueueBatch({ batch, env });
+    } else if (batch.queue === 'packrat-logs-queue') {
+      if (!env.LOGS_QUEUE) {
+        throw new Error('LOGS_QUEUE is not configured');
+      }
+      const consumer = new LogsQueueConsumer();
+      await consumer.handle(batch, env);
+    } else {
+      throw new Error(`Unknown queue: ${batch.queue}`);
     }
-    await processQueueBatch({ batch, env });
   },
 };

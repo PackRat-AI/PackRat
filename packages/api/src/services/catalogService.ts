@@ -1,5 +1,10 @@
-import { createDb } from '@packrat/api/db';
-import { type CatalogItem, catalogItems } from '@packrat/api/db/schema';
+import { createDb, createDbClient } from '@packrat/api/db';
+import {
+  type CatalogItem,
+  catalogItemEtlJobs,
+  catalogItems,
+  type NewCatalogItem,
+} from '@packrat/api/db/schema';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
 import {
@@ -14,18 +19,27 @@ import {
   ilike,
   isNotNull,
   or,
+  type SQL,
   sql,
 } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 
+const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
+  isContext;
+
 export class CatalogService {
   private db;
   private env;
 
-  constructor(c: Context) {
-    this.db = createDb(c);
-    this.env = env<Env>(c);
+  constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
+    if (isContext(contextOrEnv, isHonoContext)) {
+      this.db = createDb(contextOrEnv);
+      this.env = env<Env>(contextOrEnv);
+    } else {
+      this.db = createDbClient(contextOrEnv);
+      this.env = contextOrEnv;
+    }
   }
 
   async getCatalogItems(params: {
@@ -63,13 +77,13 @@ export class CatalogService {
           ilike(catalogItems.description, `%${q}%`),
           ilike(catalogItems.brand, `%${q}%`),
           ilike(catalogItems.model, `%${q}%`),
-          ilike(catalogItems.category, `%${q}%`),
+          ilike(catalogItems.categories, `%${q}%`),
         ),
       );
     }
 
     if (category) {
-      conditions.push(eq(catalogItems.category, category));
+      conditions.push(eq(catalogItems.categories, category));
     }
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -141,6 +155,9 @@ export class CatalogService {
     const embedding = await generateEmbedding({
       value: q,
       openAiApiKey: this.env.OPENAI_API_KEY,
+      provider: this.env.AI_PROVIDER,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID_ORG,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
     });
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
@@ -176,14 +193,50 @@ export class CatalogService {
   async getCategories(limit = 10) {
     const rows = await this.db
       .select({
-        category: catalogItems.category,
+        category: catalogItems.categories,
+        count: count(catalogItems.id).as('count'),
       })
       .from(catalogItems)
-      .where(isNotNull(catalogItems.category))
-      .groupBy(catalogItems.category)
+      .where(isNotNull(catalogItems.categories))
+      .groupBy(catalogItems.categories)
       .orderBy(desc(count(catalogItems.id)))
       .limit(limit);
 
     return rows.map((row) => row.category);
+  }
+
+  /**
+   * Batch upsert catalog items:
+   * - For each item, insert or update only non-empty fields
+   */
+
+  async upsertCatalogItems(items: NewCatalogItem[]): Promise<Pick<CatalogItem, 'id'>[]> {
+    const columns = getTableColumns(catalogItems);
+
+    const insertedItems = await this.db
+      .insert(catalogItems)
+      .values(items)
+      .onConflictDoUpdate({
+        target: catalogItems.sku,
+        set: Object.values(columns).reduce(
+          (acc, col) => {
+            acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
+            return acc;
+          },
+          {} as Record<string, SQL>,
+        ),
+      })
+      .returning({ id: catalogItems.id });
+
+    return insertedItems;
+  }
+
+  async trackEtlJob(itemIds: Pick<CatalogItem, 'id'>[], jobId: string): Promise<void> {
+    await this.db.insert(catalogItemEtlJobs).values(
+      itemIds.map((item) => ({
+        catalogItemId: item.id,
+        etlJobId: jobId,
+      })),
+    );
   }
 }

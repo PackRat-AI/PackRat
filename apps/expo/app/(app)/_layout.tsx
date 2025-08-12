@@ -143,6 +143,19 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="guides/index"
+        options={{
+          title: 'Guides',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Screen
+        name="guides/[id]"
+        options={{
+          title: 'Guide',
+        }}
+      />
+      <Stack.Screen
         name="pack-templates/index"
         options={{
           headerShown: false,

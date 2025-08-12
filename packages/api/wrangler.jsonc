@@ -5,8 +5,13 @@
   "compatibility_date": "2024-09-23",
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
+  "logpush": true,
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
   },
   // Environment variables are managed via:
   // - Production: Cloudflare dashboard
@@ -14,11 +19,18 @@
   "r2_buckets": [
     {
       "binding": "PACKRAT_BUCKET",
-      "bucket_name": "packrat-bucket"
+      "bucket_name": "packrat-bucket",
+      "preview_bucket_name": "packrat-bucket"
     },
     {
-      "binding": "PACKRAT_ITEMS_BUCKET",
-      "bucket_name": "packrat-items-bucket"
+      "binding": "PACKRAT_SCRAPY_BUCKET",
+      "bucket_name": "packrat-scrapy-bucket",
+      "preview_bucket_name": "packrat-scrapy-bucket"
+    },
+    {
+      "binding": "PACKRAT_GUIDES_BUCKET",
+      "bucket_name": "packrat-guides",
+      "preview_bucket_name": "packrat-guides"
     }
   ],
   "queues": {
@@ -26,6 +38,10 @@
       {
         "queue": "packrat-etl-queue",
         "binding": "ETL_QUEUE"
+      },
+      {
+        "queue": "packrat-logs-queue",
+        "binding": "LOGS_QUEUE"
       }
     ],
     "consumers": [
@@ -33,10 +49,66 @@
         "queue": "packrat-etl-queue",
         "max_batch_size": 10,
         "max_batch_timeout": 5
+      },
+      {
+        "queue": "packrat-logs-queue",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5
       }
     ]
   },
   "ai": {
     "binding": "AI"
+  },
+  "env": {
+    "dev": {
+      "version_metadata": {
+        "binding": "CF_VERSION_METADATA"
+      },
+      "r2_buckets": [
+        {
+          "binding": "PACKRAT_BUCKET",
+          "bucket_name": "packrat-bucket-preview",
+          "preview_bucket_name": "packrat-bucket-preview"
+        },
+        {
+          "binding": "PACKRAT_SCRAPY_BUCKET",
+          "bucket_name": "packrat-scrapy-bucket",
+          "preview_bucket_name": "packrat-scrapy-bucket"
+        },
+        {
+          "binding": "PACKRAT_GUIDES_BUCKET",
+          "bucket_name": "packrat-guides",
+          "preview_bucket_name": "packrat-guides"
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "queue": "packrat-etl-queue-dev",
+            "binding": "ETL_QUEUE"
+          },
+          {
+            "queue": "packrat-logs-queue-dev",
+            "binding": "LOGS_QUEUE"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "packrat-etl-queue-dev",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5
+          },
+          {
+            "queue": "packrat-logs-queue-dev",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5
+          }
+        ]
+      },
+      "ai": {
+        "binding": "AI"
+      }
+    }
   }
 }

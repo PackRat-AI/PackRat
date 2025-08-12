@@ -227,22 +227,25 @@ PackRat uses private packages from GitHub Package Registry. You need to authenti
 #### Local Development
 
 1. Install GitHub CLI:
+
    ```bash
    # macOS
    brew install gh
-   
+
    # Windows
    winget install --id GitHub.cli
-   
+
    # Linux - see https://github.com/cli/cli#installation
    ```
 
 2. Authenticate with GitHub CLI:
+
    ```bash
    gh auth login
    ```
 
 3. Add the `read:packages` scope to your authentication:
+
    ```bash
    gh auth refresh -h github.com -s read:packages
    ```
@@ -252,11 +255,23 @@ PackRat uses private packages from GitHub Package Registry. You need to authenti
    bun install
    ```
 
+   > **Note**: The `preinstall` script automatically configures GitHub authentication using the GitHub CLI token. The script maps your GitHub CLI token to `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` which is used by `bunfig.toml` for package authentication.
+
 #### CI/CD
 
-GitHub Actions automatically provides a `GITHUB_TOKEN` with the necessary permissions. No additional configuration is needed.
+For GitHub Actions and other CI platforms:
 
-For other CI platforms, set the `GITHUB_TOKEN` environment variable with a personal access token that has `read:packages` scope.
+1. Create a Personal Access Token (PAT) with `read:packages` scope
+2. Add it as a secret named `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` in your repository settings
+3. Pass it as an environment variable in your workflow:
+   ```yaml
+   - name: Install dependencies
+     env:
+       PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+     run: bun install
+   ```
+
+> **Note**: The default `GITHUB_TOKEN` provided by GitHub Actions does not have access to packages in other repositories, even within the same organization. A custom PAT is required.
 
 ### Environment Setup
 
@@ -280,14 +295,16 @@ cd PackRat
 ```
 
 3. Set up environment variables:
-   - Copy `.env.example` to `.env.local` and fill in your values
-   - For API deployment, configure your Cloudflare Workers environment variables
 
-```bash
-# Set up Expo environment
-cp .env.example .env.local
-# Edit the file with your API keys (Mapbox, etc.)
-```
+   This project uses a centralized environment configuration strategy. All environment variables are defined in a single source of truth (e.g. .env.local) located at the root of the project.
+
+   A .dev.vars file will be automatically generated for development tools.
+
+   Run bun install to regenerate .dev.vars whenever environment variables are changed.
+
+   Only variables prefixed with PUBLIC\_ will be bundled into the Expo app (e.g., PUBLIC_API_URL). These are safe to expose in the client environment.
+
+   ⚠️ Do not include secrets (e.g., private API keys) in PUBLIC\_ variables — they may be exposed in the bundled app.
 
 ### Git Hooks Setup
 

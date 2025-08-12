@@ -4,6 +4,7 @@ import { adminRoutes } from './admin';
 import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
+import { guidesRoutes } from './guides';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { searchRoutes } from './search';
@@ -23,6 +24,7 @@ protectedRoutes.use(authMiddleware);
 
 // Mount protected routes
 protectedRoutes.route('/catalog', catalogRoutes);
+protectedRoutes.route('/guides', guidesRoutes);
 protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/chat', chatRoutes);
 protectedRoutes.route('/weather', weatherRoutes);
