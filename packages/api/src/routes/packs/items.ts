@@ -8,12 +8,16 @@ import {
   UpdatePackItemRequestSchema,
 } from '@packrat/api/schemas/packs';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { and, eq } from 'drizzle-orm';
 
-const packItemsRoutes = new OpenAPIHono();
+const packItemsRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Get all items for a pack
 const getItemsRoute = createRoute({
@@ -38,14 +42,6 @@ const getItemsRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     403: {
       description: 'Forbidden - pack is private',
       content: {
@@ -66,10 +62,7 @@ const getItemsRoute = createRoute({
 });
 
 packItemsRoutes.openapi(getItemsRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
   const packId = c.req.param('packId');
@@ -156,14 +149,6 @@ const getItemRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     403: {
       description: 'Forbidden - item is private',
       content: {
@@ -184,9 +169,7 @@ const getItemRoute = createRoute({
 });
 
 packItemsRoutes.openapi(getItemRoute, async (c) => {
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+  const auth = c.get('user');
 
   const db = createDb(c);
   const userId = auth.userId;
@@ -264,14 +247,6 @@ const addItemRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     500: {
       description: 'Internal server error - embedding generation failed',
       content: {
@@ -284,10 +259,7 @@ const addItemRoute = createRoute({
 });
 
 packItemsRoutes.openapi(addItemRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
   const packId = c.req.param('packId');
@@ -384,14 +356,6 @@ const updateItemRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'Item not found',
       content: {
@@ -412,10 +376,7 @@ const updateItemRoute = createRoute({
 });
 
 packItemsRoutes.openapi(updateItemRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
 
@@ -514,7 +475,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
   // Update the pack's updatedAt timestamp
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
-  return c.json(updatedItem[0], 200);
+  return c.json(updatedItem, 200);
 });
 
 // Delete a pack item
@@ -542,14 +503,6 @@ const deleteItemRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'Item not found',
       content: {
@@ -562,10 +515,7 @@ const deleteItemRoute = createRoute({
 });
 
 packItemsRoutes.openapi(deleteItemRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
 

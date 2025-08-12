@@ -9,15 +9,19 @@ import {
   SuccessResponseSchema,
   UpdateReportStatusRequestSchema,
 } from '@packrat/api/schemas/chat';
+import type { Variables } from '@packrat/api/types/variables';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 
-const chatRoutes = new OpenAPIHono();
+const chatRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 const chatRoute = createRoute({
   method: 'post',
@@ -75,10 +79,7 @@ const chatRoute = createRoute({
 });
 
 chatRoutes.openapi(chatRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   let body: {
     messages?: CoreMessage[] | Omit<MessageType, 'id'>[] | undefined;
@@ -226,10 +227,7 @@ const createReportRoute = createRoute({
 });
 
 chatRoutes.openapi(createReportRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
 
@@ -292,10 +290,7 @@ const getReportsRoute = createRoute({
 });
 
 chatRoutes.openapi(getReportsRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
 
@@ -384,10 +379,7 @@ const updateReportRoute = createRoute({
 });
 
 chatRoutes.openapi(updateReportRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
 

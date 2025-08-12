@@ -8,7 +8,6 @@ import {
 } from '@packrat/api/schemas/catalog';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { eq } from 'drizzle-orm';
@@ -43,14 +42,6 @@ export const routeDefinition = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'Catalog item not found',
       content: {
@@ -72,16 +63,16 @@ export const routeDefinition = createRoute({
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // TODO: Only admins should be able to update catalog items
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const db = createDb(c);
   const itemId = Number(c.req.param('id'));
   const data = await c.req.json();
-  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID_ORG, CLOUDFLARE_AI_GATEWAY_ID_ORG } =
-    getEnv(c);
+  const {
+    OPENAI_API_KEY,
+    AI_PROVIDER,
+    CLOUDFLARE_ACCOUNT_ID_ORG,
+    CLOUDFLARE_AI_GATEWAY_ID_ORG,
+    AI,
+  } = getEnv(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
@@ -107,6 +98,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       provider: AI_PROVIDER,
       cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
       cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAiBinding: AI,
     });
   }
 

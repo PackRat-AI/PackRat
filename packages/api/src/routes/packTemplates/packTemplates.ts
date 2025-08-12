@@ -8,10 +8,14 @@ import {
   SuccessResponseSchema,
   UpdatePackTemplateRequestSchema,
 } from '@packrat/api/schemas/packTemplates';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { and, eq, or } from 'drizzle-orm';
 
-const packTemplateRoutes = new OpenAPIHono();
+const packTemplateRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Get all templates
 const getTemplatesRoute = createRoute({

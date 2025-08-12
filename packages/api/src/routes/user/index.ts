@@ -7,11 +7,15 @@ import {
   UpdateUserResponseSchema,
   UserProfileSchema,
 } from '@packrat/api/schemas/users';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { eq } from 'drizzle-orm';
 import { userItemsRoutes } from './items';
 
-const userRoutes = new OpenAPIHono();
+const userRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Get user profile
 const getUserProfileRoute = createRoute({
@@ -27,14 +31,6 @@ const getUserProfileRoute = createRoute({
       content: {
         'application/json': {
           schema: UserProfileSchema,
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },
@@ -59,10 +55,7 @@ const getUserProfileRoute = createRoute({
 
 userRoutes.openapi(getUserProfileRoute, async (c) => {
   try {
-    const auth = await authenticateRequest(c);
-    if (!auth) {
-      return c.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, 401);
-    }
+    const auth = c.get('user');
 
     const db = createDb(c);
     const [user] = await db
@@ -139,14 +132,6 @@ const updateUserProfileRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'User not found',
       content: {
@@ -176,10 +161,7 @@ const updateUserProfileRoute = createRoute({
 
 userRoutes.openapi(updateUserProfileRoute, async (c) => {
   try {
-    const auth = await authenticateRequest(c);
-    if (!auth) {
-      return c.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, 401);
-    }
+    const auth = c.get('user');
 
     const { firstName, lastName, email } = c.req.valid('json');
     const db = createDb(c);

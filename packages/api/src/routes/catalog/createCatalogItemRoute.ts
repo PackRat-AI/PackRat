@@ -8,7 +8,6 @@ import {
 } from '@packrat/api/schemas/catalog';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 
@@ -36,14 +35,6 @@ export const routeDefinition = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     500: {
       description: 'Server error',
       content: {
@@ -56,11 +47,6 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const db = createDb(c);
   const data = await c.req.json();
   const {

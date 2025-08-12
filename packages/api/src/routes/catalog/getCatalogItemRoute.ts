@@ -3,7 +3,6 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
 import { CatalogItemSchema, ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
@@ -35,14 +34,6 @@ export const routeDefinition = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'Catalog item not found',
       content: {
@@ -55,12 +46,6 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const db = createDb(c);
   const itemId = Number(c.req.param('id'));
 

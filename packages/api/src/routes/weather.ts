@@ -2,14 +2,20 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import {
   ErrorResponseSchema,
   LocationSearchResponseSchema,
+  type WeatherAPIForecastResponse,
+  type WeatherAPISearchResponse,
   WeatherCoordinateQuerySchema,
   WeatherForecastSchema,
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 
-const weatherRoutes = new OpenAPIHono();
+const weatherRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
@@ -63,12 +69,6 @@ const searchRoute = createRoute({
 weatherRoutes.openapi(searchRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const query = c.req.query('q');
 
   if (!query) {
@@ -84,26 +84,17 @@ weatherRoutes.openapi(searchRoute, async (c) => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: WeatherAPISearchResponse = await response.json();
 
     // Transform API response to our LocationSearchResult type
-    const locations = data.map(
-      (item: {
-        id: string;
-        lat: string;
-        lon: string;
-        name: string;
-        region: string;
-        country: string;
-      }) => ({
-        id: `${item.id || item.lat}_${item.lon}`,
-        name: item.name,
-        region: item.region,
-        country: item.country,
-        lat: item.lat,
-        lon: item.lon,
-      }),
-    );
+    const locations = data.map((item) => ({
+      id: `${item.id || item.lat}_${item.lon}`,
+      name: item.name,
+      region: item.region,
+      country: item.country,
+      lat: typeof item.lat === 'string' ? Number.parseFloat(item.lat) : item.lat,
+      lon: typeof item.lon === 'string' ? Number.parseFloat(item.lon) : item.lon,
+    }));
 
     return c.json(locations, 200);
   } catch (error) {
@@ -167,12 +158,6 @@ const searchByCoordRoute = createRoute({
 weatherRoutes.openapi(searchByCoordRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const latitude = Number.parseFloat(c.req.query('lat') || '');
   const longitude = Number.parseFloat(c.req.query('lon') || '');
 
@@ -193,7 +178,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: WeatherAPISearchResponse = await response.json();
 
     // If no results, try a reverse geocoding approach with current conditions API
     if (!data || data.length === 0) {
@@ -205,7 +190,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
         throw new Error(`API error: ${currentResponse.status}`);
       }
 
-      const currentData = await currentResponse.json();
+      const currentData: any = await currentResponse.json();
 
       if (currentData?.location) {
         // Create a single result from the current conditions response
@@ -215,31 +200,22 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
             name: currentData.location.name,
             region: currentData.location.region,
             country: currentData.location.country,
-            lat: Number.parseFloat(currentData.location.lat),
-            lon: Number.parseFloat(currentData.location.lon),
+            lat: Number.parseFloat(String(currentData.location.lat)),
+            lon: Number.parseFloat(String(currentData.location.lon)),
           },
         ]);
       }
     }
 
     // Transform API response to our LocationSearchResult type
-    const locations = data.map(
-      (item: {
-        id: string;
-        lat: string;
-        lon: string;
-        name: string;
-        region: string;
-        country: string;
-      }) => ({
-        id: `${item.id || item.lat}_${item.lon}`,
-        name: item.name,
-        region: item.region,
-        country: item.country,
-        lat: Number.parseFloat(item.lat),
-        lon: Number.parseFloat(item.lon),
-      }),
-    );
+    const locations = data.map((item) => ({
+      id: `${item.id || item.lat}_${item.lon}`,
+      name: item.name,
+      region: item.region,
+      country: item.country,
+      lat: typeof item.lat === 'string' ? Number.parseFloat(item.lat) : item.lat,
+      lon: typeof item.lon === 'string' ? Number.parseFloat(item.lon) : item.lon,
+    }));
 
     return c.json(locations, 200);
   } catch (error) {
@@ -305,12 +281,6 @@ const forecastRoute = createRoute({
 weatherRoutes.openapi(forecastRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const latitude = Number.parseFloat(c.req.query('lat') || '');
   const longitude = Number.parseFloat(c.req.query('lon') || '');
 
@@ -331,8 +301,8 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return c.json(data as any, 200);
+    const data: WeatherAPIForecastResponse = await response.json();
+    return c.json(data, 200);
   } catch (error) {
     console.error('Error fetching weather forecast:', error);
     c.get('sentry').setContext('params', {

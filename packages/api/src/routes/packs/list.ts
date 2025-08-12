@@ -3,11 +3,15 @@ import { createDb } from '@packrat/api/db';
 import { packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { CreatePackRequestSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
 import { computePacksWeights } from '@packrat/api/utils/compute-pack';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { and, eq, or } from 'drizzle-orm';
 
-const packsListRoutes = new OpenAPIHono();
+const packsListRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 const listGetRoute = createRoute({
   method: 'get',
@@ -34,20 +38,11 @@ const listGetRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
   },
 });
 
 packsListRoutes.openapi(listGetRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+  const auth = c.get('user');
 
   const { includePublic } = c.req.valid('query');
   const includePublicBool = Boolean(includePublic).valueOf();
@@ -107,20 +102,11 @@ const listPostRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
   },
 });
 
 packsListRoutes.openapi(listPostRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+  const auth = c.get('user');
 
   const db = createDb(c);
   const data = await c.req.json();
@@ -176,20 +162,11 @@ const weightHistoryRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
   },
 });
 
 packsListRoutes.openapi(weightHistoryRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+  const auth = c.get('user');
 
   const db = createDb(c);
   const userPackWeightHistories = await db.query.packWeightHistory.findMany({

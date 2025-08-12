@@ -8,11 +8,15 @@ import {
   SuccessResponseSchema,
   UpdatePackTemplateItemRequestSchema,
 } from '@packrat/api/schemas/packTemplates';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { and, eq, or } from 'drizzle-orm';
 import { z } from 'zod';
 
-const packTemplateItemsRoutes = new OpenAPIHono();
+const packTemplateItemsRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Get all items for a template
 const getItemsRoute = createRoute({
@@ -75,7 +79,7 @@ const getItemsRoute = createRoute({
 });
 
 packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
-  const auth = await authenticateRequest(c);
+  const auth = c.get('user');
   if (!auth) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = createDb(c);
@@ -175,7 +179,7 @@ const addItemRoute = createRoute({
 });
 
 packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
-  const auth = await authenticateRequest(c);
+  const auth = c.get('user');
   if (!auth) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = createDb(c);
@@ -296,7 +300,7 @@ const updateItemRoute = createRoute({
 });
 
 packTemplateItemsRoutes.openapi(updateItemRoute, async (c) => {
-  const auth = await authenticateRequest(c);
+  const auth = c.get('user');
   if (!auth) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = createDb(c);
@@ -407,7 +411,7 @@ const deleteItemRoute = createRoute({
 });
 
 packTemplateItemsRoutes.openapi(deleteItemRoute, async (c) => {
-  const auth = await authenticateRequest(c);
+  const auth = c.get('user');
   if (!auth) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = createDb(c);

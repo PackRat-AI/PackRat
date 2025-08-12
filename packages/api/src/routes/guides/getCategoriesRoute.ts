@@ -12,11 +12,7 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const _auth = await authenticateRequest(c);
 
   try {
     const bucket = new R2BucketService({

@@ -14,12 +14,16 @@ import {
   PackWithWeightsSchema,
   UpdatePackRequestSchema,
 } from '@packrat/api/schemas/packs';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { and, cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
 
-const packRoutes = new OpenAPIHono();
+const packRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Get a specific pack
 const getPackRoute = createRoute({
@@ -43,14 +47,6 @@ const getPackRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'Pack not found',
       content: {
@@ -71,11 +67,6 @@ const getPackRoute = createRoute({
 });
 
 packRoutes.openapi(getPackRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const db = createDb(c);
   try {
     const packId = c.req.param('packId');
@@ -128,14 +119,6 @@ const updatePackRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'Pack not found',
       content: {
@@ -156,10 +139,7 @@ const updatePackRoute = createRoute({
 });
 
 packRoutes.openapi(updatePackRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
   try {
@@ -228,14 +208,6 @@ const deletePackRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     500: {
       description: 'Internal server error',
       content: {
@@ -248,11 +220,6 @@ const deletePackRoute = createRoute({
 });
 
 packRoutes.openapi(deletePackRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const db = createDb(c);
   try {
     const packId = c.req.param('packId');
@@ -310,14 +277,6 @@ const itemSuggestionsRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     404: {
       description: 'Pack not found',
       content: {
@@ -330,11 +289,6 @@ const itemSuggestionsRoute = createRoute({
 });
 
 packRoutes.openapi(itemSuggestionsRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
   const db = createDb(c);
   const packId = c.req.param('packId');
 
@@ -423,14 +377,6 @@ const weightHistoryRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     500: {
       description: 'Internal server error',
       content: {
@@ -443,10 +389,7 @@ const weightHistoryRoute = createRoute({
 });
 
 packRoutes.openapi(weightHistoryRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
   try {

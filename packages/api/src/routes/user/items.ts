@@ -3,10 +3,14 @@ import { createDb } from '@packrat/api/db';
 import { packItems } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { UserItemsResponseSchema } from '@packrat/api/schemas/users';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { eq } from 'drizzle-orm';
 
-const userItemsRoutes = new OpenAPIHono();
+const userItemsRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Get all pack items for the authenticated user
 const userItemsGetRoute = createRoute({
@@ -45,10 +49,7 @@ const userItemsGetRoute = createRoute({
 });
 
 userItemsRoutes.openapi(userItemsGetRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
 

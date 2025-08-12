@@ -6,7 +6,6 @@ import {
   PresignedUploadQuerySchema,
   PresignedUploadResponseSchema,
 } from '@packrat/api/schemas/upload';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Variables } from '../types/variables';
@@ -69,11 +68,7 @@ const presignedRoute = createRoute({
 });
 
 uploadRoutes.openapi(presignedRoute, async (c) => {
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const auth = c.get('user');
 
   const {
     R2_ACCESS_KEY_ID,
