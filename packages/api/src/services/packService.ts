@@ -175,7 +175,7 @@ export class PackService {
       output: 'array',
       schema: packConceptSchema,
       system: PACK_CONCEPTS_SYSTEM_PROMPT,
-      prompt: `${count}`,
+      prompt: `Generate ${count} adventure pack concepts.`,
     });
 
     return object;
