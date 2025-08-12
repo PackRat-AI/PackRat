@@ -101,7 +101,7 @@ export class PackService {
   }
 
   async generatePacks(count: number) {
-    if (count <= 0) {
+    if (count < 1) {
       throw new Error('Count must be a positive integer');
     }
 
