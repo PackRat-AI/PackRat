@@ -23,8 +23,12 @@ try {
   });
   // Extract version from output (it prints "v2.0.3" or similar)
   newVersion = output.trim().replace('v', '');
-} catch (error: any) {
-  console.error('Failed to bump version:', error.message);
+} catch (error: unknown) {
+  if (error instanceof Error) {
+    console.error('Failed to bump version:', error.message);
+  } else {
+    console.error('Failed to bump version:', error);
+  }
   console.error('Note: bun pm version requires a clean git working directory');
   process.exit(1);
 }
