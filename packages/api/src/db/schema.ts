@@ -93,7 +93,7 @@ export const catalogItems = pgTable(
     id: serial('id').primaryKey(),
     name: text('name').notNull(),
     productUrl: text('product_url').notNull(),
-    sku: text('sku').unique(),
+    sku: text('sku').unique().notNull(),
     weight: real('weight').notNull(),
     weightUnit: text('weight_unit').notNull(),
     description: text('description'),

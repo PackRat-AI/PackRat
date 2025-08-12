@@ -1,13 +1,13 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { reportedContent } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
 import { eq } from 'drizzle-orm';
-import { env } from 'hono/adapter';
+import { DEFAULT_MODELS } from '../utils/ai/models';
 import { getSchemaInfo } from '../utils/DbUtils';
 
 const chatRoutes = new OpenAPIHono();
@@ -89,7 +89,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
       CLOUDFLARE_ACCOUNT_ID_ORG,
       CLOUDFLARE_AI_GATEWAY_ID_ORG,
       AI,
-    } = env<Env>(c);
+    } = getEnv(c);
 
     // Create AI provider based on configuration
     const aiProvider = createAIProvider({
@@ -102,7 +102,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     // Stream the AI response
     const result = streamText({
-      model: aiProvider('gpt-4o'),
+      model: aiProvider(DEFAULT_MODELS.CHAT),
       system: systemPrompt,
       messages,
       tools,
@@ -133,7 +133,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     return response;
   } catch (error) {
-    const { OPENAI_API_KEY, AI_PROVIDER } = env<Env>(c);
+    const { OPENAI_API_KEY, AI_PROVIDER } = getEnv(c);
     c.get('sentry').setContext('chat', {
       body,
       openAiApiKey: !!OPENAI_API_KEY,
