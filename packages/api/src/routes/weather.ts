@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import {
   ErrorResponseSchema,
   LocationSearchResponseSchema,
+  type WeatherAPICurrentResponse,
   type WeatherAPIForecastResponse,
   type WeatherAPISearchResponse,
   WeatherCoordinateQuerySchema,
@@ -136,14 +137,6 @@ const searchByCoordRoute = createRoute({
         },
       },
     },
-    401: {
-      description: 'Unauthorized - Invalid or missing authentication token',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
     500: {
       description: 'Internal server error',
       content: {
@@ -190,7 +183,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
         throw new Error(`API error: ${currentResponse.status}`);
       }
 
-      const currentData: any = await currentResponse.json();
+      const currentData: WeatherAPICurrentResponse = await currentResponse.json();
 
       if (currentData?.location) {
         // Create a single result from the current conditions response
