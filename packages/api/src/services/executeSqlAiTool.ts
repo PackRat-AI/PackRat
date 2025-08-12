@@ -44,7 +44,7 @@ export async function executeSqlAiTool(params: Params) {
 
   const queryPromise = db.execute(sql.raw(finalQuery));
 
-  let result;
+  let result: unknown;
   try {
     result = await Promise.race([queryPromise, timeoutPromise]);
   } catch (err) {
@@ -58,11 +58,11 @@ export async function executeSqlAiTool(params: Params) {
   }
   const executionTime = Date.now() - startTime;
 
+  const resultWithRows = result as { rows?: unknown[]; rowCount?: number };
   return {
     success: true,
-    data: result.rows,
-    data: result && 'rows' in result ? result.rows : [],
-    rowCount: result && 'rowCount' in result ? result.rowCount : undefined,
+    data: resultWithRows.rows || [],
+    rowCount: resultWithRows.rowCount,
     executionTime: executionTime,
     query: finalQuery,
   };

@@ -89,14 +89,6 @@ export async function getSchemaInfo(c: Context) {
   } catch (error) {
     console.error('Schema introspection error:', error);
     return {
-      success: true,
-      data: result.rows
-        .map((row) => `${row.table_name} (\n      ${row.columns}\n    );`)
-        .join('\n\n'),
-    };
-  } catch (error) {
-    console.error('Schema introspection error:', error);
-    return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
