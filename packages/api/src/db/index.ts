@@ -1,4 +1,4 @@
-import { Pool } from '@neondatabase/serverless';
+import { neon, Pool } from '@neondatabase/serverless';
 import * as schema from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
