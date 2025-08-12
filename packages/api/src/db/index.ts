@@ -1,4 +1,4 @@
-import { Pool } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 import * as schema from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -14,6 +14,6 @@ export const createDb = (c: Context) => {
 
 // Create SQL client with Neon for queue workers
 export const createDbClient = (env: Env) => {
-  const pool = new Pool({ connectionString: env.NEON_DATABASE_URL });
-  return drizzle(pool, { schema });
+  const sql = neon(env.NEON_DATABASE_URL);
+  return drizzle(sql, { schema });
 };
