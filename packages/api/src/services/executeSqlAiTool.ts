@@ -44,7 +44,18 @@ export async function executeSqlAiTool(params: Params) {
 
   const queryPromise = db.execute(sql.raw(finalQuery));
 
-  const result = await Promise.race([queryPromise, timeoutPromise]);
+  let result;
+  try {
+    result = await Promise.race([queryPromise, timeoutPromise]);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'Query timeout') {
+      return {
+        error: 'Query timeout',
+        query: finalQuery,
+      };
+    }
+    throw err;
+  }
   const executionTime = Date.now() - startTime;
 
   return {
