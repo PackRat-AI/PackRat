@@ -13,6 +13,7 @@ import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
+import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
@@ -55,6 +56,11 @@ const tileInfo = {
     title: 'Reported AI Content',
     keywords: ['reported', 'ai', 'content', 'flagged'],
     component: ReportedContentTile,
+  },
+  'ai-packs': {
+    title: 'AI Packs',
+    keywords: ['ai', 'packs', 'generate', 'create'],
+    component: AIPacksTile,
   },
   'pack-stats': {
     title: 'Pack Statistics',
@@ -162,6 +168,7 @@ export default function DashboardScreen() {
     'gap 1',
     'ask-packrat-ai',
     'reported-ai-content',
+    'ai-packs',
     'gap 1.5',
     'pack-stats',
     'weight-analysis',

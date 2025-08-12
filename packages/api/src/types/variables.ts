@@ -1,6 +1,6 @@
 export type Variables = {
-  user?: {
-    id: string;
-    role: 'user' | 'admin';
+  user: {
+    id: number;
+    role: 'USER' | 'ADMIN';
   };
 };

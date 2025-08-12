@@ -50,13 +50,12 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     .values({
       name: data.name,
       description: data.description,
-      defaultWeight: data.defaultWeight,
-      defaultWeightUnit: data.defaultWeightUnit,
-      category: data.category,
-      image: data.image,
+      weight: data.weight,
+      weightUnit: data.weightUnit,
+      categories: data.categories,
+      images: data.images,
       brand: data.brand,
       model: data.model,
-      url: data.url,
 
       // New fields
       ratingValue: data.ratingValue,

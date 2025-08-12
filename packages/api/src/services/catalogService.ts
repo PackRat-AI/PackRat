@@ -14,7 +14,6 @@ import {
   cosineDistance,
   count,
   desc,
-  eq,
   getTableColumns,
   gt,
   ilike,
@@ -51,7 +50,7 @@ export class CatalogService {
     offset?: number;
     category?: string;
     sort?: {
-      field: 'name' | 'brand' | 'category' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
+      field: 'name' | 'brand' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
       order: 'asc' | 'desc';
     };
   }): Promise<{
@@ -62,7 +61,6 @@ export class CatalogService {
     nextOffset: number;
   }> {
     const { q, limit = 10, offset = 0, category, sort } = params;
-    console.log(params);
 
     if (limit < 1) {
       throw new Error('Limit must be at least 1');
@@ -86,7 +84,7 @@ export class CatalogService {
     }
 
     if (category) {
-      conditions.push(eq(catalogItems.categories, category));
+      conditions.push(sql`${category} = ANY(categories)`);
     }
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -99,7 +97,6 @@ export class CatalogService {
         orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn)];
       }
     }
-    console.log(orderBy);
 
     if (!limit) {
       const items = await this.db.query.catalogItems.findMany({
@@ -193,19 +190,55 @@ export class CatalogService {
     };
   }
 
+  async batchSemanticSearch(
+    queries: string[],
+    limit: number = 5,
+  ): Promise<{
+    items: (CatalogItem & { similarity: number })[][];
+  }> {
+    if (!queries || queries.length === 0) {
+      return {
+        items: [],
+      };
+    }
+
+    const embeddings = await generateManyEmbeddings({
+      values: queries,
+      openAiApiKey: this.env.OPENAI_API_KEY,
+    });
+
+    const searchTasks = embeddings.map((embedding) => {
+      const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+      return this.db
+        .select({
+          ...getTableColumns(catalogItems),
+          similarity,
+        })
+        .from(catalogItems)
+        .where(gt(similarity, 0.1))
+        .orderBy(desc(similarity))
+        .limit(limit);
+    });
+
+    const items = await Promise.all(searchTasks);
+
+    return {
+      items,
+    };
+  }
+
   async getCategories(limit = 10) {
     const rows = await this.db
       .select({
-        category: catalogItems.categories,
-        count: count(catalogItems.id).as('count'),
+        category: sql`unnest(categories)`,
       })
       .from(catalogItems)
       .where(isNotNull(catalogItems.categories))
-      .groupBy(catalogItems.categories)
+      .groupBy(sql`unnest(categories)`)
       .orderBy(desc(count(catalogItems.id)))
       .limit(limit);
 
-    return rows.map((row) => row.category);
+    return rows.map((row) => String(row.category));
   }
 
   /**

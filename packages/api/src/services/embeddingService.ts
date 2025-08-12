@@ -39,7 +39,7 @@ export const generateManyEmbeddings = async (
   const aiProvider = createAIProvider(providerConfig);
 
   const { embeddings } = await embedMany({
-    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING),
+    model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),
     values,
   });
 
