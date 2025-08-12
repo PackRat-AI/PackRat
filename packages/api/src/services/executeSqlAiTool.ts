@@ -50,7 +50,8 @@ export async function executeSqlAiTool(params: Params) {
   return {
     success: true,
     data: result.rows,
-    rowCount: result.rowCount,
+    data: result && 'rows' in result ? result.rows : [],
+    rowCount: result && 'rowCount' in result ? result.rowCount : undefined,
     executionTime: executionTime,
     query: finalQuery,
   };
