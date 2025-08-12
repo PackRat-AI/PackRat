@@ -14,6 +14,7 @@ import {
   cosineDistance,
   count,
   desc,
+  eq,
   getTableColumns,
   gt,
   ilike,
