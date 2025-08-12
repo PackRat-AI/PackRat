@@ -63,7 +63,7 @@ packTemplateRoutes.openapi(getTemplatesRoute, async (c) => {
     with: { items: true },
   });
 
-  return c.json(templates);
+  return c.json(templates, 200);
 });
 
 // Create a new template
@@ -145,7 +145,7 @@ packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
     })
     .returning();
 
-  return c.json(newTemplate);
+  return c.json(newTemplate, 201);
 });
 
 // Get a specific pack template
@@ -228,7 +228,7 @@ packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
   });
 
   if (!template) return c.json({ error: 'Template not found' }, 404);
-  return c.json(template);
+  return c.json(template, 200);
 });
 
 // Update a pack template
@@ -345,7 +345,7 @@ packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
   });
 
   if (!updated) return c.json({ error: 'Template not found' }, 404);
-  return c.json(updated);
+  return c.json(updated, 200);
 });
 
 // Delete a pack template
@@ -431,7 +431,7 @@ packTemplateRoutes.openapi(deleteTemplateRoute, async (c) => {
         and(eq(packTemplates.id, templateId), eq(packTemplates.userId, auth.userId)),
   );
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 });
 
 export { packTemplateRoutes };

@@ -793,7 +793,7 @@ adminRoutes.openapi(getStatsRoute, async (c) => {
     });
   } catch (error) {
     console.error('Error fetching stats:', error);
-    return c.json({ error: 'Failed to fetch stats' }, 500);
+    return c.json({ error: 'Failed to fetch stats', code: 'STATS_ERROR' }, 500);
   }
 });
 
@@ -870,10 +870,10 @@ adminRoutes.openapi(getUsersListRoute, async (c) => {
       createdAt: user.createdAt?.toISOString() || null,
     }));
 
-    return c.json(formattedUsers);
+    return c.json(formattedUsers, 200);
   } catch (error) {
     console.error('Error fetching users:', error);
-    return c.json({ error: 'Failed to fetch users' }, 500);
+    return c.json({ error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' }, 500);
   }
 });
 
@@ -954,10 +954,10 @@ adminRoutes.openapi(getPacksListRoute, async (c) => {
       createdAt: pack.createdAt?.toISOString() || null,
     }));
 
-    return c.json(formattedPacks);
+    return c.json(formattedPacks, 200);
   } catch (error) {
     console.error('Error fetching packs:', error);
-    return c.json({ error: 'Failed to fetch packs' }, 500);
+    return c.json({ error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' }, 500);
   }
 });
 
@@ -1038,10 +1038,10 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
       createdAt: item.createdAt?.toISOString() || null,
     }));
 
-    return c.json(formattedItems);
+    return c.json(formattedItems, 200);
   } catch (error) {
     console.error('Error fetching catalog items:', error);
-    return c.json({ error: 'Failed to fetch catalog items' }, 500);
+    return c.json({ error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' }, 500);
   }
 });
 

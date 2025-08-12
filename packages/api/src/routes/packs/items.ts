@@ -110,7 +110,7 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
     },
   });
 
-  return c.json(items);
+  return c.json(items, 200);
 });
 
 // Get pack item by ID
@@ -211,7 +211,7 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
     return c.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
-  return c.json(item);
+  return c.json(item, 200);
 });
 
 // Add an item to a pack
@@ -346,7 +346,7 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
 
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
-  return c.json(newItem);
+  return c.json(newItem, 201);
 });
 
 // Update a pack item
@@ -514,7 +514,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
   // Update the pack's updatedAt timestamp
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
-  return c.json(updatedItem[0]);
+  return c.json(updatedItem[0], 200);
 });
 
 // Delete a pack item
@@ -585,7 +585,7 @@ packItemsRoutes.openapi(deleteItemRoute, async (c) => {
 
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
-  return c.json({ success: true, itemId: itemId });
+  return c.json({ success: true, itemId: itemId }, 200);
 });
 
 export { packItemsRoutes };

@@ -91,7 +91,7 @@ packRoutes.openapi(getPackRoute, async (c) => {
     if (!pack) {
       return c.json({ error: 'Pack not found' }, 404);
     }
-    return c.json(pack);
+    return c.json(pack, 200);
   } catch (error) {
     console.error('Error fetching pack:', error);
     return c.json({ error: 'Failed to fetch pack' }, 500);
@@ -197,7 +197,7 @@ packRoutes.openapi(updatePackRoute, async (c) => {
     }
 
     const packWithWeights = computePackWeights(updatedPack);
-    return c.json(packWithWeights);
+    return c.json(packWithWeights, 200);
   } catch (error) {
     console.error('Error updating pack:', error);
     return c.json({ error: 'Failed to update pack' }, 500);
@@ -257,7 +257,7 @@ packRoutes.openapi(deletePackRoute, async (c) => {
   try {
     const packId = c.req.param('packId');
     await db.delete(packs).where(eq(packs.id, packId));
-    return c.json({ success: true });
+    return c.json({ success: true }, 200);
   } catch (error) {
     console.error('Error deleting pack:', error);
     return c.json({ error: 'Failed to delete pack' }, 500);
@@ -377,7 +377,7 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     .orderBy(desc(similarity))
     .limit(5);
 
-  return c.json(similarItems);
+  return c.json(similarItems, 200);
 });
 
 const weightHistoryRoute = createRoute({
@@ -464,7 +464,7 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
       })
       .returning();
 
-    return c.json(packWeightHistoryEntry);
+    return c.json(packWeightHistoryEntry, 200);
   } catch (error) {
     console.error('Pack weight history API error:', error);
     return c.json({ error: 'Failed to create weight history entry' }, 500);

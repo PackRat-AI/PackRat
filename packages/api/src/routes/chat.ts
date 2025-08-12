@@ -244,7 +244,7 @@ chatRoutes.openapi(createReportRoute, async (c) => {
     userComment,
   });
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 });
 
 // Get all reported content (admin only) - separate endpoint
@@ -312,7 +312,7 @@ chatRoutes.openapi(getReportsRoute, async (c) => {
     },
   });
 
-  return c.json({ reportedItems });
+  return c.json({ reportedItems }, 200);
 });
 
 // Update reported content status (admin only)
@@ -410,7 +410,7 @@ chatRoutes.openapi(updateReportRoute, async (c) => {
     })
     .where(eq(reportedContent.id, id));
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 });
 
 export { chatRoutes };

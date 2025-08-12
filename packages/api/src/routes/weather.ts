@@ -105,14 +105,15 @@ weatherRoutes.openapi(searchRoute, async (c) => {
       }),
     );
 
-    return c.json(locations);
+    return c.json(locations, 200);
   } catch (error) {
+    console.error('Error searching weather locations:', error);
     c.get('sentry').setContext('params', {
       query,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
-    throw error;
+    return c.json({ error: 'Internal server error', code: 'WEATHER_SEARCH_ERROR' }, 500);
   }
 });
 
@@ -240,15 +241,16 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
       }),
     );
 
-    return c.json(locations);
+    return c.json(locations, 200);
   } catch (error) {
+    console.error('Error searching weather locations by coordinates:', error);
     c.get('sentry').setContext('params', {
       latitude,
       longitude,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
-    throw error;
+    return c.json({ error: 'Internal server error', code: 'WEATHER_COORD_SEARCH_ERROR' }, 500);
   }
 });
 
@@ -330,15 +332,16 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     }
 
     const data = await response.json();
-    return c.json(data);
+    return c.json(data as any, 200);
   } catch (error) {
+    console.error('Error fetching weather forecast:', error);
     c.get('sentry').setContext('params', {
       latitude,
       longitude,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
-    throw error;
+    return c.json({ error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' }, 500);
   }
 });
 

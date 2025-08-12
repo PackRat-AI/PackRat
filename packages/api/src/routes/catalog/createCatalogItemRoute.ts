@@ -118,5 +118,5 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     })
     .returning();
 
-  return c.json(newItem);
+  return c.json(newItem, 200);
 };

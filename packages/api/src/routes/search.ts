@@ -10,7 +10,7 @@ import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
 import { createDb } from '../db';
 import { catalogItems } from '../db/schema';
 import { generateEmbedding } from '../services/embeddingService';
-import { authenticateRequest, unauthorizedResponse } from '../utils/api-middleware';
+import { authenticateRequest } from '../utils/api-middleware';
 
 const searchRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -30,14 +30,6 @@ const searchVectorRoute = createRoute({
       content: {
         'application/json': {
           schema: VectorSearchResponseSchema,
-        },
-      },
-    },
-    400: {
-      description: 'Bad request - Invalid search query',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },
@@ -61,48 +53,53 @@ const searchVectorRoute = createRoute({
 });
 
 searchRoutes.openapi(searchVectorRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
+  try {
+    const auth = await authenticateRequest(c);
+    if (!auth) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const db = createDb(c);
+    const { q } = c.req.valid('query');
+    const {
+      OPENAI_API_KEY,
+      AI_PROVIDER,
+      CLOUDFLARE_ACCOUNT_ID_ORG,
+      CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      AI,
+    } = getEnv(c);
+
+    const embedding = await generateEmbedding({
+      value: q,
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAiBinding: AI,
+    });
+
+    if (!embedding) {
+      return c.json({ error: 'Failed to generate embedding', code: 'EMBEDDING_ERROR' }, 500);
+    }
+
+    const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+
+    const similarItems = await db
+      .select({
+        id: catalogItems.id,
+        name: catalogItems.name,
+        similarity,
+      })
+      .from(catalogItems)
+      .where(gt(similarity, 0.1))
+      .orderBy(desc(similarity))
+      .limit(10);
+
+    return c.json(similarItems, 200);
+  } catch (error) {
+    console.error('Error performing vector search:', error);
+    return c.json({ error: 'Internal server error', code: 'SEARCH_ERROR' }, 500);
   }
-
-  const db = createDb(c);
-  const { q } = c.req.valid('query');
-  const {
-    OPENAI_API_KEY,
-    AI_PROVIDER,
-    CLOUDFLARE_ACCOUNT_ID_ORG,
-    CLOUDFLARE_AI_GATEWAY_ID_ORG,
-    AI,
-  } = getEnv(c);
-
-  const embedding = await generateEmbedding({
-    value: q,
-    openAiApiKey: OPENAI_API_KEY,
-    provider: AI_PROVIDER,
-    cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
-    cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
-    cloudflareAiBinding: AI,
-  });
-
-  if (!embedding) {
-    return c.json({ error: 'Failed to generate embedding' }, 500);
-  }
-
-  const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
-
-  const similarItems = await db
-    .select({
-      id: catalogItems.id,
-      name: catalogItems.name,
-      similarity,
-    })
-    .from(catalogItems)
-    .where(gt(similarity, 0.1))
-    .orderBy(desc(similarity))
-    .limit(10);
-
-  return c.json(similarItems);
 });
 
 export { searchRoutes };

@@ -22,8 +22,8 @@ export const VectorSearchQuerySchema = z
 
 export const SimilarItemSchema = z
   .object({
-    id: z.string().openapi({
-      example: 'ci_123456',
+    id: z.number().openapi({
+      example: 123456,
       description: 'Catalog item ID',
     }),
     name: z.string().openapi({

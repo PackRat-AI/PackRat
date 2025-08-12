@@ -49,5 +49,5 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const { limit } = c.req.valid('query');
   const categories = await new CatalogService(c).getCategories(limit);
 
-  return c.json(categories);
+  return c.json(categories, 200);
 };

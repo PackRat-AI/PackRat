@@ -1021,7 +1021,7 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
   // Finally, delete the user
   await db.delete(users).where(eq(users.id, userId));
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 });
 
 const appleRoute = createRoute({

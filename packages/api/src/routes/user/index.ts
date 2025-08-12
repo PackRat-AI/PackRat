@@ -181,7 +181,7 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
       return c.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, 401);
     }
 
-    const { firstName, lastName, email } = await c.req.json();
+    const { firstName, lastName, email } = c.req.valid('json');
     const db = createDb(c);
 
     // If email is being updated, check if it's already in use

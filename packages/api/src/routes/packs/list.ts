@@ -64,7 +64,7 @@ packsListRoutes.openapi(listGetRoute, async (c) => {
     },
   });
 
-  return c.json(computePacksWeights(result));
+  return c.json(computePacksWeights(result), 200);
 });
 
 const listPostRoute = createRoute({
@@ -147,7 +147,7 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
     .returning();
 
   const packWithWeights = computePacksWeights([{ ...newPack, items: [] }])[0];
-  return c.json(packWithWeights);
+  return c.json(packWithWeights, 200);
 });
 
 const weightHistoryRoute = createRoute({
@@ -196,7 +196,7 @@ packsListRoutes.openapi(weightHistoryRoute, async (c) => {
     where: eq(packWeightHistory.userId, auth.userId),
   });
 
-  return c.json(userPackWeightHistories);
+  return c.json(userPackWeightHistories, 200);
 });
 
 export { packsListRoutes };

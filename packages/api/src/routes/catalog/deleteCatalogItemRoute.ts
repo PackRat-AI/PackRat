@@ -73,5 +73,5 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // Delete the catalog item
   await db.delete(catalogItems).where(eq(catalogItems.id, itemId));
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 };

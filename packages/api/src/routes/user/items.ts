@@ -59,7 +59,7 @@ userItemsRoutes.openapi(userItemsGetRoute, async (c) => {
     },
   });
 
-  return c.json(items);
+  return c.json(items, 200);
 });
 
 export { userItemsRoutes };

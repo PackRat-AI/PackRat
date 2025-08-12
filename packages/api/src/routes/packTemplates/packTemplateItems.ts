@@ -95,7 +95,7 @@ packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
       ),
     );
 
-  return c.json(items);
+  return c.json(items, 200);
 });
 
 // Add item to template
@@ -216,7 +216,7 @@ packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
     .set({ updatedAt: new Date() })
     .where(eq(packTemplates.id, templateId));
 
-  return c.json(newItem);
+  return c.json(newItem, 201);
 });
 
 // Update a template item
@@ -343,7 +343,7 @@ packTemplateItemsRoutes.openapi(updateItemRoute, async (c) => {
     )
     .returning();
 
-  return c.json(updatedItem);
+  return c.json(updatedItem, 200);
 });
 
 // Delete a template item
@@ -441,7 +441,7 @@ packTemplateItemsRoutes.openapi(deleteItemRoute, async (c) => {
     .set({ updatedAt: new Date() })
     .where(eq(packTemplates.id, item.packTemplateId));
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 });
 
 export { packTemplateItemsRoutes };

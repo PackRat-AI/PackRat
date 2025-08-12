@@ -123,5 +123,5 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     .where(eq(catalogItems.id, itemId))
     .returning();
 
-  return c.json(updatedItem);
+  return c.json(updatedItem, 200);
 };

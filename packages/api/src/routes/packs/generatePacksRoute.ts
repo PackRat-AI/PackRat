@@ -76,7 +76,7 @@ generatePacksRoute.openapi(route, async (c) => {
   const packService = new PackService(c, user.id);
   const generatedPacks = await packService.generatePacks(count);
 
-  return c.json(generatedPacks);
+  return c.json(generatedPacks, 200);
 });
 
 export { generatePacksRoute };
