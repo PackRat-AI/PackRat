@@ -10,7 +10,7 @@ export const AIPacksTile = () => {
   const { colors } = useColorScheme();
   const user = useUser();
 
-  if (user?.role !== 'ADMIN') {
+  if (user?.role !== 'admin') {
     return null;
   }
 
