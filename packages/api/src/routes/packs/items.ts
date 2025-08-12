@@ -8,7 +8,7 @@ import {
   UpdatePackItemRequestSchema,
 } from '@packrat/api/schemas/packs';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { and, eq } from 'drizzle-orm';
@@ -68,7 +68,7 @@ const getItemsRoute = createRoute({
 packItemsRoutes.openapi(getItemsRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -186,7 +186,7 @@ const getItemRoute = createRoute({
 packItemsRoutes.openapi(getItemRoute, async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
-  if (!auth) return unauthorizedResponse();
+  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = createDb(c);
   const userId = auth.userId;
@@ -286,7 +286,7 @@ const addItemRoute = createRoute({
 packItemsRoutes.openapi(addItemRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -414,7 +414,7 @@ const updateItemRoute = createRoute({
 packItemsRoutes.openapi(updateItemRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -564,7 +564,7 @@ const deleteItemRoute = createRoute({
 packItemsRoutes.openapi(deleteItemRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);

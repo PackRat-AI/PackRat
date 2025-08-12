@@ -14,7 +14,7 @@ import {
   PackWithWeightsSchema,
   UpdatePackRequestSchema,
 } from '@packrat/api/schemas/packs';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { and, cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
@@ -73,7 +73,7 @@ const getPackRoute = createRoute({
 packRoutes.openapi(getPackRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -158,7 +158,7 @@ const updatePackRoute = createRoute({
 packRoutes.openapi(updatePackRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -250,7 +250,7 @@ const deletePackRoute = createRoute({
 packRoutes.openapi(deletePackRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -332,7 +332,7 @@ const itemSuggestionsRoute = createRoute({
 packRoutes.openapi(itemSuggestionsRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -445,7 +445,7 @@ const weightHistoryRoute = createRoute({
 packRoutes.openapi(weightHistoryRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);

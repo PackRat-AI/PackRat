@@ -23,8 +23,11 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   const totalItemsResult = await db.select({ totalCount: count() }).from(catalogItems);
 
-  return c.json({
-    itemsWithoutEmbeddings: Number(totalCount),
-    totalItems: Number(totalItemsResult[0].totalCount),
-  });
+  return c.json(
+    {
+      itemsWithoutEmbeddings: Number(totalCount),
+      totalItems: Number(totalItemsResult[0].totalCount),
+    },
+    200,
+  );
 };

@@ -2,7 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import { CatalogCategoriesResponseSchema, ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -43,7 +43,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const { limit } = c.req.valid('query');

@@ -2,7 +2,7 @@ import { createRoute, z } from '@hono/zod-openapi';
 import { ErrorResponseSchema, GuideDetailSchema } from '@packrat/api/schemas/guides';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import matter from 'gray-matter';
 
@@ -61,7 +61,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const { id } = c.req.valid('param');
@@ -95,19 +95,22 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     // Parse frontmatter
     const { data: frontmatter, content } = matter(rawContent);
 
-    return c.json({
-      id,
-      title: frontmatter.title || metadata.title || id.replace(/-/g, ' '),
-      category: metadata.category || 'general',
-      categories: frontmatter.categories || [],
-      description: frontmatter.description || metadata.description || '',
-      author: frontmatter.author,
-      readingTime: frontmatter.readingTime,
-      difficulty: frontmatter.difficulty,
-      content,
-      createdAt: object.uploaded.toISOString(),
-      updatedAt: object.uploaded.toISOString(),
-    });
+    return c.json(
+      {
+        id,
+        title: frontmatter.title || metadata.title || id.replace(/-/g, ' '),
+        category: metadata.category || 'general',
+        categories: frontmatter.categories || [],
+        description: frontmatter.description || metadata.description || '',
+        author: frontmatter.author,
+        readingTime: frontmatter.readingTime,
+        difficulty: frontmatter.difficulty,
+        content,
+        createdAt: object.uploaded.toISOString(),
+        updatedAt: object.uploaded.toISOString(),
+      },
+      200,
+    );
   } catch (error) {
     console.error('Error fetching guide:', error);
     return c.json({ error: 'Failed to fetch guide' }, 500);

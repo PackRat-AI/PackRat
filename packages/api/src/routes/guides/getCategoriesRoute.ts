@@ -1,7 +1,7 @@
 import { createRoute } from '@hono/zod-openapi';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import matter from 'gray-matter';
 
@@ -15,7 +15,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   try {
@@ -62,10 +62,13 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     // Convert set to sorted array
     const categories = Array.from(categoriesSet).sort();
 
-    return c.json({
-      categories,
-      count: categories.length,
-    });
+    return c.json(
+      {
+        categories,
+        count: categories.length,
+      },
+      200,
+    );
   } catch (error) {
     console.error('Error getting guide categories:', error);
     return c.json({ error: 'Failed to get guide categories' }, 500);

@@ -8,7 +8,7 @@ import {
 } from '@packrat/api/schemas/catalog';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { eq } from 'drizzle-orm';
@@ -74,7 +74,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // TODO: Only admins should be able to update catalog items
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);

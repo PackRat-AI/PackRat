@@ -786,11 +786,14 @@ adminRoutes.openapi(getStatsRoute, async (c) => {
 
     assertAllDefined(userCount, packCount, itemCount);
 
-    return c.json({
-      users: userCount.count,
-      packs: packCount.count,
-      items: itemCount.count,
-    });
+    return c.json(
+      {
+        users: userCount.count,
+        packs: packCount.count,
+        items: itemCount.count,
+      },
+      200,
+    );
   } catch (error) {
     console.error('Error fetching stats:', error);
     return c.json({ error: 'Failed to fetch stats', code: 'STATS_ERROR' }, 500);

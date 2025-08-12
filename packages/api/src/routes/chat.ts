@@ -11,7 +11,7 @@ import {
 } from '@packrat/api/schemas/chat';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
 import { eq } from 'drizzle-orm';
@@ -77,7 +77,7 @@ const chatRoute = createRoute({
 chatRoutes.openapi(chatRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   let body: {
@@ -228,7 +228,7 @@ const createReportRoute = createRoute({
 chatRoutes.openapi(createReportRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -294,7 +294,7 @@ const getReportsRoute = createRoute({
 chatRoutes.openapi(getReportsRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -386,7 +386,7 @@ const updateReportRoute = createRoute({
 chatRoutes.openapi(updateReportRoute, async (c) => {
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);

@@ -3,7 +3,7 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
 import { CatalogItemSchema, ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
@@ -58,7 +58,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const db = createDb(c);
@@ -84,8 +84,11 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   // biome-ignore lint/correctness/noUnusedVariables: removing packItems from result
   const { packItems, ...itemData } = item;
-  return c.json({
-    ...itemData,
-    usageCount,
-  });
+  return c.json(
+    {
+      ...itemData,
+      usageCount,
+    },
+    200,
+  );
 };

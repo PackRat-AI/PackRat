@@ -6,7 +6,7 @@ import {
   WeatherForecastSchema,
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 
 const weatherRoutes = new OpenAPIHono();
@@ -66,7 +66,7 @@ weatherRoutes.openapi(searchRoute, async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const query = c.req.query('q');
@@ -170,7 +170,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const latitude = Number.parseFloat(c.req.query('lat') || '');
@@ -308,7 +308,7 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const latitude = Number.parseFloat(c.req.query('lat') || '');

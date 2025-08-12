@@ -6,7 +6,7 @@ import {
 } from '@packrat/api/schemas/guides';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import matter from 'gray-matter';
 
@@ -53,7 +53,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const { page, limit, category } = c.req.valid('query');
@@ -152,13 +152,16 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const paginatedGuides = filteredGuides.slice(offset, offset + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return c.json({
-      items: paginatedGuides,
-      totalCount: total,
-      page,
-      limit,
-      totalPages,
-    });
+    return c.json(
+      {
+        items: paginatedGuides,
+        totalCount: total,
+        page,
+        limit,
+        totalPages,
+      },
+      200,
+    );
   } catch (error) {
     console.error('Error listing guides:', error);
     return c.json({ error: 'Failed to list guides' }, 500);

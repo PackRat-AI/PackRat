@@ -6,7 +6,7 @@ import {
   PresignedUploadQuerySchema,
   PresignedUploadResponseSchema,
 } from '@packrat/api/schemas/upload';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Variables } from '../types/variables';
@@ -72,7 +72,7 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
   // Authenticate the request
   const auth = await authenticateRequest(c);
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const {
@@ -117,9 +117,12 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
       expiresIn: 3600,
     });
 
-    return c.json({
-      url: presignedUrl,
-    });
+    return c.json(
+      {
+        url: presignedUrl,
+      },
+      200,
+    );
   } catch (error) {
     c.get('sentry').setContext('upload-params', {
       fileName: c.req.query('fileName'),
