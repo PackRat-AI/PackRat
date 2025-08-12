@@ -1,10 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/api/utils/typeAssertions';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
-import { env } from 'hono/adapter';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
 
@@ -18,7 +18,7 @@ adminRoutes.use(
   },
   basicAuth({
     verifyUser: (username, password, c) => {
-      return username === env<Env>(c).ADMIN_USERNAME && password === env<Env>(c).ADMIN_PASSWORD;
+      return username === getEnv(c).ADMIN_USERNAME && password === getEnv(c).ADMIN_PASSWORD;
     },
     realm: 'PackRat Admin Panel',
   }),

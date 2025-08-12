@@ -1,7 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import type { Env } from '@packrat/api/types/env';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import { env } from 'hono/adapter';
+import { getEnv } from '@packrat/api/utils/env-validation';
 
 const weatherRoutes = new OpenAPIHono();
 
@@ -22,7 +21,7 @@ const searchRoute = createRoute({
 });
 
 weatherRoutes.openapi(searchRoute, async (c) => {
-  const { WEATHER_API_KEY } = env<Env>(c);
+  const { WEATHER_API_KEY } = getEnv(c);
 
   // Authenticate the request
   const auth = await authenticateRequest(c);
@@ -93,7 +92,7 @@ const searchByCoordRoute = createRoute({
 });
 
 weatherRoutes.openapi(searchByCoordRoute, async (c) => {
-  const { WEATHER_API_KEY } = env<Env>(c);
+  const { WEATHER_API_KEY } = getEnv(c);
 
   // Authenticate the request
   const auth = await authenticateRequest(c);
@@ -197,7 +196,7 @@ const forecastRoute = createRoute({
 });
 
 weatherRoutes.openapi(forecastRoute, async (c) => {
-  const { WEATHER_API_KEY } = env<Env>(c);
+  const { WEATHER_API_KEY } = getEnv(c);
 
   // Authenticate the request
   const auth = await authenticateRequest(c);
