@@ -244,7 +244,7 @@ export function createTools(c: Context, userId: number) {
         } catch (error) {
           console.error('SQL tool error', error);
           sentry.setTag('location', 'ai-tool-call/executeSql');
-          sentry.setContext('paramms', { query, limit });
+          sentry.setContext('params', { query, limit });
           sentry.captureException(error);
           return {
             success: false,
