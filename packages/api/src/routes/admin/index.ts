@@ -1,10 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
-import { CatalogService } from '@packrat/api/services';
 import type { Env } from '@packrat/api/types/env';
 import { assertAllDefined } from '@packrat/api/utils/typeAssertions';
-import { and, count, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { env } from 'hono/adapter';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
