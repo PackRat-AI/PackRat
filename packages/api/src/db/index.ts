@@ -1,4 +1,4 @@
-import { Pool } from '@neondatabase/serverless';
+import { neon, Pool } from '@neondatabase/serverless';
 import * as schema from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -14,7 +14,7 @@ export const createDb = (c: Context) => {
 
 // Create a read-only SQL client with Neon for Hono contexts
 export const createReadOnlyDb = (c: Context) => {
-  const { NEON_DATABASE_URL_READONLY } = honoEnv<Env>(c);
+  const { NEON_DATABASE_URL_READONLY } = getEnv(c);
   const sql = neon(NEON_DATABASE_URL_READONLY);
   return drizzle(sql, { schema });
 };
