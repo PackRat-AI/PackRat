@@ -1,6 +1,6 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs } from '@packrat/api/db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 
 // Get pack details from the database
@@ -35,18 +35,26 @@ export async function getCatalogItems({
   c: Context;
 }) {
   const db = createDb(c);
-  let query = db.select().from(catalogItems);
 
+  const filters: SQL[] = [];
+
+  // For categories, use Drizzle's arrayOverlaps operator for JSONB arrays
   if (options?.categories?.length) {
-    query = query.where(inArray(catalogItems.category, options.categories));
+    filters.push(arrayOverlaps(catalogItems.categories, options.categories));
   }
 
+  // For IDs, we can use the standard inArray
   if (options?.ids?.length) {
-    query = query.where(inArray(catalogItems.id, options.ids));
+    filters.push(inArray(catalogItems.id, options.ids));
   }
+
+  const query = db
+    .select()
+    .from(catalogItems)
+    .where(filters.length > 0 ? and(...filters) : undefined);
 
   if (options?.limit) {
-    query = query.limit(options.limit);
+    return query.limit(options.limit);
   }
 
   return query;
