@@ -1,25 +1,4 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import {
-  LoginRequestSchema,
-  LoginResponseSchema,
-  RegisterRequestSchema,
-  RegisterResponseSchema,
-  VerifyEmailRequestSchema,
-  VerifyEmailResponseSchema,
-  RefreshTokenRequestSchema,
-  RefreshTokenResponseSchema,
-  ForgotPasswordRequestSchema,
-  ForgotPasswordResponseSchema,
-  ResetPasswordRequestSchema,
-  ResetPasswordResponseSchema,
-  GoogleAuthRequestSchema,
-  AppleAuthRequestSchema,
-  SocialAuthResponseSchema,
-  LogoutRequestSchema,
-  LogoutResponseSchema,
-  MeResponseSchema,
-  ErrorResponseSchema
-} from '@packrat/api/schemas/auth';
 import { createDb } from '@packrat/api/db';
 import {
   authProviders,
@@ -28,6 +7,27 @@ import {
   refreshTokens,
   users,
 } from '@packrat/api/db/schema';
+import {
+  AppleAuthRequestSchema,
+  ErrorResponseSchema,
+  ForgotPasswordRequestSchema,
+  ForgotPasswordResponseSchema,
+  GoogleAuthRequestSchema,
+  LoginRequestSchema,
+  LoginResponseSchema,
+  LogoutRequestSchema,
+  LogoutResponseSchema,
+  MeResponseSchema,
+  RefreshTokenRequestSchema,
+  RefreshTokenResponseSchema,
+  RegisterRequestSchema,
+  RegisterResponseSchema,
+  ResetPasswordRequestSchema,
+  ResetPasswordResponseSchema,
+  SocialAuthResponseSchema,
+  VerifyEmailRequestSchema,
+  VerifyEmailResponseSchema,
+} from '@packrat/api/schemas/auth';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import {
   generateJWT,
@@ -56,46 +56,46 @@ const loginRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: LoginRequestSchema
-        }
+          schema: LoginRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'Successful login',
       content: {
         'application/json': {
-          schema: LoginResponseSchema
-        }
-      }
+          schema: LoginResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid request',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     401: {
       description: 'Invalid credentials',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     403: {
       description: 'Email not verified',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(loginRoute, async (c) => {
@@ -176,38 +176,38 @@ const registerRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: RegisterRequestSchema
-        }
+          schema: RegisterRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'User registered successfully',
       content: {
         'application/json': {
-          schema: RegisterResponseSchema
-        }
-      }
+          schema: RegisterResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid request data',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     409: {
       description: 'Email already in use',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(registerRoute, async (c) => {
@@ -288,38 +288,38 @@ const verifyEmailRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: VerifyEmailRequestSchema
-        }
+          schema: VerifyEmailRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'Email verified successfully',
       content: {
         'application/json': {
-          schema: VerifyEmailResponseSchema
-        }
-      }
+          schema: VerifyEmailResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid or expired verification code',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     404: {
       description: 'User not found',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(verifyEmailRoute, async (c) => {
@@ -414,12 +414,12 @@ const resendVerificationRoute = createRoute({
       content: {
         'application/json': {
           schema: z.object({
-            email: z.string().email()
-          })
-        }
+            email: z.string().email(),
+          }),
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
@@ -428,20 +428,20 @@ const resendVerificationRoute = createRoute({
         'application/json': {
           schema: z.object({
             success: z.boolean(),
-            message: z.string()
-          })
-        }
-      }
+            message: z.string(),
+          }),
+        },
+      },
     },
     400: {
       description: 'Invalid request',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(resendVerificationRoute, async (c) => {
@@ -505,30 +505,30 @@ const forgotPasswordRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: ForgotPasswordRequestSchema
-        }
+          schema: ForgotPasswordRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'Password reset code sent if email exists',
       content: {
         'application/json': {
-          schema: ForgotPasswordResponseSchema
-        }
-      }
+          schema: ForgotPasswordResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid request',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(forgotPasswordRoute, async (c) => {
@@ -592,38 +592,38 @@ const resetPasswordRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: ResetPasswordRequestSchema
-        }
+          schema: ResetPasswordRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'Password reset successfully',
       content: {
         'application/json': {
-          schema: ResetPasswordResponseSchema
-        }
-      }
+          schema: ResetPasswordResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid request or expired code',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     404: {
       description: 'User not found',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(resetPasswordRoute, async (c) => {
@@ -704,38 +704,38 @@ const refreshTokenRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: RefreshTokenRequestSchema
-        }
+          schema: RefreshTokenRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'Tokens refreshed successfully',
       content: {
         'application/json': {
-          schema: RefreshTokenResponseSchema
-        }
-      }
+          schema: RefreshTokenResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid request',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     401: {
       description: 'Invalid or expired refresh token',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(refreshTokenRoute, async (c) => {
@@ -843,30 +843,30 @@ const logoutRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: LogoutRequestSchema
-        }
+          schema: LogoutRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'Logged out successfully',
       content: {
         'application/json': {
-          schema: LogoutResponseSchema
-        }
-      }
+          schema: LogoutResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid request',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(logoutRoute, async (c) => {
@@ -904,27 +904,27 @@ const meRoute = createRoute({
       description: 'Current user information',
       content: {
         'application/json': {
-          schema: MeResponseSchema
-        }
-      }
+          schema: MeResponseSchema,
+        },
+      },
     },
     401: {
       description: 'Unauthorized',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
+          schema: ErrorResponseSchema,
+        },
+      },
     },
     404: {
       description: 'User not found',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(meRoute, async (c) => {
@@ -981,19 +981,19 @@ const deleteAccountRoute = createRoute({
       description: 'Account deleted successfully',
       content: {
         'application/json': {
-          schema: z.object({ success: z.boolean() })
-        }
-      }
+          schema: z.object({ success: z.boolean() }),
+        },
+      },
     },
     401: {
       description: 'Unauthorized',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 authRoutes.openapi(deleteAccountRoute, async (c) => {
   const auth = await authenticateRequest(c);
@@ -1034,30 +1034,30 @@ const appleRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: AppleAuthRequestSchema
-        }
+          schema: AppleAuthRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'Authentication successful',
       content: {
         'application/json': {
-          schema: SocialAuthResponseSchema
-        }
-      }
+          schema: SocialAuthResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid Apple token',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(appleRoute, async (c) => {
@@ -1149,30 +1149,30 @@ const googleRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: GoogleAuthRequestSchema
-        }
+          schema: GoogleAuthRequestSchema,
+        },
       },
-      required: true
-    }
+      required: true,
+    },
   },
   responses: {
     200: {
       description: 'Authentication successful',
       content: {
         'application/json': {
-          schema: SocialAuthResponseSchema
-        }
-      }
+          schema: SocialAuthResponseSchema,
+        },
+      },
     },
     400: {
       description: 'Invalid Google token',
       content: {
         'application/json': {
-          schema: ErrorResponseSchema
-        }
-      }
-    }
-  }
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(googleRoute, async (c) => {
