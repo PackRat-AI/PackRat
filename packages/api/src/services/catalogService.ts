@@ -238,7 +238,7 @@ export class CatalogService {
       .orderBy(desc(count(catalogItems.id)))
       .limit(limit);
 
-    return rows.map((row) => row.category as string);
+    return rows.map((row) => String(row.category));
   }
 
   /**

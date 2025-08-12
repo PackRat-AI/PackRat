@@ -199,7 +199,9 @@ export class PackService {
       output: 'array',
       schema: finalPackSchema,
       system: PACKS_CONSTRUCTION_SYSTEM_PROMPT,
-      prompt: "Based on the following pack concepts and candidate items, select the best items for each pack:\n" + JSON.stringify(packConceptsWithCandidateItems),
+      prompt:
+        'Based on the following pack concepts and candidate items, select the best items for each pack:\n' +
+        JSON.stringify(packConceptsWithCandidateItems),
     });
 
     return object;
