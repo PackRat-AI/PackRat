@@ -22,7 +22,7 @@ export function createTools(c: Context, userId: number) {
     getPackDetails: tool({
       description:
         'Get detailed information about a specific pack including all items, weights, and categories.',
-      parameters: z.object({
+      inputSchema: z.object({
         packId: z.string().describe('The ID of the pack to get details for'),
       }),
       execute: async ({ packId }) => {
@@ -63,7 +63,7 @@ export function createTools(c: Context, userId: number) {
     getPackItemDetails: tool({
       description:
         'Get detailed information about a specific item in a pack including its catalog details.',
-      parameters: z.object({
+      inputSchema: z.object({
         itemId: z.string().describe('The ID of the item to get details for'),
       }),
       execute: async ({ itemId }) => {
@@ -94,7 +94,7 @@ export function createTools(c: Context, userId: number) {
 
     getWeatherForLocation: tool({
       description: 'Get current weather information a specific location.',
-      parameters: z.object({
+      inputSchema: z.object({
         location: z
           .string()
           .describe('Location to get weather for (city, state, coordinates, or trail name)'),
@@ -122,7 +122,7 @@ export function createTools(c: Context, userId: number) {
     getCatalogItems: tool({
       description:
         'Retrieve items from the comprehensive gear database with optional filters or search criteria.',
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().optional().describe('Optional search query to filter catalog items'),
         category: z.string().optional().describe('Optional category to filter catalog items'),
         limit: z
@@ -160,7 +160,7 @@ export function createTools(c: Context, userId: number) {
 
     semanticCatalogSearch: tool({
       description: 'Search the comprehensive gear database using semantic search.',
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().min(1).describe('Search query to find catalog items'),
         limit: z
           .number()
@@ -193,7 +193,7 @@ export function createTools(c: Context, userId: number) {
     searchPackratOutdoorGuidesRAG: tool({
       description:
         'Search the Packrat outdoor guides knowledge base using RAG (Retrieval-Augmented Generation).',
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().min(1).describe('Search query for outdoor guides'),
         limit: z
           .number()
@@ -217,6 +217,39 @@ export function createTools(c: Context, userId: number) {
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to search outdoor guides',
+          };
+        }
+      },
+    }),
+
+    webSearchTool: tool({
+      description: `Search the web for current information, news, deals, recommendations, and real-time data. 
+        Use this when users ask about:
+        - Current events or recent news
+        - Product deals, prices, or reviews
+        - Travel recommendations (trails, hikes, destinations)
+        - Weather conditions
+        - Recent developments in any field
+        - Anything requiring up-to-date information`,
+      inputSchema: z.object({
+        query: z.string().describe('The search query - be specific and include relevant keywords'),
+      }),
+      execute: async ({ query }) => {
+        try {
+          const result = await aiService.perplexitySearch(query);
+
+          return {
+            ...result,
+            success: true,
+          };
+        } catch (error) {
+          console.error('webSearchTool', error);
+          sentry.setTag('location', 'ai-tool-call/webSearchTool');
+          sentry.setContext('meta', { query });
+          sentry.captureException(error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Search failed',
           };
         }
       },

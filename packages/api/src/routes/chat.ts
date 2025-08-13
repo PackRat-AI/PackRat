@@ -5,7 +5,7 @@ import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
+import { type UIMessage, streamText, convertToModelMessages } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 
@@ -37,7 +37,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
   }
 
   let body: {
-    messages?: CoreMessage[] | Omit<MessageType, 'id'>[] | undefined;
+    messages?: UIMessage[] | undefined;
     contextType?: string;
     itemId?: string;
     packId?: string;
@@ -91,9 +91,9 @@ chatRoutes.openapi(chatRoute, async (c) => {
     const result = streamText({
       model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       system: systemPrompt,
-      messages,
+      messages: convertToModelMessages(messages),
       tools,
-      maxTokens: 1000,
+      maxOutputTokens: 1000,
       temperature: 0.7,
       maxSteps: 5,
       onError: ({ error }) => {
@@ -109,7 +109,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
     });
 
     // Get the response with proper headers
-    const response = result.toDataStreamResponse();
+    const response = result.toUIMessageStreamResponse();
 
     // Add CORS headers for streaming when using Cloudflare Gateway
     if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_AI_GATEWAY_ID) {
