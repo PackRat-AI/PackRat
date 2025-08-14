@@ -5,7 +5,7 @@ import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { type UIMessage, streamText, convertToModelMessages } from 'ai';
+import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 
@@ -95,7 +95,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
       tools,
       maxOutputTokens: 1000,
       temperature: 0.7,
-      maxSteps: 5,
+      stopWhen: stepCountIs(5),
       onError: ({ error }) => {
         console.error('streaming error', error);
         c.get('sentry').setTag('location', 'chat/streamText');

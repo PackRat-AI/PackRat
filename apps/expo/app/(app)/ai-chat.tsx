@@ -219,10 +219,6 @@ export default function AIChat() {
           }}
           data={messages}
           renderItem={({ item, index }) => {
-            item.parts?.forEach((part) => {
-              console.log('part', JSON.stringify(part));
-            });
-
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {

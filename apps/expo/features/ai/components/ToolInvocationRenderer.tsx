@@ -4,15 +4,13 @@ import { GuidesRAGGenerativeUI } from './GuidesRAGGenerativeUI';
 import { PackDetailsGenerativeUI } from './PackDetailsGenerativeUI';
 import { PackItemDetailsGenerativeUI } from './PackItemDetailsGenerativeUI';
 import { WeatherGenerativeUI } from './WeatherGenerativeUI';
-import { Text } from 'react-native';
+import { WebSearchGenerativeUI } from './WebSearchGenerativeUI';
 
 interface ToolInvocationRendererProps {
   toolInvocation: ToolUIPart;
 }
 
-export function ToolInvocationRenderer({
-  toolInvocation,
-}: ToolInvocationRendererProps) {
+export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
   // Only render completed tool calls with results
   if (toolInvocation.state !== 'output-available' || !toolInvocation.output) {
     return null;
@@ -22,15 +20,12 @@ export function ToolInvocationRenderer({
 
   // Handle getWeatherForLocation tool result
   if (toolName === 'tool-getWeatherForLocation') {
-    return (
-      <WeatherGenerativeUI location={args.location} weatherData={result} />
-    );
+    return <WeatherGenerativeUI location={args.location} weatherData={result} />;
   }
 
   // Handle getCatalogItems tool result
   if (
-    (toolName === 'tool-getCatalogItems' ||
-      toolName === 'tool-semanticCatalogSearch') &&
+    (toolName === 'tool-getCatalogItems' || toolName === 'tool-semanticCatalogSearch') &&
     result.success &&
     result.data
   ) {
@@ -44,17 +39,8 @@ export function ToolInvocationRenderer({
   }
 
   // Handle searchPackratOutdoorGuidesRAG tool result
-  if (
-    toolName === 'tool-searchPackratOutdoorGuidesRAG' &&
-    result.success &&
-    result.results
-  ) {
-    return (
-      <GuidesRAGGenerativeUI
-        searchQuery={args.query}
-        results={result.results}
-      />
-    );
+  if (toolName === 'tool-searchPackratOutdoorGuidesRAG' && result.success && result.results) {
+    return <GuidesRAGGenerativeUI searchQuery={args.query} results={result.results} />;
   }
 
   // Handle getPackDetails tool result
@@ -65,6 +51,10 @@ export function ToolInvocationRenderer({
   // Handle getPackItemDetails tool result
   if (toolName === 'tool-getPackItemDetails' && result.success && result.item) {
     return <PackItemDetailsGenerativeUI item={result.item} />;
+  }
+
+  if (toolName === 'tool-webSearchTool' && result.success) {
+    return <WebSearchGenerativeUI searchQuery={args.query} searchData={result} />;
   }
 
   return null;
