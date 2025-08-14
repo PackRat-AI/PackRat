@@ -8,6 +8,7 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
+import { getSchemaInfo } from '../utils/DbUtils';
 
 const chatRoutes = new OpenAPIHono();
 
@@ -50,6 +51,8 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     const tools = createTools(c, auth.userId);
 
+    const schemaInfo = await getSchemaInfo(c);
+
     // Build context-aware system prompt
     let systemPrompt = `
       You are PackRat AI, a helpful assistant for hikers and outdoor enthusiasts.
@@ -62,17 +65,22 @@ chatRoutes.openapi(chatRoute, async (c) => {
       - Suggest multi-purpose items to reduce pack weight
       - Be concise but helpful in your responses
       - Use tools proactively to provide accurate, up-to-date information
-    `;
+
+      Schema Info for SQL Tool:
+      ${schemaInfo}
+
+      Context:
+      - User id is ${auth.userId}`;
 
     // Add context-specific information
     if (contextType === 'pack' && packId) {
-      systemPrompt += `\n\nContext: You are currently helping with a pack with ID: ${packId}.`;
+      systemPrompt += `\n- You are currently helping with a pack with ID: ${packId}.`;
     } else if (contextType === 'item' && itemId) {
-      systemPrompt += `\n\nContext: You are currently helping with an item with ID: ${itemId}.`;
+      systemPrompt += `\n- You are currently helping with an item with ID: ${itemId}.`;
     }
 
     if (location) {
-      systemPrompt += `\n\nContext: The current location of the user is: ${location}.`;
+      systemPrompt += `\n- The current location of the user is: ${location}.`;
     }
 
     const {

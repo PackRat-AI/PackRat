@@ -11,6 +11,7 @@ export const apiEnvSchema = z.object({
 
   // Database
   NEON_DATABASE_URL: z.string().url(),
+  NEON_DATABASE_URL_READONLY: z.string().url(),
 
   // Authentication & Security
   JWT_SECRET: z.string(),
