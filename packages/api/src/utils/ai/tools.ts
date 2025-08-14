@@ -5,6 +5,7 @@ import {
   PackService,
   WeatherService,
 } from '@packrat/api/services';
+import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
 import { tool } from 'ai';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -250,6 +251,33 @@ export function createTools(c: Context, userId: number) {
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Search failed',
+
+    executeSql: tool({
+      description:
+        'Execute read-only SQL queries against the database. Only SELECT statements are allowed.',
+      inputSchema: z.object({
+        query: z
+          .string()
+          .describe('SQL SELECT statement to execute. Must be a valid SELECT query.'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(1000)
+          .default(100)
+          .describe('Maximum number of rows to return (default: 100, max: 1000)'),
+      }),
+      execute: async ({ query, limit = 100 }) => {
+        try {
+          return await executeSqlAiTool({ query, limit, c, userId });
+        } catch (error) {
+          console.error('SQL tool error', error);
+          sentry.setTag('location', 'ai-tool-call/executeSql');
+          sentry.setContext('params', { query, limit });
+          sentry.captureException(error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred',
           };
         }
       },
