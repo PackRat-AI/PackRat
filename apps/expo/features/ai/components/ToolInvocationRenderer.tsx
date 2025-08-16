@@ -1,30 +1,31 @@
-import type { ToolInvocation } from '@ai-sdk/ui-utils';
+import type { ToolUIPart } from 'ai';
 import { CatalogItemsGenerativeUI } from './CatalogItemsGenerativeUI';
 import { GuidesRAGGenerativeUI } from './GuidesRAGGenerativeUI';
 import { PackDetailsGenerativeUI } from './PackDetailsGenerativeUI';
 import { PackItemDetailsGenerativeUI } from './PackItemDetailsGenerativeUI';
 import { WeatherGenerativeUI } from './WeatherGenerativeUI';
+import { WebSearchGenerativeUI } from './WebSearchGenerativeUI';
 
 interface ToolInvocationRendererProps {
-  toolInvocation: ToolInvocation;
+  toolInvocation: ToolUIPart;
 }
 
 export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
   // Only render completed tool calls with results
-  if (toolInvocation.state !== 'result' || !toolInvocation.result) {
+  if (toolInvocation.state !== 'output-available' || !toolInvocation.output) {
     return null;
   }
 
-  const { toolName, args, result } = toolInvocation;
+  const { type: toolName, input: args, output: result } = toolInvocation;
 
   // Handle getWeatherForLocation tool result
-  if (toolName === 'getWeatherForLocation') {
+  if (toolName === 'tool-getWeatherForLocation') {
     return <WeatherGenerativeUI location={args.location} weatherData={result} />;
   }
 
   // Handle getCatalogItems tool result
   if (
-    (toolName === 'getCatalogItems' || toolName === 'semanticCatalogSearch') &&
+    (toolName === 'tool-getCatalogItems' || toolName === 'tool-semanticCatalogSearch') &&
     result.success &&
     result.data
   ) {
@@ -38,18 +39,22 @@ export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendere
   }
 
   // Handle searchPackratOutdoorGuidesRAG tool result
-  if (toolName === 'searchPackratOutdoorGuidesRAG' && result.success && result.results) {
+  if (toolName === 'tool-searchPackratOutdoorGuidesRAG' && result.success && result.results) {
     return <GuidesRAGGenerativeUI searchQuery={args.query} results={result.results} />;
   }
 
   // Handle getPackDetails tool result
-  if (toolName === 'getPackDetails' && result.success && result.pack) {
+  if (toolName === 'tool-getPackDetails' && result.success && result.pack) {
     return <PackDetailsGenerativeUI pack={result.pack} />;
   }
 
   // Handle getPackItemDetails tool result
-  if (toolName === 'getPackItemDetails' && result.success && result.item) {
+  if (toolName === 'tool-getPackItemDetails' && result.success && result.item) {
     return <PackItemDetailsGenerativeUI item={result.item} />;
+  }
+
+  if (toolName === 'tool-webSearchTool' && result.success) {
+    return <WebSearchGenerativeUI searchQuery={args.query} searchData={result} />;
   }
 
   return null;

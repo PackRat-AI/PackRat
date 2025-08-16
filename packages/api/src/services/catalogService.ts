@@ -136,7 +136,7 @@ export class CatalogService {
     limit: number = 10,
     offset: number = 0,
   ): Promise<{
-    items: (CatalogItem & { similarity: number })[];
+    items: (Omit<CatalogItem, 'embedding'> & { similarity: number })[];
     total: number;
     limit: number;
     offset: number;
@@ -156,16 +156,18 @@ export class CatalogService {
       value: q,
       openAiApiKey: this.env.OPENAI_API_KEY,
       provider: this.env.AI_PROVIDER,
-      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID_ORG,
-      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
     });
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
 
+    const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
+
     const [items, [{ totalCount }]] = await Promise.all([
       this.db
         .select({
-          ...getTableColumns(catalogItems),
+          ...columnsToSelect,
           similarity,
         })
         .from(catalogItems)
@@ -194,7 +196,7 @@ export class CatalogService {
     queries: string[],
     limit: number = 5,
   ): Promise<{
-    items: (CatalogItem & { similarity: number })[][];
+    items: (Omit<CatalogItem, 'embedding'> & { similarity: number })[][];
   }> {
     if (!queries || queries.length === 0) {
       return {
@@ -209,9 +211,10 @@ export class CatalogService {
 
     const searchTasks = embeddings.map((embedding) => {
       const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+      const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
       return this.db
         .select({
-          ...getTableColumns(catalogItems),
+          ...columnsToSelect,
           similarity,
         })
         .from(catalogItems)
@@ -379,7 +382,7 @@ export class CatalogService {
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
         provider: this.env.AI_PROVIDER,
       });
 

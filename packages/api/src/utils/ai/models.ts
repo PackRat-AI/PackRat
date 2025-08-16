@@ -22,8 +22,23 @@ export enum OpenAIModels {
   TEXT_EMBEDDING_ADA_002 = 'text-embedding-ada-002',
 }
 
+export enum PerplexityModels {
+  SONAR = 'sonar',
+  SONAR_PRO = 'sonar-pro',
+  SONAR_REASONING = 'sonar reasoning',
+  SONAR_REASONING_PRO = 'sonar reasoning pro',
+  SONAR_DEEP_RESEARCH = 'sonar deep research',
+  GPT_5 = 'gpt-5',
+  CLAUDE_4_SONNET = 'claude 4.0 sonnet',
+  GEMINI_2_5_PRO = 'gemini 2.5 pro',
+  SONAR_LARGE = 'sonar large',
+}
+
 // Default models for each use case
 export const DEFAULT_MODELS = {
-  CHAT: OpenAIModels.GPT_4O,
-  EMBEDDING: OpenAIModels.TEXT_EMBEDDING_3_SMALL,
+  CHAT: CloudflareAIModels.LLAMA_2_7B_CHAT_INT8,
+  EMBEDDING: CloudflareAIModels.BGE_BASE_EN_V1_5,
+  OPENAI_CHAT: OpenAIModels.GPT_4O,
+  OPENAI_EMBEDDING: OpenAIModels.TEXT_EMBEDDING_3_SMALL,
+  PERPLEXITY_SEARCH: PerplexityModels.SONAR_PRO,
 } as const;
