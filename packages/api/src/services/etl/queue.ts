@@ -28,6 +28,7 @@ export interface CatalogETLMessage extends BaseQueueMessage {
     objectKey: string;
     userId: string;
     filename: string;
+    scraperRevision: string;
   };
 }
 
@@ -45,17 +46,19 @@ export async function queueCatalogETL({
   objectKey,
   userId,
   filename,
+  scraperRevision,
 }: {
   queue: Queue;
   objectKey: string;
   userId: string;
   filename: string;
+  scraperRevision: string;
 }): Promise<string> {
   const jobId = crypto.randomUUID();
 
   const message: CatalogETLMessage = {
     type: QueueType.CATALOG_ETL,
-    data: { objectKey, userId, filename },
+    data: { objectKey, userId, filename, scraperRevision },
     timestamp: Date.now(),
     id: jobId,
   };
@@ -106,7 +109,7 @@ async function processCatalogETL({
   message: CatalogETLMessage;
   env: Env;
 }): Promise<void> {
-  const { objectKey, filename } = message.data;
+  const { objectKey, filename, scraperRevision } = message.data;
   const jobId = message.id;
 
   const db = createDbClient(env);
@@ -116,6 +119,7 @@ async function processCatalogETL({
       status: 'running',
       source: filename,
       objectKey,
+      scraperRevision,
       startedAt: new Date(),
     });
 
