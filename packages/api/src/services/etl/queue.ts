@@ -121,12 +121,17 @@ async function processCatalogETL({
 
     console.log(`🚀 Starting ETL job ${jobId} for file ${filename}`);
 
-    const r2Service = new R2BucketService({
+    const r2CatalogService = new R2BucketService({
       env,
       bucketType: 'catalog',
     });
 
-    const object = await r2Service.get(objectKey);
+    const r2ImageService = new R2BucketService({
+      env,
+      bucketType: 'catalog'
+    });
+
+    const object = await r2CatalogService.get(objectKey);
     if (!object) {
       throw new Error(`Object not found: ${objectKey}`);
     }
@@ -169,6 +174,30 @@ async function processCatalogETL({
         totalProcessed++;
 
         if (validatedItem.isValid) {
+          // Upload images to R2
+          if (validatedItem.item.images?.length) {
+            const uploadedKeys = await Promise.all(
+              validatedItem.item.images.map(async (url, idx) => {
+                try {
+                  const res = await fetch(url);
+                  if (!res.ok) throw new Error(`Failed to download image: ${url}`);
+
+                  const arrayBuffer = await res.arrayBuffer();
+                  const key = `catalog/images/${item.sku || crypto.randomUUID()}/${idx}.jpg`;
+
+                  await r2ImageService.put(key, arrayBuffer, {
+                    httpMetadata: { contentType: res.headers.get('content-type') || 'image/jpeg' },
+                  });
+
+                  return key;
+                } catch (err) {
+                  console.error(`❌ Failed to upload image ${url}:`, err);
+                  return null;
+                }
+              }),
+            );
+            validatedItem.item.images = uploadedKeys.filter(Boolean) as string[];
+          }
           validItemsBatch.push(validatedItem.item);
           totalValid++;
         } else {
