@@ -1,32 +1,17 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import type { ItemLink } from 'expo-app/types';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { Linking, TouchableOpacity, View } from 'react-native';
 
 type ItemLinksProps = {
-  links: ItemLink[];
+  links: CatalogItem['links'];
 };
 
 export function ItemLinks({ links }: ItemLinksProps) {
   const { colors } = useColorScheme();
 
   if (!links || links.length === 0) return null;
-
-  const getIconName = (type: ItemLink['type']) => {
-    switch (type) {
-      case 'official':
-        return 'globe-model';
-      case 'review':
-        return 'star-outline';
-      case 'guide':
-        return 'book-open-outline';
-      case 'purchase':
-        return 'cart';
-      default:
-        return 'link';
-    }
-  };
 
   const handleLinkPress = async (url: string) => {
     const supported = await Linking.canOpenURL(url);
@@ -45,11 +30,11 @@ export function ItemLinks({ links }: ItemLinksProps) {
       <View className="rounded-lg">
         {links.map((link) => (
           <TouchableOpacity
-            key={link.id}
+            key={link.url}
             className="flex-row items-center border-b border-border p-3 last:border-b-0"
             onPress={() => handleLinkPress(link.url)}
           >
-            <Icon name={getIconName(link.type)} size={18} color={colors.primary} />
+            <Icon name="link" size={18} color={colors.primary} />
             <View className="ml-3 flex-1">
               <Text className="text-foreground">{link.title}</Text>
               <Text className="text-xs text-muted-foreground" numberOfLines={1}>

@@ -50,55 +50,6 @@ export const WeightUnitSchema = z.enum(['g', 'oz', 'kg', 'lb']);
 
 export type WeightUnit = z.infer<typeof WeightUnitSchema>;
 
-export type ItemLink = {
-  id: string;
-  title: string;
-  url: string;
-  type: 'official' | 'review' | 'guide' | 'purchase' | 'other';
-};
-
-export type ItemReview = {
-  id: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  rating: number;
-  text: string;
-  date: string;
-  helpful?: number;
-  verified?: boolean;
-};
-
-export type CatalogItem = {
-  id: string;
-  name: string;
-  description: string;
-  defaultWeight: number;
-  weightUnit: string;
-  category: string;
-  image: string;
-  createdAt: string;
-  updatedAt: string;
-  usageCount?: number;
-  // Enhanced properties
-  brand?: string;
-  ratingValue?: number;
-  productUrl?: string;
-  color?: string | null;
-  size?: string | null;
-  sku?: string;
-  price?: number | null;
-  availability?: string;
-  seller?: string;
-  productSku?: string;
-  material?: string;
-  currency?: string;
-  condition?: string;
-  techs?: Record<string, string>;
-  // New properties
-  links?: ItemLink[];
-  reviews?: ItemReview[];
-};
 // --- Pack Item Schema ---
 export const PackItemSchema = z.object({
   id: z.string(),
