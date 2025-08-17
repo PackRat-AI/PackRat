@@ -84,8 +84,9 @@ export class CatalogService {
     }
 
     if (category) {
-      conditions.push(sql`${category} = ANY(categories)`);
+      conditions.push(sql`${catalogItems.categories} @> ${JSON.stringify([category])}::jsonb`);
     }
+
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Build orderBy clause
