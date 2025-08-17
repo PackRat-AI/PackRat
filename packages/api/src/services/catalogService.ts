@@ -14,11 +14,11 @@ import {
   cosineDistance,
   count,
   desc,
+  eq,
   getTableColumns,
   gt,
   ilike,
   inArray,
-  isNotNull,
   isNull,
   or,
   type SQL,
@@ -230,12 +230,12 @@ export class CatalogService {
   async getCategories(limit = 10) {
     const rows = await this.db
       .select({
-        category: sql`unnest(categories)`,
+        category: sql<string>`jsonb_array_elements_text(${catalogItems.categories})`,
       })
       .from(catalogItems)
-      .where(isNotNull(catalogItems.categories))
-      .groupBy(sql`unnest(categories)`)
-      .orderBy(desc(count(catalogItems.id)))
+      .where(sql`${catalogItems.categories} IS NOT NULL`)
+      .groupBy(sql`jsonb_array_elements_text(${catalogItems.categories})`)
+      .orderBy(desc(sql`count(*)`))
       .limit(limit);
 
     return rows.map((row) => String(row.category));

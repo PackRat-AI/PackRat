@@ -3,12 +3,12 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import type { ItemReview } from 'expo-app/types';
 import { useState } from 'react';
 import { Image, TouchableOpacity, View } from 'react-native';
+import type { CatalogItem } from '../types';
 
 type ItemReviewsProps = {
-  reviews: ItemReview[];
+  reviews: CatalogItem['reviews'];
 };
 
 export function ItemReviews({ reviews }: ItemReviewsProps) {
@@ -41,22 +41,22 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
       </View>
 
       {reviews.map((review) => {
-        const isExpanded = expandedReviews[review.id] || false;
+        const isExpanded = expandedReviews[review.title] || false;
         const shouldTruncate = review.text.length > 150;
 
         return (
-          <View key={review.id} className="mb-3 rounded-lg bg-card p-3 shadow-sm">
+          <View key={review.title} className="mb-3 rounded-lg bg-card p-3 shadow-sm">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
-                {review.userAvatar ? (
-                  <Image source={{ uri: review.userAvatar }} className="h-8 w-8 rounded-full" />
+                {review.user_avatar ? (
+                  <Image source={{ uri: review.user_avatar }} className="h-8 w-8 rounded-full" />
                 ) : (
                   <View className="h-8 w-8 items-center justify-center rounded-full bg-muted">
                     <Icon name="person-outline" size={16} color="text-muted-foreground" />
                   </View>
                 )}
                 <View className="ml-2">
-                  <Text className="font-medium text-foreground">{review.userName}</Text>
+                  <Text className="font-medium text-foreground">{review.user_name}</Text>
                   <Text className="text-xs text-muted-foreground">{formatDate(review.date)}</Text>
                 </View>
               </View>
@@ -91,22 +91,16 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
               </Text>
 
               {shouldTruncate && (
-                <TouchableOpacity className="mt-1" onPress={() => toggleReviewExpansion(review.id)}>
+                <TouchableOpacity
+                  className="mt-1"
+                  onPress={() => toggleReviewExpansion(review.title)}
+                >
                   <Text className="text-sm text-primary">
                     {isExpanded ? 'Show less' : 'Read more'}
                   </Text>
                 </TouchableOpacity>
               )}
             </View>
-
-            {review.helpful !== undefined && (
-              <View className="mt-2 flex-row items-center">
-                <Icon name="heart" size={14} color={colors.grey} />
-                <Text className="ml-1 text-xs text-muted-foreground">
-                  {review.helpful} {review.helpful === 1 ? 'person' : 'people'} found this helpful
-                </Text>
-              </View>
-            )}
           </View>
         );
       })}
