@@ -138,9 +138,9 @@ export function CatalogItemDetailScreen() {
             {item.material && (
               <View className="mb-2 mr-4">
                 <Text className="text-xs uppercase text-muted-foreground">MATERIAL</Text>
-                <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.material}
-                </Chip>
+                <View className="bg-secondary rounded-2xl py-1 px-2">
+                  <Text className="text-xs text-secondary-foreground">{item.material}</Text>
+                </View>
               </View>
             )}
 
