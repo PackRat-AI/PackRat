@@ -251,6 +251,10 @@ export function createTools(c: Context, userId: number) {
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Search failed',
+          };
+        }
+      },
+    }),
 
     executeSql: tool({
       description:
