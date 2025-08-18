@@ -1,11 +1,12 @@
 import { Text } from '@packrat/ui/nativewindui';
+import type { ToolUIPart, UIMessage } from 'ai';
+import { Markdown } from 'expo-app/components/Markdown';
 import { ReportButton } from 'expo-app/features/ai/components/ReportButton';
 import { cn } from 'expo-app/lib/cn';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
-import Animated, { interpolate, type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
-import type { UIMessage, ToolUIPart } from 'ai';
 
 const BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',
@@ -21,13 +22,7 @@ export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
   const rootStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
-  const dateStyle = useAnimatedStyle(() => ({
-    width: 75,
-    position: 'absolute',
-    right: 0,
-    paddingLeft: 8,
-    transform: [{ translateX: interpolate(translateX.value, [-75, 0], [0, 75]) }],
-  }));
+
   const isAI = item.role === 'assistant';
 
   return (
@@ -82,9 +77,11 @@ export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
                 {item.parts.map((part, idx) => {
                   const key = `${part.type}-${idx}`;
                   if (part.type === 'text')
-                    return (
+                    return isAI ? (
+                      <Markdown>{formatAIResponse(part.text)}</Markdown>
+                    ) : (
                       <Text key={key} className={cn(!isAI && 'text-white')}>
-                        {isAI ? formatAIResponse(part.text) : part.text}
+                        {part.text}
                       </Text>
                     );
 
