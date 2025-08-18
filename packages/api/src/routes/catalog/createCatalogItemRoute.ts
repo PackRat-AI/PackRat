@@ -28,7 +28,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   const db = createDb(c);
   const data = await c.req.json();
-  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID_ORG, CLOUDFLARE_AI_GATEWAY_ID_ORG } =
+  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID } =
     getEnv(c);
 
   if (!OPENAI_API_KEY) {
@@ -41,8 +41,8 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     openAiApiKey: OPENAI_API_KEY,
     value: embeddingText,
     provider: AI_PROVIDER,
-    cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
-    cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+    cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+    cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
   });
 
   const [newItem] = await db
