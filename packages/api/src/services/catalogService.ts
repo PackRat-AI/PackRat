@@ -206,6 +206,9 @@ export class CatalogService {
     const embeddings = await generateManyEmbeddings({
       values: queries,
       openAiApiKey: this.env.OPENAI_API_KEY,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      provider: this.env.AI_PROVIDER,
     });
 
     const searchTasks = embeddings.map((embedding) => {
@@ -289,6 +292,9 @@ export class CatalogService {
       const embeddings = await generateManyEmbeddings({
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,
+        cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+        provider: this.env.AI_PROVIDER,
       });
 
       // Update items with new embeddings

@@ -1,6 +1,3 @@
-import { Icon } from '@roninoss/icons';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { Platform, TouchableWithoutFeedback, View } from 'react-native';
 import {
   Card,
   CardContent,
@@ -11,8 +8,12 @@ import {
   CardTitle,
   Text,
 } from '@packrat/ui/nativewindui';
+import { Icon } from '@roninoss/icons';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { Platform, TouchableWithoutFeedback, View } from 'react-native';
 import type { CatalogItem } from '../types';
-import fallbackImage from 'expo-app/assets/image-not-available.png';
+
+const fallbackImage = require('expo-app/assets/image-not-available.png');
 
 type CatalogItemCardProps = {
   item: CatalogItem;
