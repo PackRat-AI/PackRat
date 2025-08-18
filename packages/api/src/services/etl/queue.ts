@@ -190,7 +190,12 @@ async function processCatalogETL({
                   const key = `catalog/images/${item.sku || crypto.randomUUID()}/${idx}.jpg`;
 
                   await r2ImageService.put(key, arrayBuffer, {
-                    httpMetadata: { contentType: res.headers.get('content-type') || 'image/jpeg' },
+                  const contentType = res.headers.get('content-type') || 'image/jpeg';
+                  const extension = getImageExtensionFromContentType(contentType);
+                  const key = `catalog/images/${item.sku || crypto.randomUUID()}/${idx}.${extension}`;
+
+                  await r2ImageService.put(key, arrayBuffer, {
+                    httpMetadata: { contentType },
                   });
 
                   return key;
