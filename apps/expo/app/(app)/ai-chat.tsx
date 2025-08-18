@@ -121,8 +121,8 @@ export default function AIChat() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  const handleSubmit = () => {
-    sendMessage({ text: input });
+  const handleSubmit = (text?: string) => {
+    sendMessage({ text: text || input });
     setInput('');
   };
 
@@ -133,8 +133,7 @@ export default function AIChat() {
   }, [error]);
 
   const handleSuggestionPress = (suggestion: string) => {
-    setInput(suggestion);
-    handleSubmit();
+    handleSubmit(suggestion);
     setShowSuggestions(false);
   };
 
