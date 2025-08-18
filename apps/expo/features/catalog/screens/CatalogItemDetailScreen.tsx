@@ -1,16 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
+import { Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
 import { ErrorScreen } from '../../../screens/ErrorScreen';
 import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { useCatalogItemDetails } from '../hooks';
-import { Ionicons } from '@expo/vector-icons';
+
+const fallbackImage = require('expo-app/assets/image-not-available.png');
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
@@ -51,22 +54,31 @@ export function CatalogItemDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        <Image
-          source={{
-            uri: item.images?.[0] !== null ? item.images?.[0] : undefined, // `null` isn't assignable to uri
-            ...(Platform.OS === 'android'
-              ? {
-                  headers: {
-                    'User-Agent':
-                      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-                    Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
-                  },
-                }
-              : {}),
-          }}
-          className="h-64 w-full"
-          resizeMode="contain"
-        />
+        <View className="h-64 w-full">
+          <Image
+            source={
+              item.images?.[0]
+                ? {
+                    uri: item.images?.[0],
+                    ...(Platform.OS === 'android'
+                      ? {
+                          headers: {
+                            'User-Agent':
+                              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+                            Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
+                          },
+                        }
+                      : {}),
+                  }
+                : fallbackImage
+            }
+            contentFit="contain"
+            transition={200}
+            style={{
+              flex: 1,
+            }}
+          />
+        </View>
 
         <View className="bg-card p-4">
           <View className="mb-2">
