@@ -187,7 +187,6 @@ async function processCatalogETL({
                   if (!res.ok) throw new Error(`Failed to download image: ${url}`);
 
                   const arrayBuffer = await res.arrayBuffer();
-                  const key = `catalog/images/${item.sku || crypto.randomUUID()}/${idx}.jpg`;
 
                   await r2ImageService.put(key, arrayBuffer, {
                   const contentType = res.headers.get('content-type') || 'image/jpeg';
