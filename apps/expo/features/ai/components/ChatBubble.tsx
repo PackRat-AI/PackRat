@@ -64,12 +64,12 @@ export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
               </>
             )}
           </View>
-          <View className={cn(isAI && 'max-w-[85vw]')}>
+          <View>
             <Pressable>
               <View
                 style={BORDER_CURVE}
                 className={cn(
-                  'rounded-2xl bg-background px-3 py-1.5 dark:bg-muted-foreground',
+                  'px-2 py-1.5 dark:bg-muted-foreground',
                   Platform.OS === 'ios' && 'dark:bg-muted',
                   !isAI && 'bg-primary dark:bg-primary',
                 )}
