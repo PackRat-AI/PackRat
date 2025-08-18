@@ -1,5 +1,5 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Button, Text, ActivityIndicator } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { fetch as expoFetch } from 'expo/fetch';
@@ -119,7 +119,7 @@ export default function AIChat() {
     },
   });
 
-  const isLoading = status === 'streaming';
+  const isLoading = status === 'submitted' || status === 'streaming';
 
   const handleSubmit = () => {
     sendMessage({ text: input });
@@ -331,9 +331,7 @@ function Composer({
         />
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
-            <View className="h-7 w-7 items-center justify-center">
-              <Text className="text-xs text-primary">...</Text>
-            </View>
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : input.length > 0 ? (
             <Button
               onPress={handleSubmit}
