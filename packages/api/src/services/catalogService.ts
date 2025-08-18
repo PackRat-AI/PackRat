@@ -14,11 +14,11 @@ import {
   cosineDistance,
   count,
   desc,
+  eq,
   getTableColumns,
   gt,
   ilike,
   inArray,
-  isNotNull,
   isNull,
   or,
   type SQL,
@@ -84,8 +84,9 @@ export class CatalogService {
     }
 
     if (category) {
-      conditions.push(sql`${category} = ANY(categories)`);
+      conditions.push(sql`${catalogItems.categories} @> ${JSON.stringify([category])}::jsonb`);
     }
+
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Build orderBy clause
@@ -207,6 +208,9 @@ export class CatalogService {
     const embeddings = await generateManyEmbeddings({
       values: queries,
       openAiApiKey: this.env.OPENAI_API_KEY,
+      cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      provider: this.env.AI_PROVIDER,
     });
 
     const searchTasks = embeddings.map((embedding) => {
@@ -233,12 +237,12 @@ export class CatalogService {
   async getCategories(limit = 10) {
     const rows = await this.db
       .select({
-        category: sql`unnest(categories)`,
+        category: sql<string>`jsonb_array_elements_text(${catalogItems.categories})`,
       })
       .from(catalogItems)
-      .where(isNotNull(catalogItems.categories))
-      .groupBy(sql`unnest(categories)`)
-      .orderBy(desc(count(catalogItems.id)))
+      .where(sql`${catalogItems.categories} IS NOT NULL`)
+      .groupBy(sql`jsonb_array_elements_text(${catalogItems.categories})`)
+      .orderBy(desc(sql`count(*)`))
       .limit(limit);
 
     return rows.map((row) => String(row.category));
@@ -291,6 +295,9 @@ export class CatalogService {
       const embeddings = await generateManyEmbeddings({
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,
+        cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
+        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+        provider: this.env.AI_PROVIDER,
       });
 
       // Update items with new embeddings

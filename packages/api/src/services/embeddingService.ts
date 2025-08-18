@@ -13,8 +13,16 @@ type GenerateEmbeddingParams = GenerateEmbeddingBaseParams & {
   value: string;
 };
 
-export const generateEmbedding = async (params: GenerateEmbeddingParams): Promise<number[]> => {
+export const generateEmbedding = async (
+  params: GenerateEmbeddingParams,
+): Promise<number[] | null> => {
   const { value, ...providerConfig } = params;
+
+  // Guard: skip if no text or only whitespace
+  if (!value || !value.trim()) {
+    return null;
+  }
+
   const aiProvider = createAIProvider(providerConfig);
 
   // OpenAI recommends replacing newlines with spaces for best results
@@ -34,13 +42,20 @@ type GenerateManyEmbeddingsParams = GenerateEmbeddingBaseParams & {
 
 export const generateManyEmbeddings = async (
   params: GenerateManyEmbeddingsParams,
-): Promise<number[][]> => {
+): Promise<(number[] | null)[]> => {
   const { values, ...providerConfig } = params;
+
+  // Filter out empty/whitespace-only strings
+  const cleanValues = values.map((v) => v?.replace(/\n/g, ' ').trim()).filter(Boolean);
+  if (cleanValues.length === 0) {
+    return [];
+  }
+
   const aiProvider = createAIProvider(providerConfig);
 
   const { embeddings } = await embedMany({
-    model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),
-    values,
+    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING),
+    values: cleanValues,
   });
 
   return embeddings;

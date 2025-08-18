@@ -86,7 +86,7 @@ export default function FeatureSection() {
                   </ul>
                 </div>
               </div>
-              <div className="order-1 md:order-2 mx-auto">
+              <div className="order-1 md:order-2 flex justify-center">
                 <DeviceMockup
                   image="/feature-packing-list.png"
                   alt="Smart Packing Lists"
@@ -103,7 +103,7 @@ export default function FeatureSection() {
             gradientClassName="bg-gradient-to-r from-secondary via-primary to-secondary"
           >
             <div className="grid gap-8 md:grid-cols-2 items-center p-6 md:p-8">
-              <div className="mx-auto">
+              <div className="flex justify-center">
                 <DeviceMockup
                   image="/feature-trail-maps.png"
                   alt="Trail Maps & Navigation"

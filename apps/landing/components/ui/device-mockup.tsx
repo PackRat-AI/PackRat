@@ -44,8 +44,8 @@ export default function DeviceMockup({
     // biome-ignore lint/a11y/noStaticElementInteractions: ignore
     <div
       className={cn(
-        'relative mx-auto transition-all duration-500',
-        aspectRatio === 'portrait' ? 'max-w-[280px] md:max-w-[320px]' : 'max-w-[560px]',
+        'relative mx-auto w-full transition-all duration-500',
+        aspectRatio === 'portrait' ? 'max-w-[280px] md:max-w-[320px]' : 'max-w-[560px] w-full',
         className,
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -64,8 +64,8 @@ export default function DeviceMockup({
 
       <div
         className={cn(
-          'relative overflow-hidden rounded-[40px] border-[14px] bg-black transition-transform duration-500',
-          aspectRatio === 'portrait' ? 'aspect-[9/19.5]' : 'aspect-[19.5/9]',
+          'relative w-full overflow-hidden rounded-[40px] border-[14px] bg-black transition-transform duration-500',
+          aspectRatio === 'portrait' ? 'aspect-[9/16]' : 'aspect-[16/9]',
           showShadow && 'shadow-2xl shadow-black/20',
           isHovered && 'scale-[1.02]',
         )}
