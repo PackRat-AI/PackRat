@@ -188,7 +188,6 @@ async function processCatalogETL({
 
                   const arrayBuffer = await res.arrayBuffer();
 
-                  await r2ImageService.put(key, arrayBuffer, {
                   const contentType = res.headers.get('content-type') || 'image/jpeg';
                   const extension = getImageExtensionFromContentType(contentType);
                   const key = `catalog/images/${item.sku || crypto.randomUUID()}/${idx}.${extension}`;
