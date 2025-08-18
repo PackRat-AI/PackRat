@@ -98,7 +98,7 @@ export function CatalogItemDetailScreen() {
               <View className="flex-row flex-wrap gap-2">
                 {item.categories.map((category) => (
                   <Chip key={category} textClassName="text-xs" variant="outline">
-                    {category}
+                    <Text> {category}</Text>
                   </Chip>
                 ))}
               </View>
@@ -114,11 +114,11 @@ export function CatalogItemDetailScreen() {
               <Text className="text-xs uppercase text-muted-foreground">WEIGHT</Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {item.weight !== undefined && item.weightUnit ? (
-                  <>
+                  <Text>
                     {item.weight} {item.weightUnit}
-                  </>
+                  </Text>
                 ) : (
-                  'Not specified'
+                  <Text>Not specified</Text>
                 )}
               </Chip>
             </View>
@@ -127,19 +127,21 @@ export function CatalogItemDetailScreen() {
               <View className="mb-2 mr-4">
                 <Text className="text-xs uppercase text-muted-foreground">MATERIAL</Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.material}
+                  <Text>{item.material}</Text>
                 </Chip>
               </View>
             )}
 
-            {item.usageCount && item.usageCount > 0 && (
+            {item.usageCount && item.usageCount > 0 ? (
               <View className="mb-2">
                 <Text className="text-xs uppercase text-muted-foreground">USED IN</Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
+                  <Text>
+                    {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
+                  </Text>
                 </Chip>
               </View>
-            )}
+            ) : null}
           </View>
 
           {item.availability && (

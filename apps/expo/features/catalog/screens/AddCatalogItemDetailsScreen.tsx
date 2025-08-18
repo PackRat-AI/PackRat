@@ -69,14 +69,14 @@ export function AddCatalogItemDetailsScreen() {
       itemData: {
         name: catalogItem.name,
         description: catalogItem.description,
-        weight: catalogItem.defaultWeight || 0,
-        weightUnit: catalogItem.defaultWeightUnit as WeightUnit,
+        weight: catalogItem.weight || 0,
+        weightUnit: catalogItem.weightUnit as WeightUnit,
         quantity: Number.parseInt(quantity, 10) || 1,
-        category: catalogItem.category,
+        category: catalogItem.categories,
         consumable: isConsumable,
         worn: isWorn,
         notes: notes,
-        image: catalogItem.image,
+        image: catalogItem.images,
         catalogItemId: catalogItem.id,
       },
     });
@@ -123,7 +123,7 @@ export function AddCatalogItemDetailsScreen() {
                 <View className="flex-row items-center">
                   <Icon name="dumbbell" size={16} color={colors.grey} />
                   <Text className="ml-1 text-muted-foreground">
-                    {catalogItem.defaultWeight} {catalogItem.defaultWeightUnit}
+                    {catalogItem.weight} {catalogItem.weightUnit}
                   </Text>
                 </View>
                 {catalogItem.brand && (
