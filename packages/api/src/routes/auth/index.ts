@@ -258,6 +258,7 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
       firstName: userRecord.firstName,
       lastName: userRecord.lastName,
       emailVerified: true,
+      role: userRecord.role,
     },
   });
 });

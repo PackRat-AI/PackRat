@@ -29,7 +29,7 @@ export const generateEmbedding = async (
   const input = value.replace(/\n/g, ' ');
 
   const { embedding } = await embed({
-    model: aiProvider.embedding(DEFAULT_MODELS.EMBEDDING),
+    model: aiProvider.embedding(DEFAULT_MODELS.OPENAI_EMBEDDING),
     value: input,
   });
 
