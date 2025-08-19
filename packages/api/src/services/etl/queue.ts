@@ -300,6 +300,9 @@ async function processCatalogETLWriteBatch({
     const embeddings = await generateManyEmbeddings({
       openAiApiKey: env.OPENAI_API_KEY,
       values: embeddingTexts,
+      cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      provider: env.AI_PROVIDER,
     });
 
     // Combine items with their embeddings
