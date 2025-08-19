@@ -65,6 +65,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
       - Suggest multi-purpose items to reduce pack weight
       - Be concise but helpful in your responses
       - Use tools proactively to provide accurate, up-to-date information
+      - If users ask about what you can do or need help getting started, use the listAvailableTools function to show them all available capabilities
 
       Schema Info for SQL Tool:
       ${schemaInfo}
