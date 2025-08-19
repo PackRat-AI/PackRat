@@ -186,7 +186,11 @@ async function processCatalogETL({
                   const res = await fetch(url);
                   if (!res.ok) throw new Error(`Failed to download image: ${url}`);
 
+                  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
                   const arrayBuffer = await res.arrayBuffer();
+                  if (arrayBuffer.byteLength > MAX_IMAGE_SIZE) {
+                    throw new Error(`Image too large (${arrayBuffer.byteLength} bytes): ${url}`);
+                  }
 
                   const contentType = res.headers.get('content-type') || 'image/jpeg';
                   const extension = getImageExtensionFromContentType(contentType);
@@ -600,4 +604,20 @@ function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
   const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
   return Number.isNaN(price) ? null : price;
+}
+
+function getImageExtensionFromContentType(contentType: string): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/bmp': 'bmp',
+    'image/tiff': 'tiff',
+    'image/svg+xml': 'svg',
+    'image/avif': 'avif',
+  };
+
+  return map[contentType.toLowerCase()] || 'jpg'; // default fallback
 }
