@@ -132,7 +132,7 @@ async function processCatalogETL({
 
     const r2ImageService = new R2BucketService({
       env,
-      bucketType: 'catalog'
+      bucketType: 'images'
     });
 
     const object = await r2CatalogService.get(objectKey);
