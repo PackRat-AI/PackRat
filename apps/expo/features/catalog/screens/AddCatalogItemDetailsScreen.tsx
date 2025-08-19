@@ -76,7 +76,7 @@ export function AddCatalogItemDetailsScreen() {
         consumable: isConsumable,
         worn: isWorn,
         notes: notes,
-        image: catalogItem.images,
+        image: Array.isArray(catalogItem.images) ? catalogItem.images[0] : catalogItem.images,
         catalogItemId: catalogItem.id,
       },
     });
