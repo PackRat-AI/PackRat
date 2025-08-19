@@ -21,7 +21,7 @@ export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
   const rootStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
-  const dateStyle = useAnimatedStyle(() => ({
+  const _dateStyle = useAnimatedStyle(() => ({
     width: 75,
     position: 'absolute',
     right: 0,
