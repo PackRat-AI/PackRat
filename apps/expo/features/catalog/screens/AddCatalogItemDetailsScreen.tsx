@@ -72,11 +72,11 @@ export function AddCatalogItemDetailsScreen() {
         weight: catalogItem.weight || 0,
         weightUnit: catalogItem.weightUnit as WeightUnit,
         quantity: Number.parseInt(quantity, 10) || 1,
-        category: Array.isArray(catalogItem.categories) ? catalogItem.categories[0] : catalogItem.categories,
+        category: catalogItem.categories,
         consumable: isConsumable,
         worn: isWorn,
         notes: notes,
-        image: Array.isArray(catalogItem.images) ? catalogItem.images[0] : catalogItem.images,
+        image: catalogItem.images,
         catalogItemId: catalogItem.id,
       },
     });
