@@ -72,7 +72,7 @@ export function AddCatalogItemDetailsScreen() {
         weight: catalogItem.weight || 0,
         weightUnit: catalogItem.weightUnit as WeightUnit,
         quantity: Number.parseInt(quantity, 10) || 1,
-        category: catalogItem.categories,
+        category: Array.isArray(catalogItem.categories) ? catalogItem.categories[0] : catalogItem.categories,
         consumable: isConsumable,
         worn: isWorn,
         notes: notes,
