@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
@@ -10,7 +11,6 @@ import { ErrorScreen } from '../../../screens/ErrorScreen';
 import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { useCatalogItemDetails } from '../hooks';
-import { Ionicons } from '@expo/vector-icons';
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();

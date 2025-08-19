@@ -1,5 +1,3 @@
-import type { WeightUnit } from 'expo-app/types';
-
 export interface CatalogItemLink {
   id: string;
   title: string;
