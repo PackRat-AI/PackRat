@@ -322,8 +322,8 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     .select({
       id: catalogItems.id,
       name: catalogItems.name,
-      image: catalogItems.image,
-      category: catalogItems.category,
+      image: sql<string | null>`COALESCE((${catalogItems.images})::jsonb->>0, NULL)`, // Get first image from array or null
+      category: sql<string | null>`COALESCE((${catalogItems.categories})::jsonb->>0, NULL)`, // Get first category from array or null
       similarity,
     })
     .from(catalogItems)
