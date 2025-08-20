@@ -2,6 +2,7 @@ import { type UIMessage, useChat } from '@ai-sdk/react';
 import { Button, Text, ActivityIndicator } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
@@ -39,7 +40,6 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { type TextUIPart, DefaultChatTransport } from 'ai';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 const _dimensions = Dimensions.get('window');
