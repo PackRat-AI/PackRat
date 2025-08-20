@@ -1,4 +1,3 @@
-import { sign } from 'hono/jwt';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   api,
@@ -6,7 +5,6 @@ import {
   expectBadRequest,
   expectJsonResponse,
   expectUnauthorized,
-  httpMethods,
 } from './utils/test-helpers';
 
 describe('Weather Routes', () => {
@@ -98,7 +96,7 @@ describe('Weather Routes', () => {
       const originalFetch = global.fetch;
       global.fetch = mockFetch as any;
 
-      const res = await apiWithAuth('/weather/search?q=' + encodeURIComponent('São Paulo'));
+      const res = await apiWithAuth(`/weather/search?q=${encodeURIComponent('São Paulo')}`);
       expect(res.status).toBe(200);
 
       global.fetch = originalFetch;

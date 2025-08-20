@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import app from '../src/index';
 import {
-  api,
   apiWithAuth,
   expectBadRequest,
-  expectJsonResponse,
   expectUnauthorized,
   httpMethods,
 } from './utils/test-helpers';
@@ -94,7 +92,7 @@ describe('Auth Routes', () => {
     });
 
     it('accepts valid registration data', async () => {
-      const res = await authApi(
+      const _res = await authApi(
         '/register',
         httpMethods.post('', {
           email: 'newuser@example.com',
@@ -195,7 +193,7 @@ describe('Auth Routes', () => {
     });
 
     it('returns user data when authenticated', async () => {
-      const res = await apiWithAuth('/auth/me');
+      const _res = await apiWithAuth('/auth/me');
       // This would work with proper database mocking
       // For now, just test the auth requirement
     });
@@ -222,7 +220,7 @@ describe('Auth Routes', () => {
     });
 
     it('validates identity token format', async () => {
-      const res = await authApi(
+      const _res = await authApi(
         '/apple',
         httpMethods.post('', {
           identityToken: 'invalid-token',
@@ -244,7 +242,7 @@ describe('Auth Routes', () => {
 
     it('validates Google ID token', async () => {
       // Mock Google client verification
-      const res = await authApi(
+      const _res = await authApi(
         '/google',
         httpMethods.post('', {
           idToken: 'mock-google-token',

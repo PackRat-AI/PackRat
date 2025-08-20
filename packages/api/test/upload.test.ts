@@ -271,7 +271,7 @@ describe('Upload Routes', () => {
         '../../../etc/passwd.jpg',
         'test\0file.jpg',
         'test<script>.jpg',
-        'very-long-filename-' + 'a'.repeat(200) + '.jpg',
+        `very-long-filename-${'a'.repeat(200)}.jpg`,
       ];
 
       for (const filename of malformedFilenames) {

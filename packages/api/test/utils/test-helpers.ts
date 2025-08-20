@@ -77,23 +77,23 @@ export const createTestRequestBody = (data: any) => ({
 
 // Helper to test common HTTP methods
 export const httpMethods = {
-  get: (url: string, options?: RequestInit) => ({ method: 'GET', ...options }),
-  post: (url: string, body?: any, options?: RequestInit) => ({
+  get: (_url: string, options?: RequestInit) => ({ method: 'GET', ...options }),
+  post: (_url: string, body?: any, options?: RequestInit) => ({
     method: 'POST',
     ...createTestRequestBody(body),
     ...options,
   }),
-  put: (url: string, body?: any, options?: RequestInit) => ({
+  put: (_url: string, body?: any, options?: RequestInit) => ({
     method: 'PUT',
     ...createTestRequestBody(body),
     ...options,
   }),
-  patch: (url: string, body?: any, options?: RequestInit) => ({
+  patch: (_url: string, body?: any, options?: RequestInit) => ({
     method: 'PATCH',
     ...createTestRequestBody(body),
     ...options,
   }),
-  delete: (url: string, options?: RequestInit) => ({ method: 'DELETE', ...options }),
+  delete: (_url: string, options?: RequestInit) => ({ method: 'DELETE', ...options }),
 };
 
 // Common test scenarios
