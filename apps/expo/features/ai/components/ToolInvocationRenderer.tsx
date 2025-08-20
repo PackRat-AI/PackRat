@@ -21,12 +21,7 @@ export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendere
 
   // Handle listAvailableTools tool result
   if (toolName === 'tool-listAvailableTools' && result.success && result.tools) {
-    return (
-      <AvailableToolsGenerativeUI
-        tools={result.tools}
-        totalCount={result.totalCount}
-      />
-    );
+    return <AvailableToolsGenerativeUI tools={result.tools} totalCount={result.totalCount} />;
   }
 
   // Handle getWeatherForLocation tool result
