@@ -3,23 +3,21 @@ import { z } from '@hono/zod-openapi';
 export const PackItemSchema = z
   .object({
     id: z.string().openapi({ example: 'pi_123456' }),
-    packId: z.string().openapi({ example: 'p_123456' }),
     name: z.string().openapi({ example: 'Sleeping Bag' }),
-    category: z.string().nullable().openapi({ example: 'Sleep System' }),
-    quantity: z.number().int().min(1).openapi({ example: 1 }),
-    weight: z.number().nullable().openapi({ example: 850, description: 'Weight in grams' }),
-    unit: z.string().nullable().openapi({ example: 'g' }),
-    wornWeight: z
-      .number()
-      .nullable()
-      .openapi({ example: 0, description: 'Weight when worn in grams' }),
-    image: z.string().nullable().openapi({ example: 'https://example.com/image.jpg' }),
     description: z.string().nullable().openapi({ example: 'Down sleeping bag rated to -5°C' }),
-    tags: z
-      .array(z.string())
-      .nullable()
-      .openapi({ example: ['sleeping', 'camping'] }),
+    weight: z.number().openapi({ example: 850, description: 'Weight in grams' }),
+    weightUnit: z.string().openapi({ example: 'g' }),
+    quantity: z.number().int().min(1).openapi({ example: 1 }),
+    category: z.string().nullable().openapi({ example: 'Sleep System' }),
+    consumable: z.boolean().openapi({ example: false }),
+    worn: z.boolean().openapi({ example: false }),
+    image: z.string().nullable().openapi({ example: 'https://example.com/image.jpg' }),
+    notes: z.string().nullable().openapi({ example: 'Great for cold weather' }),
+    packId: z.string().openapi({ example: 'p_123456' }),
+    catalogItemId: z.number().int().nullable().openapi({ example: 12345 }),
+    userId: z.number().int().openapi({ example: 1 }),
     deleted: z.boolean().openapi({ example: false }),
+    templateItemId: z.string().nullable().openapi({ example: 'pti_123456' }),
     createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
     updatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
   })
@@ -90,28 +88,32 @@ export const UpdatePackRequestSchema = z
 export const CreatePackItemRequestSchema = z
   .object({
     name: z.string().min(1).max(255).openapi({ example: 'Sleeping Bag' }),
-    category: z.string().optional().openapi({ example: 'Sleep System' }),
+    description: z.string().optional().openapi({ example: 'Down sleeping bag rated to -5°C' }),
+    weight: z.number().openapi({ example: 850, description: 'Weight in grams' }),
+    weightUnit: z.string().default('g').openapi({ example: 'g' }),
     quantity: z.number().int().min(1).default(1).openapi({ example: 1 }),
-    weight: z.number().optional().openapi({ example: 850, description: 'Weight in grams' }),
-    unit: z.string().optional().default('g').openapi({ example: 'g' }),
-    wornWeight: z.number().optional().openapi({ example: 0, description: 'Weight when worn' }),
-    image: z.string().url().optional(),
-    description: z.string().optional(),
-    tags: z.array(z.string()).optional(),
+    category: z.string().optional().openapi({ example: 'Sleep System' }),
+    consumable: z.boolean().optional().default(false).openapi({ example: false }),
+    worn: z.boolean().optional().default(false).openapi({ example: false }),
+    image: z.string().url().optional().openapi({ example: 'https://example.com/image.jpg' }),
+    notes: z.string().optional().openapi({ example: 'Great for cold weather' }),
+    catalogItemId: z.number().int().optional().openapi({ example: 12345 }),
   })
   .openapi('CreatePackItemRequest');
 
 export const UpdatePackItemRequestSchema = z
   .object({
     name: z.string().min(1).max(255).optional(),
-    category: z.string().optional(),
-    quantity: z.number().int().min(1).optional(),
-    weight: z.number().optional(),
-    unit: z.string().optional(),
-    wornWeight: z.number().optional(),
-    image: z.string().url().optional(),
     description: z.string().optional(),
-    tags: z.array(z.string()).optional(),
+    weight: z.number().optional(),
+    weightUnit: z.string().optional(),
+    quantity: z.number().int().min(1).optional(),
+    category: z.string().optional(),
+    consumable: z.boolean().optional(),
+    worn: z.boolean().optional(),
+    image: z.string().url().optional(),
+    notes: z.string().optional(),
+    catalogItemId: z.number().int().optional(),
     deleted: z.boolean().optional(),
   })
   .openapi('UpdatePackItemRequest');

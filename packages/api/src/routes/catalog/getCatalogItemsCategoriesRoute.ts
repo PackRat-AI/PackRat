@@ -34,5 +34,13 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const { limit } = c.req.valid('query');
   const categories = await new CatalogService(c).getCategories(limit);
 
-  return c.json(categories, 200);
+  // Transform to match the expected response schema
+  const response = {
+    categories: categories.map(category => ({
+      category,
+      count: 0, // TODO: Service should return actual counts
+    })),
+  };
+
+  return c.json(response, 200);
 };
