@@ -2,12 +2,14 @@ import { createRoute } from '@hono/zod-openapi';
 import { authMiddleware } from '@packrat/api/middleware';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 
 const catalogETLSchema = z.object({
   objectKey: z.string().min(1, 'R2 object key is required'),
   filename: z.string().min(1, 'File path is required'),
+  scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
 });
 
 export const routeDefinition = createRoute({
@@ -53,20 +55,21 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const { objectKey, filename } = c.req.valid('json');
+  const { objectKey, filename, scraperRevision } = c.req.valid('json');
   const userId = c.get('jwtPayload')?.userId;
 
-  if (!c.env.ETL_QUEUE) {
+  if (!getEnv(c).ETL_QUEUE) {
     throw new HTTPException(400, {
       message: 'ETL_QUEUE is not configured',
     });
   }
 
   const jobId = await queueCatalogETL({
-    queue: c.env.ETL_QUEUE,
+    queue: getEnv(c).ETL_QUEUE,
     objectKey,
     userId,
     filename,
+    scraperRevision,
   });
 
   return c.json({

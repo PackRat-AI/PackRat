@@ -93,7 +93,7 @@ export const catalogItems = pgTable(
     id: serial('id').primaryKey(),
     name: text('name').notNull(),
     productUrl: text('product_url').notNull(),
-    sku: text('sku').unique(),
+    sku: text('sku').unique().notNull(),
     weight: real('weight').notNull(),
     weightUnit: text('weight_unit').notNull(),
     description: text('description'),
@@ -379,17 +379,24 @@ export type NewInvalidItemLog = typeof invalidItemLogs.$inferInsert;
 
 const etlJobStatusEnum = pgEnum('etl_job_status', ['running', 'completed', 'failed']);
 
-export const etlJobs = pgTable('etl_jobs', {
-  id: text('id').primaryKey(),
-  status: etlJobStatusEnum('status').notNull(),
-  source: text('source').notNull(),
-  objectKey: text('object_key').notNull(),
-  startedAt: timestamp('started_at').notNull(),
-  completedAt: timestamp('completed_at'),
-  totalProcessed: integer('total_processed'),
-  totalValid: integer('total_valid'),
-  totalInvalid: integer('total_invalid'),
-});
+export const etlJobs = pgTable(
+  'etl_jobs',
+  {
+    id: text('id').primaryKey(),
+    status: etlJobStatusEnum('status').notNull(),
+    source: text('source').notNull(),
+    objectKey: text('object_key').notNull(),
+    startedAt: timestamp('started_at').notNull(),
+    completedAt: timestamp('completed_at'),
+    totalProcessed: integer('total_processed'),
+    totalValid: integer('total_valid'),
+    totalInvalid: integer('total_invalid'),
+    scraperRevision: text('scraper_revision').notNull(), // Git commit SHA or tag
+  },
+  (table) => ({
+    scraperRevisionIdx: index('etl_jobs_scraper_revision_idx').on(table.scraperRevision),
+  }),
+);
 
 export type ETLJob = typeof etlJobs.$inferSelect;
 export type NewETLJob = typeof etlJobs.$inferInsert;

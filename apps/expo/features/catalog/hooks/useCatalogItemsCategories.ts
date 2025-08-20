@@ -2,29 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
-const FALLBACK_CATEGORIES = [
-  'Clothing',
-  'Bike',
-  'Footwear',
-  'Accessories',
-  'Kids',
-  'Hike & Camp',
-  'Ski',
-  'Climb',
-  'Snowboard',
-  'Fishing',
-];
-
 const getCategories = async (): Promise<string[]> => {
   try {
-    const response = await axiosInstance.get(`/api/catalog/categories`);
-    const data = response.data;
-    if (data.length > 0) return data;
-    return FALLBACK_CATEGORIES;
+    const response = await axiosInstance.get<string[]>(`/api/catalog/categories`);
+    return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
     console.error(`Failed to fetch catalog categories: ${message}`);
-    return FALLBACK_CATEGORIES;
+    return [];
   }
 };
 
