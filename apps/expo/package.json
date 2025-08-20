@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-v2-poc",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "main": "expo-router/entry",
   "scripts": {
     "android": "expo run:android",
@@ -37,7 +37,7 @@
     "update:production": "eas update --branch production"
   },
   "dependencies": {
-    "@ai-sdk/react": "^1.1.23",
+    "@ai-sdk/react": "^2.0.11",
     "@expo/react-native-action-sheet": "^4.1.1",
     "@expo/vector-icons": "^14.0.0",
     "@gorhom/bottom-sheet": "^5.1.2",
@@ -67,7 +67,7 @@
     "@stardazed/streams-text-encoding": "^1.0.2",
     "@tanstack/react-form": "^1.0.5",
     "@tanstack/react-query": "^5.67.3",
-    "ai": "^4.1.61",
+    "ai": "^5.0.11",
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -104,7 +104,7 @@
     "react-native-gesture-handler": "~2.24.0",
     "react-native-ios-context-menu": "^3.1.0",
     "react-native-ios-utilities": "^5.1.2",
-    "react-native-keyboard-controller": "^1.16.7",
+    "react-native-keyboard-controller": "^1.18.3",
     "react-native-pager-view": "6.7.1",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",

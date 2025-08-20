@@ -1,15 +1,46 @@
+import { createPerplexity } from '@ai-sdk/perplexity';
 import type { AutoRAG } from '@cloudflare/workers-types';
-import type { Env } from '@packrat/api/types/env';
+import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { generateText } from 'ai';
 import type { Context } from 'hono';
-import { env } from 'hono/adapter';
+
+interface SearchResult {
+  answer: string;
+  sources: unknown[];
+}
+
+const WEB_SEARCH_SYSTEM_PROMPT =
+  'You are a helpful research assistant. Provide accurate, up-to-date information with proper citations. Be concise but comprehensive.';
 
 export class AIService {
   private env: Env;
   private guidesRAG: AutoRAG;
 
   constructor(c: Context) {
-    this.env = env<Env>(c);
+    this.env = getEnv(c);
     this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);
+  }
+
+  async perplexitySearch(query: string): Promise<SearchResult> {
+    const perplexity = createPerplexity({
+      apiKey: this.env.PERPLEXITY_API_KEY,
+    });
+
+    try {
+      const resp = await generateText({
+        model: perplexity(DEFAULT_MODELS.PERPLEXITY_SEARCH),
+        system: WEB_SEARCH_SYSTEM_PROMPT,
+        prompt: query,
+      });
+
+      const { text, sources } = resp;
+      return { answer: text, sources };
+    } catch (error) {
+      console.error('Search error:', error);
+      throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async searchPackratOutdoorGuidesRAG(

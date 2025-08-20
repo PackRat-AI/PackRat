@@ -42,6 +42,10 @@
       {
         "queue": "packrat-logs-queue",
         "binding": "LOGS_QUEUE"
+      },
+      {
+        "queue": "packrat-embeddings-queue",
+        "binding": "EMBEDDINGS_QUEUE"
       }
     ],
     "consumers": [
@@ -53,6 +57,11 @@
       {
         "queue": "packrat-logs-queue",
         "max_batch_size": 10,
+        "max_batch_timeout": 5
+      },
+      {
+        "queue": "packrat-embeddings-queue",
+        "max_batch_size": 100,
         "max_batch_timeout": 5
       }
     ]
@@ -91,6 +100,10 @@
           {
             "queue": "packrat-logs-queue-dev",
             "binding": "LOGS_QUEUE"
+          },
+          {
+            "queue": "packrat-embeddings-queue-dev",
+            "binding": "EMBEDDINGS_QUEUE"
           }
         ],
         "consumers": [
@@ -102,6 +115,11 @@
           {
             "queue": "packrat-logs-queue-dev",
             "max_batch_size": 10,
+            "max_batch_timeout": 5
+          },
+          {
+            "queue": "packrat-embeddings-queue-dev",
+            "max_batch_size": 100,
             "max_batch_timeout": 5
           }
         ]

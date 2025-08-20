@@ -190,6 +190,20 @@
       "when": 1753689394871,
       "tag": "0025_absent_fixer",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1754404075392,
+      "tag": "0026_shocking_agent_zero",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1755197646956,
+      "tag": "0027_past_madrox",
+      "breakpoints": true
     }
   ]
 }

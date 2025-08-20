@@ -1,10 +1,12 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import { createDbClient } from '@packrat/api/db';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
+import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { parse } from 'csv-parse/sync';
 import { eq } from 'drizzle-orm';
 import { CatalogService } from '../catalogService';
+import { generateManyEmbeddings } from '../embeddingService';
 import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
 import { mergeItemsBySku } from './mergeItemsBySku';
@@ -26,6 +28,7 @@ export interface CatalogETLMessage extends BaseQueueMessage {
     objectKey: string;
     userId: string;
     filename: string;
+    scraperRevision: string;
   };
 }
 
@@ -43,17 +46,19 @@ export async function queueCatalogETL({
   objectKey,
   userId,
   filename,
+  scraperRevision,
 }: {
   queue: Queue;
   objectKey: string;
   userId: string;
   filename: string;
+  scraperRevision: string;
 }): Promise<string> {
   const jobId = crypto.randomUUID();
 
   const message: CatalogETLMessage = {
     type: QueueType.CATALOG_ETL,
-    data: { objectKey, userId, filename },
+    data: { objectKey, userId, filename, scraperRevision },
     timestamp: Date.now(),
     id: jobId,
   };
@@ -104,7 +109,7 @@ async function processCatalogETL({
   message: CatalogETLMessage;
   env: Env;
 }): Promise<void> {
-  const { objectKey, filename } = message.data;
+  const { objectKey, filename, scraperRevision } = message.data;
   const jobId = message.id;
 
   const db = createDbClient(env);
@@ -114,6 +119,7 @@ async function processCatalogETL({
       status: 'running',
       source: filename,
       objectKey,
+      scraperRevision,
       startedAt: new Date(),
     });
 
@@ -249,11 +255,37 @@ async function processCatalogETLWriteBatch({
 
   // Consolidate items with identical SKUs before upserting to avoid conflicting duplicate upserts.
   const mergedItems = mergeItemsBySku(items as NewCatalogItem[]);
-  const result = await catalogService.upsertCatalogItems(mergedItems);
-  // Track the ETL job that processed these items
-  await catalogService.trackEtlJob(result, jobId);
 
-  console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);
+  // Prepare texts for batch embedding
+  const embeddingTexts = mergedItems.map((item) => getEmbeddingText(item));
+
+  try {
+    // Generate embeddings in batch
+    const embeddings = await generateManyEmbeddings({
+      openAiApiKey: env.OPENAI_API_KEY,
+      values: embeddingTexts,
+      cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
+      provider: env.AI_PROVIDER,
+    });
+
+    // Combine items with their embeddings
+    const itemsWithEmbeddings = mergedItems.map((item, index) => ({
+      ...item,
+      embedding: embeddings[index],
+    }));
+
+    const upsertedItems = await catalogService.upsertCatalogItems(itemsWithEmbeddings);
+    // Track the ETL job that processed these items
+    await catalogService.trackEtlJob(upsertedItems, jobId);
+  } catch (error) {
+    console.error(`Error generating embeddings for batch ${jobId}:`, error);
+    // Fall back to processing without embeddings
+    const upsertedItems = await catalogService.upsertCatalogItems(mergedItems);
+    await catalogService.trackEtlJob(upsertedItems, jobId);
+  } finally {
+    console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);
+  }
 }
 
 function mapCsvRowToItem({

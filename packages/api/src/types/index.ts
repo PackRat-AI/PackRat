@@ -143,5 +143,4 @@ export type Pack = z.infer<typeof PackSchema>;
 // --- Arrays for Mock Data Validation ---
 export const UsersArraySchema = z.array(UserSchema);
 export const PacksArraySchema = z.array(PackSchema);
-export const CatalogItemsArraySchema = z.array(CatalogItemSchema);
 export const PackItemsArraySchema = z.array(PackItemSchema);

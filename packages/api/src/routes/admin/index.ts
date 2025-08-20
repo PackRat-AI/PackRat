@@ -1,10 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/types/env';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/api/utils/typeAssertions';
-import { and, count, desc, eq, ilike, or } from 'drizzle-orm';
-import { env } from 'hono/adapter';
+import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
 
@@ -18,7 +18,7 @@ adminRoutes.use(
   },
   basicAuth({
     verifyUser: (username, password, c) => {
-      return username === env<Env>(c).ADMIN_USERNAME && password === env<Env>(c).ADMIN_PASSWORD;
+      return username === getEnv(c).ADMIN_USERNAME && password === getEnv(c).ADMIN_PASSWORD;
     },
     realm: 'PackRat Admin Panel',
   }),
@@ -489,11 +489,11 @@ adminRoutes.get('/catalog-table', async (c) => {
       .select({
         id: catalogItems.id,
         name: catalogItems.name,
-        category: catalogItems.category,
+        categories: catalogItems.categories,
         brand: catalogItems.brand,
         price: catalogItems.price,
-        defaultWeight: catalogItems.defaultWeight,
-        defaultWeightUnit: catalogItems.defaultWeightUnit,
+        weight: catalogItems.weight,
+        weightUnit: catalogItems.weightUnit,
         createdAt: catalogItems.createdAt,
       })
       .from(catalogItems)
@@ -506,9 +506,9 @@ adminRoutes.get('/catalog-table', async (c) => {
       <tr class="hover:bg-gray-50">
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.name}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.brand || 'Unknown'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.category || 'Uncategorized'}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.categories?.join(', ') || 'Uncategorized'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.defaultWeight ? `${item.defaultWeight} ${item.defaultWeightUnit || 'g'}` : 'N/A'
+          item.weight ? `${item.weight} ${item.weightUnit || 'g'}` : 'N/A'
         }</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
           item.price ? `$${item.price}` : 'N/A'
@@ -670,11 +670,11 @@ adminRoutes.get('/catalog-search', async (c) => {
       .select({
         id: catalogItems.id,
         name: catalogItems.name,
-        category: catalogItems.category,
+        categories: catalogItems.categories,
         brand: catalogItems.brand,
         price: catalogItems.price,
-        defaultWeight: catalogItems.defaultWeight,
-        defaultWeightUnit: catalogItems.defaultWeightUnit,
+        weight: catalogItems.weight,
+        weightUnit: catalogItems.weightUnit,
         createdAt: catalogItems.createdAt,
       })
       .from(catalogItems)
@@ -683,7 +683,13 @@ adminRoutes.get('/catalog-search', async (c) => {
           ? or(
               ilike(catalogItems.name, `%${search}%`),
               ilike(catalogItems.brand, `%${search}%`),
-              ilike(catalogItems.category, `%${search}%`),
+              // Partial match in any category (uses jsonb_array_elements_text and ILIKE)
+              sql`
+                  EXISTS (
+                    SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat
+                    WHERE cat ILIKE '%' || ${search} || '%'
+                  )
+                `,
               ilike(catalogItems.description, `%${search}%`),
             )
           : undefined,
@@ -697,9 +703,9 @@ adminRoutes.get('/catalog-search', async (c) => {
       <tr class="hover:bg-gray-50">
         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.name}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.brand || 'Unknown'}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.category || 'Uncategorized'}</td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.categories?.join(', ') || 'Uncategorized'}</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
-          item.defaultWeight ? `${item.defaultWeight} ${item.defaultWeightUnit || 'g'}` : 'N/A'
+          item.weight ? `${item.weight} ${item.weightUnit || 'g'}` : 'N/A'
         }</td>
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
           item.price ? `$${item.price}` : 'N/A'
@@ -811,11 +817,11 @@ adminRoutes.get('/catalog-list', async (c) => {
       .select({
         id: catalogItems.id,
         name: catalogItems.name,
-        category: catalogItems.category,
+        categories: catalogItems.categories,
         brand: catalogItems.brand,
         price: catalogItems.price,
-        defaultWeight: catalogItems.defaultWeight,
-        defaultWeightUnit: catalogItems.defaultWeightUnit,
+        weight: catalogItems.weight,
+        weightUnit: catalogItems.weightUnit,
         createdAt: catalogItems.createdAt,
       })
       .from(catalogItems)

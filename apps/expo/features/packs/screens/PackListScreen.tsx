@@ -13,7 +13,7 @@ import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import {
@@ -65,7 +65,11 @@ export function PackListScreen() {
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useAtom(activeFilterAtom);
   const { isAuthenticated } = useAuth();
-  const [selectedTypeIndex, setSelectedTypeIndex] = useState(USER_PACKS_INDEX);
+  const { view } = useLocalSearchParams();
+  const isAllPacksView = view === 'all';
+  const [selectedTypeIndex, setSelectedTypeIndex] = useState(
+    isAllPacksView ? ALL_PACKS_INDEX : USER_PACKS_INDEX,
+  );
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
