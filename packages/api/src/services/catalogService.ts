@@ -296,7 +296,7 @@ export class CatalogService {
         openAiApiKey: this.env.OPENAI_API_KEY,
         values: embeddingTexts,
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
-        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+        cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
         provider: this.env.AI_PROVIDER,
       });
 
