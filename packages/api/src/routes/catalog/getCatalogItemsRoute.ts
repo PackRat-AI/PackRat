@@ -2,7 +2,6 @@ import { createRoute } from '@hono/zod-openapi';
 import { CatalogItemsQuerySchema, CatalogItemsResponseSchema } from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -27,7 +26,7 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const _auth = await authenticateRequest(c);
+  // Authentication handled by middleware
 
   const { page, limit, q, category } = c.req.valid('query');
 

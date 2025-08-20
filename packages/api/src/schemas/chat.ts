@@ -108,7 +108,7 @@ export const ReportedContentSchema = z
       example: 'pending',
       description: 'Status of the report',
     }),
-    reviewed: z.boolean().openapi({
+    reviewed: z.boolean().nullable().openapi({
       example: false,
       description: 'Whether the report has been reviewed',
     }),

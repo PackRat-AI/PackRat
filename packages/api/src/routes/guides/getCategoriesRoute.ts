@@ -1,7 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import matter from 'gray-matter';
 
@@ -12,7 +11,7 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const _auth = await authenticateRequest(c);
+  // Authentication handled by middleware
 
   try {
     const bucket = new R2BucketService({

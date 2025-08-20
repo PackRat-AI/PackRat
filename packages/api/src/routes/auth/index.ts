@@ -28,7 +28,7 @@ import {
   VerifyEmailRequestSchema,
   VerifyEmailResponseSchema,
 } from '@packrat/api/schemas/auth';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
+import type { Variables } from '@packrat/api/types/variables';
 import {
   generateJWT,
   generateRefreshToken,
@@ -36,15 +36,20 @@ import {
   hashPassword,
   validateEmail,
   validatePassword,
+  verifyJWT,
   verifyPassword,
 } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
+import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 
-const authRoutes = new OpenAPIHono();
+const authRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 // Login route
 const loginRoute = createRoute({
   method: 'post',
@@ -935,7 +940,14 @@ const meRoute = createRoute({
 
 authRoutes.openapi(meRoute, async (c) => {
   try {
-    const auth = await authenticateRequest(c);
+    // Extract JWT from Authorization header
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const token = authHeader.substring(7);
+    const auth = await verifyJWT({ token, c });
     const db = createDb(c);
 
     if (!auth) {
@@ -943,6 +955,7 @@ authRoutes.openapi(meRoute, async (c) => {
     }
 
     // Find user
+    const userId = Number(auth.userId);
     const user = await db
       .select({
         id: users.id,
@@ -952,7 +965,7 @@ authRoutes.openapi(meRoute, async (c) => {
         emailVerified: users.emailVerified,
       })
       .from(users)
-      .where(eq(users.id, auth.userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     if (user.length === 0) {
@@ -994,16 +1007,31 @@ const deleteAccountRoute = createRoute({
         },
       },
     },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
   },
 });
 authRoutes.openapi(deleteAccountRoute, async (c) => {
-  const auth = await authenticateRequest(c);
+  // Extract JWT from Authorization header
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const token = authHeader.substring(7);
+  const auth = await verifyJWT({ token, c });
   if (!auth) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
   const db = createDb(c);
 
-  const userId = auth.userId;
+  const userId = auth.userId as number;
 
   // Delete all user-related data in the correct order to respect foreign key constraints
 

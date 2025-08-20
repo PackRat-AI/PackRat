@@ -2,7 +2,6 @@ import { createRoute, z } from '@hono/zod-openapi';
 import { CatalogCategoriesResponseSchema } from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest } from '@packrat/api/utils/api-middleware';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -32,8 +31,6 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const _auth = await authenticateRequest(c);
-
   const { limit } = c.req.valid('query');
   const categories = await new CatalogService(c).getCategories(limit);
 

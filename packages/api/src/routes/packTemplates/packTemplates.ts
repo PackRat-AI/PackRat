@@ -47,8 +47,7 @@ const getTemplatesRoute = createRoute({
 });
 
 packTemplateRoutes.openapi(getTemplatesRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+  const auth = c.get('user');
 
   const db = createDb(c);
   const templates = await db.query.packTemplates.findMany({
@@ -109,8 +108,7 @@ const createTemplateRoute = createRoute({
 });
 
 packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+  const auth = c.get('user');
 
   const db = createDb(c);
   const data = await c.req.json();
@@ -189,8 +187,7 @@ const getTemplateRoute = createRoute({
 });
 
 packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+  const auth = c.get('user');
 
   const db = createDb(c);
   const templateId = c.req.param('templateId');
@@ -280,9 +277,7 @@ const updateTemplateRoute = createRoute({
 });
 
 packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
-
+  const auth = c.get('user');
   const db = createDb(c);
   const templateId = c.req.param('templateId');
   const data = await c.req.json();
@@ -373,8 +368,7 @@ const deleteTemplateRoute = createRoute({
 });
 
 packTemplateRoutes.openapi(deleteTemplateRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
+  const auth = c.get('user');
 
   const db = createDb(c);
   const templateId = c.req.param('templateId');
