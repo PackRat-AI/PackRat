@@ -1,5 +1,5 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
-import { Button, Text, ActivityIndicator } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
@@ -72,7 +72,6 @@ export default function AIChat() {
   const { progress } = useReanimatedKeyboardAnimation();
   const textInputHeight = useSharedValue(17);
   const params = useLocalSearchParams();
-  const [showSuggestions, setShowSuggestions] = React.useState(true);
   const { activeLocation } = useActiveLocation();
   const listRef = React.useRef<FlashList<UIMessage>>(null);
 
@@ -112,10 +111,6 @@ export default function AIChat() {
         parts: [{ type: 'text', text: getContextualGreeting(context) }],
       } as UIMessage,
     ],
-    onFinish: () => {
-      // Hide suggestions after user sends a message
-      setShowSuggestions(false);
-    },
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
@@ -130,11 +125,6 @@ export default function AIChat() {
       Alert.alert(error.message);
     }
   }, [error]);
-
-  const handleSuggestionPress = (suggestion: string) => {
-    handleSubmit(suggestion);
-    setShowSuggestions(false);
-  };
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
     height: interpolate(
@@ -190,14 +180,14 @@ export default function AIChat() {
           }
           ListFooterComponent={
             <>
-              {showSuggestions && messages.length <= 2 && (
+              {messages.length < 2 && (
                 <View className="px-4 py-4">
                   <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
                   <View className="flex-row flex-wrap gap-2">
                     {getContextualSuggestions(context).map((suggestion) => (
                       <TouchableOpacity
                         key={suggestion}
-                        onPress={() => handleSuggestionPress(suggestion)}
+                        onPress={() => handleSubmit(suggestion)}
                         className="mb-2 rounded-full border border-border bg-card px-3 py-2"
                       >
                         <Text className="text-sm text-foreground">{suggestion}</Text>
@@ -205,6 +195,13 @@ export default function AIChat() {
                     ))}
                   </View>
                 </View>
+              )}
+              {status === 'submitted' && (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                  className="self-start ml-4 mb-8"
+                />
               )}
               <Animated.View style={toolbarHeightStyle} />
             </>
@@ -224,7 +221,14 @@ export default function AIChat() {
               userQuery = userMessage.parts.find((p) => p.type === 'text')?.text;
             }
 
-            return <ChatBubble item={item} userQuery={userQuery} />;
+            return (
+              <ChatBubble
+                item={item}
+                isLast={index === messages.length - 1}
+                status={status}
+                userQuery={userQuery}
+              />
+            );
           }}
         />
       </KeyboardAvoidingView>
@@ -235,7 +239,6 @@ export default function AIChat() {
           handleInputChange={setInput} // Pass the setter directly.
           handleSubmit={() => {
             handleSubmit();
-            setShowSuggestions(false);
           }}
           isLoading={isLoading}
           placeholder={
