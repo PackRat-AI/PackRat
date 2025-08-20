@@ -11,8 +11,6 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  // Authentication handled by middleware
-
   try {
     const bucket = new R2BucketService({
       env: getEnv(c),

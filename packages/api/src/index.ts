@@ -62,7 +62,7 @@ app.get(
     theme: 'purple',
     pageTitle: 'PackRat API Documentation',
     defaultHttpClient: {
-      targetKey: 'javascript',
+      targetKey: 'js',
       clientKey: 'fetch',
     },
   }),

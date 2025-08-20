@@ -781,9 +781,9 @@ adminRoutes.openapi(getStatsRoute, async (c) => {
 
     return c.json(
       {
-        users: userCount.count,
-        packs: packCount.count,
-        items: itemCount.count,
+        users: userCount?.count ?? 0,
+        packs: packCount?.count ?? 0,
+        items: itemCount?.count ?? 0,
       },
       200,
     );

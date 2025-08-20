@@ -26,8 +26,6 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  // Authentication handled by middleware
-
   const { page, limit, q, category } = c.req.valid('query');
 
   // Manually parse sort parameters from raw query

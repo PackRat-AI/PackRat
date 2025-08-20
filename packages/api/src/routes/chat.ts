@@ -14,7 +14,7 @@ import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { type CoreMessage, type Message as MessageType, streamText } from 'ai';
+import { type CoreMessage, streamText } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 
@@ -151,7 +151,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
     });
 
     // Get the response with proper headers
-    const response = result.toDataStreamResponse();
+    const response = result.toTextStreamResponse();
 
     // Add CORS headers for streaming when using Cloudflare Gateway
     if (CLOUDFLARE_ACCOUNT_ID_ORG && CLOUDFLARE_AI_GATEWAY_ID_ORG) {

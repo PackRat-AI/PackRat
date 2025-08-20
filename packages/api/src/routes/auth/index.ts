@@ -959,6 +959,14 @@ const meRoute = createRoute({
         },
       },
     },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
     404: {
       description: 'User not found',
       content: {
@@ -1157,7 +1165,7 @@ authRoutes.openapi(appleRoute, async (c) => {
           emailVerified: email_verified || false,
         })
         .returning({ id: users.id });
-      userId = newUser.id;
+      userId = newUser?.id || 0;
     }
 
     await db.insert(authProviders).values({
@@ -1188,7 +1196,7 @@ authRoutes.openapi(appleRoute, async (c) => {
   });
 
   const accessToken = await generateJWT({
-    payload: { userId, role: user.role },
+    payload: { userId, role: user?.role || 'USER' },
     c,
   });
 
