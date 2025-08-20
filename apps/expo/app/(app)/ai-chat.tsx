@@ -6,6 +6,7 @@ import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
@@ -161,7 +162,6 @@ export default function AIChat() {
         behavior="padding"
       >
         <FlashList
-          // inverted
           ref={listRef}
           estimatedItemSize={70}
           ListHeaderComponent={
@@ -203,6 +203,7 @@ export default function AIChat() {
                   className="self-start ml-4 mb-8"
                 />
               )}
+              {status === 'error' && <ErrorState error={error} onRetry={() => handleSubmit()} />}
               <Animated.View style={toolbarHeightStyle} />
             </>
           }
@@ -221,14 +222,7 @@ export default function AIChat() {
               userQuery = userMessage.parts.find((p) => p.type === 'text')?.text;
             }
 
-            return (
-              <ChatBubble
-                item={item}
-                isLast={index === messages.length - 1}
-                status={status}
-                userQuery={userQuery}
-              />
-            );
+            return <ChatBubble item={item} userQuery={userQuery} />;
           }}
         />
       </KeyboardAvoidingView>
