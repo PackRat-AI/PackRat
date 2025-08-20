@@ -1,4 +1,4 @@
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
