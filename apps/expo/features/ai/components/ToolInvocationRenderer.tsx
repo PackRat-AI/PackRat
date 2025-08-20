@@ -19,7 +19,17 @@ interface ToolInvocationRendererProps {
 
 type AvailableToolsTool = ToolUIPart & {
   type: 'tool-listAvailableTools';
-  output?: { tools: Array<{ name: string; displayName: string; description: string; icon: string; category: string; example: string }>; totalCount: number };
+  output?: {
+    tools: Array<{
+      name: string;
+      displayName: string;
+      description: string;
+      icon: string;
+      category: string;
+      example: string;
+    }>;
+    totalCount: number;
+  };
 };
 
 type Tool =

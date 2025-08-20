@@ -53,14 +53,12 @@ const handleToolPress = (tool: ToolInfo) => {
       {
         text: 'Try Example',
         onPress: () => {
-          Alert.alert(
-            'Example Usage',
-            `Try asking: "${tool.example}"`,
-            [{ text: 'Got it!', style: 'default' }]
-          );
+          Alert.alert('Example Usage', `Try asking: "${tool.example}"`, [
+            { text: 'Got it!', style: 'default' },
+          ]);
         },
       },
-    ]
+    ],
   );
 };
 
@@ -68,13 +66,16 @@ export function AvailableToolsGenerativeUI({ tools, totalCount }: AvailableTools
   const { colors } = useColorScheme();
 
   // Group tools by category
-  const toolsByCategory = tools.reduce((acc, tool) => {
-    if (!acc[tool.category]) {
-      acc[tool.category] = [];
-    }
-    acc[tool.category].push(tool);
-    return acc;
-  }, {} as Record<string, ToolInfo[]>);
+  const toolsByCategory = tools.reduce(
+    (acc, tool) => {
+      if (!acc[tool.category]) {
+        acc[tool.category] = [];
+      }
+      acc[tool.category].push(tool);
+      return acc;
+    },
+    {} as Record<string, ToolInfo[]>,
+  );
 
   const categories = Object.keys(toolsByCategory).sort();
 
@@ -94,8 +95,8 @@ export function AvailableToolsGenerativeUI({ tools, totalCount }: AvailableTools
       </View>
 
       {/* Tools List */}
-      <ScrollView 
-        className="max-h-96" 
+      <ScrollView
+        className="max-h-96"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 12 }}
       >
@@ -103,11 +104,11 @@ export function AvailableToolsGenerativeUI({ tools, totalCount }: AvailableTools
           <View key={category} className="px-4 py-2">
             {/* Category Header */}
             <View className="flex-row items-center gap-2 mb-3 mt-2">
-              <View 
+              <View
                 className="rounded-full px-2 py-1"
                 style={{ backgroundColor: `${getCategoryColor(category)}20` }}
               >
-                <Text 
+                <Text
                   className="text-xs font-semibold"
                   style={{ color: getCategoryColor(category) }}
                 >
@@ -157,7 +158,8 @@ export function AvailableToolsGenerativeUI({ tools, totalCount }: AvailableTools
         <View className="px-4 pt-2 pb-2">
           <View className="rounded-lg bg-muted/20 p-3">
             <Text className="text-xs text-muted-foreground text-center">
-              💡 Tip: Tap any tool to see an example of how to use it, or just ask me in natural language!
+              💡 Tip: Tap any tool to see an example of how to use it, or just ask me in natural
+              language!
             </Text>
           </View>
         </View>
