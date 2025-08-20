@@ -84,6 +84,14 @@ const loginRoute = createRoute({
         },
       },
     },
+    401: {
+      description: 'Invalid credentials',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
     403: {
       description: 'Email not verified',
       content: {
@@ -201,6 +209,14 @@ const registerRoute = createRoute({
     },
     409: {
       description: 'Email already in use',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
@@ -441,6 +457,14 @@ const resendVerificationRoute = createRoute({
     },
     400: {
       description: 'Invalid request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'User not found',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
@@ -742,6 +766,14 @@ const refreshTokenRoute = createRoute({
     },
     400: {
       description: 'Invalid request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Invalid or expired refresh token',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
