@@ -5,7 +5,6 @@ import { ReportButton } from 'expo-app/features/ai/components/ReportButton';
 import { cn } from 'expo-app/lib/cn';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
-import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
 const BORDER_CURVE: ViewStyle = {
@@ -14,22 +13,17 @@ const BORDER_CURVE: ViewStyle = {
 
 interface ChatBubbleProps {
   item: UIMessage;
-  translateX: SharedValue<number>;
   userQuery?: string;
 }
 
-export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
-  const rootStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
+export function ChatBubble({ item, userQuery }: ChatBubbleProps) {
   const isAI = item.role === 'assistant';
 
   return (
     <View
       className={cn('justify-center px-2 pb-3.5', isAI ? 'items-start pr-4' : 'items-end pl-16')}
     >
-      <Animated.View style={!isAI ? rootStyle : undefined}>
+      <View>
         <View>
           <View
             className={cn(
@@ -109,12 +103,7 @@ export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
             )}
           </View>
         </View>
-      </Animated.View>
-      {/* <Animated.View style={dateStyle} className="justify-center">
-        <Text variant="caption1" className="text-muted-foreground">
-          {item.time}
-        </Text>
-      </Animated.View> */}
+      </View>
     </View>
   );
 }

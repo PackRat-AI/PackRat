@@ -71,7 +71,6 @@ export default function AIChat() {
   const insets = useSafeAreaInsets();
   const { progress } = useReanimatedKeyboardAnimation();
   const textInputHeight = useSharedValue(17);
-  const translateX = useSharedValue(0);
   const params = useLocalSearchParams();
   const [showSuggestions, setShowSuggestions] = React.useState(true);
   const { activeLocation } = useActiveLocation();
@@ -225,7 +224,7 @@ export default function AIChat() {
               userQuery = userMessage.parts.find((p) => p.type === 'text')?.text;
             }
 
-            return <ChatBubble item={item} translateX={translateX} userQuery={userQuery} />;
+            return <ChatBubble item={item} userQuery={userQuery} />;
           }}
         />
       </KeyboardAvoidingView>
