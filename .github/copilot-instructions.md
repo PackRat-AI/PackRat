@@ -1,6 +1,8 @@
-# PackRat Development Instructions
+# PackRat - Outdoor Adventure Planning Platform
 
-Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
+PackRat is a modern full-stack application for outdoor enthusiasts to plan and organize their adventures. Built with React Native/Expo for mobile, Next.js for web, and Cloudflare Workers for API, all managed in a monorepo using Bun.
+
+**Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
 ## Working Effectively
 
@@ -124,26 +126,119 @@ Always manually validate changes by running complete user scenarios:
 - Verify Expo development server starts without errors
 - Check that `expo-doctor` passes
 
+### **Code Quality Validation**
+- Run `bun format && bun lint` - should complete without errors
+- Pre-push hooks automatically run formatting checks
+
 ## Repository Structure
 
-### **Key Directories**
-- `apps/expo/` - React Native mobile application
-- `apps/guides/` - Next.js guides website
-- `apps/landing/` - Next.js landing page
-- `packages/api/` - Hono.js API on Cloudflare Workers
-- `packages/ui/` - Shared UI components
+### Key Directories
 
-### **Key Files**
-- `package.json` - Root monorepo configuration
-- `biome.json` - Code formatting and linting rules  
-- `bunfig.toml` - GitHub package authentication config
-- `lefthook.yml` - Git hooks configuration
-- `packages/api/wrangler.jsonc` - Cloudflare Workers configuration
+**Applications (`apps/`):**
+- `expo/` - React Native mobile app with Expo
+- `landing/` - Marketing/landing website (Next.js)  
+- `guides/` - Content site with generated outdoor guides (Next.js)
 
-### **Configuration Files**
-- `.env.example` - Template for environment variables
-- `tsconfig.base.json` - Base TypeScript configuration
-- `.github/workflows/` - CI/CD pipelines
+**Packages (`packages/`):**
+- `api/` - Cloudflare Workers API with Hono framework
+- `ui/` - Shared UI components (requires GitHub auth)
+
+**Configuration Files:**
+- `biome.json` - Code formatting and linting config
+- `lefthook.yml` - Git hooks configuration  
+- `bunfig.toml` - Bun package manager configuration
+- `package.json` - Monorepo scripts and dependencies
+
+### Important Files to Check
+
+**When modifying API:**
+- Always check `packages/api/wrangler.jsonc` for Cloudflare configuration
+- Update `packages/api/src/routes/` for new endpoints
+- Check `packages/api/drizzle/` for database schema changes
+
+**When modifying mobile app:**
+- Check `apps/expo/app.config.js` for Expo configuration
+- Update `apps/expo/app/` for screen changes (uses Expo Router)
+- Check `apps/expo/components/` for reusable components
+
+**When adding dependencies:**
+- Run `bun fix:deps` to check for version mismatches
+- Update relevant package.json files
+- Private packages require GitHub authentication
+
+## Common Issues and Solutions
+
+**GitHub Authentication Failures:**
+- Ensure `gh auth login` and `gh auth refresh -h github.com -s read:packages` are completed
+- Alternative: Set `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` environment variable
+- Error: `401` from npm.pkg.github.com means authentication failed
+
+**Build Failures:**
+- Next.js builds may fail without internet access (Google Fonts dependency)
+- Type checking fails without private package authentication
+- Use `bun clean && bun install` to reset dependencies
+
+**Development Server Issues:**
+- API server shows network warnings - these are normal
+- Expo runs in CI mode in some environments - reloads may be disabled
+- Multiple apps running simultaneously may cause port conflicts
+
+**Testing Issues:**
+- API tests require GitHub authentication and proper Cloudflare configuration
+- Tests use `@cloudflare/vitest-pool-workers` for Workers environment simulation
+- Mock external services for unit tests
+
+## Time Expectations
+
+**NEVER CANCEL these operations - they are expected to take time:**
+
+- Initial `bun install`: ~1 minute
+- API server startup: ~10 seconds  
+- Expo startup: ~10 seconds
+- Next.js dev server startup: ~5 seconds
+- Type checking: ~17 seconds
+- Code formatting: ~1 second
+- Code linting: ~1 second
+- API tests: ~5 seconds (when properly configured)
+- Mobile app builds (local): 10-15 minutes - Set timeout to 30+ minutes
+- Mobile app builds (EAS): 15-30 minutes - Set timeout to 60+ minutes
+
+## CI/CD Integration
+
+**Required Environment Variables for CI:**
+- `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` - GitHub Personal Access Token with `read:packages` scope
+- Cloudflare API tokens for API deployment
+- Expo credentials for mobile builds
+
+**GitHub Actions:**
+- `.github/workflows/biome.yml` - Code quality checks
+- See workflow files for complete CI setup
+
+## Development Workflow
+
+**Typical development session:**
+```bash
+# 1. Setup (one-time)
+gh auth login
+gh auth refresh -h github.com -s read:packages
+bun install
+
+# 2. Start development servers (separate terminals)
+bun api          # Terminal 1: API server
+bun expo         # Terminal 2: Mobile app  
+cd apps/guides && bun dev  # Terminal 3: Web app (optional)
+
+# 3. Make changes and validate
+bun format       # Format code
+bun lint         # Check linting
+# Test functionality in Expo Go app or web browser
+
+# 4. Before committing
+bun format && bun lint  # Final quality check
+# Git hooks will automatically run on push
+```
+
+**Always validate changes work end-to-end before committing.**
 
 ## Common Issues and Solutions
 
