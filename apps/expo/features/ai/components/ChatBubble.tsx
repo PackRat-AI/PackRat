@@ -1,11 +1,11 @@
 import { Text } from '@packrat/ui/nativewindui';
+import type { ToolUIPart, UIMessage } from 'ai';
 import { ReportButton } from 'expo-app/features/ai/components/ReportButton';
 import { cn } from 'expo-app/lib/cn';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import Animated, { interpolate, type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
-import type { UIMessage, ToolUIPart } from 'ai';
 
 const BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',
