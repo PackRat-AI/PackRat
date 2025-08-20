@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { 
-  api, 
-  apiWithAuth, 
-  expectUnauthorized, 
+import {
+  api,
+  apiWithAuth,
   expectBadRequest,
-  expectNotFound,
   expectJsonResponse,
-  httpMethods 
+  expectNotFound,
+  expectUnauthorized,
+  httpMethods,
 } from './utils/test-helpers';
 
 describe('Guides Routes', () => {
@@ -35,7 +35,7 @@ describe('Guides Routes', () => {
   describe('GET /guides', () => {
     it('returns guides list', async () => {
       const res = await apiWithAuth('/guides');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.guides).toBeTruthy();
@@ -44,7 +44,7 @@ describe('Guides Routes', () => {
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/guides?page=1&limit=10');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -52,7 +52,7 @@ describe('Guides Routes', () => {
 
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/guides?category=backpacking');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -60,7 +60,7 @@ describe('Guides Routes', () => {
 
     it('accepts difficulty filter', async () => {
       const res = await apiWithAuth('/guides?difficulty=beginner');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -68,7 +68,7 @@ describe('Guides Routes', () => {
 
     it('accepts sorting parameters', async () => {
       const res = await apiWithAuth('/guides?sortBy=title&sortOrder=asc');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -76,7 +76,7 @@ describe('Guides Routes', () => {
 
     it('accepts featured filter', async () => {
       const res = await apiWithAuth('/guides?featured=true');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -86,7 +86,7 @@ describe('Guides Routes', () => {
   describe('GET /guides/categories', () => {
     it('returns available guide categories', async () => {
       const res = await apiWithAuth('/guides/categories');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.categories).toBeTruthy();
@@ -95,7 +95,7 @@ describe('Guides Routes', () => {
 
     it('includes category metadata', async () => {
       const res = await apiWithAuth('/guides/categories');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         if (Array.isArray(data) && data.length > 0) {
@@ -110,7 +110,7 @@ describe('Guides Routes', () => {
   describe('GET /guides/search', () => {
     it('searches guides with query parameter', async () => {
       const res = await apiWithAuth('/guides/search?q=hiking');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.results).toBeTruthy();
@@ -120,14 +120,14 @@ describe('Guides Routes', () => {
     it('requires query parameter', async () => {
       const res = await apiWithAuth('/guides/search');
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toContain('query');
     });
 
     it('accepts search filters', async () => {
       const res = await apiWithAuth('/guides/search?q=tent&category=gear&difficulty=intermediate');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -135,7 +135,7 @@ describe('Guides Routes', () => {
 
     it('accepts pagination for search results', async () => {
       const res = await apiWithAuth('/guides/search?q=backpacking&page=1&limit=5');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -143,7 +143,7 @@ describe('Guides Routes', () => {
 
     it('handles empty search results', async () => {
       const res = await apiWithAuth('/guides/search?q=veryrareunlikelyterm12345');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         if (Array.isArray(data)) {
@@ -158,7 +158,7 @@ describe('Guides Routes', () => {
   describe('GET /guides/:id', () => {
     it('returns single guide by ID', async () => {
       const res = await apiWithAuth('/guides/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['id', 'title']);
         expect(data.id).toBeDefined();
@@ -170,7 +170,7 @@ describe('Guides Routes', () => {
 
     it('returns guide with content', async () => {
       const res = await apiWithAuth('/guides/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.content || data.body || data.markdown).toBeDefined();
@@ -179,7 +179,7 @@ describe('Guides Routes', () => {
 
     it('returns guide metadata', async () => {
       const res = await apiWithAuth('/guides/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         // Common guide metadata fields
@@ -202,7 +202,7 @@ describe('Guides Routes', () => {
   describe('GET /guides/:slug (if slug-based routing exists)', () => {
     it('returns guide by slug', async () => {
       const res = await apiWithAuth('/guides/backpacking-basics');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['id', 'title']);
         expect(data.slug || data.title).toBeDefined();
@@ -220,7 +220,7 @@ describe('Guides Routes', () => {
   describe('Error Handling', () => {
     it('handles malformed requests gracefully', async () => {
       const res = await apiWithAuth('/guides?page=invalid&limit=notanumber');
-      
+
       // Should either return 400 or default to valid pagination
       if (res.status === 400) {
         expectBadRequest(res);
@@ -231,7 +231,7 @@ describe('Guides Routes', () => {
 
     it('handles invalid category filters', async () => {
       const res = await apiWithAuth('/guides?category=nonexistent-category');
-      
+
       // Should return empty results or 400, not crash
       if (res.status === 200) {
         const data = await expectJsonResponse(res);

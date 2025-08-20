@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { 
-  api, 
-  apiWithAuth, 
-  expectUnauthorized, 
+import {
+  api,
+  apiWithAuth,
   expectBadRequest,
-  expectNotFound,
   expectJsonResponse,
-  httpMethods 
+  expectNotFound,
+  expectUnauthorized,
+  httpMethods,
 } from './utils/test-helpers';
 
 describe('Packs Routes', () => {
@@ -40,7 +40,7 @@ describe('Packs Routes', () => {
   describe('GET /packs', () => {
     it('returns user packs list', async () => {
       const res = await apiWithAuth('/packs');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.packs).toBeTruthy();
@@ -49,7 +49,7 @@ describe('Packs Routes', () => {
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/packs?page=1&limit=10');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -57,7 +57,7 @@ describe('Packs Routes', () => {
 
     it('accepts search query', async () => {
       const res = await apiWithAuth('/packs?q=hiking');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -65,7 +65,7 @@ describe('Packs Routes', () => {
 
     it('accepts activity filter', async () => {
       const res = await apiWithAuth('/packs?activity=hiking');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -73,7 +73,7 @@ describe('Packs Routes', () => {
 
     it('accepts weight range filters', async () => {
       const res = await apiWithAuth('/packs?minWeight=1000&maxWeight=5000');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -81,7 +81,7 @@ describe('Packs Routes', () => {
 
     it('accepts public filter', async () => {
       const res = await apiWithAuth('/packs?public=true');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -91,7 +91,7 @@ describe('Packs Routes', () => {
   describe('GET /packs/:id', () => {
     it('returns single pack', async () => {
       const res = await apiWithAuth('/packs/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['id', 'name']);
         expect(data.id).toBeDefined();
@@ -118,11 +118,11 @@ describe('Packs Routes', () => {
         name: 'Test Pack',
         description: 'A test pack for hiking',
         activity: 'hiking',
-        public: false
+        public: false,
       };
 
       const res = await apiWithAuth('/packs', httpMethods.post('', newPack));
-      
+
       if (res.status === 201 || res.status === 200) {
         const data = await expectJsonResponse(res, ['id']);
         expect(data.id).toBeDefined();
@@ -135,17 +135,23 @@ describe('Packs Routes', () => {
     });
 
     it('validates name field', async () => {
-      const res = await apiWithAuth('/packs', httpMethods.post('', {
-        description: 'Pack without name'
-      }));
+      const res = await apiWithAuth(
+        '/packs',
+        httpMethods.post('', {
+          description: 'Pack without name',
+        }),
+      );
       expectBadRequest(res);
     });
 
     it('validates activity field', async () => {
-      const res = await apiWithAuth('/packs', httpMethods.post('', {
-        name: 'Test Pack',
-        activity: 'invalid-activity'
-      }));
+      const res = await apiWithAuth(
+        '/packs',
+        httpMethods.post('', {
+          name: 'Test Pack',
+          activity: 'invalid-activity',
+        }),
+      );
       expectBadRequest(res);
     });
   });
@@ -155,11 +161,11 @@ describe('Packs Routes', () => {
       const updateData = {
         name: 'Updated Pack Name',
         description: 'Updated description',
-        activity: 'backpacking'
+        activity: 'backpacking',
       };
 
       const res = await apiWithAuth('/packs/1', httpMethods.put('', updateData));
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.id).toBeDefined();
@@ -169,18 +175,24 @@ describe('Packs Routes', () => {
     });
 
     it('returns 404 for non-existent pack', async () => {
-      const res = await apiWithAuth('/packs/999999', httpMethods.put('', {
-        name: 'Updated Pack'
-      }));
+      const res = await apiWithAuth(
+        '/packs/999999',
+        httpMethods.put('', {
+          name: 'Updated Pack',
+        }),
+      );
       expectNotFound(res);
     });
 
     it('prevents updating other users packs', async () => {
       // This would need proper test data setup to verify ownership
-      const res = await apiWithAuth('/packs/1', httpMethods.put('', {
-        name: 'Attempting to update'
-      }));
-      
+      const res = await apiWithAuth(
+        '/packs/1',
+        httpMethods.put('', {
+          name: 'Attempting to update',
+        }),
+      );
+
       // Could be 403 (forbidden) or 404 (not found for this user)
       if (res.status === 403) {
         expect(res.status).toBe(403);
@@ -191,7 +203,7 @@ describe('Packs Routes', () => {
   describe('DELETE /packs/:id', () => {
     it('deletes pack', async () => {
       const res = await apiWithAuth('/packs/1', httpMethods.delete(''));
-      
+
       if (res.status === 200 || res.status === 204) {
         expect(res.status).toBeOneOf([200, 204]);
       } else if (res.status === 404) {
@@ -206,7 +218,7 @@ describe('Packs Routes', () => {
 
     it('prevents deleting other users packs', async () => {
       const res = await apiWithAuth('/packs/1', httpMethods.delete(''));
-      
+
       if (res.status === 403) {
         expect(res.status).toBe(403);
       }
@@ -217,7 +229,7 @@ describe('Packs Routes', () => {
     describe('GET /packs/:id/items', () => {
       it('returns pack items', async () => {
         const res = await apiWithAuth('/packs/1/items');
-        
+
         if (res.status === 200) {
           const data = await expectJsonResponse(res);
           expect(Array.isArray(data) || data.items).toBeTruthy();
@@ -232,11 +244,11 @@ describe('Packs Routes', () => {
         const newItem = {
           catalogItemId: 1,
           quantity: 2,
-          notes: 'Extra item for safety'
+          notes: 'Extra item for safety',
         };
 
         const res = await apiWithAuth('/packs/1/items', httpMethods.post('', newItem));
-        
+
         if (res.status === 201 || res.status === 200) {
           const data = await expectJsonResponse(res, ['id']);
           expect(data.id).toBeDefined();
@@ -255,11 +267,11 @@ describe('Packs Routes', () => {
       it('updates pack item', async () => {
         const updateData = {
           quantity: 3,
-          notes: 'Updated notes'
+          notes: 'Updated notes',
         };
 
         const res = await apiWithAuth('/packs/1/items/1', httpMethods.put('', updateData));
-        
+
         if (res.status === 200) {
           await expectJsonResponse(res);
         } else if (res.status === 404) {
@@ -271,7 +283,7 @@ describe('Packs Routes', () => {
     describe('DELETE /packs/:packId/items/:itemId', () => {
       it('removes item from pack', async () => {
         const res = await apiWithAuth('/packs/1/items/1', httpMethods.delete(''));
-        
+
         if (res.status === 200 || res.status === 204) {
           expect(res.status).toBeOneOf([200, 204]);
         } else if (res.status === 404) {
@@ -287,11 +299,11 @@ describe('Packs Routes', () => {
         activity: 'hiking',
         duration: 3,
         season: 'summer',
-        location: 'mountains'
+        location: 'mountains',
       };
 
       const res = await apiWithAuth('/packs/generate', httpMethods.post('', generateRequest));
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.items || data.suggestions).toBeDefined();
@@ -304,10 +316,13 @@ describe('Packs Routes', () => {
     });
 
     it('validates activity parameter', async () => {
-      const res = await apiWithAuth('/packs/generate', httpMethods.post('', {
-        activity: 'invalid-activity',
-        duration: 3
-      }));
+      const res = await apiWithAuth(
+        '/packs/generate',
+        httpMethods.post('', {
+          activity: 'invalid-activity',
+          duration: 3,
+        }),
+      );
       expectBadRequest(res);
     });
   });

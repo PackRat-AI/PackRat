@@ -1,12 +1,12 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import app from '../src/index';
-import { 
-  api, 
-  apiWithAuth, 
-  expectBadRequest, 
-  expectUnauthorized, 
-  expectJsonResponse, 
-  httpMethods 
+import {
+  api,
+  apiWithAuth,
+  expectBadRequest,
+  expectJsonResponse,
+  expectUnauthorized,
+  httpMethods,
 } from './utils/test-helpers';
 
 // Helper for auth-specific API calls
@@ -23,7 +23,7 @@ describe('Auth Routes', () => {
     it('requires email and password', async () => {
       const res = await authApi('/login', httpMethods.post('', {}));
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toBe('Email and password are required');
     });
@@ -39,12 +39,15 @@ describe('Auth Routes', () => {
     });
 
     it('returns error for non-existent user', async () => {
-      const res = await authApi('/login', httpMethods.post('', {
-        email: 'nonexistent@example.com',
-        password: 'password123'
-      }));
+      const res = await authApi(
+        '/login',
+        httpMethods.post('', {
+          email: 'nonexistent@example.com',
+          password: 'password123',
+        }),
+      );
       expect(res.status).toBe(401);
-      
+
       const data = await res.json();
       expect(data.error).toBe('Invalid email or password');
     });
@@ -57,41 +60,50 @@ describe('Auth Routes', () => {
     it('requires email and password', async () => {
       const res = await authApi('/register', httpMethods.post('', {}));
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toBe('Email and password are required');
     });
 
     it('validates email format', async () => {
-      const res = await authApi('/register', httpMethods.post('', {
-        email: 'invalid-email',
-        password: 'Password123!'
-      }));
+      const res = await authApi(
+        '/register',
+        httpMethods.post('', {
+          email: 'invalid-email',
+          password: 'Password123!',
+        }),
+      );
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toBe('Invalid email format');
     });
 
     it('validates password strength', async () => {
-      const res = await authApi('/register', httpMethods.post('', {
-        email: 'test@example.com',
-        password: '123' // Too weak
-      }));
+      const res = await authApi(
+        '/register',
+        httpMethods.post('', {
+          email: 'test@example.com',
+          password: '123', // Too weak
+        }),
+      );
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toContain('Password must be at least');
     });
 
     it('accepts valid registration data', async () => {
-      const res = await authApi('/register', httpMethods.post('', {
-        email: 'newuser@example.com',
-        password: 'Password123!',
-        firstName: 'Test',
-        lastName: 'User'
-      }));
-      
+      const res = await authApi(
+        '/register',
+        httpMethods.post('', {
+          email: 'newuser@example.com',
+          password: 'Password123!',
+          firstName: 'Test',
+          lastName: 'User',
+        }),
+      );
+
       // Note: This will likely fail without database setup
       // but tests the validation logic
     });
@@ -101,7 +113,7 @@ describe('Auth Routes', () => {
     it('requires email and code', async () => {
       const res = await authApi('/verify-email', httpMethods.post('', {}));
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toBe('Email and verification code are required');
     });
@@ -112,7 +124,10 @@ describe('Auth Routes', () => {
     });
 
     it('requires code field', async () => {
-      const res = await authApi('/verify-email', httpMethods.post('', { email: 'test@example.com' }));
+      const res = await authApi(
+        '/verify-email',
+        httpMethods.post('', { email: 'test@example.com' }),
+      );
       expectBadRequest(res);
     });
   });
@@ -124,9 +139,12 @@ describe('Auth Routes', () => {
     });
 
     it('validates email format', async () => {
-      const res = await authApi('/resend-verification', httpMethods.post('', {
-        email: 'invalid-email'
-      }));
+      const res = await authApi(
+        '/resend-verification',
+        httpMethods.post('', {
+          email: 'invalid-email',
+        }),
+      );
       expectBadRequest(res);
     });
   });
@@ -138,9 +156,12 @@ describe('Auth Routes', () => {
     });
 
     it('validates email format', async () => {
-      const res = await authApi('/forgot-password', httpMethods.post('', {
-        email: 'invalid-email'
-      }));
+      const res = await authApi(
+        '/forgot-password',
+        httpMethods.post('', {
+          email: 'invalid-email',
+        }),
+      );
       expectBadRequest(res);
     });
   });
@@ -149,17 +170,20 @@ describe('Auth Routes', () => {
     it('requires email, code, and new password', async () => {
       const res = await authApi('/reset-password', httpMethods.post('', {}));
       expect(res.status).toBe(400);
-      
+
       const data = await res.json();
       expect(data.error).toBe('Email, code, and new password are required');
     });
 
     it('validates new password strength', async () => {
-      const res = await authApi('/reset-password', httpMethods.post('', {
-        email: 'test@example.com',
-        code: '12345',
-        newPassword: '123' // Too weak
-      }));
+      const res = await authApi(
+        '/reset-password',
+        httpMethods.post('', {
+          email: 'test@example.com',
+          code: '12345',
+          newPassword: '123', // Too weak
+        }),
+      );
       expect(res.status).toBe(400);
     });
   });
@@ -198,10 +222,13 @@ describe('Auth Routes', () => {
     });
 
     it('validates identity token format', async () => {
-      const res = await authApi('/apple', httpMethods.post('', {
-        identityToken: 'invalid-token',
-        authorizationCode: 'auth-code'
-      }));
+      const res = await authApi(
+        '/apple',
+        httpMethods.post('', {
+          identityToken: 'invalid-token',
+          authorizationCode: 'auth-code',
+        }),
+      );
       // This would test JWT validation
     });
   });
@@ -210,16 +237,19 @@ describe('Auth Routes', () => {
     it('requires ID token', async () => {
       const res = await authApi('/google', httpMethods.post('', {}));
       expect(res.status).toBe(400);
-      
+
       const data = await res.json();
       expect(data.error).toBe('ID token is required');
     });
 
     it('validates Google ID token', async () => {
       // Mock Google client verification
-      const res = await authApi('/google', httpMethods.post('', {
-        idToken: 'mock-google-token'
-      }));
+      const res = await authApi(
+        '/google',
+        httpMethods.post('', {
+          idToken: 'mock-google-token',
+        }),
+      );
       // This would require mocking Google OAuth verification
     });
   });

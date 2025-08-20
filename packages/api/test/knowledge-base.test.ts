@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { 
-  api, 
-  apiWithAuth, 
-  expectUnauthorized, 
+import {
+  api,
+  apiWithAuth,
   expectBadRequest,
-  expectNotFound,
   expectJsonResponse,
-  httpMethods 
+  expectNotFound,
+  expectUnauthorized,
+  httpMethods,
 } from './utils/test-helpers';
 
 describe('Knowledge Base Routes', () => {
@@ -30,7 +30,7 @@ describe('Knowledge Base Routes', () => {
   describe('GET /knowledge-base', () => {
     it('returns knowledge base overview', async () => {
       const res = await apiWithAuth('/knowledge-base');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.categories || data.articles || Array.isArray(data)).toBeTruthy();
@@ -42,7 +42,7 @@ describe('Knowledge Base Routes', () => {
 
     it('includes category information', async () => {
       const res = await apiWithAuth('/knowledge-base');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         if (data.categories) {
@@ -55,7 +55,7 @@ describe('Knowledge Base Routes', () => {
   describe('GET /knowledge-base/categories', () => {
     it('returns available categories', async () => {
       const res = await apiWithAuth('/knowledge-base/categories');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.categories).toBeTruthy();
@@ -66,11 +66,11 @@ describe('Knowledge Base Routes', () => {
 
     it('includes category metadata', async () => {
       const res = await apiWithAuth('/knowledge-base/categories');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         const categories = Array.isArray(data) ? data : data.categories;
-        
+
         if (categories && categories.length > 0) {
           const category = categories[0];
           expect(category.name || category.title).toBeDefined();
@@ -83,7 +83,7 @@ describe('Knowledge Base Routes', () => {
   describe('GET /knowledge-base/articles', () => {
     it('returns articles list', async () => {
       const res = await apiWithAuth('/knowledge-base/articles');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.articles).toBeTruthy();
@@ -94,7 +94,7 @@ describe('Knowledge Base Routes', () => {
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?page=1&limit=10');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -104,7 +104,7 @@ describe('Knowledge Base Routes', () => {
 
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?category=gear');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -114,7 +114,7 @@ describe('Knowledge Base Routes', () => {
 
     it('accepts tag filter', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?tags=backpacking,ultralight');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -124,7 +124,7 @@ describe('Knowledge Base Routes', () => {
 
     it('accepts featured filter', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?featured=true');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -136,7 +136,7 @@ describe('Knowledge Base Routes', () => {
   describe('GET /knowledge-base/articles/:id', () => {
     it('returns single article', async () => {
       const res = await apiWithAuth('/knowledge-base/articles/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['id', 'title', 'content']);
         expect(data.id).toBeDefined();
@@ -149,7 +149,7 @@ describe('Knowledge Base Routes', () => {
 
     it('includes article metadata', async () => {
       const res = await apiWithAuth('/knowledge-base/articles/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.title).toBeDefined();
@@ -160,7 +160,7 @@ describe('Knowledge Base Routes', () => {
 
     it('includes related articles', async () => {
       const res = await apiWithAuth('/knowledge-base/articles/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         if (data.relatedArticles) {
@@ -178,7 +178,7 @@ describe('Knowledge Base Routes', () => {
   describe('GET /knowledge-base/search', () => {
     it('searches knowledge base with query', async () => {
       const res = await apiWithAuth('/knowledge-base/search?q=tent setup');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.results).toBeTruthy();
@@ -189,7 +189,7 @@ describe('Knowledge Base Routes', () => {
 
     it('requires query parameter', async () => {
       const res = await apiWithAuth('/knowledge-base/search');
-      
+
       if (res.status === 400) {
         expectBadRequest(res);
         const data = await res.json();
@@ -201,7 +201,7 @@ describe('Knowledge Base Routes', () => {
 
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/knowledge-base/search?q=sleeping&category=gear');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -211,7 +211,7 @@ describe('Knowledge Base Routes', () => {
 
     it('accepts pagination for search results', async () => {
       const res = await apiWithAuth('/knowledge-base/search?q=backpack&page=1&limit=5');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -221,7 +221,7 @@ describe('Knowledge Base Routes', () => {
 
     it('handles empty search results', async () => {
       const res = await apiWithAuth('/knowledge-base/search?q=veryrareunlikelyterm12345');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         const results = Array.isArray(data) ? data : data.results;
@@ -237,11 +237,11 @@ describe('Knowledge Base Routes', () => {
   describe('Tags and Categories', () => {
     it('handles gear category articles', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?category=gear');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         const articles = Array.isArray(data) ? data : data.articles;
-        
+
         if (articles && articles.length > 0) {
           const article = articles[0];
           expect(article.category || article.categories).toContain('gear');
@@ -251,7 +251,7 @@ describe('Knowledge Base Routes', () => {
 
     it('handles technique category articles', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?category=techniques');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -261,7 +261,7 @@ describe('Knowledge Base Routes', () => {
 
     it('handles safety category articles', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?category=safety');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -271,7 +271,7 @@ describe('Knowledge Base Routes', () => {
 
     it('handles multiple tags', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?tags=ultralight,backpacking,gear');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -283,7 +283,7 @@ describe('Knowledge Base Routes', () => {
   describe('Content Features', () => {
     it('may support article ratings', async () => {
       const res = await apiWithAuth('/knowledge-base/articles/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         if (data.rating || data.votes) {
@@ -294,7 +294,7 @@ describe('Knowledge Base Routes', () => {
 
     it('may support article comments', async () => {
       const res = await apiWithAuth('/knowledge-base/articles/1/comments');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.comments).toBeTruthy();
@@ -304,8 +304,11 @@ describe('Knowledge Base Routes', () => {
     });
 
     it('may support bookmarking articles', async () => {
-      const res = await apiWithAuth('/knowledge-base/articles/1/bookmark', httpMethods.post('', {}));
-      
+      const res = await apiWithAuth(
+        '/knowledge-base/articles/1/bookmark',
+        httpMethods.post('', {}),
+      );
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -317,7 +320,7 @@ describe('Knowledge Base Routes', () => {
   describe('Error Handling', () => {
     it('handles malformed requests gracefully', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?page=invalid&limit=notanumber');
-      
+
       if (res.status === 400) {
         expectBadRequest(res);
       } else if (res.status === 404) {
@@ -329,7 +332,7 @@ describe('Knowledge Base Routes', () => {
 
     it('handles invalid category filters', async () => {
       const res = await apiWithAuth('/knowledge-base/articles?category=nonexistent-category');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         const articles = Array.isArray(data) ? data : data.articles;
@@ -344,7 +347,7 @@ describe('Knowledge Base Routes', () => {
     it('handles very long search queries', async () => {
       const longQuery = 'a'.repeat(1000);
       const res = await apiWithAuth(`/knowledge-base/search?q=${longQuery}`);
-      
+
       if (res.status === 400) {
         expectBadRequest(res);
       } else if (res.status === 404) {
@@ -361,11 +364,11 @@ describe('Knowledge Base Routes', () => {
         title: 'Test Article',
         content: 'Test content',
         category: 'gear',
-        tags: ['test', 'gear']
+        tags: ['test', 'gear'],
       };
 
       const res = await apiWithAuth('/knowledge-base/articles', httpMethods.post('', newArticle));
-      
+
       // May require admin privileges
       if (res.status === 403) {
         expect(res.status).toBe(403);
@@ -379,11 +382,11 @@ describe('Knowledge Base Routes', () => {
     it('may allow updating articles (admin only)', async () => {
       const updateData = {
         title: 'Updated Article Title',
-        content: 'Updated content'
+        content: 'Updated content',
       };
 
       const res = await apiWithAuth('/knowledge-base/articles/1', httpMethods.put('', updateData));
-      
+
       if (res.status === 403) {
         expect(res.status).toBe(403);
       } else if (res.status === 200) {
@@ -395,7 +398,7 @@ describe('Knowledge Base Routes', () => {
 
     it('may allow deleting articles (admin only)', async () => {
       const res = await apiWithAuth('/knowledge-base/articles/1', httpMethods.delete(''));
-      
+
       if (res.status === 403) {
         expect(res.status).toBe(403);
       } else if (res.status === 200 || res.status === 204) {

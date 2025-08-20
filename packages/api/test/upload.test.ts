@@ -1,12 +1,12 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { 
-  api, 
-  apiWithAuth, 
-  expectUnauthorized, 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  api,
+  apiWithAuth,
   expectBadRequest,
-  expectNotFound,
   expectJsonResponse,
-  httpMethods 
+  expectNotFound,
+  expectUnauthorized,
+  httpMethods,
 } from './utils/test-helpers';
 
 describe('Upload Routes', () => {
@@ -29,7 +29,7 @@ describe('Upload Routes', () => {
   describe('GET /upload/presigned', () => {
     it('generates presigned URL for file upload', async () => {
       const res = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['url', 'key']);
         expect(data.url).toBeDefined();
@@ -42,25 +42,29 @@ describe('Upload Routes', () => {
     it('requires filename parameter', async () => {
       const res = await apiWithAuth('/upload/presigned');
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toContain('filename');
     });
 
     it('validates content type', async () => {
-      const res = await apiWithAuth('/upload/presigned?filename=test.exe&contentType=application/x-executable');
+      const res = await apiWithAuth(
+        '/upload/presigned?filename=test.exe&contentType=application/x-executable',
+      );
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toContain('content type');
     });
 
     it('accepts image content types', async () => {
       const imageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      
+
       for (const contentType of imageTypes) {
-        const res = await apiWithAuth(`/upload/presigned?filename=test.jpg&contentType=${contentType}`);
-        
+        const res = await apiWithAuth(
+          `/upload/presigned?filename=test.jpg&contentType=${contentType}`,
+        );
+
         if (res.status === 200) {
           await expectJsonResponse(res, ['url']);
         }
@@ -69,7 +73,7 @@ describe('Upload Routes', () => {
 
     it('validates file extension', async () => {
       const res = await apiWithAuth('/upload/presigned?filename=test.txt&contentType=text/plain');
-      
+
       // Should reject non-image files
       if (res.status === 400) {
         expectBadRequest(res);
@@ -79,18 +83,20 @@ describe('Upload Routes', () => {
     it('generates unique keys for different files', async () => {
       const res1 = await apiWithAuth('/upload/presigned?filename=test1.jpg&contentType=image/jpeg');
       const res2 = await apiWithAuth('/upload/presigned?filename=test2.jpg&contentType=image/jpeg');
-      
+
       if (res1.status === 200 && res2.status === 200) {
         const data1 = await res1.json();
         const data2 = await res2.json();
-        
+
         expect(data1.key).not.toBe(data2.key);
       }
     });
 
     it('includes file size limits', async () => {
-      const res = await apiWithAuth('/upload/presigned?filename=huge.jpg&contentType=image/jpeg&size=50000000'); // 50MB
-      
+      const res = await apiWithAuth(
+        '/upload/presigned?filename=huge.jpg&contentType=image/jpeg&size=50000000',
+      ); // 50MB
+
       // Should reject files that are too large
       if (res.status === 400) {
         expectBadRequest(res);
@@ -109,9 +115,9 @@ describe('Upload Routes', () => {
 
       const res = await apiWithAuth('/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['url', 'key']);
         expect(data.url).toBeDefined();
@@ -122,7 +128,7 @@ describe('Upload Routes', () => {
     it('requires file in request', async () => {
       const res = await apiWithAuth('/upload', httpMethods.post('', {}));
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toContain('file');
     });
@@ -134,9 +140,9 @@ describe('Upload Routes', () => {
 
       const res = await apiWithAuth('/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
-      
+
       expectBadRequest(res);
     });
 
@@ -149,9 +155,9 @@ describe('Upload Routes', () => {
 
       const res = await apiWithAuth('/upload', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
-      
+
       if (res.status === 400) {
         expectBadRequest(res);
         const data = await res.json();
@@ -163,7 +169,7 @@ describe('Upload Routes', () => {
   describe('GET /upload/:key', () => {
     it('returns file information', async () => {
       const res = await apiWithAuth('/upload/test-key-123');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['key', 'url']);
         expect(data.key).toBe('test-key-123');
@@ -181,7 +187,7 @@ describe('Upload Routes', () => {
   describe('DELETE /upload/:key', () => {
     it('deletes uploaded file', async () => {
       const res = await apiWithAuth('/upload/test-key-123', httpMethods.delete(''));
-      
+
       if (res.status === 200 || res.status === 204) {
         expect(res.status).toBeOneOf([200, 204]);
       } else if (res.status === 404) {
@@ -192,15 +198,17 @@ describe('Upload Routes', () => {
     it('prevents deleting other users files', async () => {
       // This would need proper test setup with ownership
       const res = await apiWithAuth('/upload/other-user-file', httpMethods.delete(''));
-      
+
       expect([403, 404]).toContain(res.status);
     });
   });
 
   describe('Avatar Upload', () => {
     it('handles avatar upload', async () => {
-      const res = await apiWithAuth('/upload/presigned?filename=avatar.jpg&contentType=image/jpeg&type=avatar');
-      
+      const res = await apiWithAuth(
+        '/upload/presigned?filename=avatar.jpg&contentType=image/jpeg&type=avatar',
+      );
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.url).toBeDefined();
@@ -210,8 +218,10 @@ describe('Upload Routes', () => {
     });
 
     it('enforces avatar size limits', async () => {
-      const res = await apiWithAuth('/upload/presigned?filename=avatar.jpg&contentType=image/jpeg&type=avatar&size=10000000'); // 10MB
-      
+      const res = await apiWithAuth(
+        '/upload/presigned?filename=avatar.jpg&contentType=image/jpeg&type=avatar&size=10000000',
+      ); // 10MB
+
       // Avatars should have stricter size limits
       if (res.status === 400) {
         expectBadRequest(res);
@@ -221,8 +231,10 @@ describe('Upload Routes', () => {
 
   describe('Pack Image Upload', () => {
     it('handles pack image upload', async () => {
-      const res = await apiWithAuth('/upload/presigned?filename=pack.jpg&contentType=image/jpeg&type=pack&packId=123');
-      
+      const res = await apiWithAuth(
+        '/upload/presigned?filename=pack.jpg&contentType=image/jpeg&type=pack&packId=123',
+      );
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.url).toBeDefined();
@@ -231,8 +243,10 @@ describe('Upload Routes', () => {
     });
 
     it('requires pack ID for pack images', async () => {
-      const res = await apiWithAuth('/upload/presigned?filename=pack.jpg&contentType=image/jpeg&type=pack');
-      
+      const res = await apiWithAuth(
+        '/upload/presigned?filename=pack.jpg&contentType=image/jpeg&type=pack',
+      );
+
       if (res.status === 400) {
         expectBadRequest(res);
         const data = await res.json();
@@ -245,7 +259,7 @@ describe('Upload Routes', () => {
     it('handles S3/R2 service errors gracefully', async () => {
       // This would require mocking the cloud storage service
       const res = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
-      
+
       if (res.status === 500) {
         const data = await res.json();
         expect(data.error).toBeDefined();
@@ -257,12 +271,14 @@ describe('Upload Routes', () => {
         '../../../etc/passwd.jpg',
         'test\0file.jpg',
         'test<script>.jpg',
-        'very-long-filename-' + 'a'.repeat(200) + '.jpg'
+        'very-long-filename-' + 'a'.repeat(200) + '.jpg',
       ];
 
       for (const filename of malformedFilenames) {
-        const res = await apiWithAuth(`/upload/presigned?filename=${encodeURIComponent(filename)}&contentType=image/jpeg`);
-        
+        const res = await apiWithAuth(
+          `/upload/presigned?filename=${encodeURIComponent(filename)}&contentType=image/jpeg`,
+        );
+
         if (res.status === 400) {
           expectBadRequest(res);
         }
@@ -274,11 +290,13 @@ describe('Upload Routes', () => {
         'application/javascript',
         'text/html',
         'application/x-executable',
-        'invalid/type'
+        'invalid/type',
       ];
 
       for (const contentType of invalidTypes) {
-        const res = await apiWithAuth(`/upload/presigned?filename=test.jpg&contentType=${contentType}`);
+        const res = await apiWithAuth(
+          `/upload/presigned?filename=test.jpg&contentType=${contentType}`,
+        );
         expectBadRequest(res);
       }
     });
@@ -286,8 +304,10 @@ describe('Upload Routes', () => {
 
   describe('Security', () => {
     it('sanitizes file names', async () => {
-      const res = await apiWithAuth('/upload/presigned?filename=../malicious.jpg&contentType=image/jpeg');
-      
+      const res = await apiWithAuth(
+        '/upload/presigned?filename=../malicious.jpg&contentType=image/jpeg',
+      );
+
       if (res.status === 200) {
         const data = await res.json();
         expect(data.key).not.toContain('../');
@@ -299,11 +319,11 @@ describe('Upload Routes', () => {
     it('generates secure random keys', async () => {
       const res1 = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
       const res2 = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
-      
+
       if (res1.status === 200 && res2.status === 200) {
         const data1 = await res1.json();
         const data2 = await res2.json();
-        
+
         // Keys should be different even for same filename
         expect(data1.key).not.toBe(data2.key);
         // Keys should be sufficiently random/long
@@ -313,7 +333,7 @@ describe('Upload Routes', () => {
 
     it('includes user context in file keys', async () => {
       const res = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
-      
+
       if (res.status === 200) {
         const data = await res.json();
         // Should include user ID or similar in the path to prevent conflicts

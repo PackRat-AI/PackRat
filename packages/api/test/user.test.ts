@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { 
-  api, 
-  apiWithAuth, 
-  expectUnauthorized, 
+import {
+  api,
+  apiWithAuth,
   expectBadRequest,
-  expectNotFound,
   expectJsonResponse,
-  httpMethods 
+  expectNotFound,
+  expectUnauthorized,
+  httpMethods,
 } from './utils/test-helpers';
 
 describe('User Routes', () => {
@@ -35,7 +35,7 @@ describe('User Routes', () => {
   describe('GET /user/items', () => {
     it('returns user items list', async () => {
       const res = await apiWithAuth('/user/items');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.items).toBeTruthy();
@@ -44,7 +44,7 @@ describe('User Routes', () => {
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/user/items?page=1&limit=10');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -52,7 +52,7 @@ describe('User Routes', () => {
 
     it('accepts search query', async () => {
       const res = await apiWithAuth('/user/items?q=tent');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -60,7 +60,7 @@ describe('User Routes', () => {
 
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/user/items?category=shelter');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -68,7 +68,7 @@ describe('User Routes', () => {
 
     it('accepts weight range filters', async () => {
       const res = await apiWithAuth('/user/items?minWeight=100&maxWeight=2000');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -76,7 +76,7 @@ describe('User Routes', () => {
 
     it('accepts sorting parameters', async () => {
       const res = await apiWithAuth('/user/items?sortBy=name&sortOrder=asc');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -86,7 +86,7 @@ describe('User Routes', () => {
   describe('GET /user/items/:id', () => {
     it('returns single user item', async () => {
       const res = await apiWithAuth('/user/items/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['id', 'name']);
         expect(data.id).toBeDefined();
@@ -104,7 +104,7 @@ describe('User Routes', () => {
     it('prevents accessing other users items', async () => {
       // This would need proper test data setup
       const res = await apiWithAuth('/user/items/1');
-      
+
       // Should either return the item (if owned) or 404 (if not owned)
       expect([200, 404]).toContain(res.status);
     });
@@ -123,11 +123,11 @@ describe('User Routes', () => {
         weight: 1200,
         unit: 'g',
         price: 299.99,
-        notes: 'Personal tent for backpacking'
+        notes: 'Personal tent for backpacking',
       };
 
       const res = await apiWithAuth('/user/items', httpMethods.post('', newItem));
-      
+
       if (res.status === 201 || res.status === 200) {
         const data = await expectJsonResponse(res, ['id']);
         expect(data.id).toBeDefined();
@@ -140,38 +140,50 @@ describe('User Routes', () => {
     });
 
     it('validates name field', async () => {
-      const res = await apiWithAuth('/user/items', httpMethods.post('', {
-        category: 'shelter',
-        weight: 1200
-      }));
+      const res = await apiWithAuth(
+        '/user/items',
+        httpMethods.post('', {
+          category: 'shelter',
+          weight: 1200,
+        }),
+      );
       expectBadRequest(res);
     });
 
     it('validates category field', async () => {
-      const res = await apiWithAuth('/user/items', httpMethods.post('', {
-        name: 'Test Item',
-        category: 'invalid-category',
-        weight: 1200
-      }));
+      const res = await apiWithAuth(
+        '/user/items',
+        httpMethods.post('', {
+          name: 'Test Item',
+          category: 'invalid-category',
+          weight: 1200,
+        }),
+      );
       expectBadRequest(res);
     });
 
     it('validates weight field', async () => {
-      const res = await apiWithAuth('/user/items', httpMethods.post('', {
-        name: 'Test Item',
-        category: 'shelter',
-        weight: -1 // Invalid weight
-      }));
+      const res = await apiWithAuth(
+        '/user/items',
+        httpMethods.post('', {
+          name: 'Test Item',
+          category: 'shelter',
+          weight: -1, // Invalid weight
+        }),
+      );
       expectBadRequest(res);
     });
 
     it('validates weight unit', async () => {
-      const res = await apiWithAuth('/user/items', httpMethods.post('', {
-        name: 'Test Item',
-        category: 'shelter',
-        weight: 1200,
-        unit: 'invalid-unit'
-      }));
+      const res = await apiWithAuth(
+        '/user/items',
+        httpMethods.post('', {
+          name: 'Test Item',
+          category: 'shelter',
+          weight: 1200,
+          unit: 'invalid-unit',
+        }),
+      );
       expectBadRequest(res);
     });
 
@@ -186,11 +198,11 @@ describe('User Routes', () => {
         model: 'TestModel',
         notes: 'Test notes',
         purchaseDate: '2024-01-01',
-        purchaseLocation: 'Test Store'
+        purchaseLocation: 'Test Store',
       };
 
       const res = await apiWithAuth('/user/items', httpMethods.post('', itemWithOptionals));
-      
+
       if (res.status === 201 || res.status === 200) {
         await expectJsonResponse(res, ['id']);
       }
@@ -204,11 +216,11 @@ describe('User Routes', () => {
         category: 'shelter',
         weight: 1500,
         unit: 'g',
-        notes: 'Updated notes'
+        notes: 'Updated notes',
       };
 
       const res = await apiWithAuth('/user/items/1', httpMethods.put('', updateData));
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.id).toBeDefined();
@@ -218,36 +230,48 @@ describe('User Routes', () => {
     });
 
     it('returns 404 for non-existent item', async () => {
-      const res = await apiWithAuth('/user/items/999999', httpMethods.put('', {
-        name: 'Updated Item'
-      }));
+      const res = await apiWithAuth(
+        '/user/items/999999',
+        httpMethods.put('', {
+          name: 'Updated Item',
+        }),
+      );
       expectNotFound(res);
     });
 
     it('prevents updating other users items', async () => {
-      const res = await apiWithAuth('/user/items/1', httpMethods.put('', {
-        name: 'Attempting to update'
-      }));
-      
+      const res = await apiWithAuth(
+        '/user/items/1',
+        httpMethods.put('', {
+          name: 'Attempting to update',
+        }),
+      );
+
       // Should either succeed (if owned) or return 404/403 (if not owned)
       expect([200, 403, 404]).toContain(res.status);
     });
 
     it('validates update data', async () => {
-      const res = await apiWithAuth('/user/items/1', httpMethods.put('', {
-        weight: -1 // Invalid weight
-      }));
-      
+      const res = await apiWithAuth(
+        '/user/items/1',
+        httpMethods.put('', {
+          weight: -1, // Invalid weight
+        }),
+      );
+
       if (res.status !== 404) {
         expectBadRequest(res);
       }
     });
 
     it('allows partial updates', async () => {
-      const res = await apiWithAuth('/user/items/1', httpMethods.put('', {
-        notes: 'Only updating notes'
-      }));
-      
+      const res = await apiWithAuth(
+        '/user/items/1',
+        httpMethods.put('', {
+          notes: 'Only updating notes',
+        }),
+      );
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -259,7 +283,7 @@ describe('User Routes', () => {
   describe('DELETE /user/items/:id', () => {
     it('deletes user item', async () => {
       const res = await apiWithAuth('/user/items/1', httpMethods.delete(''));
-      
+
       if (res.status === 200 || res.status === 204) {
         expect(res.status).toBeOneOf([200, 204]);
       } else if (res.status === 404) {
@@ -274,7 +298,7 @@ describe('User Routes', () => {
 
     it('prevents deleting other users items', async () => {
       const res = await apiWithAuth('/user/items/1', httpMethods.delete(''));
-      
+
       // Should either succeed (if owned) or return 404/403 (if not owned)
       expect([200, 204, 403, 404]).toContain(res.status);
     });
@@ -288,7 +312,7 @@ describe('User Routes', () => {
   describe('Error Handling', () => {
     it('handles malformed requests gracefully', async () => {
       const res = await apiWithAuth('/user/items?page=invalid&limit=notanumber');
-      
+
       // Should either return 400 or default to valid pagination
       if (res.status === 400) {
         expectBadRequest(res);
@@ -299,7 +323,7 @@ describe('User Routes', () => {
 
     it('handles invalid filter values', async () => {
       const res = await apiWithAuth('/user/items?minWeight=invalid&maxWeight=alsoInvalid');
-      
+
       // Should return 400 or ignore invalid filters
       if (res.status === 400) {
         expectBadRequest(res);
@@ -310,7 +334,7 @@ describe('User Routes', () => {
 
     it('handles large pagination requests', async () => {
       const res = await apiWithAuth('/user/items?page=1&limit=1000');
-      
+
       // Should either cap the limit or return 400
       if (res.status === 400) {
         expectBadRequest(res);

@@ -1,11 +1,16 @@
-import { describe, expect, it, beforeEach } from 'vitest';
-import { apiWithBasicAuth, expectUnauthorized, expectJsonResponse, api } from './utils/test-helpers';
+import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  api,
+  apiWithBasicAuth,
+  expectJsonResponse,
+  expectUnauthorized,
+} from './utils/test-helpers';
 
 describe('Admin Routes', () => {
   describe('Authentication', () => {
     it('requires basic auth for all admin routes', async () => {
       const routes = ['/', '/stats', '/users-list', '/packs', '/catalog'];
-      
+
       for (const route of routes) {
         const res = await api(`/admin${route}`);
         expectUnauthorized(res);
@@ -15,7 +20,7 @@ describe('Admin Routes', () => {
     it('rejects invalid basic auth credentials', async () => {
       const invalidAuth = btoa('wrong:credentials');
       const res = await api('/admin/', {
-        headers: { Authorization: `Basic ${invalidAuth}` }
+        headers: { Authorization: `Basic ${invalidAuth}` },
       });
       expectUnauthorized(res);
     });
@@ -26,7 +31,7 @@ describe('Admin Routes', () => {
       const res = await apiWithBasicAuth('/');
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('text/html');
-      
+
       const html = await res.text();
       expect(html).toContain('PackRat Admin Panel');
       expect(html).toContain('Dashboard');
@@ -38,7 +43,7 @@ describe('Admin Routes', () => {
       const res = await apiWithBasicAuth('/stats');
       // Note: This will likely fail without database setup
       // but tests the auth and route structure
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['users', 'packs', 'items']);
         expect(typeof data.users).toBe('number');
@@ -51,7 +56,7 @@ describe('Admin Routes', () => {
   describe('GET /admin/users-list', () => {
     it('returns paginated users list', async () => {
       const res = await apiWithBasicAuth('/users-list');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data.users)).toBe(true);
@@ -62,7 +67,7 @@ describe('Admin Routes', () => {
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithBasicAuth('/users-list?page=2&limit=5');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data.users)).toBe(true);
@@ -71,7 +76,7 @@ describe('Admin Routes', () => {
 
     it('accepts search parameter', async () => {
       const res = await apiWithBasicAuth('/users-list?search=test');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data.users)).toBe(true);
@@ -84,7 +89,7 @@ describe('Admin Routes', () => {
       const res = await apiWithBasicAuth('/packs');
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('text/html');
-      
+
       const html = await res.text();
       expect(html).toContain('Packs Management');
     });
@@ -105,7 +110,7 @@ describe('Admin Routes', () => {
       const res = await apiWithBasicAuth('/catalog');
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('text/html');
-      
+
       const html = await res.text();
       expect(html).toContain('Catalog Management');
     });

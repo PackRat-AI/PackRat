@@ -49,7 +49,7 @@ export const apiWithAuth = async (path: string, init?: RequestInit, user = TEST_
   );
 };
 
-// Helper to create admin authenticated requests  
+// Helper to create admin authenticated requests
 export const apiWithAdmin = async (path: string, init?: RequestInit) => {
   return apiWithAuth(path, init, TEST_ADMIN);
 };
@@ -119,12 +119,12 @@ export const expectJsonResponse = async (response: Response, expectedFields?: st
   expectSuccess(response);
   const data = await response.json();
   expect(data).toBeDefined();
-  
+
   if (expectedFields) {
     for (const field of expectedFields) {
       expect(data).toHaveProperty(field);
     }
   }
-  
+
   return data;
 };

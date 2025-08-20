@@ -1,11 +1,11 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { 
-  api, 
-  apiWithAuth, 
-  expectUnauthorized, 
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  api,
+  apiWithAuth,
   expectBadRequest,
   expectJsonResponse,
-  httpMethods 
+  expectUnauthorized,
+  httpMethods,
 } from './utils/test-helpers';
 
 describe('Chat Routes', () => {
@@ -27,12 +27,12 @@ describe('Chat Routes', () => {
         context: {
           activity: 'hiking',
           duration: 'day',
-          experience: 'beginner'
-        }
+          experience: 'beginner',
+        },
       };
 
       const res = await apiWithAuth('/chat', httpMethods.post('', chatMessage));
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['response']);
         expect(data.response).toBeDefined();
@@ -43,17 +43,20 @@ describe('Chat Routes', () => {
     it('requires message field', async () => {
       const res = await apiWithAuth('/chat', httpMethods.post('', {}));
       expectBadRequest(res);
-      
+
       const data = await res.json();
       expect(data.error).toContain('message');
     });
 
     it('validates message length', async () => {
       const longMessage = 'a'.repeat(10000);
-      const res = await apiWithAuth('/chat', httpMethods.post('', {
-        message: longMessage
-      }));
-      
+      const res = await apiWithAuth(
+        '/chat',
+        httpMethods.post('', {
+          message: longMessage,
+        }),
+      );
+
       // Should either handle gracefully or return 400
       if (res.status === 400) {
         expectBadRequest(res);
@@ -69,12 +72,12 @@ describe('Chat Routes', () => {
           temperature: 20,
           season: 'winter',
           budget: 300,
-          activity: 'backpacking'
-        }
+          activity: 'backpacking',
+        },
       };
 
       const res = await apiWithAuth('/chat', httpMethods.post('', chatWithContext));
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['response']);
         expect(data.response).toBeDefined();
@@ -87,12 +90,12 @@ describe('Chat Routes', () => {
         context: {
           category: 'shelter',
           capacity: 2,
-          maxPrice: 200
-        }
+          maxPrice: 200,
+        },
       };
 
       const res = await apiWithAuth('/chat', httpMethods.post('', gearRequest));
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.response).toBeDefined();
@@ -109,12 +112,12 @@ describe('Chat Routes', () => {
         context: {
           activity: 'backpacking',
           duration: 3,
-          season: 'summer'
-        }
+          season: 'summer',
+        },
       };
 
       const res = await apiWithAuth('/chat', httpMethods.post('', packingRequest));
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.response).toBeDefined();
@@ -132,12 +135,12 @@ describe('Chat Routes', () => {
           activity: 'camping',
           duration: 'weekend',
           location: 'mountains',
-          groupSize: 4
-        }
+          groupSize: 4,
+        },
       };
 
       const res = await apiWithAuth('/chat', httpMethods.post('', tripRequest));
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res, ['response']);
       }
@@ -147,22 +150,22 @@ describe('Chat Routes', () => {
       // First message
       const firstMessage = {
         message: 'I am planning a hiking trip',
-        conversationId: 'test-conversation-1'
+        conversationId: 'test-conversation-1',
       };
 
       const res1 = await apiWithAuth('/chat', httpMethods.post('', firstMessage));
-      
+
       if (res1.status === 200) {
         const data1 = await res1.json();
-        
+
         // Follow-up message
         const followupMessage = {
           message: 'What shoes should I wear?',
-          conversationId: data1.conversationId || 'test-conversation-1'
+          conversationId: data1.conversationId || 'test-conversation-1',
         };
 
         const res2 = await apiWithAuth('/chat', httpMethods.post('', followupMessage));
-        
+
         if (res2.status === 200) {
           await expectJsonResponse(res2, ['response']);
         }
@@ -173,7 +176,7 @@ describe('Chat Routes', () => {
   describe('GET /chat/history', () => {
     it('returns chat history for authenticated user', async () => {
       const res = await apiWithAuth('/chat/history');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.conversations).toBeTruthy();
@@ -185,7 +188,7 @@ describe('Chat Routes', () => {
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/chat/history?page=1&limit=10');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       } else if (res.status === 404) {
@@ -197,7 +200,7 @@ describe('Chat Routes', () => {
   describe('GET /chat/:conversationId', () => {
     it('returns specific conversation', async () => {
       const res = await apiWithAuth('/chat/test-conversation-1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['id', 'messages']);
         expect(data.messages).toBeDefined();
@@ -209,7 +212,7 @@ describe('Chat Routes', () => {
 
     it('prevents access to other users conversations', async () => {
       const res = await apiWithAuth('/chat/other-user-conversation');
-      
+
       // Should return 404 or 403
       expect([403, 404]).toContain(res.status);
     });
@@ -218,7 +221,7 @@ describe('Chat Routes', () => {
   describe('DELETE /chat/:conversationId', () => {
     it('deletes conversation', async () => {
       const res = await apiWithAuth('/chat/test-conversation-1', httpMethods.delete(''));
-      
+
       if (res.status === 200 || res.status === 204) {
         expect(res.status).toBeOneOf([200, 204]);
       } else if (res.status === 404) {
@@ -228,7 +231,7 @@ describe('Chat Routes', () => {
 
     it('prevents deleting other users conversations', async () => {
       const res = await apiWithAuth('/chat/other-user-conversation', httpMethods.delete(''));
-      
+
       expect([403, 404]).toContain(res.status);
     });
   });
@@ -236,10 +239,13 @@ describe('Chat Routes', () => {
   describe('Error Handling', () => {
     it('handles AI service errors gracefully', async () => {
       // Mock AI service failure
-      const res = await apiWithAuth('/chat', httpMethods.post('', {
-        message: 'This might cause an AI error'
-      }));
-      
+      const res = await apiWithAuth(
+        '/chat',
+        httpMethods.post('', {
+          message: 'This might cause an AI error',
+        }),
+      );
+
       // Should not crash, should return error message
       if (res.status === 500) {
         const data = await res.json();
@@ -250,28 +256,34 @@ describe('Chat Routes', () => {
     });
 
     it('handles malformed requests', async () => {
-      const res = await apiWithAuth('/chat', httpMethods.post('', {
-        invalidField: 'invalid'
-      }));
-      
+      const res = await apiWithAuth(
+        '/chat',
+        httpMethods.post('', {
+          invalidField: 'invalid',
+        }),
+      );
+
       expectBadRequest(res);
     });
 
     it('handles empty messages', async () => {
-      const res = await apiWithAuth('/chat', httpMethods.post('', {
-        message: ''
-      }));
-      
+      const res = await apiWithAuth(
+        '/chat',
+        httpMethods.post('', {
+          message: '',
+        }),
+      );
+
       expectBadRequest(res);
     });
 
     it('handles special characters in messages', async () => {
       const specialMessage = {
-        message: 'Test with special chars: @#$%^&*()[]{}|\\:";\'<>?,./'
+        message: 'Test with special chars: @#$%^&*()[]{}|\\:";\'<>?,./',
       };
 
       const res = await apiWithAuth('/chat', httpMethods.post('', specialMessage));
-      
+
       // Should handle gracefully
       if (res.status === 200) {
         await expectJsonResponse(res);
@@ -283,16 +295,21 @@ describe('Chat Routes', () => {
 
   describe('Rate Limiting', () => {
     it('handles multiple rapid requests', async () => {
-      const requests = Array(5).fill(null).map((_, i) => 
-        apiWithAuth('/chat', httpMethods.post('', {
-          message: `Test message ${i + 1}`
-        }))
-      );
+      const requests = Array(5)
+        .fill(null)
+        .map((_, i) =>
+          apiWithAuth(
+            '/chat',
+            httpMethods.post('', {
+              message: `Test message ${i + 1}`,
+            }),
+          ),
+        );
 
       const responses = await Promise.all(requests);
-      
+
       // Some may succeed, some may be rate limited
-      responses.forEach(res => {
+      responses.forEach((res) => {
         expect([200, 429]).toContain(res.status);
       });
     });

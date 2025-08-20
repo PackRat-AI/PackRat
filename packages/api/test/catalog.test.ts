@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { 
-  api, 
-  apiWithAuth, 
-  apiWithAdmin, 
-  expectUnauthorized, 
+import {
+  api,
+  apiWithAdmin,
+  apiWithAuth,
   expectBadRequest,
-  expectNotFound,
   expectJsonResponse,
-  httpMethods 
+  expectNotFound,
+  expectUnauthorized,
+  httpMethods,
 } from './utils/test-helpers';
 
 describe('Catalog Routes', () => {
@@ -41,7 +41,7 @@ describe('Catalog Routes', () => {
   describe('GET /catalog/', () => {
     it('returns catalog items list', async () => {
       const res = await apiWithAuth('/catalog/');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.items).toBeTruthy();
@@ -50,7 +50,7 @@ describe('Catalog Routes', () => {
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/catalog/?page=1&limit=10');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -58,7 +58,7 @@ describe('Catalog Routes', () => {
 
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/catalog/?category=shelter');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -66,7 +66,7 @@ describe('Catalog Routes', () => {
 
     it('accepts search query', async () => {
       const res = await apiWithAuth('/catalog/?q=tent');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -74,7 +74,7 @@ describe('Catalog Routes', () => {
 
     it('accepts weight range filters', async () => {
       const res = await apiWithAuth('/catalog/?minWeight=0&maxWeight=1000');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -82,7 +82,7 @@ describe('Catalog Routes', () => {
 
     it('accepts sorting parameters', async () => {
       const res = await apiWithAuth('/catalog/?sortBy=weight&sortOrder=asc');
-      
+
       if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -92,7 +92,7 @@ describe('Catalog Routes', () => {
   describe('GET /catalog/categories', () => {
     it('returns available categories', async () => {
       const res = await apiWithAuth('/catalog/categories');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.categories).toBeTruthy();
@@ -103,7 +103,7 @@ describe('Catalog Routes', () => {
   describe('GET /catalog/:id', () => {
     it('returns single catalog item', async () => {
       const res = await apiWithAuth('/catalog/1');
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['id', 'name']);
         expect(data.id).toBeDefined();
@@ -132,11 +132,11 @@ describe('Catalog Routes', () => {
         category: 'shelter',
         weight: 1200,
         unit: 'g',
-        price: 299.99
+        price: 299.99,
       };
 
       const res = await apiWithAuth('/catalog/', httpMethods.post('', newItem));
-      
+
       if (res.status === 201 || res.status === 200) {
         const data = await expectJsonResponse(res, ['id']);
         expect(data.id).toBeDefined();
@@ -149,28 +149,37 @@ describe('Catalog Routes', () => {
     });
 
     it('validates name field', async () => {
-      const res = await apiWithAuth('/catalog/', httpMethods.post('', {
-        category: 'shelter',
-        weight: 1200
-      }));
+      const res = await apiWithAuth(
+        '/catalog/',
+        httpMethods.post('', {
+          category: 'shelter',
+          weight: 1200,
+        }),
+      );
       expectBadRequest(res);
     });
 
     it('validates weight field', async () => {
-      const res = await apiWithAuth('/catalog/', httpMethods.post('', {
-        name: 'Test Item',
-        category: 'shelter',
-        weight: -1 // Invalid weight
-      }));
+      const res = await apiWithAuth(
+        '/catalog/',
+        httpMethods.post('', {
+          name: 'Test Item',
+          category: 'shelter',
+          weight: -1, // Invalid weight
+        }),
+      );
       expectBadRequest(res);
     });
 
     it('validates category field', async () => {
-      const res = await apiWithAuth('/catalog/', httpMethods.post('', {
-        name: 'Test Item',
-        category: 'invalid-category',
-        weight: 1200
-      }));
+      const res = await apiWithAuth(
+        '/catalog/',
+        httpMethods.post('', {
+          name: 'Test Item',
+          category: 'invalid-category',
+          weight: 1200,
+        }),
+      );
       expectBadRequest(res);
     });
   });
@@ -181,11 +190,11 @@ describe('Catalog Routes', () => {
         name: 'Updated Test Item',
         category: 'shelter',
         weight: 1500,
-        unit: 'g'
+        unit: 'g',
       };
 
       const res = await apiWithAuth('/catalog/1', httpMethods.put('', updateData));
-      
+
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(data.id).toBeDefined();
@@ -195,16 +204,22 @@ describe('Catalog Routes', () => {
     });
 
     it('returns 404 for non-existent item', async () => {
-      const res = await apiWithAuth('/catalog/999999', httpMethods.put('', {
-        name: 'Updated Item'
-      }));
+      const res = await apiWithAuth(
+        '/catalog/999999',
+        httpMethods.put('', {
+          name: 'Updated Item',
+        }),
+      );
       expectNotFound(res);
     });
 
     it('validates update data', async () => {
-      const res = await apiWithAuth('/catalog/1', httpMethods.put('', {
-        weight: -1 // Invalid weight
-      }));
+      const res = await apiWithAuth(
+        '/catalog/1',
+        httpMethods.put('', {
+          weight: -1, // Invalid weight
+        }),
+      );
       expectBadRequest(res);
     });
   });
@@ -212,7 +227,7 @@ describe('Catalog Routes', () => {
   describe('DELETE /catalog/:id', () => {
     it('deletes catalog item', async () => {
       const res = await apiWithAuth('/catalog/1', httpMethods.delete(''));
-      
+
       if (res.status === 200 || res.status === 204) {
         // Success - item deleted
         expect(res.status).toBeOneOf([200, 204]);
@@ -230,7 +245,7 @@ describe('Catalog Routes', () => {
   describe('POST /catalog/queue-etl', () => {
     it('queues ETL job (admin only)', async () => {
       const res = await apiWithAdmin('/catalog/queue-etl', httpMethods.post('', {}));
-      
+
       // This may require admin permissions
       if (res.status === 403) {
         expect(res.status).toBe(403);
@@ -248,7 +263,7 @@ describe('Catalog Routes', () => {
   describe('POST /catalog/backfill-embeddings', () => {
     it('backfills embeddings (admin only)', async () => {
       const res = await apiWithAdmin('/catalog/backfill-embeddings', httpMethods.post('', {}));
-      
+
       if (res.status === 403) {
         expect(res.status).toBe(403);
       } else if (res.status === 200) {
