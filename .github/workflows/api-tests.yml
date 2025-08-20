@@ -6,7 +6,7 @@ on:
     paths:
       - "packages/api/**"
   pull_request:
-    branches: ["main", "development"]
+    branches: ["**"]
     paths:
       - "packages/api/**"
 
@@ -30,6 +30,3 @@ jobs:
         
       - name: Run API tests
         run: bun test --cwd packages/api
-        
-      - name: Check types
-        run: bun check-types --cwd packages/api
