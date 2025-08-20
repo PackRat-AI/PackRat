@@ -4,7 +4,7 @@ import app from '../../src/index';
 
 // Extend expect with custom matchers
 expect.extend({
-  toBeOneOf(received: any, expected: any[]) {
+  toBeOneOf(received: unknown, expected: unknown[]) {
     const pass = expected.includes(received);
     return {
       message: () => `expected ${received} to be one of [${expected.join(', ')}]`,
@@ -70,7 +70,7 @@ export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
 };
 
 // Common request bodies for testing
-export const createTestRequestBody = (data: any) => ({
+export const createTestRequestBody = (data: unknown) => ({
   body: JSON.stringify(data),
   headers: { 'Content-Type': 'application/json' },
 });
@@ -78,17 +78,17 @@ export const createTestRequestBody = (data: any) => ({
 // Helper to test common HTTP methods
 export const httpMethods = {
   get: (_url: string, options?: RequestInit) => ({ method: 'GET', ...options }),
-  post: (_url: string, body?: any, options?: RequestInit) => ({
+  post: (_url: string, body?: unknown, options?: RequestInit) => ({
     method: 'POST',
     ...createTestRequestBody(body),
     ...options,
   }),
-  put: (_url: string, body?: any, options?: RequestInit) => ({
+  put: (_url: string, body?: unknown, options?: RequestInit) => ({
     method: 'PUT',
     ...createTestRequestBody(body),
     ...options,
   }),
-  patch: (_url: string, body?: any, options?: RequestInit) => ({
+  patch: (_url: string, body?: unknown, options?: RequestInit) => ({
     method: 'PATCH',
     ...createTestRequestBody(body),
     ...options,
