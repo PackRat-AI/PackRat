@@ -83,6 +83,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     return c.json(
       {
         id,
+        key, // Add the key field that the schema expects
         title: frontmatter.title || metadata.title || id.replace(/-/g, ' '),
         category: metadata.category || 'general',
         categories: frontmatter.categories || [],

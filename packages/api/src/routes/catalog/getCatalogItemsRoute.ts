@@ -37,7 +37,6 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const validSortFields = [
     'name',
     'brand',
-    'category',
     'price',
     'ratingValue',
     'createdAt',

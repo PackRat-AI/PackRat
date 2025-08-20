@@ -101,7 +101,7 @@ export const CatalogItemsQuerySchema = z
     sort: z
       .object({
         field: z
-          .enum(['name', 'brand', 'category', 'price', 'ratingValue', 'createdAt', 'updatedAt'])
+          .enum(['name', 'brand', 'price', 'ratingValue', 'createdAt', 'updatedAt'])
           .openapi({
             example: 'price',
             description: 'Field to sort by',
