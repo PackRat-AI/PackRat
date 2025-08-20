@@ -62,7 +62,7 @@ export const apiEnvSchema = z.object({
 type ValidatedAppEnv = z.infer<typeof apiEnvSchema>;
 
 // Override Cloudflare binding types with proper TypeScript types
-export type Env = Omit<
+export type ValidatedEnv = Omit<
   ValidatedAppEnv,
   | 'CF_VERSION_METADATA'
   | 'AI'
@@ -85,13 +85,13 @@ export type Env = Omit<
 };
 
 // Cache for validated environments per request
-const envCache = new WeakMap<Context, Env>();
+const envCache = new WeakMap<Context, ValidatedEnv>();
 
 /**
  * Get and validate environment variables from Hono context
  * Results are cached per request context
  */
-export function getEnv(c: Context): Env {
+export function getEnv(c: Context): ValidatedEnv {
   // Check if we already have validated env for this context
   const cached = envCache.get(c);
   if (cached) {
@@ -99,7 +99,7 @@ export function getEnv(c: Context): Env {
   }
 
   // Get raw environment
-  const rawEnv = env<Env>(c);
+  const rawEnv = env<ValidatedEnv>(c);
 
   // Validate all environment variables with Zod
   // This ensures all required fields exist, including CF bindings
@@ -109,7 +109,7 @@ export function getEnv(c: Context): Env {
   }
 
   // Merge validated data with correctly typed Cloudflare bindings from rawEnv
-  const data: Env = {
+  const data: ValidatedEnv = {
     ...validated.data,
     CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA,
     AI: rawEnv.AI,
