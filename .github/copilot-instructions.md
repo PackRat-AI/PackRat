@@ -7,130 +7,128 @@ PackRat is a modern full-stack application for outdoor enthusiasts to plan and o
 ## Working Effectively
 
 ### Prerequisites and Installation
+Install required tools and authenticate:
 
-Install required tools:
-- Install Bun: `curl -fsSL https://bun.sh/install | bash && source ~/.bashrc`
-- Install Node.js (required for some tooling): Use Node.js 20+ 
-- Install GitHub CLI: `sudo apt install gh` (Ubuntu/Debian) or follow [GitHub CLI installation](https://cli.github.com)
-- Install Wrangler CLI: `bun install -g wrangler`
+1. **Install Bun (Primary Package Manager)**:
+   ```bash
+   curl -fsSL https://bun.sh/install | bash
+   source ~/.bashrc
+   ```
 
-### Initial Setup
+2. **Install GitHub CLI for Package Authentication**:
+   ```bash
+   # macOS: brew install gh
+   # Windows: winget install --id GitHub.cli
+   # Linux: see https://github.com/cli/cli#installation
+   ```
 
-**CRITICAL:** GitHub authentication is required for private packages:
-1. Authenticate with GitHub CLI: `gh auth login`
-2. Add packages scope: `gh auth refresh -h github.com -s read:packages`
-3. Install dependencies: `bun install` (takes ~1 minute)
+3. **Authenticate with GitHub for Private Packages**:
+   ```bash
+   gh auth login
+   gh auth refresh -h github.com -s read:packages
+   ```
 
-**Alternative:** Set environment variable `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` with a Personal Access Token that has `read:packages` scope.
+4. **Install Global Tools**:
+   ```bash
+   bun add -g @expo/cli wrangler
+   ```
+
+### Setup and Dependencies
+- **Install Dependencies**: `bun install` -- NEVER CANCEL: takes up to 60 seconds, set timeout to 120+ seconds
+- **Clean Install**: `bun clean && bun install` -- NEVER CANCEL: takes up to 90 seconds, set timeout to 180+ seconds
+- **GitHub Authentication**: Required for `@packrat-ai/nativewindui` private package. Without authentication, `bun install` will fail with 401 errors
 
 ### Build and Development Commands
 
-**Install Dependencies:**
+#### **Format and Lint** (Fast Operations)
+- **Format Code**: `bun format` -- takes <1 second, formats 613+ files
+- **Lint Code**: `bun lint` -- takes ~1 second, may show warnings 
+- **Type Check**: `bun check-types` -- FAILS without dependencies installed (expected)
+
+#### **Development Servers**
+Run each application independently. NEVER CANCEL these commands:
+
+**API Server (Hono + Cloudflare Workers)**:
 ```bash
-bun install  # Takes ~1 minute. NEVER CANCEL.
+bun api
 ```
+- NEVER CANCEL: Takes ~10 seconds to start, set timeout to 60+ seconds
+- Runs on `http://localhost:8787`
+- May show network warnings (expected in restricted environments)
+- API endpoints require authentication, returns `{"error":"Unauthorized"}` without auth
 
-**Code Quality:**
+**Mobile App (Expo)**:
 ```bash
-bun format   # Format code with Biome (takes ~1 second)
-bun lint     # Lint code with Biome (takes ~1 second)  
-bun check-types  # TypeScript checking - WILL FAIL without GitHub auth (takes ~17 seconds)
+# Start Expo development server
+bun expo
+
+# Or run directly on device/simulator  
+bun android  # for Android
+bun ios       # for iOS
 ```
+- NEVER CANCEL: Expo commands can take 2+ minutes, set timeout to 180+ seconds
 
-**Application Development:**
-
-**API Server (Cloudflare Workers):**
-```bash
-bun api  # Start API development server on http://localhost:8787
-# Takes ~10 seconds to start. NEVER CANCEL.
-# Shows Cloudflare Workers dev environment with local R2, queues, and AI bindings
-# Will show network warnings - these are normal in development
-```
-
-**Mobile App (Expo/React Native):**
-```bash
-bun expo     # Start Expo development server (Metro bundler)
-bun android  # Run on Android device/emulator
-bun ios      # Run on iOS device/simulator
-# Expo starts in ~10 seconds. NEVER CANCEL.
-# Runs on http://localhost:8081
-```
-
-**Landing Page (Next.js):**
+**Landing Page (Next.js)**:
 ```bash
 cd apps/landing
-bun dev  # Start Next.js dev server on http://localhost:3000
-# Takes ~5 seconds to start
+bun dev
 ```
+- NEVER CANCEL: Takes ~1.4 seconds to start, set timeout to 30+ seconds
+- Runs on `http://localhost:3000`
 
-**Guides Site (Next.js):**
+**Guides Site (Next.js)**:
 ```bash
-cd apps/guides
-bun dev  # Start Next.js dev server on http://localhost:3000  
-# Takes ~5 seconds to start
-# Note: Content is pre-built during installation
+cd apps/guides  
+bun dev
 ```
+- NEVER CANCEL: Takes ~1.4 seconds to start, set timeout to 30+ seconds
+- Runs on `http://localhost:3001` (if 3000 is taken)
 
-### Testing
+#### **Build Commands**
+- **Guides Build**: `cd apps/guides && bun run build` -- NEVER CANCEL: May fail on Google Fonts in restricted networks, set timeout to 300+ seconds
+- **Landing Build**: `cd apps/landing && bun run build` -- NEVER CANCEL: May fail on Google Fonts in restricted networks, set timeout to 300+ seconds
 
-**API Tests:**
+#### **Testing**
+- **API Tests**: `cd packages/api && bun test` -- NEVER CANCEL: Takes <1 second but may have environment errors
+- Tests expect environment variables to be configured
+
+### Typical Development Workflow
+For mobile development with API backend:
 ```bash
-cd packages/api
-bun test  # Run Vitest tests with Cloudflare Workers environment
-# Currently requires GitHub authentication to pass
-# Takes ~5 seconds when configured correctly
-```
+# Terminal 1: Start the API
+bun api
 
-**Note:** API tests use Cloudflare Workers vitest pool and require proper authentication setup to pass.
-
-### Building for Production
-
-**API Deployment:**
-```bash
-cd packages/api
-wrangler deploy  # Deploy to Cloudflare Workers
-```
-
-**Next.js Applications:**
-```bash
-cd apps/landing && bun build  # Build landing page
-cd apps/guides && bun build   # Build guides site (includes content generation)
-# Note: Builds may fail in environments without internet access due to Google Fonts
-```
-
-**Mobile App Builds:**
-```bash
-cd apps/expo
-# EAS Build (requires Expo account)
-bun build:preview        # Preview build locally
-bun build:production     # Production build locally
-bun build:preview:eas    # Preview build on EAS
-bun build:production:eas # Production build on EAS
-# Local builds take 10-15 minutes. NEVER CANCEL. Set timeout to 30+ minutes.
+# Terminal 2: Start the mobile app  
+bun expo
 ```
 
 ## Validation Scenarios
 
-**Always test these scenarios after making changes:**
+Always manually validate changes by running complete user scenarios:
 
-1. **API Validation:**
-   - Start API server: `bun api`
-   - Test health endpoint: `curl http://localhost:8787/api/health`
-   - Expected: `{"error":"Unauthorized"}` (auth required)
+### **API Validation**
+1. Start API: `bun api`
+2. Test health check: `curl http://localhost:8787/api/health` (expect 401 unauthorized)
+3. Verify API is responding on port 8787
 
-2. **Mobile App Validation:**
-   - Start Expo: `bun expo`
-   - Check Metro bundler is running on http://localhost:8081
-   - Can connect with Expo Go app or simulator
+### **Web Apps Validation** 
+1. **Guides App**: 
+   - Start: `cd apps/guides && bun dev`
+   - Test: `curl http://localhost:3001` (expect HTML response)
+   - Content generation works: builds 49+ posts, 29+ categories
 
-3. **Web Applications:**
-   - Start dev servers for landing/guides: `cd apps/landing && bun dev`
-   - Access http://localhost:3000
-   - Check for no build errors in console
+2. **Landing Page**:
+   - Start: `cd apps/landing && bun dev` 
+   - Test: `curl http://localhost:3000` (expect HTML response)
 
-4. **Code Quality Validation:**
-   - Run `bun format && bun lint` - should complete without errors
-   - Pre-push hooks automatically run formatting checks
+### **Mobile App Validation**
+- Cannot fully test mobile UI in this environment
+- Verify Expo development server starts without errors
+- Check that `expo-doctor` passes
+
+### **Code Quality Validation**
+- Run `bun format && bun lint` - should complete without errors
+- Pre-push hooks automatically run formatting checks
 
 ## Repository Structure
 
@@ -241,3 +239,57 @@ bun format && bun lint  # Final quality check
 ```
 
 **Always validate changes work end-to-end before committing.**
+
+## Common Issues and Solutions
+
+### **Authentication Issues**
+- **Problem**: `bun install` fails with 401 errors
+- **Solution**: Ensure GitHub CLI is authenticated with `read:packages` scope
+
+### **Build Failures**
+- **Problem**: Next.js builds fail with Google Fonts errors
+- **Solution**: Expected in restricted networks, development servers work fine
+
+### **Type Checking Failures**  
+- **Problem**: `bun check-types` fails with module not found errors
+- **Solution**: Expected without dependencies installed, install with `bun install` first
+
+### **Port Conflicts**
+- Landing page uses port 3000, guides use port 3001 if 3000 is taken
+- API always uses port 8787
+
+## Git Workflow
+- **Pre-push Hook**: Automatically runs `bun format` 
+- **Skip Hooks**: `git push --no-verify` (if needed temporarily)
+- **Quality Commands**: Always run `bun format && bun lint` before committing
+
+## Architecture Notes
+- **Package Manager**: Bun (primary), some legacy PNPM files exist
+- **Monorepo**: Uses Bun workspaces
+- **Mobile**: React Native with Expo
+- **Web**: Next.js 15+ with React 19
+- **API**: Hono.js on Cloudflare Workers with Wrangler CLI
+- **Database**: PostgreSQL with Drizzle ORM
+- **Styling**: Tailwind CSS with custom UI components
+- **Code Quality**: Biome for formatting and linting
+
+## Environment Variables
+See `.env.example` for complete list. Key variables:
+- `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` - Required for private package access
+- `NEON_DATABASE_URL` - Database connection
+- `OPENAI_API_KEY` - AI features
+- `EXPO_PUBLIC_*` - Client-side Expo variables
+
+## Time Expectations and Timeouts
+
+**CRITICAL: NEVER CANCEL long-running operations. Always set appropriate timeouts:**
+
+- **bun install**: 60-120 seconds timeout
+- **bun format**: <1 second 
+- **bun lint**: ~1 second
+- **Development server startup**: 30-60 seconds timeout
+- **API startup**: 60 seconds timeout  
+- **Builds**: 300+ seconds timeout (may fail on network issues)
+- **Expo commands**: 180+ seconds timeout
+
+**Always wait for commands to complete rather than canceling them.**
