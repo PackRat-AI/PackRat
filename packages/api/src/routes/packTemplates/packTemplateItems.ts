@@ -163,7 +163,6 @@ const addItemRoute = createRoute({
 
 packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
   const auth = c.get('user');
-  
 
   const db = createDb(c);
   const templateId = c.req.param('templateId');
@@ -276,7 +275,6 @@ const updateItemRoute = createRoute({
 
 packTemplateItemsRoutes.openapi(updateItemRoute, async (c) => {
   const auth = c.get('user');
-  
 
   const db = createDb(c);
   const itemId = c.req.param('itemId');
@@ -379,7 +377,6 @@ const deleteItemRoute = createRoute({
 
 packTemplateItemsRoutes.openapi(deleteItemRoute, async (c) => {
   const auth = c.get('user');
-  
 
   const db = createDb(c);
   const itemId = c.req.param('itemId');
