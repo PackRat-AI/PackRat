@@ -72,7 +72,6 @@ const getItemsRoute = createRoute({
 
 packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
   const auth = c.get('user');
-  if (!auth) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = createDb(c);
   const templateId = c.req.param('templateId');
