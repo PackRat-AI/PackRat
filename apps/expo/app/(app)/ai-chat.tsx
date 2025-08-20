@@ -1,4 +1,4 @@
-import { type Message, useChat } from '@ai-sdk/react';
+import { type UIMessage, useChat } from '@ai-sdk/react';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
@@ -245,7 +245,7 @@ export default function AIChat() {
             });
 
             // Get the user query for this AI response
-            let userQuery: Message['content'] | undefined;
+            let userQuery: UIMessage['content'] | undefined;
             if (item.sender === AI && index > 1) {
               const userMessage = messages[index - 1];
               assertDefined(userMessage);

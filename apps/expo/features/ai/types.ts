@@ -1,6 +1,6 @@
-import type { Message } from '@ai-sdk/react';
+import type { UIMessage } from '@ai-sdk/react';
 
-export interface ChatMessage extends Message {
+export interface ChatMessage extends UIMessage {
   sender: string;
   text: string;
   date: string;
