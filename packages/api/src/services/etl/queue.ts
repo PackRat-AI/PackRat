@@ -301,7 +301,7 @@ async function processCatalogETLWriteBatch({
       openAiApiKey: env.OPENAI_API_KEY,
       values: embeddingTexts,
       cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
-      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
       provider: env.AI_PROVIDER,
     });
 
