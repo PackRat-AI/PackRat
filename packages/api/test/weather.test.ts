@@ -17,7 +17,7 @@ describe('weather routes', () => {
         }),
       ),
     );
-    
+
     // Mock global fetch for this test
     const originalFetch = global.fetch;
     global.fetch = mockFetch as any;

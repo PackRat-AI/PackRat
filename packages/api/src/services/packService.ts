@@ -167,7 +167,7 @@ export class PackService {
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
     const openai = createOpenAI({
-      apiKey: env(this.c).OPENAI_API_KEY,
+      apiKey: getEnv(this.c, 'OPENAI_API_KEY'),
     });
 
     const { object } = await generateObject({
