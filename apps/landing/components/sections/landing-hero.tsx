@@ -151,7 +151,7 @@ export default function LandingHero() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <DeviceMockup
-              image="/packrat-app-preview.png"
+              image="/feature-app-dashboard.png"
               alt="PackRat App"
               priority
               showReflection

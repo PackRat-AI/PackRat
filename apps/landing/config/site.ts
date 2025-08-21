@@ -301,7 +301,7 @@ export const siteConfig = {
     subtitle: 'Download PackRat today and start planning your outdoor journeys with confidence.',
     appStoreLink: '#app-store',
     googlePlayLink: '#google-play',
-    image: '/feature-create-pack-preview.png',
+    image: '/install-now-preview.png',
     features: [
       'Free basic version',
       'Premium features from $4.99/month',
