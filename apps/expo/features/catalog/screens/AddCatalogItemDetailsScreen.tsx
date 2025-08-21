@@ -21,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { useCatalogItemDetails } from '../hooks';
 
 export function AddCatalogItemDetailsScreen() {
@@ -41,6 +42,7 @@ export function AddCatalogItemDetailsScreen() {
   const [notes, setNotes] = useState('');
   const [isConsumable, setIsConsumable] = useState(false);
   const [isWorn, setIsWorn] = useState(false);
+  const [category, setCategory] = useState('');
 
   const { colors } = useColorScheme();
 
@@ -59,6 +61,7 @@ export function AddCatalogItemDetailsScreen() {
       setNotes('');
       setIsConsumable(false);
       setIsWorn(false);
+      setCategory('');
     }
   }, [catalogItem]);
 
@@ -68,15 +71,15 @@ export function AddCatalogItemDetailsScreen() {
       packId: packId as string,
       itemData: {
         name: catalogItem.name,
-        description: catalogItem.description,
+        description: catalogItem.description ?? undefined,
         weight: catalogItem.weight || 0,
         weightUnit: catalogItem.weightUnit as WeightUnit,
         quantity: Number.parseInt(quantity, 10) || 1,
-        category: catalogItem.categories,
+        category,
         consumable: isConsumable,
         worn: isWorn,
-        notes: notes,
-        image: catalogItem.images,
+        notes,
+        image: Array.isArray(catalogItem.images) ? catalogItem.images[0] : catalogItem.images,
         catalogItemId: catalogItem.id,
       },
     });
@@ -208,6 +211,16 @@ export function AddCatalogItemDetailsScreen() {
                     multiline
                     numberOfLines={3}
                     textAlignVertical="top"
+                  />
+                </View>
+
+                <View className="mb-4">
+                  <Text className="mb-1 text-sm font-medium text-foreground">Category</Text>
+                  <TextInput
+                    className="rounded-md border border-border bg-background px-3 py-2 text-foreground"
+                    value={category}
+                    onChangeText={setCategory}
+                    placeholder="Category (e.g., Shelter, Cooking)"
                   />
                 </View>
 
