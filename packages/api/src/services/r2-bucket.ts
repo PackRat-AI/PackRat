@@ -175,6 +175,7 @@ export class R2BucketService {
           break;
         case 'images':
           this.bucketName = env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME;
+          break;
       }
     }
 
