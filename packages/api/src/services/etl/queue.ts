@@ -207,7 +207,7 @@ async function processCatalogETL({
                 }
               }),
             );
-            validatedItem.item.images = uploadedKeys.filter(Boolean) as string[];
+            validatedItem.item.images = uploadedKeys.filter((key): key is string => typeof key === "string");
           }
           validItemsBatch.push(validatedItem.item);
           totalValid++;
