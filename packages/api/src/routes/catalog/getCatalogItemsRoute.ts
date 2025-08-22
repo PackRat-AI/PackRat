@@ -39,7 +39,14 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   }
 
   const { page, limit, q, category: encodedCategory } = c.req.valid('query');
-  const category = decodeURIComponent(encodedCategory ?? '');
+  let category: string | undefined = undefined;
+  if (typeof encodedCategory === 'string' && encodedCategory.length > 0) {
+    try {
+      category = decodeURIComponent(encodedCategory);
+    } catch (e) {
+      category = undefined;
+    }
+  }
 
   // Manually parse sort parameters from raw query
   const url = new URL(c.req.url);
