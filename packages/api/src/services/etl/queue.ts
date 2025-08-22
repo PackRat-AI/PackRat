@@ -20,7 +20,7 @@ export interface CatalogETLMessage extends BaseQueueMessage {
   data: {
     objectKey: string;
     userId: string;
-    filename: string;
+    source: string;
     scraperRevision: string;
     startRow?: number; // for chunking
   };
@@ -30,7 +30,7 @@ export async function queueCatalogETL({
   queue,
   objectKey,
   userId,
-  filename,
+  source,
   scraperRevision,
   jobId,
   startRow = 0, // <-- Default to 0
@@ -38,14 +38,14 @@ export async function queueCatalogETL({
   queue: Queue;
   objectKey: string;
   userId: string;
-  filename: string;
+  source: string;
   scraperRevision: string;
   jobId: string;
   startRow?: number;
 }): Promise<string> {
   const message: CatalogETLMessage = {
     type: QueueType.CATALOG_ETL,
-    data: { objectKey, userId, filename, scraperRevision, startRow },
+    data: { objectKey, userId, source, scraperRevision, startRow },
     timestamp: Date.now(),
     id: jobId,
   };

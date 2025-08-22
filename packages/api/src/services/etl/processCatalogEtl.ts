@@ -18,13 +18,13 @@ export async function processCatalogETL({
   message: CatalogETLMessage;
   env: Env;
 }): Promise<void> {
-  const { objectKey, filename, scraperRevision, startRow = 0 } = message.data;
+  const { objectKey, source, scraperRevision, startRow = 0 } = message.data;
   const jobId = message.id;
 
   const db = createDbClient(env);
   try {
     console.log(
-      `🚀 Starting ETL job ${jobId} for file ${filename} (rows ${startRow} to ${startRow + CHUNK_SIZE - 1})`,
+      `🚀 Starting ETL job ${jobId} for file ${objectKey} (rows ${startRow} to ${startRow + CHUNK_SIZE - 1})`,
     );
 
     const r2Service = new R2BucketService({
@@ -62,7 +62,7 @@ export async function processCatalogETL({
           {} as Record<string, number>,
         );
         isHeader = false;
-        console.log(`📋 Processing ${filename} with field mapping:`, Object.keys(fieldMap));
+        console.log(`📋 Processing ${objectKey} with field mapping:`, Object.keys(fieldMap));
         continue;
       }
 
@@ -130,7 +130,7 @@ export async function processCatalogETL({
         queue: env.ETL_QUEUE,
         objectKey,
         userId: message.data.userId,
-        filename,
+        source,
         scraperRevision,
         jobId,
         startRow: startRow + CHUNK_SIZE,

@@ -17,7 +17,7 @@ export interface CatalogETLMessage extends BaseQueueMessage {
   data: {
     objectKey: string;
     userId: string;
-    filename: string;
+    source: string;
     scraperRevision: string;
     startRow?: number;
   };
@@ -35,7 +35,7 @@ export interface QueueCatalogETLParams {
   queue: Queue;
   objectKey: string;
   userId: string;
-  filename: string;
+  source: string;
   scraperRevision: string;
   startRow?: number;
 }
