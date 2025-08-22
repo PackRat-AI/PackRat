@@ -306,8 +306,14 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     return c.json({ error: 'No embeddings found for existing items' }, 400);
   }
 
-  const avgEmbedding = existingEmbeddings[0].map(
-    (_, i) => existingEmbeddings.reduce((sum, emb) => sum + emb[i], 0) / existingEmbeddings.length,
+  const firstEmbedding = existingEmbeddings[0];
+  if (!firstEmbedding) {
+    return c.json({ error: 'No valid embeddings found' }, 400);
+  }
+
+  const avgEmbedding = firstEmbedding.map(
+    (_, i) =>
+      existingEmbeddings.reduce((sum, emb) => sum + (emb?.[i] ?? 0), 0) / existingEmbeddings.length,
   );
 
   const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;

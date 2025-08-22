@@ -132,7 +132,16 @@ packsListRoutes.openapi(listPostRoute, async (c) => {
     })
     .returning();
 
-  const packWithWeights = computePacksWeights([{ ...newPack, items: [] }])[0];
+  if (!newPack) {
+    return c.json({ error: 'Failed to create pack' }, 400);
+  }
+
+  const packWithItems: PackWithItems = {
+    ...newPack,
+    items: [],
+  };
+
+  const packWithWeights = computePacksWeights([packWithItems])[0];
   return c.json(packWithWeights, 200);
 });
 
