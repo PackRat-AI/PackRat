@@ -34,6 +34,7 @@
     "linkedom": "^0.18.11",
     "nodemailer": "^6.10.0",
     "pg": "^8.16.3",
+    "radash": "^12.1.1",
     "resend": "^4.2.0",
     "workers-ai-provider": "^0.7.2",
     "ws": "^8.18.1",
