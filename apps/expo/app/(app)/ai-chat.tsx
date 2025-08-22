@@ -158,7 +158,7 @@ export default function AIChat() {
     return () => {
       keyboardListener.remove();
     };
-  }, [messages]);
+  }, []);
 
   return (
     <>
