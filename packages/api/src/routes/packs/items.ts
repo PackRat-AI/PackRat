@@ -339,6 +339,10 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
 
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
+  if (!newItem) {
+    return c.json({ error: 'Failed to create item' }, 400);
+  }
+
   // Map the new item to ensure proper format
   const mappedNewItem = {
     ...newItem,

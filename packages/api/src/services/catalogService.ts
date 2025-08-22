@@ -70,17 +70,18 @@ export class CatalogService {
       throw new Error('Offset cannot be negative');
     }
 
-    const conditions = [];
+    const conditions: SQL[] = [];
     if (q) {
-      conditions.push(
-        or(
-          ilike(catalogItems.name, `%${q}%`),
-          ilike(catalogItems.description, `%${q}%`),
-          ilike(catalogItems.brand, `%${q}%`),
-          ilike(catalogItems.model, `%${q}%`),
-          ilike(catalogItems.categories, `%${q}%`),
-        ),
+      const searchCondition = or(
+        ilike(catalogItems.name, `%${q}%`),
+        ilike(catalogItems.description, `%${q}%`),
+        ilike(catalogItems.brand, `%${q}%`),
+        ilike(catalogItems.model, `%${q}%`),
+        ilike(catalogItems.categories, `%${q}%`),
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     if (category) {
@@ -232,6 +233,10 @@ export class CatalogService {
     }
 
     const searchTasks = embeddings.map((embedding) => {
+      if (!embedding) {
+        return Promise.resolve([]);
+      }
+
       const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
       return this.db

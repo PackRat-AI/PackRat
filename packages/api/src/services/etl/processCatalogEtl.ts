@@ -54,13 +54,14 @@ export async function processCatalogETL({
       const row = rows[rowIndex];
 
       if (isHeader) {
-        fieldMap = row?.reduce(
-          (acc, header, idx) => {
-            acc[header.trim()] = idx;
-            return acc;
-          },
-          {} as Record<string, number>,
-        );
+        fieldMap =
+          row?.reduce(
+            (acc, header, idx) => {
+              acc[header.trim()] = idx;
+              return acc;
+            },
+            {} as Record<string, number>,
+          ) ?? {};
         isHeader = false;
         console.log(`📋 Processing ${objectKey} with field mapping:`, Object.keys(fieldMap));
         continue;
