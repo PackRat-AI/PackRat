@@ -11,7 +11,14 @@ export function ExpandableText({
 }) {
   const [expanded, setExpanded] = useState(false);
   const MIN_WIDTH = 60;
-  const expandThreshold = 60;
+  expandThreshold = 60,
+}: {
+  text: string;
+  numberOfLines?: number;
+  expandThreshold?: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const MIN_WIDTH = 60;
 
   return (
     <View
