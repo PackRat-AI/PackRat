@@ -9,10 +9,10 @@ import {
   SuccessResponseSchema,
   UpdateReportStatusRequestSchema,
 } from '@packrat/api/schemas/chat';
+import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
-import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
@@ -132,11 +132,15 @@ chatRoutes.openapi(chatRoute, async (c) => {
       cloudflareAiBinding: AI,
     });
 
+    if (!aiProvider) {
+      return c.json({ error: 'AI provider not configured' }, 500);
+    }
+
     // Stream the AI response
     const result = streamText({
       model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       system: systemPrompt,
-      messages: convertToModelMessages(messages),
+      messages: convertToModelMessages(messages || []),
       tools,
       maxOutputTokens: 1000,
       temperature: 0.7,
@@ -286,7 +290,13 @@ chatRoutes.openapi(getReportsRoute, async (c) => {
     },
   });
 
-  return c.json({ reportedItems }, 200);
+  // Add updatedAt field (using createdAt as fallback since table doesn't have updatedAt)
+  const reportedItemsWithUpdatedAt = reportedItems.map((item) => ({
+    ...item,
+    updatedAt: item.createdAt,
+  }));
+
+  return c.json({ reportedItems: reportedItemsWithUpdatedAt }, 200);
 });
 
 // Update reported content status (admin only)

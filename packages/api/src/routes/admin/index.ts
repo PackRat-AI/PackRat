@@ -3,7 +3,7 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { UserSearchQuerySchema } from '@packrat/api/schemas/users';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/api/utils/typeAssertions';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';

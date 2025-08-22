@@ -8,9 +8,9 @@ import {
   UpdatePackItemRequestSchema,
 } from '@packrat/api/schemas/packs';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { and, eq } from 'drizzle-orm';
 
@@ -103,7 +103,17 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
     },
   });
 
-  return c.json(items, 200);
+  // Map items to ensure consumable, worn, and deleted are not null
+  const mappedItems = items.map((item) => ({
+    ...item,
+    consumable: item.consumable ?? false,
+    worn: item.worn ?? false,
+    deleted: item.deleted ?? false,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+  }));
+
+  return c.json(mappedItems, 200);
 });
 
 // Get pack item by ID
@@ -194,7 +204,23 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
     return c.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
-  return c.json(item, 200);
+  // Map item to ensure nullable fields are handled
+  const mappedItem = {
+    ...item,
+    consumable: item.consumable ?? false,
+    worn: item.worn ?? false,
+    deleted: item.deleted ?? false,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+    pack: item.pack
+      ? {
+          ...item.pack,
+          isPublic: item.pack.isPublic ?? false,
+        }
+      : null,
+  };
+
+  return c.json(mappedItem, 200);
 });
 
 // Add an item to a pack
@@ -268,7 +294,7 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
     getEnv(c);
 
   if (!OPENAI_API_KEY) {
-    return c.json({ error: 'OpenAI API key not configured' }, 500);
+    return c.json({ error: 'OpenAI API key not configured' }, 400);
   }
 
   if (!packId) {
@@ -313,7 +339,23 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
 
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
-  return c.json(newItem, 201);
+  if (!newItem) {
+    return c.json({ error: 'Failed to create item' }, 400);
+  }
+
+  // Map the new item to ensure proper format
+  const mappedNewItem = {
+    ...newItem,
+    consumable: newItem.consumable ?? false,
+    worn: newItem.worn ?? false,
+    deleted: newItem.deleted ?? false,
+    createdAt: newItem.createdAt.toISOString(),
+    updatedAt: newItem.updatedAt.toISOString(),
+    embedding: undefined, // Don't send embedding in response
+    templateItemId: newItem.templateItemId ?? null,
+  };
+
+  return c.json(mappedNewItem, 201);
 });
 
 // Update a pack item
@@ -381,7 +423,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
     getEnv(c);
 
   if (!OPENAI_API_KEY) {
-    return c.json({ error: 'OpenAI API key not configured' }, 500);
+    return c.json({ error: 'OpenAI API key not configured' }, 400);
   }
 
   const existingItem = await db.query.packItems.findFirst({
@@ -465,7 +507,19 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
   // Update the pack's updatedAt timestamp
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
-  return c.json(updatedItem, 200);
+  // Map the updated item to ensure proper format
+  const mappedUpdatedItem = {
+    ...updatedItem,
+    consumable: updatedItem.consumable ?? false,
+    worn: updatedItem.worn ?? false,
+    deleted: updatedItem.deleted ?? false,
+    createdAt: updatedItem.createdAt.toISOString(),
+    updatedAt: updatedItem.updatedAt.toISOString(),
+    embedding: undefined, // Don't send embedding in response
+    templateItemId: updatedItem.templateItemId ?? null,
+  };
+
+  return c.json(mappedUpdatedItem, 200);
 });
 
 // Delete a pack item

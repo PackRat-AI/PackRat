@@ -16,17 +16,20 @@ export const routeDefinition = createRoute({
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const db = createDb(c);
 
-  const [{ totalCount }] = await db
+  const result = await db
     .select({ totalCount: count() })
     .from(catalogItems)
     .where(isNull(catalogItems.embedding));
 
+  const withoutEmbeddings = result[0]?.totalCount ?? 0;
+
   const totalItemsResult = await db.select({ totalCount: count() }).from(catalogItems);
+  const totalItems = totalItemsResult[0]?.totalCount ?? 0;
 
   return c.json(
     {
-      itemsWithoutEmbeddings: Number(totalCount),
-      totalItems: Number(totalItemsResult[0].totalCount),
+      itemsWithoutEmbeddings: Number(withoutEmbeddings),
+      totalItems: Number(totalItems),
     },
     200,
   );

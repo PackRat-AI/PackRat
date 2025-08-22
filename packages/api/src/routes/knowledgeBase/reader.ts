@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { Readability } from '@mozilla/readability';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { parseHTML } from 'linkedom';
 
 const readerRoutes = new OpenAPIHono<{ Bindings: Env }>();
@@ -122,7 +122,7 @@ readerRoutes.openapi(extractContentRoute, async (c) => {
     const cleanedText = cleanTextForEmbedding(article.textContent || '');
 
     // Convert HTML to Markdown using our pure function
-    let markdown = null;
+    let markdown: string | null = null;
     try {
       markdown = htmlToMarkdown(article.content || '');
     } catch (err) {

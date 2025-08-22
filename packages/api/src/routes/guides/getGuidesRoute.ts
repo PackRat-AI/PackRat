@@ -8,6 +8,7 @@ import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import matter from 'gray-matter';
+import { isArray } from 'radash';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -110,15 +111,17 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     let filteredGuides = guides;
     if (category) {
       filteredGuides = guides.filter(
-        (guide) => guide.category === category || guide.categories?.includes(category),
+        (guide) =>
+          guide.category === category ||
+          (isArray(guide.categories) && guide.categories.includes(category)),
       );
     }
 
     // Apply sorting
     if (sort) {
       filteredGuides.sort((a, b) => {
-        const aValue = a[sort.field as keyof typeof a];
-        const bValue = b[sort.field as keyof typeof b];
+        const aValue = String(a[sort.field as keyof typeof a]);
+        const bValue = String(b[sort.field as keyof typeof b]);
 
         if (sort.order === 'asc') {
           return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
@@ -128,7 +131,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       });
     } else {
       // Default sort by title
-      filteredGuides.sort((a, b) => a.title.localeCompare(b.title));
+      filteredGuides.sort((a, b) => String(a.title).localeCompare(String(b.title)));
     }
 
     // Apply pagination

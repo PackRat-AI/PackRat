@@ -6,7 +6,7 @@ import {
   PresignedUploadQuerySchema,
   PresignedUploadResponseSchema,
 } from '@packrat/api/schemas/upload';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Variables } from '../types/variables';
 

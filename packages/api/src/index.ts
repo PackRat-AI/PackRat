@@ -3,7 +3,7 @@ import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { routes } from '@packrat/api/routes';
 import { type BaseQueueMessage, processQueueBatch } from '@packrat/api/services/etl/queue';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { configureOpenAPI } from '@packrat/api/utils/openapi';
 import { Scalar } from '@scalar/hono-api-reference';

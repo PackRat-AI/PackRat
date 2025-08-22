@@ -1,5 +1,5 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { processCatalogETLWriteBatch } from './processCatalogETLWriteBatch';
 import { processCatalogETL } from './processCatalogEtl';
 import type { CatalogETLWriteBatchMessage } from './types';

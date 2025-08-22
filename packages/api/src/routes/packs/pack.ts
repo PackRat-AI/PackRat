@@ -14,10 +14,10 @@ import {
   PackWithWeightsSchema,
   UpdatePackRequestSchema,
 } from '@packrat/api/schemas/packs';
+import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import type { Env } from '@packrat/api/utils/env-validation';
 import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
 
 const packRoutes = new OpenAPIHono<{
@@ -306,8 +306,14 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     return c.json({ error: 'No embeddings found for existing items' }, 400);
   }
 
-  const avgEmbedding = existingEmbeddings[0].map(
-    (_, i) => existingEmbeddings.reduce((sum, emb) => sum + emb[i], 0) / existingEmbeddings.length,
+  const firstEmbedding = existingEmbeddings[0];
+  if (!firstEmbedding) {
+    return c.json({ error: 'No valid embeddings found' }, 400);
+  }
+
+  const avgEmbedding = firstEmbedding.map(
+    (_, i) =>
+      existingEmbeddings.reduce((sum, emb) => sum + (emb?.[i] ?? 0), 0) / existingEmbeddings.length,
   );
 
   const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
@@ -334,7 +340,16 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     .orderBy(desc(similarity))
     .limit(5);
 
-  return c.json(similarItems, 200);
+  // Transform to match expected schema (singular image/category instead of arrays)
+  const transformedItems = similarItems.map((item) => ({
+    id: item.id.toString(),
+    name: item.name,
+    image: item.images?.[0] ?? null,
+    category: item.categories?.[0] ?? null,
+    similarity: item.similarity,
+  }));
+
+  return c.json(transformedItems, 200);
 });
 
 const weightHistoryRoute = createRoute({
@@ -410,7 +425,13 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
       })
       .returning();
 
-    return c.json(packWeightHistoryEntry, 200);
+    // Add updatedAt field (using createdAt as fallback since table doesn't have updatedAt)
+    const entryWithUpdatedAt = packWeightHistoryEntry.map((entry) => ({
+      ...entry,
+      updatedAt: entry.createdAt,
+    }));
+
+    return c.json(entryWithUpdatedAt, 200);
   } catch (error) {
     console.error('Pack weight history API error:', error);
     return c.json({ error: 'Failed to create weight history entry' }, 500);

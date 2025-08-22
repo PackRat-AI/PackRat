@@ -150,7 +150,7 @@ export function getEnv(c: Context): ValidatedEnv {
     ETL_QUEUE: rawEnv.ETL_QUEUE || validated.data.ETL_QUEUE,
     LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
     EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
-  };
+  } as ValidatedEnv;
 
   // Cache the result
   envCache.set(c, data);
