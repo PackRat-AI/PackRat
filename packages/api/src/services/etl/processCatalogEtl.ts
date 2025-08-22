@@ -308,9 +308,12 @@ function mapCsvRowToItem({
 
   // Handle availability enum separately
   if (fieldMap.availability !== undefined && values[fieldMap.availability]) {
-    item.availability = values[fieldMap.availability]
-      .replace(/^"|"$/g, '')
-      .trim() as NewCatalogItem['availability'];
+    const availabilityValue = values[fieldMap.availability];
+    if (availabilityValue) {
+      item.availability = availabilityValue
+        .replace(/^"|"$/g, '')
+        .trim() as NewCatalogItem['availability'];
+    }
   }
 
   return item;
@@ -422,9 +425,11 @@ export function parseFaqs(input: string): Array<{ question: string; answer: stri
 
   let match = regex.exec(cleaned);
   while (match !== null) {
-    const question = match[1].trim();
-    const answer = match[2].trim();
-    results.push({ question, answer });
+    const question = match[1]?.trim();
+    const answer = match[2]?.trim();
+    if (question && answer) {
+      results.push({ question, answer });
+    }
 
     match = regex.exec(cleaned);
   }

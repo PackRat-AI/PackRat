@@ -117,10 +117,10 @@ export class PackService {
           ...concept,
           items: concept.items.map((item, idx) => ({
             requestedItem: item,
-            candidateItems: searchResults[idx].map((item) => {
+            candidateItems: searchResults[idx]?.map((item) => {
               const { reviews: _reviews, ...rest } = item; // remove unhelpful fields to manage context
               return rest;
-            }),
+            }) ?? [],
           })),
         };
       }),
