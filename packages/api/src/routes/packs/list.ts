@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
+import { type PackWithItems, packItems, packs, packWeightHistory } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { CreatePackRequestSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
 import type { Env } from '@packrat/api/types/env';
@@ -182,7 +182,13 @@ packsListRoutes.openapi(weightHistoryRoute, async (c) => {
     where: eq(packWeightHistory.userId, auth.userId),
   });
 
-  return c.json(userPackWeightHistories, 200);
+  // Add updatedAt field (using createdAt as fallback since table doesn't have updatedAt)
+  const historiesWithUpdatedAt = userPackWeightHistories.map((history) => ({
+    ...history,
+    updatedAt: history.createdAt,
+  }));
+
+  return c.json(historiesWithUpdatedAt, 200);
 });
 
 export { packsListRoutes };

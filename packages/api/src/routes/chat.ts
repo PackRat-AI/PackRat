@@ -290,7 +290,13 @@ chatRoutes.openapi(getReportsRoute, async (c) => {
     },
   });
 
-  return c.json({ reportedItems }, 200);
+  // Add updatedAt field (using createdAt as fallback since table doesn't have updatedAt)
+  const reportedItemsWithUpdatedAt = reportedItems.map((item) => ({
+    ...item,
+    updatedAt: item.createdAt,
+  }));
+
+  return c.json({ reportedItems: reportedItemsWithUpdatedAt }, 200);
 });
 
 // Update reported content status (admin only)

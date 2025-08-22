@@ -60,7 +60,7 @@ searchRoutes.openapi(searchVectorRoute, async (c) => {
       getEnv(c);
 
     const embedding = await generateEmbedding({
-      value: q,
+      value: q ?? '',
       openAiApiKey: OPENAI_API_KEY,
       provider: AI_PROVIDER,
       cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,

@@ -340,7 +340,16 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     .orderBy(desc(similarity))
     .limit(5);
 
-  return c.json(similarItems, 200);
+  // Transform to match expected schema (singular image/category instead of arrays)
+  const transformedItems = similarItems.map((item) => ({
+    id: item.id.toString(),
+    name: item.name,
+    image: item.images?.[0] ?? null,
+    category: item.categories?.[0] ?? null,
+    similarity: item.similarity,
+  }));
+
+  return c.json(transformedItems, 200);
 });
 
 const weightHistoryRoute = createRoute({
@@ -416,7 +425,13 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
       })
       .returning();
 
-    return c.json(packWeightHistoryEntry, 200);
+    // Add updatedAt field (using createdAt as fallback since table doesn't have updatedAt)
+    const entryWithUpdatedAt = packWeightHistoryEntry.map((entry) => ({
+      ...entry,
+      updatedAt: entry.createdAt,
+    }));
+
+    return c.json(entryWithUpdatedAt, 200);
   } catch (error) {
     console.error('Pack weight history API error:', error);
     return c.json({ error: 'Failed to create weight history entry' }, 500);

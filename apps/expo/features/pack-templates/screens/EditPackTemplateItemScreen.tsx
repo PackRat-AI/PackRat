@@ -1,7 +1,7 @@
-import { useLocalSearchParams } from 'expo-router';
-import { NotFoundScreen } from '../../../screens/NotFoundScreen';
-import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
-import { CreatePackTemplateItemForm } from './CreatePackTemplateItemForm';
+import { NotFoundScreen } from "expo-app/features/pack-templates/screens/NotFoundScreen";
+import { useLocalSearchParams } from "expo-router";
+import { usePackTemplateItem } from "../hooks/usePackTemplateItem";
+import { CreatePackTemplateItemForm } from "./CreatePackTemplateItemForm";
 
 export function EditPackTemplateItemScreen() {
   const { id, packTemplateId } = useLocalSearchParams<{
@@ -31,6 +31,9 @@ export function EditPackTemplateItemScreen() {
   }
 
   return (
-    <CreatePackTemplateItemForm packTemplateId={effectivePackTemplateId} existingItem={item} />
+    <CreatePackTemplateItemForm
+      packTemplateId={effectivePackTemplateId}
+      existingItem={item}
+    />
   );
 }
