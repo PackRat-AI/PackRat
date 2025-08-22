@@ -13,7 +13,7 @@ export type User = {
 
 // Token storage atom
 export const tokenAtom = atomWithStorage<string | null>('access_token', null, {
-  getItem: async (key) => Storage.getItem(key),
+  getItem: async (key) => await Storage.getItem(key),
   setItem: async (key, value) => {
     if (value === null) return Storage.removeItem(key);
     return Storage.setItem(key, value);
