@@ -86,7 +86,7 @@ export function PackCard({ pack: packArg, onPress, showDuplicateButton = false }
                   {isDuplicating ? (
                     <ActivityIndicator size="small" color={colors.grey2} />
                   ) : (
-                    <Icon name="content-copy" size={21} color={colors.grey2} />
+                    <Icon name="file-copy" size={21} color={colors.grey2} />
                   )}
                 </Button>
               </Alert>
