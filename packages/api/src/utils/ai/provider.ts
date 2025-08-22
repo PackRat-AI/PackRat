@@ -1,6 +1,6 @@
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { createWorkersAI } from 'workers-ai-provider';
+// import type { createWorkersAI } from 'workers-ai-provider';
 
 export type AIProvider = 'openai' | 'cloudflare-workers-ai';
 
@@ -21,10 +21,12 @@ interface WorkersAIProviderConfig extends BaseProviderConfig {
 export type AIProviderConfig = OpenAIProviderConfig | WorkersAIProviderConfig;
 
 // Define return type for Workers AI
-type WorkersAIProvider = ReturnType<typeof createWorkersAI>;
+// type WorkersAIProvider = ReturnType<typeof createWorkersAI>;
+
+type CreateAIProviderReturn = OpenAIProvider;
 
 // Function to create an AI provider based on the config
-export function createAIProvider(config: AIProviderConfig): OpenAIProvider | WorkersAIProvider {
+export function createAIProvider(config: AIProviderConfig): CreateAIProviderReturn {
   const { openAiApiKey, provider, cloudflareAccountId, cloudflareGatewayId } = config;
 
   // All providers go through Cloudflare Gateway if configured
