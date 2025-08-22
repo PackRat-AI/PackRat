@@ -54,7 +54,7 @@ export async function processCatalogETL({
       const row = rows[rowIndex];
 
       if (isHeader) {
-        fieldMap = row.reduce(
+        fieldMap = row?.reduce(
           (acc, header, idx) => {
             acc[header.trim()] = idx;
             return acc;
@@ -71,7 +71,7 @@ export async function processCatalogETL({
       if (dataRowIndex < startRow) continue;
       if (dataRowIndex >= startRow + CHUNK_SIZE) break;
 
-      const item = mapCsvRowToItem({ values: row, fieldMap });
+      const item = mapCsvRowToItem({ values: row?.map((v) => v.trim()) ?? [], fieldMap });
       if (item) {
         const validatedItem = validator.validateItem(item);
 
@@ -181,16 +181,20 @@ function mapCsvRowToItem({
   item.reviewCount = reviewCountStr ? parseInt(reviewCountStr) || 0 : 0;
 
   if (fieldMap.categories !== undefined && values[fieldMap.categories]) {
-    const val = values[fieldMap.categories].trim();
-    try {
-      item.categories = val.startsWith('[')
-        ? JSON.parse(val)
-        : val
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean);
-    } catch {
-      item.categories = val ? [val] : undefined;
+    const val = values[fieldMap.categories]?.trim();
+    if (val) {
+      try {
+        item.categories = val.startsWith('[')
+          ? JSON.parse(val)
+          : val
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean);
+      } catch {
+        item.categories = [val];
+      }
+    } else {
+      item.categories = undefined;
     }
   } else {
     item.categories = undefined;
@@ -198,15 +202,19 @@ function mapCsvRowToItem({
 
   let images: string[] | undefined;
   if (fieldMap.images !== undefined && values[fieldMap.images]) {
-    try {
-      const val = values[fieldMap.images].trim();
-      images = val.startsWith('[')
-        ? JSON.parse(val)
-        : val
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean);
-    } catch {
+    const val = values[fieldMap.images]?.trim();
+    if (val) {
+      try {
+        images = val.startsWith('[')
+          ? JSON.parse(val)
+          : val
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean);
+      } catch {
+        images = undefined;
+      }
+    } else {
       images = undefined;
     }
   } else {
@@ -230,24 +238,28 @@ function mapCsvRowToItem({
   if (ratingStr) item.ratingValue = parseFloat(ratingStr) || null;
 
   if (fieldMap.variants !== undefined && values[fieldMap.variants]) {
-    const val = values[fieldMap.variants].trim();
-    try {
-      item.variants = JSON.parse(val);
-    } catch {
+    const val = values[fieldMap.variants]?.trim();
+    if (val) {
       try {
-        item.variants = JSON.parse(val.replace(/'/g, '"'));
+        item.variants = JSON.parse(val);
       } catch {
-        item.variants = [];
+        try {
+          item.variants = JSON.parse(val.replace(/'/g, '"'));
+        } catch {
+          item.variants = [];
+        }
       }
     }
   }
 
   if (fieldMap.faqs !== undefined && values[fieldMap.faqs]) {
-    const val = values[fieldMap.faqs].trim();
-    try {
-      item.faqs = parseFaqs(val);
-    } catch {
-      item.faqs = [];
+    const val = values[fieldMap.faqs]?.trim();
+    if (val) {
+      try {
+        item.faqs = parseFaqs(val);
+      } catch {
+        item.faqs = [];
+      }
     }
   }
 
@@ -258,9 +270,10 @@ function mapCsvRowToItem({
     'qas',
   ];
   for (const field of jsonFields) {
-    if (fieldMap[String(field)] !== undefined && values[fieldMap[String(field)]]) {
+    const fieldIndex = fieldMap[String(field)];
+    if (fieldIndex !== undefined && values[fieldIndex]) {
       try {
-        item[field] = safeJsonParse(values[fieldMap[String(field)]]);
+        item[field] = safeJsonParse(values[fieldIndex]);
       } catch {
         item[field] = [];
       }

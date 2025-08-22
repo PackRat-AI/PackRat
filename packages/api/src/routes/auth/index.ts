@@ -853,7 +853,7 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
       .limit(1);
 
     if (!user) {
-      return c.json({ error: 'User not found' }, 404);
+      return c.json({ error: 'User not found' }, 401);
     }
 
     // Generate new access token
@@ -870,13 +870,20 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
         success: true,
         accessToken,
         refreshToken: newRefreshToken,
-        user,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          emailVerified: user.emailVerified,
+          role: user.role,
+        },
       },
       200,
     );
   } catch (error) {
     console.error('Token refresh error:', error);
-    return c.json({ error: 'An error occurred during token refresh' }, 500);
+    return c.json({ error: 'An error occurred during token refresh' }, 401);
   }
 });
 
@@ -1026,7 +1033,7 @@ authRoutes.openapi(meRoute, async (c) => {
     );
   } catch (error) {
     console.error('Get user info error:', error);
-    return c.json({ error: 'An error occurred' }, 500);
+    return c.json({ error: 'An error occurred' }, 401);
   }
 });
 

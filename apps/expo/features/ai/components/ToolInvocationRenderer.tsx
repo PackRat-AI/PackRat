@@ -1,7 +1,7 @@
 import type { ToolUIPart } from 'ai';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import type { PackItem } from 'expo-app/features/packs';
-import type { Pack } from 'expo-app/lib/types';
+import type { Pack } from 'expo-app/features/packs/types';
 import { CatalogItemsGenerativeUI } from './CatalogItemsGenerativeUI';
 import { GuidesRAGGenerativeUI } from './GuidesRAGGenerativeUI';
 import { PackDetailsGenerativeUI } from './PackDetailsGenerativeUI';
@@ -31,18 +31,20 @@ interface WebSearchData {
 }
 
 interface GuideSearchResult {
-  source: string;
-  object: string;
+  file_id: string;
+  filename: string;
   score: number;
-  file: string;
-  extract: string;
-  meta: {
-    section: string;
-    page_number: number;
-    file_name: string;
-    title?: string;
-    date?: string;
+  attributes: {
+    timestamp: number;
+    folder: string;
+    filename: string;
   };
+  content: Array<{
+    id: string;
+    type: string;
+    text: string;
+  }>;
+  url: string;
 }
 
 interface GuidesSearchResultsData {

@@ -20,7 +20,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     .select({ totalCount: count() })
     .from(catalogItems)
     .where(isNull(catalogItems.embedding));
-  
+
   const withoutEmbeddings = result[0]?.totalCount ?? 0;
 
   const totalItemsResult = await db.select({ totalCount: count() }).from(catalogItems);

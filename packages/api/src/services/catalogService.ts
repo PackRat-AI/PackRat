@@ -410,6 +410,7 @@ export class CatalogService {
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
         provider: this.env.AI_PROVIDER,
+        cloudflareAiBinding: this.env.AI,
       });
 
       // Update items with embeddings
