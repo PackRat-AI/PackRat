@@ -111,7 +111,11 @@ export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendere
   }
 
   // Handle searchPackratOutdoorGuidesRAG tool result
-  if (toolName === 'tool-searchPackratOutdoorGuidesRAG' && isQueryArgs(args) && isRAGSearchResult(result)) {
+  if (
+    toolName === 'tool-searchPackratOutdoorGuidesRAG' &&
+    isQueryArgs(args) &&
+    isRAGSearchResult(result)
+  ) {
     if (result.success && result.results) {
       return <GuidesRAGGenerativeUI searchQuery={args.query} results={result.results} />;
     }

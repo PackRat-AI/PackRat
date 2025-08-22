@@ -36,12 +36,22 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
       onPress={() => onPress(item)}
     >
       <View className="flex-row">
-        {((item as PackItem).image || (item as CatalogItem).images?.[0]) ? (
-          <Image source={{ uri: (item as PackItem).image || (item as CatalogItem).images?.[0] }} className="h-24 w-24" resizeMode="cover" />
+        {(item as PackItem).image || (item as CatalogItem).images?.[0] ? (
+          <Image
+            source={{ uri: (item as PackItem).image || (item as CatalogItem).images?.[0] }}
+            className="h-24 w-24"
+            resizeMode="cover"
+          />
         ) : (
           <View className="h-24 w-24 items-center justify-center bg-muted">
             <Icon
-              name={getCategoryIcon((item as PackItem).category || (item as CatalogItem).categories?.[0] || 'miscellaneous') as MaterialIconName}
+              name={
+                getCategoryIcon(
+                  (item as PackItem).category ||
+                    (item as CatalogItem).categories?.[0] ||
+                    'miscellaneous',
+                ) as MaterialIconName
+              }
               size={32}
               color="text-muted-foreground"
             />
@@ -64,7 +74,13 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
           </View>
 
           <View className="mb-2 flex-row items-center">
-            <CategoryBadge category={(item as PackItem).category || (item as CatalogItem).categories?.[0] || 'miscellaneous'} />
+            <CategoryBadge
+              category={
+                (item as PackItem).category ||
+                (item as CatalogItem).categories?.[0] ||
+                'miscellaneous'
+              }
+            />
             {isItemConsumable && (
               <View className="ml-2 rounded-full bg-amber-100 px-2 py-0.5">
                 <Text className="text-xs text-amber-800">Consumable</Text>

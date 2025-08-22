@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { cn } from '@packrat-ai/nativewindui';
+import { cn } from "@packrat-ai/nativewindui";
+import { useState } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 
 export function ExpandableText({
   text,
@@ -16,7 +16,7 @@ export function ExpandableText({
   return (
     <View
       className={cn(
-        `flex-row flex-wrap items-center bg-transparent px-2 py-1 min-w-[${MIN_WIDTH}px] my-1`,
+        `flex-row flex-wrap items-center bg-transparent px-2 py-1 min-w-[${MIN_WIDTH}px] my-1`
       )}
     >
       <Text
@@ -28,7 +28,7 @@ export function ExpandableText({
       {text.length > expandThreshold && (
         <TouchableOpacity onPress={() => setExpanded((v) => !v)}>
           <Text className="text-primary ml-2 text-sm font-medium">
-            {expanded ? 'Show less' : 'Show more'}
+            {expanded ? "Show less" : "Show more"}
           </Text>
         </TouchableOpacity>
       )}
