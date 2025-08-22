@@ -1,0 +1,33 @@
+import React, { useState } from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { cn } from '@packrat-ai/nativewindui';
+
+export function ExpandableText({
+  text,
+  numberOfLines = 2,
+}: {
+  text: string;
+  numberOfLines?: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <View
+      className={cn('flex-row flex-wrap items-center bg-transparent px-2 py-1 min-w-[60px] my-1')}
+    >
+      <Text
+        className="text-foreground text-sm flex-shrink"
+        numberOfLines={expanded ? undefined : numberOfLines}
+      >
+        {text}
+      </Text>
+      {text.length > 60 && (
+        <TouchableOpacity onPress={() => setExpanded((v) => !v)}>
+          <Text className="text-primary ml-2 text-sm font-medium">
+            {expanded ? 'Show less' : 'Show more'}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}

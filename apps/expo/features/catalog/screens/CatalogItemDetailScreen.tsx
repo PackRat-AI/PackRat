@@ -6,11 +6,20 @@ import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
+import {
+  Image,
+  Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { ErrorScreen } from '../../../screens/ErrorScreen';
 import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { useCatalogItemDetails } from '../hooks';
+import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
@@ -126,9 +135,13 @@ export function CatalogItemDetailScreen() {
             {item.material && (
               <View className="mb-2 mr-4">
                 <Text className="text-xs uppercase text-muted-foreground">MATERIAL</Text>
-                <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.material}
-                </Chip>
+                {item.material.length < 10 ? (
+                  <Chip textClassName="text-center text-xs" variant="secondary">
+                    {item.material}
+                  </Chip>
+                ) : (
+                  <ExpandableText text={item.material} />
+                )}
               </View>
             )}
 
