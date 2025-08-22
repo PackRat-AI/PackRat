@@ -1,4 +1,3 @@
-import type { Readable } from 'node:stream';
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -13,6 +12,7 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
+import type { Readable } from 'node:stream';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -22,6 +22,25 @@ interface R2HTTPMetadata {
   contentEncoding?: string;
   cacheControl?: string;
   cacheExpiry?: Date;
+}
+
+function isR2HTTPMetadata(obj: unknown): obj is R2HTTPMetadata {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+
+  // Type-safe property checking
+  const record = obj as { [key: string]: unknown };
+
+  // Check that all properties, if present, are the correct type
+  return (
+    (record.contentType === undefined || typeof record.contentType === 'string') &&
+    (record.contentLanguage === undefined || typeof record.contentLanguage === 'string') &&
+    (record.contentDisposition === undefined || typeof record.contentDisposition === 'string') &&
+    (record.contentEncoding === undefined || typeof record.contentEncoding === 'string') &&
+    (record.cacheControl === undefined || typeof record.cacheControl === 'string') &&
+    (record.cacheExpiry === undefined || record.cacheExpiry instanceof Date)
+  );
 }
 
 interface R2Checksums {
@@ -534,7 +553,7 @@ export class R2BucketService {
       etag: response.ETag?.replace(/"/g, '') || '',
       httpEtag: response.ETag || '',
       checksums: this.createChecksums(response),
-      uploaded: new Date(response.LastModified || Date.now()),
+      uploaded: new Date(response.LastModified || new Date()),
       httpMetadata: {
         contentType: response.ContentType,
         contentLanguage: response.ContentLanguage,
@@ -604,7 +623,8 @@ export class R2BucketService {
       return `bytes=-${range.suffix}`;
     }
 
-    const { offset = 0, length } = range;
+    const offset = 'offset' in range ? (range.offset ?? 0) : 0;
+    const length = 'length' in range ? range.length : undefined;
     if (length !== undefined) {
       return `bytes=${offset}-${offset + length - 1}`;
     }
@@ -631,6 +651,10 @@ export class R2BucketService {
       };
     }
 
-    return metadata;
+    // Return the metadata object if it matches the R2HTTPMetadata interface
+    if (isR2HTTPMetadata(metadata)) {
+      return metadata;
+    }
+    return undefined;
   }
 }
