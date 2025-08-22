@@ -42,7 +42,7 @@ process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME = 'test-scrapy-bucket';
 process.env.PACKRAT_GUIDES_RAG_NAME = 'test-rag';
 process.env.PACKRAT_GUIDES_BASE_URL = 'https://guides.test.com';
 
-import { execSync } from 'node:child_process';
+import { spawn } from 'bun';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
@@ -57,9 +57,13 @@ beforeAll(async () => {
 
   // Start Docker Compose with PostgreSQL container
   try {
-    execSync('docker compose -f docker-compose.test.yml up -d --wait', {
+    spawn('docker', ['compose', '-f', 'docker-compose.test.yml', 'up', '-d', '--wait'], {
       cwd: process.cwd(),
       stdio: 'inherit',
+    }).on('close', (code) => {
+      if (code !== 0) {
+        throw new Error(`Docker compose failed with code ${code}`);
+      }
     });
     console.log('✅ PostgreSQL container started successfully');
   } catch (error) {
