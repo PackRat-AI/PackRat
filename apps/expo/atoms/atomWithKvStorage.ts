@@ -1,12 +1,12 @@
-import * as SecureStore from 'expo-secure-store';
+import Storage from 'expo-sqlite/kv-store';
 import { atom } from 'jotai';
 
-export const atomWithSecureStorage = <T>(key: string, initialValue: T) => {
+export const atomWithKvStorage = <T>(key: string, initialValue: T) => {
   const baseAtom = atom(initialValue);
 
   baseAtom.onMount = (setValue) => {
     (async () => {
-      const item = await SecureStore.getItemAsync(key);
+      const item = await Storage.getItem(key);
       setValue(item ? JSON.parse(item) : initialValue);
     })();
   };
@@ -15,8 +15,10 @@ export const atomWithSecureStorage = <T>(key: string, initialValue: T) => {
     (get) => get(baseAtom),
     (get, set, update) => {
       const nextValue = typeof update === 'function' ? update(get(baseAtom)) : update;
+
       set(baseAtom, nextValue);
-      SecureStore.setItemAsync(key, JSON.stringify(nextValue));
+
+      Storage.setItem(key, JSON.stringify(nextValue));
     },
   );
 
