@@ -16,6 +16,21 @@ permissions:
 jobs:
   api-tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: packrat_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       
@@ -27,6 +42,19 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
+      
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+        
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5433 -U test_user; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready!"
         
       - name: Run API tests
         run: bun test --cwd packages/api

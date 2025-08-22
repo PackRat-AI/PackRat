@@ -63,8 +63,8 @@ export const apiEnvSchema = z.object({
 const testEnvSchema = apiEnvSchema.partial().extend({
   ENVIRONMENT: z.enum(['development', 'production']).default('development'),
   SENTRY_DSN: z.string().url().optional().default('https://test@test.ingest.sentry.io/test'),
-  NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
-  NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://user:pass@localhost/db'),
+  NEON_DATABASE_URL: z.string().optional().default('postgres://test_user:test_password@localhost:5433/packrat_test'),
+  NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://test_user:test_password@localhost:5433/packrat_test'),
   JWT_SECRET: z.string().optional().default('secret'),
   CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
   AI: z.unknown().optional(),
