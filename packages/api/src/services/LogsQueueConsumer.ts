@@ -22,7 +22,7 @@ export class LogsQueueConsumer {
           total: totalItemsCount,
         });
 
-        console.log(`📝 Processed and wrote ${logs.length} invalid items for job ${logs[0].jobId}`);
+        console.log(`📝 Processed and wrote ${logs.length} invalid items for job ${jobId}`);
       } catch (error) {
         console.error(`Failed to process log message:`, error);
       }
