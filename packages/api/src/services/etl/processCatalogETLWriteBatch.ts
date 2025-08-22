@@ -1,10 +1,10 @@
-import type { Env } from '@packrat/api/utils/env-validation';
-import type { CatalogETLWriteBatchMessage } from './types';
-import { CatalogService } from '../catalogService';
-import { mergeItemsBySku } from './mergeItemsBySku';
 import type { NewCatalogItem } from '@packrat/api/db/schema';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { CatalogService } from '../catalogService';
 import { generateManyEmbeddings } from '../embeddingService';
+import { mergeItemsBySku } from './mergeItemsBySku';
+import type { CatalogETLWriteBatchMessage } from './types';
 import { updateEtlJobProgress } from './updateEtlJobProgress';
 
 export async function processCatalogETLWriteBatch({

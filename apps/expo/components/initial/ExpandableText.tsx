@@ -1,6 +1,6 @@
+import { cn } from '@packrat-ai/nativewindui';
 import React, { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { cn } from '@packrat-ai/nativewindui';
 
 export function ExpandableText({
   text,

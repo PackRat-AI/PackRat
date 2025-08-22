@@ -79,7 +79,9 @@ export function AddCatalogItemDetailsScreen() {
         consumable: isConsumable,
         worn: isWorn,
         notes,
-        image: Array.isArray(catalogItem.images) ? catalogItem.images[0] : (catalogItem.images || undefined),
+        image: Array.isArray(catalogItem.images)
+          ? catalogItem.images[0]
+          : catalogItem.images || undefined,
         catalogItemId: catalogItem.id,
       },
     });

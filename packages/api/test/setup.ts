@@ -4,7 +4,8 @@ process.env.SENTRY_DSN = 'https://test@test.ingest.sentry.io/test';
 
 // Database - Using PostgreSQL Docker container for tests
 process.env.NEON_DATABASE_URL = 'postgres://test_user:test_password@localhost:5433/packrat_test';
-process.env.NEON_DATABASE_URL_READONLY = 'postgres://test_user:test_password@localhost:5433/packrat_test';
+process.env.NEON_DATABASE_URL_READONLY =
+  'postgres://test_user:test_password@localhost:5433/packrat_test';
 
 // Authentication & Security
 process.env.JWT_SECRET = 'secret';
@@ -42,8 +43,8 @@ process.env.PACKRAT_GUIDES_RAG_NAME = 'test-rag';
 process.env.PACKRAT_GUIDES_BASE_URL = 'https://guides.test.com';
 
 import { execSync } from 'node:child_process';
-import { Client } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 
@@ -53,7 +54,7 @@ let testDb: ReturnType<typeof drizzle>;
 // Setup PostgreSQL Docker container before all tests
 beforeAll(async () => {
   console.log('🐳 Starting PostgreSQL Docker container for tests...');
-  
+
   // Start Docker Compose with PostgreSQL container
   try {
     execSync('docker compose -f docker-compose.test.yml up -d --wait', {
@@ -67,7 +68,7 @@ beforeAll(async () => {
   }
 
   // Wait a bit for the database to be fully ready
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   // Create direct PostgreSQL client connection
   testClient = new Client({
@@ -106,11 +107,19 @@ beforeAll(async () => {
 beforeEach(async () => {
   // Truncate all tables except migrations and drizzle metadata using PostgreSQL client
   const tablesToTruncate = [
-    'users', 'packs', 'pack_items', 'pack_templates', 'pack_template_items',
-    'user_items', 'catalog_items', 'weather_cache', 'password_reset_codes',
-    'verification_codes', 'weight_history'
+    'users',
+    'packs',
+    'pack_items',
+    'pack_templates',
+    'pack_template_items',
+    'user_items',
+    'catalog_items',
+    'weather_cache',
+    'password_reset_codes',
+    'verification_codes',
+    'weight_history',
   ];
-  
+
   for (const tableName of tablesToTruncate) {
     try {
       await testClient.query(`TRUNCATE TABLE ${tableName} CASCADE`);
@@ -123,13 +132,13 @@ beforeEach(async () => {
 // Cleanup after all tests
 afterAll(async () => {
   console.log('🧹 Cleaning up test database and PostgreSQL Docker container...');
-  
+
   try {
     // Close PostgreSQL client connection
     if (testClient) {
       await testClient.end();
     }
-    
+
     // Stop and remove Docker Compose containers
     execSync('docker compose -f docker-compose.test.yml down -v', {
       cwd: process.cwd(),
