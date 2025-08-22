@@ -1,12 +1,12 @@
-import type { Env } from '@packrat/api/utils/env-validation';
-import { QueueType, type CatalogETLMessage } from './types';
 import { createDbClient } from '@packrat/api/db';
-import { R2BucketService } from '../r2-bucket';
-import { parse } from 'csv-parse/sync';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/api/db/schema';
+import type { Env } from '@packrat/api/utils/env-validation';
+import { parse } from 'csv-parse/sync';
+import { eq } from 'drizzle-orm';
+import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
 import { queueCatalogETL } from './queue';
-import { eq } from 'drizzle-orm';
+import { type CatalogETLMessage, QueueType } from './types';
 
 export const CHUNK_SIZE = 5000;
 export const BATCH_SIZE = 10;
@@ -68,7 +68,7 @@ export async function processCatalogETL({
 
       // Only process rows in the current chunk
       const dataRowIndex = rowIndex - 1; // -1 because header is row 0
-      if (dataRowIndex < startRow) if (dataRowIndex < startRow) continue;
+      if (dataRowIndex < startRow) continue;
       if (dataRowIndex >= startRow + CHUNK_SIZE) break;
 
       const item = mapCsvRowToItem({ values: row, fieldMap });
@@ -100,7 +100,11 @@ export async function processCatalogETL({
       }
 
       if (invalidItemsBatch.length >= BATCH_SIZE) {
-        await env.LOGS_QUEUE.send({ data: invalidItemsBatch, id: jobId, totalItemsCount: rows.length - 1 });
+        await env.LOGS_QUEUE.send({
+          data: invalidItemsBatch,
+          id: jobId,
+          totalItemsCount: rows.length - 1,
+        });
         invalidItemsBatch = [];
       }
     }
