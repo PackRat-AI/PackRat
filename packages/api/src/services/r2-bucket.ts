@@ -1,3 +1,4 @@
+import type { Readable } from 'node:stream';
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -12,7 +13,7 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
-import type { Readable } from 'node:stream';
+import { isString } from 'radash';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -550,10 +551,10 @@ export class R2BucketService {
       key,
       version: response.VersionId || '',
       size: response.ContentLength || 0,
-      etag: response.ETag?.replace(/"/g, '') || '',
+      etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
       httpEtag: response.ETag || '',
       checksums: this.createChecksums(response),
-      uploaded: new Date(response.LastModified || new Date()),
+      uploaded: new Date(String(response.LastModified) || new Date()),
       httpMetadata: {
         contentType: response.ContentType,
         contentLanguage: response.ContentLanguage,
@@ -647,7 +648,9 @@ export class R2BucketService {
         contentDisposition: metadata.get('content-disposition') || undefined,
         contentEncoding: metadata.get('content-encoding') || undefined,
         cacheControl: metadata.get('cache-control') || undefined,
-        cacheExpiry: metadata.get('expires') ? new Date(metadata.get('expires')) : undefined,
+        cacheExpiry: metadata.get('expires')
+          ? new Date(String(metadata.get('expires')))
+          : undefined,
       };
     }
 

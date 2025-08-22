@@ -187,8 +187,8 @@ export class PackService {
     const catalogService = new CatalogService(this.c);
     const searchResults = await catalogService.batchSemanticSearch(items);
     // Map each group to add the missing fields back
-    return searchResults.items.map(group => 
-      group.map(item => ({
+    return searchResults.items.map((group) =>
+      group.map((item) => ({
         id: item.id,
         name: item.name,
         productUrl: item.productUrl,
@@ -221,7 +221,7 @@ export class PackService {
         updatedAt: item.updatedAt,
         embedding: null,
         similarity: item.similarity,
-      }))
+      })),
     );
   }
 
