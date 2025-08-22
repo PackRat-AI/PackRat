@@ -1,33 +1,13 @@
 import { Icon, type MaterialIconName } from '@roninoss/icons';
+import type { Pack as BasePack, PackItem as BasePackItem } from 'expo-app/features/packs/types';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
-interface PackItem {
-  id: string;
-  name: string;
-  weight?: number;
-  category?: string;
-}
+// Use the shared types from packs/types with some overrides for compatibility
+type PackItem = Pick<BasePackItem, 'id' | 'name' | 'weight' | 'category'>;
 
-interface Pack {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  userId: number;
-  templateId: string | null;
-  isPublic: boolean;
-  image: string | null;
-  tags: string[];
-  deleted: boolean;
-  localCreatedAt: string;
-  localUpdatedAt: string;
-  createdAt: string;
-  updatedAt: string;
+interface Pack extends Omit<BasePack, 'items'> {
   items: PackItem[];
-  baseWeight: number;
-  totalWeight: number;
-  categories: string[];
 }
 
 interface PackDetailsGenerativeUIProps {
@@ -98,7 +78,7 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
         )}
 
         {/* Tags */}
-        {pack.tags.length > 0 && (
+        {pack.tags && pack.tags.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-2 max-h-8">
             <View className="flex-row space-x-2">
               {pack.tags.map((tag) => (
@@ -178,11 +158,15 @@ export function PackDetailsGenerativeUI({ pack }: PackDetailsGenerativeUIProps) 
         <View className="flex-row items-center justify-between">
           <View>
             <Text className="text-xs text-gray-500">Created</Text>
-            <Text className="text-xs font-medium text-gray-700">{formatDate(pack.createdAt)}</Text>
+            <Text className="text-xs font-medium text-gray-700">
+              {formatDate(pack.createdAt || pack.localCreatedAt)}
+            </Text>
           </View>
           <View className="items-end">
             <Text className="text-xs text-gray-500">Updated</Text>
-            <Text className="text-xs font-medium text-gray-700">{formatDate(pack.updatedAt)}</Text>
+            <Text className="text-xs font-medium text-gray-700">
+              {formatDate(pack.updatedAt || pack.localUpdatedAt)}
+            </Text>
           </View>
         </View>
       </View>
