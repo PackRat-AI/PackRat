@@ -16,6 +16,9 @@ const fontSans = FontSans({
 export const metadata = {
   title: 'PackRat Guides | Hiking & Outdoor Adventures',
   description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
+  icons: {
+    icon: '/PackRat.ico', 
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
