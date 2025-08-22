@@ -135,7 +135,7 @@ export function CatalogItemDetailScreen() {
             {item.material && (
               <View className="mb-2 mr-4">
                 <Text className="text-xs uppercase text-muted-foreground">MATERIAL</Text>
-                {item.material.length < 10 ? (
+                {item.material.length < MATERIAL_LENGTH_THRESHOLD ? (
                   <Chip textClassName="text-center text-xs" variant="secondary">
                     {item.material}
                   </Chip>
