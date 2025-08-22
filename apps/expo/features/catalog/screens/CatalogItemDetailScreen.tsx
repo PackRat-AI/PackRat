@@ -26,6 +26,7 @@ export function CatalogItemDetailScreen() {
   const { id } = useLocalSearchParams();
   const { data: item, isLoading, isError, refetch } = useCatalogItemDetails(id as string);
   const { colors } = useColorScheme();
+  const MATERIAL_LENGTH_THRESHOLD = 60;
 
   const handleAddToPack = () => {
     router.push({

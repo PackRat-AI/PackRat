@@ -10,10 +10,14 @@ export function ExpandableText({
   numberOfLines?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const MIN_WIDTH = 60;
+  const expandThreshold = 60;
 
   return (
     <View
-      className={cn(`flex-row flex-wrap items-center bg-transparent px-2 py-1 min-w-[${MIN_WIDTH}px] my-1`)}
+      className={cn(
+        `flex-row flex-wrap items-center bg-transparent px-2 py-1 min-w-[${MIN_WIDTH}px] my-1`,
+      )}
     >
       <Text
         className="text-foreground text-sm flex-shrink"
