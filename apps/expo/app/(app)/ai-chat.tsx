@@ -133,8 +133,8 @@ export default function AIChat() {
   }, [error]);
 
   const handleSuggestionPress = (suggestion: string) => {
-    setInput(suggestion);
-    handleSubmit();
+    sendMessage({ text: suggestion });
+    setInput('');
     setShowSuggestions(false);
   };
 
@@ -158,7 +158,7 @@ export default function AIChat() {
     return () => {
       keyboardListener.remove();
     };
-  }, []);
+  }, [messages]);
 
   return (
     <>
