@@ -110,7 +110,8 @@ function isTestEnvironment(): boolean {
   return (
     process.env.NODE_ENV === 'test' ||
     process.env.VITEST === 'true' ||
-    (typeof global !== 'undefined' && (global as any).__vitest__ !== undefined)
+    (typeof global !== 'undefined' &&
+      (global as unknown as { __vitest__?: unknown }).__vitest__ !== undefined)
   );
 }
 

@@ -20,7 +20,7 @@ describe('weather routes', () => {
 
     // Mock global fetch for this test
     const originalFetch = global.fetch;
-    global.fetch = mockFetch as any;
+    global.fetch = mockFetch as unknown as typeof fetch;
 
     const res = await app.fetch(
       new Request('http://localhost/api/weather/search?q=test', {
