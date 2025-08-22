@@ -8,8 +8,8 @@ const bindings = {
   SENTRY_DSN: 'https://test@test.ingest.sentry.io/test',
 
   // Database
-  NEON_DATABASE_URL: 'postgres://user:pass@localhost/db',
-  NEON_DATABASE_URL_READONLY: 'postgres://user:pass@localhost/db',
+  NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5433/packrat_test',
+  NEON_DATABASE_URL_READONLY: 'postgres://test_user:test_password@localhost:5433/packrat_test',
 
   // Authentication & Security
   JWT_SECRET: 'secret',
