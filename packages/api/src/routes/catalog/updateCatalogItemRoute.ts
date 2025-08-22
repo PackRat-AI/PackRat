@@ -66,7 +66,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const db = createDb(c);
   const itemId = Number(c.req.param('id'));
   const data = await c.req.json();
-  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID } =
+  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
     getEnv(c);
 
   if (!OPENAI_API_KEY) {
@@ -82,7 +82,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   }
 
   // Only generate a new embedding if the text has changed
-  let embedding: number[] | undefined;
+  let embedding: number[] | null = null;
   const newEmbeddingText = getEmbeddingText(data, existingItem);
   const oldEmbeddingText = getEmbeddingText(existingItem);
 
@@ -93,6 +93,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       provider: AI_PROVIDER,
       cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareAiBinding: AI,
     });
   }
 
