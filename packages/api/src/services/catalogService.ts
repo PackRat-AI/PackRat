@@ -32,7 +32,7 @@ const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEn
 
 export class CatalogService {
   private db;
-  private env;
+  private env: Env;
 
   constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
     if (isContext(contextOrEnv, isHonoContext)) {
@@ -159,7 +159,18 @@ export class CatalogService {
       provider: this.env.AI_PROVIDER,
       cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareAiBinding: this.env.AI,
     });
+
+    if (!embedding) {
+      return {
+        items: [],
+        total: 0,
+        limit,
+        offset,
+        nextOffset: offset + limit,
+      };
+    }
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
 
@@ -211,7 +222,14 @@ export class CatalogService {
       cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
       provider: this.env.AI_PROVIDER,
+      cloudflareAiBinding: this.env.AI,
     });
+
+    if (!embeddings) {
+      return {
+        items: [],
+      };
+    }
 
     const searchTasks = embeddings.map((embedding) => {
       const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
@@ -298,6 +316,7 @@ export class CatalogService {
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
         provider: this.env.AI_PROVIDER,
+        cloudflareAiBinding: this.env.AI,
       });
 
       // Update items with new embeddings

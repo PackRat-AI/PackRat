@@ -1,6 +1,6 @@
 import type { NewCatalogItem } from '@packrat/api/db/schema';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { CatalogService } from '../catalogService';
 import { generateManyEmbeddings } from '../embeddingService';
 import { mergeItemsBySku } from './mergeItemsBySku';
@@ -33,6 +33,7 @@ export async function processCatalogETLWriteBatch({
       cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
       provider: env.AI_PROVIDER,
+      cloudflareAiBinding: env.AI,
     });
 
     // Combine items with their embeddings

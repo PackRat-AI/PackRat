@@ -1,6 +1,6 @@
 import { createDbClient } from '@packrat/api/db';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { parse } from 'csv-parse/sync';
 import { eq } from 'drizzle-orm';
 import { R2BucketService } from '../r2-bucket';
