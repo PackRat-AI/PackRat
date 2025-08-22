@@ -25,7 +25,7 @@
     "bcryptjs": "^3.0.2",
     "csv-parse": "^5.6.0",
     "drizzle-kit": "^0.30.6",
-    "drizzle-orm": "^0.41.0",
+    "drizzle-orm": "^0.44.4",
     "drizzle-zod": "^0.8.3",
     "google-auth-library": "^10.1.0",
     "gray-matter": "^4.0.3",
@@ -44,6 +44,7 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.30",
     "@cloudflare/workers-types": "^4.20250405.0",
+    "@electric-sql/pglite": "^0.3.7",
     "@types/bun": "latest",
     "typed-htmx": "^0.3.1",
     "vitest": "~3.1.0",
