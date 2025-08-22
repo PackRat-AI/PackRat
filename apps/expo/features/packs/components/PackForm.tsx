@@ -103,7 +103,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
             description: pack?.description || '',
             category: pack?.category || 'hiking',
             isPublic: pack?.isPublic || false,
-            tags: pack?.tags || ['hiking'],
+            tags: pack?.tags || [],
           },
     validators: {
       onChange: packFormSchema,
