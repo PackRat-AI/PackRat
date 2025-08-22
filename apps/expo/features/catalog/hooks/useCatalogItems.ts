@@ -39,10 +39,7 @@ export const getCatalogItems = async ({
 export function useCatalogItemsInfinite({ query, category, limit, sort }: GetCatalogItemsParams) {
   return useInfiniteQuery({
     queryKey: ['catalogItems', query, category, limit, sort],
-    queryFn: ({ pageParam }) => {
-      const encodedCategory = encodeURIComponent(category ?? '');
-      return getCatalogItems({ pageParam, query, category: encodedCategory, limit, sort });
-    },
+    queryFn: ({ pageParam }) => getCatalogItems({ pageParam, query, category, limit, sort }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       if (lastPage.page < lastPage.totalPages) {
