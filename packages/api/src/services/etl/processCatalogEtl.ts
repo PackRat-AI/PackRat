@@ -69,7 +69,8 @@ export async function processCatalogETL({
       // Only process rows in the current chunk
       const dataRowIndex = rowIndex - 1;
       if (dataRowIndex < startRow)
-        // -1 because header is row 0
+      const dataRowIndex = rowIndex - 1; // -1 because header is row 0
+      if (dataRowIndex < startRow)
         continue;
       if (dataRowIndex >= startRow + CHUNK_SIZE) break;
 
