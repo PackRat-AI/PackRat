@@ -102,8 +102,6 @@ export type ValidatedEnv = Omit<
   EMBEDDINGS_QUEUE: Queue;
 };
 
-
-
 // Cache for validated environments per request
 const envCache = new WeakMap<Context, ValidatedEnv>();
 

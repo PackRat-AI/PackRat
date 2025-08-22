@@ -1,6 +1,6 @@
+import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { type AIProvider, createAIProvider } from '@packrat/api/utils/ai/provider';
-import type { Env } from '@packrat/api/types/env';
 import { embed, embedMany } from 'ai';
 
 type GenerateEmbeddingBaseParams = {

@@ -93,29 +93,41 @@ export const CatalogItemSchema = z.object({
   currency: z.string().optional(),
   condition: z.string().optional(),
   reviewCount: z.number().int().optional(),
-  variants: z.array(z.object({
-    attribute: z.string(),
-    values: z.array(z.string()),
-  })).optional(),
+  variants: z
+    .array(
+      z.object({
+        attribute: z.string(),
+        values: z.array(z.string()),
+      }),
+    )
+    .optional(),
   techs: z.record(z.string(), z.string()).optional(),
-  links: z.array(z.object({
-    title: z.string(),
-    url: z.string(),
-  })).optional(),
-  reviews: z.array(z.object({
-    user_name: z.string(),
-    user_avatar: z.string().optional(),
-    context: z.record(z.string(), z.string()).optional(),
-    recommends: z.boolean().optional(),
-    rating: z.number(),
-    title: z.string(),
-    text: z.string(),
-    date: z.string(),
-    images: z.array(z.string()).optional(),
-    upvotes: z.number().optional(),
-    downvotes: z.number().optional(),
-    verified: z.boolean().optional(),
-  })).optional(),
+  links: z
+    .array(
+      z.object({
+        title: z.string(),
+        url: z.string(),
+      }),
+    )
+    .optional(),
+  reviews: z
+    .array(
+      z.object({
+        user_name: z.string(),
+        user_avatar: z.string().optional(),
+        context: z.record(z.string(), z.string()).optional(),
+        recommends: z.boolean().optional(),
+        rating: z.number(),
+        title: z.string(),
+        text: z.string(),
+        date: z.string(),
+        images: z.array(z.string()).optional(),
+        upvotes: z.number().optional(),
+        downvotes: z.number().optional(),
+        verified: z.boolean().optional(),
+      }),
+    )
+    .optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });

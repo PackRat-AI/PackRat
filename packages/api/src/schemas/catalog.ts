@@ -22,59 +22,95 @@ export const CatalogItemSchema = z
     description: z.string().nullable().openapi({
       example: 'Lightweight 2-person backpacking tent with excellent ventilation',
     }),
-    categories: z.array(z.string()).nullable().openapi({ example: ['camping', 'backpacking', 'shelter'] }),
-    images: z.array(z.string()).nullable().openapi({ example: ['https://example.com/tent.jpg'] }),
+    categories: z
+      .array(z.string())
+      .nullable()
+      .openapi({ example: ['camping', 'backpacking', 'shelter'] }),
+    images: z
+      .array(z.string())
+      .nullable()
+      .openapi({ example: ['https://example.com/tent.jpg'] }),
     brand: z.string().nullable().openapi({ example: 'MSR' }),
     model: z.string().nullable().openapi({ example: 'Hubba Hubba NX' }),
     ratingValue: z.number().nullable().openapi({ example: 4.5 }),
     color: z.string().nullable().openapi({ example: 'Green' }),
     size: z.string().nullable().openapi({ example: '2-Person' }),
     price: z.number().nullable().openapi({ example: 449.95 }),
-    availability: z.enum(['in_stock', 'out_of_stock', 'preorder']).nullable().openapi({ example: 'in_stock' }),
+    availability: z
+      .enum(['in_stock', 'out_of_stock', 'preorder'])
+      .nullable()
+      .openapi({ example: 'in_stock' }),
     seller: z.string().nullable().openapi({ example: 'REI' }),
     productSku: z.string().nullable().openapi({ example: 'REI-789' }),
     material: z.string().nullable().openapi({ example: 'Nylon' }),
     currency: z.string().nullable().openapi({ example: 'USD' }),
     condition: z.string().nullable().openapi({ example: 'New' }),
     reviewCount: z.number().int().nullable().openapi({ example: 127 }),
-    variants: z.array(z.object({
-      attribute: z.string(),
-      values: z.array(z.string()),
-    })).nullable().optional(),
+    variants: z
+      .array(
+        z.object({
+          attribute: z.string(),
+          values: z.array(z.string()),
+        }),
+      )
+      .nullable()
+      .optional(),
     techs: z.record(z.string(), z.string()).nullable().optional(),
-    links: z.array(z.object({
-      title: z.string(),
-      url: z.string(),
-    })).nullable().optional(),
-    reviews: z.array(z.object({
-      user_name: z.string(),
-      user_avatar: z.string().nullable().optional(),
-      context: z.record(z.string(), z.string()).nullable().optional(),
-      recommends: z.boolean().nullable().optional(),
-      rating: z.number(),
-      title: z.string(),
-      text: z.string(),
-      date: z.string(),
-      images: z.array(z.string()).nullable().optional(),
-      upvotes: z.number().nullable().optional(),
-      downvotes: z.number().nullable().optional(),
-      verified: z.boolean().nullable().optional(),
-    })).nullable().optional(),
-    qas: z.array(z.object({
-      question: z.string(),
-      user: z.string().nullable().optional(),
-      date: z.string(),
-      answers: z.array(z.object({
-        a: z.string(),
-        date: z.string(),
-        user: z.string().nullable().optional(),
-        upvotes: z.number().nullable().optional(),
-      })),
-    })).nullable().optional(),
-    faqs: z.array(z.object({
-      question: z.string(),
-      answer: z.string(),
-    })).nullable().optional(),
+    links: z
+      .array(
+        z.object({
+          title: z.string(),
+          url: z.string(),
+        }),
+      )
+      .nullable()
+      .optional(),
+    reviews: z
+      .array(
+        z.object({
+          user_name: z.string(),
+          user_avatar: z.string().nullable().optional(),
+          context: z.record(z.string(), z.string()).nullable().optional(),
+          recommends: z.boolean().nullable().optional(),
+          rating: z.number(),
+          title: z.string(),
+          text: z.string(),
+          date: z.string(),
+          images: z.array(z.string()).nullable().optional(),
+          upvotes: z.number().nullable().optional(),
+          downvotes: z.number().nullable().optional(),
+          verified: z.boolean().nullable().optional(),
+        }),
+      )
+      .nullable()
+      .optional(),
+    qas: z
+      .array(
+        z.object({
+          question: z.string(),
+          user: z.string().nullable().optional(),
+          date: z.string(),
+          answers: z.array(
+            z.object({
+              a: z.string(),
+              date: z.string(),
+              user: z.string().nullable().optional(),
+              upvotes: z.number().nullable().optional(),
+            }),
+          ),
+        }),
+      )
+      .nullable()
+      .optional(),
+    faqs: z
+      .array(
+        z.object({
+          question: z.string(),
+          answer: z.string(),
+        }),
+      )
+      .nullable()
+      .optional(),
     createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
     updatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
   })
@@ -100,12 +136,10 @@ export const CatalogItemsQuerySchema = z
     }),
     sort: z
       .object({
-        field: z
-          .enum(['name', 'brand', 'price', 'ratingValue', 'createdAt', 'updatedAt'])
-          .openapi({
-            example: 'price',
-            description: 'Field to sort by',
-          }),
+        field: z.enum(['name', 'brand', 'price', 'ratingValue', 'createdAt', 'updatedAt']).openapi({
+          example: 'price',
+          description: 'Field to sort by',
+        }),
         order: z.enum(['asc', 'desc']).openapi({
           example: 'asc',
           description: 'Sort order',
@@ -148,44 +182,66 @@ export const CreateCatalogItemRequestSchema = z
     currency: z.string().optional(),
     condition: z.string().optional(),
     reviewCount: z.number().min(0).optional(),
-    variants: z.array(z.object({
-      attribute: z.string(),
-      values: z.array(z.string()),
-    })).optional(),
+    variants: z
+      .array(
+        z.object({
+          attribute: z.string(),
+          values: z.array(z.string()),
+        }),
+      )
+      .optional(),
     techs: z.record(z.string(), z.string()).optional(),
-    links: z.array(z.object({
-      title: z.string(),
-      url: z.string(),
-    })).optional(),
-    reviews: z.array(z.object({
-      user_name: z.string(),
-      user_avatar: z.string().optional(),
-      context: z.record(z.string(), z.string()).optional(),
-      recommends: z.boolean().optional(),
-      rating: z.number(),
-      title: z.string(),
-      text: z.string(),
-      date: z.string(),
-      images: z.array(z.string()).optional(),
-      upvotes: z.number().optional(),
-      downvotes: z.number().optional(),
-      verified: z.boolean().optional(),
-    })).optional(),
-    qas: z.array(z.object({
-      question: z.string(),
-      user: z.string().optional(),
-      date: z.string(),
-      answers: z.array(z.object({
-        a: z.string(),
-        date: z.string(),
-        user: z.string().optional(),
-        upvotes: z.number().optional(),
-      })),
-    })).optional(),
-    faqs: z.array(z.object({
-      question: z.string(),
-      answer: z.string(),
-    })).optional(),
+    links: z
+      .array(
+        z.object({
+          title: z.string(),
+          url: z.string(),
+        }),
+      )
+      .optional(),
+    reviews: z
+      .array(
+        z.object({
+          user_name: z.string(),
+          user_avatar: z.string().optional(),
+          context: z.record(z.string(), z.string()).optional(),
+          recommends: z.boolean().optional(),
+          rating: z.number(),
+          title: z.string(),
+          text: z.string(),
+          date: z.string(),
+          images: z.array(z.string()).optional(),
+          upvotes: z.number().optional(),
+          downvotes: z.number().optional(),
+          verified: z.boolean().optional(),
+        }),
+      )
+      .optional(),
+    qas: z
+      .array(
+        z.object({
+          question: z.string(),
+          user: z.string().optional(),
+          date: z.string(),
+          answers: z.array(
+            z.object({
+              a: z.string(),
+              date: z.string(),
+              user: z.string().optional(),
+              upvotes: z.number().optional(),
+            }),
+          ),
+        }),
+      )
+      .optional(),
+    faqs: z
+      .array(
+        z.object({
+          question: z.string(),
+          answer: z.string(),
+        }),
+      )
+      .optional(),
   })
   .openapi('CreateCatalogItemRequest');
 
@@ -212,44 +268,66 @@ export const UpdateCatalogItemRequestSchema = z
     currency: z.string().optional(),
     condition: z.string().optional(),
     reviewCount: z.number().min(0).optional(),
-    variants: z.array(z.object({
-      attribute: z.string(),
-      values: z.array(z.string()),
-    })).optional(),
+    variants: z
+      .array(
+        z.object({
+          attribute: z.string(),
+          values: z.array(z.string()),
+        }),
+      )
+      .optional(),
     techs: z.record(z.string(), z.string()).optional(),
-    links: z.array(z.object({
-      title: z.string(),
-      url: z.string(),
-    })).optional(),
-    reviews: z.array(z.object({
-      user_name: z.string(),
-      user_avatar: z.string().optional(),
-      context: z.record(z.string(), z.string()).optional(),
-      recommends: z.boolean().optional(),
-      rating: z.number(),
-      title: z.string(),
-      text: z.string(),
-      date: z.string(),
-      images: z.array(z.string()).optional(),
-      upvotes: z.number().optional(),
-      downvotes: z.number().optional(),
-      verified: z.boolean().optional(),
-    })).optional(),
-    qas: z.array(z.object({
-      question: z.string(),
-      user: z.string().optional(),
-      date: z.string(),
-      answers: z.array(z.object({
-        a: z.string(),
-        date: z.string(),
-        user: z.string().optional(),
-        upvotes: z.number().optional(),
-      })),
-    })).optional(),
-    faqs: z.array(z.object({
-      question: z.string(),
-      answer: z.string(),
-    })).optional(),
+    links: z
+      .array(
+        z.object({
+          title: z.string(),
+          url: z.string(),
+        }),
+      )
+      .optional(),
+    reviews: z
+      .array(
+        z.object({
+          user_name: z.string(),
+          user_avatar: z.string().optional(),
+          context: z.record(z.string(), z.string()).optional(),
+          recommends: z.boolean().optional(),
+          rating: z.number(),
+          title: z.string(),
+          text: z.string(),
+          date: z.string(),
+          images: z.array(z.string()).optional(),
+          upvotes: z.number().optional(),
+          downvotes: z.number().optional(),
+          verified: z.boolean().optional(),
+        }),
+      )
+      .optional(),
+    qas: z
+      .array(
+        z.object({
+          question: z.string(),
+          user: z.string().optional(),
+          date: z.string(),
+          answers: z.array(
+            z.object({
+              a: z.string(),
+              date: z.string(),
+              user: z.string().optional(),
+              upvotes: z.number().optional(),
+            }),
+          ),
+        }),
+      )
+      .optional(),
+    faqs: z
+      .array(
+        z.object({
+          question: z.string(),
+          answer: z.string(),
+        }),
+      )
+      .optional(),
   })
   .openapi('UpdateCatalogItemRequest');
 

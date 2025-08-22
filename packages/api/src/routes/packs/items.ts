@@ -8,9 +8,9 @@ import {
   UpdatePackItemRequestSchema,
 } from '@packrat/api/schemas/packs';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
+import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
-import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { and, eq } from 'drizzle-orm';
 

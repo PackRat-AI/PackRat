@@ -1,6 +1,6 @@
 import type { OpenAPIHono } from '@hono/zod-openapi';
-import type { Variables } from '@packrat/api/types/variables';
 import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
 
 export const configureOpenAPI = (app: OpenAPIHono<{ Bindings: Env; Variables: Variables }>) => {
   // Register security scheme

@@ -36,7 +36,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   // Transform to match the expected response schema
   const response = {
-    categories: categories.map(category => ({
+    categories: categories.map((category) => ({
       category,
       count: 0, // TODO: Service should return actual counts
     })),
