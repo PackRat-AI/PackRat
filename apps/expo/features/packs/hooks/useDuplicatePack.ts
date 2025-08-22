@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import axiosInstance from 'expo-app/lib/api/client';
 import { useCallback } from 'react';
 import type { Pack, PackInput } from '../types';
 import { useCreatePackFromPack } from './useCreatePackFromPack';
@@ -19,7 +20,6 @@ export function useDuplicatePack() {
       const response = await queryClient.fetchQuery({
         queryKey: ['pack', packId],
         queryFn: async () => {
-          const axiosInstance = (await import('expo-app/lib/api/client')).default;
           const res = await axiosInstance.get(`/api/packs/${packId}`);
           return res.data as Pack;
         },
