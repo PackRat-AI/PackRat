@@ -38,7 +38,8 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     return unauthorizedResponse();
   }
 
-  const { page, limit, q, category } = c.req.valid('query');
+  const { page, limit, q, category: encodedCategory } = c.req.valid('query');
+  const category = decodeURIComponent(encodedCategory ?? '');
 
   // Manually parse sort parameters from raw query
   const url = new URL(c.req.url);
