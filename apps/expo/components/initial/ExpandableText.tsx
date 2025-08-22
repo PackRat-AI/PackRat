@@ -21,7 +21,7 @@ export function ExpandableText({
       >
         {text}
       </Text>
-      {text.length > 60 && (
+      {text.length > expandThreshold && (
         <TouchableOpacity onPress={() => setExpanded((v) => !v)}>
           <Text className="text-primary ml-2 text-sm font-medium">
             {expanded ? 'Show less' : 'Show more'}
