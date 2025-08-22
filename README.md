@@ -38,6 +38,8 @@ So pack your bags, grab your friends, and get ready for your next adventure with
   - [Technologies used 💻](#technologies-used-)
   - [🗂 Folder layout](#-folder-layout)
   - [🆕 Add new dependencies](#-add-new-dependencies)
+    - [Pure JS dependencies](#pure-js-dependencies)
+    - [Native dependencies](#native-dependencies)
     - [Mobile app dependencies](#mobile-app-dependencies)
     - [API dependencies](#api-dependencies)
     - [Web app dependencies](#web-app-dependencies)
@@ -142,6 +144,35 @@ The main folders are:
   - `ui/` - Shared UI components and design system
 
 ## 🆕 Add new dependencies
+
+### Pure JS dependencies
+
+For pure JavaScript libraries that work across all platforms (mobile, web, API):
+
+```sh
+# Install in the root to share across all apps
+bun add lodash
+
+# Or install in specific package if only used there
+cd packages/api
+bun add dayjs
+```
+
+These dependencies work without platform-specific code and can be safely used in any JavaScript environment.
+
+### Native dependencies
+
+For React Native modules that require platform-specific code (Android/iOS):
+
+```sh
+cd apps/expo
+bun add react-native-reanimated
+
+# Don't forget to rebuild after adding native dependencies
+bun --cwd apps/expo run expo prebuild --clean
+```
+
+Native dependencies often require additional configuration and may need platform-specific setup. Always check the library's installation guide for React Native.
 
 ### Mobile app dependencies
 
