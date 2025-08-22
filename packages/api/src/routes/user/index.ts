@@ -8,7 +8,7 @@ import {
   UserProfileSchema,
 } from '@packrat/api/schemas/users';
 import type { Variables } from '@packrat/api/types/variables';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { eq } from 'drizzle-orm';
 import { userItemsRoutes } from './items';
 

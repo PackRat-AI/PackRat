@@ -4,7 +4,7 @@ import { packItems } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { UserItemsResponseSchema } from '@packrat/api/schemas/users';
 import type { Variables } from '@packrat/api/types/variables';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { eq } from 'drizzle-orm';
 
 const userItemsRoutes = new OpenAPIHono<{

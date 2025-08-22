@@ -40,7 +40,7 @@ import {
   verifyPassword,
 } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import { and, eq, gt, isNull } from 'drizzle-orm';

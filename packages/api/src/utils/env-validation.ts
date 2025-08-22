@@ -84,8 +84,7 @@ export type ValidatedEnv = Omit<
   EMBEDDINGS_QUEUE: Queue;
 };
 
-// Alias for convenience - match the expected import pattern
-export type Env = ValidatedEnv;
+
 
 // Cache for validated environments per request
 const envCache = new WeakMap<Context, ValidatedEnv>();

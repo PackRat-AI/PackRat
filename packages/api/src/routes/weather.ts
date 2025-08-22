@@ -10,7 +10,7 @@ import {
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
 import type { Variables } from '@packrat/api/types/variables';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 
 const weatherRoutes = new OpenAPIHono<{

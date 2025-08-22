@@ -12,7 +12,7 @@ import {
   S3Client,
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {

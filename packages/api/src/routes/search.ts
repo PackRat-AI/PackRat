@@ -5,7 +5,7 @@ import {
   VectorSearchResponseSchema,
 } from '@packrat/api/schemas/search';
 import type { Variables } from '@packrat/api/types/variables';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { cosineDistance, desc, gt, sql } from 'drizzle-orm';
 import { createDb } from '../db';

@@ -5,7 +5,7 @@ import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { CreatePackRequestSchema, PackWithWeightsSchema } from '@packrat/api/schemas/packs';
 import type { Variables } from '@packrat/api/types/variables';
 import { computePacksWeights } from '@packrat/api/utils/compute-pack';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { and, eq, or } from 'drizzle-orm';
 
 const packsListRoutes = new OpenAPIHono<{
