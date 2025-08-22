@@ -2,20 +2,20 @@ import { type UIMessage, useChat } from '@ai-sdk/react';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
+import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
-import type { ChatMessage } from 'expo-app/features/ai/types';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
+import { useEffect } from 'react';
 import {
   Alert,
   Dimensions,
@@ -42,8 +42,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const USER = 'User';
-const AI = 'PackRat AI';
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 const _dimensions = Dimensions.get('window');
 
@@ -78,7 +76,7 @@ export default function AIChat() {
   const params = useLocalSearchParams();
   const [showSuggestions, setShowSuggestions] = React.useState(true);
   const { activeLocation } = useActiveLocation();
-  const listRef = React.useRef<FlashList<string | ChatMessage>>(null);
+  const listRef = React.useRef<FlashList<UIMessage>>(null);
 
   // Extract context from params
   const context = {
@@ -89,28 +87,32 @@ export default function AIChat() {
     contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
     location: activeLocation ? activeLocation.name : undefined,
   };
+  const locationRef = React.useRef(context.location);
+  locationRef.current = context.location;
 
   const token = useAtomValue(tokenAtom);
-  // Call the chat hook at the top level.
-  const { messages, error, input, setInput, handleSubmit, isLoading } = useChat({
-    fetch: expoFetch as unknown as typeof globalThis.fetch,
-    api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
+  const [input, setInput] = React.useState('');
+  const { messages, error, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      fetch: expoFetch as unknown as typeof globalThis.fetch,
+      api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: () => ({
+        contextType: context.contextType,
+        itemId: context.itemId,
+        packId: context.packId,
+        location: locationRef.current,
+      }),
+    }),
     onError: (error: Error) => console.log(error, 'ERROR'),
-    body: {
-      contextType: context.contextType,
-      itemId: context.itemId,
-      packId: context.packId,
-      location: context.location,
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    initialMessages: [
+    messages: [
       {
         id: '1',
         role: 'assistant',
-        content: getContextualGreeting(context),
-      },
+        parts: [{ type: 'text', text: getContextualGreeting(context) }],
+      } as UIMessage,
     ],
     onFinish: () => {
       // Hide suggestions after user sends a message
@@ -118,15 +120,22 @@ export default function AIChat() {
     },
   });
 
-  React.useEffect(() => {
+  const isLoading = status === 'streaming';
+
+  const handleSubmit = () => {
+    sendMessage({ text: input });
+    setInput('');
+  };
+
+  useEffect(() => {
     if (error) {
       Alert.alert(error.message);
     }
   }, [error]);
 
   const handleSuggestionPress = (suggestion: string) => {
-    setInput(suggestion);
-    handleSubmit();
+    sendMessage({ text: suggestion });
+    setInput('');
     setShowSuggestions(false);
   };
 
@@ -138,40 +147,7 @@ export default function AIChat() {
     ),
   }));
 
-  // Format messages for the UI
-  const chatMessages = React.useMemo(() => {
-    if (messages.length === 0) {
-      return [];
-    }
-
-    const formattedMessages = messages.map((message, _index) => {
-      const now = new Date();
-      const formattedMessage = {
-        sender: message.role === 'user' ? USER : AI,
-        text: message.content,
-        date: now.toISOString().split('T')[0] as string,
-        time: now.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        ...message,
-      };
-
-      return formattedMessage;
-    });
-
-    // Add a date separator at the beginning
-    const today = new Date().toLocaleDateString('en-US', {
-      weekday: 'short',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-
-    return [today, ...formattedMessages];
-  }, [messages]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     const scrollToBottom = () => {
       listRef.current?.scrollToOffset({ offset: 999999, animated: true });
     };
@@ -205,6 +181,14 @@ export default function AIChat() {
             <View>
               <View style={{ height: HEADER_HEIGHT + insets.top }} />
               <LocationSelector />
+              <DateSeparator
+                date={new Date().toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              />
             </View>
           }
           ListFooterComponent={
@@ -234,22 +218,13 @@ export default function AIChat() {
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
           }}
-          data={chatMessages}
+          data={messages}
           renderItem={({ item, index }) => {
-            if (typeof item === 'string') {
-              return <DateSeparator date={item} />;
-            }
-
-            item.parts?.forEach((part) => {
-              console.log('part', JSON.stringify(part));
-            });
-
             // Get the user query for this AI response
-            let userQuery: UIMessage['content'] | undefined;
-            if (item.sender === AI && index > 1) {
+            let userQuery: TextUIPart['text'] | undefined;
+            if (item.role === 'assistant' && index > 1) {
               const userMessage = messages[index - 1];
-              assertDefined(userMessage);
-              userQuery = userMessage.content;
+              userQuery = userMessage.parts.find((p) => p.type === 'text')?.text;
             }
 
             return <ChatBubble item={item} translateX={translateX} userQuery={userQuery} />;

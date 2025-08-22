@@ -1,10 +1,10 @@
 import { Text } from '@packrat/ui/nativewindui';
+import type { ToolUIPart, UIMessage } from 'ai';
 import { ReportButton } from 'expo-app/features/ai/components/ReportButton';
 import { cn } from 'expo-app/lib/cn';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import Animated, { interpolate, type SharedValue, useAnimatedStyle } from 'react-native-reanimated';
-import type { ChatMessage } from '../types';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
 const BORDER_CURVE: ViewStyle = {
@@ -12,25 +12,23 @@ const BORDER_CURVE: ViewStyle = {
 };
 
 interface ChatBubbleProps {
-  item: ChatMessage;
+  item: UIMessage;
   translateX: SharedValue<number>;
   userQuery?: string;
 }
-
-const AI = 'PackRat AI';
 
 export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
   const rootStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
-  const dateStyle = useAnimatedStyle(() => ({
+  const _dateStyle = useAnimatedStyle(() => ({
     width: 75,
     position: 'absolute',
     right: 0,
     paddingLeft: 8,
     transform: [{ translateX: interpolate(translateX.value, [-75, 0], [0, 75]) }],
   }));
-  const isAI = item.sender === AI;
+  const isAI = item.role === 'assistant';
 
   return (
     <View
@@ -81,42 +79,45 @@ export function ChatBubble({ item, translateX, userQuery }: ChatBubbleProps) {
                   !isAI && 'bg-primary dark:bg-primary',
                 )}
               >
-                <Text className={cn(!isAI && 'text-white')}>
-                  {isAI ? formatAIResponse(item.text) : item.text}
-                </Text>
+                {item.parts.map((part, idx) => {
+                  const key = `${part.type}-${idx}`;
+                  if (part.type === 'text')
+                    return (
+                      <Text key={key} className={cn(!isAI && 'text-white')}>
+                        {isAI ? formatAIResponse(part.text) : part.text}
+                      </Text>
+                    );
 
-                {/* Render tool invocations */}
-                {isAI && item.parts && (
-                  <View className="mt-2">
-                    {item.parts.map((part) => {
-                      if (part.type === 'tool-invocation' && part.toolInvocation) {
-                        return (
-                          <ToolInvocationRenderer
-                            key={part.toolInvocation.toolCallId}
-                            toolInvocation={part.toolInvocation}
-                          />
-                        );
-                      }
-                      return null;
-                    })}
-                  </View>
-                )}
+                  if (isAI && part.type.startsWith('tool-'))
+                    return (
+                      <View key={key} className="mt-2">
+                        <ToolInvocationRenderer
+                          key={(part as ToolUIPart).toolCallId}
+                          toolInvocation={part as ToolUIPart}
+                        />
+                      </View>
+                    );
+                })}
               </View>
             </Pressable>
 
             {isAI && userQuery && (
               <View className="mt-1 pl-2">
-                <ReportButton messageId={item.id} aiResponse={item.text} userQuery={userQuery} />
+                <ReportButton
+                  messageId={item.id}
+                  aiResponse={item.parts.find((p) => p.type === 'text')?.text ?? ''}
+                  userQuery={userQuery}
+                />
               </View>
             )}
           </View>
         </View>
       </Animated.View>
-      <Animated.View style={dateStyle} className="justify-center">
+      {/* <Animated.View style={dateStyle} className="justify-center">
         <Text variant="caption1" className="text-muted-foreground">
           {item.time}
         </Text>
-      </Animated.View>
+      </Animated.View> */}
     </View>
   );
 }

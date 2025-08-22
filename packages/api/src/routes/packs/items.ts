@@ -264,13 +264,8 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
   const db = createDb(c);
   const packId = c.req.param('packId');
   const data = await c.req.json();
-  const {
-    OPENAI_API_KEY,
-    AI_PROVIDER,
-    CLOUDFLARE_ACCOUNT_ID_ORG,
-    CLOUDFLARE_AI_GATEWAY_ID_ORG,
-    AI,
-  } = getEnv(c);
+  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
+    getEnv(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
@@ -290,8 +285,8 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
     openAiApiKey: OPENAI_API_KEY,
     value: embeddingText,
     provider: AI_PROVIDER,
-    cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
-    cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+    cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+    cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
     cloudflareAiBinding: AI,
   });
 
@@ -382,13 +377,8 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
 
   const itemId = c.req.param('itemId');
   const data = await c.req.json();
-  const {
-    OPENAI_API_KEY,
-    AI_PROVIDER,
-    CLOUDFLARE_ACCOUNT_ID_ORG,
-    CLOUDFLARE_AI_GATEWAY_ID_ORG,
-    AI,
-  } = getEnv(c);
+  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
+    getEnv(c);
 
   if (!OPENAI_API_KEY) {
     return c.json({ error: 'OpenAI API key not configured' }, 500);
@@ -424,8 +414,8 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
       openAiApiKey: OPENAI_API_KEY,
       value: newEmbeddingText,
       provider: AI_PROVIDER,
-      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
-      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
       cloudflareAiBinding: AI,
     });
   }

@@ -12,6 +12,13 @@ export const createDb = (c: Context) => {
   return drizzle(sql, { schema });
 };
 
+// Create a read-only SQL client with Neon for Hono contexts
+export const createReadOnlyDb = (c: Context) => {
+  const { NEON_DATABASE_URL_READONLY } = getEnv(c);
+  const sql = neon(NEON_DATABASE_URL_READONLY);
+  return drizzle(sql, { schema });
+};
+
 // Create SQL client with Neon for queue workers
 export const createDbClient = (env: Env) => {
   const sql = neon(env.NEON_DATABASE_URL);

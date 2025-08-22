@@ -14,22 +14,28 @@ if (!arg) {
   process.exit(1);
 }
 
+// Ensure clean git working directory
+try {
+  const status = execSync('git status --porcelain', { encoding: 'utf-8' }).trim();
+  if (status) {
+    console.error('❌ Working directory not clean. Commit or stash your changes first.');
+    process.exit(1);
+  }
+} catch (error) {
+  console.error('❌ Failed to check git status:', error);
+  process.exit(1);
+}
+
 // Use bun pm version to bump the root package.json and get the new version
 let newVersion: string;
 try {
-  // Bun pm version outputs the new version directly
-  const output = execSync(`bun pm version ${arg}`, {
+  const output = execSync(`bun pm version ${arg} --no-git-tag-version`, {
     encoding: 'utf-8',
   });
   // Extract version from output (it prints "v2.0.3" or similar)
-  newVersion = output.trim().replace('v', '');
+  newVersion = output.trim().replace(/^v/, '');
 } catch (error: unknown) {
-  if (error instanceof Error) {
-    console.error('Failed to bump version:', error.message);
-  } else {
-    console.error('Failed to bump version:', error);
-  }
-  console.error('Note: bun pm version requires a clean git working directory');
+  console.error('❌ Failed to bump version:', error instanceof Error ? error.message : error);
   process.exit(1);
 }
 
@@ -63,4 +69,17 @@ try {
   console.error(`❌ Failed to update app.config.ts:`, error);
 }
 
-console.log(`\n✨ v${newVersion}`);
+// Commit and tag as last step
+try {
+  execSync('git add .', { stdio: 'inherit' });
+  execSync(`git commit -m "chore: bump version to v${newVersion}"`, { stdio: 'inherit' });
+  execSync(`git tag v${newVersion}`, { stdio: 'inherit' });
+  console.log(`✅ Created commit and tag v${newVersion}`);
+} catch (error) {
+  console.error(`❌ Failed to commit or tag:`, error);
+}
+
+console.log(`\n✨ Version bumped to v${newVersion}`);
+console.log(`👉 Next steps:`);
+console.log(`   git push`);
+console.log(`   git push --tags`);
