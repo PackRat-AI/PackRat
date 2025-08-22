@@ -122,7 +122,7 @@ readerRoutes.openapi(extractContentRoute, async (c) => {
     const cleanedText = cleanTextForEmbedding(article.textContent || '');
 
     // Convert HTML to Markdown using our pure function
-    let markdown = null;
+    let markdown: string | null = null;
     try {
       markdown = htmlToMarkdown(article.content || '');
     } catch (err) {
