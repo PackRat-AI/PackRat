@@ -1,4 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { etlJobs } from '@packrat/api/db/schema';
 import { authMiddleware } from '@packrat/api/middleware';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
@@ -57,6 +59,7 @@ export const routeDefinition = createRoute({
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const { objectKey, filename, scraperRevision } = c.req.valid('json');
   const userId = c.get('jwtPayload')?.userId;
+  const db = createDb(c);
 
   if (!getEnv(c).ETL_QUEUE) {
     throw new HTTPException(400, {
@@ -64,12 +67,25 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     });
   }
 
-  const jobId = await queueCatalogETL({
+  const jobId = crypto.randomUUID();
+
+  await db.insert(etlJobs).values({
+    id: jobId,
+    status: 'running',
+    source: filename,
+    objectKey,
+    scraperRevision,
+    startedAt: new Date(),
+  });
+
+
+  await queueCatalogETL({
     queue: getEnv(c).ETL_QUEUE,
     objectKey,
     userId,
     filename,
     scraperRevision,
+    jobId,
   });
 
   return c.json({
