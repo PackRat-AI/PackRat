@@ -67,11 +67,8 @@ export async function processCatalogETL({
       }
 
       // Only process rows in the current chunk
-      const dataRowIndex = rowIndex - 1;
-      if (dataRowIndex < startRow)
       const dataRowIndex = rowIndex - 1; // -1 because header is row 0
-      if (dataRowIndex < startRow)
-        continue;
+      if (dataRowIndex < startRow) if (dataRowIndex < startRow) continue;
       if (dataRowIndex >= startRow + CHUNK_SIZE) break;
 
       const item = mapCsvRowToItem({ values: row, fieldMap });
