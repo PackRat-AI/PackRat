@@ -215,7 +215,7 @@ export class R2BucketService {
 
       const response = await this.s3Client.send(command);
 
-      return this.createR2Object(key, response);
+      return this.createR2Object(key, { ...response });
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'name' in error) {
         const errorObj = error as {
@@ -264,7 +264,7 @@ export class R2BucketService {
         offset += chunk.length;
       }
 
-      const r2Object = this.createR2Object(key, response);
+      const r2Object = this.createR2Object(key, { ...response });
 
       // Create a proper R2ObjectBody
       const objectBody: R2ObjectBody = {
@@ -541,7 +541,7 @@ export class R2BucketService {
 
         const completeResponse = await this.s3Client.send(completeCommand);
 
-        return this.createR2Object(key, completeResponse);
+        return this.createR2Object(key, { ...completeResponse });
       },
     };
   }
