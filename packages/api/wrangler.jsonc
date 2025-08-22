@@ -51,7 +51,7 @@
     "consumers": [
       {
         "queue": "packrat-etl-queue",
-        "max_batch_size": 10,
+        "max_batch_size": 1,
         "max_batch_timeout": 5
       },
       {
