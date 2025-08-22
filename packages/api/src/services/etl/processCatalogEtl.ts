@@ -258,9 +258,9 @@ function mapCsvRowToItem({
     'qas',
   ];
   for (const field of jsonFields) {
-    if (fieldMap[field as string] !== undefined && values[fieldMap[field as string]]) {
+    if (fieldMap[String(field)] !== undefined && values[fieldMap[String(field)]]) {
       try {
-        item[field] = safeJsonParse(values[fieldMap[field as string]]);
+        item[field] = safeJsonParse(values[fieldMap[String(field)]]);
       } catch {
         item[field] = [];
       }
