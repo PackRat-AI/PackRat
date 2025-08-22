@@ -37,47 +37,22 @@ So pack your bags, grab your friends, and get ready for your next adventure with
   - [Features 🚀](#features-)
   - [Technologies used 💻](#technologies-used-)
   - [🗂 Folder layout](#-folder-layout)
-  - [UI Kit](#ui-kit)
   - [🆕 Add new dependencies](#-add-new-dependencies)
-    - [Pure JS dependencies](#pure-js-dependencies)
-    - [Native dependencies](#native-dependencies)
-  - [Update new dependencies](#update-new-dependencies)
-    - [Pure JS dependencies](#pure-js-dependencies-1)
+    - [Mobile app dependencies](#mobile-app-dependencies)
+    - [API dependencies](#api-dependencies)
+    - [Web app dependencies](#web-app-dependencies)
+  - [Dependency management](#dependency-management)
   - [Local installation 📲](#local-installation-)
     - [Dependencies](#dependencies)
+    - [GitHub Packages Authentication](#github-packages-authentication)
     - [Environment Setup](#environment-setup)
-      - [Automated Setup (Unix) 🛠️](#automated-setup-unix-️)
-      - [Manual Setup 📝](#manual-setup-)
-    - [Yarn Setup](#yarn-setup)
-      - [Root](#root)
-      - [Server](#server)
-      - [Client](#client)
+    - [Git Hooks Setup](#git-hooks-setup)
+    - [Installation & Development](#installation--development)
     - [Debugging 🐛](#debugging-)
-      - [Debugging Yarn Environment Setup - Windows](#debugging-yarn-environment-setup---windows)
-      - [Debugging Client Environment Setup 🐛](#debugging-client-environment-setup-)
-        - [Expo](#expo)
-        - [Debugging Dependencies](#debugging-dependencies)
-        - [Debugging Cloudflare Wrangler and D1](#debugging-cloudflare-wrangler-and-d1)
-  - [Docker Installation 🐳 \[Experimental\]](#docker-installation--experimental)
-    - [Dependencies](#dependencies-1)
-    - [Installation](#installation)
-  - [How backend API's are setup](#how-backend-apis-are-setup)
+  - [API Architecture](#api-architecture)
   - [Contributing 🤝](#contributing-)
-  - [User Stories:](#user-stories)
-  - [User Features:](#user-features)
-    - [Registration and Authentication:](#registration-and-authentication)
-    - [Main Dashboard:](#main-dashboard)
-    - [Destination Search:](#destination-search)
-    - [Accessing Profile Information:](#accessing-profile-information)
-    - [Profile User Overview:](#profile-user-overview)
-    - [Favorite Trips and Packs:](#favorite-trips-and-packs)
-    - [Profile Management:](#profile-management)
-    - [Appearance Theme Customization:](#appearance-theme-customization)
-    - [Profile Editing:](#profile-editing)
-  - [Pack Features:](#pack-features)
-    - [Pack Creation and Access Settings:](#pack-creation-and-access-settings)
-    - [Adding Items to Packs:](#adding-items-to-packs)
-    - [Pack Scoring System:](#pack-scoring-system)
+  - [User Stories](#user-stories)
+  - [License 📝](#license-)
     - [Navigating to the Dashboard:](#navigating-to-the-dashboard)
   - [Trip Features:](#trip-features)
     - [Trip Creation and Management:](#trip-creation-and-management)
@@ -165,6 +140,8 @@ The main folders are:
     - `drizzle/` - Database schema and migrations
     - `test/` - API tests
   - `ui/` - Shared UI components and design system
+
+## 🆕 Add new dependencies
 
 ### Mobile app dependencies
 
@@ -379,16 +356,16 @@ bun expo
 
 ```bash
 # Doctor check for Expo setup
-npx expo-doctor
+bun --cwd apps/expo run expo-doctor
 
 # Fix dependencies
-npx expo install --fix
+bun --cwd apps/expo run expo install --fix
 
 # Clean build
-npx expo prebuild --clean
+bun --cwd apps/expo run expo prebuild --clean
 
 # Clear cache
-npx expo start --clear
+bun expo --clear
 ```
 
 **Dependency Issues:**
@@ -410,6 +387,26 @@ bun install
 - Check that your `wrangler.jsonc` is configured correctly in `packages/api/`
 - Ensure your Cloudflare environment variables are set
 - Use `bun api` to start the development server locally
+
+### Code Quality
+
+PackRat uses modern tools for code quality and consistency:
+
+```bash
+# Format all code
+bun format
+
+# Lint and fix issues
+bun lint
+
+# Type checking
+bun check-types
+
+# Check dependency consistency
+bun check:deps
+```
+
+The project uses [Lefthook](https://github.com/evilmartians/lefthook) for git hooks - these run automatically on push to ensure code quality.
 
 ## API Architecture
 
