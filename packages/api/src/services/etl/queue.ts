@@ -1,8 +1,8 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { processCatalogETLWriteBatch } from './processCatalogETLWriteBatch';
-import type { CatalogETLWriteBatchMessage } from './types';
 import { processCatalogETL } from './processCatalogEtl';
+import type { CatalogETLWriteBatchMessage } from './types';
 
 export enum QueueType {
   CATALOG_ETL = 'catalog-etl',
