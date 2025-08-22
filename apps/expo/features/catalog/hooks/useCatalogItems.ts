@@ -41,7 +41,7 @@ export function useCatalogItemsInfinite({ query, category, limit, sort }: GetCat
     queryKey: ['catalogItems', query, category, limit, sort],
     queryFn: ({ pageParam }) => {
       const encodedCategory = encodeURIComponent(category ?? '');
-      return getCatalogItems({ pageParam, query, category, limit, sort });
+      return getCatalogItems({ pageParam, query, category: encodedCategory, limit, sort });
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
