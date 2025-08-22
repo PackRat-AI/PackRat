@@ -97,8 +97,7 @@ export class CatalogService {
         orderBy = [
           order === 'desc'
             ? desc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`)
-            ? desc(sql`${catalogItems.categories}->>0`)
-            : asc(sql`${catalogItems.categories}->>0`),
+            : asc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`),
         ];
       } else {
         const sortColumn = catalogItems[field];
