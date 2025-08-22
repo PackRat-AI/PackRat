@@ -78,7 +78,6 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     startedAt: new Date(),
   });
 
-
   await queueCatalogETL({
     queue: getEnv(c).ETL_QUEUE,
     objectKey,

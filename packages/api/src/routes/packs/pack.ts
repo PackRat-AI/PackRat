@@ -17,8 +17,8 @@ import {
 import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
 import type { Env } from '@packrat/api/utils/env-validation';
+import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
 
 const packRoutes = new OpenAPIHono<{
   Bindings: Env;
