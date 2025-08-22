@@ -40,8 +40,9 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.30",
     "@cloudflare/workers-types": "^4.20250405.0",
-    "@electric-sql/pglite": "^0.3.7",
     "@types/bun": "latest",
+    "@types/pg": "^8.11.15",
+    "drizzle-orm": "^0.44.4",
     "typed-htmx": "^0.3.1",
     "vitest": "~3.1.0",
     "wrangler": "^4.21.2"
