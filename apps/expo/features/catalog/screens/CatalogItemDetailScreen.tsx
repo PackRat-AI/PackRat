@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
@@ -52,7 +53,7 @@ export function CatalogItemDetailScreen() {
       <ScrollView>
         <Image
           source={{
-            uri: item.image !== null ? item.image : undefined, // `null` isn't assignable to uri
+            uri: item.images?.[0] !== null ? item.images?.[0] : undefined, // `null` isn't assignable to uri
             ...(Platform.OS === 'android'
               ? {
                   headers: {
@@ -69,8 +70,10 @@ export function CatalogItemDetailScreen() {
 
         <View className="bg-card p-4">
           <View className="mb-2">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-2xl font-bold text-foreground">{item.name}</Text>
+            <View className="flex-row items-baseline justify-between">
+              <View className="flex-1">
+                <Text className="text-2xl font-bold text-foreground">{item.name}</Text>
+              </View>
               {item.ratingValue && (
                 <View className="flex-row items-center">
                   <Icon name="star" size={16} color={colors.yellow} />
@@ -89,6 +92,19 @@ export function CatalogItemDetailScreen() {
             </Text>
           )}
 
+          {item.categories && item.categories.length > 0 && (
+            <View className="mb-4">
+              <Text className="mb-2 text-xs uppercase text-muted-foreground">CATEGORIES</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {item.categories.map((category) => (
+                  <Chip key={category} textClassName="text-xs" variant="outline">
+                    {category}
+                  </Chip>
+                ))}
+              </View>
+            </View>
+          )}
+
           <View className="mb-4">
             <Text className="mb-2 text-foreground">{item.description}</Text>
           </View>
@@ -97,24 +113,15 @@ export function CatalogItemDetailScreen() {
             <View className="mb-2 mr-4">
               <Text className="text-xs uppercase text-muted-foreground">WEIGHT</Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
-                {item.defaultWeight !== undefined && item.defaultWeightUnit ? (
+                {item.weight !== undefined && item.weightUnit ? (
                   <>
-                    {item.defaultWeight} {item.defaultWeightUnit}
+                    {item.weight} {item.weightUnit}
                   </>
                 ) : (
                   'Not specified'
                 )}
               </Chip>
             </View>
-
-            {item.category && (
-              <View className="mb-2 mr-4">
-                <Text className="text-xs uppercase text-muted-foreground">CATEGORY</Text>
-                <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.category}
-                </Chip>
-              </View>
-            )}
 
             {item.material && (
               <View className="mb-2 mr-4">
@@ -125,7 +132,7 @@ export function CatalogItemDetailScreen() {
               </View>
             )}
 
-            {item.usageCount > 0 && (
+            {item.usageCount && item.usageCount > 0 && (
               <View className="mb-2">
                 <Text className="text-xs uppercase text-muted-foreground">USED IN</Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
@@ -137,12 +144,30 @@ export function CatalogItemDetailScreen() {
 
           {item.availability && (
             <View className="mb-4 flex-row items-center">
-              <Icon
-                name={item.availability === 'In Stock' ? 'check-circle-outline' : 'exclamation'}
+              <Ionicons
+                name={
+                  item.availability === 'in_stock'
+                    ? 'checkmark-circle-outline'
+                    : item.availability === 'out_of_stock'
+                      ? 'close-circle-outline'
+                      : 'time-outline'
+                }
                 size={16}
-                color={item.availability === 'In Stock' ? colors.green : colors.yellow}
+                color={
+                  item.availability === 'in_stock'
+                    ? '#22c55e' // green
+                    : item.availability === 'out_of_stock'
+                      ? '#ef4444' // red
+                      : '#f59e0b' // amber for preorder
+                }
               />
-              <Text className="ml-1 text-sm text-foreground">{item.availability}</Text>
+              <Text className="ml-1 text-sm text-foreground">
+                {item.availability === 'in_stock'
+                  ? 'In Stock'
+                  : item.availability === 'out_of_stock'
+                    ? 'Out of Stock'
+                    : 'Pre-order'}
+              </Text>
             </View>
           )}
 
@@ -172,16 +197,11 @@ export function CatalogItemDetailScreen() {
             </View>
           )}
 
-          {item.productUrl && (
-            <View className="mt-4">
-              <Button
-                variant="secondary"
-                onPress={() => Linking.openURL(item.productUrl as string)}
-              >
-                <Text className="text-foreground">View on Retailer Site</Text>
-              </Button>
-            </View>
-          )}
+          <View className="mt-4">
+            <Button variant="secondary" onPress={() => Linking.openURL(item.productUrl as string)}>
+              <Text className="text-foreground">View on Retailer Site</Text>
+            </Button>
+          </View>
 
           <View className="mt-2">
             <Button onPress={handleAddToPack}>

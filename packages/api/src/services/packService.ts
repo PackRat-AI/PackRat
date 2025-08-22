@@ -117,7 +117,7 @@ export class PackService {
           items: concept.items.map((item, idx) => ({
             requestedItem: item,
             candidateItems: searchResults[idx].map((item) => {
-              const { reviews: _reviews, embedding: _embedding, ...rest } = item; // remove unhelpful fields to manage context
+              const { reviews: _reviews, ...rest } = item; // remove unhelpful fields to manage context
               return rest;
             }),
           })),
@@ -167,7 +167,7 @@ export class PackService {
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
     const openai = createOpenAI({
-      apiKey: env(this.c).OPENAI_API_KEY,
+      apiKey: getEnv(this.c, 'OPENAI_API_KEY'),
     });
 
     const { object } = await generateObject({

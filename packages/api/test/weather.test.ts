@@ -17,7 +17,10 @@ describe('weather routes', () => {
         }),
       ),
     );
-    vi.stubGlobal('fetch', mockFetch);
+
+    // Mock global fetch for this test
+    const originalFetch = global.fetch;
+    global.fetch = mockFetch as any;
 
     const res = await app.fetch(
       new Request('http://localhost/api/weather/search?q=test', {
@@ -29,6 +32,7 @@ describe('weather routes', () => {
     const data = await res.json();
     expect(data[0].name).toBe('Test');
 
-    vi.unstubAllGlobals();
+    // Restore original fetch
+    global.fetch = originalFetch;
   });
 });

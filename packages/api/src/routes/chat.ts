@@ -14,9 +14,10 @@ import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { type CoreMessage, streamText } from 'ai';
+import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
+import { getSchemaInfo } from '../utils/DbUtils';
 
 const chatRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -74,7 +75,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
   const auth = c.get('user');
 
   let body: {
-    messages?: CoreMessage[] | Omit<MessageType, 'id'>[] | undefined;
+    messages?: UIMessage[] | undefined;
     contextType?: string;
     itemId?: string;
     packId?: string;
@@ -86,6 +87,8 @@ chatRoutes.openapi(chatRoute, async (c) => {
     const { messages, contextType, itemId, packId, location } = body;
 
     const tools = createTools(c, auth.userId);
+
+    const schemaInfo = await getSchemaInfo(c);
 
     // Build context-aware system prompt
     let systemPrompt = `
@@ -99,45 +102,45 @@ chatRoutes.openapi(chatRoute, async (c) => {
       - Suggest multi-purpose items to reduce pack weight
       - Be concise but helpful in your responses
       - Use tools proactively to provide accurate, up-to-date information
-    `;
+
+      Schema Info for SQL Tool:
+      ${schemaInfo}
+
+      Context:
+      - User id is ${auth.userId}`;
 
     // Add context-specific information
     if (contextType === 'pack' && packId) {
-      systemPrompt += `\n\nContext: You are currently helping with a pack with ID: ${packId}.`;
+      systemPrompt += `\n- You are currently helping with a pack with ID: ${packId}.`;
     } else if (contextType === 'item' && itemId) {
-      systemPrompt += `\n\nContext: You are currently helping with an item with ID: ${itemId}.`;
+      systemPrompt += `\n- You are currently helping with an item with ID: ${itemId}.`;
     }
 
     if (location) {
-      systemPrompt += `\n\nContext: The current location of the user is: ${location}.`;
+      systemPrompt += `\n- The current location of the user is: ${location}.`;
     }
 
-    const {
-      AI_PROVIDER,
-      OPENAI_API_KEY,
-      CLOUDFLARE_ACCOUNT_ID_ORG,
-      CLOUDFLARE_AI_GATEWAY_ID_ORG,
-      AI,
-    } = getEnv(c);
+    const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
+      getEnv(c);
 
     // Create AI provider based on configuration
     const aiProvider = createAIProvider({
       openAiApiKey: OPENAI_API_KEY,
       provider: AI_PROVIDER,
-      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID_ORG,
-      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID_ORG,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
       cloudflareAiBinding: AI,
     });
 
     // Stream the AI response
     const result = streamText({
-      model: aiProvider(DEFAULT_MODELS.CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       system: systemPrompt,
-      messages,
+      messages: convertToModelMessages(messages),
       tools,
-      maxTokens: 1000,
+      maxOutputTokens: 1000,
       temperature: 0.7,
-      maxSteps: 5,
+      stopWhen: stepCountIs(5),
       onError: ({ error }) => {
         console.error('streaming error', error);
         c.get('sentry').setTag('location', 'chat/streamText');
@@ -151,10 +154,10 @@ chatRoutes.openapi(chatRoute, async (c) => {
     });
 
     // Get the response with proper headers
-    const response = result.toTextStreamResponse();
+    const response = result.toUIMessageStreamResponse();
 
     // Add CORS headers for streaming when using Cloudflare Gateway
-    if (CLOUDFLARE_ACCOUNT_ID_ORG && CLOUDFLARE_AI_GATEWAY_ID_ORG) {
+    if (CLOUDFLARE_ACCOUNT_ID && CLOUDFLARE_AI_GATEWAY_ID) {
       response.headers.set('Access-Control-Allow-Origin', '*');
       response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
       response.headers.set('Access-Control-Allow-Headers', 'Content-Type');

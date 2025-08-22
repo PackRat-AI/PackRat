@@ -1,6 +1,5 @@
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { Ai } from '@cloudflare/workers-types';
 import type { createWorkersAI } from 'workers-ai-provider';
 
 export type AIProvider = 'openai' | 'cloudflare-workers-ai';
@@ -9,7 +8,6 @@ interface BaseProviderConfig {
   openAiApiKey: string;
   cloudflareAccountId: string;
   cloudflareGatewayId: string;
-  cloudflareAiBinding: Ai;
 }
 
 interface OpenAIProviderConfig extends BaseProviderConfig {
