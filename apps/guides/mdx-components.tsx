@@ -1,9 +1,8 @@
 import Image, { type ImageProps } from 'next/image';
 import Link, { type LinkProps } from 'next/link';
 
-// Define MDXComponents type locally since mdx/types is not available
 type MDXComponents = {
-  [key: string]: React.ComponentType<any>;
+  [key: string]: React.ComponentType<React.HTMLAttributes<HTMLElement>>;
 };
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
