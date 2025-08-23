@@ -15,7 +15,7 @@ const isStandardPostgresUrl = (url: string) => {
     // Only allow if NOT neon.tech and NOT neon.com, and NOT their subdomains
     const host = u.hostname.toLowerCase();
     const isNeonTech = host === 'neon.tech' || host.endsWith('.neon.tech');
-    const isNeonCom  = host === 'neon.com'  || host.endsWith('.neon.com');
+    const isNeonCom = host === 'neon.com' || host.endsWith('.neon.com');
     return u.protocol === 'postgres:' && !isNeonTech && !isNeonCom;
   } catch {
     // Any parsing error: treat as NOT standard Postgres

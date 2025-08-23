@@ -1,7 +1,7 @@
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/neon-http/migrator';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { migrate as migratePg } from 'drizzle-orm/node-postgres/migrator';
 import { Client } from 'pg';
 import * as ws from 'ws';
@@ -11,15 +11,16 @@ neonConfig.webSocketConstructor = ws;
 
 // Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
 import { isStandardPostgresUrl } from './src/db/utils';
+
 async function runMigrations() {
   if (!process.env.NEON_DATABASE_URL) {
     throw new Error('NEON_DATABASE_URL is not set');
   }
 
   console.log('Running migrations...');
-  
+
   const url = process.env.NEON_DATABASE_URL;
-  
+
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL
     console.log('Using PostgreSQL migrations...');

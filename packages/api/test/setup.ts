@@ -102,7 +102,7 @@ beforeAll(async () => {
 // Clean up database after each test to ensure isolation
 beforeEach(async () => {
   if (!testClient) return;
-  
+
   // Truncate all tables except migrations and drizzle metadata using PostgreSQL client
   const tablesToTruncate = [
     'users',
@@ -141,5 +141,3 @@ afterAll(async () => {
     console.error('❌ Failed to cleanup test database connection:', error);
   }
 });
-
-
