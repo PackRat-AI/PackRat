@@ -184,11 +184,15 @@ export function CatalogItemDetailScreen() {
               <Text variant="callout" className="mb-2">
                 Specifications
               </Text>
-              <View className="rounded-lg p-3">
+              <View className="rounded-lg bg-muted/10 p-4">
                 {Object.entries(item.techs).map(([key, value]) => (
-                  <View key={key} className="mb-2 flex-row justify-between">
-                    <Text className="text-sm text-muted-foreground">{key}</Text>
-                    <Text className="text-sm font-medium text-foreground">{value}</Text>
+                  <View key={key} className="mb-3 last:mb-0">
+                    <Text className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
+                      {key}
+                    </Text>
+                    <Text className="text-sm font-medium text-foreground leading-relaxed">
+                      {value}
+                    </Text>
                   </View>
                 ))}
               </View>
