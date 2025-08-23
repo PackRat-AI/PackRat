@@ -9,7 +9,6 @@
         "@types/bun": "^1.2.17",
         "@types/fs-extra": "^11.0.4",
         "@types/glob": "^9.0.0",
-        "@types/mdx": "^2.0.13",
         "fs-extra": "^11.3.0",
         "glob": "^11.0.3",
         "lefthook": "^1.11.14",
