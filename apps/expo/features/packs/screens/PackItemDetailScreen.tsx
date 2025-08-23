@@ -1,4 +1,4 @@
-import { ActivityIndicator, Button } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -14,7 +14,7 @@ import {
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView, ScrollView, View } from 'react-native';
 import {
   usePackItemDetailsFromApi,
   usePackItemDetailsFromStore,
@@ -56,7 +56,7 @@ export function ItemDetailScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-1 items-center justify-center p-8">
-          <View className="bg-destructive/10 mb-4 rounded-full p-4">
+          <View className="mb-4 rounded-full bg-destructive/10 p-4">
             <Icon name="exclamation" size={32} color="text-destructive" />
           </View>
           <Text className="mb-2 text-lg font-medium text-foreground">
@@ -117,10 +117,22 @@ export function ItemDetailScreen() {
     });
   };
 
+  const isImageUrl =
+    item?.image &&
+    typeof item.image === 'string' &&
+    (item.image.startsWith('http://') || item.image.startsWith('https://'));
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        <CachedImage localFileName={item.image} className="h-64 w-full" resizeMode="cover" />
+        {item.image && (
+          <CachedImage
+            localFileName={!isImageUrl ? item.image : undefined}
+            remoteUrl={isImageUrl ? item.image : undefined}
+            className="h-64 w-full"
+            resizeMode="cover"
+          />
+        )}
 
         <View className="mb-4 bg-card p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>
@@ -132,7 +144,6 @@ export function ItemDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">WEIGHT (EACH)</Text>
               <WeightBadge weight={item.weight} unit={item.weightUnit} />
             </View>
 
