@@ -11,7 +11,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
-
 function HomeContent() {
   const searchParams = useSearchParams();
   const category = searchParams.get('category');
