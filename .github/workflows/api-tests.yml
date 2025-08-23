@@ -19,7 +19,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:15-alpine
+        image: pgvector/pgvector:pg15
         env:
           POSTGRES_DB: packrat_test
           POSTGRES_USER: test_user
@@ -44,6 +44,13 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
+        
+      - name: Run database migrations
+        env:
+          NEON_DATABASE_URL: postgres://test_user:test_password@localhost:5433/packrat_test
+        run: |
+          cd packages/api
+          bun run migrate
         
       - name: Run API tests
         env:
