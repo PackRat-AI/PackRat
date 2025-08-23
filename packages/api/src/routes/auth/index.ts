@@ -268,7 +268,7 @@ authRoutes.openapi(registerRoute, async (c) => {
       lastName,
       emailVerified: false,
     })
-    .returning({ id: users.id });
+    .returning();
 
   if (!newUser) {
     return c.json({ error: 'Failed to create user' }, 500);
@@ -1171,7 +1171,7 @@ authRoutes.openapi(appleRoute, async (c) => {
           email,
           emailVerified: email_verified || false,
         })
-        .returning({ id: users.id });
+        .returning();
       userId = newUser?.id || 0;
     }
 
@@ -1318,7 +1318,7 @@ authRoutes.openapi(googleRoute, async (c) => {
           lastName: payload.family_name,
           emailVerified: payload.email_verified || false,
         })
-        .returning({ id: users.id });
+        .returning();
       assertDefined(newUser);
 
       userId = newUser.id;
