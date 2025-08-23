@@ -1,0 +1,90 @@
+name: Deploy API to Development
+
+on:
+  push:
+    branches: ["development"]
+    paths:
+      - "packages/api/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy-development:
+    runs-on: ubuntu-latest
+    environment: development
+    # Skip if this is an automatic merge from main to development
+    if: ${{ !contains(github.event.head_commit.message, 'Merge main into development') }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+        
+      - name: Run API tests
+        run: bun test --cwd packages/api
+        continue-on-error: true
+        
+      - name: Validate Cloudflare environment
+        working-directory: packages/api
+        env:
+          # Environment & Deployment
+          ENVIRONMENT: development
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          
+          # Database
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL_DEV }}
+          NEON_DATABASE_URL_READONLY: ${{ secrets.NEON_DATABASE_URL_READONLY_DEV }}
+          
+          # Authentication & Security
+          JWT_SECRET: ${{ secrets.JWT_SECRET_DEV }}
+          PASSWORD_RESET_SECRET: ${{ secrets.PASSWORD_RESET_SECRET_DEV }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID_DEV }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME_DEV }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD_DEV }}
+          PACKRAT_API_KEY: ${{ secrets.PACKRAT_API_KEY_DEV }}
+          
+          # Email Configuration
+          EMAIL_PROVIDER: ${{ vars.EMAIL_PROVIDER_DEV || 'resend' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY_DEV }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM_DEV }}
+          
+          # AI & External APIs
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_DEV }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER_DEV || 'openai' }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY_DEV }}
+          
+          # Weather Services
+          OPENWEATHER_KEY: ${{ secrets.OPENWEATHER_KEY_DEV }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY_DEV }}
+          
+          # Cloudflare Configuration
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_DEV }}
+          CLOUDFLARE_AI_GATEWAY_ID: ${{ secrets.CLOUDFLARE_AI_GATEWAY_ID_DEV }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID_DEV }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY_DEV }}
+          PACKRAT_BUCKET_R2_BUCKET_NAME: ${{ vars.PACKRAT_BUCKET_R2_BUCKET_NAME_DEV }}
+          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: ${{ vars.PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME_DEV }}
+          PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: ${{ vars.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME_DEV }}
+          
+          # Content & Guides
+          PACKRAT_GUIDES_RAG_NAME: ${{ vars.PACKRAT_GUIDES_RAG_NAME_DEV }}
+          PACKRAT_GUIDES_BASE_URL: ${{ vars.PACKRAT_GUIDES_BASE_URL_DEV }}
+        run: bun run validate:cloudflare-env
+        
+      - name: Deploy to Cloudflare Workers (Development)
+        working-directory: packages/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_DEV }}
+        run: bun run deploy:dev

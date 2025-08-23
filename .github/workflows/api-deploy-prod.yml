@@ -1,0 +1,88 @@
+name: Deploy API to Production
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "packages/api/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+        
+      - name: Run API tests
+        run: bun test --cwd packages/api
+        continue-on-error: true
+        
+      - name: Validate Cloudflare environment
+        working-directory: packages/api
+        env:
+          # Environment & Deployment
+          ENVIRONMENT: production
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          
+          # Database
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          NEON_DATABASE_URL_READONLY: ${{ secrets.NEON_DATABASE_URL_READONLY }}
+          
+          # Authentication & Security
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          PASSWORD_RESET_SECRET: ${{ secrets.PASSWORD_RESET_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          PACKRAT_API_KEY: ${{ secrets.PACKRAT_API_KEY }}
+          
+          # Email Configuration
+          EMAIL_PROVIDER: ${{ vars.EMAIL_PROVIDER || 'resend' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          
+          # AI & External APIs
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_PROVIDER: ${{ vars.AI_PROVIDER || 'openai' }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+          
+          # Weather Services
+          OPENWEATHER_KEY: ${{ secrets.OPENWEATHER_KEY }}
+          WEATHER_API_KEY: ${{ secrets.WEATHER_API_KEY }}
+          
+          # Cloudflare Configuration
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_AI_GATEWAY_ID: ${{ secrets.CLOUDFLARE_AI_GATEWAY_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          PACKRAT_BUCKET_R2_BUCKET_NAME: ${{ vars.PACKRAT_BUCKET_R2_BUCKET_NAME }}
+          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: ${{ vars.PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME }}
+          PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: ${{ vars.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME }}
+          
+          # Content & Guides
+          PACKRAT_GUIDES_RAG_NAME: ${{ vars.PACKRAT_GUIDES_RAG_NAME }}
+          PACKRAT_GUIDES_BASE_URL: ${{ vars.PACKRAT_GUIDES_BASE_URL }}
+        run: bun run validate:cloudflare-env
+        
+      - name: Deploy to Cloudflare Workers (Production)
+        working-directory: packages/api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: bun run deploy
