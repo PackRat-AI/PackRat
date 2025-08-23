@@ -5,7 +5,7 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import type { Context } from 'hono';
-import { Client, Pool } from 'pg';
+import { Pool } from 'pg';
 
 // Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
 const isStandardPostgresUrl = (url: string) => {
@@ -15,7 +15,7 @@ const isStandardPostgresUrl = (url: string) => {
     // Only allow if NOT neon.tech and NOT neon.com, and NOT their subdomains
     const host = u.hostname.toLowerCase();
     const isNeonTech = host === 'neon.tech' || host.endsWith('.neon.tech');
-    const isNeonCom  = host === 'neon.com'  || host.endsWith('.neon.com');
+    const isNeonCom = host === 'neon.com' || host.endsWith('.neon.com');
     return u.protocol === 'postgres:' && !isNeonTech && !isNeonCom;
   } catch {
     // Any parsing error: treat as NOT standard Postgres

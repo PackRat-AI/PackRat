@@ -55,6 +55,13 @@ vi.mock('hono/adapter', async () => {
   return { ...actual, env: () => process.env };
 });
 
+// Mock the database module to use our test database (node-postgres version)
+vi.mock('@packrat/api/db', () => ({
+  createDb: vi.fn(() => testDb),
+  createReadOnlyDb: vi.fn(() => testDb),
+  createDbClient: vi.fn(() => testDb),
+}));
+
 // Setup PostgreSQL connection for tests
 beforeAll(async () => {
   console.log('🔧 Setting up test database connection...');
@@ -102,7 +109,7 @@ beforeAll(async () => {
 // Clean up database after each test to ensure isolation
 beforeEach(async () => {
   if (!testClient) return;
-  
+
   // Truncate all tables except migrations and drizzle metadata using PostgreSQL client
   const tablesToTruncate = [
     'users',
@@ -141,5 +148,3 @@ afterAll(async () => {
     console.error('❌ Failed to cleanup test database connection:', error);
   }
 });
-
-
