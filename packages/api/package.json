@@ -2,7 +2,9 @@
   "name": "@packrat/api",
   "scripts": {
     "dev": "wrangler dev -e=dev",
-    "deploy": "wrangler deploy --minify",
+    "deploy": "bun run validate:cloudflare-env && wrangler deploy --minify",
+    "deploy:dev": "bun run validate:cloudflare-env && wrangler deploy --minify -e=dev",
+    "validate:cloudflare-env": "bun scripts/validate-cloudflare-api-env.ts",
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
     "db:generate": "drizzle-kit generate --dialect=postgresql --schema=src/db/schema.ts --out=./drizzle",
@@ -24,7 +26,7 @@
     "bcryptjs": "^3.0.2",
     "csv-parse": "^5.6.0",
     "drizzle-kit": "^0.30.6",
-    "drizzle-orm": "^0.41.0",
+    "drizzle-orm": "^0.44.4",
     "google-auth-library": "^10.1.0",
     "gray-matter": "^4.0.3",
     "hono": "^4.7.5",
@@ -41,6 +43,8 @@
     "@cloudflare/vitest-pool-workers": "^0.8.30",
     "@cloudflare/workers-types": "^4.20250405.0",
     "@types/bun": "latest",
+    "@types/pg": "^8.11.15",
+    "drizzle-orm": "^0.44.4",
     "typed-htmx": "^0.3.1",
     "vitest": "~3.1.0",
     "wrangler": "^4.21.2"

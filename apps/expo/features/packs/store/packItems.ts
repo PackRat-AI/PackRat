@@ -31,6 +31,11 @@ const getPresignedUrl = async (
 
 // Upload the image to R2
 const uploadImage = async (fileName: string): Promise<void> => {
+  if (!fileName || fileName.trim() === '') {
+    console.warn('Skipping upload: fileName is empty');
+    return;
+  }
+
   try {
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
     const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;

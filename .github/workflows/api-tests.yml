@@ -1,0 +1,77 @@
+name: API Tests
+
+on:
+  push:
+    branches: ["main", "development"]
+    paths:
+      - "packages/api/**"
+  pull_request:
+    branches: ["**"]
+    paths:
+      - "packages/api/**"
+
+permissions:
+  contents: read
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_DB: packrat_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d packrat_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+        
+      - name: Run database migrations
+        env:
+          NEON_DATABASE_URL: postgres://test_user:test_password@localhost:5433/packrat_test
+        run: |
+          cd packages/api
+          bun run migrate
+        
+      - name: Run API tests
+        env:
+          # Test database configuration
+          NEON_DATABASE_URL: postgres://test_user:test_password@localhost:5433/packrat_test
+          NEON_DATABASE_URL_READONLY: postgres://test_user:test_password@localhost:5433/packrat_test
+          # Other test environment variables (from test setup)
+          ENVIRONMENT: development
+          SENTRY_DSN: https://test@test.ingest.sentry.io/test
+          JWT_SECRET: secret
+          PASSWORD_RESET_SECRET: secret
+          GOOGLE_CLIENT_ID: test-client-id
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: admin-password
+          PACKRAT_API_KEY: test-api-key
+          EMAIL_PROVIDER: resend
+          RESEND_API_KEY: key
+          EMAIL_FROM: test@example.com
+          OPENAI_API_KEY: sk-test-key
+          AI_PROVIDER: openai
+          PERPLEXITY_API_KEY: pplx-test-key
+          OPENWEATHER_KEY: test-weather-key
+          WEATHER_API_KEY: test-weather-key
+        run: bun test --cwd packages/api
