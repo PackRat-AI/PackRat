@@ -4,6 +4,7 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import type { WeightUnit } from 'expo-app/types';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
@@ -21,9 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
 import { useCatalogItemDetails } from '../hooks';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
 
 export function AddCatalogItemDetailsScreen() {
@@ -87,7 +86,7 @@ export function AddCatalogItemDetailsScreen() {
       }
     }
     setIsAdding(true);
-    
+
     const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
 
     createItem({
