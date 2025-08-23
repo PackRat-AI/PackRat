@@ -1,11 +1,9 @@
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
-import { nanoid } from 'nanoid/non-secure';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useCreatePackItem } from '../hooks';
@@ -24,17 +22,8 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
 
   const handleAddItem = async (item: CatalogItem) => {
     setIsAdding(true);
-    let imageFileName: string | null = null;
-    if (item.images?.[0]) {
-      try {
-        const extension = await getImageExtension(item.images[0]);
-        const fileName = `${nanoid()}.${extension}`;
-        await ImageCacheManager.cacheRemoteImage(fileName, item.images[0]);
-        imageFileName = fileName;
-      } catch (err) {
-        console.log('caching remote image failed', err);
-      }
-    }
+    const cachedImageFilename = await cacheCatalogItemImage(item.images?.[0]);
+
     // Create a new pack item from the catalog item
     const newItem: PackItemInput = {
       name: item.name,
@@ -44,7 +33,7 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
       quantity: 1,
       consumable: false,
       worn: false,
-      image: imageFileName,
+      image: cachedImageFilename,
       notes: 'Suggested by PackRat AI',
       catalogItemId: item.id,
     };
