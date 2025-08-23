@@ -28,10 +28,20 @@ export interface GuideCatalogSearchResult {
  * This provides a simplified interface optimized for generating guide content
  */
 export class GuideCatalogSearchTool {
-  private catalogService: CatalogService;
+  private catalogService: CatalogService | null = null;
+  private env: Env;
 
   constructor(env: Env) {
-    this.catalogService = new CatalogService(env, false);
+    this.env = env;
+    // Only initialize catalog service if database URL is provided
+    if (env.NEON_DATABASE_URL) {
+      try {
+        this.catalogService = new CatalogService(env, false);
+      } catch (error) {
+        console.warn('Warning: Could not initialize catalog service:', error);
+        this.catalogService = null;
+      }
+    }
   }
 
   /**
@@ -47,6 +57,15 @@ export class GuideCatalogSearchTool {
     } = {},
   ): Promise<GuideCatalogSearchResult> {
     const { limit = 10, category, minRating } = options;
+
+    if (!this.catalogService) {
+      console.warn('CatalogService not available - returning empty results');
+      return {
+        items: [],
+        query,
+        total: 0,
+      };
+    }
 
     try {
       // Use semantic search for better results
@@ -105,6 +124,14 @@ export class GuideCatalogSearchTool {
       minRating?: number;
     } = {},
   ): Promise<Record<string, GuideCatalogSearchResult>> {
+    if (!this.catalogService) {
+      const results: Record<string, GuideCatalogSearchResult> = {};
+      for (const query of queries) {
+        results[query] = { items: [], query, total: 0 };
+      }
+      return results;
+    }
+
     const results: Record<string, GuideCatalogSearchResult> = {};
     
     for (const query of queries) {
