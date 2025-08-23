@@ -71,7 +71,7 @@ const chatRoute = createRoute({
   },
 });
 
-chatRoutes.openapi(chatRoute, async (c) => {
+chatRoutes.openapi(chatRoute, (async (c): Promise<Response> => {
   const auth = c.get('user');
 
   let body: {
@@ -178,7 +178,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
 
     throw error;
   }
-});
+}) as any);
 
 const createReportRoute = createRoute({
   method: 'post',

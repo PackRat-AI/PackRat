@@ -1136,7 +1136,7 @@ const appleRoute = createRoute({
   },
 });
 
-authRoutes.openapi(appleRoute, async (c) => {
+authRoutes.openapi(appleRoute, (async (c) => {
   const { identityToken } = await c.req.json();
   const db = createDb(c);
 
@@ -1216,7 +1216,7 @@ authRoutes.openapi(appleRoute, async (c) => {
     },
     200,
   );
-});
+}) as any);
 
 const googleRoute = createRoute({
   method: 'post',
