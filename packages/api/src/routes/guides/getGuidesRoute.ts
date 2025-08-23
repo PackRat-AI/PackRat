@@ -41,7 +41,7 @@ export const routeDefinition = createRoute({
   },
 });
 
-export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
+export const handler = (async (c) => {
   const { page, limit, category } = c.req.valid('query');
 
   // Manually parse sort parameters from raw query
@@ -154,4 +154,4 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     console.error('Error listing guides:', error);
     return c.json({ error: 'Failed to list guides' }, 500);
   }
-};
+}) as any;

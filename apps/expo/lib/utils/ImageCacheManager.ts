@@ -135,7 +135,7 @@ export class ImageCacheManager {
    * Check if a string is a remote URL
    */
   private isRemoteURL(str: string): boolean {
-    return str && (str.startsWith('http://') || str.startsWith('https://'));
+    return Boolean(str && (str.startsWith('http://') || str.startsWith('https://')));
   }
 
   /**

@@ -282,7 +282,10 @@ export const CreatePackItemForm = ({
                     placeholder="Weight"
                     value={field.state.value.toString()}
                     onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
+                    onChangeText={(text) => {
+                      const numValue = text === '' ? 0 : parseFloat(text) || 0;
+                      field.handleChange(numValue);
+                    }}
                     keyboardType="numeric"
                     errorMessage={(field.state.meta.errors[0] as any)?.message}
                     leftView={

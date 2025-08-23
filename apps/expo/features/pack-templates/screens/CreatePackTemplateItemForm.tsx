@@ -100,11 +100,11 @@ export const CreatePackTemplateItemForm = ({
         }
 
         if (isEditing) {
-          updateItem({ 
+          updateItem({
             id: existingItem.id,
             packTemplateId: existingItem.packTemplateId,
             deleted: existingItem.deleted,
-            ...(value as PackTemplateItemInput) 
+            ...(value as PackTemplateItemInput),
           });
         } else {
           createItem({ packTemplateId, itemData: value as PackTemplateItemInput });
@@ -241,7 +241,10 @@ export const CreatePackTemplateItemForm = ({
                     placeholder="Weight"
                     value={field.state.value.toString()}
                     onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
+                    onChangeText={(text) => {
+                      const numValue = text === '' ? 0 : parseFloat(text) || 0;
+                      field.handleChange(numValue);
+                    }}
                     keyboardType="numeric"
                     errorMessage={(field.state.meta.errors[0] as any)?.message}
                     leftView={

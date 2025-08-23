@@ -35,7 +35,11 @@ export const api = (path: string, init?: RequestInit) =>
   app.fetch(new Request(`http://localhost/api${path}`, init));
 
 // Helper to create requests with authentication token
-export const apiWithAuth = async (path: string, init?: RequestInit, user: typeof TEST_USER | typeof TEST_ADMIN = TEST_USER) => {
+export const apiWithAuth = async (
+  path: string,
+  init?: RequestInit,
+  user: typeof TEST_USER | typeof TEST_ADMIN = TEST_USER,
+) => {
   const token = await sign({ userId: user.id, role: user.role }, 'secret');
   return app.fetch(
     new Request(`http://localhost/api${path}`, {

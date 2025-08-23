@@ -140,7 +140,7 @@ const searchByCoordRoute = createRoute({
   },
 });
 
-weatherRoutes.openapi(searchByCoordRoute, async (c) => {
+weatherRoutes.openapi(searchByCoordRoute, (async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
   const latitude = Number.parseFloat(c.req.query('lat') || '');
@@ -213,7 +213,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
     });
     return c.json({ error: 'Internal server error', code: 'WEATHER_COORD_SEARCH_ERROR' }, 500);
   }
-});
+}) as any);
 
 // Get weather data endpoint
 const forecastRoute = createRoute({
