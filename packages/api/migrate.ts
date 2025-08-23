@@ -26,14 +26,14 @@ async function runMigrations() {
     const client = new Client({ connectionString: url });
     await client.connect();
     const db = drizzlePg(client);
-    await migratePg(db, { migrationsFolder: `${__dirname}/drizzle` });
+    await migratePg(db, { migrationsFolder: `${dirname}/drizzle` });
     await client.end();
   } else {
     // Use Neon serverless for Neon URLs
     console.log('Using Neon serverless migrations...');
     const sql = neon(url);
     const db = drizzle(sql);
-    await migrate(db, { migrationsFolder: `${__dirname}/drizzle` });
+    await migrate(db, { migrationsFolder: `${dirname}/drizzle` });
   }
 
   console.log('Migrations completed successfully!');
