@@ -33,7 +33,7 @@ export const ChatMessageSchema = z
   })
   .openapi('ChatMessage');
 
-export const ChatRequestSchema = z.any().openapi('Chatequest');
+export const ChatRequestSchema = z.any().openapi('ChatRequest');
 // .oRbject({
 //   messages: z.array(ChatMessageSchema).openapi({
 //     description: 'Array of chat messages',
