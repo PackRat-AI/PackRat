@@ -12,8 +12,8 @@ import axiosInstance from 'expo-app/lib/api/client';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
-import { useAtomValue, useSetAtom } from 'jotai';
 import Storage from 'expo-sqlite/kv-store';
+import { useAtomValue, useSetAtom } from 'jotai';
 
 import { isLoadingAtom, redirectToAtom, refreshTokenAtom, tokenAtom } from '../atoms/authAtoms';
 
