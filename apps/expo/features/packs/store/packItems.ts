@@ -37,24 +37,40 @@ const uploadImage = async (fileName: string): Promise<void> => {
   }
 
   try {
-    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+    const isUrl = fileName.startsWith('http://') || fileName.startsWith('https://');
+
+    let localFileName = fileName;
+    if (isUrl) {
+      try {
+        localFileName = await ImageCacheManager.cacheRemoteImage(fileName);
+      } catch (error) {
+        console.error('Failed to cache remote image:', error);
+        throw new Error(`Failed to process remote image: ${error.message}`);
+      }
+    }
+
+    const fileExtension = localFileName.split('.').pop()?.toLowerCase() || 'jpg';
     const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
-    const remoteFileName = `${userStore.id.peek()}-${fileName}`;
+    const remoteFileName = `${userStore.id.peek()}-${localFileName}`;
+
     // Get presigned URL
     const { url: presignedUrl } = await getPresignedUrl(remoteFileName, type);
 
+    const localFilePath = `${ImageCacheManager.cacheDirectory}${localFileName}`;
+
+    const fileInfo = await FileSystem.getInfoAsync(localFilePath);
+    if (!fileInfo.exists) {
+      throw new Error(`Local file not found at: ${localFilePath}`);
+    }
+
     // Upload the image
-    const uploadResult = await FileSystem.uploadAsync(
-      presignedUrl,
-      `${ImageCacheManager.cacheDirectory}${fileName}`,
-      {
-        httpMethod: 'PUT',
-        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-        headers: {
-          'Content-Type': type,
-        },
+    const uploadResult = await FileSystem.uploadAsync(presignedUrl, localFilePath, {
+      httpMethod: 'PUT',
+      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      headers: {
+        'Content-Type': type,
       },
-    );
+    });
 
     if (uploadResult.status >= 300) {
       throw new Error(`Upload failed with status: ${uploadResult.status}`);
