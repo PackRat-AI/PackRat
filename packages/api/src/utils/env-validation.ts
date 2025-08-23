@@ -59,6 +59,23 @@ export const apiEnvSchema = z.object({
   EMBEDDINGS_QUEUE: z.unknown(),
 });
 
+// Relaxed schema for test environments
+const testEnvSchema = apiEnvSchema.partial().extend({
+  ENVIRONMENT: z.enum(['development', 'production']).default('development'),
+  SENTRY_DSN: z.string().url().optional().default('https://test@test.ingest.sentry.io/test'),
+  NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
+  NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://user:pass@localhost/db'),
+  JWT_SECRET: z.string().optional().default('secret'),
+  CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
+  AI: z.unknown().optional(),
+  PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),
+  PACKRAT_BUCKET: z.unknown().optional(),
+  PACKRAT_GUIDES_BUCKET: z.unknown().optional(),
+  ETL_QUEUE: z.unknown().optional(),
+  LOGS_QUEUE: z.unknown().optional(),
+  EMBEDDINGS_QUEUE: z.unknown().optional(),
+});
+
 // Infer the base type from Zod schema
 type ValidatedAppEnv = z.infer<typeof apiEnvSchema>;
 
@@ -88,6 +105,15 @@ export type Env = Omit<
 // Cache for validated environments per request
 const envCache = new WeakMap<Context, Env>();
 
+// Check if we're in a test environment
+function isTestEnvironment(): boolean {
+  return (
+    process.env.NODE_ENV === 'test' ||
+    process.env.VITEST === 'true' ||
+    (typeof global !== 'undefined' && (global as Record<string, unknown>).__vitest__ !== undefined)
+  );
+}
+
 /**
  * Get and validate environment variables from Hono context
  * Results are cached per request context
@@ -102,9 +128,12 @@ export function getEnv(c: Context): Env {
   // Get raw environment
   const rawEnv = env<Env>(c);
 
+  // Use relaxed validation for test environments
+  const schema = isTestEnvironment() ? testEnvSchema : apiEnvSchema;
+
   // Validate all environment variables with Zod
   // This ensures all required fields exist, including CF bindings
-  const validated = apiEnvSchema.safeParse(rawEnv);
+  const validated = schema.safeParse(rawEnv);
   if (!validated.success) {
     throw new Error(`Invalid environment variables: ${validated.error.message}`);
   }
@@ -112,14 +141,14 @@ export function getEnv(c: Context): Env {
   // Merge validated data with correctly typed Cloudflare bindings from rawEnv
   const data: Env = {
     ...validated.data,
-    CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA,
-    AI: rawEnv.AI,
-    PACKRAT_SCRAPY_BUCKET: rawEnv.PACKRAT_SCRAPY_BUCKET,
-    PACKRAT_BUCKET: rawEnv.PACKRAT_BUCKET,
-    PACKRAT_GUIDES_BUCKET: rawEnv.PACKRAT_GUIDES_BUCKET,
-    ETL_QUEUE: rawEnv.ETL_QUEUE,
-    LOGS_QUEUE: rawEnv.LOGS_QUEUE,
-    EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE,
+    CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA || validated.data.CF_VERSION_METADATA,
+    AI: rawEnv.AI || validated.data.AI,
+    PACKRAT_SCRAPY_BUCKET: rawEnv.PACKRAT_SCRAPY_BUCKET || validated.data.PACKRAT_SCRAPY_BUCKET,
+    PACKRAT_BUCKET: rawEnv.PACKRAT_BUCKET || validated.data.PACKRAT_BUCKET,
+    PACKRAT_GUIDES_BUCKET: rawEnv.PACKRAT_GUIDES_BUCKET || validated.data.PACKRAT_GUIDES_BUCKET,
+    ETL_QUEUE: rawEnv.ETL_QUEUE || validated.data.ETL_QUEUE,
+    LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
+    EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
   };
 
   // Cache the result

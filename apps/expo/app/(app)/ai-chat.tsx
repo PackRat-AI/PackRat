@@ -15,6 +15,7 @@ import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
+import { useEffect } from 'react';
 import {
   Alert,
   Dimensions,
@@ -133,8 +134,8 @@ export default function AIChat() {
   }, [error]);
 
   const handleSuggestionPress = (suggestion: string) => {
-    setInput(suggestion);
-    handleSubmit();
+    sendMessage({ text: suggestion });
+    setInput('');
     setShowSuggestions(false);
   };
 
@@ -146,7 +147,7 @@ export default function AIChat() {
     ),
   }));
 
-  React.useEffect(() => {
+  useEffect(() => {
     const scrollToBottom = () => {
       listRef.current?.scrollToOffset({ offset: 999999, animated: true });
     };

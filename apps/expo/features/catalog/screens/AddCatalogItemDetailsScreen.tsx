@@ -21,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { useCatalogItemDetails } from '../hooks';
 
 export function AddCatalogItemDetailsScreen() {
@@ -41,6 +42,7 @@ export function AddCatalogItemDetailsScreen() {
   const [notes, setNotes] = useState('');
   const [isConsumable, setIsConsumable] = useState(false);
   const [isWorn, setIsWorn] = useState(false);
+  const [category, setCategory] = useState('');
 
   const { colors } = useColorScheme();
 
@@ -59,6 +61,7 @@ export function AddCatalogItemDetailsScreen() {
       setNotes('');
       setIsConsumable(false);
       setIsWorn(false);
+      setCategory('');
     }
   }, [catalogItem]);
 
@@ -68,15 +71,17 @@ export function AddCatalogItemDetailsScreen() {
       packId: packId as string,
       itemData: {
         name: catalogItem.name,
-        description: catalogItem.description,
-        weight: catalogItem.defaultWeight || 0,
-        weightUnit: catalogItem.defaultWeightUnit as WeightUnit,
+        description: catalogItem.description ?? undefined,
+        weight: catalogItem.weight || 0,
+        weightUnit: (catalogItem.weightUnit ?? 'g') as WeightUnit,
         quantity: Number.parseInt(quantity, 10) || 1,
-        category: catalogItem.category,
+        category,
         consumable: isConsumable,
         worn: isWorn,
-        notes: notes,
-        image: catalogItem.image,
+        notes,
+        image: Array.isArray(catalogItem.images)
+          ? catalogItem.images[0]
+          : catalogItem.images || undefined,
         catalogItemId: catalogItem.id,
       },
     });
@@ -123,7 +128,7 @@ export function AddCatalogItemDetailsScreen() {
                 <View className="flex-row items-center">
                   <Icon name="dumbbell" size={16} color={colors.grey} />
                   <Text className="ml-1 text-muted-foreground">
-                    {catalogItem.defaultWeight} {catalogItem.defaultWeightUnit}
+                    {catalogItem.weight} {catalogItem.weightUnit}
                   </Text>
                 </View>
                 {catalogItem.brand && (
@@ -208,6 +213,16 @@ export function AddCatalogItemDetailsScreen() {
                     multiline
                     numberOfLines={3}
                     textAlignVertical="top"
+                  />
+                </View>
+
+                <View className="mb-4">
+                  <Text className="mb-1 text-sm font-medium text-foreground">Category</Text>
+                  <TextInput
+                    className="rounded-md border border-border bg-background px-3 py-2 text-foreground"
+                    value={category}
+                    onChangeText={setCategory}
+                    placeholder="Category (e.g., Shelter, Cooking)"
                   />
                 </View>
 
