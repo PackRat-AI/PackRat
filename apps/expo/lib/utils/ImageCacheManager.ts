@@ -154,6 +154,7 @@ export class ImageCacheManager {
       if (lastDotIndex !== -1) {
         extension = pathname.substring(lastDotIndex);
       }
+    } catch (error) {
       // URL parsing failed, use default extension
       console.warn('Failed to parse URL for extension:', error);
     }
