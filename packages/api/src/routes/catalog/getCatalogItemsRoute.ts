@@ -39,7 +39,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   }
 
   const { page, limit, q, category: encodedCategory } = c.req.valid('query');
-  let category: string | undefined = undefined;
+  let category: string | undefined;
   if (typeof encodedCategory === 'string' && encodedCategory.length > 0) {
     try {
       category = decodeURIComponent(encodedCategory);

@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
+import { join } from 'node:path';
 import { $ } from 'bun';
 import { readFileSync, writeFileSync } from 'fs-extra';
 import { glob } from 'glob';
-import { join } from 'node:path';
 
 const arg = process.argv[2];
 
