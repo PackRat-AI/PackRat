@@ -7,6 +7,8 @@ import matter from 'gray-matter';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import path from 'path';
 import slugify from 'slugify';
+import { GuideCatalogSearchTool } from '../../../packages/api/src/utils/guideCatalogSearch';
+import type { Env } from '../../../packages/api/src/utils/env-validation';
 
 // Types
 type ContentCategory =
@@ -35,6 +37,7 @@ interface ContentRequest {
   difficulty?: DifficultyLevel;
   author?: string;
   generateFullContent?: boolean;
+  includeCatalogLinks?: boolean; // New option to enable catalog search integration
 }
 
 interface ContentMetadata {
@@ -82,6 +85,17 @@ const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   console.log(chalk.green(`✓ Created output directory: ${OUTPUT_DIR}`));
+}
+
+// Initialize environment for catalog search
+function getEnvForCatalog(): Env {
+  return {
+    NEON_DATABASE_URL: process.env.NEON_DATABASE_URL || '',
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+    AI_PROVIDER: (process.env.AI_PROVIDER as any) || 'openai',
+    CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || '',
+    CLOUDFLARE_AI_GATEWAY_ID: process.env.CLOUDFLARE_AI_GATEWAY_ID || '',
+  } as Env;
 }
 
 // Generate a slug from title
@@ -286,10 +300,11 @@ async function generateTopicIdeas(
   }
 }
 
-// Generate full MDX content for a topic with awareness of existing content
+// Generate full MDX content for a topic with awareness of existing content and catalog integration
 async function generateMdxContent(
   metadata: ContentMetadata,
   existingContent: ContentMetadata[] = [],
+  includeCatalogLinks: boolean = true,
 ): Promise<string> {
   console.log(chalk.blue(`Generating content for: ${metadata.title}`));
 
@@ -320,6 +335,78 @@ async function generateMdxContent(
     `;
   }
 
+  // Initialize catalog search for gear recommendations
+  let catalogRecommendations = '';
+  if (includeCatalogLinks && process.env.NEON_DATABASE_URL) {
+    try {
+      const catalogSearchTool = new GuideCatalogSearchTool(getEnvForCatalog());
+      
+      // Extract potential gear terms from title and description
+      const searchTerms = catalogSearchTool.extractGearTerms(`${metadata.title} ${metadata.description}`);
+      
+      // Also search for category-specific items
+      const categorySearchTerms: string[] = [];
+      metadata.categories.forEach(category => {
+        switch (category) {
+          case 'gear-essentials':
+            categorySearchTerms.push('backpack', 'sleeping bag', 'tent');
+            break;
+          case 'pack-strategy':
+            categorySearchTerms.push('backpack', 'packing cubes', 'stuff sack');
+            break;
+          case 'weight-management':
+            categorySearchTerms.push('lightweight gear', 'ultralight backpack');
+            break;
+          case 'seasonal-guides':
+            categorySearchTerms.push('winter gear', 'summer gear');
+            break;
+          case 'food-nutrition':
+            categorySearchTerms.push('camp stove', 'cookware', 'water filter');
+            break;
+          default:
+            break;
+        }
+      });
+
+      // Combine all search terms and deduplicate
+      const allSearchTerms = Array.from(new Set([...searchTerms, ...categorySearchTerms])).slice(0, 5);
+      
+      if (allSearchTerms.length > 0) {
+        console.log(chalk.yellow(`Searching catalog for terms: ${allSearchTerms.join(', ')}`));
+        
+        // Search catalog for relevant items
+        const searchResults = await catalogSearchTool.batchSearchCatalogForGuides(allSearchTerms, {
+          limit: 3,
+          minRating: 3.5, // Only include well-rated items
+        });
+
+        // Collect top recommendations
+        const topItems = Object.values(searchResults)
+          .flatMap(result => result.items)
+          .filter((item, index, self) => index === self.findIndex(t => t.id === item.id)) // Remove duplicates
+          .sort((a, b) => (b.ratingValue || 0) - (a.ratingValue || 0)) // Sort by rating
+          .slice(0, 8); // Take top 8 items
+
+        if (topItems.length > 0) {
+          catalogRecommendations = `
+          
+Available gear recommendations from our catalog:
+${topItems.map(item => {
+  const brandInfo = item.brand ? ` (${item.brand})` : '';
+  const priceInfo = item.price ? ` - $${item.price.toFixed(2)}` : '';
+  const ratingInfo = item.ratingValue ? ` ⭐ ${item.ratingValue.toFixed(1)}` : '';
+  return `- ${item.name}${brandInfo}${priceInfo}${ratingInfo} - ${item.productUrl}`;
+}).join('\n')}
+
+You can reference these specific products in your recommendations where appropriate, using their exact names and including links to their product pages.`;
+        }
+      }
+    } catch (error) {
+      console.warn(chalk.yellow('Warning: Could not fetch catalog recommendations:'), error);
+      // Continue without catalog recommendations
+    }
+  }
+
   const { text } = await generateText({
     model: openai('gpt-4o-mini'),
     prompt: `Write a comprehensive blog post about "${
@@ -327,6 +414,7 @@ async function generateMdxContent(
     }" for an outdoor adventure planning app that helps users manage packs and items for trips.
     
     ${relatedArticlesPrompt}
+    ${catalogRecommendations}
     
     The post should:
     - Target these categories: ${categoryNames.join(', ')}
@@ -334,7 +422,7 @@ async function generateMdxContent(
     - Start with an introduction that expands on this description: "${metadata.description}"
     - Include 4-6 main sections with clear subheadings
     - Provide practical, actionable advice related to packing and trip planning
-    - Include specific gear recommendations where appropriate
+    - Include specific gear recommendations where appropriate${catalogRecommendations ? ', using the catalog items provided above when relevant' : ''}
     - End with a conclusion
     - Be SEO-optimized for the title keywords
     - Be informative enough to be used in a retrieval-augmented generation (RAG) system
@@ -346,7 +434,7 @@ async function generateMdxContent(
     
     Format the content in MDX format with proper markdown headings, lists, and emphasis.
     Do not include the frontmatter - that will be added separately.
-    Start directly with the main heading (# Title) and content.`,
+    Start directly with the main heading (# Title) and content.${catalogRecommendations ? '\n\nWhen recommending specific gear, include markdown links to the product URLs provided in the catalog recommendations.' : ''}`,
     temperature: 0.7,
   });
 
@@ -389,7 +477,7 @@ async function generatePost(
     // Generate content if requested
     let content = '';
     if (request.generateFullContent) {
-      content = await generateMdxContent(metadata, existingContent);
+      content = await generateMdxContent(metadata, existingContent, request.includeCatalogLinks);
     } else {
       content = `# ${metadata.title}\n\n${metadata.description}\n\n## Introduction\n\nThis is a placeholder for the full article content.`;
     }
