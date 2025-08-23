@@ -1,7 +1,13 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { CatalogCategoriesResponseSchema } from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
-import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
+
+export const getCatalogItemsCategoriesRoute = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -30,17 +36,9 @@ export const routeDefinition = createRoute({
   },
 });
 
-export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
+getCatalogItemsCategoriesRoute.openapi(routeDefinition, async (c) => {
   const { limit } = c.req.valid('query');
   const categories = await new CatalogService(c).getCategories(limit);
 
-  // Transform to match the expected response schema
-  const response = {
-    categories: categories.map((category) => ({
-      category,
-      count: 0, // TODO: Service should return actual counts
-    })),
-  };
-
-  return c.json(response, 200);
-};
+  return c.json(categories, 200);
+});

@@ -332,12 +332,5 @@ export const UpdateCatalogItemRequestSchema = z
   .openapi('UpdateCatalogItemRequest');
 
 export const CatalogCategoriesResponseSchema = z
-  .object({
-    categories: z.array(
-      z.object({
-        category: z.string().openapi({ example: 'Tents' }),
-        count: z.number().openapi({ example: 25 }),
-      }),
-    ),
-  })
+  .array(z.string().openapi({ example: 'Tents' }))
   .openapi('CatalogCategoriesResponse');
