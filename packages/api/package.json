@@ -2,7 +2,7 @@
   "name": "@packrat/api",
   "scripts": {
     "dev": "wrangler dev -e=dev",
-    "deploy": "wrangler deploy --minify",
+    "deploy": "bun run validate:cloudflare-env && wrangler deploy --minify",
     "validate:cloudflare-env": "bun scripts/validate-cloudflare-api-env.ts",
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
