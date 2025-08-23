@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
-import { execSync } from 'node:child_process';
-import { join } from 'node:path';
+import { $ } from 'bun';
 import { readFileSync, writeFileSync } from 'fs-extra';
 import { glob } from 'glob';
+import { join } from 'node:path';
 
 const arg = process.argv[2];
 
@@ -16,8 +16,8 @@ if (!arg) {
 
 // Ensure clean git working directory
 try {
-  const status = execSync('git status --porcelain', { encoding: 'utf-8' }).trim();
-  if (status) {
+  const result = await $`git status --porcelain`;
+  if (result.stdout.toString().trim()) {
     console.error('❌ Working directory not clean. Commit or stash your changes first.');
     process.exit(1);
   }
@@ -29,11 +29,9 @@ try {
 // Use bun pm version to bump the root package.json and get the new version
 let newVersion: string;
 try {
-  const output = execSync(`bun pm version ${arg} --no-git-tag-version`, {
-    encoding: 'utf-8',
-  });
+  const result = await $`bun pm version ${arg} --no-git-tag-version`;
   // Extract version from output (it prints "v2.0.3" or similar)
-  newVersion = output.trim().replace(/^v/, '');
+  newVersion = result.stdout.toString().trim().replace(/^v/, '');
 } catch (error: unknown) {
   console.error('❌ Failed to bump version:', error instanceof Error ? error.message : error);
   process.exit(1);
@@ -71,12 +69,12 @@ try {
 
 // Commit and tag as last step
 try {
-  execSync('git add .', { stdio: 'inherit' });
-  execSync(`git commit -m "chore: bump version to v${newVersion}"`, { stdio: 'inherit' });
-  execSync(`git tag v${newVersion}`, { stdio: 'inherit' });
+  await $`git add .`;
+  await $`git commit -m "chore: bump version to v${newVersion}"`;
+  await $`git tag v${newVersion}`;
   console.log(`✅ Created commit and tag v${newVersion}`);
 } catch (error) {
-  console.error(`❌ Failed to commit or tag:`, error);
+  console.error('❌ Failed to commit or tag:', error);
 }
 
 console.log(`\n✨ Version bumped to v${newVersion}`);
