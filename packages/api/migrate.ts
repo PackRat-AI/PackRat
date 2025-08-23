@@ -10,19 +10,7 @@ import * as ws from 'ws';
 neonConfig.webSocketConstructor = ws;
 
 // Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
-const isStandardPostgresUrl = (url: string) => {
-  try {
-    const parsed = new URL(url);
-    const hostname = parsed.hostname;
-    // Detect Neon hosts (*.neon.tech, *.neon.com)
-    const isNeon = hostname.endsWith('.neon.tech') || hostname === 'neon.tech'
-                 || hostname.endsWith('.neon.com') || hostname === 'neon.com';
-    return parsed.protocol === 'postgres:' && !isNeon;
-  } catch {
-    return false;
-  }
-};
-
+import { isStandardPostgresUrl } from './src/db/utils';
 async function runMigrations() {
   if (!process.env.NEON_DATABASE_URL) {
     throw new Error('NEON_DATABASE_URL is not set');
