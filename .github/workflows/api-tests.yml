@@ -16,6 +16,23 @@ permissions:
 jobs:
   api-tests:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: packrat_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d packrat_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -29,4 +46,25 @@ jobs:
         run: bun install
         
       - name: Run API tests
+        env:
+          # Test database configuration
+          NEON_DATABASE_URL: postgres://test_user:test_password@localhost:5433/packrat_test
+          NEON_DATABASE_URL_READONLY: postgres://test_user:test_password@localhost:5433/packrat_test
+          # Other test environment variables (from test setup)
+          ENVIRONMENT: development
+          SENTRY_DSN: https://test@test.ingest.sentry.io/test
+          JWT_SECRET: secret
+          PASSWORD_RESET_SECRET: secret
+          GOOGLE_CLIENT_ID: test-client-id
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: admin-password
+          PACKRAT_API_KEY: test-api-key
+          EMAIL_PROVIDER: resend
+          RESEND_API_KEY: key
+          EMAIL_FROM: test@example.com
+          OPENAI_API_KEY: sk-test-key
+          AI_PROVIDER: openai
+          PERPLEXITY_API_KEY: pplx-test-key
+          OPENWEATHER_KEY: test-weather-key
+          WEATHER_API_KEY: test-weather-key
         run: bun test --cwd packages/api
