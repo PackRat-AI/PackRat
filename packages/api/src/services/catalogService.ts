@@ -77,7 +77,7 @@ export class CatalogService {
         ilike(catalogItems.description, `%${q}%`),
         ilike(catalogItems.brand, `%${q}%`),
         ilike(catalogItems.model, `%${q}%`),
-        ilike(catalogItems.categories, `%${q}%`),
+        ilike(sql`${catalogItems.categories}::text`, `%${q}%`),
       );
       if (searchCondition) {
         conditions.push(searchCondition);
