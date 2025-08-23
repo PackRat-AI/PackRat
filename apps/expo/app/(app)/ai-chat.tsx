@@ -91,7 +91,9 @@ export default function AIChat() {
 
   const token = useAtomValue(tokenAtom);
   const [input, setInput] = React.useState('');
-  const { messages, error, sendMessage, status } = useChat({
+  const [lastUserMessage, setLastUserMessage] = React.useState('');
+  const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
+  const { messages, setMessages, error, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
@@ -118,15 +120,17 @@ export default function AIChat() {
   const isLoading = status === 'submitted' || status === 'streaming';
 
   const handleSubmit = (text?: string) => {
-    sendMessage({ text: text || input });
+    const messageText = text || input;
+    setLastUserMessage(messageText);
+    setPreviousMessages(messages);
+    sendMessage({ text: messageText });
     setInput('');
   };
 
-  useEffect(() => {
-    if (error) {
-      Alert.alert(error.message);
-    }
-  }, [error]);
+  const handleRetry = () => {
+    setMessages(previousMessages);
+    sendMessage({ text: lastUserMessage });
+  };
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
     height: interpolate(
@@ -204,7 +208,7 @@ export default function AIChat() {
                   className="self-start ml-4 mb-8"
                 />
               )}
-              {status === 'error' && <ErrorState error={error} onRetry={() => handleSubmit()} />}
+              {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
               <Animated.View style={toolbarHeightStyle} />
             </>
           }
