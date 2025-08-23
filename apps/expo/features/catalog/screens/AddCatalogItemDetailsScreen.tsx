@@ -23,6 +23,7 @@ import {
 } from 'react-native';
 
 import { useCatalogItemDetails } from '../hooks';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();
@@ -65,8 +66,25 @@ export function AddCatalogItemDetailsScreen() {
     }
   }, [catalogItem]);
 
-  const handleAddToPack = () => {
+  const handleAddToPack = async () => {
     assertDefined(catalogItem);
+    assertDefined(packId);
+
+    let imageFileName = null;
+    if (catalogItem.images) {
+      try {
+        const imageUrl = Array.isArray(catalogItem.images)
+          ? catalogItem.images[0]
+          : catalogItem.images;
+
+        if (imageUrl) {
+          imageFileName = await ImageCacheManager.cacheRemoteImage(imageUrl);
+        }
+      } catch (error) {
+        console.error('Error caching image:', error);
+      }
+    }
+
     createItem({
       packId: packId as string,
       itemData: {
@@ -79,12 +97,11 @@ export function AddCatalogItemDetailsScreen() {
         consumable: isConsumable,
         worn: isWorn,
         notes,
-        image: Array.isArray(catalogItem.images)
-          ? catalogItem.images[0]
-          : catalogItem.images || undefined,
+        image: imageFileName,
         catalogItemId: catalogItem.id,
       },
     });
+
     // Navigate back to the catalog item detail screen
     router.dismissTo({
       pathname: '/catalog/[id]',
