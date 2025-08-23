@@ -56,7 +56,7 @@ weatherRoutes.openapi(searchRoute, async (c) => {
         region: string;
         country: string;
       }) => ({
-        id: `${item.id || item.lat}_${item.lon}`,
+        id: `${item.id}`,
         name: item.name,
         region: item.region,
         country: item.country,
@@ -186,8 +186,7 @@ const forecastRoute = createRoute({
   path: '/forecast',
   request: {
     query: z.object({
-      lat: z.string().optional(),
-      lon: z.string().optional(),
+      id: z.string(),
     }),
   },
   responses: {
@@ -204,16 +203,8 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     return unauthorizedResponse();
   }
 
-  const latitude = Number.parseFloat(c.req.query('lat') || '');
-  const longitude = Number.parseFloat(c.req.query('lon') || '');
-
-  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-    return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
-  }
-
   try {
-    // Format coordinates for the API query
-    const query = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+    const query = `id:${c.req.query('id')}`;
 
     // Get forecast data with all the details we need
     const response = await fetch(
@@ -228,8 +219,7 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     return c.json(data);
   } catch (error) {
     c.get('sentry').setContext('params', {
-      latitude,
-      longitude,
+      id: c.req.query('id'),
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });

@@ -15,7 +15,7 @@ export function useLocationRefresh() {
     setIsRefreshing(true);
 
     try {
-      const weatherData = await getWeatherData(location.lat, location.lon);
+      const weatherData = await getWeatherData(locationId);
 
       if (weatherData) {
         const formattedData = formatWeatherData(weatherData);
@@ -54,7 +54,7 @@ export function useLocationRefresh() {
     try {
       for (const location of locations) {
         try {
-          const weatherData = await getWeatherData(location.lat, location.lon);
+          const weatherData = await getWeatherData(location.id);
 
           if (weatherData) {
             const formattedData = formatWeatherData(weatherData);

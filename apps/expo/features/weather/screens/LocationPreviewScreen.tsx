@@ -50,7 +50,7 @@ export default function LocationPreviewScreen() {
     setError(null);
 
     try {
-      const data = await getWeatherData(latitude, longitude);
+      const data = await getWeatherData(params.id as string);
       if (data) {
         const formattedData = formatWeatherData(data);
         setWeatherData(formattedData);

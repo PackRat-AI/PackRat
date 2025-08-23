@@ -49,12 +49,11 @@ export async function searchLocationsByCoordinates(
 /**
  * Get detailed weather data for a location
  */
-export async function getWeatherData(latitude: number, longitude: number) {
+export async function getWeatherData(id: string) {
   try {
     const response = await axiosInstance.get(`/api/weather/forecast`, {
       params: {
-        lat: latitude.toFixed(6),
-        lon: longitude.toFixed(6),
+        id,
       },
     });
 
