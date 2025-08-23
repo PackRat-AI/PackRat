@@ -1,3 +1,4 @@
+import { parse } from 'csv-parse/sync';
 import type { NewCatalogItem } from '../db/schema';
 
 export function mapCsvRowToItem({
@@ -283,4 +284,20 @@ export function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
   const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
   return Number.isNaN(price) ? null : price;
+}
+
+// Helper function to parse CSV lines using csv-parse/sync
+export function parseCSVLine(line: string): string[] {
+  try {
+    const records = parse(line, {
+      relax_column_count: true,
+      skip_empty_lines: true,
+    });
+
+    // Return the first (and should be only) record
+    return records[0] || [];
+  } catch (error) {
+    console.warn('Failed to parse CSV line:', error);
+    return [];
+  }
 }
