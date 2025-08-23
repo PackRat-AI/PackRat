@@ -19,7 +19,7 @@ describe('Weather Routes', () => {
     });
 
     // Mock global fetch for this test
-    const originalFetch = global.fetch;
+    const _originalFetch = global.fetch;
     global.fetch = mockFetch as unknown as typeof fetch;
 
     it('GET /weather/forecast requires auth', async () => {
@@ -39,7 +39,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/search?q=test');
       expect(res.status).toBe(200);
@@ -66,7 +66,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/search?q=nonexistentplace');
       expect(res.status).toBe(200);
@@ -93,7 +93,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth(`/weather/search?q=${encodeURIComponent('São Paulo')}`);
       expect(res.status).toBe(200);
@@ -130,7 +130,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/current?lat=40.7128&lon=-74.0060');
       expect(res.status).toBe(200);
@@ -192,7 +192,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/current?location=London');
 
@@ -232,7 +232,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/forecast?lat=47.6062&lon=-122.3321');
       expect(res.status).toBe(200);
@@ -263,7 +263,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/forecast?lat=40.7128&lon=-74.0060&days=5');
 
@@ -317,7 +317,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/alerts?lat=40.7128&lon=-74.0060');
 
@@ -342,7 +342,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/alerts?lat=40.7128&lon=-74.0060');
 
@@ -368,7 +368,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/current?lat=40.7128&lon=-74.0060');
 
@@ -385,7 +385,7 @@ describe('Weather Routes', () => {
       const mockFetch = vi.fn(() => Promise.reject(new Error('Request timeout')));
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/current?lat=40.7128&lon=-74.0060');
 
@@ -408,7 +408,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/current?lat=40.7128&lon=-74.0060');
 
@@ -436,7 +436,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       // Make two identical requests
       const res1 = await apiWithAuth('/weather/current?lat=42.3601&lon=-71.0589');
@@ -473,7 +473,7 @@ describe('Weather Routes', () => {
       );
 
       const originalFetch = global.fetch;
-      global.fetch = mockFetch as typeof fetch;
+      global.fetch = mockFetch as unknown as typeof fetch;
 
       const res = await apiWithAuth('/weather/current?lat=40.7128&lon=-74.0060');
 

@@ -71,7 +71,7 @@ export function AddCatalogItemDetailsScreen() {
     assertDefined(catalogItem);
     assertDefined(packId);
 
-    let imageFileName = null;
+    let imageFileName: string | null = null;
     if (catalogItem.images) {
       try {
         const imageUrl = Array.isArray(catalogItem.images)
@@ -87,7 +87,7 @@ export function AddCatalogItemDetailsScreen() {
     }
     setIsAdding(true);
 
-    const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
+    const _cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
 
     createItem({
       packId: packId as string,
