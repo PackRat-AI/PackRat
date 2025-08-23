@@ -11,7 +11,16 @@ neonConfig.webSocketConstructor = ws;
 
 // Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
 const isStandardPostgresUrl = (url: string) => {
-  return url.startsWith('postgres://') && !url.includes('neon.tech') && !url.includes('neon.com');
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname;
+    // Detect Neon hosts (*.neon.tech, *.neon.com)
+    const isNeon = hostname.endsWith('.neon.tech') || hostname === 'neon.tech'
+                 || hostname.endsWith('.neon.com') || hostname === 'neon.com';
+    return parsed.protocol === 'postgres:' && !isNeon;
+  } catch {
+    return false;
+  }
 };
 
 async function runMigrations() {
