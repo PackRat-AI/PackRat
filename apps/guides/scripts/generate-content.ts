@@ -7,8 +7,12 @@ import matter from 'gray-matter';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import path from 'path';
 import slugify from 'slugify';
-import { GuideCatalogSearchTool } from '../../../packages/api/src/utils/guideCatalogSearch';
-import type { Env } from '../../../packages/api/src/utils/env-validation';
+import { 
+  searchCatalogForGuides, 
+  batchSearchCatalogForGuides, 
+  extractGearTerms,
+  type CatalogItemLink 
+} from '../lib/catalogSearchClient';
 
 // Types
 type ContentCategory =
@@ -85,17 +89,6 @@ const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   console.log(chalk.green(`✓ Created output directory: ${OUTPUT_DIR}`));
-}
-
-// Initialize environment for catalog search
-function getEnvForCatalog(): Env {
-  return {
-    NEON_DATABASE_URL: process.env.NEON_DATABASE_URL || '',
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
-    AI_PROVIDER: (process.env.AI_PROVIDER as any) || 'openai',
-    CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || '',
-    CLOUDFLARE_AI_GATEWAY_ID: process.env.CLOUDFLARE_AI_GATEWAY_ID || '',
-  } as Env;
 }
 
 // Generate a slug from title
@@ -337,12 +330,10 @@ async function generateMdxContent(
 
   // Initialize catalog search for gear recommendations
   let catalogRecommendations = '';
-  if (includeCatalogLinks && process.env.NEON_DATABASE_URL) {
+  if (includeCatalogLinks) {
     try {
-      const catalogSearchTool = new GuideCatalogSearchTool(getEnvForCatalog());
-      
       // Extract potential gear terms from title and description
-      const searchTerms = catalogSearchTool.extractGearTerms(`${metadata.title} ${metadata.description}`);
+      const searchTerms = extractGearTerms(`${metadata.title} ${metadata.description}`);
       
       // Also search for category-specific items
       const categorySearchTerms: string[] = [];
@@ -374,14 +365,14 @@ async function generateMdxContent(
       if (allSearchTerms.length > 0) {
         console.log(chalk.yellow(`Searching catalog for terms: ${allSearchTerms.join(', ')}`));
         
-        // Search catalog for relevant items
-        const searchResults = await catalogSearchTool.batchSearchCatalogForGuides(allSearchTerms, {
+        // Search catalog via API for relevant items
+        const searchResults = await batchSearchCatalogForGuides(allSearchTerms, {
           limit: 3,
           minRating: 3.5, // Only include well-rated items
         });
 
         // Collect top recommendations
-        const topItems = Object.values(searchResults)
+        const topItems: CatalogItemLink[] = Object.values(searchResults)
           .flatMap(result => result.items)
           .filter((item, index, self) => index === self.findIndex(t => t.id === item.id)) // Remove duplicates
           .sort((a, b) => (b.ratingValue || 0) - (a.ratingValue || 0)) // Sort by rating

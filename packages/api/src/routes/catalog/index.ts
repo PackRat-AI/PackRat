@@ -6,12 +6,14 @@ import * as deleteCatalogItemRoute from './deleteCatalogItemRoute';
 import * as getCatalogItemRoute from './getCatalogItemRoute';
 import * as getCatalogItemsCategoriesRoute from './getCatalogItemsCategoriesRoute';
 import * as getCatalogItemsRoute from './getCatalogItemsRoute';
+import * as guideCatalogSearchRoute from './guideCatalogSearchRoute';
 import * as queueCatalogEtlRoute from './queueCatalogEtlRoute';
 import * as updateCatalogItemRoute from './updateCatalogItemRoute';
 
 const catalogRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 catalogRoutes.openapi(getCatalogItemsRoute.routeDefinition, getCatalogItemsRoute.handler);
+catalogRoutes.openapi(guideCatalogSearchRoute.routeDefinition, guideCatalogSearchRoute.handler);
 catalogRoutes.openapi(createCatalogItemRoute.routeDefinition, createCatalogItemRoute.handler);
 catalogRoutes.openapi(
   getCatalogItemsCategoriesRoute.routeDefinition,
