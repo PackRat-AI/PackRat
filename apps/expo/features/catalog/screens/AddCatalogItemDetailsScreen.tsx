@@ -4,6 +4,7 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import type { WeightUnit } from 'expo-app/types';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
@@ -21,7 +22,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
 import { useCatalogItemDetails } from '../hooks';
 import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
 
@@ -68,10 +68,26 @@ export function AddCatalogItemDetailsScreen() {
   }, [catalogItem]);
 
   const handleAddToPack = async () => {
-    setIsAdding(true);
     assertDefined(catalogItem);
+    assertDefined(packId);
 
-    const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
+    let imageFileName: string | null = null;
+    if (catalogItem.images) {
+      try {
+        const imageUrl = Array.isArray(catalogItem.images)
+          ? catalogItem.images[0]
+          : catalogItem.images;
+
+        if (imageUrl) {
+          imageFileName = await ImageCacheManager.cacheRemoteImage(imageUrl);
+        }
+      } catch (error) {
+        console.error('Error caching image:', error);
+      }
+    }
+    setIsAdding(true);
+
+    const _cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
 
     createItem({
       packId: packId as string,
@@ -85,7 +101,7 @@ export function AddCatalogItemDetailsScreen() {
         consumable: isConsumable,
         worn: isWorn,
         notes,
-        image: cachedImageFilename,
+        image: imageFileName,
         catalogItemId: catalogItem.id,
       },
     });

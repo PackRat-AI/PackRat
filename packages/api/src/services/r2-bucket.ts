@@ -12,7 +12,8 @@ import {
   S3Client,
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
+import { isString } from 'radash';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -22,6 +23,25 @@ interface R2HTTPMetadata {
   contentEncoding?: string;
   cacheControl?: string;
   cacheExpiry?: Date;
+}
+
+function isR2HTTPMetadata(obj: unknown): obj is R2HTTPMetadata {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+
+  // Type-safe property checking
+  const record = obj as { [key: string]: unknown };
+
+  // Check that all properties, if present, are the correct type
+  return (
+    (record.contentType === undefined || typeof record.contentType === 'string') &&
+    (record.contentLanguage === undefined || typeof record.contentLanguage === 'string') &&
+    (record.contentDisposition === undefined || typeof record.contentDisposition === 'string') &&
+    (record.contentEncoding === undefined || typeof record.contentEncoding === 'string') &&
+    (record.cacheControl === undefined || typeof record.cacheControl === 'string') &&
+    (record.cacheExpiry === undefined || record.cacheExpiry instanceof Date)
+  );
 }
 
 interface R2Checksums {
@@ -195,7 +215,7 @@ export class R2BucketService {
 
       const response = await this.s3Client.send(command);
 
-      return this.createR2Object(key, response);
+      return this.createR2Object(key, { ...response });
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'name' in error) {
         const errorObj = error as {
@@ -244,7 +264,7 @@ export class R2BucketService {
         offset += chunk.length;
       }
 
-      const r2Object = this.createR2Object(key, response);
+      const r2Object = this.createR2Object(key, { ...response });
 
       // Create a proper R2ObjectBody
       const objectBody: R2ObjectBody = {
@@ -521,7 +541,7 @@ export class R2BucketService {
 
         const completeResponse = await this.s3Client.send(completeCommand);
 
-        return this.createR2Object(key, completeResponse);
+        return this.createR2Object(key, { ...completeResponse });
       },
     };
   }
@@ -531,10 +551,10 @@ export class R2BucketService {
       key,
       version: response.VersionId || '',
       size: response.ContentLength || 0,
-      etag: response.ETag?.replace(/"/g, '') || '',
+      etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
       httpEtag: response.ETag || '',
       checksums: this.createChecksums(response),
-      uploaded: new Date(response.LastModified || Date.now()),
+      uploaded: new Date(String(response.LastModified) || new Date()),
       httpMetadata: {
         contentType: response.ContentType,
         contentLanguage: response.ContentLanguage,
@@ -604,7 +624,8 @@ export class R2BucketService {
       return `bytes=-${range.suffix}`;
     }
 
-    const { offset = 0, length } = range;
+    const offset = 'offset' in range ? (range.offset ?? 0) : 0;
+    const length = 'length' in range ? range.length : undefined;
     if (length !== undefined) {
       return `bytes=${offset}-${offset + length - 1}`;
     }
@@ -627,10 +648,16 @@ export class R2BucketService {
         contentDisposition: metadata.get('content-disposition') || undefined,
         contentEncoding: metadata.get('content-encoding') || undefined,
         cacheControl: metadata.get('cache-control') || undefined,
-        cacheExpiry: metadata.get('expires') ? new Date(metadata.get('expires')) : undefined,
+        cacheExpiry: metadata.get('expires')
+          ? new Date(String(metadata.get('expires')))
+          : undefined,
       };
     }
 
-    return metadata;
+    // Return the metadata object if it matches the R2HTTPMetadata interface
+    if (isR2HTTPMetadata(metadata)) {
+      return metadata;
+    }
+    return undefined;
   }
 }

@@ -1,24 +1,19 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
+import type { CatalogItem as BaseCatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, View } from 'react-native';
 
-interface CatalogItem {
-  id: number;
-  name: string;
-  description: string;
-  defaultWeight: number;
-  defaultWeightUnit: string;
-  category: string;
-  brand: string;
-  model: string;
-  url?: string;
-  ratingValue: number;
-  price: number;
-  currency: string;
-  material?: string;
-  techs?: Record<string, string>;
+// Extend the base type to handle both API response formats
+interface CatalogItem extends Omit<BaseCatalogItem, 'createdAt' | 'updatedAt'> {
+  // Support both field names for backward compatibility
+  defaultWeight?: number;
+  defaultWeightUnit?: string;
+  category?: string;
+  // These are optional overrides
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 interface CatalogItemsGenerativeUIProps {
@@ -42,17 +37,23 @@ const getCategoryIcon = (category: string): MaterialIconName => {
   return categoryMap[category] || 'archive';
 };
 
-const formatWeight = (weight: number, unit: string): string => {
+const formatWeight = (weight: number | undefined, unit: string | undefined): string => {
+  if (!weight || !unit) return 'N/A';
   if (unit === 'kg' && weight < 1) {
     return `${(weight * 1000).toFixed(0)}g`;
   }
   return `${weight}${unit}`;
 };
 
-const formatPrice = (price: number, currency: string): string => {
+const formatPrice = (
+  price: number | null | undefined,
+  currency: string | null | undefined,
+): string => {
+  if (!price) return 'N/A';
+  const currencyCode = currency || 'USD';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: currency,
+    currency: currencyCode,
     minimumFractionDigits: 0,
   }).format(price);
 };
@@ -62,9 +63,15 @@ export function CatalogItemsGenerativeUI({ items }: CatalogItemsGenerativeUIProp
   const router = useRouter();
 
   const handleItemPress = (catalogItem: CatalogItem) => {
+    // Handle both field name formats
+    const weight = catalogItem.defaultWeight ?? catalogItem.weight;
+    const weightUnit = catalogItem.defaultWeightUnit ?? catalogItem.weightUnit;
+    const weightStr = formatWeight(weight, weightUnit);
+    const priceStr = formatPrice(catalogItem.price, catalogItem.currency);
+
     Alert.alert(
       catalogItem.name,
-      `${catalogItem.description}\n\nPrice: $${catalogItem.price}\nWeight: ${catalogItem.defaultWeight}${catalogItem.defaultWeightUnit}`,
+      `${catalogItem.description || 'No description'}\n\nPrice: ${priceStr}\nWeight: ${weightStr}`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -120,9 +127,13 @@ export function CatalogItemsGenerativeUI({ items }: CatalogItemsGenerativeUIProp
               <View className="mb-3 flex-row items-start justify-between">
                 <View className="mr-3 flex-1">
                   <View className="mb-1 flex-row items-center gap-2">
-                    <Icon name={getCategoryIcon(item.category)} size={16} color={colors.primary} />
+                    <Icon
+                      name={getCategoryIcon(item.category || item.categories?.[0] || '')}
+                      size={16}
+                      color={colors.primary}
+                    />
                     <Text className="text-xs font-medium uppercase tracking-wide text-primary">
-                      {item.category}
+                      {item.category || item.categories?.[0] || 'General'}
                     </Text>
                   </View>
                   <Text className="text-base font-semibold leading-tight text-foreground">
@@ -136,7 +147,9 @@ export function CatalogItemsGenerativeUI({ items }: CatalogItemsGenerativeUIProp
                 {/* Rating */}
                 <View className="bg-muted/50 flex-row items-center gap-1 rounded-full px-2 py-1">
                   <Icon name="star" size={12} color="#FFD700" />
-                  <Text className="text-xs font-medium text-foreground">{item.ratingValue}</Text>
+                  <Text className="text-xs font-medium text-foreground">
+                    {item.ratingValue || 'N/A'}
+                  </Text>
                 </View>
               </View>
 
@@ -150,7 +163,10 @@ export function CatalogItemsGenerativeUI({ items }: CatalogItemsGenerativeUIProp
                 <View className="flex-row flex-wrap gap-2">
                   <View className="bg-muted/30 rounded-md px-2 py-1">
                     <Text className="text-xs text-foreground">
-                      {formatWeight(item.defaultWeight, item.defaultWeightUnit)}
+                      {formatWeight(
+                        item.defaultWeight ?? item.weight,
+                        item.defaultWeightUnit ?? item.weightUnit,
+                      )}
                     </Text>
                   </View>
                   {item.material && (

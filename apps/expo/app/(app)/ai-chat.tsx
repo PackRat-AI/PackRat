@@ -122,7 +122,7 @@ export default function AIChat() {
     setInput('');
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (error) {
       Alert.alert(error.message);
     }
@@ -220,7 +220,7 @@ export default function AIChat() {
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
               const userMessage = messages[index - 1];
-              userQuery = userMessage.parts.find((p) => p.type === 'text')?.text;
+              userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
             }
 
             return <ChatBubble item={item} userQuery={userQuery} />;
