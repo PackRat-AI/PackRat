@@ -1,4 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
+import Storage from 'expo-sqlite/kv-store';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
@@ -13,25 +13,21 @@ export type User = {
 
 // Token storage atom
 export const tokenAtom = atomWithStorage<string | null>('access_token', null, {
-  getItem: async (key) => await SecureStore.getItemAsync(key),
+  getItem: async (key) => await Storage.getItem(key),
   setItem: async (key, value) => {
-    if (value === null) {
-      return await SecureStore.deleteItemAsync(key);
-    }
-    return await SecureStore.setItemAsync(key, value);
+    if (value === null) return Storage.removeItem(key);
+    return Storage.setItem(key, value);
   },
-  removeItem: async (key) => SecureStore.deleteItemAsync(key),
+  removeItem: async (key) => Storage.removeItem(key),
 });
 
 export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', null, {
-  getItem: async (key) => await SecureStore.getItemAsync(key),
+  getItem: async (key) => await Storage.getItem(key),
   setItem: async (key, value) => {
-    if (value === null) {
-      return await SecureStore.deleteItemAsync(key);
-    }
-    return await SecureStore.setItemAsync(key, value);
+    if (value === null) return Storage.removeItem(key);
+    return Storage.setItem(key, value);
   },
-  removeItem: async (key) => SecureStore.deleteItemAsync(key),
+  removeItem: async (key) => Storage.removeItem(key),
 });
 
 // Loading state atom

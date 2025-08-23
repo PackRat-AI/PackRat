@@ -42,7 +42,7 @@ process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME = 'test-scrapy-bucket';
 process.env.PACKRAT_GUIDES_RAG_NAME = 'test-rag';
 process.env.PACKRAT_GUIDES_BASE_URL = 'https://guides.test.com';
 
-import { spawn } from 'bun';
+import { $ } from 'bun';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
@@ -57,14 +57,10 @@ beforeAll(async () => {
 
   // Start Docker Compose with PostgreSQL container
   try {
-    spawn('docker', ['compose', '-f', 'docker-compose.test.yml', 'up', '-d', '--wait'], {
-      cwd: process.cwd(),
-      stdio: 'inherit',
-    }).on('close', (code) => {
-      if (code !== 0) {
-        throw new Error(`Docker compose failed with code ${code}`);
-      }
-    });
+    const result = await $`docker compose -f docker-compose.test.yml up -d --wait`;
+    if (result.exitCode !== 0) {
+      throw new Error(`Docker compose failed with code ${result.exitCode}`);
+    }
     console.log('✅ PostgreSQL container started successfully');
   } catch (error) {
     console.error('❌ Failed to start PostgreSQL container:', error);
@@ -144,10 +140,10 @@ afterAll(async () => {
     }
 
     // Stop and remove Docker Compose containers
-    execSync('docker compose -f docker-compose.test.yml down -v', {
-      cwd: process.cwd(),
-      stdio: 'inherit',
-    });
+    const result = await $`docker compose -f docker-compose.test.yml down -v`;
+    if (result.exitCode !== 0) {
+      throw new Error(`Docker compose down failed with code ${result.exitCode}`);
+    }
     console.log('✅ PostgreSQL container stopped and cleaned up');
   } catch (error) {
     console.error('❌ Failed to cleanup PostgreSQL container:', error);
