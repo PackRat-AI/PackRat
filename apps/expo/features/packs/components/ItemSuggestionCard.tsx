@@ -1,11 +1,9 @@
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
-import { nanoid } from 'nanoid/non-secure';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';
 import { useCreatePackItem } from '../hooks';
@@ -24,30 +22,18 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
 
   const handleAddItem = async (item: CatalogItem) => {
     setIsAdding(true);
-    if (item.image) {
-      try {
-        const extension = await getImageExtension(item.image);
-        const fileName = `${nanoid()}.${extension}`;
-        await ImageCacheManager.cacheRemoteImage(fileName, item.image);
-        item.image = fileName;
-      } catch (err) {
-        console.log('caching remote image failed', err);
-        item.image = null;
-      }
-    } else {
-      item.image = null;
-    }
+    const cachedImageFilename = await cacheCatalogItemImage(item.images?.[0]);
+
     // Create a new pack item from the catalog item
     const newItem: PackItemInput = {
       name: item.name,
       description: item.description || '',
-      weight: item.defaultWeight || 0,
-      weightUnit: item.defaultWeightUnit || 'oz',
+      weight: item.weight || 0,
+      weightUnit: item.weightUnit || 'oz',
       quantity: 1,
-      category: item.category || 'Uncategorized',
       consumable: false,
       worn: false,
-      image: item.image,
+      image: cachedImageFilename,
       notes: 'Suggested by PackRat AI',
       catalogItemId: item.id,
     };
@@ -76,8 +62,8 @@ export function ItemSuggestionCard({ packId, item }: ItemSuggestionCardProps) {
       </View>
       <View className="flex-row items-center justify-between">
         <Text className="text-xs text-muted-foreground">
-          {item.defaultWeight}
-          {item.defaultWeightUnit}
+          {item.weight}
+          {item.weightUnit}
         </Text>
         <Button disabled={isAdding} onPress={() => handleAddItem(item)} variant="tonal" size="icon">
           {isAdding ? (

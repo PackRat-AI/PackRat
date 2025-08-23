@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
+import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
 import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -20,6 +21,7 @@ export function CatalogItemDetailScreen() {
   const { id } = useLocalSearchParams();
   const { data: item, isLoading, isError, refetch } = useCatalogItemDetails(id as string);
   const { colors } = useColorScheme();
+  const MATERIAL_LENGTH_THRESHOLD = 60;
 
   const handleAddToPack = () => {
     router.push({
@@ -110,7 +112,7 @@ export function CatalogItemDetailScreen() {
               <View className="flex-row flex-wrap gap-2">
                 {item.categories.map((category) => (
                   <Chip key={category} textClassName="text-xs" variant="outline">
-                    {category}
+                    <Text> {category}</Text>
                   </Chip>
                 ))}
               </View>
@@ -126,11 +128,11 @@ export function CatalogItemDetailScreen() {
               <Text className="text-xs uppercase text-muted-foreground">WEIGHT</Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {item.weight !== undefined && item.weightUnit ? (
-                  <>
+                  <Text>
                     {item.weight} {item.weightUnit}
-                  </>
+                  </Text>
                 ) : (
-                  'Not specified'
+                  <Text>Not specified</Text>
                 )}
               </Chip>
             </View>
@@ -138,20 +140,26 @@ export function CatalogItemDetailScreen() {
             {item.material && (
               <View className="mb-2 mr-4">
                 <Text className="text-xs uppercase text-muted-foreground">MATERIAL</Text>
-                <View className="bg-secondary rounded-2xl py-1 px-2">
-                  <Text className="text-xs text-secondary-foreground">{item.material}</Text>
-                </View>
+                {item.material.length < MATERIAL_LENGTH_THRESHOLD ? (
+                  <Chip textClassName="text-center text-xs" variant="secondary">
+                    {item.material}
+                  </Chip>
+                ) : (
+                  <ExpandableText text={item.material} />
+                )}
               </View>
             )}
 
-            {item.usageCount && item.usageCount > 0 && (
+            {item.usageCount && item.usageCount > 0 ? (
               <View className="mb-2">
                 <Text className="text-xs uppercase text-muted-foreground">USED IN</Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
+                  <Text>
+                    {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
+                  </Text>
                 </Chip>
               </View>
-            )}
+            ) : null}
           </View>
 
           {item.availability && (

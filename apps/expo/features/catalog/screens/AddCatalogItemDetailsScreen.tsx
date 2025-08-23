@@ -21,7 +21,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { useCatalogItemDetails } from '../hooks';
+import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();
@@ -35,12 +37,14 @@ export function AddCatalogItemDetailsScreen() {
   const pack = usePackDetailsFromStore(packId as string);
   const createItem = useCreatePackItem();
   const fadeAnim = useState(new Animated.Value(0))[0];
+  const [isAdding, setIsAdding] = useState(false);
 
   // Form state
   const [quantity, setQuantity] = useState('1');
   const [notes, setNotes] = useState('');
   const [isConsumable, setIsConsumable] = useState(false);
   const [isWorn, setIsWorn] = useState(false);
+  const [category, setCategory] = useState('');
 
   const { colors } = useColorScheme();
 
@@ -59,27 +63,33 @@ export function AddCatalogItemDetailsScreen() {
       setNotes('');
       setIsConsumable(false);
       setIsWorn(false);
+      setCategory('');
     }
   }, [catalogItem]);
 
-  const handleAddToPack = () => {
+  const handleAddToPack = async () => {
+    setIsAdding(true);
     assertDefined(catalogItem);
+
+    const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
+
     createItem({
       packId: packId as string,
       itemData: {
         name: catalogItem.name,
-        description: catalogItem.description,
-        weight: catalogItem.defaultWeight || 0,
-        weightUnit: catalogItem.defaultWeightUnit as WeightUnit,
+        description: catalogItem.description ?? undefined,
+        weight: catalogItem.weight || 0,
+        weightUnit: (catalogItem.weightUnit ?? 'g') as WeightUnit,
         quantity: Number.parseInt(quantity, 10) || 1,
-        category: catalogItem.category,
+        category,
         consumable: isConsumable,
         worn: isWorn,
-        notes: notes,
-        image: catalogItem.image,
+        notes,
+        image: cachedImageFilename,
         catalogItemId: catalogItem.id,
       },
     });
+    setIsAdding(false);
     // Navigate back to the catalog item detail screen
     router.dismissTo({
       pathname: '/catalog/[id]',
@@ -123,7 +133,7 @@ export function AddCatalogItemDetailsScreen() {
                 <View className="flex-row items-center">
                   <Icon name="dumbbell" size={16} color={colors.grey} />
                   <Text className="ml-1 text-muted-foreground">
-                    {catalogItem.defaultWeight} {catalogItem.defaultWeightUnit}
+                    {catalogItem.weight} {catalogItem.weightUnit}
                   </Text>
                 </View>
                 {catalogItem.brand && (
@@ -160,6 +170,7 @@ export function AddCatalogItemDetailsScreen() {
                       params: { catalogItemId },
                     })
                   }
+                  disabled={isAdding}
                 >
                   <Text className="font-normal">Change</Text>
                 </Button>
@@ -211,6 +222,16 @@ export function AddCatalogItemDetailsScreen() {
                   />
                 </View>
 
+                <View className="mb-4">
+                  <Text className="mb-1 text-sm font-medium text-foreground">Category</Text>
+                  <TextInput
+                    className="rounded-md border border-border bg-background px-3 py-2 text-foreground"
+                    value={category}
+                    onChangeText={setCategory}
+                    placeholder="Category (e.g., Shelter, Cooking)"
+                  />
+                </View>
+
                 <View className="mb-2 flex-row items-center justify-between">
                   <View>
                     <Text className="text-sm font-medium text-foreground">Consumable</Text>
@@ -233,13 +254,17 @@ export function AddCatalogItemDetailsScreen() {
               </View>
 
               <View className="mb-2 mt-6">
-                <Button onPress={handleAddToPack}>
-                  <Text>Add to Pack</Text>
+                <Button onPress={handleAddToPack} disabled={isAdding}>
+                  {isAdding ? (
+                    <ActivityIndicator color={colors.foreground} />
+                  ) : (
+                    <Text>Add to Pack</Text>
+                  )}
                 </Button>
               </View>
 
               <View>
-                <Button variant="secondary" onPress={() => router.back()}>
+                <Button variant="secondary" onPress={() => router.back()} disabled={isAdding}>
                   <Text>Cancel</Text>
                 </Button>
               </View>

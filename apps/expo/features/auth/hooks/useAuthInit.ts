@@ -2,10 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { isAuthed } from '../store';
+import Storage from 'expo-sqlite/kv-store';
 
 export function useAuthInit() {
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +33,7 @@ export function useAuthInit() {
         const hasSkippedLogin = await AsyncStorage.getItem('skipped_login');
 
         // Get stored token
-        const accessToken = await SecureStore.getItemAsync('access_token');
+        const accessToken = await Storage.getItem('access_token');
 
         // If user has session or hasSkippedLogin before, continue to app
         if (accessToken || hasSkippedLogin === 'true') {

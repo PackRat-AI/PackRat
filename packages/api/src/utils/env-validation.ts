@@ -110,8 +110,7 @@ function isTestEnvironment(): boolean {
   return (
     process.env.NODE_ENV === 'test' ||
     process.env.VITEST === 'true' ||
-    typeof global !== 'undefined' && 
-    (global as any).__vitest__ !== undefined
+    (typeof global !== 'undefined' && (global as Record<string, unknown>).__vitest__ !== undefined)
   );
 }
 
@@ -156,4 +155,13 @@ export function getEnv(c: Context): Env {
   envCache.set(c, data);
 
   return data;
+}
+
+/**
+ * Validate Cloudflare API environment variables at build/deploy time
+ * Called after root postinstall populates env vars
+ * Throws an error if validation fails
+ */
+export function validateCloudflareApiEnv(env: Record<string, unknown>): void {
+  apiEnvSchema.parse(env);
 }
