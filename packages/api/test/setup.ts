@@ -51,6 +51,11 @@ import * as schema from '../src/db/schema';
 let testClient: Client;
 let testDb: ReturnType<typeof drizzle>;
 
+vi.mock('hono/adapter', async () => {
+  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
+  return { ...actual, env: () => process.env };
+});
+
 // Setup PostgreSQL Docker container before all tests
 beforeAll(async () => {
   console.log('🐳 Starting PostgreSQL Docker container for tests...');
@@ -81,6 +86,12 @@ beforeAll(async () => {
 
   await testClient.connect();
   testDb = drizzle(testClient, { schema });
+
+  // Set the test database in the DB module
+  console.log('🔧 Setting up test database...');
+  const { setTestDatabase } = await import('../src/db/index');
+  setTestDatabase(testDb);
+  console.log('✅ Test database set up successfully');
 
   // Run migrations using direct PostgreSQL client
   try {
@@ -150,14 +161,4 @@ afterAll(async () => {
   }
 });
 
-// Mock the database module to use our test database (node-postgres version)
-vi.mock('@packrat/api/db', () => ({
-  createDb: vi.fn(() => testDb),
-  createReadOnlyDb: vi.fn(() => testDb),
-  createDbClient: vi.fn(() => testDb),
-}));
 
-vi.mock('hono/adapter', async () => {
-  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
-  return { ...actual, env: () => process.env };
-});
