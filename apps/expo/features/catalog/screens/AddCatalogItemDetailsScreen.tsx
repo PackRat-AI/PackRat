@@ -24,6 +24,7 @@ import {
 
 import { useCatalogItemDetails } from '../hooks';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();
@@ -37,6 +38,7 @@ export function AddCatalogItemDetailsScreen() {
   const pack = usePackDetailsFromStore(packId as string);
   const createItem = useCreatePackItem();
   const fadeAnim = useState(new Animated.Value(0))[0];
+  const [isAdding, setIsAdding] = useState(false);
 
   // Form state
   const [quantity, setQuantity] = useState('1');
@@ -84,6 +86,9 @@ export function AddCatalogItemDetailsScreen() {
         console.error('Error caching image:', error);
       }
     }
+    setIsAdding(true);
+
+    const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
 
     createItem({
       packId: packId as string,
@@ -97,11 +102,11 @@ export function AddCatalogItemDetailsScreen() {
         consumable: isConsumable,
         worn: isWorn,
         notes,
-        image: imageFileName,
+        image: cachedImageFilename,
         catalogItemId: catalogItem.id,
       },
     });
-
+    setIsAdding(false);
     // Navigate back to the catalog item detail screen
     router.dismissTo({
       pathname: '/catalog/[id]',
@@ -182,6 +187,7 @@ export function AddCatalogItemDetailsScreen() {
                       params: { catalogItemId },
                     })
                   }
+                  disabled={isAdding}
                 >
                   <Text className="font-normal">Change</Text>
                 </Button>
@@ -265,13 +271,17 @@ export function AddCatalogItemDetailsScreen() {
               </View>
 
               <View className="mb-2 mt-6">
-                <Button onPress={handleAddToPack}>
-                  <Text>Add to Pack</Text>
+                <Button onPress={handleAddToPack} disabled={isAdding}>
+                  {isAdding ? (
+                    <ActivityIndicator color={colors.foreground} />
+                  ) : (
+                    <Text>Add to Pack</Text>
+                  )}
                 </Button>
               </View>
 
               <View>
-                <Button variant="secondary" onPress={() => router.back()}>
+                <Button variant="secondary" onPress={() => router.back()} disabled={isAdding}>
                   <Text>Cancel</Text>
                 </Button>
               </View>
