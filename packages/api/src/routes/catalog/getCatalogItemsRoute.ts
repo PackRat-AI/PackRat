@@ -43,7 +43,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   if (typeof encodedCategory === 'string' && encodedCategory.length > 0) {
     try {
       category = decodeURIComponent(encodedCategory);
-    } catch (e) {
+    } catch (_e) {
       category = undefined;
     }
   }

@@ -3,7 +3,7 @@
 import { $ } from 'bun';
 
 const COMPOSE_FILE = 'docker-compose.test.yml';
-const DB_URL = 'postgres://test_user:test_password@localhost:5433/packrat_test';
+const _DB_URL = 'postgres://test_user:test_password@localhost:5433/packrat_test';
 
 async function startContainer() {
   console.log('🐳 Starting PostgreSQL test container...');
