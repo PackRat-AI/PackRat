@@ -42,7 +42,6 @@ process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME = 'test-scrapy-bucket';
 process.env.PACKRAT_GUIDES_RAG_NAME = 'test-rag';
 process.env.PACKRAT_GUIDES_BASE_URL = 'https://guides.test.com';
 
-import { $ } from 'bun';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
@@ -51,26 +50,23 @@ import * as schema from '../src/db/schema';
 let testClient: Client;
 let testDb: ReturnType<typeof drizzle>;
 
-// Setup PostgreSQL Docker container before all tests
+vi.mock('hono/adapter', async () => {
+  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
+  return { ...actual, env: () => process.env };
+});
+
+// Mock the database module to use our test database (node-postgres version)
+vi.mock('@packrat/api/db', () => ({
+  createDb: vi.fn(() => testDb),
+  createReadOnlyDb: vi.fn(() => testDb),
+  createDbClient: vi.fn(() => testDb),
+}));
+
+// Setup PostgreSQL connection for tests
 beforeAll(async () => {
-  console.log('🐳 Starting PostgreSQL Docker container for tests...');
+  console.log('🔧 Setting up test database connection...');
 
-  // Start Docker Compose with PostgreSQL container
-  try {
-    const result = await $`docker compose -f docker-compose.test.yml up -d --wait`;
-    if (result.exitCode !== 0) {
-      throw new Error(`Docker compose failed with code ${result.exitCode}`);
-    }
-    console.log('✅ PostgreSQL container started successfully');
-  } catch (error) {
-    console.error('❌ Failed to start PostgreSQL container:', error);
-    throw error;
-  }
-
-  // Wait a bit for the database to be fully ready
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-
-  // Create direct PostgreSQL client connection
+  // Create direct PostgreSQL client connection for manual database operations
   testClient = new Client({
     host: 'localhost',
     port: 5433,
@@ -79,32 +75,41 @@ beforeAll(async () => {
     password: 'test_password',
   });
 
-  await testClient.connect();
-  testDb = drizzle(testClient, { schema });
-
-  // Run migrations using direct PostgreSQL client
   try {
+    await testClient.connect();
+    testDb = drizzle(testClient, { schema });
+    console.log('✅ Test database connected successfully');
+
+    // Run migrations using direct PostgreSQL client
     const fs = await import('node:fs/promises');
     const path = await import('node:path');
     const migrationsDir = path.join(process.cwd(), 'drizzle');
 
-    const files = await fs.readdir(migrationsDir);
-    const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
+    try {
+      const files = await fs.readdir(migrationsDir);
+      const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
 
-    for (const file of sqlFiles) {
-      const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
-      await testClient.query(migrationSql);
+      for (const file of sqlFiles) {
+        const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
+        await testClient.query(migrationSql);
+      }
+
+      console.log('✅ Test database migrations completed');
+    } catch (error) {
+      console.error('❌ Failed to run database migrations:', error);
+      throw error;
     }
-
-    console.log('✅ Test database migrations completed');
   } catch (error) {
-    console.error('❌ Failed to run database migrations:', error);
+    console.error('❌ Failed to connect to test database:', error);
+    console.log('This is expected in CI where PostgreSQL service should be available');
     throw error;
   }
 });
 
 // Clean up database after each test to ensure isolation
 beforeEach(async () => {
+  if (!testClient) return;
+
   // Truncate all tables except migrations and drizzle metadata using PostgreSQL client
   const tablesToTruncate = [
     'users',
@@ -131,33 +136,15 @@ beforeEach(async () => {
 
 // Cleanup after all tests
 afterAll(async () => {
-  console.log('🧹 Cleaning up test database and PostgreSQL Docker container...');
+  console.log('🧹 Cleaning up test database connection...');
 
   try {
     // Close PostgreSQL client connection
     if (testClient) {
       await testClient.end();
     }
-
-    // Stop and remove Docker Compose containers
-    const result = await $`docker compose -f docker-compose.test.yml down -v`;
-    if (result.exitCode !== 0) {
-      throw new Error(`Docker compose down failed with code ${result.exitCode}`);
-    }
-    console.log('✅ PostgreSQL container stopped and cleaned up');
+    console.log('✅ Test database connection closed');
   } catch (error) {
-    console.error('❌ Failed to cleanup PostgreSQL container:', error);
+    console.error('❌ Failed to cleanup test database connection:', error);
   }
-});
-
-// Mock the database module to use our test database (node-postgres version)
-vi.mock('@packrat/api/db', () => ({
-  createDb: vi.fn(() => testDb),
-  createReadOnlyDb: vi.fn(() => testDb),
-  createDbClient: vi.fn(() => testDb),
-}));
-
-vi.mock('hono/adapter', async () => {
-  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
-  return { ...actual, env: () => process.env };
 });
