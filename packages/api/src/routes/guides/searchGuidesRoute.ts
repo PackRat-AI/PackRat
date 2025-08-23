@@ -1,30 +1,52 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+import {
+  ErrorResponseSchema,
+  GuideSearchQuerySchema,
+  GuideSearchResponseSchema,
+} from '@packrat/api/schemas/guides';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 
 export const routeDefinition = createRoute({
   method: 'get',
   path: '/search',
+  tags: ['Guides'],
+  summary: 'Search guides',
+  description: 'Search through guide titles, descriptions, and content using text matching',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      q: z.string().min(1),
-      page: z.coerce.number().int().positive().optional().default(1),
-      limit: z.coerce.number().int().nonnegative().optional().default(20),
-      category: z.string().optional(),
-    }),
+    query: GuideSearchQuerySchema,
   },
-  responses: { 200: { description: 'Search guides' } },
+  responses: {
+    200: {
+      description: 'Search results retrieved successfully',
+      content: {
+        'application/json': {
+          schema: GuideSearchResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Invalid search query',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
-
   const { q, page, limit, category } = c.req.valid('query');
   const searchQuery = q.toLowerCase();
 
@@ -102,14 +124,17 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const paginatedGuides = guides.slice(offset, offset + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return c.json({
-      items: paginatedGuides,
-      totalCount: total,
-      page,
-      limit,
-      totalPages,
-      query: q,
-    });
+    return c.json(
+      {
+        items: paginatedGuides,
+        totalCount: total,
+        page,
+        limit,
+        totalPages,
+        query: q,
+      },
+      200,
+    );
   } catch (error) {
     console.error('Error searching guides:', error);
     return c.json({ error: 'Failed to search guides' }, 500);

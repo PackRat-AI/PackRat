@@ -7,7 +7,29 @@ import {
   refreshTokens,
   users,
 } from '@packrat/api/db/schema';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import {
+  AppleAuthRequestSchema,
+  ErrorResponseSchema,
+  ForgotPasswordRequestSchema,
+  ForgotPasswordResponseSchema,
+  GoogleAuthRequestSchema,
+  LoginRequestSchema,
+  LoginResponseSchema,
+  LogoutRequestSchema,
+  LogoutResponseSchema,
+  MeResponseSchema,
+  RefreshTokenRequestSchema,
+  RefreshTokenResponseSchema,
+  RegisterRequestSchema,
+  RegisterResponseSchema,
+  ResetPasswordRequestSchema,
+  ResetPasswordResponseSchema,
+  SocialAuthResponseSchema,
+  VerifyEmailRequestSchema,
+  VerifyEmailResponseSchema,
+} from '@packrat/api/schemas/auth';
+import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
 import {
   generateJWT,
   generateRefreshToken,
@@ -15,6 +37,7 @@ import {
   hashPassword,
   validateEmail,
   validatePassword,
+  verifyJWT,
   verifyPassword,
 } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
@@ -23,13 +46,61 @@ import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 
-const authRoutes = new OpenAPIHono();
+const authRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 // Login route
 const loginRoute = createRoute({
   method: 'post',
   path: '/login',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Login' } },
+  tags: ['Authentication'],
+  summary: 'User login',
+  description: 'Authenticate a user with email and password to receive access and refresh tokens',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: LoginRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Successful login',
+      content: {
+        'application/json': {
+          schema: LoginResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Invalid credentials',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Email not verified',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(loginRoute, async (c) => {
@@ -85,26 +156,74 @@ authRoutes.openapi(loginRoute, async (c) => {
     c,
   });
 
-  return c.json({
-    success: true,
-    accessToken,
-    refreshToken,
-    user: {
-      id: userRecord.id,
-      email: userRecord.email,
-      firstName: userRecord.firstName,
-      lastName: userRecord.lastName,
-      emailVerified: userRecord.emailVerified,
+  return c.json(
+    {
+      success: true,
+      accessToken,
+      refreshToken,
+      user: {
+        id: userRecord.id,
+        email: userRecord.email,
+        firstName: userRecord.firstName,
+        lastName: userRecord.lastName,
+        emailVerified: userRecord.emailVerified,
+      },
     },
-  });
+    200,
+  );
 });
 
 // Register route
 const registerRoute = createRoute({
   method: 'post',
   path: '/register',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Register user' } },
+  tags: ['Authentication'],
+  summary: 'Register new user',
+  description: 'Create a new user account and send verification email',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: RegisterRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'User registered successfully',
+      content: {
+        'application/json': {
+          schema: RegisterResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid request data',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    409: {
+      description: 'Email already in use',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(registerRoute, async (c) => {
@@ -122,7 +241,7 @@ authRoutes.openapi(registerRoute, async (c) => {
 
   const passwordValidation = validatePassword(password);
   if (!passwordValidation.valid) {
-    return c.json({ error: passwordValidation.message }, 400);
+    return c.json({ error: passwordValidation.message || 'Invalid password' }, 400);
   }
 
   // Check if user already exists
@@ -167,19 +286,59 @@ authRoutes.openapi(registerRoute, async (c) => {
   // Send verification email with code
   await sendVerificationCodeEmail({ to: email, code, c });
 
-  return c.json({
-    success: true,
-    message: 'User registered successfully. Please check your email for your verification code.',
-    userId: newUser.id,
-  });
+  return c.json(
+    {
+      success: true,
+      message: 'User registered successfully. Please check your email for your verification code.',
+      userId: newUser.id,
+    },
+    200,
+  );
 });
 
 // Verify email route
 const verifyEmailRoute = createRoute({
   method: 'post',
   path: '/verify-email',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Verify email' } },
+  tags: ['Authentication'],
+  summary: 'Verify email address',
+  description: 'Verify user email with the code sent to their email address',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: VerifyEmailRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Email verified successfully',
+      content: {
+        'application/json': {
+          schema: VerifyEmailResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid or expired verification code',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'User not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(verifyEmailRoute, async (c) => {
@@ -247,35 +406,79 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     c,
   });
 
-  return c.json({
-    success: true,
-    message: 'Email verified successfully',
-    accessToken,
-    refreshToken,
-    user: {
-      id: userRecord.id,
-      email: userRecord.email,
-      firstName: userRecord.firstName,
-      lastName: userRecord.lastName,
-      emailVerified: true,
-      role: userRecord.role,
+  return c.json(
+    {
+      success: true,
+      message: 'Email verified successfully',
+      accessToken,
+      refreshToken,
+      user: {
+        id: userRecord.id,
+        email: userRecord.email,
+        firstName: userRecord.firstName,
+        lastName: userRecord.lastName,
+        emailVerified: true,
+      },
     },
-  });
+    200,
+  );
 });
 
 // Resend verification route
 const resendVerificationRoute = createRoute({
   method: 'post',
   path: '/resend-verification',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Resend verification code' } },
+  tags: ['Authentication'],
+  summary: 'Resend verification code',
+  description: 'Resend email verification code to the user',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            email: z.string().email(),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Verification code sent',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean(),
+            message: z.string(),
+          }),
+        },
+      },
+    },
+    400: {
+      description: 'Invalid request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'User not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(resendVerificationRoute, async (c) => {
   const { email } = await c.req.json();
 
   if (!email) {
-    return Response.json({ error: 'Email is required' }, { status: 400 });
+    return c.json({ error: 'Email is required' }, 400);
   }
 
   const db = createDb(c);
@@ -284,19 +487,19 @@ authRoutes.openapi(resendVerificationRoute, async (c) => {
   const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
   if (user.length === 0) {
-    return Response.json({ error: 'User not found' }, { status: 404 });
+    return c.json({ error: 'User not found' }, 404);
   }
 
   const userRecord = user[0];
   if (!userRecord) {
-    return Response.json({ error: 'User not found' }, { status: 404 });
+    return c.json({ error: 'User not found' }, 404);
   }
 
   const userId = userRecord.id;
 
   // Check if user is already verified
   if (userRecord.emailVerified) {
-    return Response.json({ error: 'Email is already verified' }, { status: 400 });
+    return c.json({ error: 'Email is already verified' }, 400);
   }
 
   // Delete any existing verification codes
@@ -315,18 +518,50 @@ authRoutes.openapi(resendVerificationRoute, async (c) => {
   // Send verification email with code
   await sendVerificationCodeEmail({ to: email, code, c });
 
-  return Response.json({
-    success: true,
-    message: 'Verification code sent successfully',
-  });
+  return c.json(
+    {
+      success: true,
+      message: 'Verification code sent successfully',
+    },
+    200,
+  );
 });
 
 // Forgot password route
 const forgotPasswordRoute = createRoute({
   method: 'post',
   path: '/forgot-password',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Forgot password' } },
+  tags: ['Authentication'],
+  summary: 'Request password reset',
+  description: 'Send a password reset verification code to the user email',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: ForgotPasswordRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Password reset code sent if email exists',
+      content: {
+        'application/json': {
+          schema: ForgotPasswordResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(forgotPasswordRoute, async (c) => {
@@ -335,7 +570,7 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
   const db = createDb(c);
 
   if (!email) {
-    return Response.json({ error: 'Email is required' }, { status: 400 });
+    return c.json({ error: 'Email is required' }, 400);
   }
 
   // Find user
@@ -343,18 +578,24 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
 
   // Always return success even if user doesn't exist (security best practice)
   if (user.length === 0) {
-    return Response.json({
-      success: true,
-      message: 'If your email is registered, you will receive a verification code',
-    });
+    return c.json(
+      {
+        success: true,
+        message: 'If your email is registered, you will receive a verification code',
+      },
+      200,
+    );
   }
 
   const userRecord = user[0];
   if (!userRecord) {
-    return Response.json({
-      success: true,
-      message: 'If your email is registered, you will receive a verification code',
-    });
+    return c.json(
+      {
+        success: true,
+        message: 'If your email is registered, you will receive a verification code',
+      },
+      200,
+    );
   }
 
   // Generate verification code
@@ -373,18 +614,58 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
   // Send password reset email with code
   await sendPasswordResetEmail({ to: email, code, c });
 
-  return Response.json({
-    success: true,
-    message: 'If your email is registered, you will receive a verification code',
-  });
+  return c.json(
+    {
+      success: true,
+      message: 'If your email is registered, you will receive a verification code',
+    },
+    200,
+  );
 });
 
 // Reset password route
 const resetPasswordRoute = createRoute({
   method: 'post',
   path: '/reset-password',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Reset password' } },
+  tags: ['Authentication'],
+  summary: 'Reset password',
+  description: 'Reset user password using verification code',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: ResetPasswordRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Password reset successfully',
+      content: {
+        'application/json': {
+          schema: ResetPasswordResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid request or expired code',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'User not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(resetPasswordRoute, async (c) => {
@@ -393,13 +674,13 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
   const db = createDb(c);
 
   if (!email || !code || !newPassword) {
-    return Response.json({ error: 'Email, code, and new password are required' }, { status: 400 });
+    return c.json({ error: 'Email, code, and new password are required' }, 400);
   }
 
   // Validate password
   const passwordValidation = validatePassword(newPassword);
   if (!passwordValidation.valid) {
-    return Response.json({ error: passwordValidation.message }, { status: 400 });
+    return c.json({ error: passwordValidation.message || 'Invalid password' }, 400);
   }
 
   // Find user by email
@@ -410,12 +691,12 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
     .limit(1);
 
   if (userResult.length === 0) {
-    return Response.json({ error: 'User not found' }, { status: 404 });
+    return c.json({ error: 'User not found' }, 404);
   }
 
   const user = userResult[0];
   if (!user) {
-    return Response.json({ error: 'User not found' }, { status: 404 });
+    return c.json({ error: 'User not found' }, 404);
   }
 
   // Find verification code
@@ -426,17 +707,17 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
     .limit(1);
 
   if (codeRecord.length === 0) {
-    return Response.json({ error: 'Invalid verification code' }, { status: 400 });
+    return c.json({ error: 'Invalid verification code' }, 400);
   }
 
   const codeRecordItem = codeRecord[0];
   if (!codeRecordItem) {
-    return Response.json({ error: 'Invalid verification code' }, { status: 400 });
+    return c.json({ error: 'Invalid verification code' }, 400);
   }
 
   // Check if code is expired
   if (new Date() > codeRecordItem.expiresAt) {
-    return Response.json({ error: 'Verification code has expired' }, { status: 400 });
+    return c.json({ error: 'Verification code has expired' }, 400);
   }
 
   // Hash new password
@@ -448,18 +729,58 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
   // Delete the used verification code
   await db.delete(oneTimePasswords).where(eq(oneTimePasswords.id, codeRecordItem.id));
 
-  return Response.json({
-    success: true,
-    message: 'Password reset successfully',
-  });
+  return c.json(
+    {
+      success: true,
+      message: 'Password reset successfully',
+    },
+    200,
+  );
 });
 
 // Refresh token route
 const refreshTokenRoute = createRoute({
   method: 'post',
   path: '/refresh',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Refresh token' } },
+  tags: ['Authentication'],
+  summary: 'Refresh access token',
+  description: 'Exchange a refresh token for new access and refresh tokens',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: RefreshTokenRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Tokens refreshed successfully',
+      content: {
+        'application/json': {
+          schema: RefreshTokenResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Invalid or expired refresh token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(refreshTokenRoute, async (c) => {
@@ -532,7 +853,7 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
       .limit(1);
 
     if (!user) {
-      return c.json({ error: 'User not found' }, 404);
+      return c.json({ error: 'User not found' }, 401);
     }
 
     // Generate new access token
@@ -544,15 +865,25 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
       c,
     });
 
-    return c.json({
-      success: true,
-      accessToken,
-      refreshToken: newRefreshToken,
-      user,
-    });
+    return c.json(
+      {
+        success: true,
+        accessToken,
+        refreshToken: newRefreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          emailVerified: user.emailVerified,
+          role: user.role,
+        },
+      },
+      200,
+    );
   } catch (error) {
     console.error('Token refresh error:', error);
-    return c.json({ error: 'An error occurred during token refresh' }, 500);
+    return c.json({ error: 'An error occurred during token refresh' }, 401);
   }
 });
 
@@ -560,8 +891,37 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
 const logoutRoute = createRoute({
   method: 'post',
   path: '/logout',
-  request: { body: { content: { 'application/json': { schema: z.any() } } } },
-  responses: { 200: { description: 'Logout' } },
+  tags: ['Authentication'],
+  summary: 'Logout user',
+  description: 'Revoke the refresh token to logout the user',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: LogoutRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Logged out successfully',
+      content: {
+        'application/json': {
+          schema: LogoutResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(logoutRoute, async (c) => {
@@ -580,29 +940,69 @@ authRoutes.openapi(logoutRoute, async (c) => {
     .set({ revokedAt: new Date() })
     .where(eq(refreshTokens.token, refreshToken));
 
-  return c.json({
-    success: true,
-    message: 'Logged out successfully',
-  });
+  return c.json(
+    {
+      success: true,
+      message: 'Logged out successfully',
+    },
+    200,
+  );
 });
 
 // Me route
 const meRoute = createRoute({
   method: 'get',
   path: '/me',
-  responses: { 200: { description: 'Get current user' } },
+  tags: ['Authentication'],
+  summary: 'Get current user',
+  description: 'Get the authenticated user information',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Current user information',
+      content: {
+        'application/json': {
+          schema: MeResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'User not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 authRoutes.openapi(meRoute, async (c) => {
   try {
-    const auth = await authenticateRequest(c);
+    // Extract JWT from Authorization header
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const token = authHeader.substring(7);
+    const auth = await verifyJWT({ token, c });
     const db = createDb(c);
 
     if (!auth) {
-      return unauthorizedResponse();
+      return c.json({ error: 'Unauthorized' }, 401);
     }
 
     // Find user
+    const userId = Number(auth.userId);
     const user = await db
       .select({
         id: users.id,
@@ -612,7 +1012,7 @@ authRoutes.openapi(meRoute, async (c) => {
         emailVerified: users.emailVerified,
       })
       .from(users)
-      .where(eq(users.id, auth.userId))
+      .where(eq(users.id, userId))
       .limit(1);
 
     if (user.length === 0) {
@@ -624,13 +1024,16 @@ authRoutes.openapi(meRoute, async (c) => {
       return c.json({ error: 'User not found' }, 404);
     }
 
-    return c.json({
-      success: true,
-      user: userRecord,
-    });
+    return c.json(
+      {
+        success: true,
+        user: userRecord,
+      },
+      200,
+    );
   } catch (error) {
     console.error('Get user info error:', error);
-    return c.json({ error: 'An error occurred' }, 500);
+    return c.json({ error: 'An error occurred' }, 401);
   }
 });
 
@@ -638,16 +1041,44 @@ authRoutes.openapi(meRoute, async (c) => {
 const deleteAccountRoute = createRoute({
   method: 'delete',
   path: '/',
-  responses: { 200: { description: 'Delete account' } },
+  tags: ['Authentication'],
+  summary: 'Delete user account',
+  description: 'Permanently delete the authenticated user account and all associated data',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'Account deleted successfully',
+      content: {
+        'application/json': {
+          schema: z.object({ success: z.boolean() }),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 authRoutes.openapi(deleteAccountRoute, async (c) => {
-  const auth = await authenticateRequest(c);
+  // Extract JWT from Authorization header
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const token = authHeader.substring(7);
+  const auth = await verifyJWT({ token, c });
   if (!auth) {
-    return unauthorizedResponse();
+    return c.json({ error: 'Unauthorized' }, 401);
   }
   const db = createDb(c);
 
-  const userId = auth.userId;
+  const userId = auth.userId as number;
 
   // Delete all user-related data in the correct order to respect foreign key constraints
 
@@ -666,25 +1097,43 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
   // Finally, delete the user
   await db.delete(users).where(eq(users.id, userId));
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 });
 
 const appleRoute = createRoute({
   method: 'post',
   path: '/apple',
+  tags: ['Authentication'],
+  summary: 'Sign in with Apple',
+  description: 'Authenticate or register a user using Sign in with Apple',
   request: {
     body: {
       content: {
         'application/json': {
-          schema: z.object({
-            identityToken: z.string(),
-            authorizationCode: z.string(),
-          }),
+          schema: AppleAuthRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Authentication successful',
+      content: {
+        'application/json': {
+          schema: SocialAuthResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid Apple token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
         },
       },
     },
   },
-  responses: { 200: { description: 'Apple authentication' } },
 });
 
 authRoutes.openapi(appleRoute, async (c) => {
@@ -723,7 +1172,7 @@ authRoutes.openapi(appleRoute, async (c) => {
           emailVerified: email_verified || false,
         })
         .returning({ id: users.id });
-      userId = newUser.id;
+      userId = newUser?.id || 0;
     }
 
     await db.insert(authProviders).values({
@@ -754,33 +1203,55 @@ authRoutes.openapi(appleRoute, async (c) => {
   });
 
   const accessToken = await generateJWT({
-    payload: { userId, role: user.role },
+    payload: { userId, role: user?.role || 'USER' },
     c,
   });
 
-  return c.json({
-    success: true,
-    accessToken,
-    refreshToken,
-    user,
-  });
+  return c.json(
+    {
+      success: true,
+      accessToken,
+      refreshToken,
+      user,
+    },
+    200,
+  );
 });
 
 const googleRoute = createRoute({
   method: 'post',
   path: '/google',
+  tags: ['Authentication'],
+  summary: 'Sign in with Google',
+  description: 'Authenticate or register a user using Google Sign-In',
   request: {
     body: {
       content: {
         'application/json': {
-          schema: z.object({
-            idToken: z.string(),
-          }),
+          schema: GoogleAuthRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Authentication successful',
+      content: {
+        'application/json': {
+          schema: SocialAuthResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Invalid Google token',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
         },
       },
     },
   },
-  responses: { 200: { description: 'Google authentication' } },
 });
 
 authRoutes.openapi(googleRoute, async (c) => {
@@ -790,7 +1261,7 @@ authRoutes.openapi(googleRoute, async (c) => {
   const { idToken } = await c.req.json();
 
   if (!idToken) {
-    return Response.json({ error: 'ID token is required' }, { status: 400 });
+    return c.json({ error: 'ID token is required' }, 400);
   }
 
   const db = createDb(c);
@@ -804,7 +1275,7 @@ authRoutes.openapi(googleRoute, async (c) => {
   const payload = ticket.getPayload();
 
   if (!payload || !payload.email || !payload.sub) {
-    return Response.json({ error: 'Invalid Google token' }, { status: 400 });
+    return c.json({ error: 'Invalid Google token' }, 400);
   }
 
   // Check if user exists with this Google ID
@@ -893,13 +1364,16 @@ authRoutes.openapi(googleRoute, async (c) => {
     c,
   });
 
-  return Response.json({
-    success: true,
-    accessToken,
-    refreshToken,
-    user,
-    isNewUser,
-  });
+  return c.json(
+    {
+      success: true,
+      accessToken,
+      refreshToken,
+      user,
+      isNewUser,
+    },
+    200,
+  );
 });
 
 export { authRoutes };

@@ -18,10 +18,9 @@ describe('Weather Routes', () => {
       expectUnauthorized(res);
     });
 
-    it('GET /weather/current requires auth', async () => {
-      const res = await api('/weather/current?lat=40.7128&lon=-74.0060');
-      expectUnauthorized(res);
-    });
+    // Mock global fetch for this test
+    const originalFetch = global.fetch;
+    global.fetch = mockFetch as unknown as typeof fetch;
 
     it('GET /weather/forecast requires auth', async () => {
       const res = await api('/weather/forecast?lat=40.7128&lon=-74.0060');

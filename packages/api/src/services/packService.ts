@@ -9,6 +9,7 @@ import {
   packs,
 } from '@packrat/api/db/schema';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -116,10 +117,11 @@ export class PackService {
           ...concept,
           items: concept.items.map((item, idx) => ({
             requestedItem: item,
-            candidateItems: searchResults[idx].map((item) => {
-              const { reviews: _reviews, ...rest } = item; // remove unhelpful fields to manage context
-              return rest;
-            }),
+            candidateItems:
+              searchResults[idx]?.map((item) => {
+                const { reviews: _reviews, ...rest } = item; // remove unhelpful fields to manage context
+                return rest;
+              }) ?? [],
           })),
         };
       }),
@@ -166,12 +168,13 @@ export class PackService {
   }
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
+    const { OPENAI_API_KEY } = getEnv(this.c);
     const openai = createOpenAI({
-      apiKey: getEnv(this.c, 'OPENAI_API_KEY'),
+      apiKey: OPENAI_API_KEY,
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: openai(DEFAULT_MODELS.CHAT),
       output: 'array',
       schema: packConceptSchema,
       system: PACK_CONCEPTS_SYSTEM_PROMPT,
@@ -184,7 +187,43 @@ export class PackService {
   private async searchCatalog(items: string[]): Promise<SemanticSearchResult> {
     const catalogService = new CatalogService(this.c);
     const searchResults = await catalogService.batchSemanticSearch(items);
-    return searchResults.items;
+    // Map each group to add the missing fields back
+    return searchResults.items.map((group) =>
+      group.map((item) => ({
+        id: item.id,
+        name: item.name,
+        productUrl: item.productUrl,
+        sku: item.sku,
+        weight: item.weight,
+        weightUnit: item.weightUnit,
+        description: item.description,
+        categories: item.categories,
+        images: item.images,
+        brand: item.brand,
+        model: item.model,
+        ratingValue: item.ratingValue,
+        color: item.color,
+        size: item.size,
+        price: item.price,
+        availability: item.availability,
+        seller: item.seller,
+        productSku: item.productSku,
+        material: item.material,
+        currency: item.currency,
+        condition: item.condition,
+        reviewCount: item.reviewCount,
+        variants: item.variants,
+        techs: item.techs,
+        links: item.links,
+        reviews: item.reviews,
+        qas: item.qas,
+        faqs: item.faqs,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        embedding: null,
+        similarity: item.similarity,
+      })),
+    );
   }
 
   private async constructPacks(
@@ -195,7 +234,7 @@ export class PackService {
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: openai(DEFAULT_MODELS.CHAT),
       output: 'array',
       schema: finalPackSchema,
       system: PACKS_CONSTRUCTION_SYSTEM_PROMPT,

@@ -106,3 +106,12 @@ export function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
+
+// Validate API key
+export function isValidApiKey(c: Context): boolean {
+  const apiKeyHeader = c.req.header('X-API-Key');
+  if (!apiKeyHeader) return false;
+  const { PACKRAT_API_KEY } = getEnv(c);
+  if (!PACKRAT_API_KEY) return false;
+  return apiKeyHeader === PACKRAT_API_KEY;
+}

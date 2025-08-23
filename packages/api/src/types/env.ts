@@ -1,1 +1,1 @@
-export type { Env } from '@packrat/api/utils/env-validation';
+export type { ValidatedEnv as Env } from '@packrat/api/utils/env-validation';

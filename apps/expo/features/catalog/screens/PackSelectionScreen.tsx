@@ -59,7 +59,7 @@ export function PackSelectionScreen() {
             <View className="flex-row items-center">
               <Image
                 source={{
-                  uri: catalogItem.image || undefined /* `null` isn't assignable to uri */,
+                  uri: catalogItem.images?.[0] || undefined /* `null` isn't assignable to uri */,
                 }}
                 className="h-16 w-16 rounded-md"
                 resizeMode="cover"
@@ -72,7 +72,7 @@ export function PackSelectionScreen() {
                 <View className="mt-1 flex-row items-center">
                   <Icon name="dumbbell" size={14} color={colors.grey2} />
                   <Text variant="caption2" className="ml-1">
-                    {catalogItem.defaultWeight} {catalogItem.defaultWeightUnit}
+                    {catalogItem.weight} {catalogItem.weightUnit}
                   </Text>
                   {catalogItem.brand && (
                     <>

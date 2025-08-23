@@ -1,4 +1,4 @@
-import { isValidApiKey } from '@packrat/api/utils/api-middleware';
+import { isValidApiKey } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { MiddlewareHandler } from 'hono';
 import { verify } from 'hono/jwt';

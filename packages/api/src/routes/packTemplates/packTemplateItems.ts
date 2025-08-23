@@ -1,23 +1,77 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packTemplateItems, packTemplates } from '@packrat/api/db/schema';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import {
+  CreatePackTemplateItemRequestSchema,
+  ErrorResponseSchema,
+  PackTemplateItemSchema,
+  SuccessResponseSchema,
+  UpdatePackTemplateItemRequestSchema,
+} from '@packrat/api/schemas/packTemplates';
+import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
 import { and, eq, or } from 'drizzle-orm';
 import { z } from 'zod';
 
-const packTemplateItemsRoutes = new OpenAPIHono();
+const packTemplateItemsRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Get all items for a template
 const getItemsRoute = createRoute({
   method: 'get',
   path: '/{templateId}/items',
-  request: { params: z.object({ templateId: z.string() }) },
-  responses: { 200: { description: 'Get all items for a template' } },
+  tags: ['Pack Templates'],
+  summary: 'Get all items for a template',
+  description: 'Retrieve all items for a specific pack template',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      templateId: z.string().openapi({
+        example: 'pt_123456',
+        description: 'The unique identifier of the pack template',
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Template items retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(PackTemplateItemSchema),
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Access denied to this template',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Template not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return unauthorizedResponse();
+  const auth = c.get('user');
 
   const db = createDb(c);
   const templateId = c.req.param('templateId');
@@ -36,25 +90,79 @@ packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
       ),
     );
 
-  return c.json(items);
+  return c.json(items, 200);
 });
 
 // Add item to template
 const addItemRoute = createRoute({
   method: 'post',
   path: '/{templateId}/items',
+  tags: ['Pack Templates'],
+  summary: 'Add item to template',
+  description: 'Add a new item to a specific pack template',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ templateId: z.string() }),
+    params: z.object({
+      templateId: z.string().openapi({
+        example: 'pt_123456',
+        description: 'The unique identifier of the pack template',
+      }),
+    }),
     body: {
-      content: { 'application/json': { schema: z.any() } },
+      content: {
+        'application/json': {
+          schema: CreatePackTemplateItemRequestSchema,
+        },
+      },
+      required: true,
     },
   },
-  responses: { 201: { description: 'Add item to template' } },
+  responses: {
+    201: {
+      description: 'Item added to template successfully',
+      content: {
+        'application/json': {
+          schema: PackTemplateItemSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Invalid input data',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Access denied to this template',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Template not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return unauthorizedResponse();
+  const auth = c.get('user');
 
   const db = createDb(c);
   const templateId = c.req.param('templateId');
@@ -94,25 +202,79 @@ packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
     .set({ updatedAt: new Date() })
     .where(eq(packTemplates.id, templateId));
 
-  return c.json(newItem);
+  return c.json(newItem, 201);
 });
 
 // Update a template item
 const updateItemRoute = createRoute({
   method: 'patch',
   path: '/items/{itemId}',
+  tags: ['Pack Templates'],
+  summary: 'Update a template item',
+  description: 'Update a specific item in a pack template',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ itemId: z.string() }),
+    params: z.object({
+      itemId: z.string().openapi({
+        example: 'pti_123456',
+        description: 'The unique identifier of the template item',
+      }),
+    }),
     body: {
-      content: { 'application/json': { schema: z.any() } },
+      content: {
+        'application/json': {
+          schema: UpdatePackTemplateItemRequestSchema,
+        },
+      },
+      required: true,
     },
   },
-  responses: { 200: { description: 'Update a template item' } },
+  responses: {
+    200: {
+      description: 'Template item updated successfully',
+      content: {
+        'application/json': {
+          schema: PackTemplateItemSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Invalid input data',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Access denied to this template or item',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Template item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packTemplateItemsRoutes.openapi(updateItemRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) return unauthorizedResponse();
+  const auth = c.get('user');
 
   const db = createDb(c);
   const itemId = c.req.param('itemId');
@@ -158,7 +320,96 @@ packTemplateItemsRoutes.openapi(updateItemRoute, async (c) => {
     )
     .returning();
 
-  return c.json(updatedItem);
+  return c.json(updatedItem, 200);
+});
+
+// Delete a template item
+const deleteItemRoute = createRoute({
+  method: 'delete',
+  path: '/items/{itemId}',
+  tags: ['Pack Templates'],
+  summary: 'Delete a template item',
+  description: 'Delete a specific item from a pack template',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      itemId: z.string().openapi({
+        example: 'pti_123456',
+        description: 'The unique identifier of the template item',
+      }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Template item deleted successfully',
+      content: {
+        'application/json': {
+          schema: SuccessResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Access denied to this template or item',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Template item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+packTemplateItemsRoutes.openapi(deleteItemRoute, async (c) => {
+  const auth = c.get('user');
+
+  const db = createDb(c);
+  const itemId = c.req.param('itemId');
+
+  const item = await db.query.packTemplateItems.findFirst({
+    where: eq(packTemplateItems.id, itemId),
+    with: {
+      template: true, // include the template to check permissions
+    },
+  });
+
+  if (!item) return c.json({ error: 'Item not found' }, 404);
+  if (item.template.isAppTemplate && auth.role !== 'ADMIN') {
+    return c.json({ error: 'Not allowed' }, 403);
+  }
+
+  // Check if user owns the item or is admin for app template
+  const canDelete =
+    (item.template.isAppTemplate && auth.role === 'ADMIN') || item.userId === auth.userId;
+
+  if (!canDelete) {
+    return c.json({ error: 'Not allowed' }, 403);
+  }
+
+  await db.delete(packTemplateItems).where(eq(packTemplateItems.id, itemId));
+
+  // Update the parent template's updatedAt timestamp
+  await db
+    .update(packTemplates)
+    .set({ updatedAt: new Date() })
+    .where(eq(packTemplates.id, item.packTemplateId));
+
+  return c.json({ success: true }, 200);
 });
 
 export { packTemplateItemsRoutes };
