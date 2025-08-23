@@ -25,7 +25,7 @@ import {
 import { z } from 'zod';
 import { useCreatePackTemplateItem } from '../hooks/useCreatePackTemplateItem';
 import { useUpdatePackTemplateItem } from '../hooks/useUpdatePackTemplateItem';
-import type { PackTemplateItem } from '../types';
+import type { PackTemplateItem, PackTemplateItemInput } from '../types';
 
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
@@ -100,9 +100,9 @@ export const CreatePackTemplateItemForm = ({
         }
 
         if (isEditing) {
-          updateItem({ id: existingItem.id, ...value });
+          updateItem({ id: existingItem.id, ...(value as PackTemplateItemInput) });
         } else {
-          createItem({ packTemplateId, itemData: value });
+          createItem({ packTemplateId, itemData: value as PackTemplateItemInput });
         }
 
         if (isEditing && oldImageUrl && imageChanged) {

@@ -20,8 +20,11 @@ backfillEmbeddingsRoute.openapi(routeDefinition, async (c) => {
   const catalogService = new CatalogService(c);
   const { count } = await catalogService.queueEmbeddingJobs();
 
-  return c.json({
-    success: true,
-    message: `Queued ${count} items`,
-  });
+  return c.json(
+    {
+      success: true,
+      message: `Queued ${count} items`,
+    },
+    200,
+  );
 });

@@ -1,12 +1,14 @@
+import type { Env } from '@packrat/api/types/env';
+import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { type AIProvider, createAIProvider } from '@packrat/api/utils/ai/provider';
 import { embed, embedMany } from 'ai';
-import { DEFAULT_MODELS } from '../utils/ai/models';
 
 type GenerateEmbeddingBaseParams = {
   openAiApiKey: string;
   provider: AIProvider;
   cloudflareAccountId: string;
   cloudflareGatewayId: string;
+  cloudflareAiBinding: Env['AI'];
 };
 
 type GenerateEmbeddingParams = GenerateEmbeddingBaseParams & {

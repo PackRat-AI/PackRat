@@ -1,8 +1,22 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import {
+  ErrorResponseSchema,
+  LocationSearchResponseSchema,
+  type WeatherAPICurrentResponse,
+  type WeatherAPIForecastResponse,
+  type WeatherAPISearchResponse,
+  WeatherCoordinateQuerySchema,
+  WeatherForecastSchema,
+  WeatherSearchQuerySchema,
+} from '@packrat/api/schemas/weather';
+import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';
 
-const weatherRoutes = new OpenAPIHono();
+const weatherRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
@@ -10,24 +24,43 @@ const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 const searchRoute = createRoute({
   method: 'get',
   path: '/search',
+  tags: ['Weather'],
+  summary: 'Search locations',
+  description: 'Search for locations by name to get weather data',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      q: z.string().optional(),
-    }),
+    query: WeatherSearchQuerySchema,
   },
   responses: {
-    200: { description: 'Search locations' },
+    200: {
+      description: 'Location search results',
+      content: {
+        'application/json': {
+          schema: LocationSearchResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Query parameter required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
   },
 });
 
 weatherRoutes.openapi(searchRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
-
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
 
   const query = c.req.query('q');
 
@@ -44,35 +77,27 @@ weatherRoutes.openapi(searchRoute, async (c) => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: WeatherAPISearchResponse = await response.json();
 
     // Transform API response to our LocationSearchResult type
-    const locations = data.map(
-      (item: {
-        id: string;
-        lat: string;
-        lon: string;
-        name: string;
-        region: string;
-        country: string;
-      }) => ({
-        id: `${item.id}`,
-        name: item.name,
-        region: item.region,
-        country: item.country,
-        lat: item.lat,
-        lon: item.lon,
-      }),
-    );
+    const locations = data.map((item) => ({
+      id: `${item.id}`,
+      name: item.name,
+      region: item.region,
+      country: item.country,
+      lat: typeof item.lat === 'string' ? Number.parseFloat(item.lat) : item.lat,
+      lon: typeof item.lon === 'string' ? Number.parseFloat(item.lon) : item.lon,
+    }));
 
-    return c.json(locations);
+    return c.json(locations, 200);
   } catch (error) {
+    console.error('Error searching weather locations:', error);
     c.get('sentry').setContext('params', {
       query,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
-    throw error;
+    return c.json({ error: 'Internal server error', code: 'WEATHER_SEARCH_ERROR' }, 500);
   }
 });
 
@@ -80,25 +105,43 @@ weatherRoutes.openapi(searchRoute, async (c) => {
 const searchByCoordRoute = createRoute({
   method: 'get',
   path: '/search-by-coordinates',
+  tags: ['Weather'],
+  summary: 'Search locations by coordinates',
+  description: 'Find location information using latitude and longitude coordinates',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      lat: z.string().optional(),
-      lon: z.string().optional(),
-    }),
+    query: WeatherCoordinateQuerySchema,
   },
   responses: {
-    200: { description: 'Search locations by coordinates' },
+    200: {
+      description: 'Location search results by coordinates',
+      content: {
+        'application/json': {
+          schema: LocationSearchResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Valid latitude and longitude required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
   },
 });
 
 weatherRoutes.openapi(searchByCoordRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
-
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
 
   const latitude = Number.parseFloat(c.req.query('lat') || '');
   const longitude = Number.parseFloat(c.req.query('lon') || '');
@@ -120,7 +163,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: WeatherAPISearchResponse = await response.json();
 
     // If no results, try a reverse geocoding approach with current conditions API
     if (!data || data.length === 0) {
@@ -132,7 +175,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
         throw new Error(`API error: ${currentResponse.status}`);
       }
 
-      const currentData = await currentResponse.json();
+      const currentData: WeatherAPICurrentResponse = await currentResponse.json();
 
       if (currentData?.location) {
         // Create a single result from the current conditions response
@@ -142,41 +185,33 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
             name: currentData.location.name,
             region: currentData.location.region,
             country: currentData.location.country,
-            lat: Number.parseFloat(currentData.location.lat),
-            lon: Number.parseFloat(currentData.location.lon),
+            lat: Number.parseFloat(String(currentData.location.lat)),
+            lon: Number.parseFloat(String(currentData.location.lon)),
           },
         ]);
       }
     }
 
     // Transform API response to our LocationSearchResult type
-    const locations = data.map(
-      (item: {
-        id: string;
-        lat: string;
-        lon: string;
-        name: string;
-        region: string;
-        country: string;
-      }) => ({
-        id: `${item.id || item.lat}_${item.lon}`,
-        name: item.name,
-        region: item.region,
-        country: item.country,
-        lat: Number.parseFloat(item.lat),
-        lon: Number.parseFloat(item.lon),
-      }),
-    );
+    const locations = data.map((item) => ({
+      id: `${item.id || item.lat}_${item.lon}`,
+      name: item.name,
+      region: item.region,
+      country: item.country,
+      lat: typeof item.lat === 'string' ? Number.parseFloat(item.lat) : item.lat,
+      lon: typeof item.lon === 'string' ? Number.parseFloat(item.lon) : item.lon,
+    }));
 
-    return c.json(locations);
+    return c.json(locations, 200);
   } catch (error) {
+    console.error('Error searching weather locations by coordinates:', error);
     c.get('sentry').setContext('params', {
       latitude,
       longitude,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
-    throw error;
+    return c.json({ error: 'Internal server error', code: 'WEATHER_COORD_SEARCH_ERROR' }, 500);
   }
 });
 
@@ -184,27 +219,48 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 const forecastRoute = createRoute({
   method: 'get',
   path: '/forecast',
+  tags: ['Weather'],
+  summary: 'Get weather forecast',
+  description:
+    'Retrieve detailed weather forecast data including current conditions, daily forecasts, and alerts',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      id: z.string(),
-    }),
+    query: WeatherCoordinateQuerySchema,
   },
   responses: {
-    200: { description: 'Get weather forecast' },
+    200: {
+      description: 'Weather forecast data',
+      content: {
+        'application/json': {
+          schema: WeatherForecastSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Valid latitude and longitude required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
   },
 });
 
 weatherRoutes.openapi(forecastRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
-
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  const locationId = c.req.query('id');
 
   try {
-    const query = `id:${c.req.query('id')}`;
+    const query = `id:${locationId}`;
 
     // Get forecast data with all the details we need
     const response = await fetch(
@@ -215,15 +271,16 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return c.json(data);
+    const data: WeatherAPIForecastResponse = await response.json();
+    return c.json(data, 200);
   } catch (error) {
+    console.error('Error fetching weather forecast:', error);
     c.get('sentry').setContext('params', {
-      id: c.req.query('id'),
+      locationId,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
-    throw error;
+    return c.json({ error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' }, 500);
   }
 });
 

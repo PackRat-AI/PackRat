@@ -22,7 +22,7 @@ import {
 import { z } from 'zod';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
-import type { PackItem } from '../types';
+import type { PackItem, PackItemInput } from '../types';
 
 // Define Zod schema
 const itemFormSchema = z.object({
@@ -121,10 +121,10 @@ export const CreatePackItemForm = ({
 
         // Submit the form with the image URL
         if (isEditing) {
-          updatePackItem({ ...existingItem, ...value });
+          updatePackItem({ ...existingItem, ...(value as PackItemInput) });
           router.back();
         } else {
-          createPackItem({ packId, itemData: value });
+          createPackItem({ packId, itemData: value as PackItemInput });
           router.back();
         }
 

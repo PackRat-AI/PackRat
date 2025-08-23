@@ -6,11 +6,11 @@ import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
 import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
+import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
+import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
-import { ErrorScreen } from '../../../screens/ErrorScreen';
-import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
-import { NotFoundScreen } from '../../../screens/NotFoundScreen';
 import { useCatalogItemDetails } from '../hooks';
 
 export function CatalogItemDetailScreen() {

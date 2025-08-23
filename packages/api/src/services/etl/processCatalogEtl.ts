@@ -1,6 +1,6 @@
 import { createDbClient } from '@packrat/api/db';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { parse } from 'csv-parse/sync';
 import { eq } from 'drizzle-orm';
 import { R2BucketService } from '../r2-bucket';
@@ -54,13 +54,14 @@ export async function processCatalogETL({
       const row = rows[rowIndex];
 
       if (isHeader) {
-        fieldMap = row.reduce(
-          (acc, header, idx) => {
-            acc[header.trim()] = idx;
-            return acc;
-          },
-          {} as Record<string, number>,
-        );
+        fieldMap =
+          row?.reduce(
+            (acc, header, idx) => {
+              acc[header.trim()] = idx;
+              return acc;
+            },
+            {} as Record<string, number>,
+          ) ?? {};
         isHeader = false;
         console.log(`📋 Processing ${objectKey} with field mapping:`, Object.keys(fieldMap));
         continue;
@@ -71,7 +72,7 @@ export async function processCatalogETL({
       if (dataRowIndex < startRow) continue;
       if (dataRowIndex >= startRow + CHUNK_SIZE) break;
 
-      const item = mapCsvRowToItem({ values: row, fieldMap });
+      const item = mapCsvRowToItem({ values: row?.map((v) => v.trim()) ?? [], fieldMap });
       if (item) {
         const validatedItem = validator.validateItem(item);
 
@@ -181,16 +182,20 @@ function mapCsvRowToItem({
   item.reviewCount = reviewCountStr ? parseInt(reviewCountStr) || 0 : 0;
 
   if (fieldMap.categories !== undefined && values[fieldMap.categories]) {
-    const val = values[fieldMap.categories].trim();
-    try {
-      item.categories = val.startsWith('[')
-        ? JSON.parse(val)
-        : val
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean);
-    } catch {
-      item.categories = val ? [val] : undefined;
+    const val = values[fieldMap.categories]?.trim();
+    if (val) {
+      try {
+        item.categories = val.startsWith('[')
+          ? JSON.parse(val)
+          : val
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean);
+      } catch {
+        item.categories = [val];
+      }
+    } else {
+      item.categories = undefined;
     }
   } else {
     item.categories = undefined;
@@ -198,15 +203,19 @@ function mapCsvRowToItem({
 
   let images: string[] | undefined;
   if (fieldMap.images !== undefined && values[fieldMap.images]) {
-    try {
-      const val = values[fieldMap.images].trim();
-      images = val.startsWith('[')
-        ? JSON.parse(val)
-        : val
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean);
-    } catch {
+    const val = values[fieldMap.images]?.trim();
+    if (val) {
+      try {
+        images = val.startsWith('[')
+          ? JSON.parse(val)
+          : val
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean);
+      } catch {
+        images = undefined;
+      }
+    } else {
       images = undefined;
     }
   } else {
@@ -230,24 +239,28 @@ function mapCsvRowToItem({
   if (ratingStr) item.ratingValue = parseFloat(ratingStr) || null;
 
   if (fieldMap.variants !== undefined && values[fieldMap.variants]) {
-    const val = values[fieldMap.variants].trim();
-    try {
-      item.variants = JSON.parse(val);
-    } catch {
+    const val = values[fieldMap.variants]?.trim();
+    if (val) {
       try {
-        item.variants = JSON.parse(val.replace(/'/g, '"'));
+        item.variants = JSON.parse(val);
       } catch {
-        item.variants = [];
+        try {
+          item.variants = JSON.parse(val.replace(/'/g, '"'));
+        } catch {
+          item.variants = [];
+        }
       }
     }
   }
 
   if (fieldMap.faqs !== undefined && values[fieldMap.faqs]) {
-    const val = values[fieldMap.faqs].trim();
-    try {
-      item.faqs = parseFaqs(val);
-    } catch {
-      item.faqs = [];
+    const val = values[fieldMap.faqs]?.trim();
+    if (val) {
+      try {
+        item.faqs = parseFaqs(val);
+      } catch {
+        item.faqs = [];
+      }
     }
   }
 
@@ -258,9 +271,10 @@ function mapCsvRowToItem({
     'qas',
   ];
   for (const field of jsonFields) {
-    if (fieldMap[field as string] !== undefined && values[fieldMap[field as string]]) {
+    const fieldIndex = fieldMap[String(field)];
+    if (fieldIndex !== undefined && values[fieldIndex]) {
       try {
-        item[field] = safeJsonParse(values[fieldMap[field as string]]);
+        item[field] = safeJsonParse(values[fieldIndex]);
       } catch {
         item[field] = [];
       }
@@ -308,9 +322,12 @@ function mapCsvRowToItem({
 
   // Handle availability enum separately
   if (fieldMap.availability !== undefined && values[fieldMap.availability]) {
-    item.availability = values[fieldMap.availability]
-      .replace(/^"|"$/g, '')
-      .trim() as NewCatalogItem['availability'];
+    const availabilityValue = values[fieldMap.availability];
+    if (availabilityValue) {
+      item.availability = availabilityValue
+        .replace(/^"|"$/g, '')
+        .trim() as NewCatalogItem['availability'];
+    }
   }
 
   return item;
@@ -422,9 +439,11 @@ export function parseFaqs(input: string): Array<{ question: string; answer: stri
 
   let match = regex.exec(cleaned);
   while (match !== null) {
-    const question = match[1].trim();
-    const answer = match[2].trim();
-    results.push({ question, answer });
+    const question = match[1]?.trim();
+    const answer = match[2]?.trim();
+    if (question && answer) {
+      results.push({ question, answer });
+    }
 
     match = regex.exec(cleaned);
   }
