@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     images: [`${siteConfig.url}/og-image.jpg`],
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: '/PackRat.ico',
     shortcut: '/favicon-16x16.png',
     apple: '/apple-touch-icon.png',
   },

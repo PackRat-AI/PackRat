@@ -7,11 +7,18 @@ on:
 jobs:
   merge-main-into-development:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+      checks: write
+      pull-requests: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           ref: development
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       - name: Merge main into development
         uses: devmasx/merge-branch@v1.4.0
         with:
