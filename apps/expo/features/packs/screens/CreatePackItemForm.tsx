@@ -217,7 +217,7 @@ export const CreatePackItemForm = ({
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors[0]?.message}
+                    errorMessage={(field.state.meta.errors[0] as any)?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="backpack" size={16} color={colors.grey3} />
@@ -284,7 +284,7 @@ export const CreatePackItemForm = ({
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
                     keyboardType="numeric"
-                    errorMessage={field.state.meta.errors[0]?.message}
+                    errorMessage={(field.state.meta.errors[0] as any)?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="dumbbell" size={16} color={colors.grey3} />
@@ -302,9 +302,12 @@ export const CreatePackItemForm = ({
                     <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
                     <SegmentedControl
                       values={WEIGHT_UNITS}
-                      selectedIndex={WEIGHT_UNITS.indexOf(field.state.value)}
+                      selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
                       onIndexChange={(index) => {
-                        field.handleChange(WEIGHT_UNITS[index]);
+                        const unit = WEIGHT_UNITS[index];
+                        if (unit) {
+                          field.handleChange(unit);
+                        }
                       }}
                     />
                   </View>
@@ -324,7 +327,7 @@ export const CreatePackItemForm = ({
                       field.handleChange(intValue);
                     }}
                     keyboardType="numeric"
-                    errorMessage={field.state.meta.errors[0]?.message}
+                    errorMessage={(field.state.meta.errors[0] as any)?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="circle-outline" size={16} color={colors.grey3} />

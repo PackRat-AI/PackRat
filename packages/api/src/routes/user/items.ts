@@ -41,17 +41,22 @@ const userItemsGetRoute = createRoute({
 });
 
 userItemsRoutes.openapi(userItemsGetRoute, async (c) => {
-  const auth = c.get('user');
-  const db = createDb(c);
+  try {
+    const auth = c.get('user');
+    const db = createDb(c);
 
-  const items = await db.query.packItems.findMany({
-    where: eq(packItems.userId, auth.userId),
-    with: {
-      catalogItem: true,
-    },
-  });
+    const items = await db.query.packItems.findMany({
+      where: eq(packItems.userId, auth.userId),
+      with: {
+        catalogItem: true,
+      },
+    });
 
-  return c.json(items, 200);
+    return c.json(items, 200);
+  } catch (error) {
+    console.error('Error fetching user items:', error);
+    return c.json({ error: 'Internal server error', code: 'FETCH_ERROR' }, 500);
+  }
 });
 
 export { userItemsRoutes };
