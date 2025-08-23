@@ -1,6 +1,6 @@
+import Storage from 'expo-sqlite/kv-store';
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
-import Storage from 'expo-sqlite/kv-store';
 
 // User type definition
 export type User = {
