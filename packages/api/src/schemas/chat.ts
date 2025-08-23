@@ -33,29 +33,29 @@ export const ChatMessageSchema = z
   })
   .openapi('ChatMessage');
 
-export const ChatRequestSchema = z
-  .object({
-    messages: z.array(ChatMessageSchema).openapi({
-      description: 'Array of chat messages',
-    }),
-    contextType: z.string().optional().openapi({
-      example: 'pack',
-      description: 'Type of context for the chat (e.g., pack, item)',
-    }),
-    itemId: z.string().optional().openapi({
-      example: 'item_123456',
-      description: 'ID of the item being discussed',
-    }),
-    packId: z.string().optional().openapi({
-      example: 'pack_123456',
-      description: 'ID of the pack being discussed',
-    }),
-    location: z.string().optional().openapi({
-      example: 'Mount Washington, New Hampshire',
-      description: 'Current location context for the user',
-    }),
-  })
-  .openapi('ChatRequest');
+export const ChatRequestSchema = z.any().openapi('Chatequest');
+// .oRbject({
+//   messages: z.array(ChatMessageSchema).openapi({
+//     description: 'Array of chat messages',
+//   }),
+//   contextType: z.string().optional().openapi({
+//     example: 'pack',
+//     description: 'Type of context for the chat (e.g., pack, item)',
+//   }),
+//   itemId: z.string().optional().openapi({
+//     example: 'item_123456',
+//     description: 'ID of the item being discussed',
+//   }),
+//   packId: z.string().optional().openapi({
+//     example: 'pack_123456',
+//     description: 'ID of the pack being discussed',
+//   }),
+//   location: z.string().optional().openapi({
+//     example: 'Mount Washington, New Hampshire',
+//     description: 'Current location context for the user',
+//   }),
+// })
+// .openapi('Chatequest');
 
 export const ReportedContentUserSchema = z
   .object({
