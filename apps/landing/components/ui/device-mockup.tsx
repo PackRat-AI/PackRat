@@ -82,7 +82,7 @@ export default function DeviceMockup({
             src={image || '/placeholder.svg'}
             alt={alt}
             fill
-            className="object-cover"
+            className="object-cover object-top"
             priority={priority}
           />
 
