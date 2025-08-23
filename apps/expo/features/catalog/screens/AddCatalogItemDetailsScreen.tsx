@@ -87,7 +87,7 @@ export function AddCatalogItemDetailsScreen() {
       }
     }
     setIsAdding(true);
-
+    
     const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
 
     createItem({
@@ -102,7 +102,7 @@ export function AddCatalogItemDetailsScreen() {
         consumable: isConsumable,
         worn: isWorn,
         notes,
-        image: cachedImageFilename,
+        image: imageFileName,
         catalogItemId: catalogItem.id,
       },
     });
