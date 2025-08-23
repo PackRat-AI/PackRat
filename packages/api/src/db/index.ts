@@ -5,7 +5,7 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import type { Context } from 'hono';
-import { Client, Pool } from 'pg';
+import { Pool } from 'pg';
 
 // Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
 const isStandardPostgresUrl = (url: string) => {
