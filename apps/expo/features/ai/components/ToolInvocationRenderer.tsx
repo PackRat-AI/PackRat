@@ -1,4 +1,5 @@
 import type { ToolUIPart } from 'ai';
+import { AvailableToolsGenerativeUI } from './AvailableToolsGenerativeUI';
 import { CatalogItemsGenerativeUI } from './CatalogItemsGenerativeUI';
 import { GuidesRAGGenerativeUI } from './GuidesRAGGenerativeUI';
 import { PackDetailsGenerativeUI } from './PackDetailsGenerativeUI';
@@ -17,6 +18,11 @@ export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendere
   }
 
   const { type: toolName, input: args, output: result } = toolInvocation;
+
+  // Handle listAvailableTools tool result
+  if (toolName === 'tool-listAvailableTools' && result.success && result.tools) {
+    return <AvailableToolsGenerativeUI tools={result.tools} totalCount={result.totalCount} />;
+  }
 
   // Handle getWeatherForLocation tool result
   if (toolName === 'tool-getWeatherForLocation') {

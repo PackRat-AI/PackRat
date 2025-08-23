@@ -256,6 +256,104 @@ export function createTools(c: Context, userId: number) {
       },
     }),
 
+    listAvailableTools: tool({
+      description:
+        'List all available AI tools and their descriptions to help users discover functionality.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        try {
+          // Define tool information that will be displayed to users
+          const toolsInfo = [
+            {
+              name: 'getPackDetails',
+              displayName: 'Pack Details',
+              description:
+                'Get detailed information about a specific pack including all items, weights, and categories.',
+              icon: 'backpack',
+              category: 'Packs',
+              example: 'Show me details for pack ID 12345',
+            },
+            {
+              name: 'getPackItemDetails',
+              displayName: 'Pack Item Details',
+              description:
+                'Get detailed information about a specific item in a pack including its catalog details.',
+              icon: 'archive',
+              category: 'Items',
+              example: 'Show me details for item ID 67890',
+            },
+            {
+              name: 'getWeatherForLocation',
+              displayName: 'Weather Information',
+              description: 'Get current weather information for a specific location.',
+              icon: 'cloud',
+              category: 'Weather',
+              example: "What's the weather like in Yosemite National Park?",
+            },
+            {
+              name: 'getCatalogItems',
+              displayName: 'Gear Catalog',
+              description:
+                'Retrieve items from the comprehensive gear database with optional filters or search criteria.',
+              icon: 'clipboard-list',
+              category: 'Catalog',
+              example: 'Show me ultralight tents under 2 lbs',
+            },
+            {
+              name: 'semanticCatalogSearch',
+              displayName: 'Smart Gear Search',
+              description:
+                'Search the comprehensive gear database using semantic search for better results.',
+              icon: 'magnify',
+              category: 'Catalog',
+              example: 'Find gear for winter backpacking',
+            },
+            {
+              name: 'searchPackratOutdoorGuidesRAG',
+              displayName: 'Outdoor Guides',
+              description:
+                'Search the Packrat outdoor guides knowledge base for hiking tips, trail information, and outdoor expertise.',
+              icon: 'book-open',
+              category: 'Guides',
+              example: 'How to pack for a 3-day backpacking trip?',
+            },
+            {
+              name: 'webSearchTool',
+              displayName: 'Web Search',
+              description:
+                'Search the web for current information, news, deals, recommendations, and real-time data.',
+              icon: 'web',
+              category: 'Search',
+              example: 'Latest hiking gear deals this month',
+            },
+            {
+              name: 'executeSql',
+              displayName: 'Database Query',
+              description:
+                'Execute read-only SQL queries against the database for advanced data analysis.',
+              icon: 'database',
+              category: 'Advanced',
+              example: 'Show me all packs created in the last month',
+            },
+          ];
+
+          return {
+            success: true,
+            tools: toolsInfo,
+            totalCount: toolsInfo.length,
+          };
+        } catch (error) {
+          console.error('listAvailableTools tool error', error);
+          sentry.setTag('location', 'ai-tool-call/listAvailableTools');
+          sentry.captureException(error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to list available tools',
+          };
+        }
+      },
+    }),
+
     executeSql: tool({
       description:
         'Execute read-only SQL queries against the database. Only SELECT statements are allowed.',
