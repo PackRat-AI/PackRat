@@ -41,6 +41,7 @@ export default function LocationPreviewScreen() {
   // Extract location data from params
   const latitude = Number.parseFloat(params.lat as string);
   const longitude = Number.parseFloat(params.lon as string);
+  const locationId = Number.parseInt(String(params.id), 10);
   // const locationName = params.name as string;
   // const region = params.region as string;
   // const country = params.country as string;
@@ -50,7 +51,7 @@ export default function LocationPreviewScreen() {
     setError(null);
 
     try {
-      const data = await getWeatherData(latitude, longitude);
+      const data = await getWeatherData(locationId);
       if (data) {
         const formattedData = formatWeatherData(data);
         setWeatherData(formattedData);

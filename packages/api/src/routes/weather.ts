@@ -81,7 +81,7 @@ weatherRoutes.openapi(searchRoute, async (c) => {
 
     // Transform API response to our LocationSearchResult type
     const locations = data.map((item) => ({
-      id: `${item.id || item.lat}_${item.lon}`,
+      id: item.id,
       name: item.name,
       region: item.region,
       country: item.country,
@@ -181,7 +181,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
         // Create a single result from the current conditions response
         return c.json([
           {
-            id: `${currentData.location.lat}_${currentData.location.lon}`,
+            id: currentData.location.id,
             name: currentData.location.name,
             region: currentData.location.region,
             country: currentData.location.country,
@@ -194,7 +194,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
     // Transform API response to our LocationSearchResult type
     const locations = data.map((item) => ({
-      id: `${item.id || item.lat}_${item.lon}`,
+      id: item.id,
       name: item.name,
       region: item.region,
       country: item.country,
@@ -258,16 +258,14 @@ const forecastRoute = createRoute({
 weatherRoutes.openapi(forecastRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
-  const latitude = Number.parseFloat(c.req.query('lat') || '');
-  const longitude = Number.parseFloat(c.req.query('lon') || '');
+  const id = c.req.query('id');
 
-  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-    return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
+  if (Number.isNaN(id)) {
+    return c.json({ error: 'Valid location ID is required' }, 400);
   }
 
   try {
-    // Format coordinates for the API query
-    const query = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+    const query = `id:${id}`;
 
     // Get forecast data with all the details we need
     const response = await fetch(
@@ -279,12 +277,12 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     }
 
     const data: WeatherAPIForecastResponse = await response.json();
+    data.location.id = Number(id);
     return c.json(data, 200);
   } catch (error) {
     console.error('Error fetching weather forecast:', error);
     c.get('sentry').setContext('params', {
-      latitude,
-      longitude,
+      id,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });

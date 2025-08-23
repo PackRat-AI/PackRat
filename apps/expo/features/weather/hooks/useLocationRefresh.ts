@@ -6,16 +6,13 @@ export function useLocationRefresh() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { locationsState, updateLocation } = useLocations();
 
-  const refreshLocation = async (locationId: string) => {
+  const refreshLocation = async (locationId: number) => {
     if (isRefreshing || locationsState.state !== 'hasData') return false;
-
-    const location = locationsState.data.find((loc) => loc.id === locationId);
-    if (!location) return false;
 
     setIsRefreshing(true);
 
     try {
-      const weatherData = await getWeatherData(location.lat, location.lon);
+      const weatherData = await getWeatherData(locationId);
 
       if (weatherData) {
         const formattedData = formatWeatherData(weatherData);
@@ -54,7 +51,7 @@ export function useLocationRefresh() {
     try {
       for (const location of locations) {
         try {
-          const weatherData = await getWeatherData(location.lat, location.lon);
+          const weatherData = await getWeatherData(location.id);
 
           if (weatherData) {
             const formattedData = formatWeatherData(weatherData);
