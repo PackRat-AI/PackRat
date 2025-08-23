@@ -81,7 +81,7 @@ weatherRoutes.openapi(searchRoute, async (c) => {
 
     // Transform API response to our LocationSearchResult type
     const locations = data.map((item) => ({
-      id: `${item.id}`,
+      id: item.id,
       name: item.name,
       region: item.region,
       country: item.country,
@@ -181,7 +181,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
         // Create a single result from the current conditions response
         return c.json([
           {
-            id: `${currentData.location.lat}_${currentData.location.lon}`,
+            id: currentData.location.id,
             name: currentData.location.name,
             region: currentData.location.region,
             country: currentData.location.country,
@@ -194,7 +194,7 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
     // Transform API response to our LocationSearchResult type
     const locations = data.map((item) => ({
-      id: `${item.id || item.lat}_${item.lon}`,
+      id: item.id,
       name: item.name,
       region: item.region,
       country: item.country,
@@ -257,10 +257,15 @@ const forecastRoute = createRoute({
 
 weatherRoutes.openapi(forecastRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
-  const locationId = c.req.query('id');
+
+  const id = c.req.query('id');
+
+  if (Number.isNaN(id)) {
+    return c.json({ error: 'Valid location ID is required' }, 400);
+  }
 
   try {
-    const query = `id:${locationId}`;
+    const query = `id:${id}`;
 
     // Get forecast data with all the details we need
     const response = await fetch(
@@ -272,11 +277,12 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     }
 
     const data: WeatherAPIForecastResponse = await response.json();
+    data.location.id = Number(id);
     return c.json(data, 200);
   } catch (error) {
     console.error('Error fetching weather forecast:', error);
     c.get('sentry').setContext('params', {
-      locationId,
+      id,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });

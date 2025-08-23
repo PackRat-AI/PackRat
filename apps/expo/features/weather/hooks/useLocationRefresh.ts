@@ -6,11 +6,8 @@ export function useLocationRefresh() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { locationsState, updateLocation } = useLocations();
 
-  const refreshLocation = async (locationId: string) => {
+  const refreshLocation = async (locationId: number) => {
     if (isRefreshing || locationsState.state !== 'hasData') return false;
-
-    const location = locationsState.data.find((loc) => loc.id === locationId);
-    if (!location) return false;
 
     setIsRefreshing(true);
 

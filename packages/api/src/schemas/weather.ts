@@ -43,6 +43,7 @@ export const LocationSchema = z
 // Extended location schema for API responses
 export const WeatherAPILocationSchema = z
   .object({
+    id: z.number(),
     name: z.string(),
     region: z.string(),
     country: z.string(),
