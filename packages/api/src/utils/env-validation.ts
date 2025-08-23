@@ -157,3 +157,12 @@ export function getEnv(c: Context): ValidatedEnv {
 
   return data;
 }
+
+/**
+ * Validate Cloudflare API environment variables at build/deploy time
+ * Called after root postinstall populates env vars
+ * Throws an error if validation fails
+ */
+export function validateCloudflareApiEnv(env: Record<string, unknown>): void {
+  apiEnvSchema.parse(env);
+}

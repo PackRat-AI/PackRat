@@ -108,17 +108,17 @@ export default function DownloadSection() {
               <div className="relative mx-auto lg:mx-0">
                 <div className="relative mx-auto max-w-[220px] md:max-w-[280px]">
                   <div
-                    className="relative overflow-hidden rounded-[30px] md:rounded-[40px] border-[10px] md:border-[14px] bg-black aspect-[9/19.5] shadow-2xl shadow-black/20"
+                    className="relative overflow-hidden rounded-[30px] md:rounded-[40px] border-[10px] md:border-[14px] bg-white aspect-[9/19.5] shadow-2xl shadow-black/20"
                     style={{ borderColor: '#1E293B' }}
                   >
                     <div className="absolute top-0 left-1/2 z-10 h-4 md:h-6 w-24 md:w-36 -translate-x-1/2 rounded-b-3xl bg-black"></div>
-                    <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute inset-0 overflow-hidden pt-4 md:pt-5">
                       <Image
                         width={522}
                         height={1024}
                         src={siteConfig.download.image || '/placeholder.svg'}
                         alt="PackRat App"
-                        className="object-cover w-full"
+                        className="object-cover w-full h-full"
                       />
                       <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-80"></div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>

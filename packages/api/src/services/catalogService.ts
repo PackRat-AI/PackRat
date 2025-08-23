@@ -50,7 +50,7 @@ export class CatalogService {
     offset?: number;
     category?: string;
     sort?: {
-      field: 'name' | 'brand' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
+      field: 'name' | 'brand' | 'category' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
       order: 'asc' | 'desc';
     };
   }): Promise<{
@@ -94,9 +94,17 @@ export class CatalogService {
     let orderBy = [desc(catalogItems.id)]; // default ordering
     if (sort) {
       const { field, order } = sort;
-      const sortColumn = catalogItems[field];
-      if (sortColumn) {
-        orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn)];
+      if (field === 'category') {
+        orderBy = [
+          order === 'desc'
+            ? desc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`)
+            : asc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`),
+        ];
+      } else {
+        const sortColumn = catalogItems[field];
+        if (sortColumn) {
+          orderBy = [order === 'desc' ? desc(sortColumn) : asc(sortColumn)];
+        }
       }
     }
 

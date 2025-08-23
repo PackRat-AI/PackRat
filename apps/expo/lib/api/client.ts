@@ -8,7 +8,7 @@ import axios, {
 import { store } from 'expo-app/atoms/store';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { refreshTokenAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import * as SecureStore from 'expo-secure-store';
+import Storage from 'expo-sqlite/kv-store';
 
 // Define base API URL based on environment
 export const API_URL = clientEnvs.EXPO_PUBLIC_API_URL;
@@ -50,7 +50,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 axiosInstance.interceptors.request.use(
   async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
     try {
-      const token = await SecureStore.getItemAsync('access_token');
+      const token = await Storage.getItem('access_token');
 
       // If token exists, attach it to the request
       if (token && config.headers) {
@@ -91,7 +91,7 @@ axiosInstance.interceptors.response.use(
       try {
         // Get refresh token
         // const refreshToken = await store.get(refreshTokenAtom);
-        const refreshToken = await SecureStore.getItemAsync('refresh_token');
+        const refreshToken = await Storage.getItem('refresh_token');
 
         if (!refreshToken) {
           // No refresh token, logout user
@@ -129,8 +129,9 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed, logout user
         // Clear tokens
-        await SecureStore.deleteItemAsync('access_token');
-        await SecureStore.deleteItemAsync('refresh_token');
+        await Storage.removeItem('access_token');
+        await Storage.removeItem('refresh_token');
+
         await store.set(tokenAtom, null);
         await store.set(refreshTokenAtom, null);
         // Dispatch logout action

@@ -13,15 +13,14 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 > This project is still in development and may contain bugs or issues. Please use the app with caution and report any problems you encounter. Thank you for your understanding and cooperation.
 
 **Build & CI:**
-![Node.js CI](https://github.com/andrew-bierman/PackRat/actions/workflows/node.js.yml/badge.svg)
-![Node.js CI for Dev Environment](https://github.com/andrew-bierman/PackRat/actions/workflows/node.js.dev.yml/badge.svg)
-![Docker Image CI](https://github.com/andrew-bierman/PackRat/actions/workflows/docker.node.yml/badge.svg)
-![android-build-apk](https://github.com/andrew-bierman/PackRat/actions/workflows/build.yml/badge.svg)
+![Biome Check](https://github.com/PackRat-AI/PackRat/actions/workflows/biome.yml/badge.svg)
+![Check Types](https://github.com/PackRat-AI/PackRat/actions/workflows/check-types.yml/badge.svg)
+![Database Migrations](https://github.com/PackRat-AI/PackRat/actions/workflows/migrations.yml/badge.svg)
 
 **Repository Info:**
-![GitHub tag](https://img.shields.io/github/tag/andrew-bierman/PackRat?include_prereleases=&sort=semver&color=blue)
+![GitHub tag](https://img.shields.io/github/tag/PackRat-AI/PackRat?include_prereleases=&sort=semver&color=blue)
 ![License](https://img.shields.io/badge/License-GNU-blue)
-![issues - PackRat](https://img.shields.io/github/issues/andrew-bierman/PackRat)
+![issues - PackRat](https://img.shields.io/github/issues/PackRat-AI/PackRat)
 
 <div align="center">
 
@@ -38,31 +37,21 @@ So pack your bags, grab your friends, and get ready for your next adventure with
   - [Features 🚀](#features-)
   - [Technologies used 💻](#technologies-used-)
   - [🗂 Folder layout](#-folder-layout)
-  - [UI Kit](#ui-kit)
   - [🆕 Add new dependencies](#-add-new-dependencies)
     - [Pure JS dependencies](#pure-js-dependencies)
     - [Native dependencies](#native-dependencies)
-  - [Update new dependencies](#update-new-dependencies)
-    - [Pure JS dependencies](#pure-js-dependencies-1)
+    - [Mobile app dependencies](#mobile-app-dependencies)
+    - [API dependencies](#api-dependencies)
+    - [Web app dependencies](#web-app-dependencies)
+  - [Dependency management](#dependency-management)
   - [Local installation 📲](#local-installation-)
     - [Dependencies](#dependencies)
+    - [GitHub Packages Authentication](#github-packages-authentication)
     - [Environment Setup](#environment-setup)
-      - [Automated Setup (Unix) 🛠️](#automated-setup-unix-️)
-      - [Manual Setup 📝](#manual-setup-)
-    - [Yarn Setup](#yarn-setup)
-      - [Root](#root)
-      - [Server](#server)
-      - [Client](#client)
+    - [Git Hooks Setup](#git-hooks-setup)
+    - [Installation & Development](#installation--development)
     - [Debugging 🐛](#debugging-)
-      - [Debugging Yarn Environment Setup - Windows](#debugging-yarn-environment-setup---windows)
-      - [Debugging Client Environment Setup 🐛](#debugging-client-environment-setup-)
-        - [Expo](#expo)
-        - [Debugging Dependencies](#debugging-dependencies)
-        - [Debugging Cloudflare Wrangler and D1](#debugging-cloudflare-wrangler-and-d1)
-  - [Docker Installation 🐳 \[Experimental\]](#docker-installation--experimental)
-    - [Dependencies](#dependencies-1)
-    - [Installation](#installation)
-  - [How backend API's are setup](#how-backend-apis-are-setup)
+  - [API Architecture](#api-architecture)
   - [Contributing 🤝](#contributing-)
   - [User Stories:](#user-stories)
   - [User Features:](#user-features)
@@ -150,27 +139,53 @@ The main folders are:
 
 - **`apps/`** - Applications
   - `expo/` - React Native mobile app with Expo Router
+    - `app/` - App router screens and layouts
+    - `features/` - Feature-based modules (auth, packs, etc.)
+    - `components/` - Reusable UI components
+    - `atoms/` - Jotai atoms for global state
+    - `providers/` - React context providers
+    - `lib/` - Utility libraries and configurations
+    - `assets/` - Images, fonts, and other static assets
   - `landing/` - Next.js landing page website
   - `guides/` - Next.js documentation and guides site
 
 - **`packages/`** - Shared packages across apps
   - `api/` - Hono.js API server running on Cloudflare Workers
-    - `provider` (all the providers that wrap the app, and some no-ops for Web.)
-    - `api` - intended to be our services, but tRPC eliminated a lot of this need due to custom hooks. [mostly deprecated]
-    - `assets` - images and branding
-    - `auth` - auth provider and hook, currently set up for expo router auth. Once we have next js config done, will refactor to support next js auth somehow
-    - `components` - built components from our primitive ui elements (root/packages/ui), and custom logic hooks (/hooks)
-    - `config` - axios config, we have almost no axios needs with trpc. Once fully migrated away this will be removed.
-    - `constants` - strings and arrays that don’t change
-    - `context` - all react context stuff
-    - `hooks` - custom hooks for logic and data fetching with trpc
-    - `media` - media query in react native config
-    - `public` - web only assets like favicon
-    - `atoms` - jotai atoms for global state
-    - `theme` - tracks dark and light mode theming logic and tamagui config
-    - `utils` - utility functions that can be reused
+    - `src/` - Source code with routes, middleware, and services
+    - `drizzle/` - Database schema and migrations
+    - `test/` - API tests
+  - `ui/` - Shared UI components and design system
 
 ## 🆕 Add new dependencies
+
+### Pure JS dependencies
+
+For pure JavaScript libraries that work across all platforms (mobile, web, API):
+
+```sh
+# Install in the root to share across all apps
+bun add lodash
+
+# Or install in specific package if only used there
+cd packages/api
+bun add dayjs
+```
+
+These dependencies work without platform-specific code and can be safely used in any JavaScript environment.
+
+### Native dependencies
+
+For React Native modules that require platform-specific code (Android/iOS):
+
+```sh
+cd apps/expo
+bun add react-native-reanimated
+
+# Don't forget to rebuild after adding native dependencies
+bun --cwd apps/expo run expo prebuild --clean
+```
+
+Native dependencies often require additional configuration and may need platform-specific setup. Always check the library's installation guide for React Native.
 
 ### Mobile app dependencies
 
@@ -279,13 +294,13 @@ For GitHub Actions and other CI platforms:
    HTTPS:
 
 ```bash
-git clone https://github.com/andrew-bierman/PackRat.git
+git clone https://github.com/PackRat-AI/PackRat.git
 ```
 
 SSH:
 
 ```bash
-git clone git@github.com:andrew-bierman/PackRat.git
+git clone git@github.com:PackRat-AI/PackRat.git
 ```
 
 2. Navigate to the `PackRat` directory:
@@ -385,16 +400,16 @@ bun expo
 
 ```bash
 # Doctor check for Expo setup
-npx expo-doctor
+bun --cwd apps/expo run expo-doctor
 
 # Fix dependencies
-npx expo install --fix
+bun --cwd apps/expo run expo install --fix
 
 # Clean build
-npx expo prebuild --clean
+bun --cwd apps/expo run expo prebuild --clean
 
 # Clear cache
-npx expo start --clear
+bun expo --clear
 ```
 
 **Dependency Issues:**
@@ -416,6 +431,26 @@ bun install
 - Check that your `wrangler.jsonc` is configured correctly in `packages/api/`
 - Ensure your Cloudflare environment variables are set
 - Use `bun api` to start the development server locally
+
+### Code Quality
+
+PackRat uses modern tools for code quality and consistency:
+
+```bash
+# Format all code
+bun format
+
+# Lint and fix issues
+bun lint
+
+# Type checking
+bun check-types
+
+# Check dependency consistency
+bun check:deps
+```
+
+The project uses [Lefthook](https://github.com/evilmartians/lefthook) for git hooks - these run automatically on push to ensure code quality.
 
 ## API Architecture
 

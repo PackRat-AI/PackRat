@@ -2,9 +2,10 @@
 process.env.ENVIRONMENT = 'development';
 process.env.SENTRY_DSN = 'https://test@test.ingest.sentry.io/test';
 
-// Database - Using in-memory PGlite for tests
-process.env.NEON_DATABASE_URL = 'pglite://memory';
-process.env.NEON_DATABASE_URL_READONLY = 'pglite://memory';
+// Database - Using PostgreSQL Docker container for tests
+process.env.NEON_DATABASE_URL = 'postgres://test_user:test_password@localhost:5433/packrat_test';
+process.env.NEON_DATABASE_URL_READONLY =
+  'postgres://test_user:test_password@localhost:5433/packrat_test';
 
 // Authentication & Security
 process.env.JWT_SECRET = 'secret';
@@ -41,49 +42,92 @@ process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME = 'test-scrapy-bucket';
 process.env.PACKRAT_GUIDES_RAG_NAME = 'test-rag';
 process.env.PACKRAT_GUIDES_BASE_URL = 'https://guides.test.com';
 
-import { PGlite } from '@electric-sql/pglite';
-import { drizzle } from 'drizzle-orm/pglite';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 
-let pglite: PGlite;
+let testClient: Client;
 let testDb: ReturnType<typeof drizzle>;
 
-// Setup in-memory database before all tests
-beforeAll(async () => {
-  // Create in-memory PGlite instance
-  pglite = new PGlite();
-  testDb = drizzle(pglite, { schema });
+vi.mock('hono/adapter', async () => {
+  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
+  return { ...actual, env: () => process.env };
+});
 
-  // Run migrations by executing SQL directly
+// Mock the database module to use our test database (node-postgres version)
+vi.mock('@packrat/api/db', () => ({
+  createDb: vi.fn(() => testDb),
+  createReadOnlyDb: vi.fn(() => testDb),
+  createDbClient: vi.fn(() => testDb),
+}));
+
+// Setup PostgreSQL connection for tests
+beforeAll(async () => {
+  console.log('🔧 Setting up test database connection...');
+
+  // Create direct PostgreSQL client connection for manual database operations
+  testClient = new Client({
+    host: 'localhost',
+    port: 5433,
+    database: 'packrat_test',
+    user: 'test_user',
+    password: 'test_password',
+  });
+
   try {
-    // Read and execute migration files
+    await testClient.connect();
+    testDb = drizzle(testClient, { schema });
+    console.log('✅ Test database connected successfully');
+
+    // Run migrations using direct PostgreSQL client
     const fs = await import('node:fs/promises');
     const path = await import('node:path');
     const migrationsDir = path.join(process.cwd(), 'drizzle');
 
-    const files = await fs.readdir(migrationsDir);
-    const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
+    try {
+      const files = await fs.readdir(migrationsDir);
+      const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
 
-    for (const file of sqlFiles) {
-      const sql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
-      await pglite.exec(sql);
+      for (const file of sqlFiles) {
+        const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
+        await testClient.query(migrationSql);
+      }
+
+      console.log('✅ Test database migrations completed');
+    } catch (error) {
+      console.error('❌ Failed to run database migrations:', error);
+      throw error;
     }
-
-    console.log('✅ Test database setup complete');
   } catch (error) {
-    console.error('Failed to setup test database:', error);
+    console.error('❌ Failed to connect to test database:', error);
+    console.log('This is expected in CI where PostgreSQL service should be available');
     throw error;
   }
 });
 
 // Clean up database after each test to ensure isolation
 beforeEach(async () => {
-  // Truncate all tables except migrations
-  const tables = Object.keys(schema);
-  for (const tableName of tables) {
+  if (!testClient) return;
+
+  // Truncate all tables except migrations and drizzle metadata using PostgreSQL client
+  const tablesToTruncate = [
+    'users',
+    'packs',
+    'pack_items',
+    'pack_templates',
+    'pack_template_items',
+    'user_items',
+    'catalog_items',
+    'weather_cache',
+    'password_reset_codes',
+    'verification_codes',
+    'weight_history',
+  ];
+
+  for (const tableName of tablesToTruncate) {
     try {
-      await pglite.exec(`TRUNCATE TABLE ${tableName} CASCADE`);
+      await testClient.query(`TRUNCATE TABLE ${tableName} CASCADE`);
     } catch (_error) {
       // Ignore errors for non-existent tables
     }
@@ -92,29 +136,15 @@ beforeEach(async () => {
 
 // Cleanup after all tests
 afterAll(async () => {
-  if (pglite) {
-    await pglite.close();
+  console.log('🧹 Cleaning up test database connection...');
+
+  try {
+    // Close PostgreSQL client connection
+    if (testClient) {
+      await testClient.end();
+    }
+    console.log('✅ Test database connection closed');
+  } catch (error) {
+    console.error('❌ Failed to cleanup test database connection:', error);
   }
-});
-
-// Mock the database module to use our test database
-vi.mock('@packrat/api/db', () => ({
-  createDb: vi.fn(() => testDb),
-  createReadOnlyDb: vi.fn(() => testDb),
-  createDbClient: vi.fn(() => testDb),
-}));
-
-// Mock neon module to work with PGlite
-vi.mock('@neondatabase/serverless', () => ({
-  neon: vi.fn(() => (sql: string, params?: unknown[]) => pglite.query(sql, params)),
-}));
-
-// Mock drizzle-orm/neon-http to use PGlite
-vi.mock('drizzle-orm/neon-http', () => ({
-  drizzle: vi.fn(() => testDb),
-}));
-
-vi.mock('hono/adapter', async () => {
-  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
-  return { ...actual, env: () => process.env };
 });
