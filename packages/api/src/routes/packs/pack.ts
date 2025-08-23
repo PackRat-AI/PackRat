@@ -12,7 +12,7 @@ import {
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { and, cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
+import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
 
 const packRoutes = new OpenAPIHono();
 
@@ -180,22 +180,25 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
 
   const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
 
-  const existingCatalogIds = new Set(pack.items.map((item) => item.catalogItemId).filter(Boolean));
+  const existingCatalogIds = pack.items
+    .map((item) => item.catalogItemId)
+    .filter((id): id is number => typeof id === 'number');
 
-  const excludeCondition = existingCatalogIds.size
-    ? sql`NOT (${catalogItems.id} = ANY(${Array.from(existingCatalogIds)}))`
-    : sql`TRUE`;
+  const whereConditions = [gt(similarity, 0.1)];
+  if (existingCatalogIds.length > 0) {
+    whereConditions.push(notInArray(catalogItems.id, existingCatalogIds));
+  }
 
   const similarItems = await db
     .select({
       id: catalogItems.id,
       name: catalogItems.name,
-      image: catalogItems.image,
-      category: catalogItems.category,
+      images: catalogItems.images,
+      categories: catalogItems.categories,
       similarity,
     })
     .from(catalogItems)
-    .where(and(gt(similarity, 0.1), excludeCondition))
+    .where(and(...whereConditions))
     .orderBy(desc(similarity))
     .limit(5);
 
