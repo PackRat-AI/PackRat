@@ -9,6 +9,13 @@ interface CachedImageProps extends Omit<ImageProps, 'source'> {
   placeholderColor?: string;
 }
 
+/**
+ * CachedImage
+ *
+ * Responsible for displaying user-owned item images.
+ * Loads from local cache if available, otherwise downloads and caches the image
+ * before displaying. Shows loading indicator while fetching.
+ */
 export const CachedImage: React.FC<CachedImageProps> = ({
   imageObjectKey,
   imageRemoteUrl,
