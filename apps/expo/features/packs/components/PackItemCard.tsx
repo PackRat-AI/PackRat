@@ -1,7 +1,6 @@
 import { Alert, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
@@ -13,6 +12,7 @@ import {
   usePackItemOwnershipCheck,
 } from '../hooks';
 import type { PackItem } from '../types';
+import { PackItemImage } from './PackItemImage';
 
 type PackItemCardProps = {
   item: PackItem;
@@ -34,7 +34,7 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
       className="mb-3 flex-row overflow-hidden rounded-lg bg-card shadow-sm"
       onPress={() => onPress(item)}
     >
-      <CachedImage localFileName={item.image} className="w-28" resizeMode="cover" />
+      <PackItemImage item={item} className="w-28" resizeMode="cover" />
 
       <View className="flex-1 p-3">
         <View className="flex-row items-start justify-between">

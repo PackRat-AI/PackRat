@@ -11,7 +11,7 @@
     "env": "bun run .github/scripts/env.ts",
     "lefthook": "lefthook install",
     "preinstall": "bun run configure:deps",
-    "postinstall": "bun run lefthook && bun run env",
+    "postinstall": "bun run lefthook",
     "check:deps": "manypkg check",
     "fix:deps": "bun manypkg fix",
     "check-types": "tsc --noEmit",
