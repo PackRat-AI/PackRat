@@ -4,19 +4,17 @@ import type { Env } from '@packrat/api/utils/env-validation';
 import { CatalogService } from '../catalogService';
 import { generateManyEmbeddings } from '../embeddingService';
 import { mergeItemsBySku } from './mergeItemsBySku';
-import type { CatalogETLWriteBatchMessage } from './types';
 import { updateEtlJobProgress } from './updateEtlJobProgress';
 
-export async function processCatalogETLWriteBatch({
-  message,
+export async function processValidItemsBatch({
+  jobId,
+  items,
   env,
 }: {
-  message: CatalogETLWriteBatchMessage;
+  jobId: string;
+  items: Partial<NewCatalogItem>[];
   env: Env;
 }): Promise<void> {
-  const jobId = message.id;
-  const { items } = message.data;
-
   const catalogService = new CatalogService(env, false);
 
   // Consolidate items with identical SKUs before upserting to avoid conflicting duplicate upserts.

@@ -6,11 +6,13 @@ import { parse } from 'csv-parse';
 import { eq } from 'drizzle-orm';
 import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
+import { processLogsBatch } from './processLogsBatch';
+import { processValidItemsBatch } from './processValidItemsBatch';
 import { queueCatalogETL } from './queue';
-import { type CatalogETLMessage, QueueType } from './types';
+import type { CatalogETLMessage } from './types';
 
-export const CHUNK_SIZE = 5000;
-export const BATCH_SIZE = 10;
+export const CHUNK_SIZE = 10000;
+export const BATCH_SIZE = 500;
 
 async function* streamToText(stream: ReadableStream) {
   const reader = stream.getReader();
@@ -117,20 +119,20 @@ export async function processCatalogETL({
       }
 
       if (validItemsBatch.length >= BATCH_SIZE) {
-        await env.ETL_QUEUE.send({
-          type: QueueType.CATALOG_ETL_WRITE_BATCH,
-          id: jobId,
-          timestamp: Date.now(),
-          data: { items: validItemsBatch },
+        await processValidItemsBatch({
+          jobId,
+          items: validItemsBatch,
+          env,
         });
         validItemsBatch = [];
         await new Promise((r) => setTimeout(r, 1));
       }
 
       if (invalidItemsBatch.length >= BATCH_SIZE) {
-        await env.LOGS_QUEUE.send({
-          data: invalidItemsBatch,
-          id: jobId,
+        await processLogsBatch({
+          jobId,
+          logs: invalidItemsBatch,
+          env,
         });
         invalidItemsBatch = [];
       }
@@ -152,11 +154,10 @@ export async function processCatalogETL({
       console.log(
         `🔍 [TRACE] Processing final valid items batch - size: ${validItemsBatch.length}`,
       );
-      await env.ETL_QUEUE.send({
-        type: QueueType.CATALOG_ETL_WRITE_BATCH,
-        id: jobId,
-        timestamp: Date.now(),
-        data: { items: validItemsBatch },
+      await processValidItemsBatch({
+        jobId,
+        items: validItemsBatch,
+        env,
       });
     }
 
@@ -164,9 +165,10 @@ export async function processCatalogETL({
       console.log(
         `🔍 [TRACE] Processing final invalid items batch - size: ${invalidItemsBatch.length}`,
       );
-      await env.LOGS_QUEUE.send({
-        id: jobId,
-        data: invalidItemsBatch,
+      await processLogsBatch({
+        jobId,
+        logs: invalidItemsBatch,
+        env,
       });
     }
 
@@ -190,7 +192,10 @@ export async function processCatalogETL({
       );
     } else {
       console.log('🔍 [TRACE] No more chunks needed - processed all rows');
-      await db.update(etlJobs).set({ totalCount: rowIndex }).where(eq(etlJobs.id, jobId));
+      await db
+        .update(etlJobs)
+        .set({ totalCount: rowIndex, status: 'completed', completedAt: new Date() })
+        .where(eq(etlJobs.id, jobId));
     }
   } catch (error) {
     await db

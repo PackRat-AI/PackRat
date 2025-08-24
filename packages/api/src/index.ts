@@ -2,7 +2,7 @@ import type { MessageBatch } from '@cloudflare/workers-types';
 import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { routes } from '@packrat/api/routes';
-import { type BaseQueueMessage, processQueueBatch } from '@packrat/api/services/etl/queue';
+import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { Scalar } from '@scalar/hono-api-reference';
@@ -10,7 +10,7 @@ import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { logger } from 'hono/logger';
 import { CatalogService } from './services';
-import { LogsQueueConsumer } from './services/LogsQueueConsumer';
+import type { CatalogETLMessage } from './services/etl/types';
 import type { Variables } from './types/variables';
 
 const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
@@ -64,18 +64,12 @@ app.get('/', (c) => {
 
 export default {
   fetch: app.fetch,
-  async queue(batch: MessageBatch<BaseQueueMessage>, env: Env): Promise<void> {
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
       if (!env.ETL_QUEUE) {
         throw new Error('ETL_QUEUE is not configured');
       }
-      await processQueueBatch({ batch, env });
-    } else if (batch.queue === 'packrat-logs-queue' || batch.queue === 'packrat-logs-queue-dev') {
-      if (!env.LOGS_QUEUE) {
-        throw new Error('LOGS_QUEUE is not configured');
-      }
-      const consumer = new LogsQueueConsumer();
-      await consumer.handle(batch, env);
+      await processQueueBatch({ batch: batch as MessageBatch<CatalogETLMessage>, env });
     } else if (
       batch.queue === 'packrat-embeddings-queue' ||
       batch.queue === 'packrat-embeddings-queue-dev'
