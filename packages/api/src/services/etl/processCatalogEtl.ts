@@ -31,7 +31,10 @@ export async function processCatalogETL({
       env,
       bucketType: 'catalog',
     });
-
+ const r2ImageService = new R2BucketService({
+      env,
+      bucketType: 'images',
+    });
     const object = await r2Service.get(objectKey);
     if (!object) {
       throw new Error(`Object not found: ${objectKey}`);
@@ -77,6 +80,39 @@ export async function processCatalogETL({
         const validatedItem = validator.validateItem(item);
 
         if (validatedItem.isValid) {
+               // Upload images to R2
+          if (validatedItem.item.images?.length) {
+            const uploadedKeys = await Promise.all(
+              validatedItem.item.images.map(async (url, idx) => {
+                try {
+                  const res = await fetch(url);
+                  if (!res.ok) throw new Error(`Failed to download image: ${url}`);
+
+                  const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+                  const arrayBuffer = await res.arrayBuffer();
+                  if (arrayBuffer.byteLength > MAX_IMAGE_SIZE) {
+                    throw new Error(`Image too large (${arrayBuffer.byteLength} bytes): ${url}`);
+                  }
+
+                  const contentType = res.headers.get('content-type') || 'image/jpeg';
+                  const extension = getImageExtensionFromContentType(contentType);
+                  const key = `catalog/images/${validatedItem.item.sku}/${idx}.${extension}`;
+
+                  await r2ImageService.put(key, arrayBuffer, {
+                    httpMetadata: { contentType },
+                  });
+
+                  return key;
+                } catch (err) {
+                  console.error(`❌ Failed to upload image ${url}:`, err);
+                  return null;
+                }
+              }),
+            );
+            validatedItem.item.images = uploadedKeys.filter(
+              (key): key is string => typeof key === 'string',
+            );
+          }
           validItemsBatch.push(validatedItem.item);
         } else {
           const invalidItemLog = {
@@ -454,4 +490,19 @@ function parsePrice(priceStr: string): number | null {
   if (!priceStr) return null;
   const price = parseFloat(priceStr.replace(/[^0-9.]/g, ''));
   return Number.isNaN(price) ? null : price;
+}
+function getImageExtensionFromContentType(contentType: string): string {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/bmp': 'bmp',
+    'image/tiff': 'tiff',
+    'image/svg+xml': 'svg',
+    'image/avif': 'avif',
+  };
+
+  return map[contentType.toLowerCase()] || 'jpg'; // default fallback
 }

@@ -159,7 +159,7 @@ interface R2BucketConfig {
   bucketName?: string;
 }
 
-type BucketType = 'guides' | 'catalog' | 'general';
+type BucketType = 'guides' | 'catalog' | 'general' | 'images';
 
 export class R2BucketService {
   private s3Client: S3Client;
@@ -192,6 +192,9 @@ export class R2BucketService {
           break;
         case 'general':
           this.bucketName = env.PACKRAT_BUCKET_R2_BUCKET_NAME;
+          break;
+        case 'images':
+          this.bucketName = env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME;
           break;
       }
     }
