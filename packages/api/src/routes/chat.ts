@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { reportedContent } from '@packrat/api/db/schema';
+import { getAxConfig } from '@packrat/api/utils/ai/ax-config';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
@@ -87,12 +88,15 @@ chatRoutes.openapi(chatRoute, async (c) => {
       getEnv(c);
 
     // Create AI provider based on configuration
+    // If AI_PROVIDER is 'ax-openai', enable enhanced Ax features
+    const axConfig = AI_PROVIDER === 'ax-openai' ? getAxConfig('chat') : {};
     const aiProvider = createAIProvider({
       openAiApiKey: OPENAI_API_KEY,
       provider: AI_PROVIDER,
       cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
       cloudflareAiBinding: AI,
+      ...axConfig,
     });
 
     // Stream the AI response

@@ -1,4 +1,3 @@
-import { createOpenAI } from '@ai-sdk/openai';
 import { createDb } from '@packrat/api/db';
 import {
   type CatalogItem,
@@ -8,11 +7,13 @@ import {
   packItems,
   packs,
 } from '@packrat/api/db/schema';
+import { getAxConfig } from '@packrat/api/utils/ai/ax-config';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
+import { createAIProvider } from '@packrat/api/utils/ai/provider';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 import { z } from 'zod';
 import { computePackWeights } from '../utils/compute-pack';
 import { CatalogService } from './catalogService';
@@ -166,12 +167,21 @@ export class PackService {
   }
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
-    const openai = createOpenAI({
-      apiKey: getEnv(this.c, 'OPENAI_API_KEY'),
+    const env = getEnv(this.c);
+
+    // Use enhanced AI provider for better performance in pack generation
+    const axConfig = env.AI_PROVIDER === 'ax-openai' ? getAxConfig('pack-generation') : {};
+    const aiProvider = createAIProvider({
+      openAiApiKey: env.OPENAI_API_KEY,
+      provider: env.AI_PROVIDER,
+      cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareAiBinding: env.AI,
+      ...axConfig,
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: packConceptSchema,
       system: PACK_CONCEPTS_SYSTEM_PROMPT,
@@ -190,12 +200,21 @@ export class PackService {
   private async constructPacks(
     packConceptsWithCandidateItems: PackConceptWithCandidateItems[],
   ): Promise<FinalPack[]> {
-    const openai = createOpenAI({
-      apiKey: env(this.c).OPENAI_API_KEY,
+    const env = getEnv(this.c);
+
+    // Use enhanced AI provider for better performance in pack construction
+    const axConfig = env.AI_PROVIDER === 'ax-openai' ? getAxConfig('pack-generation') : {};
+    const aiProvider = createAIProvider({
+      openAiApiKey: env.OPENAI_API_KEY,
+      provider: env.AI_PROVIDER,
+      cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareAiBinding: env.AI,
+      ...axConfig,
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: finalPackSchema,
       system: PACKS_CONSTRUCTION_SYSTEM_PROMPT,

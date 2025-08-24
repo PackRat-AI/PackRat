@@ -16,6 +16,8 @@
     "@ai-sdk/perplexity": "^2.0.1",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "@ax-llm/ax": "^14.0.16",
+    "@ax-llm/ax-ai-sdk-provider": "^14.0.16",
     "@hono/sentry": "^1.2.2",
     "@hono/zod-openapi": "^0.19.2",
     "@hono/zod-validator": "^0.4.3",
