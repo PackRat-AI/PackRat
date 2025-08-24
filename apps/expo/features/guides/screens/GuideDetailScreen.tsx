@@ -1,5 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
-import Markdown from '@ronradtke/react-native-markdown-display';
+import { Markdown } from 'expo-app/components/Markdown';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
@@ -36,99 +36,6 @@ export const GuideDetailScreen = () => {
       </View>
     );
   }
-
-  const markdownStyles = {
-    body: {
-      color: colors.foreground,
-      fontSize: 16,
-    },
-    heading1: {
-      color: colors.foreground,
-      fontSize: 28,
-      fontWeight: '700',
-      marginTop: 24,
-      marginBottom: 16,
-    },
-    heading2: {
-      color: colors.foreground,
-      fontSize: 24,
-      fontWeight: '600',
-      marginTop: 20,
-      marginBottom: 12,
-    },
-    heading3: {
-      color: colors.foreground,
-      fontSize: 20,
-      fontWeight: '600',
-      marginTop: 16,
-      marginBottom: 8,
-    },
-    paragraph: {
-      marginTop: 0,
-      marginBottom: 16,
-    },
-    strong: {
-      fontWeight: '600' as const,
-    },
-    link: {
-      color: colors.primary,
-      textDecorationLine: 'underline' as const,
-    },
-    blockquote: {
-      backgroundColor: colors.grey6,
-      borderLeftColor: colors.primary,
-      borderLeftWidth: 4,
-      paddingLeft: 16,
-      paddingVertical: 8,
-      marginVertical: 16,
-    },
-    code_inline: {
-      backgroundColor: colors.grey6,
-      color: colors.primary,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 4,
-      fontFamily: 'monospace',
-      fontSize: 14,
-    },
-    code_block: {
-      backgroundColor: colors.card,
-      color: colors.foreground,
-      padding: 16,
-      borderRadius: 8,
-      marginVertical: 16,
-      fontFamily: 'monospace',
-      fontSize: 14,
-    },
-    list_item: {
-      marginBottom: 8,
-    },
-    bullet_list: {
-      marginBottom: 16,
-    },
-    ordered_list: {
-      marginBottom: 16,
-    },
-    hr: {
-      backgroundColor: colors.grey5,
-      height: 1,
-      marginVertical: 24,
-    },
-    table: {
-      borderColor: colors.grey5,
-      marginVertical: 16,
-    },
-    th: {
-      backgroundColor: colors.grey6,
-      color: colors.foreground,
-      fontWeight: '600',
-      padding: 12,
-    },
-    td: {
-      padding: 12,
-      borderColor: colors.grey5,
-    },
-  };
 
   return (
     <ScrollView
@@ -177,7 +84,7 @@ export const GuideDetailScreen = () => {
         <Text className="text-gray-600 dark:text-gray-400 mb-2 text-base">{guide.description}</Text>
       )}
 
-      <Markdown style={markdownStyles}>{guide.content || ''}</Markdown>
+      <Markdown>{guide.content || ''}</Markdown>
     </ScrollView>
   );
 };

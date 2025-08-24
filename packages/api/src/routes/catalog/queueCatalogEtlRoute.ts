@@ -1,4 +1,6 @@
 import { createRoute } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { etlJobs } from '@packrat/api/db/schema';
 import { authMiddleware } from '@packrat/api/middleware';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
@@ -8,7 +10,7 @@ import { z } from 'zod';
 
 const catalogETLSchema = z.object({
   objectKey: z.string().min(1, 'R2 object key is required'),
-  filename: z.string().min(1, 'File path is required'),
+  source: z.string().min(1, 'Source name is required'),
   scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
 });
 
@@ -55,8 +57,9 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const { objectKey, filename, scraperRevision } = c.req.valid('json');
+  const { objectKey, source, scraperRevision } = c.req.valid('json');
   const userId = c.get('jwtPayload')?.userId;
+  const db = createDb(c);
 
   if (!getEnv(c).ETL_QUEUE) {
     throw new HTTPException(400, {
@@ -64,17 +67,32 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     });
   }
 
-  const jobId = await queueCatalogETL({
+  const jobId = crypto.randomUUID();
+
+  await db.insert(etlJobs).values({
+    id: jobId,
+    status: 'running',
+    source,
+    objectKey,
+    scraperRevision,
+    startedAt: new Date(),
+  });
+
+  await queueCatalogETL({
     queue: getEnv(c).ETL_QUEUE,
     objectKey,
     userId,
-    filename,
+    source,
     scraperRevision,
+    jobId,
   });
 
-  return c.json({
-    message: 'Catalog ETL job queued successfully',
-    jobId,
-    queued: true,
-  });
+  return c.json(
+    {
+      message: 'Catalog ETL job queued successfully',
+      jobId,
+      queued: true,
+    },
+    200,
+  );
 };

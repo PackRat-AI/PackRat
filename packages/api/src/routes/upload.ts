@@ -1,8 +1,12 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
-import type { Env } from '@packrat/api/utils/env-validation';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import {
+  ErrorResponseSchema,
+  PresignedUploadQuerySchema,
+  PresignedUploadResponseSchema,
+} from '@packrat/api/schemas/upload';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Variables } from '../types/variables';
 
@@ -12,21 +16,51 @@ const uploadRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 const presignedRoute = createRoute({
   method: 'get',
   path: '/presigned',
+  tags: ['Upload'],
+  summary: 'Generate presigned upload URL',
+  description: 'Generate a presigned URL for secure file uploads to R2 storage',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      fileName: z.string().optional(),
-      contentType: z.string().optional(),
-    }),
+    query: PresignedUploadQuerySchema,
   },
-  responses: { 200: { description: 'Generate presigned upload URL' } },
+  responses: {
+    200: {
+      description: 'Presigned URL generated successfully',
+      content: {
+        'application/json': {
+          schema: PresignedUploadResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - fileName and contentType are required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - File name must start with user ID',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 uploadRoutes.openapi(presignedRoute, async (c) => {
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  const auth = c.get('user');
 
   const {
     R2_ACCESS_KEY_ID,
@@ -70,9 +104,12 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
       expiresIn: 3600,
     });
 
-    return c.json({
-      url: presignedUrl,
-    });
+    return c.json(
+      {
+        url: presignedUrl,
+      },
+      200,
+    );
   } catch (error) {
     c.get('sentry').setContext('upload-params', {
       fileName: c.req.query('fileName'),

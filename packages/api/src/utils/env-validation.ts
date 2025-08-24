@@ -80,7 +80,7 @@ const testEnvSchema = apiEnvSchema.partial().extend({
 type ValidatedAppEnv = z.infer<typeof apiEnvSchema>;
 
 // Override Cloudflare binding types with proper TypeScript types
-export type Env = Omit<
+export type ValidatedEnv = Omit<
   ValidatedAppEnv,
   | 'CF_VERSION_METADATA'
   | 'AI'
@@ -103,14 +103,15 @@ export type Env = Omit<
 };
 
 // Cache for validated environments per request
-const envCache = new WeakMap<Context, Env>();
+const envCache = new WeakMap<Context, ValidatedEnv>();
 
 // Check if we're in a test environment
 function isTestEnvironment(): boolean {
   return (
     process.env.NODE_ENV === 'test' ||
     process.env.VITEST === 'true' ||
-    (typeof global !== 'undefined' && (global as any).__vitest__ !== undefined)
+    (typeof global !== 'undefined' &&
+      (global as unknown as { __vitest__?: unknown }).__vitest__ !== undefined)
   );
 }
 
@@ -118,7 +119,7 @@ function isTestEnvironment(): boolean {
  * Get and validate environment variables from Hono context
  * Results are cached per request context
  */
-export function getEnv(c: Context): Env {
+export function getEnv(c: Context): ValidatedEnv {
   // Check if we already have validated env for this context
   const cached = envCache.get(c);
   if (cached) {
@@ -126,7 +127,7 @@ export function getEnv(c: Context): Env {
   }
 
   // Get raw environment
-  const rawEnv = env<Env>(c);
+  const rawEnv = env<ValidatedEnv>(c);
 
   // Use relaxed validation for test environments
   const schema = isTestEnvironment() ? testEnvSchema : apiEnvSchema;
@@ -139,7 +140,7 @@ export function getEnv(c: Context): Env {
   }
 
   // Merge validated data with correctly typed Cloudflare bindings from rawEnv
-  const data: Env = {
+  const data: ValidatedEnv = {
     ...validated.data,
     CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA || validated.data.CF_VERSION_METADATA,
     AI: rawEnv.AI || validated.data.AI,
@@ -149,10 +150,19 @@ export function getEnv(c: Context): Env {
     ETL_QUEUE: rawEnv.ETL_QUEUE || validated.data.ETL_QUEUE,
     LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
     EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
-  };
+  } as ValidatedEnv;
 
   // Cache the result
   envCache.set(c, data);
 
   return data;
+}
+
+/**
+ * Validate Cloudflare API environment variables at build/deploy time
+ * Called after root postinstall populates env vars
+ * Throws an error if validation fails
+ */
+export function validateCloudflareApiEnv(env: Record<string, unknown>): void {
+  apiEnvSchema.parse(env);
 }

@@ -8,30 +8,65 @@ import {
   packs,
   packWeightHistory,
 } from '@packrat/api/db/schema';
-
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
+import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
+import {
+  ItemSuggestionsRequestSchema,
+  PackWithWeightsSchema,
+  UpdatePackRequestSchema,
+} from '@packrat/api/schemas/packs';
+import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { and, cosineDistance, desc, eq, gt, sql } from 'drizzle-orm';
+import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
 
-const packRoutes = new OpenAPIHono();
+const packRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 // Get a specific pack
 const getPackRoute = createRoute({
   method: 'get',
   path: '/{packId}',
+  tags: ['Packs'],
+  summary: 'Get pack by ID',
+  description: 'Retrieve a specific pack by its ID with all items',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
   },
-  responses: { 200: { description: 'Get pack' } },
+  responses: {
+    200: {
+      description: 'Pack retrieved successfully',
+      content: {
+        'application/json': {
+          schema: PackWithWeightsSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(getPackRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
-
   const db = createDb(c);
   try {
     const packId = c.req.param('packId');
@@ -47,7 +82,7 @@ packRoutes.openapi(getPackRoute, async (c) => {
     if (!pack) {
       return c.json({ error: 'Pack not found' }, 404);
     }
-    return c.json(pack);
+    return c.json(pack, 200);
   } catch (error) {
     console.error('Error fetching pack:', error);
     return c.json({ error: 'Failed to fetch pack' }, 500);
@@ -58,20 +93,53 @@ packRoutes.openapi(getPackRoute, async (c) => {
 const updatePackRoute = createRoute({
   method: 'put',
   path: '/{packId}',
+  tags: ['Packs'],
+  summary: 'Update pack',
+  description: 'Update pack information such as name, description, category, and visibility',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
     body: {
-      content: { 'application/json': { schema: z.any() } },
+      content: {
+        'application/json': {
+          schema: UpdatePackRequestSchema,
+        },
+      },
+      required: true,
     },
   },
-  responses: { 200: { description: 'Update pack' } },
+  responses: {
+    200: {
+      description: 'Pack updated successfully',
+      content: {
+        'application/json': {
+          schema: PackWithWeightsSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(updatePackRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
   try {
@@ -109,7 +177,7 @@ packRoutes.openapi(updatePackRoute, async (c) => {
     }
 
     const packWithWeights = computePackWeights(updatedPack);
-    return c.json(packWithWeights);
+    return c.json(packWithWeights, 200);
   } catch (error) {
     console.error('Error updating pack:', error);
     return c.json({ error: 'Failed to update pack' }, 500);
@@ -120,21 +188,43 @@ packRoutes.openapi(updatePackRoute, async (c) => {
 const deletePackRoute = createRoute({
   method: 'delete',
   path: '/{packId}',
-  request: { params: z.object({ packId: z.string() }) },
-  responses: { 200: { description: 'Delete pack' } },
+  tags: ['Packs'],
+  summary: 'Delete pack',
+  description: 'Permanently delete a pack and all its items',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Pack deleted successfully',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.boolean().openapi({ example: true }),
+          }),
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(deletePackRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
-
   const db = createDb(c);
   try {
     const packId = c.req.param('packId');
     await db.delete(packs).where(eq(packs.id, packId));
-    return c.json({ success: true });
+    return c.json({ success: true }, 200);
   } catch (error) {
     console.error('Error deleting pack:', error);
     return c.json({ error: 'Failed to delete pack' }, 500);
@@ -144,19 +234,61 @@ packRoutes.openapi(deletePackRoute, async (c) => {
 const itemSuggestionsRoute = createRoute({
   method: 'post',
   path: '/{packId}/item-suggestions',
+  tags: ['Packs'],
+  summary: 'Get item suggestions for pack',
+  description:
+    'Get AI-powered item suggestions based on existing pack items using similarity matching',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
-    body: { content: { 'application/json': { schema: z.any() } } },
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: ItemSuggestionsRequestSchema,
+        },
+      },
+      required: true,
+    },
   },
-  responses: { 200: { description: 'Pack item suggestions' } },
+  responses: {
+    200: {
+      description: 'Item suggestions retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              image: z.string().nullable(),
+              category: z.string().nullable(),
+              similarity: z.number(),
+            }),
+          ),
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - no embeddings found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(itemSuggestionsRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
-
   const db = createDb(c);
   const packId = c.req.param('packId');
 
@@ -174,49 +306,108 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     return c.json({ error: 'No embeddings found for existing items' }, 400);
   }
 
-  const avgEmbedding = existingEmbeddings[0].map(
-    (_, i) => existingEmbeddings.reduce((sum, emb) => sum + emb[i], 0) / existingEmbeddings.length,
+  const firstEmbedding = existingEmbeddings[0];
+  if (!firstEmbedding) {
+    return c.json({ error: 'No valid embeddings found' }, 400);
+  }
+
+  const avgEmbedding = firstEmbedding.map(
+    (_, i) =>
+      existingEmbeddings.reduce((sum, emb) => sum + (emb?.[i] ?? 0), 0) / existingEmbeddings.length,
   );
 
   const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
 
-  const existingCatalogIds = new Set(pack.items.map((item) => item.catalogItemId).filter(Boolean));
+  const existingCatalogIds = pack.items
+    .map((item) => item.catalogItemId)
+    .filter((id): id is number => typeof id === 'number');
 
-  const excludeCondition = existingCatalogIds.size
-    ? sql`NOT (${catalogItems.id} = ANY(${Array.from(existingCatalogIds)}))`
-    : sql`TRUE`;
+  const whereConditions = [gt(similarity, 0.1)];
+  if (existingCatalogIds.length > 0) {
+    whereConditions.push(notInArray(catalogItems.id, existingCatalogIds));
+  }
 
   const similarItems = await db
     .select({
       id: catalogItems.id,
       name: catalogItems.name,
-      image: catalogItems.image,
-      category: catalogItems.category,
+      images: catalogItems.images,
+      categories: catalogItems.categories,
       similarity,
     })
     .from(catalogItems)
-    .where(and(gt(similarity, 0.1), excludeCondition))
+    .where(and(...whereConditions))
     .orderBy(desc(similarity))
     .limit(5);
 
-  return c.json(similarItems);
+  // Transform to match expected schema (singular image/category instead of arrays)
+  const transformedItems = similarItems.map((item) => ({
+    id: item.id.toString(),
+    name: item.name,
+    image: item.images?.[0] ?? null,
+    category: item.categories?.[0] ?? null,
+    similarity: item.similarity,
+  }));
+
+  return c.json(transformedItems, 200);
 });
 
 const weightHistoryRoute = createRoute({
   method: 'post',
   path: '/{packId}/weight-history',
+  tags: ['Packs'],
+  summary: 'Create pack weight history entry',
+  description: 'Record a weight history entry for pack tracking over time',
+  security: [{ bearerAuth: [] }],
   request: {
-    params: z.object({ packId: z.string() }),
-    body: { content: { 'application/json': { schema: z.any() } } },
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            id: z.string().openapi({ example: 'pwh_123456' }),
+            weight: z.number().openapi({ example: 5500, description: 'Weight in grams' }),
+            localCreatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
+          }),
+        },
+      },
+      required: true,
+    },
   },
-  responses: { 200: { description: 'Create pack weight history' } },
+  responses: {
+    200: {
+      description: 'Weight history entry created successfully',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({
+              id: z.string(),
+              packId: z.string(),
+              userId: z.number(),
+              weight: z.number(),
+              localCreatedAt: z.string().datetime(),
+              createdAt: z.string().datetime(),
+              updatedAt: z.string().datetime(),
+            }),
+          ),
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 packRoutes.openapi(weightHistoryRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  const auth = c.get('user');
 
   const db = createDb(c);
   try {
@@ -234,7 +425,13 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
       })
       .returning();
 
-    return c.json(packWeightHistoryEntry);
+    // Add updatedAt field (using createdAt as fallback since table doesn't have updatedAt)
+    const entryWithUpdatedAt = packWeightHistoryEntry.map((entry) => ({
+      ...entry,
+      updatedAt: entry.createdAt,
+    }));
+
+    return c.json(entryWithUpdatedAt, 200);
   } catch (error) {
     console.error('Pack weight history API error:', error);
     return c.json({ error: 'Failed to create weight history entry' }, 500);

@@ -2,21 +2,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
+import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
 import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
+import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
+import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
-import { ErrorScreen } from '../../../screens/ErrorScreen';
-import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
-import { NotFoundScreen } from '../../../screens/NotFoundScreen';
+import { Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
 import { useCatalogItemDetails } from '../hooks';
+
+const fallbackImage = require('expo-app/assets/image-not-available.png');
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { data: item, isLoading, isError, refetch } = useCatalogItemDetails(id as string);
   const { colors } = useColorScheme();
+  const MATERIAL_LENGTH_THRESHOLD = 60;
 
   const handleAddToPack = () => {
     router.push({
@@ -51,22 +56,31 @@ export function CatalogItemDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        <Image
-          source={{
-            uri: item.images?.[0] !== null ? item.images?.[0] : undefined, // `null` isn't assignable to uri
-            ...(Platform.OS === 'android'
-              ? {
-                  headers: {
-                    'User-Agent':
-                      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-                    Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
-                  },
-                }
-              : {}),
-          }}
-          className="h-64 w-full"
-          resizeMode="contain"
-        />
+        <View className="h-64 w-full">
+          <Image
+            source={
+              item.images?.[0]
+                ? {
+                    uri: item.images?.[0],
+                    ...(Platform.OS === 'android'
+                      ? {
+                          headers: {
+                            'User-Agent':
+                              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+                            Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
+                          },
+                        }
+                      : {}),
+                  }
+                : fallbackImage
+            }
+            contentFit="contain"
+            transition={200}
+            style={{
+              flex: 1,
+            }}
+          />
+        </View>
 
         <View className="bg-card p-4">
           <View className="mb-2">
@@ -98,7 +112,7 @@ export function CatalogItemDetailScreen() {
               <View className="flex-row flex-wrap gap-2">
                 {item.categories.map((category) => (
                   <Chip key={category} textClassName="text-xs" variant="outline">
-                    {category}
+                    <Text> {category}</Text>
                   </Chip>
                 ))}
               </View>
@@ -114,11 +128,11 @@ export function CatalogItemDetailScreen() {
               <Text className="text-xs uppercase text-muted-foreground">WEIGHT</Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {item.weight !== undefined && item.weightUnit ? (
-                  <>
+                  <Text>
                     {item.weight} {item.weightUnit}
-                  </>
+                  </Text>
                 ) : (
-                  'Not specified'
+                  <Text>Not specified</Text>
                 )}
               </Chip>
             </View>
@@ -126,20 +140,26 @@ export function CatalogItemDetailScreen() {
             {item.material && (
               <View className="mb-2 mr-4">
                 <Text className="text-xs uppercase text-muted-foreground">MATERIAL</Text>
-                <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.material}
-                </Chip>
+                {item.material.length < MATERIAL_LENGTH_THRESHOLD ? (
+                  <Chip textClassName="text-center text-xs" variant="secondary">
+                    {item.material}
+                  </Chip>
+                ) : (
+                  <ExpandableText text={item.material} />
+                )}
               </View>
             )}
 
-            {item.usageCount && item.usageCount > 0 && (
+            {item.usageCount && item.usageCount > 0 ? (
               <View className="mb-2">
                 <Text className="text-xs uppercase text-muted-foreground">USED IN</Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
-                  {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
+                  <Text>
+                    {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
+                  </Text>
                 </Chip>
               </View>
-            )}
+            ) : null}
           </View>
 
           {item.availability && (
@@ -176,11 +196,11 @@ export function CatalogItemDetailScreen() {
               <Text variant="callout" className="mb-2">
                 Specifications
               </Text>
-              <View className="rounded-lg p-3">
+              <View className="rounded-lg p-3 gap-4">
                 {Object.entries(item.techs).map(([key, value]) => (
-                  <View key={key} className="mb-2 flex-row justify-between">
+                  <View key={key} className="gap-1">
                     <Text className="text-sm text-muted-foreground">{key}</Text>
-                    <Text className="text-sm font-medium text-foreground">{value}</Text>
+                    <Text className="text-base font-medium text-foreground">{value}</Text>
                   </View>
                 ))}
               </View>

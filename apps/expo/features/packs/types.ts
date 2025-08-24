@@ -26,7 +26,7 @@ export interface PackItemInput {
   weight: number;
   weightUnit: WeightUnit;
   quantity: number;
-  category: string;
+  category?: string;
   consumable: boolean;
   worn: boolean;
   notes?: string;
@@ -63,9 +63,11 @@ export interface Pack {
   description?: string;
   category: PackCategory;
   userId?: number;
+  templateId?: string | null;
   isPublic: boolean;
   image?: string;
   tags?: string[];
+  categories?: string[]; // For compatibility with some API responses
   items: PackItem[];
   baseWeight: number;
   totalWeight: number;
