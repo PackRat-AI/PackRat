@@ -24,6 +24,17 @@ import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 import { useVectorSearch } from '../hooks/useVectorSearch';
 import type { CatalogItem } from '../types';
 
+function renderSearchPlaceholder(iosHideWhenScrolling: boolean) {
+  if (iosHideWhenScrolling) {
+    return null; // don’t show on iOS
+  }
+  return (
+    <View className="flex-1 items-center justify-center p-4">
+      <Text className="text-muted-foreground">Search catalog</Text>
+    </View>
+  );
+}
+
 function CatalogItemsScreen() {
   const router = useRouter();
   const { colors } = useColorScheme();
@@ -144,9 +155,7 @@ function CatalogItemsScreen() {
               </ScrollView>
             )
           ) : (
-            <View className="flex-1 items-center justify-center p-4">
-              <Text className="text-muted-foreground">Search catalog</Text>
-            </View>
+            renderSearchPlaceholder(true)
           ),
         }}
       />
