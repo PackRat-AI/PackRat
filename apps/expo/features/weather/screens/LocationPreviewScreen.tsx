@@ -39,8 +39,8 @@ export default function LocationPreviewScreen() {
   ]);
 
   // Extract location data from params
-  const latitude = Number.parseFloat(params.lat as string);
-  const longitude = Number.parseFloat(params.lon as string);
+  const _latitude = Number.parseFloat(params.lat as string);
+  const _longitude = Number.parseFloat(params.lon as string);
   const locationId = Number.parseInt(String(params.id), 10);
   // const locationName = params.name as string;
   // const region = params.region as string;
