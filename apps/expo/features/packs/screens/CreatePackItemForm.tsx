@@ -105,7 +105,7 @@ export const CreatePackItemForm = ({
       try {
         // Validate the form data before processing
         const validatedData = itemFormSchema.parse(value);
-        
+
         let imageUrl = validatedData.image;
         const oldImageUrl = initialImageUrl.current;
 

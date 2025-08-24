@@ -1,7 +1,7 @@
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
-import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import type { WeightUnit } from 'expo-app/types';
 import { Image, ScrollView, Text, View } from 'react-native';
 

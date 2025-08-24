@@ -86,7 +86,7 @@ export const CreatePackTemplateItemForm = ({
       try {
         // Validate the form data before processing
         const validatedData = itemFormSchema.parse(value);
-        
+
         let imageUrl = validatedData.image;
         const oldImageUrl = initialImageUrl.current;
 
@@ -100,11 +100,11 @@ export const CreatePackTemplateItemForm = ({
         }
 
         if (isEditing) {
-          updateItem({ 
-            id: existingItem.id, 
+          updateItem({
+            id: existingItem.id,
             packTemplateId: existingItem.packTemplateId,
             deleted: existingItem.deleted,
-            ...(validatedData as PackTemplateItemInput) 
+            ...(validatedData as PackTemplateItemInput),
           });
         } else {
           createItem({ packTemplateId, itemData: validatedData as PackTemplateItemInput });
