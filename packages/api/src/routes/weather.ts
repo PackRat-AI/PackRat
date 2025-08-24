@@ -258,9 +258,10 @@ const forecastRoute = createRoute({
 weatherRoutes.openapi(forecastRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
-  const id = c.req.query('id');
+  const idParam = c.req.query('id');
+  const id = Number(idParam);
 
-  if (Number.isNaN(id)) {
+  if (!idParam || Number.isNaN(id)) {
     return c.json({ error: 'Valid location ID is required' }, 400);
   }
 
@@ -277,8 +278,15 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     }
 
     const data: WeatherAPIForecastResponse = await response.json();
-    data.location.id = Number(id);
-    return c.json(data, 200);
+    const result = {
+      ...data,
+      location: {
+        ...data.location,
+        id: Number(id),
+      },
+    };
+
+    return c.json(result, 200);
   } catch (error) {
     console.error('Error fetching weather forecast:', error);
     c.get('sentry').setContext('params', {
