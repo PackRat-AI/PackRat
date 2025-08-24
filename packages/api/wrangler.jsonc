@@ -14,7 +14,7 @@
     "head_sampling_rate": 1
   },
   "limits": {
-    "cpu_ms": 300000 // 300,000 milliseconds = 5 minutes
+    "cpu_ms": 600000 // 600,000 milliseconds = 10 minutes
   },
   // Environment variables are managed via:
   // - Production: Cloudflare dashboard
