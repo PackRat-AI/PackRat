@@ -5,31 +5,29 @@ import { eq, sql } from 'drizzle-orm';
 
 export async function updateEtlJobProgress(
   env: Env,
-  jobId: string,
-  update: { valid?: number; invalid?: number; total: number },
+  params: { jobId: string; valid?: number; invalid?: number },
 ): Promise<void> {
   const db = createDbClient(env);
 
-  const valid = update?.valid ?? 0;
-  const invalid = update?.invalid ?? 0;
+  const valid = params?.valid ?? 0;
+  const invalid = params?.invalid ?? 0;
 
   // Use atomic SQL operations to prevent race conditions
   await db
     .update(etlJobs)
     .set({
-      totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${valid + invalid}`,
       totalValid: sql`COALESCE(${etlJobs.totalValid}, 0) + ${valid}`,
       totalInvalid: sql`COALESCE(${etlJobs.totalInvalid}, 0) + ${invalid}`,
       status: sql`CASE 
-        WHEN COALESCE(${etlJobs.totalProcessed}, 0) + ${valid + invalid} >= ${update.total} 
+        WHEN COALESCE(${etlJobs.totalCount}, 0) = COALESCE(${etlJobs.totalValid}, 0) + COALESCE(${etlJobs.totalInvalid}, 0) 
         THEN 'completed' 
         ELSE ${etlJobs.status} 
       END`,
       completedAt: sql`CASE 
-        WHEN COALESCE(${etlJobs.totalProcessed}, 0) + ${valid + invalid} >= ${update.total} 
+        WHEN COALESCE(${etlJobs.totalCount}, 0) = COALESCE(${etlJobs.totalValid}, 0) + COALESCE(${etlJobs.totalInvalid}, 0) 
         THEN CURRENT_TIMESTAMP 
         ELSE ${etlJobs.completedAt} 
       END`,
     })
-    .where(eq(etlJobs.id, jobId));
+    .where(eq(etlJobs.id, params.jobId));
 }

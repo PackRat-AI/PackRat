@@ -27,7 +27,6 @@ export interface CatalogETLWriteBatchMessage extends BaseQueueMessage {
   type: QueueType.CATALOG_ETL_WRITE_BATCH;
   data: {
     items: Partial<NewCatalogItem>[];
-    total: number;
   };
 }
 

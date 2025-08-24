@@ -388,7 +388,7 @@ export const etlJobs = pgTable(
     objectKey: text('object_key').notNull(),
     startedAt: timestamp('started_at').notNull(),
     completedAt: timestamp('completed_at'),
-    totalProcessed: integer('total_processed'),
+    totalCount: integer('total_count'),
     totalValid: integer('total_valid'),
     totalInvalid: integer('total_invalid'),
     scraperRevision: text('scraper_revision').notNull(), // Git commit SHA or tag

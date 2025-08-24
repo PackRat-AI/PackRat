@@ -15,7 +15,7 @@ export async function processCatalogETLWriteBatch({
   env: Env;
 }): Promise<void> {
   const jobId = message.id;
-  const { items, total } = message.data;
+  const { items } = message.data;
 
   const catalogService = new CatalogService(env, false);
 
@@ -45,18 +45,18 @@ export async function processCatalogETLWriteBatch({
     // Track the ETL job that processed these items
     await catalogService.trackEtlJob(upsertedItems, jobId);
     // Update the ETL job progress
-    await updateEtlJobProgress(env, jobId, {
+    await updateEtlJobProgress(env, {
+      jobId,
       valid: items.length,
-      total,
     });
   } catch (error) {
     console.error(`Error generating embeddings for batch ${jobId}:`, error);
     // Fall back to processing without embeddings
     const upsertedItems = await catalogService.upsertCatalogItems(mergedItems);
     await catalogService.trackEtlJob(upsertedItems, jobId);
-    await updateEtlJobProgress(env, jobId, {
+    await updateEtlJobProgress(env, {
+      jobId,
       valid: items.length,
-      total,
     });
   } finally {
     console.log(`📦 Batch ${jobId}: Processed ${items.length} valid items`);

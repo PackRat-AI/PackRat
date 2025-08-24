@@ -204,6 +204,13 @@
       "when": 1755197646956,
       "tag": "0027_past_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1756039667476,
+      "tag": "0028_left_stellaris",
+      "breakpoints": true
     }
   ]
 }

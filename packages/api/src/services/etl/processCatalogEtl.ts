@@ -12,7 +12,7 @@ import { type CatalogETLMessage, QueueType } from './types';
 export const CHUNK_SIZE = 5000;
 export const BATCH_SIZE = 10;
 
-async function* streamToText(stream) {
+async function* streamToText(stream: ReadableStream) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   while (true) {
@@ -33,7 +33,6 @@ export async function processCatalogETL({
   const jobId = message.id;
 
   const db = createDbClient(env);
-  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined; // Declare reader here to ensure it's in scope for finally block
 
   try {
     console.log(
@@ -56,7 +55,7 @@ export async function processCatalogETL({
     let isHeaderProcessed = false;
     let validItemsBatch: Partial<NewCatalogItem>[] = [];
     let invalidItemsBatch: NewInvalidItemLog[] = [];
-    let totalRows = 0;
+    let rowsProcessedInChunk = 0;
 
     const validator = new CatalogItemValidator();
 
@@ -73,7 +72,8 @@ export async function processCatalogETL({
       parser.end();
     })();
 
-    for await (const row of parser) {
+    for await (const record of parser) {
+      const row = record as string[];
       if (!isHeaderProcessed) {
         fieldMap = row.reduce(
           (acc, header, idx) => {
@@ -121,7 +121,7 @@ export async function processCatalogETL({
           type: QueueType.CATALOG_ETL_WRITE_BATCH,
           id: jobId,
           timestamp: Date.now(),
-          data: { items: validItemsBatch, total: totalRows },
+          data: { items: validItemsBatch },
         });
         validItemsBatch = [];
         await new Promise((r) => setTimeout(r, 1));
@@ -131,24 +131,23 @@ export async function processCatalogETL({
         await env.LOGS_QUEUE.send({
           data: invalidItemsBatch,
           id: jobId,
-          totalItemsCount: totalRows,
         });
         invalidItemsBatch = [];
       }
 
       rowIndex++;
-      totalRows++;
+      rowsProcessedInChunk++;
 
-      if (totalRows % 100 === 0) {
+      if (rowsProcessedInChunk % 100 === 0) {
         console.log(
-          `🔍 [TRACE] Progress update - totalRows: ${totalRows}, rowIndex: ${rowIndex}, validBatch: ${validItemsBatch.length}, invalidBatch: ${invalidItemsBatch.length}`,
+          `🔍 [TRACE] Progress update - rowsProcessedInChunk: ${rowsProcessedInChunk}, rowIndex: ${rowIndex}, validBatch: ${validItemsBatch.length}, invalidBatch: ${invalidItemsBatch.length}`,
         );
       }
     }
 
     console.log(`🔍 [TRACE] Streaming complete - processing final batches`);
 
-    // Process remaining batches
+    // Flush remaining batches
     if (validItemsBatch.length > 0) {
       console.log(
         `🔍 [TRACE] Processing final valid items batch - size: ${validItemsBatch.length}`,
@@ -157,7 +156,7 @@ export async function processCatalogETL({
         type: QueueType.CATALOG_ETL_WRITE_BATCH,
         id: jobId,
         timestamp: Date.now(),
-        data: { items: validItemsBatch, total: totalRows },
+        data: { items: validItemsBatch },
       });
     }
 
@@ -168,7 +167,6 @@ export async function processCatalogETL({
       await env.LOGS_QUEUE.send({
         id: jobId,
         data: invalidItemsBatch,
-        totalItemsCount: totalRows,
       });
     }
 
@@ -191,7 +189,8 @@ export async function processCatalogETL({
         `➡️ Queued next ETL chunk for rows ${startRow + CHUNK_SIZE} to ${startRow + 2 * CHUNK_SIZE - 1}`,
       );
     } else {
-      console.log(`🔍 [TRACE] No more chunks needed - processed all rows in range`);
+      console.log('🔍 [TRACE] No more chunks needed - processed all rows');
+      await db.update(etlJobs).set({ totalCount: rowIndex }).where(eq(etlJobs.id, jobId));
     }
   } catch (error) {
     await db
@@ -203,10 +202,5 @@ export async function processCatalogETL({
       error,
     );
     throw error;
-  } finally {
-    console.log('🔍 [TRACE] Releasing reader lock');
-    if (reader) {
-      reader.releaseLock();
-    }
   }
 }

@@ -9,17 +9,13 @@ export class LogsQueueConsumer {
     const db = createDbClient(env);
 
     for (const message of batch.messages) {
-      const {
-        id: jobId,
-        totalItemsCount,
-        data: logs,
-      } = message.body as { id: string; totalItemsCount: number; data: NewInvalidItemLog[] };
+      const { id: jobId, data: logs } = message.body as { id: string; data: NewInvalidItemLog[] };
 
       try {
         await db.insert(invalidItemLogs).values(logs);
-        await updateEtlJobProgress(env, jobId, {
+        await updateEtlJobProgress(env, {
+          jobId,
           invalid: logs.length,
-          total: totalItemsCount,
         });
 
         console.log(`📝 Processed and wrote ${logs.length} invalid items for job ${jobId}`);
