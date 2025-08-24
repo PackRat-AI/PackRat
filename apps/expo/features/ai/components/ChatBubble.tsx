@@ -4,7 +4,7 @@ import { Markdown } from 'expo-app/components/Markdown';
 import { ReportButton } from 'expo-app/features/ai/components/ReportButton';
 import { cn } from 'expo-app/lib/cn';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
-import { Platform, Pressable, View, type ViewStyle } from 'react-native';
+import { Pressable, View, type ViewStyle } from 'react-native';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
 const BORDER_CURVE: ViewStyle = {
@@ -22,42 +22,14 @@ export function ChatBubble({ item, userQuery }: ChatBubbleProps) {
   return (
     <View className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}>
       <View>
-        <View className="items-center justify-center">
-          {Platform.OS === 'ios' && (
-            <>
-              <View
-                className={cn(
-                  'h-5 w-5 rounded-full',
-                  !isAI
-                    ? 'bg-primary'
-                    : Platform.OS === 'ios'
-                      ? 'bg-background dark:bg-muted'
-                      : 'bg-background dark:bg-muted-foreground',
-                )}
-              />
-              <View
-                className={cn(
-                  'absolute h-5 w-5 rounded-full bg-card dark:bg-background',
-                  !isAI ? '-right-2' : 'right-2',
-                )}
-              />
-              <View
-                className={cn(
-                  'absolute h-5 w-5 -translate-y-1 rounded-full bg-card dark:bg-background',
-                  !isAI ? '-right-2' : 'right-2',
-                )}
-              />
-            </>
-          )}
-        </View>
+        <View className="items-center justify-center"></View>
         <View>
           <Pressable>
             <View
               style={BORDER_CURVE}
               className={cn(
-                'px-2 py-1.5 dark:bg-muted-foreground',
-                Platform.OS === 'ios' && 'dark:bg-muted',
-                !isAI && 'bg-primary dark:bg-primary rounded-2xl',
+                'px-2 py-1.5',
+                !isAI && 'bg-neutral-200 dark:bg-neutral-700 rounded-2xl',
               )}
             >
               {item.parts.map((part, idx) => {
@@ -66,9 +38,7 @@ export function ChatBubble({ item, userQuery }: ChatBubbleProps) {
                   return isAI ? (
                     <Markdown key={key}>{formatAIResponse(part.text)}</Markdown>
                   ) : (
-                    <Text key={key} className={cn(!isAI && 'text-white')}>
-                      {part.text}
-                    </Text>
+                    <Text key={key}>{part.text}</Text>
                   );
 
                 if (isAI && part.type.startsWith('tool-'))
