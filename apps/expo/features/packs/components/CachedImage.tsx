@@ -1,95 +1,53 @@
-import { Text } from '@packrat/ui/nativewindui';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, type ImageProps, View } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
-  localFileName?: string | null;
-  remoteUrl?: string | null;
+  imageObjectKey: string;
+  imageRemoteUrl: string;
   placeholderColor?: string;
 }
 
 export const CachedImage: React.FC<CachedImageProps> = ({
-  localFileName,
-  remoteUrl,
-  className,
+  imageObjectKey,
+  imageRemoteUrl,
   placeholderColor = '#e1e1e1',
   ...props
 }) => {
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageLocalUri, setImageLocalUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const user = useUser();
 
-  const isRemoteUrl = localFileName?.startsWith('http://') || localFileName?.startsWith('https://');
-
-  const actualRemoteUrl = remoteUrl || (isRemoteUrl ? localFileName : null);
-
-  const remoteFileName =
-    localFileName && !isRemoteUrl && user?.id ? `${user?.id}-${localFileName}` : null;
-  const cloudStorageUrl = remoteFileName
-    ? `${clientEnvs.EXPO_PUBLIC_R2_PUBLIC_URL}/${remoteFileName}`
-    : null;
+  console.log(imageLocalUri);
 
   useEffect(() => {
+    if (!imageObjectKey) return;
     const loadImage = async () => {
       try {
         setLoading(true);
 
-        if (!localFileName && !actualRemoteUrl) {
-          setLoading(false);
-          return;
-        }
-
-        if (localFileName && !isRemoteUrl) {
-          const localUri = await ImageCacheManager.getCachedImageUri(localFileName);
-          if (localUri) {
-            setImageUri(localUri);
-            setLoading(false);
-            return;
-          }
-        }
-
-        if (actualRemoteUrl) {
-          try {
-            const cachedFileName = await ImageCacheManager.cacheRemoteImage(actualRemoteUrl);
-            const localUri = await ImageCacheManager.getCachedImageUri(cachedFileName);
-            setImageUri(localUri);
-          } catch (err) {
-            console.error('Failed to cache remote image:', err);
-            setImageUri(actualRemoteUrl);
-          }
-        } else if (cloudStorageUrl) {
-          setImageUri(cloudStorageUrl);
+        const localUri = await ImageCacheManager.getCachedImageUri(imageObjectKey);
+        if (localUri) {
+          setImageLocalUri(localUri);
+        } else {
+          const localUri = await ImageCacheManager.cacheRemoteImage(imageObjectKey, imageRemoteUrl);
+          setImageLocalUri(localUri);
         }
       } catch (error) {
         console.error('Error loading image:', error);
-        if (actualRemoteUrl) {
-          setImageUri(actualRemoteUrl);
-        } else if (cloudStorageUrl) {
-          setImageUri(cloudStorageUrl);
-        }
+        // TODO: Handle error state if needed
       } finally {
         setLoading(false);
       }
     };
 
     loadImage();
-  }, [localFileName, actualRemoteUrl, cloudStorageUrl, isRemoteUrl]);
-
-  if (!localFileName && !actualRemoteUrl)
-    return (
-      <View className={`items-center justify-center bg-muted px-2 ${className}`}>
-        <Text className="text-muted-foreground">No image</Text>
-      </View>
-    );
+  }, [imageObjectKey, imageRemoteUrl]);
 
   if (loading) {
     return (
       <View
-        className={`items-center justify-center bg-muted px-2 ${className}`}
+        className={`items-center justify-center bg-muted px-2 ${props.className}`}
         style={[{ backgroundColor: placeholderColor }]}
       >
         <ActivityIndicator size="small" color="#999" />
@@ -97,11 +55,5 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     );
   }
 
-  return imageUri ? (
-    <Image source={{ uri: imageUri }} {...props} className={className} />
-  ) : (
-    <View className={`items-center justify-center bg-muted px-2 ${className}`}>
-      <Text className="text-muted-foreground">Failed to load</Text>
-    </View>
-  );
+  return <Image source={{ uri: imageLocalUri ?? undefined }} {...props} />;
 };

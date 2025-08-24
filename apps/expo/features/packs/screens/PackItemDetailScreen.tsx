@@ -3,7 +3,6 @@ import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
-import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import {
   calculateTotalWeight,
   getNotes,
@@ -15,6 +14,7 @@ import {
 } from 'expo-app/lib/utils/itemCalculations';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, ScrollView, View } from 'react-native';
+import { PackItemImage } from '../components/PackItemImage';
 import {
   usePackItemDetailsFromApi,
   usePackItemDetailsFromStore,
@@ -117,22 +117,10 @@ export function ItemDetailScreen() {
     });
   };
 
-  const isImageUrl =
-    item?.image &&
-    typeof item.image === 'string' &&
-    (item.image.startsWith('http://') || item.image.startsWith('https://'));
-
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        {item.image && (
-          <CachedImage
-            localFileName={!isImageUrl ? item.image : undefined}
-            remoteUrl={isImageUrl ? item.image : undefined}
-            className="h-64 w-full"
-            resizeMode="cover"
-          />
-        )}
+        <PackItemImage item={item} className="h-64 w-full" resizeMode="contain" />
 
         <View className="mb-4 bg-card p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>
@@ -144,6 +132,7 @@ export function ItemDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">WEIGHT (EACH)</Text>
               <WeightBadge weight={item.weight} unit={item.weightUnit} />
             </View>
 
