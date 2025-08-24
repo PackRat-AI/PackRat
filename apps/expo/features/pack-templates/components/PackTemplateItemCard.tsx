@@ -1,14 +1,12 @@
-// components/PackTemplateItemCard.tsx
-
-import { Alert, Button } from '@packrat/ui/nativewindui';
+import { Alert, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import { useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { useDeletePackTemplateItem } from '../hooks/useDeletePackTemplateItem';
 import type { PackTemplateItem } from '../types';
 
@@ -28,12 +26,20 @@ export function PackTemplateItemCard({
   const { colors } = useColorScheme();
   const user = useUser();
 
+  const imageUrl = buildPackTemplateItemImageUrl(item.image);
+
   return (
     <Pressable
       className="mb-3 flex-row overflow-hidden rounded-lg bg-card shadow-sm"
       onPress={() => onPress(item)}
     >
-      <CachedImage localFileName={item.image} className="w-28" resizeMode="cover" />
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} className="w-28" resizeMode="cover" />
+      ) : (
+        <View className="w-28 items-center justify-center bg-muted">
+          <Text className="text-muted-foreground">No image</Text>
+        </View>
+      )}
 
       <View className="flex-1 p-3">
         <View className="flex-row items-start justify-between">

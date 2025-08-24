@@ -101,12 +101,12 @@ export const CreatePackItemForm = ({
       notes: '',
       image: null,
     },
-    validators: {
-      onChange: itemFormSchema,
-    },
     onSubmit: async ({ value }) => {
       try {
-        let imageUrl = value.image;
+        // Validate the form data before processing
+        const validatedData = itemFormSchema.parse(value);
+
+        let imageUrl = validatedData.image;
         const oldImageUrl = initialImageUrl.current;
 
         // Permanently save the new image on users' device if one is selected - because selectedImage is currrently in temporary cache
@@ -116,15 +116,15 @@ export const CreatePackItemForm = ({
             Alert.alert('Error', 'Failed to save item image. Please try again.');
             return;
           }
-          value.image = imageUrl;
+          validatedData.image = imageUrl;
         }
 
         // Submit the form with the image URL
         if (isEditing) {
-          updatePackItem({ ...existingItem, ...(value as PackItemInput) });
+          updatePackItem({ ...existingItem, ...(validatedData as PackItemInput) });
           router.back();
         } else {
-          createPackItem({ packId, itemData: value as PackItemInput });
+          createPackItem({ packId, itemData: validatedData as PackItemInput });
           router.back();
         }
 
@@ -217,7 +217,6 @@ export const CreatePackItemForm = ({
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="backpack" size={16} color={colors.grey3} />
@@ -282,9 +281,8 @@ export const CreatePackItemForm = ({
                     placeholder="Weight"
                     value={field.state.value.toString()}
                     onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
+                    onChangeText={(text) => field.handleChange(Number(text) || 0)}
                     keyboardType="numeric"
-                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="dumbbell" size={16} color={colors.grey3} />
@@ -302,9 +300,12 @@ export const CreatePackItemForm = ({
                     <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
                     <SegmentedControl
                       values={WEIGHT_UNITS}
-                      selectedIndex={WEIGHT_UNITS.indexOf(field.state.value)}
+                      selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
                       onIndexChange={(index) => {
-                        field.handleChange(WEIGHT_UNITS[index]);
+                        const selectedUnit = WEIGHT_UNITS[index];
+                        if (selectedUnit) {
+                          field.handleChange(selectedUnit);
+                        }
                       }}
                     />
                   </View>
@@ -324,7 +325,6 @@ export const CreatePackItemForm = ({
                       field.handleChange(intValue);
                     }}
                     keyboardType="numeric"
-                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="circle-outline" size={16} color={colors.grey3} />
