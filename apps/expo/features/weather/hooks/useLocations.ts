@@ -20,7 +20,7 @@ export function useLocations() {
     setBaseLocations([...locations, location]);
   };
 
-  const removeLocation = (locationId: string) => {
+  const removeLocation = (locationId: number) => {
     if (locationsState.state !== 'hasData') return;
 
     const locations = locationsState.data;
@@ -29,7 +29,7 @@ export function useLocations() {
     setBaseLocations(locations.filter((loc) => loc.id !== locationId));
   };
 
-  const updateLocation = (locationId: string, updates: Partial<WeatherLocation>) => {
+  const updateLocation = (locationId: number, updates: Partial<WeatherLocation>) => {
     if (locationsState.state !== 'hasData') return;
 
     const locations = locationsState.data;

@@ -1,15 +1,15 @@
-import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Text } from "@packrat/ui/nativewindui";
+import { Icon } from "@roninoss/icons";
 import {
   formatWeatherData,
   getWeatherBackgroundColors,
   getWeatherData,
-} from 'expo-app/features/weather/lib/weatherService';
-import { cn } from 'expo-app/lib/cn';
+} from "expo-app/features/weather/lib/weatherService";
+import { cn } from "expo-app/lib/cn";
 // import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { LinearGradient } from "expo-linear-gradient";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,11 +17,11 @@ import {
   StatusBar,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WeatherIcon } from '../components';
-import { useLocations } from '../hooks';
-import type { WeatherLocation } from '../types';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { WeatherIcon } from "../components";
+import { useLocations } from "../hooks";
+import type { WeatherLocation } from "../types";
 
 export default function LocationPreviewScreen() {
   const params = useLocalSearchParams();
@@ -32,15 +32,14 @@ export default function LocationPreviewScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherLocation | null>(null);
-  const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
-    '#4c669f',
-    '#3b5998',
-    '#192f6a',
-  ]);
+  const [gradientColors, setGradientColors] = useState<
+    [string, string, ...string[]]
+  >(["#4c669f", "#3b5998", "#192f6a"]);
 
   // Extract location data from params
   const latitude = Number.parseFloat(params.lat as string);
   const longitude = Number.parseFloat(params.lon as string);
+  const locationId = Number.parseInt(String(params.id), 10);
   // const locationName = params.name as string;
   // const region = params.region as string;
   // const country = params.country as string;
@@ -50,7 +49,7 @@ export default function LocationPreviewScreen() {
     setError(null);
 
     try {
-      const data = await getWeatherData(latitude, longitude);
+      const data = await getWeatherData(locationId);
       if (data) {
         const formattedData = formatWeatherData(data);
         setWeatherData(formattedData);
@@ -62,11 +61,11 @@ export default function LocationPreviewScreen() {
           setGradientColors(getWeatherBackgroundColors(weatherCode, isNight));
         }
       } else {
-        setError('Failed to load weather data');
+        setError("Failed to load weather data");
       }
     } catch (err) {
-      console.error('Error loading weather data:', err);
-      setError('An error occurred while loading weather data');
+      console.error("Error loading weather data:", err);
+      setError("An error occurred while loading weather data");
     } finally {
       setIsLoading(false);
     }
@@ -86,19 +85,23 @@ export default function LocationPreviewScreen() {
     try {
       addLocation(weatherData);
 
-      Alert.alert('Location Saved', `${weatherData.name} has been added to your saved locations.`, [
-        {
-          text: 'View All Locations',
-          onPress: () => router.replace('/weather'),
-        },
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      Alert.alert(
+        "Location Saved",
+        `${weatherData.name} has been added to your saved locations.`,
+        [
+          {
+            text: "View All Locations",
+            onPress: () => router.replace("/weather"),
+          },
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ],
+      );
     } catch (err) {
-      console.error('Error saving location:', err);
-      Alert.alert('Error', 'Failed to save location. Please try again.');
+      console.error("Error saving location:", err);
+      Alert.alert("Error", "Failed to save location. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -106,16 +109,20 @@ export default function LocationPreviewScreen() {
 
   // Determine if we should use light or dark status bar based on gradient colors
   const _isDarkGradient =
-    gradientColors[0].toLowerCase().startsWith('#4') ||
-    gradientColors[0].toLowerCase().startsWith('#3') ||
-    gradientColors[0].toLowerCase().startsWith('#2') ||
-    gradientColors[0].toLowerCase().startsWith('#1');
+    gradientColors[0].toLowerCase().startsWith("#4") ||
+    gradientColors[0].toLowerCase().startsWith("#3") ||
+    gradientColors[0].toLowerCase().startsWith("#2") ||
+    gradientColors[0].toLowerCase().startsWith("#1");
 
   return (
     <View className="flex-1">
       <Stack.Screen options={{ headerShown: false }} />
       {/* Status bar with matching style */}
-      <StatusBar barStyle="light-content" translucent={true} backgroundColor="transparent" />
+      <StatusBar
+        barStyle="light-content"
+        translucent={true}
+        backgroundColor="transparent"
+      />
 
       <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
         {/* Fixed header buttons */}
@@ -173,13 +180,19 @@ export default function LocationPreviewScreen() {
                 {/* Location name and current weather */}
                 <View className="mt-8 items-center">
                   <View className="flex-row items-center">
-                    <Text className="text-3xl font-semibold text-white">{weatherData.name}</Text>
+                    <Text className="text-3xl font-semibold text-white">
+                      {weatherData.name}
+                    </Text>
                   </View>
-                  <Text className="text-lg text-white/80">{weatherData.time}</Text>
+                  <Text className="text-lg text-white/80">
+                    {weatherData.time}
+                  </Text>
                   <Text className="mt-6 text-8xl font-light text-white">
                     {weatherData.temperature}°
                   </Text>
-                  <Text className="text-xl text-white">{weatherData.condition}</Text>
+                  <Text className="text-xl text-white">
+                    {weatherData.condition}
+                  </Text>
                   <Text className="mt-1 text-white/80">
                     H:{weatherData.highTemp}° L:{weatherData.lowTemp}°
                   </Text>
@@ -191,7 +204,9 @@ export default function LocationPreviewScreen() {
                     disabled={isLoading}
                   >
                     <Icon name="restart" color="white" size={20} />
-                    <Text className="text-white">{isLoading ? 'Refreshing...' : 'Refresh'}</Text>
+                    <Text className="text-white">
+                      {isLoading ? "Refreshing..." : "Refresh"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -200,8 +215,13 @@ export default function LocationPreviewScreen() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {weatherData.hourlyForecast ? (
                       weatherData.hourlyForecast.map((hour, index) => (
-                        <View key={hour.time} className="mr-4 min-w-[50px] items-center">
-                          <Text className="text-white">{index === 0 ? 'Now' : hour.time}</Text>
+                        <View
+                          key={hour.time}
+                          className="mr-4 min-w-[50px] items-center"
+                        >
+                          <Text className="text-white">
+                            {index === 0 ? "Now" : hour.time}
+                          </Text>
                           <WeatherIcon
                             code={hour.weatherCode}
                             isDay={hour.isDay}
@@ -214,7 +234,9 @@ export default function LocationPreviewScreen() {
                       ))
                     ) : (
                       <View className="w-full items-center justify-center py-4">
-                        <Text className="text-white/80">Hourly forecast not available</Text>
+                        <Text className="text-white/80">
+                          Hourly forecast not available
+                        </Text>
                       </View>
                     )}
                   </ScrollView>
@@ -225,7 +247,7 @@ export default function LocationPreviewScreen() {
                   <Text className="mb-2 font-medium text-white">
                     {weatherData.dailyForecast
                       ? `${weatherData.dailyForecast.length}-DAY`
-                      : 'DAILY'}{' '}
+                      : "DAILY"}{" "}
                     FORECAST
                   </Text>
                   {weatherData.dailyForecast ? (
@@ -233,13 +255,21 @@ export default function LocationPreviewScreen() {
                       <View
                         key={day.day}
                         className={cn(
-                          'flex-row items-center justify-between py-3',
-                          index !== (weatherData.dailyForecast?.length || 0) - 1 &&
-                            'border-b border-white/10',
+                          "flex-row items-center justify-between py-3",
+                          index !==
+                            (weatherData.dailyForecast?.length || 0) - 1 &&
+                            "border-b border-white/10",
                         )}
                       >
-                        <Text className="min-w-[40px] text-white">{day.day}</Text>
-                        <WeatherIcon code={day.weatherCode} isDay={1} color="white" size={24} />
+                        <Text className="min-w-[40px] text-white">
+                          {day.day}
+                        </Text>
+                        <WeatherIcon
+                          code={day.weatherCode}
+                          isDay={1}
+                          color="white"
+                          size={24}
+                        />
                         <View className="flex-1 flex-row items-center px-4">
                           <View className="h-1 flex-1 overflow-hidden rounded-full bg-white/30">
                             <View
@@ -251,13 +281,19 @@ export default function LocationPreviewScreen() {
                             />
                           </View>
                         </View>
-                        <Text className="min-w-[30px] text-right text-white/90">{day.low}°</Text>
-                        <Text className="min-w-[30px] text-right text-white">{day.high}°</Text>
+                        <Text className="min-w-[30px] text-right text-white/90">
+                          {day.low}°
+                        </Text>
+                        <Text className="min-w-[30px] text-right text-white">
+                          {day.high}°
+                        </Text>
                       </View>
                     ))
                   ) : (
                     <View className="items-center justify-center py-4">
-                      <Text className="text-white/80">Daily forecast not available</Text>
+                      <Text className="text-white/80">
+                        Daily forecast not available
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -269,34 +305,37 @@ export default function LocationPreviewScreen() {
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Feels Like</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.feelsLike || weatherData.temperature}°
+                        {weatherData.details?.feelsLike ||
+                          weatherData.temperature}
+                        °
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Humidity</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.humidity || '62'}%
+                        {weatherData.details?.humidity || "62"}%
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Visibility</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.visibility || '10'} mi
+                        {weatherData.details?.visibility || "10"} mi
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">UV Index</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.uvIndex || '6'}{' '}
-                        {weatherData.details?.uvIndex && weatherData.details.uvIndex > 5
-                          ? '(High)'
-                          : ''}
+                        {weatherData.details?.uvIndex || "6"}{" "}
+                        {weatherData.details?.uvIndex &&
+                        weatherData.details.uvIndex > 5
+                          ? "(High)"
+                          : ""}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
                       <Text className="text-white/70">Wind</Text>
                       <Text className="text-xl text-white">
-                        {weatherData.details?.windSpeed || '5'} mph
+                        {weatherData.details?.windSpeed || "5"} mph
                       </Text>
                     </View>
                   </View>
