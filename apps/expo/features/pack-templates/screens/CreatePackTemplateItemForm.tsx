@@ -25,7 +25,7 @@ import {
 import { z } from 'zod';
 import { useCreatePackTemplateItem } from '../hooks/useCreatePackTemplateItem';
 import { useUpdatePackTemplateItem } from '../hooks/useUpdatePackTemplateItem';
-import type { PackTemplateItem } from '../types';
+import type { PackTemplateItem, PackTemplateItemInput } from '../types';
 
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
@@ -74,20 +74,20 @@ export const CreatePackTemplateItemForm = ({
       name: '',
       description: '',
       weight: 0,
-      weightUnit: 'g',
-      quantity: 0,
+      weightUnit: 'g' as WeightUnit,
+      quantity: 1,
       category: '',
       consumable: false,
       worn: false,
       notes: '',
       image: null,
     },
-    validators: {
-      onChange: itemFormSchema,
-    },
     onSubmit: async ({ value }) => {
       try {
-        let imageUrl = value.image;
+        // Validate the form data before processing
+        const validatedData = itemFormSchema.parse(value);
+
+        let imageUrl = validatedData.image;
         const oldImageUrl = initialImageUrl.current;
 
         if (selectedImage) {
@@ -96,13 +96,18 @@ export const CreatePackTemplateItemForm = ({
             Alert.alert('Error', 'Failed to save item image. Please try again.');
             return;
           }
-          value.image = imageUrl;
+          validatedData.image = imageUrl;
         }
 
         if (isEditing) {
-          updateItem({ id: existingItem.id, ...value });
+          updateItem({
+            id: existingItem.id,
+            packTemplateId: existingItem.packTemplateId,
+            deleted: existingItem.deleted,
+            ...(validatedData as PackTemplateItemInput),
+          });
         } else {
-          createItem({ packTemplateId, itemData: value });
+          createItem({ packTemplateId, itemData: validatedData as PackTemplateItemInput });
         }
 
         if (isEditing && oldImageUrl && imageChanged) {
@@ -177,7 +182,6 @@ export const CreatePackTemplateItemForm = ({
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="backpack" size={16} color={colors.grey3} />
@@ -236,9 +240,8 @@ export const CreatePackTemplateItemForm = ({
                     placeholder="Weight"
                     value={field.state.value.toString()}
                     onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
+                    onChangeText={(text) => field.handleChange(Number(text) || 0)}
                     keyboardType="numeric"
-                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="dumbbell" size={16} color={colors.grey3} />
@@ -256,9 +259,12 @@ export const CreatePackTemplateItemForm = ({
                     <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
                     <SegmentedControl
                       values={WEIGHT_UNITS}
-                      selectedIndex={WEIGHT_UNITS.indexOf(field.state.value)}
+                      selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
                       onIndexChange={(index) => {
-                        field.handleChange(WEIGHT_UNITS[index]);
+                        const selectedUnit = WEIGHT_UNITS[index];
+                        if (selectedUnit) {
+                          field.handleChange(selectedUnit);
+                        }
                       }}
                     />
                   </View>
@@ -278,7 +284,6 @@ export const CreatePackTemplateItemForm = ({
                       field.handleChange(intValue);
                     }}
                     keyboardType="numeric"
-                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="circle-outline" size={16} color={colors.grey3} />

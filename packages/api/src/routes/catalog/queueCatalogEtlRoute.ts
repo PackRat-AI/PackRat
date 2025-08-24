@@ -89,9 +89,12 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   console.log(`🚀 Initiated ETL job ${jobId} for file ${objectKey}`);
 
-  return c.json({
-    message: 'Catalog ETL job queued successfully',
-    jobId,
-    queued: true,
-  });
+  return c.json(
+    {
+      message: 'Catalog ETL job queued successfully',
+      jobId,
+      queued: true,
+    },
+    200,
+  );
 };

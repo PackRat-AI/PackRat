@@ -1,28 +1,12 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
+import type { PackItem as BasePackItem } from 'expo-app/features/packs/types';
 import { View } from 'react-native';
 
-interface PackItem {
-  id: string;
-  name: string;
-  description: string;
-  weight: number;
-  weightUnit: string;
-  quantity: number;
-  category: string;
-  consumable: boolean;
-  worn: boolean;
-  image: string | null;
-  notes: string;
-  packId: string;
-  catalogItemId: string | null;
-  userId: number;
-  deleted: boolean;
-  templateItemId: string | null;
-  createdAt: string;
-  updatedAt: string;
-  pack: {
+interface PackItem extends BasePackItem {
+  templateItemId?: string | null;
+  pack?: {
     id: string;
     name: string;
     description: string;
@@ -38,7 +22,7 @@ interface PackItem {
     createdAt: string;
     updatedAt: string;
   };
-  catalogItem: CatalogItem | null;
+  catalogItem?: CatalogItem | null;
 }
 
 interface PackItemDetailsGenerativeUIProps {
@@ -156,11 +140,11 @@ export function PackItemDetailsGenerativeUI({ item }: PackItemDetailsGenerativeU
           <View className="flex-row items-center justify-between">
             <View>
               <Text className="text-xs text-gray-400">Created</Text>
-              <Text className="text-xs text-gray-600">{formatDate(item.createdAt)}</Text>
+              <Text className="text-xs text-gray-600">{formatDate(String(item.createdAt))}</Text>
             </View>
             <View>
               <Text className="text-xs text-gray-400">Updated</Text>
-              <Text className="text-xs text-gray-600">{formatDate(item.updatedAt)}</Text>
+              <Text className="text-xs text-gray-600">{formatDate(String(item.updatedAt))}</Text>
             </View>
           </View>
         </View>

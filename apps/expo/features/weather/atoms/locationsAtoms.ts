@@ -27,7 +27,7 @@ export const activeLocationAtom = atom(
     // Return null during loading or error states
     return null;
   },
-  (get, set, newActiveId: string) => {
+  (get, set, newActiveId: number) => {
     const locationsResult = get(locationsAtom);
 
     if (locationsResult.state === 'hasData') {

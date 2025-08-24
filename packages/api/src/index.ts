@@ -3,8 +3,9 @@ import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { routes } from '@packrat/api/routes';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { configureOpenAPI } from '@packrat/api/utils/openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
@@ -50,12 +51,22 @@ app.use(cors());
 // Mount routes
 app.route('/api', routes);
 
-// OpenAPI documentation and UI
-app.doc('/doc', {
-  openapi: '3.0.0',
-  info: { title: 'PackRat API', version: '1.0.0' },
-});
-app.get('/scalar', Scalar({ url: '/doc' }));
+// Configure OpenAPI documentation
+configureOpenAPI(app);
+
+// Scalar UI with enhanced configuration
+app.get(
+  '/scalar',
+  Scalar({
+    url: '/doc',
+    theme: 'purple',
+    pageTitle: 'PackRat API Documentation',
+    defaultHttpClient: {
+      targetKey: 'js',
+      clientKey: 'fetch',
+    },
+  }),
+);
 
 // Health check endpoint
 app.get('/', (c) => {

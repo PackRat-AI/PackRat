@@ -1,41 +1,78 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { reportedContent } from '@packrat/api/db/schema';
+import {
+  ChatRequestSchema,
+  CreateReportRequestSchema,
+  ErrorResponseSchema,
+  ReportsResponseSchema,
+  SuccessResponseSchema,
+  UpdateReportStatusRequestSchema,
+} from '@packrat/api/schemas/chat';
+import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 import { getSchemaInfo } from '../utils/DbUtils';
 
-const chatRoutes = new OpenAPIHono();
+const chatRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
 
 const chatRoute = createRoute({
   method: 'post',
   path: '/',
+  tags: ['Chat'],
+  summary: 'Chat with AI assistant',
+  description: 'Send messages to the PackRat AI assistant for hiking and outdoor gear advice',
+  security: [{ bearerAuth: [] }],
   request: {
     body: {
       content: {
         'application/json': {
-          schema: z.any(),
+          schema: ChatRequestSchema,
         },
       },
+      required: true,
     },
   },
   responses: {
     200: {
-      description: 'Chat response',
+      description: 'Streaming AI response',
+      content: {
+        'text/plain': {
+          schema: z.string().openapi({
+            description: 'Streaming text response from the AI',
+          }),
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - Invalid message format',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
     },
   },
 });
 
 chatRoutes.openapi(chatRoute, async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+  const auth = c.get('user');
 
   let body: {
     messages?: UIMessage[] | undefined;
@@ -95,11 +132,15 @@ chatRoutes.openapi(chatRoute, async (c) => {
       cloudflareAiBinding: AI,
     });
 
+    if (!aiProvider) {
+      return c.json({ error: 'AI provider not configured' }, 500);
+    }
+
     // Stream the AI response
     const result = streamText({
       model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       system: systemPrompt,
-      messages: convertToModelMessages(messages),
+      messages: convertToModelMessages(messages || []),
       tools,
       maxOutputTokens: 1000,
       temperature: 0.7,
@@ -139,11 +180,45 @@ chatRoutes.openapi(chatRoute, async (c) => {
   }
 });
 
-chatRoutes.post('/reports', async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+const createReportRoute = createRoute({
+  method: 'post',
+  path: '/reports',
+  tags: ['Chat'],
+  summary: 'Report AI content',
+  description: 'Report inappropriate or problematic AI responses for review',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: CreateReportRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Report submitted successfully',
+      content: {
+        'application/json': {
+          schema: SuccessResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+chatRoutes.openapi(createReportRoute, async (c) => {
+  const auth = c.get('user');
 
   const db = createDb(c);
 
@@ -158,15 +233,47 @@ chatRoutes.post('/reports', async (c) => {
     userComment,
   });
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 });
 
 // Get all reported content (admin only) - separate endpoint
-chatRoutes.get('/reports', async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+const getReportsRoute = createRoute({
+  method: 'get',
+  path: '/reports',
+  tags: ['Chat'],
+  summary: 'Get reported content (Admin)',
+  description: 'Retrieve all reported AI content for admin review',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: 'List of reported content',
+      content: {
+        'application/json': {
+          schema: ReportsResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Admin access required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+chatRoutes.openapi(getReportsRoute, async (c) => {
+  const auth = c.get('user');
 
   const db = createDb(c);
 
@@ -183,15 +290,77 @@ chatRoutes.get('/reports', async (c) => {
     },
   });
 
-  return c.json({ reportedItems });
+  // Add updatedAt field (using createdAt as fallback since table doesn't have updatedAt)
+  const reportedItemsWithUpdatedAt = reportedItems.map((item) => ({
+    ...item,
+    updatedAt: item.createdAt,
+  }));
+
+  return c.json({ reportedItems: reportedItemsWithUpdatedAt }, 200);
 });
 
 // Update reported content status (admin only)
-chatRoutes.patch('/reports/:id', async (c) => {
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
+const updateReportRoute = createRoute({
+  method: 'patch',
+  path: '/reports/{id}',
+  tags: ['Chat'],
+  summary: 'Update report status (Admin)',
+  description: 'Update the status of a reported content item (admin only)',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      id: z.string().openapi({
+        example: '123',
+        description: 'The ID of the report to update',
+      }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: UpdateReportStatusRequestSchema,
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Report status updated successfully',
+      content: {
+        'application/json': {
+          schema: SuccessResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - Admin access required',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Report not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+chatRoutes.openapi(updateReportRoute, async (c) => {
+  const auth = c.get('user');
 
   const db = createDb(c);
 
@@ -214,7 +383,7 @@ chatRoutes.patch('/reports/:id', async (c) => {
     })
     .where(eq(reportedContent.id, id));
 
-  return c.json({ success: true });
+  return c.json({ success: true }, 200);
 });
 
 export { chatRoutes };
