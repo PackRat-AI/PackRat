@@ -6,12 +6,15 @@ import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
 import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
+import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
+import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Image, Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
-import { ErrorScreen } from '../../../screens/ErrorScreen';
-import { LoadingSpinnerScreen } from '../../../screens/LoadingSpinnerScreen';
-import { NotFoundScreen } from '../../../screens/NotFoundScreen';
+import { Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
 import { useCatalogItemDetails } from '../hooks';
+
+const fallbackImage = require('expo-app/assets/image-not-available.png');
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
@@ -53,22 +56,31 @@ export function CatalogItemDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        <Image
-          source={{
-            uri: item.images?.[0] !== null ? item.images?.[0] : undefined, // `null` isn't assignable to uri
-            ...(Platform.OS === 'android'
-              ? {
-                  headers: {
-                    'User-Agent':
-                      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-                    Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
-                  },
-                }
-              : {}),
-          }}
-          className="h-64 w-full"
-          resizeMode="contain"
-        />
+        <View className="h-64 w-full">
+          <Image
+            source={
+              item.images?.[0]
+                ? {
+                    uri: item.images?.[0],
+                    ...(Platform.OS === 'android'
+                      ? {
+                          headers: {
+                            'User-Agent':
+                              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+                            Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
+                          },
+                        }
+                      : {}),
+                  }
+                : fallbackImage
+            }
+            contentFit="contain"
+            transition={200}
+            style={{
+              flex: 1,
+            }}
+          />
+        </View>
 
         <View className="bg-card p-4">
           <View className="mb-2">
@@ -184,11 +196,11 @@ export function CatalogItemDetailScreen() {
               <Text variant="callout" className="mb-2">
                 Specifications
               </Text>
-              <View className="rounded-lg p-3">
+              <View className="rounded-lg p-3 gap-4">
                 {Object.entries(item.techs).map(([key, value]) => (
-                  <View key={key} className="mb-2 flex-row justify-between">
+                  <View key={key} className="gap-1">
                     <Text className="text-sm text-muted-foreground">{key}</Text>
-                    <Text className="text-sm font-medium text-foreground">{value}</Text>
+                    <Text className="text-base font-medium text-foreground">{value}</Text>
                   </View>
                 ))}
               </View>

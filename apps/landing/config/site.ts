@@ -60,6 +60,10 @@ export const siteConfig = {
       href: '#features',
     },
     {
+      title: 'Guides',
+      href: 'https://guides.packratai.com/',
+    },
+    {
       title: 'How It Works',
       href: '#how-it-works',
     },
@@ -86,6 +90,10 @@ export const siteConfig = {
     secondary: {
       text: 'Learn More',
       href: '#features',
+    },
+    tertiary: {
+      text: 'Explore Guides',
+      href: 'https://guides.packratai.com/',
     },
   },
 
@@ -131,6 +139,15 @@ export const siteConfig = {
       icon: 'Map',
       color: '#F97316',
       image: '/feature-trail-maps.png',
+    },
+    {
+      id: 'guides',
+      title: 'Guides',
+      description:
+        'Browse practical guides on trip planning, gear selection, and survival strategies for every adventure.',
+      icon: 'Book',
+      color: '#14B8A6',
+      image: '/feature-guides-ios.png',
     },
     {
       id: 'trip-planning',
@@ -347,6 +364,7 @@ export const siteConfig = {
   footerLinks: {
     product: [
       { title: 'Features', href: '#features' },
+      { title: 'Guides', href: 'https://guides.packratai.com/' },
       { title: 'Integrations', href: '#integrations' },
       { title: 'Updates', href: '#' },
     ],

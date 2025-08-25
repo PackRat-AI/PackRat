@@ -14,7 +14,7 @@ export function getEffectiveWeight(item: CatalogItem | PackItem): number {
   if (isPackItem(item)) {
     return item.weight;
   }
-  return 'defaultWeight' in item ? item.defaultWeight : 0;
+  return 'weight' in item ? (item.weight as number) : 0;
 }
 
 /**

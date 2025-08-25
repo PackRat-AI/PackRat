@@ -1,6 +1,5 @@
 import { resolve } from 'node:path';
 import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
-import { defineConfig } from 'vitest/config';
 
 const bindings = {
   // Environment & Deployment
@@ -54,21 +53,19 @@ const bindings = {
 
 Object.assign(process.env, bindings);
 
-export default defineWorkersConfig(
-  defineConfig({
-    resolve: {
-      alias: {
-        '@': resolve(__dirname, 'src'),
+export default defineWorkersConfig({
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
+  test: {
+    setupFiles: ['./test/setup.ts'],
+    pool: '@cloudflare/vitest-pool-workers',
+    poolOptions: {
+      workers: {
+        wrangler: { configPath: './wrangler.toml' },
       },
     },
-    test: {
-      setupFiles: ['./test/setup.ts'],
-      pool: '@cloudflare/vitest-pool-workers',
-      poolOptions: {
-        workers: {
-          wrangler: { configPath: './wrangler.toml' },
-        },
-      },
-    },
-  }),
-);
+  },
+});

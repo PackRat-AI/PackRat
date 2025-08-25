@@ -1,9 +1,9 @@
-import { Button } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
-import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
+import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import {
   calculateTotalWeight,
   getNotes,
@@ -15,7 +15,7 @@ import {
 } from 'expo-app/lib/utils/itemCalculations';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Image, SafeAreaView, ScrollView, View } from 'react-native';
 import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
 
 export function PackTemplateItemDetailScreen() {
@@ -62,10 +62,18 @@ export function PackTemplateItemDetailScreen() {
     });
   };
 
+  const imageUrl = buildPackTemplateItemImageUrl(item.image);
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        <CachedImage localFileName={item.image} className="h-64 w-full" resizeMode="cover" />
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} className="h-64 w-full" resizeMode="cover" />
+        ) : (
+          <View className="h-64 w-full items-center justify-center bg-muted">
+            <Text className="text-muted-foreground">No image</Text>
+          </View>
+        )}
 
         <View className="mb-4 bg-card p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>

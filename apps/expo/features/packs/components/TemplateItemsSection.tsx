@@ -1,9 +1,9 @@
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import type { WeightUnit } from 'expo-app/types';
-import { ScrollView, Text, View } from 'react-native';
-import { CachedImage } from './CachedImage';
+import { Image, ScrollView, Text, View } from 'react-native';
 
 export interface PackTemplateItem {
   id: string;
@@ -44,11 +44,18 @@ const formatWeight = (weight: number, unit: string) => {
 // Template Item Card Component
 const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
   const { colors } = useColorScheme();
+  const imageUrl = buildPackTemplateItemImageUrl(item.image);
 
   return (
     <View className="mr-3 w-48 rounded-xl border border-border bg-card p-4 shadow-sm">
       <View className="mb-3 h-20 w-full overflow-hidden rounded-lg bg-muted">
-        <CachedImage localFileName={item.image} className="h-full w-full" resizeMode="cover" />
+        {imageUrl ? (
+          <Image source={{ uri: imageUrl }} className="h-full w-full" resizeMode="cover" />
+        ) : (
+          <View className="h-full w-full items-center justify-center">
+            <Text className="text-muted-foreground">No image</Text>
+          </View>
+        )}
       </View>
 
       {/* Item name */}

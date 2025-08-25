@@ -37,7 +37,7 @@ export function LocationSelector() {
     bottomSheetRef.current?.present();
   };
 
-  const handleSelectLocation = (locationId: string) => {
+  const handleSelectLocation = (locationId: number) => {
     setActiveLocation(locationId);
     bottomSheetRef.current?.close();
 

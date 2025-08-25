@@ -13,6 +13,9 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  "limits": {
+    "cpu_ms": 300000 // 300,000 milliseconds = 5 minutes
+  },
   // Environment variables are managed via:
   // - Production: Cloudflare dashboard
   // - Local development: .dev.vars file (not committed to git)
@@ -40,10 +43,6 @@
         "binding": "ETL_QUEUE"
       },
       {
-        "queue": "packrat-logs-queue",
-        "binding": "LOGS_QUEUE"
-      },
-      {
         "queue": "packrat-embeddings-queue",
         "binding": "EMBEDDINGS_QUEUE"
       }
@@ -52,11 +51,6 @@
       {
         "queue": "packrat-etl-queue",
         "max_batch_size": 1,
-        "max_batch_timeout": 5
-      },
-      {
-        "queue": "packrat-logs-queue",
-        "max_batch_size": 10,
         "max_batch_timeout": 5
       },
       {
