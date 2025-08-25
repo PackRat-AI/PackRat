@@ -151,13 +151,7 @@ export default function AIChat() {
     return () => {
       keyboardListener.remove();
     };
-  }, [messages]);
-
-  // Add synthetic row for suggestions
-  const data =
-    messages.length < 2
-      ? [...messages, { id: 'suggestions', role: 'system', parts: [] } as UIMessage]
-      : messages;
+  }, []);
 
   return (
     <>
@@ -207,27 +201,8 @@ export default function AIChat() {
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
           }}
-          data={data}
+          data={messages}
           renderItem={({ item, index }) => {
-            if (item.id === 'suggestions') {
-              return (
-                <View className="px-4">
-                  <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {getContextualSuggestions(context).map((suggestion) => (
-                      <TouchableOpacity
-                        key={suggestion}
-                        onPress={() => handleSubmit(suggestion)}
-                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                      >
-                        <Text className="text-sm text-foreground">{suggestion}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              );
-            }
-
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
@@ -238,13 +213,29 @@ export default function AIChat() {
             return <ChatBubble item={item} userQuery={userQuery} />;
           }}
         />
+        {messages.length < 2 && (
+          <View className="flex-1 px-4">
+            <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {getContextualSuggestions(context).map((suggestion) => (
+                <TouchableOpacity
+                  key={suggestion}
+                  onPress={() => handleSubmit(suggestion)}
+                  className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                >
+                  <Text className="text-sm text-foreground">{suggestion}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <Composer
           textInputHeight={textInputHeight}
           input={input}
-          handleInputChange={setInput}
+          handleInputChange={setInput} // Pass the setter directly.
           handleSubmit={() => {
             handleSubmit();
           }}
