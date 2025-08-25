@@ -11,16 +11,19 @@ import { processValidItemsBatch } from './processValidItemsBatch';
 import { queueCatalogETL } from './queue';
 import type { CatalogETLMessage } from './types';
 
-export const CHUNK_SIZE = 10000;
-export const BATCH_SIZE = 500;
+export const BATCH_SIZE = 100;
 
 async function* streamToText(stream: ReadableStream) {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    yield decoder.decode(value, { stream: true });
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      yield decoder.decode(value, { stream: true });
+    }
+  } finally {
+    reader.releaseLock();
   }
 }
 
@@ -38,7 +41,7 @@ export async function processCatalogETL({
 
   try {
     console.log(
-      `🔄 Processing ETL chunk (rows ${startRow} to ${startRow + CHUNK_SIZE - 1}) for file ${objectKey}, job ${jobId}`,
+      `🔄 Processing ETL batch (rows ${startRow} to ${startRow + BATCH_SIZE - 1}) for file ${objectKey}, job ${jobId}`,
     );
 
     const r2Service = new R2BucketService({
@@ -57,7 +60,6 @@ export async function processCatalogETL({
     let isHeaderProcessed = false;
     let validItemsBatch: Partial<NewCatalogItem>[] = [];
     let invalidItemsBatch: NewInvalidItemLog[] = [];
-    let rowsProcessedInChunk = 0;
 
     const validator = new CatalogItemValidator();
 
@@ -75,6 +77,7 @@ export async function processCatalogETL({
     })();
 
     for await (const record of parser) {
+      await new Promise((resolve) => setTimeout(resolve, 1)); // Yield to event loop for GC Opportunities to prevent memory bloat
       const row = record as string[];
       if (!isHeaderProcessed) {
         fieldMap = row.reduce(
@@ -96,7 +99,7 @@ export async function processCatalogETL({
         rowIndex++;
         continue;
       }
-      if (rowIndex >= startRow + CHUNK_SIZE) {
+      if (rowIndex >= startRow + BATCH_SIZE) {
         break;
       }
 
@@ -138,12 +141,8 @@ export async function processCatalogETL({
       }
 
       rowIndex++;
-      rowsProcessedInChunk++;
-
-      if (rowsProcessedInChunk % 100 === 0) {
-        console.log(
-          `🔍 [TRACE] Progress update - rowsProcessedInChunk: ${rowsProcessedInChunk}, rowIndex: ${rowIndex}, validBatch: ${validItemsBatch.length}, invalidBatch: ${invalidItemsBatch.length}`,
-        );
+      if (rowIndex % 100 === 0) {
+        console.log(`🔍 [TRACE] Progress update - rows processed: ${rowIndex}`);
       }
     }
 
@@ -172,10 +171,10 @@ export async function processCatalogETL({
       });
     }
 
-    // Queue next chunk if needed
-    if (rowIndex >= startRow + CHUNK_SIZE) {
+    // Queue next batch if needed
+    if (rowIndex >= startRow + BATCH_SIZE) {
       console.log(
-        `🔍 [TRACE] Queueing next chunk - currentRow: ${rowIndex}, nextStartRow: ${startRow + CHUNK_SIZE}`,
+        `🔍 [TRACE] Queueing next batch - currentRow: ${rowIndex}, nextStartRow: ${startRow + BATCH_SIZE}`,
       );
       await queueCatalogETL({
         queue: env.ETL_QUEUE,
@@ -184,14 +183,14 @@ export async function processCatalogETL({
         source,
         scraperRevision,
         jobId,
-        startRow: startRow + CHUNK_SIZE,
+        startRow: startRow + BATCH_SIZE,
       });
 
       console.log(
-        `➡️ Queued next ETL chunk for rows ${startRow + CHUNK_SIZE} to ${startRow + 2 * CHUNK_SIZE - 1}`,
+        `➡️ Queued next ETL batch for rows ${startRow + BATCH_SIZE} to ${startRow + 2 * BATCH_SIZE - 1}`,
       );
     } else {
-      console.log('🔍 [TRACE] No more chunks needed - processed all rows');
+      console.log('🔍 [TRACE] No more batches needed - processed all rows');
       await db
         .update(etlJobs)
         .set({ totalCount: rowIndex, status: 'completed', completedAt: new Date() })
@@ -203,7 +202,7 @@ export async function processCatalogETL({
       .set({ status: 'failed', completedAt: new Date() })
       .where(eq(etlJobs.id, jobId));
     console.error(
-      `❌ Error processing ETL chunk (rows ${startRow} to ${startRow + CHUNK_SIZE - 1}), job ${jobId}:`,
+      `❌ Error processing ETL batch (rows ${startRow} to ${startRow + BATCH_SIZE - 1}), job ${jobId}:`,
       error,
     );
     throw error;
