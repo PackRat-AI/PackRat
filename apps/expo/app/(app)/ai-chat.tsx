@@ -151,7 +151,13 @@ export default function AIChat() {
     return () => {
       keyboardListener.remove();
     };
-  }, []);
+  }, [messages]);
+
+  // Add synthetic row for suggestions
+  const data =
+    messages.length < 2
+      ? [...messages, { id: 'suggestions', role: 'system', parts: [] } as UIMessage]
+      : messages;
 
   return (
     <>
@@ -184,22 +190,6 @@ export default function AIChat() {
           }
           ListFooterComponent={
             <>
-              {messages.length < 2 && (
-                <View className="px-4 py-4">
-                  <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {getContextualSuggestions(context).map((suggestion) => (
-                      <TouchableOpacity
-                        key={suggestion}
-                        onPress={() => handleSubmit(suggestion)}
-                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                      >
-                        <Text className="text-sm text-foreground">{suggestion}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              )}
               {status === 'submitted' && (
                 <ActivityIndicator
                   size="small"
@@ -217,8 +207,27 @@ export default function AIChat() {
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
           }}
-          data={messages}
+          data={data}
           renderItem={({ item, index }) => {
+            if (item.id === 'suggestions') {
+              return (
+                <View className="px-4">
+                  <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {getContextualSuggestions(context).map((suggestion) => (
+                      <TouchableOpacity
+                        key={suggestion}
+                        onPress={() => handleSubmit(suggestion)}
+                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                      >
+                        <Text className="text-sm text-foreground">{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              );
+            }
+
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
@@ -230,11 +239,12 @@ export default function AIChat() {
           }}
         />
       </KeyboardAvoidingView>
+
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <Composer
           textInputHeight={textInputHeight}
           input={input}
-          handleInputChange={setInput} // Pass the setter directly.
+          handleInputChange={setInput}
           handleSubmit={() => {
             handleSubmit();
           }}
