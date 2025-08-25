@@ -43,6 +43,7 @@ export const LocationSchema = z
 // Extended location schema for API responses
 export const WeatherAPILocationSchema = z
   .object({
+    id: z.number(),
     name: z.string(),
     region: z.string(),
     country: z.string(),
@@ -65,13 +66,9 @@ export const WeatherSearchQuerySchema = z
 
 export const WeatherCoordinateQuerySchema = z
   .object({
-    lat: z.string().optional().openapi({
-      example: '42.3601',
-      description: 'Latitude coordinate as string',
-    }),
-    lon: z.string().optional().openapi({
-      example: '-71.0589',
-      description: 'Longitude coordinate as string',
+    id: z.string().openapi({
+      example: '2618724',
+      description: 'Unique identifier for the location',
     }),
   })
   .openapi('WeatherCoordinateQuery');

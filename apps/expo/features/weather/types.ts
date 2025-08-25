@@ -12,6 +12,7 @@ export interface WeatherApiForecastResponse {
 }
 
 export interface Location {
+  id: number;
   name: string;
   region: string;
   country: string;
@@ -173,7 +174,7 @@ export interface Alert {
 
 // Location shape used in app
 export interface WeatherLocation {
-  id: string;
+  id: number;
   name: string;
   temperature: number;
   condition: string;
@@ -210,7 +211,7 @@ export interface WeatherLocation {
 }
 
 export type LocationSearchResult = {
-  id: string;
+  id: number;
   name: string;
   region: string;
   country: string;

@@ -34,7 +34,7 @@ export default function LocationSearchScreen() {
   const searchInputRef = useRef<SearchInputRef>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [addingLocationId, setAddingLocationId] = useState<string | null>(null);
+  const [addingLocationId, setAddingLocationId] = useState<number | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 
@@ -424,7 +424,7 @@ export default function LocationSearchScreen() {
         <FlatList
           data={results}
           renderItem={renderResultItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           ListEmptyComponent={renderEmptyList}
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"

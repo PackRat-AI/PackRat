@@ -1,10 +1,12 @@
+import { Button } from 'landing-app/components/ui/button';
 import DeviceMockup from 'landing-app/components/ui/device-mockup';
 import FeatureCard from 'landing-app/components/ui/feature-card';
 import GradientBackground from 'landing-app/components/ui/gradient-background';
 import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
 import GradientText from 'landing-app/components/ui/gradient-text';
 import { siteConfig } from 'landing-app/config/site';
-import { Check } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 export default function FeatureSection() {
   return (
@@ -153,9 +155,69 @@ export default function FeatureSection() {
             </div>
           </GradientBorderCard>
 
+          {/* Feature showcase 3 */}
+          <GradientBorderCard
+            className="p-0 overflow-hidden bg-card/80 backdrop-blur-sm"
+            interactive={false}
+          >
+            <div className="grid gap-8 md:grid-cols-2 items-center p-6 md:p-8">
+              <div className="order-2 md:order-1">
+                <div className="space-y-4 md:space-y-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/15 dark:bg-primary/10">
+                    <svg
+                      className="w-6 h-6 text-primary"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <title>Open Book icon</title>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6c-1.5-1-3.5-2-6-2s-4 1-4 1v14s1-1 4-1 4.5 1 6 2m0-14c1.5-1 3.5-2 6-2s4 1 4 1v14s-1-1-4-1-4.5 1-6 2m0-14v14"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                    {siteConfig.features[2].title}
+                  </h3>
+                  <p className="text-base md:text-lg text-muted-foreground">
+                    {siteConfig.features[2].description}
+                  </p>
+                  <ul className="space-y-2">
+                    <li className="flex items-center">
+                      <Check className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                      <span>Destination highlights and recommendations</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                      <span>Safety and survival tips</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="w-5 h-5 mr-2 text-primary flex-shrink-0" />
+                      <span>Expert gear recommendations</span>
+                    </li>
+                  </ul>
+                  <div className="pt-4">
+                    <Button asChild variant="outline" size="lg" className="group">
+                      <Link href={siteConfig.cta.tertiary.href}>
+                        {siteConfig.cta.tertiary.text}
+                        <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <div className="order-1 md:order-2 flex justify-center">
+                <DeviceMockup image="/feature-guides-ios.png" alt="Guides" showReflection />
+              </div>
+            </div>
+          </GradientBorderCard>
+
           {/* Other features grid */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {siteConfig.features.slice(2).map((feature) => (
+            {siteConfig.features.slice(3).map((feature) => (
               <GradientBorderCard key={feature.id}>
                 <FeatureCard
                   title={feature.title}
