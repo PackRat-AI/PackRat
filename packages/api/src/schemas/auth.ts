@@ -195,7 +195,7 @@ export const SocialAuthResponseSchema = z
       lastName: z.string().nullable(),
       emailVerified: z.boolean().nullable(),
       role: z.string().nullable(),
-    }),
+    }).optional(),
     isNewUser: z.boolean().optional().openapi({
       description: 'Indicates if this is a newly created account',
     }),
