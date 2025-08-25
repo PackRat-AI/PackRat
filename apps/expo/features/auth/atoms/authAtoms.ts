@@ -13,21 +13,21 @@ export type User = {
 
 // Token storage atom
 export const tokenAtom = atomWithStorage<string | null>('access_token', null, {
-  getItem: (key) => Storage.getItem(key),
+  getItem: (key) => Storage.getItemSync(key),
   setItem: (key, value) => {
-    if (value === null) return Storage.removeItem(key);
-    return Storage.setItem(key, value);
+    if (value === null) return Storage.removeItemSync(key);
+    return Storage.setItemSync(key, value);
   },
-  removeItem: (key) => Storage.removeItem(key),
+  removeItem: (key) => Storage.removeItemSync(key),
 });
 
 export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', null, {
-  getItem: (key) => Storage.getItem(key),
+  getItem: (key) => Storage.getItemSync(key),
   setItem: (key, value) => {
-    if (value === null) return Storage.removeItem(key);
-    return Storage.setItem(key, value);
+    if (value === null) return Storage.removeItemSync(key);
+    return Storage.setItemSync(key, value);
   },
-  removeItem: (key) => Storage.removeItem(key),
+  removeItem: (key) => Storage.removeItemSync(key),
 });
 
 // Loading state atom
