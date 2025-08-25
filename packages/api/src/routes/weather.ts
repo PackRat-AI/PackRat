@@ -7,6 +7,7 @@ import {
   type WeatherAPISearchResponse,
   WeatherCoordinateQuerySchema,
   WeatherForecastSchema,
+  WeatherLocationIdSchema,
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
 import type { Env } from '@packrat/api/types/env';
@@ -225,7 +226,7 @@ const forecastRoute = createRoute({
     'Retrieve detailed weather forecast data including current conditions, daily forecasts, and alerts',
   security: [{ bearerAuth: [] }],
   request: {
-    query: WeatherCoordinateQuerySchema,
+    query: WeatherLocationIdSchema,
   },
   responses: {
     200: {

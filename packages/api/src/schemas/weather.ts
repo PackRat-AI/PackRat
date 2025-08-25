@@ -66,12 +66,25 @@ export const WeatherSearchQuerySchema = z
 
 export const WeatherCoordinateQuerySchema = z
   .object({
+    lat: z.string().openapi({
+      example: '42.3601',
+      description: 'Latitude coordinate',
+    }),
+    lon: z.string().openapi({
+      example: '-71.0589',
+      description: 'Longitude coordinate',
+    }),
+  })
+  .openapi('WeatherCoordinateQuery');
+
+export const WeatherLocationIdSchema = z
+  .object({
     id: z.string().openapi({
       example: '2618724',
       description: 'Unique identifier for the location',
     }),
   })
-  .openapi('WeatherCoordinateQuery');
+  .openapi('WeatherLocation');
 
 export const WeatherConditionSchema = z
   .object({
