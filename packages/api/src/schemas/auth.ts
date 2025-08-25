@@ -188,14 +188,16 @@ export const SocialAuthResponseSchema = z
     success: z.boolean(),
     accessToken: z.string(),
     refreshToken: z.string(),
-    user: z.object({
-      id: z.number(),
-      email: z.string().email(),
-      firstName: z.string().nullable(),
-      lastName: z.string().nullable(),
-      emailVerified: z.boolean().nullable(),
-      role: z.string().nullable(),
-    }).optional(),
+    user: z
+      .object({
+        id: z.number(),
+        email: z.string().email(),
+        firstName: z.string().nullable(),
+        lastName: z.string().nullable(),
+        emailVerified: z.boolean().nullable(),
+        role: z.string().nullable(),
+      })
+      .optional(),
     isNewUser: z.boolean().optional().openapi({
       description: 'Indicates if this is a newly created account',
     }),
