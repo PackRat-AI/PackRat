@@ -244,47 +244,97 @@ export class R2BucketService {
       });
 
       const response = await this.s3Client.send(command);
+      const body = response.Body;
 
-      if (!response.Body) {
+      if (!body) {
         return null;
       }
 
-      const stream = response.Body as Readable;
-      const chunks: Uint8Array[] = [];
+      const r2Object = this.createR2Object(key, response);
 
-      // Collect all chunks
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
+      let streamConsumed = false;
+      let webStream: ReadableStream<Uint8Array>;
 
-      const bodyArray = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
-      let offset = 0;
-      for (const chunk of chunks) {
-        bodyArray.set(chunk, offset);
-        offset += chunk.length;
-      }
+      const getStream = () => {
+        if (webStream) {
+          return webStream;
+        }
 
-      const r2Object = this.createR2Object(key, { ...response });
+        // Check if it's a Node.js stream (like in a local Node environment)
+        if ('on' in body && typeof body.on === 'function') {
+          const nodeStream = body as Readable;
+          webStream = new globalThis.ReadableStream({
+            start(controller) {
+              nodeStream.on('data', (chunk) => controller.enqueue(chunk));
+              nodeStream.on('end', () => controller.close());
+              nodeStream.on('error', (err) => controller.error(err));
+            },
+            cancel() {
+              nodeStream.destroy();
+            },
+          });
+        } else {
+          // Assume it's a web stream (like in Cloudflare Workers)
+          webStream = body as ReadableStream<Uint8Array>;
+        }
+        return webStream;
+      };
+
+      const consumeStream = async (): Promise<Uint8Array> => {
+        const reader = getStream().getReader();
+        const chunks: Uint8Array[] = [];
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+
+        const bodyArray = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+        let offset = 0;
+        for (const chunk of chunks) {
+          bodyArray.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return bodyArray;
+      };
+
+      const assertStreamNotConsumed = () => {
+        if (streamConsumed) {
+          throw new Error('Body already used');
+        }
+        streamConsumed = true;
+      };
 
       // Create a proper R2ObjectBody
       const objectBody: R2ObjectBody = {
         ...r2Object,
         get body(): ReadableStream {
-          return new globalThis.ReadableStream({
-            start(controller) {
-              controller.enqueue(bodyArray);
-              controller.close();
-            },
-          });
+          assertStreamNotConsumed();
+          return getStream();
         },
         get bodyUsed(): boolean {
-          return false;
+          return streamConsumed;
         },
-        arrayBuffer: async () => bodyArray.buffer,
-        bytes: async () => bodyArray,
-        text: async () => new TextDecoder().decode(bodyArray),
-        json: async <T>() => JSON.parse(new TextDecoder().decode(bodyArray)) as T,
-        blob: async () => new globalThis.Blob([bodyArray]),
+        arrayBuffer: async () => {
+          assertStreamNotConsumed();
+          return (await consumeStream()).buffer as ArrayBuffer;
+        },
+        bytes: async () => {
+          assertStreamNotConsumed();
+          return consumeStream();
+        },
+        text: async () => {
+          assertStreamNotConsumed();
+          return new TextDecoder().decode(await consumeStream());
+        },
+        json: async <T>() => {
+          assertStreamNotConsumed();
+          return JSON.parse(new TextDecoder().decode(await consumeStream())) as T;
+        },
+        blob: async () => {
+          assertStreamNotConsumed();
+          return new globalThis.Blob([await consumeStream()]);
+        },
       };
 
       return objectBody;
@@ -365,29 +415,7 @@ export class R2BucketService {
         throw new Error('Cannot put null value');
       }
 
-      let body: Buffer | Uint8Array | string;
-
-      if (value instanceof globalThis.ReadableStream) {
-        const reader = value.getReader();
-        const chunks: Uint8Array[] = [];
-        while (true) {
-          const { done, value: chunk } = await reader.read();
-          if (done) break;
-          chunks.push(chunk);
-        }
-        body = Buffer.concat(chunks);
-      } else if (value instanceof ArrayBuffer) {
-        body = new Uint8Array(value);
-      } else if (ArrayBuffer.isView(value)) {
-        body = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-      } else if (typeof value === 'string') {
-        body = value;
-      } else if (value instanceof globalThis.Blob) {
-        body = new Uint8Array(await value.arrayBuffer());
-      } else {
-        throw new Error('Unsupported value type');
-      }
-
+      const body = await this.convertBodyToUploadable(value);
       const httpMetadata = this.extractHttpMetadata(options?.httpMetadata);
 
       const command = new PutObjectCommand({
@@ -480,28 +508,7 @@ export class R2BucketService {
         value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
         _options?: R2UploadPartOptions,
       ) => {
-        let body: Buffer | Uint8Array | string;
-
-        if (value instanceof globalThis.ReadableStream) {
-          const reader = value.getReader();
-          const chunks: Uint8Array[] = [];
-          while (true) {
-            const { done, value: chunk } = await reader.read();
-            if (done) break;
-            chunks.push(chunk);
-          }
-          body = Buffer.concat(chunks);
-        } else if (value instanceof ArrayBuffer) {
-          body = new Uint8Array(value);
-        } else if (ArrayBuffer.isView(value)) {
-          body = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-        } else if (typeof value === 'string') {
-          body = value;
-        } else if (value instanceof globalThis.Blob) {
-          body = new Uint8Array(await value.arrayBuffer());
-        } else {
-          throw new Error('Unsupported value type');
-        }
+        const body = await this.convertBodyToUploadable(value);
 
         const uploadCommand = new UploadPartCommand({
           Bucket: this.bucketName,
@@ -544,6 +551,34 @@ export class R2BucketService {
         return this.createR2Object(key, { ...completeResponse });
       },
     };
+  }
+
+  private async convertBodyToUploadable(
+    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
+  ): Promise<Buffer | Uint8Array | string> {
+    if (value instanceof globalThis.ReadableStream) {
+      const reader = value.getReader();
+      const chunks: Uint8Array[] = [];
+      while (true) {
+        const { done, value: chunk } = await reader.read();
+        if (done) break;
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks);
+    }
+    if (value instanceof ArrayBuffer) {
+      return new Uint8Array(value);
+    }
+    if (ArrayBuffer.isView(value)) {
+      return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (value instanceof globalThis.Blob) {
+      return new Uint8Array(await value.arrayBuffer());
+    }
+    throw new Error('Unsupported value type');
   }
 
   private createR2Object(key: string, response: Record<string, unknown>): R2Object {
