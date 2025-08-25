@@ -1,12 +1,15 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
-import type { Env } from '@packrat/api/utils/env-validation';
+import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
+import { UserSearchQuerySchema } from '@packrat/api/schemas/users';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/api/utils/typeAssertions';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
+import { z } from 'zod';
 
 const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -732,7 +735,38 @@ adminRoutes.get('/catalog-search', async (c) => {
 });
 
 // Admin API endpoints for getting data
-adminRoutes.get('/stats', async (c) => {
+const getStatsRoute = createRoute({
+  method: 'get',
+  path: '/stats',
+  tags: ['Admin'],
+  summary: 'Get admin dashboard statistics',
+  description: 'Get count statistics for users, packs, and catalog items (Admin only)',
+  responses: {
+    200: {
+      description: 'Admin statistics retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.object({
+            users: z.number().int().min(0),
+            packs: z.number().int().min(0),
+            items: z.number().int().min(0),
+          }),
+        },
+      },
+    },
+
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+adminRoutes.openapi(getStatsRoute, async (c) => {
   const db = createDb(c);
 
   try {
@@ -745,22 +779,66 @@ adminRoutes.get('/stats', async (c) => {
 
     assertAllDefined(userCount, packCount, itemCount);
 
-    return c.json({
-      users: userCount.count,
-      packs: packCount.count,
-      items: itemCount.count,
-    });
+    return c.json(
+      {
+        users: userCount?.count ?? 0,
+        packs: packCount?.count ?? 0,
+        items: itemCount?.count ?? 0,
+      },
+      200,
+    );
   } catch (error) {
     console.error('Error fetching stats:', error);
-    return c.json({ error: 'Failed to fetch stats' }, 500);
+    return c.json({ error: 'Failed to fetch stats', code: 'STATS_ERROR' }, 500);
   }
 });
 
 // Keep the existing API endpoints for backward compatibility
-adminRoutes.get('/users-list', async (c) => {
+const getUsersListRoute = createRoute({
+  method: 'get',
+  path: '/users-list',
+  tags: ['Admin'],
+  summary: 'List all users',
+  description: 'Get a list of all users in the system (Admin only)',
+  request: {
+    query: UserSearchQuerySchema.pick({ limit: true, offset: true }),
+  },
+  responses: {
+    200: {
+      description: 'Users list retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({
+              id: z.number(),
+              email: z.string(),
+              firstName: z.string().nullable(),
+              lastName: z.string().nullable(),
+              role: z.string().nullable(),
+              emailVerified: z.boolean().nullable(),
+              createdAt: z.string().nullable(),
+            }),
+          ),
+        },
+      },
+    },
+
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+adminRoutes.openapi(getUsersListRoute, async (c) => {
   const db = createDb(c);
 
   try {
+    const { limit = 100, offset = 0 } = c.req.query();
     const usersList = await db
       .select({
         id: users.id,
@@ -773,19 +851,68 @@ adminRoutes.get('/users-list', async (c) => {
       })
       .from(users)
       .orderBy(desc(users.createdAt))
-      .limit(100);
+      .limit(Number(limit))
+      .offset(Number(offset));
 
-    return c.json(usersList);
+    const formattedUsers = usersList.map((user) => ({
+      ...user,
+      createdAt: user.createdAt?.toISOString() || null,
+    }));
+
+    return c.json(formattedUsers, 200);
   } catch (error) {
     console.error('Error fetching users:', error);
-    return c.json({ error: 'Failed to fetch users' }, 500);
+    return c.json({ error: 'Failed to fetch users', code: 'USERS_FETCH_ERROR' }, 500);
   }
 });
 
-adminRoutes.get('/packs-list', async (c) => {
+const getPacksListRoute = createRoute({
+  method: 'get',
+  path: '/packs-list',
+  tags: ['Admin'],
+  summary: 'List all packs',
+  description: 'Get a list of all packs in the system (Admin only)',
+  request: {
+    query: z.object({
+      limit: z.number().int().positive().max(100).default(100).optional(),
+      offset: z.number().int().min(0).default(0).optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Packs list retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              description: z.string().nullable(),
+              category: z.string(),
+              isPublic: z.boolean().nullable(),
+              createdAt: z.string().nullable(),
+              userEmail: z.string().nullable(),
+            }),
+          ),
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+adminRoutes.openapi(getPacksListRoute, async (c) => {
   const db = createDb(c);
 
   try {
+    const { limit = 100, offset = 0 } = c.req.query();
     const packsList = await db
       .select({
         id: packs.id,
@@ -800,19 +927,69 @@ adminRoutes.get('/packs-list', async (c) => {
       .leftJoin(users, eq(packs.userId, users.id))
       .where(eq(packs.deleted, false))
       .orderBy(desc(packs.createdAt))
-      .limit(100);
+      .limit(Number(limit))
+      .offset(Number(offset));
 
-    return c.json(packsList);
+    const formattedPacks = packsList.map((pack) => ({
+      ...pack,
+      createdAt: pack.createdAt?.toISOString() || null,
+    }));
+
+    return c.json(formattedPacks, 200);
   } catch (error) {
     console.error('Error fetching packs:', error);
-    return c.json({ error: 'Failed to fetch packs' }, 500);
+    return c.json({ error: 'Failed to fetch packs', code: 'PACKS_FETCH_ERROR' }, 500);
   }
 });
 
-adminRoutes.get('/catalog-list', async (c) => {
+const getCatalogListRoute = createRoute({
+  method: 'get',
+  path: '/catalog-list',
+  tags: ['Admin'],
+  summary: 'List catalog items',
+  description: 'Get a list of catalog items (Admin only)',
+  request: {
+    query: z.object({
+      limit: z.number().int().positive().max(100).default(25).optional(),
+      offset: z.number().int().min(0).default(0).optional(),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Catalog items list retrieved successfully',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+              categories: z.array(z.string()).nullable(),
+              brand: z.string().nullable(),
+              price: z.number().nullable(),
+              weight: z.number().nullable(),
+              weightUnit: z.string(),
+              createdAt: z.string().nullable(),
+            }),
+          ),
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+adminRoutes.openapi(getCatalogListRoute, async (c) => {
   const db = createDb(c);
 
   try {
+    const { limit = 25, offset = 0 } = c.req.query();
     const itemsList = await db
       .select({
         id: catalogItems.id,
@@ -826,12 +1003,18 @@ adminRoutes.get('/catalog-list', async (c) => {
       })
       .from(catalogItems)
       .orderBy(desc(catalogItems.id))
-      .limit(25);
+      .limit(Number(limit))
+      .offset(Number(offset));
 
-    return c.json(itemsList);
+    const formattedItems = itemsList.map((item) => ({
+      ...item,
+      createdAt: item.createdAt?.toISOString() || null,
+    }));
+
+    return c.json(formattedItems, 200);
   } catch (error) {
     console.error('Error fetching catalog items:', error);
-    return c.json({ error: 'Failed to fetch catalog items' }, 500);
+    return c.json({ error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' }, 500);
   }
 });
 

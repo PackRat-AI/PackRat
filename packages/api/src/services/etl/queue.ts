@@ -1,30 +1,7 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
 import type { Env } from '@packrat/api/utils/env-validation';
-import { processCatalogETLWriteBatch } from './processCatalogETLWriteBatch';
 import { processCatalogETL } from './processCatalogEtl';
-import type { CatalogETLWriteBatchMessage } from './types';
-
-export enum QueueType {
-  CATALOG_ETL = 'catalog-etl',
-  CATALOG_ETL_WRITE_BATCH = 'catalog-etl-write-batch',
-}
-
-export interface BaseQueueMessage {
-  type: QueueType;
-  timestamp: number;
-  id: string;
-}
-
-export interface CatalogETLMessage extends BaseQueueMessage {
-  type: QueueType.CATALOG_ETL;
-  data: {
-    objectKey: string;
-    userId: string;
-    source: string;
-    scraperRevision: string;
-    startRow?: number; // for chunking
-  };
-}
+import type { CatalogETLMessage } from './types';
 
 export async function queueCatalogETL({
   queue,
@@ -44,7 +21,6 @@ export async function queueCatalogETL({
   startRow?: number;
 }): Promise<string> {
   const message: CatalogETLMessage = {
-    type: QueueType.CATALOG_ETL,
     data: { objectKey, userId, source, scraperRevision, startRow },
     timestamp: Date.now(),
     id: jobId,
@@ -58,31 +34,16 @@ export async function processQueueBatch({
   batch,
   env,
 }: {
-  batch: MessageBatch<BaseQueueMessage>;
+  batch: MessageBatch<CatalogETLMessage>;
   env: Env;
 }): Promise<void> {
   for (const message of batch.messages) {
     try {
-      const queueMessage: BaseQueueMessage = message.body;
-
-      switch (queueMessage.type) {
-        case QueueType.CATALOG_ETL:
-          await processCatalogETL({
-            message: queueMessage as CatalogETLMessage,
-            env,
-          });
-          break;
-
-        case QueueType.CATALOG_ETL_WRITE_BATCH:
-          await processCatalogETLWriteBatch({
-            message: queueMessage as CatalogETLWriteBatchMessage,
-            env,
-          });
-          break;
-
-        default:
-          console.warn(`Unknown queue message type: ${queueMessage.type}`);
-      }
+      const queueMessage: CatalogETLMessage = message.body;
+      await processCatalogETL({
+        message: queueMessage,
+        env,
+      });
     } catch (error) {
       console.error('Error processing queue message:', error);
     }

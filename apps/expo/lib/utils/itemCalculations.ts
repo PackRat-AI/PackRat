@@ -16,7 +16,7 @@ export function isCatalogItem(item: Item): item is CatalogItem {
  */
 export function getEffectiveWeight(item: Item): number {
   if (isCatalogItem(item)) {
-    return item.defaultWeight ?? 0;
+    return item.weight ?? 0;
   }
   return item.weight;
 }
@@ -32,7 +32,19 @@ export function getQuantity(item: Item): number {
  * Gets the weight unit of an item
  */
 export function getWeightUnit(item: Item): WeightUnit {
-  return isCatalogItem(item) ? (item.defaultWeightUnit ?? 'g') : item.weightUnit;
+  if (isCatalogItem(item)) {
+    // CatalogItem weightUnit is a string, need to ensure it's a valid WeightUnit
+    const unit = item.weightUnit ?? 'g';
+    if (isWeightUnit(unit)) {
+      return unit;
+    }
+    return 'g'; // default fallback
+  }
+  return item.weightUnit;
+}
+
+function isWeightUnit(value: string): value is WeightUnit {
+  return ['g', 'oz', 'kg', 'lb'].includes(value);
 }
 
 /** Gets the notes of an item */

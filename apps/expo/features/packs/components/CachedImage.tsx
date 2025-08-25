@@ -1,65 +1,60 @@
-import { Text } from '@packrat/ui/nativewindui';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, type ImageProps, View } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
-  localFileName?: string | null;
+  imageObjectKey: string;
+  imageRemoteUrl: string;
   placeholderColor?: string;
 }
 
+/**
+ * CachedImage
+ *
+ * Responsible for displaying user-owned item images.
+ * Loads from local cache if available, otherwise downloads and caches the image
+ * before displaying. Shows loading indicator while fetching.
+ */
 export const CachedImage: React.FC<CachedImageProps> = ({
-  localFileName,
-  className,
+  imageObjectKey,
+  imageRemoteUrl,
   placeholderColor = '#e1e1e1',
   ...props
 }) => {
-  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [imageLocalUri, setImageLocalUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const user = useUser();
 
-  const remoteFileName = `${user?.id}-${localFileName}`;
-  const remoteUrl = `${clientEnvs.EXPO_PUBLIC_R2_PUBLIC_URL}/${remoteFileName}`;
+  console.log(imageLocalUri);
 
   useEffect(() => {
-    if (!localFileName) return;
+    if (!imageObjectKey) return;
     const loadImage = async () => {
       try {
         setLoading(true);
 
-        const localUri = await ImageCacheManager.getCachedImageUri(localFileName);
+        const localUri = await ImageCacheManager.getCachedImageUri(imageObjectKey);
         if (localUri) {
-          setImageUri(localUri);
+          setImageLocalUri(localUri);
         } else {
-          const localUri = await ImageCacheManager.cacheRemoteImage(localFileName, remoteUrl);
-          setImageUri(localUri);
+          const localUri = await ImageCacheManager.cacheRemoteImage(imageObjectKey, imageRemoteUrl);
+          setImageLocalUri(localUri);
         }
       } catch (error) {
         console.error('Error loading image:', error);
-        // Fallback to remote URL on error
-        setImageUri(remoteUrl);
+        // TODO: Handle error state if needed
       } finally {
         setLoading(false);
       }
     };
 
     loadImage();
-  }, [localFileName, remoteUrl]);
-
-  if (!localFileName)
-    return (
-      <View className={`items-center justify-center bg-muted px-2 ${className}`}>
-        <Text className="text-muted-foreground">No image</Text>
-      </View>
-    );
+  }, [imageObjectKey, imageRemoteUrl]);
 
   if (loading) {
     return (
       <View
-        className={`items-center justify-center bg-muted px-2 ${className}`}
+        className={`items-center justify-center bg-muted px-2 ${props.className}`}
         style={[{ backgroundColor: placeholderColor }]}
       >
         <ActivityIndicator size="small" color="#999" />
@@ -67,5 +62,5 @@ export const CachedImage: React.FC<CachedImageProps> = ({
     );
   }
 
-  return <Image source={{ uri: imageUri || remoteUrl }} {...props} className={className} />;
+  return <Image source={{ uri: imageLocalUri ?? undefined }} {...props} />;
 };
