@@ -17,6 +17,16 @@ export async function updateEtlJobProgress(
     .set({
       totalValid: sql`COALESCE(${etlJobs.totalValid}, 0) + ${valid}`,
       totalInvalid: sql`COALESCE(${etlJobs.totalInvalid}, 0) + ${invalid}`,
+      status: sql`CASE 
+        WHEN COALESCE(${etlJobs.totalProcessed}, 0) = COALESCE(${etlJobs.totalValid}, 0) + ${valid} + COALESCE(${etlJobs.totalInvalid}, 0) + ${invalid} 
+        THEN 'completed' 
+        ELSE ${etlJobs.status} 
+      END`,
+      completedAt: sql`CASE 
+        WHEN COALESCE(${etlJobs.totalProcessed}, 0) = COALESCE(${etlJobs.totalValid}, 0) + ${valid} + COALESCE(${etlJobs.totalInvalid}, 0) + ${invalid}
+        THEN CURRENT_TIMESTAMP 
+        ELSE ${etlJobs.completedAt} 
+      END`,
     })
     .where(eq(etlJobs.id, params.jobId));
 }
