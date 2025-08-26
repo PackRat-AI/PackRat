@@ -51,7 +51,8 @@
       {
         "queue": "packrat-etl-queue",
         "max_batch_size": 1,
-        "max_batch_timeout": 5
+        "max_batch_timeout": 5,
+        "max_concurrency": 1
       },
       {
         "queue": "packrat-embeddings-queue",
@@ -104,7 +105,8 @@
           {
             "queue": "packrat-etl-queue-dev",
             "max_batch_size": 1,
-            "max_batch_timeout": 5
+            "max_batch_timeout": 5,
+            "max_concurrency": 1
           },
           {
             "queue": "packrat-logs-queue-dev",
