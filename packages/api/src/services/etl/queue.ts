@@ -5,28 +5,38 @@ import type { CatalogETLMessage } from './types';
 
 export async function queueCatalogETL({
   queue,
-  objectKey,
-  userId,
-  source,
-  scraperRevision,
+  objectKeys,
   jobId,
-  startRow = 0, // <-- Default to 0
 }: {
   queue: Queue;
-  objectKey: string;
-  userId: string;
-  source: string;
-  scraperRevision: string;
+  objectKeys: string[];
   jobId: string;
-  startRow?: number;
 }): Promise<string> {
-  const message: CatalogETLMessage = {
-    data: { objectKey, userId, source, scraperRevision, startRow },
-    timestamp: Date.now(),
-    id: jobId,
-  };
+  const promises = [];
 
-  await queue.send(message);
+  const batchSize = 100; // maximum batch size Cloudflare allows
+  let batch = [];
+
+  for (const objectKey of objectKeys) {
+    if (batch.length === batchSize) {
+      promises.push(queue.sendBatch(batch));
+      batch = [];
+    }
+
+    const message: CatalogETLMessage = {
+      data: { objectKey },
+      timestamp: Date.now(),
+      id: jobId,
+    };
+    batch.push({ body: message });
+  }
+
+  if (batch.length > 0) {
+    promises.push(queue.sendBatch(batch));
+  }
+
+  await Promise.all(promises);
+
   return jobId;
 }
 
