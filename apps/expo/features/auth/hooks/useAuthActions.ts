@@ -29,14 +29,11 @@ function redirect(route: string) {
 export function useAuthActions() {
   const setToken = useSetAtom(tokenAtom);
   const setRefreshToken = useSetAtom(refreshTokenAtom);
+  const refreshToken = useAtomValue(refreshTokenAtom);
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
 
   const clearLocalData = async () => {
-    // Clear tokens from secure storage
-    await Storage.removeItem('access_token');
-    await Storage.removeItem('refresh_token');
-
     // Clear state
     await setToken(null);
     await setRefreshToken(null);
@@ -65,9 +62,6 @@ export function useAuthActions() {
       }
 
       console.log(data.accessToken, data.refreshToken);
-      // Store both tokens
-      await Storage.setItem('access_token', data.accessToken);
-      await Storage.setItem('refresh_token', data.refreshToken);
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
@@ -113,9 +107,6 @@ export function useAuthActions() {
         throw new Error(data.error || 'Failed to sign in with Google');
       }
 
-      // Store both tokens
-      await Storage.setItem('access_token', data.accessToken);
-      await Storage.setItem('refresh_token', data.refreshToken);
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
@@ -171,10 +162,6 @@ export function useAuthActions() {
         throw new Error(data.error || 'Failed to sign in with Apple');
       }
 
-      // Store both tokens
-      await Storage.setItem('access_token', data.accessToken);
-      await Storage.setItem('refresh_token', data.refreshToken);
-
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
@@ -221,7 +208,6 @@ export function useAuthActions() {
       }
 
       // Get the refresh token
-      const refreshToken = await Storage.getItem('refresh_token');
       if (refreshToken) {
         // Call the logout endpoint to revoke the refresh token
         await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/logout`, {

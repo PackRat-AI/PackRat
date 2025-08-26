@@ -5,10 +5,6 @@ export interface CatalogETLMessage {
   id: string;
   data: {
     objectKey: string;
-    userId: string;
-    source: string;
-    scraperRevision: string;
-    startRow?: number; // for chunking
   };
 }
 
@@ -18,5 +14,4 @@ export interface QueueCatalogETLParams {
   userId: string;
   source: string;
   scraperRevision: string;
-  startRow?: number;
 }

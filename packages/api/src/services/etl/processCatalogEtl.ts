@@ -3,12 +3,11 @@ import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/a
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
 import type { Env } from '@packrat/api/utils/env-validation';
 import { parse } from 'csv-parse';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { R2BucketService } from '../r2-bucket';
 import { CatalogItemValidator } from './CatalogItemValidator';
 import { processLogsBatch } from './processLogsBatch';
 import { processValidItemsBatch } from './processValidItemsBatch';
-import { queueCatalogETL } from './queue';
 import type { CatalogETLMessage } from './types';
 
 export const BATCH_SIZE = 100;
@@ -34,15 +33,13 @@ export async function processCatalogETL({
   message: CatalogETLMessage;
   env: Env;
 }): Promise<void> {
-  const { objectKey, source, scraperRevision, startRow = 0 } = message.data;
+  const { objectKey } = message.data;
   const jobId = message.id;
 
   const db = createDbClient(env);
 
   try {
-    console.log(
-      `🔄 Processing ETL batch (rows ${startRow} to ${startRow + BATCH_SIZE - 1}) for file ${objectKey}, job ${jobId}`,
-    );
+    console.log(`🔄 Processing file ${objectKey}, job ${jobId}`);
 
     const r2Service = new R2BucketService({
       env,
@@ -58,12 +55,11 @@ export async function processCatalogETL({
     let rowIndex = 0;
     let fieldMap: Record<string, number> = {};
     let isHeaderProcessed = false;
-    let validItemsBatch: Partial<NewCatalogItem>[] = [];
-    let invalidItemsBatch: NewInvalidItemLog[] = [];
+    const validItemsBatch: Partial<NewCatalogItem>[] = [];
+    const invalidItemsBatch: NewInvalidItemLog[] = [];
 
     const validator = new CatalogItemValidator();
 
-    console.log(`🔍 [TRACE] Starting streaming process - jobId: ${jobId}, startRow: ${startRow}`);
     const parser = parse({
       relax_column_count: true,
       skip_empty_lines: true,
@@ -95,14 +91,6 @@ export async function processCatalogETL({
         continue;
       }
 
-      if (rowIndex < startRow) {
-        rowIndex++;
-        continue;
-      }
-      if (rowIndex >= startRow + BATCH_SIZE) {
-        break;
-      }
-
       const item = mapCsvRowToItem({ values: row, fieldMap });
 
       if (item) {
@@ -121,38 +109,20 @@ export async function processCatalogETL({
         }
       }
 
-      if (validItemsBatch.length >= BATCH_SIZE) {
-        await processValidItemsBatch({
-          jobId,
-          items: validItemsBatch,
-          env,
-        });
-        validItemsBatch = [];
-        await new Promise((r) => setTimeout(r, 1));
-      }
-
-      if (invalidItemsBatch.length >= BATCH_SIZE) {
-        await processLogsBatch({
-          jobId,
-          logs: invalidItemsBatch,
-          env,
-        });
-        invalidItemsBatch = [];
-      }
-
       rowIndex++;
-      if (rowIndex % 100 === 0) {
-        console.log(`🔍 [TRACE] Progress update - rows processed: ${rowIndex}`);
-      }
     }
 
-    console.log(`🔍 [TRACE] Streaming complete - processing final batches`);
+    console.log(`🔍 [TRACE] Streaming complete - processing batches`);
 
-    // Flush remaining batches
+    const itemsProcessed = validItemsBatch.length + invalidItemsBatch.length;
+
+    await db
+      .update(etlJobs)
+      .set({ totalProcessed: sql`COALESCE(${etlJobs.totalProcessed}, 0) + ${itemsProcessed}` })
+      .where(eq(etlJobs.id, jobId));
+
     if (validItemsBatch.length > 0) {
-      console.log(
-        `🔍 [TRACE] Processing final valid items batch - size: ${validItemsBatch.length}`,
-      );
+      console.log(`🔍 [TRACE] Processing valid items batch - size: ${validItemsBatch.length}`);
       await processValidItemsBatch({
         jobId,
         items: validItemsBatch,
@@ -161,9 +131,7 @@ export async function processCatalogETL({
     }
 
     if (invalidItemsBatch.length > 0) {
-      console.log(
-        `🔍 [TRACE] Processing final invalid items batch - size: ${invalidItemsBatch.length}`,
-      );
+      console.log(`🔍 [TRACE] Processing invalid items batch - size: ${invalidItemsBatch.length}`);
       await processLogsBatch({
         jobId,
         logs: invalidItemsBatch,
@@ -171,40 +139,15 @@ export async function processCatalogETL({
       });
     }
 
-    // Queue next batch if needed
-    if (rowIndex >= startRow + BATCH_SIZE) {
-      console.log(
-        `🔍 [TRACE] Queueing next batch - currentRow: ${rowIndex}, nextStartRow: ${startRow + BATCH_SIZE}`,
-      );
-      await queueCatalogETL({
-        queue: env.ETL_QUEUE,
-        objectKey,
-        userId: message.data.userId,
-        source,
-        scraperRevision,
-        jobId,
-        startRow: startRow + BATCH_SIZE,
-      });
+    const totalRows = rowIndex;
 
-      console.log(
-        `➡️ Queued next ETL batch for rows ${startRow + BATCH_SIZE} to ${startRow + 2 * BATCH_SIZE - 1}`,
-      );
-    } else {
-      console.log('🔍 [TRACE] No more batches needed - processed all rows');
-      await db
-        .update(etlJobs)
-        .set({ totalCount: rowIndex, status: 'completed', completedAt: new Date() })
-        .where(eq(etlJobs.id, jobId));
-    }
+    console.log(`🔍 [TRACE] ✅ Done processing ${objectKey} - ${totalRows} rows processed`);
   } catch (error) {
     await db
       .update(etlJobs)
       .set({ status: 'failed', completedAt: new Date() })
       .where(eq(etlJobs.id, jobId));
-    console.error(
-      `❌ Error processing ETL batch (rows ${startRow} to ${startRow + BATCH_SIZE - 1}), job ${jobId}:`,
-      error,
-    );
+    console.error(`❌ Error processing ${message.data.objectKey}, job ${jobId}:`, error);
     throw error;
   }
 }

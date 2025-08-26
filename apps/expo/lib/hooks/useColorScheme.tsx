@@ -37,9 +37,7 @@ function useInitialAndroidBarSync() {
   const { colorScheme } = useColorScheme();
   React.useEffect(() => {
     if (Platform.OS !== 'android') return;
-    setNavigationBar(colorScheme).catch((error) => {
-      console.error('useColorScheme.tsx", "useInitialColorScheme', error);
-    });
+    setNavigationBar(colorScheme);
   }, [colorScheme]);
 }
 
@@ -50,5 +48,7 @@ function setNavigationBar(colorScheme: 'light' | 'dark') {
     NavigationBar.setButtonStyleAsync(colorScheme === 'dark' ? 'light' : 'dark'),
     NavigationBar.setPositionAsync('absolute'),
     NavigationBar.setBackgroundColorAsync(colorScheme === 'dark' ? '#00000030' : '#ffffff80'),
-  ]);
+  ]).catch((error) => {
+    console.error('useColorScheme.tsx', 'setNavigationBar', error);
+  });
 }
