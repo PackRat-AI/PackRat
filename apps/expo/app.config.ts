@@ -5,9 +5,6 @@ const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
 
 const getAppName = () => {
-  console.log('APP_VARIANT', process.env.APP_VARIANT);
-  console.log('is dev', IS_DEV);
-  console.log('is preview', IS_PREVIEW);
   if (IS_DEV) return 'PackRat (Dev)';
   if (IS_PREVIEW) return 'PackRat (Preview)';
   return 'PackRat';
