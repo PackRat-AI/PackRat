@@ -79,7 +79,7 @@ export const UpdatePackRequestSchema = z
     description: z.string().optional(),
     category: z.string().optional(),
     isPublic: z.boolean().optional(),
-    image: z.string().url().optional(),
+    image: z.string().nullable().optional(),
     tags: z.array(z.string()).optional(),
     deleted: z.boolean().optional(),
   })
@@ -95,7 +95,7 @@ export const CreatePackItemRequestSchema = z
     category: z.string().optional().openapi({ example: 'Sleep System' }),
     consumable: z.boolean().optional().default(false).openapi({ example: false }),
     worn: z.boolean().optional().default(false).openapi({ example: false }),
-    image: z.string().url().optional().openapi({ example: 'https://example.com/image.jpg' }),
+    image: z.string().optional().openapi({ example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg' }),
     notes: z.string().optional().openapi({ example: 'Great for cold weather' }),
     catalogItemId: z.number().int().optional().openapi({ example: 12345 }),
   })
