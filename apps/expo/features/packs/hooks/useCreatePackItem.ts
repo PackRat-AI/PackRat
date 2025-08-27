@@ -12,6 +12,7 @@ export function useCreatePackItem() {
       const newItem: PackItem = {
         id,
         ...itemData,
+        category: itemData.category || 'general',
         packId,
         deleted: false,
       };

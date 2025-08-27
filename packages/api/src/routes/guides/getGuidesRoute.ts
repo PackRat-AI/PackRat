@@ -1,36 +1,47 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
+import {
+  ErrorResponseSchema,
+  GuidesQuerySchema,
+  GuidesResponseSchema,
+} from '@packrat/api/schemas/guides';
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import matter from 'gray-matter';
+import { isArray } from 'radash';
 
 export const routeDefinition = createRoute({
   method: 'get',
   path: '/',
+  tags: ['Guides'],
+  summary: 'Get all guides',
+  description:
+    'Retrieve a paginated list of all available guides with optional filtering and sorting',
+  security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      page: z.coerce.number().int().positive().optional().default(1),
-      limit: z.coerce.number().int().nonnegative().optional().default(20),
-      category: z.string().optional(),
-      sort: z
-        .object({
-          field: z.enum(['title', 'category', 'createdAt', 'updatedAt']),
-          order: z.enum(['asc', 'desc']),
-        })
-        .optional(),
-    }),
+    query: GuidesQuerySchema,
   },
-  responses: { 200: { description: 'Get guides list' } },
+  responses: {
+    200: {
+      description: 'Guides retrieved successfully',
+      content: {
+        'application/json': {
+          schema: GuidesResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
-
   const { page, limit, category } = c.req.valid('query');
 
   // Manually parse sort parameters from raw query
@@ -100,15 +111,17 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     let filteredGuides = guides;
     if (category) {
       filteredGuides = guides.filter(
-        (guide) => guide.category === category || guide.categories?.includes(category),
+        (guide) =>
+          guide.category === category ||
+          (isArray(guide.categories) && guide.categories.includes(category)),
       );
     }
 
     // Apply sorting
     if (sort) {
       filteredGuides.sort((a, b) => {
-        const aValue = a[sort.field as keyof typeof a];
-        const bValue = b[sort.field as keyof typeof b];
+        const aValue = String(a[sort.field as keyof typeof a]);
+        const bValue = String(b[sort.field as keyof typeof b]);
 
         if (sort.order === 'asc') {
           return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
@@ -118,7 +131,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       });
     } else {
       // Default sort by title
-      filteredGuides.sort((a, b) => a.title.localeCompare(b.title));
+      filteredGuides.sort((a, b) => String(a.title).localeCompare(String(b.title)));
     }
 
     // Apply pagination
@@ -127,13 +140,16 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const paginatedGuides = filteredGuides.slice(offset, offset + limit);
     const totalPages = Math.ceil(total / limit);
 
-    return c.json({
-      items: paginatedGuides,
-      totalCount: total,
-      page,
-      limit,
-      totalPages,
-    });
+    return c.json(
+      {
+        items: paginatedGuides,
+        totalCount: total,
+        page,
+        limit,
+        totalPages,
+      },
+      200,
+    );
   } catch (error) {
     console.error('Error listing guides:', error);
     return c.json({ error: 'Failed to list guides' }, 500);

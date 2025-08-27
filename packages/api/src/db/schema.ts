@@ -385,7 +385,7 @@ export const etlJobs = pgTable(
     id: text('id').primaryKey(),
     status: etlJobStatusEnum('status').notNull(),
     source: text('source').notNull(),
-    objectKey: text('object_key').notNull(),
+    filename: text('filename').notNull(),
     startedAt: timestamp('started_at').notNull(),
     completedAt: timestamp('completed_at'),
     totalProcessed: integer('total_processed'),

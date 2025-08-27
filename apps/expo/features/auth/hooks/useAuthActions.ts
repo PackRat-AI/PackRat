@@ -12,8 +12,9 @@ import axiosInstance from 'expo-app/lib/api/client';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+import Storage from 'expo-sqlite/kv-store';
 import { useAtomValue, useSetAtom } from 'jotai';
+
 import { isLoadingAtom, redirectToAtom, refreshTokenAtom, tokenAtom } from '../atoms/authAtoms';
 
 function redirect(route: string) {
@@ -28,14 +29,11 @@ function redirect(route: string) {
 export function useAuthActions() {
   const setToken = useSetAtom(tokenAtom);
   const setRefreshToken = useSetAtom(refreshTokenAtom);
+  const refreshToken = useAtomValue(refreshTokenAtom);
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
 
   const clearLocalData = async () => {
-    // Clear tokens from secure storage
-    await SecureStore.deleteItemAsync('access_token');
-    await SecureStore.deleteItemAsync('refresh_token');
-
     // Clear state
     await setToken(null);
     await setRefreshToken(null);
@@ -64,9 +62,6 @@ export function useAuthActions() {
       }
 
       console.log(data.accessToken, data.refreshToken);
-      // Store both tokens
-      await SecureStore.setItemAsync('access_token', data.accessToken);
-      await SecureStore.setItemAsync('refresh_token', data.refreshToken);
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
@@ -111,10 +106,6 @@ export function useAuthActions() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to sign in with Google');
       }
-
-      // Store both tokens
-      await SecureStore.setItemAsync('access_token', data.accessToken);
-      await SecureStore.setItemAsync('refresh_token', data.refreshToken);
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
@@ -171,10 +162,6 @@ export function useAuthActions() {
         throw new Error(data.error || 'Failed to sign in with Apple');
       }
 
-      // Store both tokens
-      await SecureStore.setItemAsync('access_token', data.accessToken);
-      await SecureStore.setItemAsync('refresh_token', data.refreshToken);
-
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
@@ -221,8 +208,6 @@ export function useAuthActions() {
       }
 
       // Get the refresh token
-      const refreshToken = await SecureStore.getItemAsync('refresh_token');
-
       if (refreshToken) {
         // Call the logout endpoint to revoke the refresh token
         await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/logout`, {
@@ -306,8 +291,8 @@ export function useAuthActions() {
 
       // If verification is successful, set the user and tokens
       if (data.accessToken && data.refreshToken && data.user) {
-        await SecureStore.setItemAsync('access_token', data.accessToken);
-        await SecureStore.setItemAsync('refresh_token', data.refreshToken);
+        await Storage.setItem('access_token', data.accessToken);
+        await Storage.setItem('refresh_token', data.refreshToken);
 
         await setToken(data.accessToken);
         await setRefreshToken(data.refreshToken);

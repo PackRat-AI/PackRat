@@ -1,11 +1,12 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
@@ -17,7 +18,6 @@ import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import { useEffect } from 'react';
 import {
-  Alert,
   Dimensions,
   Keyboard,
   type NativeSyntheticEvent,
@@ -72,9 +72,7 @@ export default function AIChat() {
   const insets = useSafeAreaInsets();
   const { progress } = useReanimatedKeyboardAnimation();
   const textInputHeight = useSharedValue(17);
-  const translateX = useSharedValue(0);
   const params = useLocalSearchParams();
-  const [showSuggestions, setShowSuggestions] = React.useState(true);
   const { activeLocation } = useActiveLocation();
   const listRef = React.useRef<FlashList<UIMessage>>(null);
 
@@ -92,7 +90,9 @@ export default function AIChat() {
 
   const token = useAtomValue(tokenAtom);
   const [input, setInput] = React.useState('');
-  const { messages, error, sendMessage, status } = useChat({
+  const [lastUserMessage, setLastUserMessage] = React.useState('');
+  const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
+  const { messages, setMessages, error, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
@@ -114,29 +114,21 @@ export default function AIChat() {
         parts: [{ type: 'text', text: getContextualGreeting(context) }],
       } as UIMessage,
     ],
-    onFinish: () => {
-      // Hide suggestions after user sends a message
-      setShowSuggestions(false);
-    },
   });
 
-  const isLoading = status === 'streaming';
+  const isLoading = status === 'submitted' || status === 'streaming';
 
-  const handleSubmit = () => {
-    sendMessage({ text: input });
+  const handleSubmit = (text?: string) => {
+    const messageText = text || input;
+    setLastUserMessage(messageText);
+    setPreviousMessages(messages);
+    sendMessage({ text: messageText });
     setInput('');
   };
 
-  React.useEffect(() => {
-    if (error) {
-      Alert.alert(error.message);
-    }
-  }, [error]);
-
-  const handleSuggestionPress = (suggestion: string) => {
-    sendMessage({ text: suggestion });
-    setInput('');
-    setShowSuggestions(false);
+  const handleRetry = () => {
+    setMessages(previousMessages);
+    sendMessage({ text: lastUserMessage });
   };
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
@@ -174,7 +166,6 @@ export default function AIChat() {
         behavior="padding"
       >
         <FlashList
-          // inverted
           ref={listRef}
           estimatedItemSize={70}
           ListHeaderComponent={
@@ -193,22 +184,14 @@ export default function AIChat() {
           }
           ListFooterComponent={
             <>
-              {showSuggestions && messages.length <= 2 && (
-                <View className="px-4 py-4">
-                  <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {getContextualSuggestions(context).map((suggestion) => (
-                      <TouchableOpacity
-                        key={suggestion}
-                        onPress={() => handleSuggestionPress(suggestion)}
-                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                      >
-                        <Text className="text-sm text-foreground">{suggestion}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
+              {status === 'submitted' && (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                  className="self-start ml-4 mb-8"
+                />
               )}
+              {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
               <Animated.View style={toolbarHeightStyle} />
             </>
           }
@@ -224,13 +207,30 @@ export default function AIChat() {
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
               const userMessage = messages[index - 1];
-              userQuery = userMessage.parts.find((p) => p.type === 'text')?.text;
+              userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
             }
 
-            return <ChatBubble item={item} translateX={translateX} userQuery={userQuery} />;
+            return <ChatBubble item={item} userQuery={userQuery} />;
           }}
         />
+        {messages.length < 2 && (
+          <View className="flex-1 px-4">
+            <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {getContextualSuggestions(context).map((suggestion) => (
+                <TouchableOpacity
+                  key={suggestion}
+                  onPress={() => handleSubmit(suggestion)}
+                  className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                >
+                  <Text className="text-sm text-foreground">{suggestion}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
       </KeyboardAvoidingView>
+
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <Composer
           textInputHeight={textInputHeight}
@@ -238,7 +238,6 @@ export default function AIChat() {
           handleInputChange={setInput} // Pass the setter directly.
           handleSubmit={() => {
             handleSubmit();
-            setShowSuggestions(false);
           }}
           isLoading={isLoading}
           placeholder={
@@ -332,9 +331,7 @@ function Composer({
         />
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
-            <View className="h-7 w-7 items-center justify-center">
-              <Text className="text-xs text-primary">...</Text>
-            </View>
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : input.length > 0 ? (
             <Button
               onPress={handleSubmit}
