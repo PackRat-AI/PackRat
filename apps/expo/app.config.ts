@@ -1,10 +1,44 @@
 import { withSentry } from '@sentry/react-native/expo';
 import type { ExpoConfig } from 'expo/config';
 
+const IS_DEV = process.env.APP_VARIANT === 'development';
+const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
+
+const getAppName = () => {
+  console.log('APP_VARIANT', process.env.APP_VARIANT);
+  console.log('is dev', IS_DEV);
+  console.log('is preview', IS_PREVIEW);
+  if (IS_DEV) return 'PackRat (Dev)';
+  if (IS_PREVIEW) return 'PackRat (Preview)';
+  return 'PackRat';
+};
+
+const getBundleIdentifier = () => {
+  if (IS_DEV) return 'com.andrewbierman.packrat.dev';
+  if (IS_PREVIEW) return 'com.andrewbierman.packrat.preview';
+  return 'com.andrewbierman.packrat';
+};
+
+const getAndroidPackage = () => {
+  if (IS_DEV) return 'com.packratai.mobile.dev';
+  if (IS_PREVIEW) return 'com.packratai.mobile.preview';
+  return 'com.packratai.mobile';
+};
+
+const getIcon = () => {
+  if (IS_DEV) return './assets/packrat-app-icon-gradient-dev.png';
+  return './assets/packrat-app-icon-gradient.png';
+};
+
+const getAdaptiveIcon = () => {
+  if (IS_DEV) return './assets/adaptive-icon-dev.png';
+  return './assets/adaptive-icon.png';
+};
+
 export default (): ExpoConfig =>
   withSentry(
     {
-      name: 'PackRat',
+      name: getAppName(),
       slug: 'packrat',
       version: '2.0.6',
       scheme: 'packrat',
@@ -32,7 +66,7 @@ export default (): ExpoConfig =>
         tsconfigPaths: true,
       },
       orientation: 'portrait',
-      icon: './assets/packrat-app-icon-gradient.png',
+      icon: getIcon(),
       userInterfaceStyle: 'automatic',
       splash: {
         image: './assets/splash.png',
@@ -40,13 +74,13 @@ export default (): ExpoConfig =>
       assetBundlePatterns: ['**/*'],
       ios: {
         supportsTablet: true,
-        bundleIdentifier: 'com.andrewbierman.packrat',
+        bundleIdentifier: getBundleIdentifier(),
         usesAppleSignIn: true,
         infoPlist: {
           ITSAppUsesNonExemptEncryption: false,
           CFBundleURLTypes: [
             {
-              CFBundleURLSchemes: ['com.andrewbierman.packrat'],
+              CFBundleURLSchemes: [getBundleIdentifier()],
             },
           ],
           NSLocationWhenInUseUsageDescription:
@@ -101,10 +135,10 @@ export default (): ExpoConfig =>
       },
       android: {
         adaptiveIcon: {
-          foregroundImage: './assets/adaptive-icon.png',
+          foregroundImage: getAdaptiveIcon(),
           backgroundColor: '#026A9F',
         },
-        package: 'com.packratai.mobile',
+        package: getAndroidPackage(),
       },
       extra: {
         eas: {
