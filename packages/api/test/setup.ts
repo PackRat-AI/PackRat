@@ -43,11 +43,11 @@ process.env.PACKRAT_GUIDES_RAG_NAME = 'test-rag';
 process.env.PACKRAT_GUIDES_BASE_URL = 'https://guides.test.com';
 
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 
-let testClient: Client;
+let testClient: Pool;
 let testDb: ReturnType<typeof drizzle>;
 
 vi.mock('hono/adapter', async () => {
@@ -67,7 +67,7 @@ beforeAll(async () => {
   console.log('🔧 Setting up test database connection...');
 
   // Create direct PostgreSQL client connection for manual database operations
-  testClient = new Client({
+  testClient = new Pool({
     host: 'localhost',
     port: 5433,
     database: 'packrat_test',
@@ -76,8 +76,7 @@ beforeAll(async () => {
   });
 
   try {
-    await testClient.connect();
-    testDb = drizzle(testClient, { schema }) as ReturnType<typeof drizzle>;
+    testDb = drizzle(testClient, { schema });
     console.log('✅ Test database connected successfully');
 
     // Run migrations using direct PostgreSQL client
