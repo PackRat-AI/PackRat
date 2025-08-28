@@ -8,8 +8,10 @@ interface PackItemImageProps extends Omit<ImageProps, 'source'> {
 export function CatalogItemImage({ imageUrl, ...imageProps }: PackItemImageProps) {
   if (!imageUrl)
     return (
-      <View className={`items-center justify-center bg-[#ddd] p-2 ${imageProps.className}`}>
-        <Text className="text-muted-foreground text-center">No image</Text>
+      <View
+        className={`items-center justify-center bg-[#ddd] dark:bg-neutral-600 p-2 ${imageProps.className}`}
+      >
+        <Text className="text-muted-foreground text-center dark:text-neutral-900">No image</Text>
       </View>
     );
 
