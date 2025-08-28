@@ -9,11 +9,7 @@ import {
   packWeightHistory,
 } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
-import {
-  ItemSuggestionsRequestSchema,
-  PackWithWeightsSchema,
-  UpdatePackRequestSchema,
-} from '@packrat/api/schemas/packs';
+import { PackWithWeightsSchema, UpdatePackRequestSchema } from '@packrat/api/schemas/packs';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
@@ -243,14 +239,6 @@ const itemSuggestionsRoute = createRoute({
     params: z.object({
       packId: z.string().openapi({ example: 'p_123456' }),
     }),
-    body: {
-      content: {
-        'application/json': {
-          schema: ItemSuggestionsRequestSchema,
-        },
-      },
-      required: true,
-    },
   },
   responses: {
     200: {
