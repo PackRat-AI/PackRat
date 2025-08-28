@@ -82,7 +82,7 @@ packRoutes.openapi(getPackRoute, async (c) => {
     if (!pack) {
       return c.json({ error: 'Pack not found' }, 404);
     }
-    return c.json(pack, 200);
+    return c.json(computePackWeights(pack), 200);
   } catch (error) {
     console.error('Error fetching pack:', error);
     return c.json({ error: 'Failed to fetch pack' }, 500);
