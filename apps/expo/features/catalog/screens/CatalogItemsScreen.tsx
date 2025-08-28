@@ -33,7 +33,11 @@ function CatalogItemsScreen() {
 
   const isSearching = debouncedSearchValue.length > 0;
 
-  const { data: categories } = useCatalogItemsCategories();
+  const {
+    data: categories,
+    error: categoriesError,
+    refetch: refetchCategories,
+  } = useCatalogItemsCategories();
 
   const {
     data: paginatedData,
@@ -157,7 +161,13 @@ function CatalogItemsScreen() {
         }}
       />
 
-      <CategoriesFilter data={categories} onFilter={setActiveFilter} activeFilter={activeFilter} />
+      <CategoriesFilter
+        data={categories}
+        onFilter={setActiveFilter}
+        activeFilter={activeFilter}
+        error={categoriesError}
+        retry={refetchCategories}
+      />
 
       <FlatList
         key={activeFilter}
