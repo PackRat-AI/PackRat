@@ -128,15 +128,6 @@ export const PackListResponseSchema = z
   })
   .openapi('PackListResponse');
 
-export const ItemSuggestionsRequestSchema = z
-  .object({
-    packDescription: z.string().openapi({
-      example: 'Weekend backpacking trip in summer mountains',
-      description: 'Description of the pack to get suggestions for',
-    }),
-  })
-  .openapi('ItemSuggestionsRequest');
-
 export const ItemSuggestionsResponseSchema = z
   .object({
     suggestions: z.array(
