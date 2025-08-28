@@ -1,11 +1,11 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "main": "expo-router/entry",
   "scripts": {
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "start": "expo start",
+    "android": "APP_VARIANT=development expo run:android",
+    "ios": "APP_VARIANT=development expo run:ios",
+    "start": "APP_VARIANT=development expo start",
     "format": "biome format --write",
     "lint": "biome check --write",
     "web": "expo start --web",
@@ -32,9 +32,9 @@
     "build:production:ios:eas": "eas build --profile production --platform ios",
     "submit:android": "eas submit --platform android",
     "submit:ios": "eas submit --platform ios",
-    "update": "eas update",
-    "update:preview": "eas update --branch preview",
-    "update:production": "eas update --branch production"
+    "update:development": "APP_VARIANT=development eas update --branch development --environment development",
+    "update:preview": "APP_VARIANT=preview eas update --branch preview --environment preview",
+    "update:production": "eas update --branch production --environment production"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.11",

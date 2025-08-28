@@ -65,7 +65,7 @@ export const CreatePackRequestSchema = z
     description: z.string().optional().openapi({ example: 'Pack for 2-day backpacking trip' }),
     category: z.string().optional().openapi({ example: 'Backpacking' }),
     isPublic: z.boolean().optional().default(false).openapi({ example: false }),
-    image: z.string().url().optional().openapi({ example: 'https://example.com/pack-image.jpg' }),
+    image: z.string().nullish().openapi({ example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg' }),
     tags: z
       .array(z.string())
       .optional()
@@ -79,7 +79,7 @@ export const UpdatePackRequestSchema = z
     description: z.string().optional(),
     category: z.string().optional(),
     isPublic: z.boolean().optional(),
-    image: z.string().url().optional(),
+    image: z.string().nullish(),
     tags: z.array(z.string()).optional(),
     deleted: z.boolean().optional(),
   })
@@ -95,9 +95,9 @@ export const CreatePackItemRequestSchema = z
     category: z.string().optional().openapi({ example: 'Sleep System' }),
     consumable: z.boolean().optional().default(false).openapi({ example: false }),
     worn: z.boolean().optional().default(false).openapi({ example: false }),
-    image: z.string().url().optional().openapi({ example: 'https://example.com/image.jpg' }),
+    image: z.string().nullish().openapi({ example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg' }),
     notes: z.string().optional().openapi({ example: 'Great for cold weather' }),
-    catalogItemId: z.number().int().optional().openapi({ example: 12345 }),
+    catalogItemId: z.number().int().nullish().openapi({ example: 12345 }),
   })
   .openapi('CreatePackItemRequest');
 
@@ -111,9 +111,9 @@ export const UpdatePackItemRequestSchema = z
     category: z.string().optional(),
     consumable: z.boolean().optional(),
     worn: z.boolean().optional(),
-    image: z.string().url().optional(),
+    image: z.string().nullish(),
     notes: z.string().optional(),
-    catalogItemId: z.number().int().optional(),
+    catalogItemId: z.number().int().nullish(),
     deleted: z.boolean().optional(),
   })
   .openapi('UpdatePackItemRequest');
