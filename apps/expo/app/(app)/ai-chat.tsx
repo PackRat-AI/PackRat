@@ -5,7 +5,7 @@ import { FlashList } from '@shopify/flash-list';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
-import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import { MemoizedChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
@@ -16,7 +16,7 @@ import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   Dimensions,
   Keyboard,
@@ -107,6 +107,8 @@ export default function AIChat() {
       }),
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
+    // Add moderate throttling to reduce render frequency while maintaining smooth streaming
+    experimental_throttle: 50,
     messages: [
       {
         id: '1',
@@ -153,6 +155,49 @@ export default function AIChat() {
     };
   }, []);
 
+  // Memoize the header component to prevent re-renders during streaming
+  const listHeaderComponent = useMemo(() => (
+    <View>
+      <View style={{ height: HEADER_HEIGHT + insets.top }} />
+      <LocationSelector />
+      <DateSeparator
+        date={new Date().toLocaleDateString('en-US', {
+          weekday: 'short',
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })}
+      />
+    </View>
+  ), [insets.top]);
+
+  // Memoize the footer component to only re-render when status changes
+  const listFooterComponent = useMemo(() => (
+    <>
+      {status === 'submitted' && (
+        <ActivityIndicator
+          size="small"
+          color={colors.primary}
+          className="self-start ml-4 mb-8"
+        />
+      )}
+      {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+      <Animated.View style={toolbarHeightStyle} />
+    </>
+  ), [status, colors.primary, error, toolbarHeightStyle]);
+
+  // Optimize renderItem with useCallback to prevent function recreation
+  const renderItem = useCallback(({ item, index }: { item: UIMessage; index: number }) => {
+    // Get the user query for this AI response
+    let userQuery: TextUIPart['text'] | undefined;
+    if (item.role === 'assistant' && index > 1) {
+      const userMessage = messages[index - 1];
+      userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
+    }
+
+    return <MemoizedChatBubble item={item} userQuery={userQuery} />;
+  }, [messages]);
+
   return (
     <>
       <Stack.Screen />
@@ -168,33 +213,8 @@ export default function AIChat() {
         <FlashList
           ref={listRef}
           estimatedItemSize={70}
-          ListHeaderComponent={
-            <View>
-              <View style={{ height: HEADER_HEIGHT + insets.top }} />
-              <LocationSelector />
-              <DateSeparator
-                date={new Date().toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              />
-            </View>
-          }
-          ListFooterComponent={
-            <>
-              {status === 'submitted' && (
-                <ActivityIndicator
-                  size="small"
-                  color={colors.primary}
-                  className="self-start ml-4 mb-8"
-                />
-              )}
-              {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
-              <Animated.View style={toolbarHeightStyle} />
-            </>
-          }
+          ListHeaderComponent={listHeaderComponent}
+          ListFooterComponent={listFooterComponent}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           scrollIndicatorInsets={{
@@ -202,16 +222,7 @@ export default function AIChat() {
             top: insets.bottom + 2,
           }}
           data={messages}
-          renderItem={({ item, index }) => {
-            // Get the user query for this AI response
-            let userQuery: TextUIPart['text'] | undefined;
-            if (item.role === 'assistant' && index > 1) {
-              const userMessage = messages[index - 1];
-              userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
-            }
-
-            return <ChatBubble item={item} userQuery={userQuery} />;
-          }}
+          renderItem={renderItem}
         />
         {messages.length < 2 && (
           <View className="flex-1 px-4">
@@ -251,7 +262,7 @@ export default function AIChat() {
   );
 }
 
-function DateSeparator({ date }: { date: string }) {
+function DateSeparatorComponent({ date }: { date: string }) {
   return (
     <View className="items-center px-4 pb-3 pt-5">
       <Text variant="caption2" className="font-medium text-muted-foreground">
@@ -260,6 +271,9 @@ function DateSeparator({ date }: { date: string }) {
     </View>
   );
 }
+
+// Memoize DateSeparator since date doesn't change frequently
+const DateSeparator = React.memo(DateSeparatorComponent);
 
 const _BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',
