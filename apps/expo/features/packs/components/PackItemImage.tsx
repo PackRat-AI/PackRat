@@ -14,8 +14,10 @@ export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
 
   if (!item.image)
     return (
-      <View className={`items-center justify-center bg-muted px-2 ${imageProps.className}`}>
-        <Text className="text-muted-foreground">No image</Text>
+      <View
+        className={`items-center justify-center bg-[#ddd] dark:bg-neutral-600 p-2 ${imageProps.className}`}
+      >
+        <Text className="text-muted-foreground text-center dark:text-neutral-900">No image</Text>
       </View>
     );
 

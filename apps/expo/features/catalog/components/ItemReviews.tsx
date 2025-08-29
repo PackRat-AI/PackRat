@@ -56,7 +56,9 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                   </View>
                 )}
                 <View className="ml-2">
-                  <Text className="font-medium text-foreground">{review.user_name}</Text>
+                  <Text className="font-medium text-foreground">
+                    {review.user_name || 'Anonymous'}
+                  </Text>
                   <Text className="text-xs text-muted-foreground">{formatDate(review.date)}</Text>
                 </View>
               </View>
