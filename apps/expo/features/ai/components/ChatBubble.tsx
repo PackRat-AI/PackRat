@@ -14,9 +14,11 @@ const BORDER_CURVE: ViewStyle = {
 interface ChatBubbleProps {
   item: UIMessage;
   userQuery?: string;
+  isLast: boolean;
+  status: 'submitted' | 'streaming' | 'ready' | 'error';
 }
 
-export function ChatBubble({ item, userQuery }: ChatBubbleProps) {
+export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps) {
   const isAI = item.role === 'assistant';
 
   return (
@@ -28,8 +30,8 @@ export function ChatBubble({ item, userQuery }: ChatBubbleProps) {
             <View
               style={BORDER_CURVE}
               className={cn(
-                'px-2 py-1.5',
-                !isAI && 'bg-neutral-200 dark:bg-neutral-700 rounded-2xl',
+                'px-2',
+                !isAI && 'py-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-2xl',
               )}
             >
               {item.parts.map((part, idx) => {
@@ -54,7 +56,7 @@ export function ChatBubble({ item, userQuery }: ChatBubbleProps) {
             </View>
           </Pressable>
 
-          {isAI && userQuery && (
+          {isAI && userQuery && (!isLast || status === 'ready') && (
             <View className="pl-2">
               <ReportButton
                 messageId={item.id}

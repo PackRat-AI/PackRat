@@ -246,7 +246,8 @@ export default function AIChat() {
             top: insets.bottom + 2,
           }}
           data={messages}
-          extraData={messages}
+          extraData={{ status }}
+          keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => {
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
@@ -255,7 +256,14 @@ export default function AIChat() {
               userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
             }
 
-            return <ChatBubble item={item} userQuery={userQuery} />;
+            return (
+              <ChatBubble
+                item={item}
+                userQuery={userQuery}
+                isLast={index === messages.length - 1}
+                status={status}
+              />
+            );
           }}
         />
       </KeyboardAvoidingView>
