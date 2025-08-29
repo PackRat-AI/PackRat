@@ -16,10 +16,8 @@ import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { useEffect } from 'react';
 import {
   Dimensions,
-  Keyboard,
   type NativeSyntheticEvent,
   Platform,
   TextInput,
@@ -92,6 +90,7 @@ export default function AIChat() {
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
+  const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
   const { messages, setMessages, error, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
@@ -118,12 +117,19 @@ export default function AIChat() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
+  const scrollToBottom = React.useCallback(() => {
+    setTimeout(() => {
+      listRef.current?.scrollToOffset({ offset: 999999, animated: false });
+    }, 100);
+  }, []);
+
   const handleSubmit = (text?: string) => {
     const messageText = text || input;
     setLastUserMessage(messageText);
     setPreviousMessages(messages);
     sendMessage({ text: messageText });
     setInput('');
+    scrollToBottom();
   };
 
   const handleRetry = () => {
@@ -139,19 +145,33 @@ export default function AIChat() {
     ),
   }));
 
-  useEffect(() => {
-    const scrollToBottom = () => {
-      listRef.current?.scrollToOffset({ offset: 999999, animated: true });
-    };
+  const listLayoutRef = React.useRef({
+    offset: 0,
+    containerHeight: 0,
+    contentHeight: 0,
+  });
 
-    scrollToBottom();
-
-    const keyboardListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
-
-    return () => {
-      keyboardListener.remove();
-    };
-  }, []);
+  const onScroll = (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+    listLayoutRef.current.offset = e.nativeEvent.contentOffset.y;
+    setIsArrowButtonVisible(
+      listLayoutRef.current.contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
+  const onLayout = (e: { nativeEvent: { layout: { height: number } } }) => {
+    listLayoutRef.current.containerHeight = e.nativeEvent.layout.height;
+    setIsArrowButtonVisible(
+      listLayoutRef.current.contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
+  const onContentSizeChange = (_contentWidth: number, contentHeight: number) => {
+    listLayoutRef.current.contentHeight = contentHeight;
+    setIsArrowButtonVisible(
+      contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
 
   return (
     <>
@@ -167,6 +187,9 @@ export default function AIChat() {
       >
         <FlashList
           ref={listRef}
+          onLayout={onLayout}
+          onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
           estimatedItemSize={70}
           ListHeaderComponent={
             <View>
@@ -192,7 +215,7 @@ export default function AIChat() {
                 />
               )}
               {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
-              <Animated.View style={toolbarHeightStyle} />
+              <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
             </>
           }
           keyboardDismissMode="on-drag"
@@ -202,6 +225,7 @@ export default function AIChat() {
             top: insets.bottom + 2,
           }}
           data={messages}
+          extraData={messages}
           renderItem={({ item, index }) => {
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
@@ -247,6 +271,14 @@ export default function AIChat() {
           }
         />
       </KeyboardStickyView>
+      {isArrowButtonVisible && status === 'ready' && (
+        <TouchableOpacity
+          onPress={scrollToBottom}
+          className="absolute bottom-20 right-4 rounded-full bg-gray-200 p-3 mb-5 shadow-lg"
+        >
+          <Icon name="arrow-down" size={20} color="black" />
+        </TouchableOpacity>
+      )}
     </>
   );
 }
