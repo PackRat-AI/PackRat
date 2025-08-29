@@ -219,12 +219,7 @@ export default function AIChat() {
                 <View className="px-4">
                   <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
                   <View className="flex-row flex-wrap gap-2">
-                    {(() => {
-                      const suggestions = getContextualSuggestions(context);
-                      console.log('Context:', context);
-                      console.log('Suggestions:', suggestions);
-                      return suggestions;
-                    })().map((suggestion) => (
+                    {getContextualSuggestions(context).map((suggestion) => (
                       <TouchableOpacity
                         key={suggestion}
                         onPress={() => handleSubmit(suggestion)}
