@@ -137,7 +137,7 @@ export function AddCatalogItemDetailsScreen() {
                   </Text>
                 </View>
                 {catalogItem.brand && (
-                  <View>
+                  <View className="flex-row items-center flex-nowrap">
                     <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
                     <Text className="text-xs text-muted-foreground">{catalogItem.brand}</Text>
                   </View>

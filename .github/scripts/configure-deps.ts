@@ -23,7 +23,8 @@ import { $ } from 'bun';
 async function configureDeps() {
   try {
     // Check if we're in a CI environment
-    const isCI = process.env.CI === '1' || process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+    const isCI =
+      process.env.CI === '1' || process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
     if (isCI) {
       // In CI, bunfig.toml will use PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
