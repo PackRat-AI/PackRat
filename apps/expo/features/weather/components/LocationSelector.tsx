@@ -4,10 +4,11 @@ import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
+import React from 'react';
 import { Alert, Pressable, TouchableOpacity, View } from 'react-native';
 import { useActiveLocation, useLocations } from '../hooks';
 
-export function LocationSelector() {
+function LocationSelectorComponent() {
   const { colors } = useColorScheme();
   const router = useRouter();
   const { locationsState } = useLocations();
@@ -140,3 +141,7 @@ export function LocationSelector() {
     </>
   );
 }
+
+// Memoize LocationSelector to prevent re-renders during AI streaming
+// This component doesn't depend on AI messages, so it shouldn't re-render when messages update
+export const LocationSelector = React.memo(LocationSelectorComponent);
