@@ -25,6 +25,9 @@ export function generatePromptWithContext(userMessage: string, context?: ChatCon
 export function getContextualSuggestions(context?: ChatContext): string[] {
   if (!context || context.contextType === 'general') {
     return [
+      'What is the weather in London this weekend?',
+      'Are there any deals on highly rated rain jackets right now?',
+      'Fetch five footwears',
       'What gear should I bring for a weekend hike?',
       'How can I reduce my pack weight?',
       "What's the best way to organize my pack?",

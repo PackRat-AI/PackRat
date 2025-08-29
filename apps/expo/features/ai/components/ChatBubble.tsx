@@ -41,7 +41,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
 
           if (isAI && part.type.startsWith('tool-'))
             return (
-              <View key={key} className="mt-2">
+              <View key={key} className="my-2">
                 <ToolInvocationRenderer
                   key={(part as ToolUIPart).toolCallId}
                   toolInvocation={part as ToolUIPart}

@@ -136,7 +136,7 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, category, limit, offset }) => {
         try {
-          const data = await catalogService.getCatalogItems({
+          const { items } = await catalogService.getCatalogItems({
             q: query,
             category,
             limit: limit || 10,
@@ -144,7 +144,7 @@ export function createTools(c: Context, userId: number) {
           });
           return {
             success: true,
-            data,
+            items,
           };
         } catch (error) {
           console.error('getCatalogItems tool error', error);
