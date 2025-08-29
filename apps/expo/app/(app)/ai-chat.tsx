@@ -120,18 +120,18 @@ export default function AIChat() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  const handleSubmit = (text?: string) => {
+  const handleSubmit = useCallback((text?: string) => {
     const messageText = text || input;
     setLastUserMessage(messageText);
     setPreviousMessages(messages);
     sendMessage({ text: messageText });
     setInput('');
-  };
+  }, [input, messages, sendMessage]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     setMessages(previousMessages);
     sendMessage({ text: lastUserMessage });
-  };
+  }, [previousMessages, lastUserMessage, sendMessage, setMessages]);
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
     height: interpolate(
@@ -198,6 +198,28 @@ export default function AIChat() {
     return <MemoizedChatBubble item={item} userQuery={userQuery} />;
   }, [messages]);
 
+  // Memoize the suggestions section to prevent re-renders during streaming
+  const suggestionsComponent = useMemo(() => {
+    if (messages.length >= 2) return null;
+    
+    return (
+      <View className="flex-1 px-4">
+        <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+        <View className="flex-row flex-wrap gap-2">
+          {getContextualSuggestions(context).map((suggestion) => (
+            <TouchableOpacity
+              key={suggestion}
+              onPress={() => handleSubmit(suggestion)}
+              className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+            >
+              <Text className="text-sm text-foreground">{suggestion}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  }, [messages.length, context, handleSubmit]);
+
   return (
     <>
       <Stack.Screen />
@@ -224,22 +246,7 @@ export default function AIChat() {
           data={messages}
           renderItem={renderItem}
         />
-        {messages.length < 2 && (
-          <View className="flex-1 px-4">
-            <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {getContextualSuggestions(context).map((suggestion) => (
-                <TouchableOpacity
-                  key={suggestion}
-                  onPress={() => handleSubmit(suggestion)}
-                  className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                >
-                  <Text className="text-sm text-foreground">{suggestion}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
+        {suggestionsComponent}
       </KeyboardAvoidingView>
 
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
