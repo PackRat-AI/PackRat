@@ -215,6 +215,27 @@ export default function AIChat() {
                 />
               )}
               {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+              {messages.length < 2 && (
+                <View className="px-4">
+                  <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {(() => {
+                      const suggestions = getContextualSuggestions(context);
+                      console.log('Context:', context);
+                      console.log('Suggestions:', suggestions);
+                      return suggestions;
+                    })().map((suggestion) => (
+                      <TouchableOpacity
+                        key={suggestion}
+                        onPress={() => handleSubmit(suggestion)}
+                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                      >
+                        <Text className="text-sm text-foreground">{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
               <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
             </>
           }
@@ -237,22 +258,6 @@ export default function AIChat() {
             return <ChatBubble item={item} userQuery={userQuery} />;
           }}
         />
-        {messages.length < 2 && (
-          <View className="flex-1 px-4">
-            <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {getContextualSuggestions(context).map((suggestion) => (
-                <TouchableOpacity
-                  key={suggestion}
-                  onPress={() => handleSubmit(suggestion)}
-                  className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                >
-                  <Text className="text-sm text-foreground">{suggestion}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
       </KeyboardAvoidingView>
 
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
