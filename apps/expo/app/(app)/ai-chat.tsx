@@ -215,6 +215,22 @@ export default function AIChat() {
                 />
               )}
               {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+              {messages.length < 2 && (
+                <View className="pl-4 pr-16">
+                  <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {getContextualSuggestions(context).map((suggestion) => (
+                      <TouchableOpacity
+                        key={suggestion}
+                        onPress={() => handleSubmit(suggestion)}
+                        className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
+                      >
+                        <Text className="text-sm text-foreground">{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
               <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
             </>
           }
@@ -225,7 +241,8 @@ export default function AIChat() {
             top: insets.bottom + 2,
           }}
           data={messages}
-          extraData={messages}
+          extraData={{ status }}
+          keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => {
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
@@ -234,25 +251,16 @@ export default function AIChat() {
               userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
             }
 
-            return <ChatBubble item={item} userQuery={userQuery} />;
+            return (
+              <ChatBubble
+                item={item}
+                userQuery={userQuery}
+                isLast={index === messages.length - 1}
+                status={status}
+              />
+            );
           }}
         />
-        {messages.length < 2 && (
-          <View className="flex-1 px-4">
-            <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
-            <View className="flex-row flex-wrap gap-2">
-              {getContextualSuggestions(context).map((suggestion) => (
-                <TouchableOpacity
-                  key={suggestion}
-                  onPress={() => handleSubmit(suggestion)}
-                  className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                >
-                  <Text className="text-sm text-foreground">{suggestion}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
       </KeyboardAvoidingView>
 
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
