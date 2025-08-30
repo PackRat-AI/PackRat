@@ -43,7 +43,7 @@ export function createTools(c: Context, userId: number) {
 
           return {
             success: true,
-            pack: {
+            data: {
               ...pack,
               categories,
             },
@@ -78,7 +78,7 @@ export function createTools(c: Context, userId: number) {
           }
           return {
             success: true,
-            item,
+            data: item,
           };
         } catch (error) {
           console.error('getPackItemDetails tool error', error);
@@ -105,7 +105,9 @@ export function createTools(c: Context, userId: number) {
           const weatherData = await weatherService.getWeatherForLocation(location);
           return {
             success: true,
-            ...weatherData,
+            data: {
+              ...weatherData,
+            },
           };
         } catch (error) {
           console.error('getWeatherForLocation tool error', error);
@@ -136,7 +138,7 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, category, limit, offset }) => {
         try {
-          const { items } = await catalogService.getCatalogItems({
+          const data = await catalogService.getCatalogItems({
             q: query,
             category,
             limit: limit || 10,
@@ -144,7 +146,7 @@ export function createTools(c: Context, userId: number) {
           });
           return {
             success: true,
-            items,
+            data,
           };
         } catch (error) {
           console.error('getCatalogItems tool error', error);
@@ -173,10 +175,10 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, limit, offset }) => {
         try {
-          const items = await catalogService.semanticSearch(query, limit || 10, offset || 0);
+          const data = await catalogService.semanticSearch(query, limit || 10, offset || 0);
           return {
             success: true,
-            items,
+            data,
           };
         } catch (error) {
           console.error('semanticCatalogSearch tool error', error);
@@ -208,7 +210,7 @@ export function createTools(c: Context, userId: number) {
           const results = await aiService.searchPackratOutdoorGuidesRAG(query, limit || 5);
           return {
             success: true,
-            results,
+            data: results,
           };
         } catch (error) {
           console.error('searchPackratOutdoorGuidesRAG', error);
@@ -240,7 +242,7 @@ export function createTools(c: Context, userId: number) {
           const result = await aiService.perplexitySearch(query);
 
           return {
-            ...result,
+            data: result,
             success: true,
           };
         } catch (error) {
