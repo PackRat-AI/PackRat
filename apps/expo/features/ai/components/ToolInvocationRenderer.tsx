@@ -27,7 +27,6 @@ type Tool =
 export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
   const tool = toolInvocation as Tool;
 
-
   switch (tool.type) {
     case 'tool-webSearchTool':
       return <WebSearchGenerativeUI toolInvocation={tool} />;
