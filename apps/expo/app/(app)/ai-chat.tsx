@@ -216,14 +216,14 @@ export default function AIChat() {
               )}
               {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
               {messages.length < 2 && (
-                <View className="px-4">
+                <View className="pl-4 pr-16">
                   <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
                   <View className="flex-row flex-wrap gap-2">
                     {getContextualSuggestions(context).map((suggestion) => (
                       <TouchableOpacity
                         key={suggestion}
                         onPress={() => handleSubmit(suggestion)}
-                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                        className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
                       >
                         <Text className="text-sm text-foreground">{suggestion}</Text>
                       </TouchableOpacity>
