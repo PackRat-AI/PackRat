@@ -36,10 +36,10 @@ export function PackDetailsGenerativeUI({ toolInvocation }: PackDetailsGenerativ
 
         return <PackCard isGenUI={true} pack={pack} />;
       } else {
-        return <ToolCard text="Couldn't fetching pack details" icon="error" />;
+        return <ToolCard text="Couldn't fetch pack details" icon="error" />;
       }
     case 'output-error':
-      return <ToolCard text="Couldn't fetching pack details" icon="error" />;
+      return <ToolCard text="Couldn't fetch pack details" icon="error" />;
     default:
       return null;
   }
