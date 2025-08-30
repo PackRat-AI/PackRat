@@ -6,15 +6,20 @@ import { Dimensions, ScrollView, View } from 'react-native';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
 
-type CatalogItemsToolOutputSuccess = {
-  success: true;
-  items: CatalogItem[];
-};
-
-type CatalogItemsToolOutputError = {
-  success: false;
-  error: string;
-};
+type CatalogItemsToolOutput =
+  | {
+      success: true;
+      data: {
+        items: CatalogItem[];
+        total: number;
+        limit: number;
+        offset: number;
+      };
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
 type CatalogItemsToolInput = {
   query?: string;
@@ -22,8 +27,6 @@ type CatalogItemsToolInput = {
   limit: number;
   offset: number;
 };
-
-type CatalogItemsToolOutput = CatalogItemsToolOutputSuccess | CatalogItemsToolOutputError;
 
 export type CatalogItemsTool = {
   type: 'tool-getCatalogItems' | 'tool-semanticCatalogSearch';
@@ -64,13 +67,13 @@ export function CatalogItemsGenerativeUI({ toolInvocation }: CatalogItemsGenerat
       if (!toolInvocation.output.success) {
         return <ToolCard text="Error fetching catalog items" icon="error" />;
       }
-      const items = toolInvocation.output.items;
+      const items = toolInvocation.output.data.items;
 
       if (items.length === 0) {
         return <ToolCard text="No items found in catalog for your search" icon="info" />;
       }
       return (
-        <View className="rounded-2xl overflow-hidden">
+        <View>
           {/* Header */}
           <Text variant="callout" className="text-sm text-foreground uppercase" color="secondary">
             Catalog Gears
@@ -81,7 +84,7 @@ export function CatalogItemsGenerativeUI({ toolInvocation }: CatalogItemsGenerat
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingVertical: 12 }}
-            className="max-h-80"
+            className="max-h-80 rounded-2xl overflow-hidden"
             // pagingEnabled
           >
             <View className="flex-row gap-4">

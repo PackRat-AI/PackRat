@@ -19,17 +19,24 @@ type WebSearchToolInput = {
   query: string;
 };
 
-type WebSearchToolOutput = {
-  query: string;
-  answer: string;
-  sources: Array<{
-    type: string;
-    sourceType: string;
-    id: string;
-    url: string;
-  }>;
-  success: boolean;
-};
+type WebSearchToolOutput =
+  | {
+      data: {
+        query: string;
+        answer: string;
+        sources: Array<{
+          type: string;
+          sourceType: string;
+          id: string;
+          url: string;
+        }>;
+      };
+      success: true;
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
 export type WebSearchTool = {
   type: 'tool-webSearchTool';
@@ -97,45 +104,46 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
                 </View>
 
                 {/* Sources */}
-                {toolInvocation.output.sources && toolInvocation.output.sources.length > 0 && (
-                  <View className="mb-6">
-                    <View className="flex-row items-center mb-3">
-                      <Icon name="link" size={16} color={colors.green} />
-                      <Text variant="caption1" className="uppercase tracking-wide">
-                        Sources ({toolInvocation.output.sources.length})
-                      </Text>
-                    </View>
-                    <View className="gap-3">
-                      {toolInvocation.output.sources.map((source, index) => (
-                        <Pressable
-                          key={source.id || index}
-                          onPress={() => handleSourcePress(source.url)}
-                          className="bg-card border border-border rounded-xl p-4"
-                        >
-                          <View className="flex-row items-start justify-between">
-                            <View className="flex-1 mr-3">
-                              <Text className="text-sm font-medium text-muted-foreground mb-1">
-                                {formatDomain(source.url)}
-                              </Text>
-                              <Text
-                                className="text-base font-medium text-foreground"
-                                numberOfLines={2}
-                              >
-                                {source.url}
-                              </Text>
+                {toolInvocation.output.data.sources &&
+                  toolInvocation.output.data.sources.length > 0 && (
+                    <View className="mb-6">
+                      <View className="flex-row items-center mb-3">
+                        <Icon name="link" size={16} color={colors.green} />
+                        <Text variant="caption1" className="uppercase tracking-wide">
+                          Sources ({toolInvocation.output.data.sources.length})
+                        </Text>
+                      </View>
+                      <View className="gap-3">
+                        {toolInvocation.output.data.sources.map((source, index) => (
+                          <Pressable
+                            key={source.id || index}
+                            onPress={() => handleSourcePress(source.url)}
+                            className="bg-card border border-border rounded-xl p-4"
+                          >
+                            <View className="flex-row items-start justify-between">
+                              <View className="flex-1 mr-3">
+                                <Text className="text-sm font-medium text-muted-foreground mb-1">
+                                  {formatDomain(source.url)}
+                                </Text>
+                                <Text
+                                  className="text-base font-medium text-foreground"
+                                  numberOfLines={2}
+                                >
+                                  {source.url}
+                                </Text>
+                              </View>
+                              <EvilIcons
+                                name="external-link"
+                                color={colors.foreground}
+                                size={16}
+                                className="text-muted-foreground mt-1"
+                              />
                             </View>
-                            <EvilIcons
-                              name="external-link"
-                              color={colors.foreground}
-                              size={16}
-                              className="text-muted-foreground mt-1"
-                            />
-                          </View>
-                        </Pressable>
-                      ))}
+                          </Pressable>
+                        ))}
+                      </View>
                     </View>
-                  </View>
-                )}
+                  )}
 
                 {/* Bottom padding for safe area */}
                 <View className="h-8" />
