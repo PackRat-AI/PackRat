@@ -85,9 +85,7 @@ export class CatalogService {
     }
 
     if (category) {
-      conditions.push(
-        sql`lower(${catalogItems.categories}::text) like lower(${`%"${category}"%`})`,
-      );
+      conditions.push(sql`lower(${catalogItems.categories}::text) like lower(${`%${category}%`})`);
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
