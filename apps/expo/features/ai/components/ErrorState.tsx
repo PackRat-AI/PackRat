@@ -1,7 +1,7 @@
-import { EvilIcons } from '@expo/vector-icons';
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { EvilIcons, Ionicons } from '@expo/vector-icons';
+import { Card, CardContent, Text } from '@packrat/ui/nativewindui';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 interface ErrorStateProps {
   error?: Error;
@@ -14,19 +14,19 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
   if (!error) return null;
 
   return (
-    <View className="mx-4 mb-4 rounded-xl border border-red-200 bg-red-50 p-3">
-      <View className="flex-row items-center gap-2">
-        <EvilIcons name="exclamation" size={24} color={colors.destructive} />
-        <Text className="flex-1 text-sm text-red-700">Something went wrong. Please retry.</Text>
-        <Button
-          variant="tonal"
-          size="icon"
-          onPress={onRetry}
-          className="rounded-lg bg-red-100 px-3 py-1"
-        >
-          <EvilIcons name="redo" size={20} color={colors.destructive} />
-        </Button>
-      </View>
-    </View>
+    <Card rootClassName="border border-border rounded-xl bg-inherit shadow-none mx-4">
+      <CardContent className="flex-row items-center justify-between">
+        <View className="flex-1 flex-row items-center gap-2 pr-2">
+          <Ionicons name="alert-circle-outline" size={24} color={colors.destructive} />
+
+          <Text variant="caption2" numberOfLines={2}>
+            Looks like something went wrong. Retry?
+          </Text>
+        </View>
+        <Pressable onPress={onRetry}>
+          <EvilIcons name="redo" size={24} color={colors.foreground} />
+        </Pressable>
+      </CardContent>
+    </Card>
   );
 }

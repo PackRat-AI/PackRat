@@ -80,11 +80,12 @@ chatRoutes.openapi(chatRoute, async (c) => {
     itemId?: string;
     packId?: string;
     location?: string;
+    date: string;
   } = {};
 
   try {
     body = await c.req.json();
-    const { messages, contextType, itemId, packId, location } = body;
+    const { messages, contextType, itemId, packId, location, date } = body;
 
     const tools = createTools(c, auth.userId);
 
@@ -107,7 +108,8 @@ chatRoutes.openapi(chatRoute, async (c) => {
       ${schemaInfo}
 
       Context:
-      - User id is ${auth.userId}`;
+      - User id is ${auth.userId}
+      - Current date is ${date}`;
 
     // Add context-specific information
     if (contextType === 'pack' && packId) {
