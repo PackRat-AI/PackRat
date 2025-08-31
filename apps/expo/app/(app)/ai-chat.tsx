@@ -74,7 +74,6 @@ export default function AIChat() {
   const { activeLocation } = useActiveLocation();
   const listRef = React.useRef<FlashList<UIMessage>>(null);
 
-  // Extract context from params
   const context = {
     itemId: params.itemId as string,
     itemName: params.itemName as string,
@@ -103,6 +102,7 @@ export default function AIChat() {
         itemId: context.itemId,
         packId: context.packId,
         location: locationRef.current,
+        date: new Date().toLocaleString(),
       }),
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
