@@ -4,8 +4,8 @@ import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { isArray } from 'radash';
-import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
-import { useDeletePack, useDuplicatePack, usePackDetailsFromStore } from '../hooks';
+import { Image, Pressable, Text, View } from 'react-native';
+import { useDeletePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackInStore } from '../types';
 
@@ -17,11 +17,10 @@ type PackCardProps = {
 
 export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardProps) {
   const deletePack = useDeletePack();
-  const { duplicatePack, isLoading: isDuplicating } = useDuplicatePack();
   const { colors } = useColorScheme();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
-  const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
-  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack; // Use passed pack for non user owned pack.
+  const packFromStore = usePackDetailsFromStore(packArg.id);
+  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack;
 
   const hasBaseWeight = typeof pack.baseWeight === 'number' && pack.baseWeight > 0;
   const hasTotalWeight = typeof pack.totalWeight === 'number' && pack.totalWeight > 0;
@@ -85,8 +84,8 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
                   <Icon name="trash-can" size={21} color={colors.grey2} />
                 </Button>
               </Alert>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>
