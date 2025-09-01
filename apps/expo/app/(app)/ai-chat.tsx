@@ -5,7 +5,7 @@ import { FlashList } from '@shopify/flash-list';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
-import { MemoizedChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
@@ -16,7 +16,7 @@ import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import {
   Dimensions,
   Keyboard,
@@ -120,18 +120,18 @@ export default function AIChat() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  const handleSubmit = useCallback((text?: string) => {
+  const handleSubmit = (text?: string) => {
     const messageText = text || input;
     setLastUserMessage(messageText);
     setPreviousMessages(messages);
     sendMessage({ text: messageText });
     setInput('');
-  }, [input, messages, sendMessage]);
+  };
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = () => {
     setMessages(previousMessages);
     sendMessage({ text: lastUserMessage });
-  }, [previousMessages, lastUserMessage, sendMessage, setMessages]);
+  };
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
     height: interpolate(
@@ -155,8 +155,7 @@ export default function AIChat() {
     };
   }, []);
 
-  // Memoize the header component to prevent re-renders during streaming
-  const listHeaderComponent = useMemo(() => (
+  const listHeaderComponent = (
     <View>
       <View style={{ height: HEADER_HEIGHT + insets.top }} />
       <LocationSelector />
@@ -169,10 +168,9 @@ export default function AIChat() {
         })}
       />
     </View>
-  ), [insets.top]);
+  );
 
-  // Memoize the footer component to only re-render when status changes
-  const listFooterComponent = useMemo(() => (
+  const listFooterComponent = (
     <>
       {status === 'submitted' && (
         <ActivityIndicator
@@ -184,41 +182,8 @@ export default function AIChat() {
       {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
       <Animated.View style={toolbarHeightStyle} />
     </>
-  ), [status, colors.primary, error, toolbarHeightStyle]);
+  );
 
-  // Optimize renderItem with useCallback to prevent function recreation
-  const renderItem = useCallback(({ item, index }: { item: UIMessage; index: number }) => {
-    // Get the user query for this AI response
-    let userQuery: TextUIPart['text'] | undefined;
-    if (item.role === 'assistant' && index > 1) {
-      const userMessage = messages[index - 1];
-      userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
-    }
-
-    return <MemoizedChatBubble item={item} userQuery={userQuery} />;
-  }, [messages]);
-
-  // Memoize the suggestions section to prevent re-renders during streaming
-  const suggestionsComponent = useMemo(() => {
-    if (messages.length >= 2) return null;
-    
-    return (
-      <View className="flex-1 px-4">
-        <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
-        <View className="flex-row flex-wrap gap-2">
-          {getContextualSuggestions(context).map((suggestion) => (
-            <TouchableOpacity
-              key={suggestion}
-              onPress={() => handleSubmit(suggestion)}
-              className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-            >
-              <Text className="text-sm text-foreground">{suggestion}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    );
-  }, [messages.length, context, handleSubmit]);
 
   return (
     <>
@@ -244,9 +209,33 @@ export default function AIChat() {
             top: insets.bottom + 2,
           }}
           data={messages}
-          renderItem={renderItem}
+          renderItem={({ item, index }) => {
+            // Get the user query for this AI response
+            let userQuery: TextUIPart['text'] | undefined;
+            if (item.role === 'assistant' && index > 1) {
+              const userMessage = messages[index - 1];
+              userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
+            }
+
+            return <ChatBubble item={item} userQuery={userQuery} />;
+          }}
         />
-        {suggestionsComponent}
+        {messages.length < 2 && (
+          <View className="flex-1 px-4">
+            <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+            <View className="flex-row flex-wrap gap-2">
+              {getContextualSuggestions(context).map((suggestion) => (
+                <TouchableOpacity
+                  key={suggestion}
+                  onPress={() => handleSubmit(suggestion)}
+                  className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                >
+                  <Text className="text-sm text-foreground">{suggestion}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
@@ -269,7 +258,7 @@ export default function AIChat() {
   );
 }
 
-function DateSeparatorComponent({ date }: { date: string }) {
+function DateSeparator({ date }: { date: string }) {
   return (
     <View className="items-center px-4 pb-3 pt-5">
       <Text variant="caption2" className="font-medium text-muted-foreground">
@@ -278,9 +267,6 @@ function DateSeparatorComponent({ date }: { date: string }) {
     </View>
   );
 }
-
-// Memoize DateSeparator since date doesn't change frequently
-const DateSeparator = React.memo(DateSeparatorComponent);
 
 const _BORDER_CURVE: ViewStyle = {
   borderCurve: 'continuous',

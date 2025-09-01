@@ -69,24 +69,3 @@ export function ChatBubble({ item, userQuery }: ChatBubbleProps) {
     </View>
   );
 }
-
-// Memoize ChatBubble to prevent unnecessary re-renders during streaming
-// Only re-render if the message content actually changes
-export const MemoizedChatBubble = React.memo(ChatBubble, (prevProps, nextProps) => {
-  // Compare message content deeply
-  const prevText = prevProps.item.parts.find(p => p.type === 'text')?.text;
-  const nextText = nextProps.item.parts.find(p => p.type === 'text')?.text;
-  
-  // If text content is different, we need to re-render
-  if (prevText !== nextText) {
-    return false;
-  }
-  
-  // Compare other properties
-  return (
-    prevProps.item.id === nextProps.item.id &&
-    prevProps.item.role === nextProps.item.role &&
-    prevProps.userQuery === nextProps.userQuery &&
-    prevProps.item.parts.length === nextProps.item.parts.length
-  );
-});
