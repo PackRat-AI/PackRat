@@ -16,10 +16,11 @@ import { PackItemImage } from './PackItemImage';
 
 type PackItemCardProps = {
   item: PackItem;
-  onPress: (item: PackItem) => void;
+  onPress?: (item: PackItem) => void;
+  isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
 };
 
-export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
+export function PackItemCard({ item: itemArg, onPress, isGenUI = false }: PackItemCardProps) {
   const router = useRouter();
   const isOwnedByUser = usePackItemOwnershipCheck(itemArg.id);
   const itemFromStore = usePackItemDetailsFromStore(itemArg.id); // Use item from store if it's user owned so that component observe changes to it and thus update properly.
@@ -32,7 +33,7 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
   return (
     <Pressable
       className="mb-3 flex-row overflow-hidden rounded-lg bg-card shadow-sm"
-      onPress={() => onPress(item)}
+      onPress={() => onPress?.(item)}
     >
       <PackItemImage item={item} className="w-28" resizeMode="cover" />
 
@@ -74,7 +75,7 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
               </View>
             )}
           </View>
-          {isOwnedByUser && (
+          {!isGenUI && isOwnedByUser && (
             <View className="flex-row gap-[.4]">
               <Alert
                 title="Delete item?"

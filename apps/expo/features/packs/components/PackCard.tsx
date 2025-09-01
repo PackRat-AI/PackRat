@@ -11,10 +11,11 @@ import type { Pack, PackInStore } from '../types';
 
 type PackCardProps = {
   pack: Pack | PackInStore;
-  onPress: (pack: Pack) => void;
+  onPress?: (pack: Pack) => void;
+  isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
 };
 
-export function PackCard({ pack: packArg, onPress }: PackCardProps) {
+export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardProps) {
   const deletePack = useDeletePack();
   const { colors } = useColorScheme();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
@@ -27,7 +28,7 @@ export function PackCard({ pack: packArg, onPress }: PackCardProps) {
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
-      onPress={() => onPress(pack)}
+      onPress={() => onPress?.(pack)}
     >
       {pack.image && (
         <Image source={{ uri: pack.image }} className="h-40 w-full" resizeMode="cover" />
@@ -69,7 +70,7 @@ export function PackCard({ pack: packArg, onPress }: PackCardProps) {
             </View>
           ) : null}
 
-          {isOwnedByUser && (
+          {!isGenUI && isOwnedByUser && (
             <View className="ml-auto">
               <Alert
                 title="Delete pack?"

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@packrat/ui/nativewindui';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 
@@ -5,11 +6,31 @@ export function CategoriesFilter({
   activeFilter,
   onFilter,
   data,
+  error,
+  retry,
 }: {
   activeFilter: string;
   onFilter: (filter: string) => void;
   data: string[] | undefined;
+  error?: Error | null;
+  retry?: (() => void) | undefined;
 }) {
+  if (error)
+    return (
+      <View className="mx-4 mb-2 rounded-lg bg-destructive/10 dark:bg-destructive/20 p-3">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center flex-1">
+            <Ionicons name="alert-circle" size={16} color="#ef4444" />
+            <Text className="ml-2 text-sm text-destructive">Failed to load categories</Text>
+          </View>
+          {retry && (
+            <TouchableOpacity onPress={retry} className="ml-2 rounded px-2 py-1 bg-destructive/20">
+              <Text className="text-xs text-destructive font-medium">Retry</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
   const renderFilterChip = (filter: string) => (
     <TouchableOpacity
       key={filter}

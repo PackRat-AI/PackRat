@@ -25,9 +25,12 @@ export function generatePromptWithContext(userMessage: string, context?: ChatCon
 export function getContextualSuggestions(context?: ChatContext): string[] {
   if (!context || context.contextType === 'general') {
     return [
-      'What gear should I bring for a weekend hike?',
-      'How can I reduce my pack weight?',
-      "What's the best way to organize my pack?",
+      'What is the weather in London this weekend?', // Primes AI to invoke weather tool
+      'Are there any deals on highly rated rain jackets right now?', // Primes AI to invoke web search tool
+      'Find me a lightweight tent for 2 people', // Primes AI to invoke vector search tool
+      'Need some guides on how I can reduce my pack weight.', // Primes AI to invoke guides tool
+      "What's the best way to organize my pack?", // General question
+      // TODO: SQL tool
     ];
   }
 
