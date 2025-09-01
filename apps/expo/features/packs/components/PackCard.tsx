@@ -18,14 +18,20 @@ type PackCardProps = {
   showDuplicateButton?: boolean;
 };
 
-export function PackCard({ pack: packArg, onPress, isGenUI = false, showDuplicateButton = false }: PackCardProps) {
+export function PackCard({
+  pack: packArg,
+  onPress,
+  isGenUI = false,
+  showDuplicateButton = false,
+}: PackCardProps) {
   const deletePack = useDeletePack();
+  const { duplicatePack, isLoading: isDuplicating } = useDuplicatePack();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const insets = useSafeAreaInsets();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
-  const packFromStore = usePackDetailsFromStore(packArg.id);
-  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack;
+  const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
+  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack; // Use passed pack for non user owned pack.
 
   const handleActionsPress = () => {
     const options =
@@ -150,6 +156,22 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false, showDuplicat
                 ) : (
                   <Icon name="file-copy" size={21} color={colors.grey2} />
                 )}
+              </Button>
+            )}
+
+            {/* Delete button for owned packs */}
+            {!isGenUI && isOwnedByUser && (
+              <Button
+                variant="plain"
+                size="icon"
+                onPress={() =>
+                  Alert.alert('Delete pack?', 'Are you sure you want to delete this pack? This action cannot be undone.', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'OK', style: 'destructive', onPress: () => deletePack(pack.id) },
+                  ])
+                }
+              >
+                <Icon name="trash-can" size={21} color={colors.grey2} />
               </Button>
             )}
           </View>
