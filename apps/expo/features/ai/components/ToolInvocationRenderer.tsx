@@ -1,61 +1,49 @@
 import type { ToolUIPart } from 'ai';
+import type { CatalogItemsTool } from './CatalogItemsGenerativeUI';
 import { CatalogItemsGenerativeUI } from './CatalogItemsGenerativeUI';
+import type { GuidesRAGTool } from './GuidesRAGGenerativeUI';
 import { GuidesRAGGenerativeUI } from './GuidesRAGGenerativeUI';
+import type { PackDetailsTool } from './PackDetailsGenerativeUI';
 import { PackDetailsGenerativeUI } from './PackDetailsGenerativeUI';
+import type { PackItemTool } from './PackItemDetailsGenerativeUI';
 import { PackItemDetailsGenerativeUI } from './PackItemDetailsGenerativeUI';
+import type { WeatherTool } from './WeatherGenerativeUI';
 import { WeatherGenerativeUI } from './WeatherGenerativeUI';
+import type { WebSearchTool } from './WebSearchGenerativeUI';
 import { WebSearchGenerativeUI } from './WebSearchGenerativeUI';
 
 interface ToolInvocationRendererProps {
   toolInvocation: ToolUIPart;
 }
 
+type Tool =
+  | WebSearchTool
+  | WeatherTool
+  | CatalogItemsTool
+  | GuidesRAGTool
+  | PackDetailsTool
+  | PackItemTool;
+
 export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendererProps) {
-  // Only render completed tool calls with results
-  if (toolInvocation.state !== 'output-available' || !toolInvocation.output) {
-    return null;
+  const tool = toolInvocation as Tool;
+
+  switch (tool.type) {
+    case 'tool-webSearchTool':
+      return <WebSearchGenerativeUI toolInvocation={tool} />;
+    case 'tool-getWeatherForLocation':
+      return <WeatherGenerativeUI toolInvocation={tool} />;
+    case 'tool-getCatalogItems':
+    case 'tool-semanticCatalogSearch':
+      return <CatalogItemsGenerativeUI toolInvocation={tool} />;
+    case 'tool-searchPackratOutdoorGuidesRAG':
+      return <GuidesRAGGenerativeUI toolInvocation={tool} />;
+    case 'tool-getPackDetails':
+      return <PackDetailsGenerativeUI toolInvocation={tool} />;
+    case 'tool-getPackItemDetails':
+      return <PackItemDetailsGenerativeUI toolInvocation={tool} />;
+    default:
+      return null;
   }
 
-  const { type: toolName, input: args, output: result } = toolInvocation;
-
-  // Handle getWeatherForLocation tool result
-  if (toolName === 'tool-getWeatherForLocation') {
-    return <WeatherGenerativeUI location={args.location} weatherData={result} />;
-  }
-
-  // Handle getCatalogItems tool result
-  if (
-    (toolName === 'tool-getCatalogItems' || toolName === 'tool-semanticCatalogSearch') &&
-    result.success &&
-    result.data
-  ) {
-    return (
-      <CatalogItemsGenerativeUI
-        items={result.data.items}
-        total={result.data.total}
-        limit={result.data.limit}
-      />
-    );
-  }
-
-  // Handle searchPackratOutdoorGuidesRAG tool result
-  if (toolName === 'tool-searchPackratOutdoorGuidesRAG' && result.success && result.results) {
-    return <GuidesRAGGenerativeUI searchQuery={args.query} results={result.results} />;
-  }
-
-  // Handle getPackDetails tool result
-  if (toolName === 'tool-getPackDetails' && result.success && result.pack) {
-    return <PackDetailsGenerativeUI pack={result.pack} />;
-  }
-
-  // Handle getPackItemDetails tool result
-  if (toolName === 'tool-getPackItemDetails' && result.success && result.item) {
-    return <PackItemDetailsGenerativeUI item={result.item} />;
-  }
-
-  if (toolName === 'tool-webSearchTool' && result.success) {
-    return <WebSearchGenerativeUI searchQuery={args.query} searchData={result} />;
-  }
-
-  return null;
+  // TODO SQL TOOL
 }

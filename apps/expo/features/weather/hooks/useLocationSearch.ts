@@ -59,7 +59,7 @@ export function useLocationSearch() {
 
     try {
       // Get weather data for the selected location
-      const weatherData = await getWeatherData(result.lat, result.lon);
+      const weatherData = await getWeatherData(result.id);
 
       if (weatherData) {
         const formattedData = formatWeatherData(weatherData);

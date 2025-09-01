@@ -28,9 +28,10 @@ export default function LocationDetailScreen() {
   const { showActionSheetWithOptions } = useActionSheet();
   const { removeLocation } = useLocations();
 
+  const locationId = parseInt(String(id), 10);
   // Get the locations array safely
   const locations = locationsState.state === 'hasData' ? locationsState.data : [];
-  const location = locations.find((loc) => loc.id === id);
+  const location = locations.find((loc) => loc.id === locationId);
 
   // Refresh weather data for this location
   const handleRefresh = async () => {

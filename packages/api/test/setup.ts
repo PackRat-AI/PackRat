@@ -77,7 +77,7 @@ beforeAll(async () => {
 
   try {
     await testClient.connect();
-    testDb = drizzle(testClient, { schema });
+    testDb = drizzle(testClient, { schema }) as ReturnType<typeof drizzle>;
     console.log('✅ Test database connected successfully');
 
     // Run migrations using direct PostgreSQL client

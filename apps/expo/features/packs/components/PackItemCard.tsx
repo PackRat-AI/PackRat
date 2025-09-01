@@ -1,7 +1,6 @@
 import { Alert, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
@@ -13,13 +12,15 @@ import {
   usePackItemOwnershipCheck,
 } from '../hooks';
 import type { PackItem } from '../types';
+import { PackItemImage } from './PackItemImage';
 
 type PackItemCardProps = {
   item: PackItem;
-  onPress: (item: PackItem) => void;
+  onPress?: (item: PackItem) => void;
+  isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
 };
 
-export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
+export function PackItemCard({ item: itemArg, onPress, isGenUI = false }: PackItemCardProps) {
   const router = useRouter();
   const isOwnedByUser = usePackItemOwnershipCheck(itemArg.id);
   const itemFromStore = usePackItemDetailsFromStore(itemArg.id); // Use item from store if it's user owned so that component observe changes to it and thus update properly.
@@ -32,9 +33,9 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
   return (
     <Pressable
       className="mb-3 flex-row overflow-hidden rounded-lg bg-card shadow-sm"
-      onPress={() => onPress(item)}
+      onPress={() => onPress?.(item)}
     >
-      <CachedImage localFileName={item.image} className="w-28" resizeMode="cover" />
+      <PackItemImage item={item} className="w-28" resizeMode="cover" />
 
       <View className="flex-1 p-3">
         <View className="flex-row items-start justify-between">
@@ -74,7 +75,7 @@ export function PackItemCard({ item: itemArg, onPress }: PackItemCardProps) {
               </View>
             )}
           </View>
-          {isOwnedByUser && (
+          {!isGenUI && isOwnedByUser && (
             <View className="flex-row gap-[.4]">
               <Alert
                 title="Delete item?"

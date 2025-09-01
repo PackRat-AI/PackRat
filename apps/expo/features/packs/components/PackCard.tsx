@@ -11,11 +11,11 @@ import type { Pack, PackInStore } from '../types';
 
 type PackCardProps = {
   pack: Pack | PackInStore;
-  onPress: (pack: Pack) => void;
-  showDuplicateButton?: boolean;
+  onPress?: (pack: Pack) => void;
+  isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
 };
 
-export function PackCard({ pack: packArg, onPress, showDuplicateButton = false }: PackCardProps) {
+export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardProps) {
   const deletePack = useDeletePack();
   const { duplicatePack, isLoading: isDuplicating } = useDuplicatePack();
   const { colors } = useColorScheme();
@@ -29,7 +29,7 @@ export function PackCard({ pack: packArg, onPress, showDuplicateButton = false }
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card shadow-sm"
-      onPress={() => onPress(pack)}
+      onPress={() => onPress?.(pack)}
     >
       {pack.image && (
         <Image source={{ uri: pack.image }} className="h-40 w-full" resizeMode="cover" />
@@ -71,29 +71,8 @@ export function PackCard({ pack: packArg, onPress, showDuplicateButton = false }
             </View>
           ) : null}
 
-          <View className="ml-auto flex-row items-center gap-2">
-            {/* Duplicate button for non-owned packs when showDuplicateButton is true */}
-            {!isOwnedByUser && showDuplicateButton && (
-              <Alert
-                title="Duplicate pack?"
-                message="This will create a copy of this pack in your collection."
-                buttons={[
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Duplicate', onPress: () => duplicatePack(pack.id) },
-                ]}
-              >
-                <Button variant="plain" size="icon" disabled={isDuplicating}>
-                  {isDuplicating ? (
-                    <ActivityIndicator size="small" color={colors.grey2} />
-                  ) : (
-                    <Icon name="file-copy" size={21} color={colors.grey2} />
-                  )}
-                </Button>
-              </Alert>
-            )}
-
-            {/* Delete button for owned packs */}
-            {isOwnedByUser && (
+          {!isGenUI && isOwnedByUser && (
+            <View className="ml-auto">
               <Alert
                 title="Delete pack?"
                 message="Are you sure you want to delete this pack? This action cannot be undone."

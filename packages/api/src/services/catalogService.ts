@@ -6,7 +6,7 @@ import {
   type NewCatalogItem,
 } from '@packrat/api/db/schema';
 import { generateEmbedding, generateManyEmbeddings } from '@packrat/api/services/embeddingService';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import {
   and,
@@ -32,7 +32,7 @@ const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEn
 
 export class CatalogService {
   private db;
-  private env;
+  private env: Env;
 
   constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
     if (isContext(contextOrEnv, isHonoContext)) {
@@ -70,21 +70,22 @@ export class CatalogService {
       throw new Error('Offset cannot be negative');
     }
 
-    const conditions = [];
+    const conditions: SQL[] = [];
     if (q) {
-      conditions.push(
-        or(
-          ilike(catalogItems.name, `%${q}%`),
-          ilike(catalogItems.description, `%${q}%`),
-          ilike(catalogItems.brand, `%${q}%`),
-          ilike(catalogItems.model, `%${q}%`),
-          ilike(catalogItems.categories, `%${q}%`),
-        ),
+      const searchCondition = or(
+        ilike(catalogItems.name, `%${q}%`),
+        ilike(catalogItems.description, `%${q}%`),
+        ilike(catalogItems.brand, `%${q}%`),
+        ilike(catalogItems.model, `%${q}%`),
+        ilike(sql`${catalogItems.categories}::text`, `%${q}%`),
       );
+      if (searchCondition) {
+        conditions.push(searchCondition);
+      }
     }
 
     if (category) {
-      conditions.push(sql`${catalogItems.categories} @> ${JSON.stringify([category])}::jsonb`);
+      conditions.push(sql`lower(${catalogItems.categories}::text) like lower(${`%${category}%`})`);
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
@@ -167,7 +168,18 @@ export class CatalogService {
       provider: this.env.AI_PROVIDER,
       cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareAiBinding: this.env.AI,
     });
+
+    if (!embedding) {
+      return {
+        items: [],
+        total: 0,
+        limit,
+        offset,
+        nextOffset: offset + limit,
+      };
+    }
 
     const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
 
@@ -219,9 +231,20 @@ export class CatalogService {
       cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
       cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
       provider: this.env.AI_PROVIDER,
+      cloudflareAiBinding: this.env.AI,
     });
 
+    if (!embeddings) {
+      return {
+        items: [],
+      };
+    }
+
     const searchTasks = embeddings.map((embedding) => {
+      if (!embedding) {
+        return Promise.resolve([]);
+      }
+
       const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
       const { embedding: _embedding, ...columnsToSelect } = getTableColumns(catalogItems);
       return this.db
@@ -306,6 +329,7 @@ export class CatalogService {
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
         provider: this.env.AI_PROVIDER,
+        cloudflareAiBinding: this.env.AI,
       });
 
       // Update items with new embeddings
@@ -399,6 +423,7 @@ export class CatalogService {
         cloudflareAccountId: this.env.CLOUDFLARE_ACCOUNT_ID,
         cloudflareGatewayId: this.env.CLOUDFLARE_AI_GATEWAY_ID,
         provider: this.env.AI_PROVIDER,
+        cloudflareAiBinding: this.env.AI,
       });
 
       // Update items with embeddings

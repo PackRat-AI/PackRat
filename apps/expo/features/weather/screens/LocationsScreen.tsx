@@ -80,11 +80,11 @@ function LocationsScreen() {
     };
   }, [navigation, clearSearch, setSearchQuery]);
 
-  const handleLocationPress = (locationId: string) => {
+  const handleLocationPress = (locationId: number) => {
     router.push(`/weather/${locationId}`);
   };
 
-  const handleSetActive = (locationId: string) => {
+  const handleSetActive = (locationId: number) => {
     setActiveLocation(locationId);
 
     // Show confirmation
@@ -101,7 +101,7 @@ function LocationsScreen() {
     }
   };
 
-  const handleRemoveLocation = (locationId: string) => {
+  const handleRemoveLocation = (locationId: number) => {
     removeLocation(locationId);
   };
 

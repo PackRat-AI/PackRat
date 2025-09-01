@@ -4,7 +4,8 @@ import { useDetailedPacks } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Animated, FlatList, Image, SafeAreaView, TouchableOpacity, View } from 'react-native';
+import { Animated, FlatList, SafeAreaView, TouchableOpacity, View } from 'react-native';
+import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
 
 export function PackSelectionScreen() {
@@ -57,22 +58,20 @@ export function PackSelectionScreen() {
         {catalogItem && (
           <View className="border-b border-border bg-card px-4 py-3">
             <View className="flex-row items-center">
-              <Image
-                source={{
-                  uri: catalogItem.image || undefined /* `null` isn't assignable to uri */,
-                }}
-                className="h-16 w-16 rounded-md"
+              <CatalogItemImage
+                imageUrl={catalogItem.images?.[0]}
+                className="h-24 w-24 rounded-md"
                 resizeMode="cover"
               />
               <View className="ml-3 flex-1">
-                <Text variant="subhead">Adding</Text>
+                <Text className="text-xs text-muted-foreground uppercase">Adding</Text>
                 <Text variant="title3" color="primary">
                   {catalogItem.name}
                 </Text>
                 <View className="mt-1 flex-row items-center">
                   <Icon name="dumbbell" size={14} color={colors.grey2} />
                   <Text variant="caption2" className="ml-1">
-                    {catalogItem.defaultWeight} {catalogItem.defaultWeightUnit}
+                    {catalogItem.weight} {catalogItem.weightUnit}
                   </Text>
                   {catalogItem.brand && (
                     <>

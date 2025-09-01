@@ -1,11 +1,12 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
+import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
@@ -15,11 +16,8 @@ import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { useEffect } from 'react';
 import {
-  Alert,
   Dimensions,
-  Keyboard,
   type NativeSyntheticEvent,
   Platform,
   TextInput,
@@ -72,13 +70,10 @@ export default function AIChat() {
   const insets = useSafeAreaInsets();
   const { progress } = useReanimatedKeyboardAnimation();
   const textInputHeight = useSharedValue(17);
-  const translateX = useSharedValue(0);
   const params = useLocalSearchParams();
-  const [showSuggestions, setShowSuggestions] = React.useState(true);
   const { activeLocation } = useActiveLocation();
   const listRef = React.useRef<FlashList<UIMessage>>(null);
 
-  // Extract context from params
   const context = {
     itemId: params.itemId as string,
     itemName: params.itemName as string,
@@ -92,7 +87,10 @@ export default function AIChat() {
 
   const token = useAtomValue(tokenAtom);
   const [input, setInput] = React.useState('');
-  const { messages, error, sendMessage, status } = useChat({
+  const [lastUserMessage, setLastUserMessage] = React.useState('');
+  const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
+  const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
+  const { messages, setMessages, error, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
@@ -104,6 +102,7 @@ export default function AIChat() {
         itemId: context.itemId,
         packId: context.packId,
         location: locationRef.current,
+        date: new Date().toLocaleString(),
       }),
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
@@ -114,29 +113,28 @@ export default function AIChat() {
         parts: [{ type: 'text', text: getContextualGreeting(context) }],
       } as UIMessage,
     ],
-    onFinish: () => {
-      // Hide suggestions after user sends a message
-      setShowSuggestions(false);
-    },
   });
 
-  const isLoading = status === 'streaming';
+  const isLoading = status === 'submitted' || status === 'streaming';
 
-  const handleSubmit = () => {
-    sendMessage({ text: input });
+  const scrollToBottom = React.useCallback(() => {
+    setTimeout(() => {
+      listRef.current?.scrollToOffset({ offset: 999999, animated: false });
+    }, 100);
+  }, []);
+
+  const handleSubmit = (text?: string) => {
+    const messageText = text || input;
+    setLastUserMessage(messageText);
+    setPreviousMessages(messages);
+    sendMessage({ text: messageText });
     setInput('');
+    scrollToBottom();
   };
 
-  React.useEffect(() => {
-    if (error) {
-      Alert.alert(error.message);
-    }
-  }, [error]);
-
-  const handleSuggestionPress = (suggestion: string) => {
-    sendMessage({ text: suggestion });
-    setInput('');
-    setShowSuggestions(false);
+  const handleRetry = () => {
+    setMessages(previousMessages);
+    sendMessage({ text: lastUserMessage });
   };
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
@@ -147,19 +145,33 @@ export default function AIChat() {
     ),
   }));
 
-  useEffect(() => {
-    const scrollToBottom = () => {
-      listRef.current?.scrollToOffset({ offset: 999999, animated: true });
-    };
+  const listLayoutRef = React.useRef({
+    offset: 0,
+    containerHeight: 0,
+    contentHeight: 0,
+  });
 
-    scrollToBottom();
-
-    const keyboardListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
-
-    return () => {
-      keyboardListener.remove();
-    };
-  }, []);
+  const onScroll = (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+    listLayoutRef.current.offset = e.nativeEvent.contentOffset.y;
+    setIsArrowButtonVisible(
+      listLayoutRef.current.contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
+  const onLayout = (e: { nativeEvent: { layout: { height: number } } }) => {
+    listLayoutRef.current.containerHeight = e.nativeEvent.layout.height;
+    setIsArrowButtonVisible(
+      listLayoutRef.current.contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
+  const onContentSizeChange = (_contentWidth: number, contentHeight: number) => {
+    listLayoutRef.current.contentHeight = contentHeight;
+    setIsArrowButtonVisible(
+      contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
 
   return (
     <>
@@ -174,8 +186,10 @@ export default function AIChat() {
         behavior="padding"
       >
         <FlashList
-          // inverted
           ref={listRef}
+          onLayout={onLayout}
+          onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
           estimatedItemSize={70}
           ListHeaderComponent={
             <View>
@@ -193,15 +207,23 @@ export default function AIChat() {
           }
           ListFooterComponent={
             <>
-              {showSuggestions && messages.length <= 2 && (
-                <View className="px-4 py-4">
-                  <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
+              {status === 'submitted' && (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                  className="self-start ml-4 mb-8"
+                />
+              )}
+              {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+              {messages.length < 2 && (
+                <View className="pl-4 pr-16">
+                  <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
                   <View className="flex-row flex-wrap gap-2">
                     {getContextualSuggestions(context).map((suggestion) => (
                       <TouchableOpacity
                         key={suggestion}
-                        onPress={() => handleSuggestionPress(suggestion)}
-                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
+                        onPress={() => handleSubmit(suggestion)}
+                        className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
                       >
                         <Text className="text-sm text-foreground">{suggestion}</Text>
                       </TouchableOpacity>
@@ -209,7 +231,7 @@ export default function AIChat() {
                   </View>
                 </View>
               )}
-              <Animated.View style={toolbarHeightStyle} />
+              <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
             </>
           }
           keyboardDismissMode="on-drag"
@@ -219,18 +241,28 @@ export default function AIChat() {
             top: insets.bottom + 2,
           }}
           data={messages}
+          extraData={{ status }}
+          keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => {
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
               const userMessage = messages[index - 1];
-              userQuery = userMessage.parts.find((p) => p.type === 'text')?.text;
+              userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
             }
 
-            return <ChatBubble item={item} translateX={translateX} userQuery={userQuery} />;
+            return (
+              <ChatBubble
+                item={item}
+                userQuery={userQuery}
+                isLast={index === messages.length - 1}
+                status={status}
+              />
+            );
           }}
         />
       </KeyboardAvoidingView>
+
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <Composer
           textInputHeight={textInputHeight}
@@ -238,7 +270,6 @@ export default function AIChat() {
           handleInputChange={setInput} // Pass the setter directly.
           handleSubmit={() => {
             handleSubmit();
-            setShowSuggestions(false);
           }}
           isLoading={isLoading}
           placeholder={
@@ -248,6 +279,14 @@ export default function AIChat() {
           }
         />
       </KeyboardStickyView>
+      {isArrowButtonVisible && status === 'ready' && (
+        <TouchableOpacity
+          onPress={scrollToBottom}
+          className="absolute bottom-20 right-4 rounded-full bg-gray-200 p-3 mb-5 shadow-lg"
+        >
+          <Icon name="arrow-down" size={20} color="black" />
+        </TouchableOpacity>
+      )}
     </>
   );
 }
@@ -332,9 +371,7 @@ function Composer({
         />
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
-            <View className="h-7 w-7 items-center justify-center">
-              <Text className="text-xs text-primary">...</Text>
-            </View>
+            <ActivityIndicator size="small" color={colors.primary} />
           ) : input.length > 0 ? (
             <Button
               onPress={handleSubmit}

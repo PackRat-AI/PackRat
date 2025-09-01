@@ -3,17 +3,15 @@ import {
   CardContent,
   CardDescription,
   CardFooter,
-  CardImage,
   CardSubtitle,
   CardTitle,
   Text,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { Platform, TouchableWithoutFeedback, View } from 'react-native';
+import { TouchableWithoutFeedback, View } from 'react-native';
 import type { CatalogItem } from '../types';
-
-const fallbackImage = require('expo-app/assets/image-not-available.png');
+import { CatalogItemImage } from './CatalogItemImage';
 
 type CatalogItemCardProps = {
   item: CatalogItem;
@@ -27,28 +25,11 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
     <TouchableWithoutFeedback onPress={onPress} className="mb-3">
       <Card className="overflow-hidden">
         <View>
-          <View className="h-48 w-full">
-            <CardImage
-              source={
-                item.images?.[0]
-                  ? {
-                      uri: item.images?.[0],
-                      ...(Platform.OS === 'android'
-                        ? {
-                            headers: {
-                              'User-Agent':
-                                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-                              Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
-                            },
-                          }
-                        : {}),
-                    }
-                  : fallbackImage
-              }
-              contentFit="cover"
-              transition={200}
-            />
-          </View>
+          <CatalogItemImage
+            imageUrl={item.images?.[0]}
+            resizeMode="cover"
+            className="h-48 w-full"
+          />
 
           <CardContent className="p-3">
             <View>
