@@ -20,13 +20,12 @@ type PackCardProps = {
 
 export function PackCard({ pack: packArg, onPress, isGenUI = false, showDuplicateButton = false }: PackCardProps) {
   const deletePack = useDeletePack();
-  const { duplicatePack, isLoading: isDuplicating } = useDuplicatePack();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const insets = useSafeAreaInsets();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
-  const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
-  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack; // Use passed pack for non user owned pack.
+  const packFromStore = usePackDetailsFromStore(packArg.id);
+  const pack = (isOwnedByUser ? packFromStore : packArg) as Pack;
 
   const handleActionsPress = () => {
     const options =
