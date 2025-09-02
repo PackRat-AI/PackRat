@@ -4,8 +4,8 @@ import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { isArray } from 'radash';
-import { Image, Pressable, Text, View } from 'react-native';
-import { useDeletePack, usePackDetailsFromStore } from '../hooks';
+import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
+import { useDeletePack, useDuplicatePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackInStore } from '../types';
 
@@ -13,10 +13,17 @@ type PackCardProps = {
   pack: Pack | PackInStore;
   onPress?: (pack: Pack) => void;
   isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
+  showDuplicateButton?: boolean;
 };
 
-export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardProps) {
+export function PackCard({
+  pack: packArg,
+  onPress,
+  isGenUI = false,
+  showDuplicateButton = false,
+}: PackCardProps) {
   const deletePack = useDeletePack();
+  const { duplicatePack, isLoading: isDuplicating } = useDuplicatePack();
   const { colors } = useColorScheme();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
   const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
@@ -70,8 +77,29 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
             </View>
           ) : null}
 
-          {!isGenUI && isOwnedByUser && (
-            <View className="ml-auto">
+          <View className="ml-auto flex-row items-center gap-2">
+            {/* Duplicate button for non-owned packs when showDuplicateButton is true */}
+            {!isOwnedByUser && showDuplicateButton && (
+              <Alert
+                title="Duplicate pack?"
+                message="This will create a copy of this pack in your collection."
+                buttons={[
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Duplicate', onPress: () => duplicatePack(pack.id) },
+                ]}
+              >
+                <Button variant="plain" size="icon" disabled={isDuplicating}>
+                  {isDuplicating ? (
+                    <ActivityIndicator size="small" color={colors.grey2} />
+                  ) : (
+                    <Icon name="file-copy" size={21} color={colors.grey2} />
+                  )}
+                </Button>
+              </Alert>
+            )}
+
+            {/* Delete button for owned packs */}
+            {!isGenUI && isOwnedByUser && (
               <Alert
                 title="Delete pack?"
                 message="Are you sure you want to delete this pack? This action cannot be undone."
@@ -84,8 +112,8 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
                   <Icon name="trash-can" size={21} color={colors.grey2} />
                 </Button>
               </Alert>
-            </View>
-          )}
+            )}
+          </View>
         </View>
       </View>
     </Pressable>
