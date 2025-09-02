@@ -123,18 +123,6 @@ export default function AIChat() {
     }, 100);
   }, []);
 
-  // Auto-scroll during streaming to keep the latest content visible
-  React.useEffect(() => {
-    if (status === 'streaming' && messages.length > 0) {
-      // Get the last message to check if it's currently being streamed
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'assistant') {
-        // Scroll to bottom whenever the assistant's message content changes during streaming
-        scrollToBottom();
-      }
-    }
-  }, [status, scrollToBottom, messages]);
-
   const handleSubmit = (text?: string) => {
     const messageText = text || input;
     setLastUserMessage(messageText);
@@ -253,7 +241,15 @@ export default function AIChat() {
             top: insets.bottom + 2,
           }}
           data={messages}
-          extraData={{ status }}
+          extraData={{ 
+            status,
+            // Include streaming content length to trigger re-measurement during streaming
+            streamingContentLength: status === 'streaming' && messages.length > 0 
+              ? messages[messages.length - 1]?.parts
+                  .filter(p => p.type === 'text')
+                  .reduce((total, part) => total + part.text.length, 0) ?? 0
+              : 0
+          }}
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => {
             // Get the user query for this AI response
