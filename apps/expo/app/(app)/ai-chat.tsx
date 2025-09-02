@@ -366,7 +366,7 @@ function Composer({
         />
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
-            <Button onPress={stop} size="icon" variant="tonal" className="h-7 w-7 rounded-full">
+            <Button onPress={stop} size="icon" variant="primary" className="h-7 w-7 rounded-full">
               <Icon name="stop" size={18} color="white" />
             </Button>
           ) : (
