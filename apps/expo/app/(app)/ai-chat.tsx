@@ -90,6 +90,8 @@ export default function AIChat() {
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
+  const [isUserScrolling, setIsUserScrolling] = React.useState(false);
+  const [isNearBottom, setIsNearBottom] = React.useState(true);
   const { messages, setMessages, error, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
@@ -120,6 +122,8 @@ export default function AIChat() {
   const scrollToBottom = React.useCallback(() => {
     setTimeout(() => {
       listRef.current?.scrollToOffset({ offset: 999999, animated: false });
+      setIsNearBottom(true);
+      setIsUserScrolling(false);
     }, 100);
   }, []);
 
@@ -151,27 +155,93 @@ export default function AIChat() {
     contentHeight: 0,
   });
 
-  const onScroll = (e: { nativeEvent: { contentOffset: { y: number } } }) => {
-    listLayoutRef.current.offset = e.nativeEvent.contentOffset.y;
-    setIsArrowButtonVisible(
-      listLayoutRef.current.contentHeight >
-        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
-    );
-  };
-  const onLayout = (e: { nativeEvent: { layout: { height: number } } }) => {
-    listLayoutRef.current.containerHeight = e.nativeEvent.layout.height;
-    setIsArrowButtonVisible(
-      listLayoutRef.current.contentHeight >
-        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
-    );
-  };
-  const onContentSizeChange = (_contentWidth: number, contentHeight: number) => {
-    listLayoutRef.current.contentHeight = contentHeight;
-    setIsArrowButtonVisible(
-      contentHeight >
-        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
-    );
-  };
+  const scrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkIfNearBottom = React.useCallback(
+    (offset: number, containerHeight: number, contentHeight: number) => {
+      const threshold = 100; // pixels from bottom
+      const distanceFromBottom = contentHeight - containerHeight - offset;
+      return distanceFromBottom <= threshold;
+    },
+    [],
+  );
+
+  const onScroll = React.useCallback(
+    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+      const newOffset = e.nativeEvent.contentOffset.y;
+      const { containerHeight, contentHeight } = listLayoutRef.current;
+
+      listLayoutRef.current.offset = newOffset;
+
+      const nearBottom = checkIfNearBottom(newOffset, containerHeight, contentHeight);
+      setIsNearBottom(nearBottom);
+
+      // Detect manual user scrolling
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      setIsUserScrolling(true);
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsUserScrolling(false);
+      }, 1000); // Consider user stopped scrolling after 1 second
+
+      setIsArrowButtonVisible(
+        listLayoutRef.current.contentHeight >
+          listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+      );
+    },
+    [checkIfNearBottom],
+  );
+  const onLayout = React.useCallback(
+    (e: { nativeEvent: { layout: { height: number } } }) => {
+      listLayoutRef.current.containerHeight = e.nativeEvent.layout.height;
+      const { offset, containerHeight, contentHeight } = listLayoutRef.current;
+
+      const nearBottom = checkIfNearBottom(offset, containerHeight, contentHeight);
+      setIsNearBottom(nearBottom);
+
+      setIsArrowButtonVisible(
+        listLayoutRef.current.contentHeight >
+          listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+      );
+    },
+    [checkIfNearBottom],
+  );
+  const onContentSizeChange = React.useCallback(
+    (_contentWidth: number, contentHeight: number) => {
+      listLayoutRef.current.contentHeight = contentHeight;
+      const { offset, containerHeight } = listLayoutRef.current;
+
+      const nearBottom = checkIfNearBottom(offset, containerHeight, contentHeight);
+      setIsNearBottom(nearBottom);
+
+      setIsArrowButtonVisible(
+        contentHeight >
+          listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+      );
+
+      // Auto-scroll to bottom only if user is near bottom and not actively scrolling
+      // This prevents jumpy behavior during streaming
+      if (nearBottom && !isUserScrolling && status === 'streaming') {
+        setTimeout(() => {
+          if (!isUserScrolling && isNearBottom) {
+            listRef.current?.scrollToOffset({ offset: 999999, animated: false });
+          }
+        }, 50);
+      }
+    },
+    [checkIfNearBottom, isUserScrolling, isNearBottom, status],
+  );
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
