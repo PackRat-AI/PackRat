@@ -106,6 +106,7 @@ export default function AIChat() {
       }),
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
+    experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
     messages: [
       {
         id: '1',
