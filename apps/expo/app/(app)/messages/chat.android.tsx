@@ -12,9 +12,12 @@ import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import {
+  Alert,
   Image,
   type NativeSyntheticEvent,
   Platform,
@@ -270,6 +273,21 @@ function ChatBubble({
   // const { colors } = useColorScheme();
   const [showTime, setShowTime] = React.useState(false);
 
+  const handleContextMenuAction = async ({ actionKey }: { actionKey: string }) => {
+    if (actionKey === 'copy') {
+      try {
+        await Clipboard.setStringAsync(item.text);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Alert.alert('Copied', 'Message copied to clipboard');
+      } catch (error) {
+        console.error('Failed to copy text:', error);
+        Alert.alert('Error', 'Failed to copy message');
+      }
+    } else {
+      console.log(`${actionKey} pressed`);
+    }
+  };
+
   const renderAuxiliaryPreview = React.useCallback(() => {
     return (
       <View className="flex-row gap-2.5 rounded-full bg-card px-2 py-1 shadow-2xl">
@@ -396,7 +414,7 @@ function ChatBubble({
                   default: [],
                 })}
                 materialOverlayClassName="bg-black/0"
-                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
+                onItemPress={handleContextMenuAction}
               >
                 <Pressable
                   onLongPress={initSelectedMessages}
@@ -461,7 +479,7 @@ function ChatBubble({
                 style={{ borderRadius: 20, marginBottom: 2 }}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
                 materialOverlayClassName="bg-black/0"
-                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
+                onItemPress={handleContextMenuAction}
               >
                 <Pressable onLongPress={initSelectedMessages} onPress={onItemPress}>
                   <View

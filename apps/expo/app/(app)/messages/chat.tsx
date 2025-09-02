@@ -13,9 +13,12 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { BlurView } from 'expo-blur';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import {
+  Alert,
   Dimensions,
   Image,
   type NativeSyntheticEvent,
@@ -357,6 +360,22 @@ function ChatBubble({
   const contextMenuRef = React.useRef<ContextMenuRef>(null);
   const contextMenuRef2 = React.useRef<ContextMenuRef>(null);
   const { colors } = useColorScheme();
+
+  const handleContextMenuAction = async ({ actionKey }: { actionKey: string }) => {
+    if (actionKey === 'copy') {
+      try {
+        await Clipboard.setStringAsync(item.text);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        Alert.alert('Copied', 'Message copied to clipboard');
+      } catch (error) {
+        console.error('Failed to copy text:', error);
+        Alert.alert('Error', 'Failed to copy message');
+      }
+    } else {
+      console.log(`${actionKey} pressed`);
+    }
+  };
+
   const rootStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: translateX.value }],
@@ -493,7 +512,7 @@ function ChatBubble({
                 auxiliaryPreviewPosition={auxiliaryPreviewPosition}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
                 items={CONTEXT_MENU_ITEMS}
-                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
+                onItemPress={handleContextMenuAction}
               >
                 <Pressable>
                   <Image
@@ -599,7 +618,7 @@ function ChatBubble({
                 items={CONTEXT_MENU_ITEMS}
                 style={{ borderRadius: 20 }}
                 renderAuxiliaryPreview={renderAuxiliaryPreview}
-                onItemPress={({ actionKey }) => console.log(`${actionKey} pressed`)}
+                onItemPress={handleContextMenuAction}
               >
                 <Pressable>
                   <View

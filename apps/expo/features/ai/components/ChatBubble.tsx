@@ -1,10 +1,14 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
+import { Icon } from '@roninoss/icons';
 import type { ToolUIPart, UIMessage } from 'ai';
 import { Markdown } from 'expo-app/components/Markdown';
 import { ReportButton } from 'expo-app/features/ai/components/ReportButton';
 import { cn } from 'expo-app/lib/cn';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
-import { View, type ViewStyle } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
+import { Alert, View, type ViewStyle } from 'react-native';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
 const BORDER_CURVE: ViewStyle = {
@@ -20,6 +24,27 @@ interface ChatBubbleProps {
 
 export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps) {
   const isAI = item.role === 'assistant';
+  const { colors } = useColorScheme();
+
+  const handleCopyText = async () => {
+    try {
+      const textContent = item.parts
+        .filter((part) => part.type === 'text')
+        .map((part) => part.text)
+        .join('\n');
+
+      await Clipboard.setStringAsync(textContent);
+
+      // Provide haptic feedback
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Show success feedback
+      Alert.alert('Copied', 'Response copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy text:', error);
+      Alert.alert('Error', 'Failed to copy text');
+    }
+  };
 
   return (
     <View className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}>
@@ -51,13 +76,25 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
         })}
       </View>
 
-      {isAI && userQuery && (!isLast || status === 'ready') && (
-        <View className="pl-2">
-          <ReportButton
-            messageId={item.id}
-            aiResponse={item.parts.find((p) => p.type === 'text')?.text ?? ''}
-            userQuery={userQuery}
-          />
+      {isAI && (!isLast || status === 'ready') && (
+        <View className="pl-2 flex-row gap-2">
+          <Button
+            variant="plain"
+            size="sm"
+            onPress={handleCopyText}
+            className="flex-row items-center gap-1"
+          >
+            <Icon name="clipboard-outline" size={16} color={colors.grey} />
+            <Text className="text-muted-foreground text-xs">Copy</Text>
+          </Button>
+
+          {userQuery && (
+            <ReportButton
+              messageId={item.id}
+              aiResponse={item.parts.find((p) => p.type === 'text')?.text ?? ''}
+              userQuery={userQuery}
+            />
+          )}
         </View>
       )}
     </View>
