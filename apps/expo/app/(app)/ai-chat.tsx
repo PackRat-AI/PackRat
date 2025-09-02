@@ -90,7 +90,7 @@ export default function AIChat() {
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
-  const { messages, setMessages, error, sendMessage, status } = useChat({
+  const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
@@ -264,6 +264,7 @@ export default function AIChat() {
           handleSubmit={() => {
             handleSubmit();
           }}
+          stop={stop}
           isLoading={isLoading}
           placeholder={
             context.contextType === 'general'
@@ -316,6 +317,7 @@ function Composer({
   input,
   handleInputChange,
   handleSubmit,
+  stop,
   isLoading,
   placeholder,
 }: {
@@ -323,6 +325,7 @@ function Composer({
   input: string;
   handleInputChange: (text: string) => void;
   handleSubmit: () => void;
+  stop: () => void;
   isLoading: boolean;
   placeholder: string;
 }) {
@@ -360,26 +363,20 @@ function Composer({
           onContentSizeChange={onContentSizeChange}
           onChangeText={handleInputChange}
           value={input}
-          editable={!isLoading}
         />
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : input.length > 0 ? (
+            <Button onPress={stop} size="icon" variant="tonal" className="h-7 w-7 rounded-full">
+              <Icon name="stop" size={18} color="white" />
+            </Button>
+          ) : (
             <Button
               onPress={handleSubmit}
+              disabled={!input.length}
               size="icon"
               className="ios:rounded-full h-7 w-7 rounded-full"
             >
               <Icon name="arrow-up" size={18} color="white" />
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              variant="plain"
-              className="ios:rounded-full h-7 w-7 rounded-full opacity-40"
-            >
-              <Icon name="arrow-up" size={20} color={colors.foreground} />
             </Button>
           )}
         </View>
