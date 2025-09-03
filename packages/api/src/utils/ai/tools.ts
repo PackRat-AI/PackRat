@@ -258,6 +258,66 @@ export function createTools(c: Context, userId: number) {
       },
     }),
 
+    catalogSearchForGuides: tool({
+      description: 'Search the catalog specifically for generating guide content with item links. Returns items with product URLs that can be included in guides.',
+      inputSchema: z.object({
+        query: z.string().min(1).describe('Search query for gear items (e.g., "backpack", "sleeping bag")'),
+        category: z.string().optional().describe('Optional category filter'),
+        limit: z.number().min(1).max(20).optional().describe('Number of results to return (default 10)'),
+        minRating: z.number().min(1).max(5).optional().describe('Minimum rating filter (1-5)')
+      }),
+      execute: async ({ query, category, limit = 10, minRating }) => {
+        try {
+          const searchResult = await catalogService.semanticSearch(query, limit, 0);
+          
+          // Filter and format results for guide generation
+          const items = searchResult.items
+            .filter(item => {
+              // Filter by category if specified
+              if (category && item.categories && !item.categories.includes(category)) {
+                return false;
+              }
+              // Filter by minimum rating if specified
+              if (minRating && (!item.ratingValue || item.ratingValue < minRating)) {
+                return false;
+              }
+              // Ensure we have a valid product URL
+              if (!item.productUrl) {
+                return false;
+              }
+              return true;
+            })
+            .map(item => ({
+              id: item.id,
+              name: item.name,
+              productUrl: item.productUrl,
+              brand: item.brand,
+              categories: item.categories,
+              price: item.price,
+              ratingValue: item.ratingValue,
+              description: item.description,
+            }));
+
+          return {
+            success: true,
+            items,
+            query,
+            total: items.length,
+            message: `Found ${items.length} catalog items for "${query}"`
+          };
+        } catch (error) {
+          console.error('catalogSearchForGuides tool error', error);
+          sentry.setTag('location', 'ai-tool-call/catalogSearchForGuides');
+          sentry.setContext('meta', { query, category, limit, minRating });
+          sentry.captureException(error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to search catalog for guides',
+          };
+        }
+      },
+    }),
+
     executeSql: tool({
       description:
         'Execute read-only SQL queries against the database. Only SELECT statements are allowed.',
