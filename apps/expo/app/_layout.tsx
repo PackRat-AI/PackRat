@@ -9,6 +9,10 @@ import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
+import type { JSX } from 'react/jsx-runtime';
+import { Platform } from 'react-native';
+import type { BaseToastProps } from 'react-native-toast-message';
+import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -29,7 +33,48 @@ export {
 
 function RootLayout() {
   useInitialAndroidBarSync();
-  const { colorScheme, isDarkColorScheme } = useColorScheme();
+  const { colorScheme, isDarkColorScheme, colors } = useColorScheme();
+
+  const toastConfig = {
+    success: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
+      <BaseToast
+        {...props}
+        style={{
+          borderLeftWidth: 0,
+          borderRadius: Platform.OS === 'ios' ? 12 : 4,
+          backgroundColor: colors.card,
+          marginTop: Platform.OS === 'ios' ? 40 : 0,
+          marginHorizontal: 12,
+          shadowOpacity: Platform.OS === 'ios' ? 0.15 : 0,
+        }}
+        contentContainerStyle={{
+          paddingHorizontal: 15,
+        }}
+        text1Style={{
+          fontSize: 15,
+          fontWeight: '500',
+          color: colors.foreground,
+        }}
+      />
+    ),
+    error: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
+      <ErrorToast
+        {...props}
+        style={{
+          borderLeftWidth: 0,
+          borderRadius: Platform.OS === 'ios' ? 12 : 4,
+          backgroundColor: colors.destructive,
+          marginTop: Platform.OS === 'ios' ? 40 : 0,
+          marginHorizontal: 12,
+        }}
+        text1Style={{
+          fontSize: 15,
+          fontWeight: '500',
+          color: '#fff',
+        }}
+      />
+    ),
+  };
 
   return (
     <>
@@ -45,6 +90,7 @@ function RootLayout() {
           </Stack>
         </NavThemeProvider>
       </Providers>
+      <Toast config={toastConfig} position={Platform.OS === 'ios' ? 'top' : 'bottom'} />
     </>
   );
 }

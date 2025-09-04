@@ -16,7 +16,7 @@
     },
     "apps/expo": {
       "name": "packrat-expo-app",
-      "version": "2.0.3",
+      "version": "2.0.8",
       "dependencies": {
         "@ai-sdk/react": "^2.0.11",
         "@expo/react-native-action-sheet": "^4.1.1",
@@ -90,6 +90,7 @@
         "react-native-reanimated": "~3.17.4",
         "react-native-safe-area-context": "5.4.0",
         "react-native-screens": "~4.11.1",
+        "react-native-toast-message": "^2.3.3",
         "react-native-uitextview": "^1.1.4",
         "react-native-web": "^0.20.0",
         "tailwind-merge": "^2.5.5",
@@ -116,7 +117,7 @@
     },
     "apps/guides": {
       "name": "packrat-guides-app",
-      "version": "2.0.3",
+      "version": "2.0.8",
       "dependencies": {
         "@ai-sdk/openai": "^2.0.11",
         "@hookform/resolvers": "^3.10.0",
@@ -192,7 +193,7 @@
     },
     "apps/landing": {
       "name": "packrat-landing-app",
-      "version": "2.0.3",
+      "version": "2.0.8",
       "dependencies": {
         "@emotion/is-prop-valid": "^1.3.1",
         "@hookform/resolvers": "^3.10.0",
@@ -302,7 +303,7 @@
     },
     "packages/ui": {
       "name": "@packrat/ui",
-      "version": "2.0.4",
+      "version": "2.0.8",
       "dependencies": {
         "@packrat-ai/nativewindui": "1.0.8",
       },
@@ -2910,6 +2911,8 @@
     "react-native-safe-area-context": ["react-native-safe-area-context@5.4.0", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-JaEThVyJcLhA+vU0NU8bZ0a1ih6GiF4faZ+ArZLqpYbL6j7R3caRqj+mE3lEtKCuHgwjLg3bCxLL1GPUJZVqUA=="],
 
     "react-native-screens": ["react-native-screens@4.11.1", "", { "dependencies": { "react-freeze": "^1.0.0", "react-native-is-edge-to-edge": "^1.1.7", "warn-once": "^0.1.0" }, "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-F0zOzRVa3ptZfLpD0J8ROdo+y1fEPw+VBFq1MTY/iyDu08al7qFUO5hLMd+EYMda5VXGaTFCa8q7bOppUszhJw=="],
+
+    "react-native-toast-message": ["react-native-toast-message@2.3.3", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-4IIUHwUPvKHu4gjD0Vj2aGQzqPATiblL1ey8tOqsxOWRPGGu52iIbL8M/mCz4uyqecvPdIcMY38AfwRuUADfQQ=="],
 
     "react-native-uitextview": ["react-native-uitextview@1.4.0", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-itm/frzkn/ma3+lwmKn2CkBOXPNo4bL8iVwQwjlzix5gVO59T2+axdfoj/Wi+Ra6F76KzNKxSah+7Y8dYmCHbQ=="],
 

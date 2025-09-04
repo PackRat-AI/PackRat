@@ -1,5 +1,3 @@
-'use client';
-
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
@@ -21,7 +19,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
+import Toast from 'react-native-toast-message';
 import { useCatalogItemDetails } from '../hooks';
 import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
 
@@ -90,6 +88,10 @@ export function AddCatalogItemDetailsScreen() {
       },
     });
     setIsAdding(false);
+    Toast.show({
+      type: 'success',
+      text1: 'Item added',
+    });
     // Navigate back to the catalog item detail screen
     router.dismissTo({
       pathname: '/catalog/[id]',
