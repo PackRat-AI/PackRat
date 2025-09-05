@@ -49,6 +49,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     'ratingValue',
     'createdAt',
     'updatedAt',
+    'usage',
   ] as const;
   const validSortOrders = ['asc', 'desc'] as const;
 
