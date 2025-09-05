@@ -47,15 +47,15 @@ type PackConceptWithCandidateItems = Omit<PackConcept, 'items'> & {
 const itemSchema = z.object({
   catalogItemId: z.number().int(),
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   weight: z.number().nonnegative(),
   weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
   quantity: z.number().int().positive().default(1),
   category: z.string(),
-  consumable: z.boolean().optional().describe('Whether the item is consumable'),
-  worn: z.boolean().optional().describe('Whether the item is worn'),
-  notes: z.string().optional(),
-  image: z.string().optional(),
+  consumable: z.boolean().default(false).describe('Whether the item is consumable'),
+  worn: z.boolean().default(false).describe('Whether the item is worn'),
+  notes: z.string().nullable().optional(),
+  image: z.string().nullable().optional(),
 });
 
 const finalPackSchema = z.object({
@@ -174,11 +174,11 @@ export class PackService {
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.CHAT),
+      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: packConceptSchema,
       system: PACK_CONCEPTS_SYSTEM_PROMPT,
-      prompt: `Generate ${count} adventure pack concepts.`,
+      prompt: `${count}`,
     });
 
     return object;
@@ -234,13 +234,11 @@ export class PackService {
     });
 
     const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.CHAT),
+      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
       output: 'array',
       schema: finalPackSchema,
       system: PACKS_CONSTRUCTION_SYSTEM_PROMPT,
-      prompt:
-        'Based on the following pack concepts and candidate items, select the best items for each pack:\n' +
-        JSON.stringify(packConceptsWithCandidateItems),
+      prompt: JSON.stringify(packConceptsWithCandidateItems),
     });
 
     return object;
