@@ -209,7 +209,7 @@ export function PackDetailScreen() {
 
           {filteredItems.length > 0 ? (
             filteredItems.map((item) => (
-              <View key={item.id} className="px-2 pt-3">
+              <View key={item.id} className="px-4 pt-3">
                 <PackItemCard item={item} onPress={handleItemPress} />
               </View>
             ))
