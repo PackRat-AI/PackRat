@@ -122,8 +122,8 @@ export function PackItemCard({ item: itemArg, onPress, isGenUI = false }: PackIt
           <View className="mt-2 flex-row items-center gap-2">
             <WeightBadge weight={item.weight * item.quantity} unit={item.weightUnit} />
 
-            <View className="rounded-full bg-muted px-2 py-0.5">
-              <Text className="text-xs text-muted-foreground">Qty: {item.quantity}</Text>
+            <View className="rounded-full bg-muted dark:bg-neutral-700 px-2 py-0.5">
+              <Text className="text-xs dark:text-neutral-200">Qty: {item.quantity}</Text>
             </View>
 
             {item.consumable && (
