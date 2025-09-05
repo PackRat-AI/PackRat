@@ -1,16 +1,12 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
-import { usePackItemDetailsFromStore } from 'expo-app/features/packs';
-import { usePackItemOwnershipCheck } from 'expo-app/features/packs/hooks/usePackItemOwnershipCheck';
-import { usePackOwnershipCheck } from 'expo-app/features/packs/hooks/usePackOwnershipCheck';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
+import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
+import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import 'expo-dev-client';
-import { Stack, useRouter } from 'expo-router';
-import { Pressable, View } from 'react-native';
+import { Stack } from 'expo-router';
+import { View } from 'react-native';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -255,64 +251,6 @@ const CATALOG_ADD_TO_PACK_ITEM_DETAILS_OPTIONS = {
   title: 'Item Details',
   animation: 'fade_from_bottom', // for android
 } as const;
-
-// DETAIL SCREENS
-export function getPackDetailOptions(id: string) {
-  return {
-    title: 'Pack Details',
-    headerRight: () => {
-      const { colors } = useColorScheme();
-      const router = useRouter();
-
-      const isOwner = usePackOwnershipCheck(id as string);
-
-      if (!isOwner) return null;
-
-      return (
-        <View className="flex-row items-center gap-2">
-          <Pressable onPress={() => router.push({ pathname: '/pack/[id]/edit', params: { id } })}>
-            <Icon name="pencil-box-outline" color={colors.foreground} />
-          </Pressable>
-          <Pressable onPress={() => router.push({ pathname: '/item/new', params: { packId: id } })}>
-            <Icon name="plus" color={colors.foreground} />
-          </Pressable>
-        </View>
-      );
-    },
-  };
-}
-
-export function getPackItemDetailOptions({ route }: { route: { params?: { id?: string } } }) {
-  return {
-    title: 'Item Details',
-    headerRight: () => {
-      const { colors } = useColorScheme();
-      const router = useRouter();
-      const id = route.params?.id as string;
-
-      const isOwner = usePackItemOwnershipCheck(id);
-      const item = usePackItemDetailsFromStore(id);
-
-      if (!isOwner) return null;
-      assertDefined(item);
-
-      return (
-        <View className="flex-row items-center">
-          <Pressable
-            onPress={() =>
-              router.push({
-                pathname: '/item/[id]/edit',
-                params: { id, packId: item.packId },
-              })
-            }
-          >
-            <Icon name="pencil-box-outline" color={colors.foreground} />
-          </Pressable>
-        </View>
-      );
-    },
-  };
-}
 
 const PACK_EDIT_OPTIONS = {
   title: 'Edit Pack',

@@ -13,11 +13,11 @@ export function WeightBadge({ weight, unit = 'g', type = 'item' }: WeightBadgePr
   const getColorClass = () => {
     switch (type) {
       case 'base':
-        return 'bg-blue-100 text-blue-800';
+        return ['bg-blue-100', 'text-blue-800'];
       case 'total':
-        return 'bg-purple-100 text-purple-800';
+        return ['bg-purple-100', 'text-purple-800'];
       default:
-        return 'bg-gray-100 text-gray-800';
+        return ['bg-muted dark:bg-neutral-700', 'text-xs dark:text-neutral-200 font-normal'];
     }
   };
 
@@ -26,8 +26,8 @@ export function WeightBadge({ weight, unit = 'g', type = 'item' }: WeightBadgePr
   const formattedWeight = formatWeight(safeWeight, safeUnit);
 
   return (
-    <View className={cn('rounded-full px-2 py-1', getColorClass().split(' ')[0])}>
-      <Text className={cn('text-center text-xs font-medium', getColorClass().split(' ')[1])}>
+    <View className={cn('rounded-full px-2 py-1', getColorClass()[0])}>
+      <Text className={cn('text-center text-xs font-medium', getColorClass()[1])}>
         {formattedWeight}
       </Text>
     </View>

@@ -79,9 +79,10 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
 
   return (
     <View className={cn('justify-center px-2 mb-6', isAI ? 'items-start pr-4' : 'items-end pl-16')}>
-      <ContextMenu
+      {/* <ContextMenu
         enabled={isAI ? !isLast || status === 'ready' : true}
         className="rounded-md"
+        
         items={[
           createContextItem({
             actionKey: 'copy',
@@ -119,35 +120,35 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
               break;
           }
         }}
+      > */}
+      <View
+        style={BORDER_CURVE}
+        className={cn(
+          'px-2',
+          isAI ? 'w-full' : 'py-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-2xl',
+        )}
       >
-        <Pressable
-          style={BORDER_CURVE}
-          className={cn(
-            'px-2',
-            isAI ? 'w-full' : 'py-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-2xl',
-          )}
-        >
-          {item.parts.map((part, idx) => {
-            const key = `${part.type}-${idx}`;
-            if (part.type === 'text')
-              return isAI ? (
-                <Markdown key={key}>{formatAIResponse(part.text)}</Markdown>
-              ) : (
-                <Text key={key}>{part.text}</Text>
-              );
+        {item.parts.map((part, idx) => {
+          const key = `${part.type}-${idx}`;
+          if (part.type === 'text')
+            return isAI ? (
+              <Markdown key={key}>{formatAIResponse(part.text)}</Markdown>
+            ) : (
+              <Text key={key}>{part.text}</Text>
+            );
 
-            if (isAI && part.type.startsWith('tool-'))
-              return (
-                <View key={key} className="my-2">
-                  <ToolInvocationRenderer
-                    key={(part as ToolUIPart).toolCallId}
-                    toolInvocation={part as ToolUIPart}
-                  />
-                </View>
-              );
-          })}
-        </Pressable>
-      </ContextMenu>
+          if (isAI && part.type.startsWith('tool-'))
+            return (
+              <View key={key} className="my-2">
+                <ToolInvocationRenderer
+                  key={(part as ToolUIPart).toolCallId}
+                  toolInvocation={part as ToolUIPart}
+                />
+              </View>
+            );
+        })}
+      </View>
+      {/* </ContextMenu> */}
 
       {isAI && userQuery && (!isLast || status === 'ready') && (
         <>
