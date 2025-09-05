@@ -79,8 +79,8 @@ export function PackItemCard({ item: itemArg, onPress, isGenUI = false }: PackIt
             break;
           case destructiveButtonIndex:
             alertRef.current?.alert({
-              title: 'Delete pack?',
-              message: 'Are you sure you want to delete this pack? This action cannot be undone.',
+              title: 'Delete item?',
+              message: 'Are you sure you want to delete this item?',
               buttons: [
                 { text: 'Cancel', style: 'cancel' },
                 { text: 'OK', onPress: () => deleteItem(item.id) },
