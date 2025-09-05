@@ -52,7 +52,7 @@ function CatalogItemsScreen() {
     query: debouncedSearchValue,
     category: activeFilter === 'All' ? undefined : activeFilter,
     limit: 20,
-    sort: { field: 'createdAt', order: 'asc' },
+    sort: { field: 'usage', order: 'asc' },
   });
 
   // Disabled for now
