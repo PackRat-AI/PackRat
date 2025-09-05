@@ -1,6 +1,5 @@
-import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
@@ -11,7 +10,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { useDeletePack, usePackDetailsFromApi, usePackDetailsFromStore } from '../hooks';
+import { usePackDetailsFromApi, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
 
@@ -37,7 +36,6 @@ export function PackDetailScreen() {
 
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
-  const deletePack = useDeletePack();
   const { colors } = useColorScheme();
 
   const handleItemPress = (item: PackItem) => {
@@ -108,16 +106,16 @@ export function PackDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1">
       <ScrollView>
         {pack.image && (
           <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
         )}
 
-        <View className="mb-4 bg-card p-4">
-          <View className="mb-2 flex-row items-center justify-between">
+        <View className="mb-4 p-4">
+          <View className="mb-2">
             <Text className="text-2xl font-bold text-foreground">{pack.name}</Text>
-            {pack.category && <CategoryBadge category={pack.category} />}
+            {pack.category && <Text variant="footnote">{pack.category}</Text>}
           </View>
 
           {pack.description && (
@@ -141,52 +139,23 @@ export function PackDetailScreen() {
             </View>
           </View>
 
-          <View className="flex-row justify-between">
-            {pack.tags && pack.tags.length > 0 && (
-              <View className="flex-row flex-wrap">
-                {pack.tags.map((tag) => (
-                  <Chip
-                    key={tag}
-                    className="mb-1 mr-2"
-                    textClassName="text-xs text-center"
-                    variant="outline"
-                  >
-                    #{tag}
-                  </Chip>
-                ))}
-              </View>
-            )}
-            {isOwnedByUser && (
-              <View className="ml-auto">
-                <Alert
-                  title="Delete pack?"
-                  message="Are you sure you want to delete this pack? This action cannot be undone."
-                  buttons={[
-                    {
-                      text: 'Cancel',
-                      style: 'cancel',
-                    },
-                    {
-                      text: 'OK',
-                      onPress: () => {
-                        deletePack(pack.id);
-                        if (router.canGoBack()) {
-                          router.back();
-                        }
-                      },
-                    },
-                  ]}
+          {pack.tags && pack.tags.length > 0 && (
+            <View className="flex-row flex-wrap">
+              {pack.tags.map((tag) => (
+                <Chip
+                  key={tag}
+                  className="mb-1 mr-2"
+                  textClassName="text-xs text-center"
+                  variant="outline"
                 >
-                  <Button variant="plain" size="icon">
-                    <Icon name="trash-can" color={colors.grey2} size={21} />
-                  </Button>
-                </Alert>
-              </View>
-            )}
-          </View>
+                  #{tag}
+                </Chip>
+              ))}
+            </View>
+          )}
         </View>
 
-        <View className="bg-card">
+        <View>
           <View className="p-4">
             <Button
               variant="secondary"
@@ -240,7 +209,7 @@ export function PackDetailScreen() {
 
           {filteredItems.length > 0 ? (
             filteredItems.map((item) => (
-              <View key={item.id} className="px-4 pt-3">
+              <View key={item.id} className="px-2 pt-3">
                 <PackItemCard item={item} onPress={handleItemPress} />
               </View>
             ))

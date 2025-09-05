@@ -3,7 +3,7 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export function PackItemSuggestionSkeleton({ hideSuggestions }: { hideSuggestions: () => void }) {
   return (
-    <View className="mb-4 bg-card p-4">
+    <View className="mb-4 p-4">
       <View className="mb-3 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Icon name="atom" size={18} />

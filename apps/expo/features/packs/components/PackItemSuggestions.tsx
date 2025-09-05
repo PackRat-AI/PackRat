@@ -47,7 +47,7 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
   // If suggestions aren't being shown, display the generate button
   if (!showSuggestions) {
     return (
-      <View className="bg-card p-4">
+      <View className="p-4">
         <Button onPress={handleGenerateSuggestions} className="w-full" variant="secondary">
           <Icon name="atom" size={18} color={colors.foreground} />
           <Text>Get AI Item Suggestions</Text>
@@ -64,7 +64,7 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
   // Handle error state
   if (isError || !suggestions || suggestions.length === 0) {
     return (
-      <View className="mb-4 bg-card p-4">
+      <View className="mb-4 p-4">
         <View className="mb-3 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Icon name="atom" size={18} />
@@ -94,11 +94,11 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
 
   // Show suggestions
   return (
-    <View className="mb-4 bg-card p-4">
+    <View className="mb-4 p-4">
       <View className="mb-3 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <Icon name="atom" size={18} />
-          <Text className="text-base font-semibold text-gray-700">AI Suggestions</Text>
+        <View className="flex-row items-center gap-2">
+          <Icon name="atom" size={18} color={colors.foreground} />
+          <Text className="text-base font-semibold text-muted-foreground">AI Suggestions</Text>
         </View>
         <TouchableOpacity onPress={handleHideSuggestions} className="rounded-full bg-gray-200 p-1">
           <Icon name="close" size={16} />
