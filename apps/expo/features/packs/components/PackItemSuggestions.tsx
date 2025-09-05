@@ -3,7 +3,7 @@ import { Icon } from '@roninoss/icons';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, TouchableOpacity, View } from 'react-native';
 import { usePackItemSuggestions } from '../hooks';
 import { ItemSuggestionCard } from './ItemSuggestionCard';
@@ -11,9 +11,10 @@ import { PackItemSuggestionSkeleton } from './PackItemSuggestionSkeleton';
 
 interface AISuggestionsProps {
   packId: string;
+  itemCount: number;
 }
 
-export function PackItemSuggestions({ packId }: AISuggestionsProps) {
+export function PackItemSuggestions({ packId, itemCount }: AISuggestionsProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const router = useRouter();
 
@@ -25,6 +26,12 @@ export function PackItemSuggestions({ packId }: AISuggestionsProps) {
   } = usePackItemSuggestions(packId, showSuggestions);
 
   const { colors } = useColorScheme();
+
+  useEffect(() => {
+    if (itemCount > 0) {
+      setShowSuggestions(false);
+    }
+  }, [itemCount]);
 
   const handleGenerateSuggestions = () => {
     if (!isAuthed.peek()) {
