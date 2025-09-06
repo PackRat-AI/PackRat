@@ -239,6 +239,19 @@ const itemSuggestionsRoute = createRoute({
     params: z.object({
       packId: z.string().openapi({ example: 'p_123456' }),
     }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            existingCatalogItemIds: z.array(z.number()).openapi({
+              example: [101, 202, 303],
+              description: 'Array of existing catalog item IDs in the pack to avoid duplicates',
+            }),
+          }),
+        },
+      },
+      required: true,
+    },
   },
   responses: {
     200: {
@@ -249,8 +262,10 @@ const itemSuggestionsRoute = createRoute({
             z.object({
               id: z.string(),
               name: z.string(),
-              image: z.string().nullable(),
-              category: z.string().nullable(),
+              weight: z.number().nullable(),
+              weightUnit: z.string().nullable(),
+              images: z.array(z.string()).nullable(),
+              categories: z.array(z.string()).nullable(),
               similarity: z.number(),
             }),
           ),
@@ -279,6 +294,7 @@ const itemSuggestionsRoute = createRoute({
 packRoutes.openapi(itemSuggestionsRoute, async (c) => {
   const db = createDb(c);
   const packId = c.req.param('packId');
+  const { existingCatalogItemIds } = await c.req.json();
 
   const pack = await getPackDetails({ packId, c });
   if (!pack) {
@@ -306,13 +322,9 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
 
   const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
 
-  const existingCatalogIds = pack.items
-    .map((item) => item.catalogItemId)
-    .filter((id): id is number => typeof id === 'number');
-
   const whereConditions = [gt(similarity, 0.1)];
-  if (existingCatalogIds.length > 0) {
-    whereConditions.push(notInArray(catalogItems.id, existingCatalogIds));
+  if (existingCatalogItemIds.length > 0) {
+    whereConditions.push(notInArray(catalogItems.id, existingCatalogItemIds));
   }
 
   const similarItems = await db
@@ -321,6 +333,8 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
       name: catalogItems.name,
       images: catalogItems.images,
       categories: catalogItems.categories,
+      weight: catalogItems.weight,
+      weightUnit: catalogItems.weightUnit,
       similarity,
     })
     .from(catalogItems)
@@ -328,16 +342,7 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     .orderBy(desc(similarity))
     .limit(5);
 
-  // Transform to match expected schema (singular image/category instead of arrays)
-  const transformedItems = similarItems.map((item) => ({
-    id: item.id.toString(),
-    name: item.name,
-    image: item.images?.[0] ?? null,
-    category: item.categories?.[0] ?? null,
-    similarity: item.similarity,
-  }));
-
-  return c.json(transformedItems, 200);
+  return c.json(similarItems, 200);
 });
 
 const weightHistoryRoute = createRoute({
