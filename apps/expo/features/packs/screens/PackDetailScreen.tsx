@@ -220,9 +220,7 @@ export function PackDetailScreen() {
           )}
 
           {/* AI Suggestions Section */}
-          {isOwnedByUser && !!filteredItems.length && (
-            <PackItemSuggestions packId={pack.id} itemCount={filteredItems.length} />
-          )}
+          {isOwnedByUser && !!filteredItems.length && <PackItemSuggestions pack={pack} />}
 
           {isOwnedByUser && (
             <Button
