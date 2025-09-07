@@ -1,6 +1,6 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { catalogItems } from '@packrat/api/db/schema';
+import { catalogItems, packItems } from '@packrat/api/db/schema';
 import { CatalogItemSchema, ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { eq } from 'drizzle-orm';
@@ -56,6 +56,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
         columns: {
           id: true,
         },
+        where: eq(packItems.deleted, false),
       },
     },
   });
@@ -67,8 +68,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // Calculate usage count from related pack items
   const usageCount = item.packItems?.length || 0;
 
-  // biome-ignore lint/correctness/noUnusedVariables: removing packItems from result
-  const { packItems, ...itemData } = item;
+  const { packItems: _packItems, ...itemData } = item;
   return c.json(
     {
       ...itemData,

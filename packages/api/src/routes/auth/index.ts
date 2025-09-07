@@ -154,6 +154,7 @@ authRoutes.openapi(loginRoute, async (c) => {
   const accessToken = await generateJWT({
     payload: {
       userId: userRecord.id,
+      role: userRecord.role,
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
     },
     c,
