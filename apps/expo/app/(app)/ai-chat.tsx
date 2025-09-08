@@ -1,7 +1,6 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { FlashList } from '@shopify/flash-list';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
@@ -20,6 +19,7 @@ import {
   Dimensions,
   type NativeSyntheticEvent,
   Platform,
+  ScrollView,
   TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
@@ -72,7 +72,7 @@ export default function AIChat() {
   const textInputHeight = useSharedValue(17);
   const params = useLocalSearchParams();
   const { activeLocation } = useActiveLocation();
-  const listRef = React.useRef<FlashList<UIMessage>>(null);
+  const scrollViewRef = React.useRef<ScrollView>(null);
 
   const context = {
     itemId: params.itemId as string,
@@ -90,7 +90,7 @@ export default function AIChat() {
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
-  const { messages, setMessages, error, sendMessage, status } = useChat({
+  const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
@@ -106,6 +106,7 @@ export default function AIChat() {
       }),
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
+    experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
     messages: [
       {
         id: '1',
@@ -119,7 +120,7 @@ export default function AIChat() {
 
   const scrollToBottom = React.useCallback(() => {
     setTimeout(() => {
-      listRef.current?.scrollToOffset({ offset: 999999, animated: false });
+      scrollViewRef.current?.scrollToEnd();
     }, 100);
   }, []);
 
@@ -185,65 +186,30 @@ export default function AIChat() {
         ]}
         behavior="padding"
       >
-        <FlashList
-          ref={listRef}
+        <ScrollView
+          ref={scrollViewRef}
           onLayout={onLayout}
           onScroll={onScroll}
           onContentSizeChange={onContentSizeChange}
-          estimatedItemSize={70}
-          ListHeaderComponent={
-            <View>
-              <View style={{ height: HEADER_HEIGHT + insets.top }} />
-              <LocationSelector />
-              <DateSeparator
-                date={new Date().toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              />
-            </View>
-          }
-          ListFooterComponent={
-            <>
-              {status === 'submitted' && (
-                <ActivityIndicator
-                  size="small"
-                  color={colors.primary}
-                  className="self-start ml-4 mb-8"
-                />
-              )}
-              {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
-              {messages.length < 2 && (
-                <View className="pl-4 pr-16">
-                  <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {getContextualSuggestions(context).map((suggestion) => (
-                      <TouchableOpacity
-                        key={suggestion}
-                        onPress={() => handleSubmit(suggestion)}
-                        className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
-                      >
-                        <Text className="text-sm text-foreground">{suggestion}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              )}
-              <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
-            </>
-          }
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="handled"
           scrollIndicatorInsets={{
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
           }}
-          data={messages}
-          extraData={{ status }}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => {
+        >
+          <View>
+            <View style={{ height: HEADER_HEIGHT + insets.top }} />
+            <LocationSelector />
+            <DateSeparator
+              date={new Date().toLocaleDateString('en-US', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })}
+            />
+          </View>
+
+          {messages.map((item, index) => {
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
@@ -253,14 +219,41 @@ export default function AIChat() {
 
             return (
               <ChatBubble
+                key={item.id}
                 item={item}
                 userQuery={userQuery}
                 isLast={index === messages.length - 1}
                 status={status}
               />
             );
-          }}
-        />
+          })}
+
+          {status === 'submitted' && (
+            <ActivityIndicator
+              size="small"
+              color={colors.primary}
+              className="self-start ml-4 mb-8"
+            />
+          )}
+          {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+          {messages.length < 2 && (
+            <View className="pl-4 pr-16">
+              <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {getContextualSuggestions(context).map((suggestion) => (
+                  <TouchableOpacity
+                    key={suggestion}
+                    onPress={() => handleSubmit(suggestion)}
+                    className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
+                  >
+                    <Text className="text-sm text-foreground">{suggestion}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+          <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
+        </ScrollView>
       </KeyboardAvoidingView>
 
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
@@ -271,6 +264,7 @@ export default function AIChat() {
           handleSubmit={() => {
             handleSubmit();
           }}
+          stop={stop}
           isLoading={isLoading}
           placeholder={
             context.contextType === 'general'
@@ -323,6 +317,7 @@ function Composer({
   input,
   handleInputChange,
   handleSubmit,
+  stop,
   isLoading,
   placeholder,
 }: {
@@ -330,6 +325,7 @@ function Composer({
   input: string;
   handleInputChange: (text: string) => void;
   handleSubmit: () => void;
+  stop: () => void;
   isLoading: boolean;
   placeholder: string;
 }) {
@@ -367,26 +363,20 @@ function Composer({
           onContentSizeChange={onContentSizeChange}
           onChangeText={handleInputChange}
           value={input}
-          editable={!isLoading}
         />
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : input.length > 0 ? (
+            <Button onPress={stop} size="icon" variant="primary" className="h-7 w-7 rounded-full">
+              <Icon name="stop" size={18} color="white" />
+            </Button>
+          ) : (
             <Button
               onPress={handleSubmit}
+              disabled={!input.length}
               size="icon"
               className="ios:rounded-full h-7 w-7 rounded-full"
             >
               <Icon name="arrow-up" size={18} color="white" />
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              variant="plain"
-              className="ios:rounded-full h-7 w-7 rounded-full opacity-40"
-            >
-              <Icon name="arrow-up" size={20} color={colors.foreground} />
             </Button>
           )}
         </View>

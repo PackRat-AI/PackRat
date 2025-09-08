@@ -50,7 +50,15 @@ export class CatalogService {
     offset?: number;
     category?: string;
     sort?: {
-      field: 'name' | 'brand' | 'category' | 'price' | 'ratingValue' | 'createdAt' | 'updatedAt';
+      field:
+        | 'name'
+        | 'brand'
+        | 'category'
+        | 'price'
+        | 'ratingValue'
+        | 'createdAt'
+        | 'updatedAt'
+        | 'usage';
       order: 'asc' | 'desc';
     };
   }): Promise<{
@@ -90,8 +98,8 @@ export class CatalogService {
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Build orderBy clause
-    let orderBy = [desc(catalogItems.id)]; // default ordering
+    // Build orderBy clause with usage as default
+    let orderBy = [desc(sql`COALESCE(pack_item_counts.count, 0)`), desc(catalogItems.id)]; // default ordering by usage
     if (sort) {
       const { field, order } = sort;
       if (field === 'category') {
@@ -99,6 +107,12 @@ export class CatalogService {
           order === 'desc'
             ? desc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`)
             : asc(sql`jsonb_array_elements_text(${catalogItems.categories})[0]`),
+        ];
+      } else if (field === 'usage') {
+        orderBy = [
+          order === 'desc'
+            ? desc(sql`COALESCE(pack_item_counts.count, 0)`)
+            : asc(sql`COALESCE(pack_item_counts.count, 0)`),
         ];
       } else {
         const sortColumn = catalogItems[field];
@@ -109,12 +123,26 @@ export class CatalogService {
     }
 
     if (!limit) {
-      const items = await this.db.query.catalogItems.findMany({
-        where,
-        orderBy,
-      });
+      const items = await this.db
+        .select({
+          ...getTableColumns(catalogItems),
+          pack_item_count: sql<number>`COALESCE(pack_item_counts.count, 0)`,
+        })
+        .from(catalogItems)
+        .leftJoin(
+          sql`(
+            SELECT catalog_item_id, COUNT(*) as count
+            FROM pack_items 
+            WHERE deleted = false
+            GROUP BY catalog_item_id
+          ) as pack_item_counts`,
+          sql`pack_item_counts.catalog_item_id = ${catalogItems.id}`,
+        )
+        .where(where)
+        .orderBy(...orderBy);
+
       return {
-        items,
+        items: items.map(({ pack_item_count, ...item }) => item),
         limit: items.length,
         total: items.length,
         offset: 0,
@@ -122,15 +150,30 @@ export class CatalogService {
       };
     }
 
-    const [items, [{ totalCount }]] = await Promise.all([
-      this.db.query.catalogItems.findMany({
-        where,
-        limit,
-        offset,
-        orderBy,
-      }),
+    const [itemsWithCounts, [{ totalCount }]] = await Promise.all([
+      this.db
+        .select({
+          ...getTableColumns(catalogItems),
+          pack_item_count: sql<number>`COALESCE(pack_item_counts.count, 0)`,
+        })
+        .from(catalogItems)
+        .leftJoin(
+          sql`(
+            SELECT catalog_item_id, COUNT(*) as count
+            FROM pack_items 
+            WHERE deleted = false
+            GROUP BY catalog_item_id
+          ) as pack_item_counts`,
+          sql`pack_item_counts.catalog_item_id = ${catalogItems.id}`,
+        )
+        .where(where)
+        .orderBy(...orderBy)
+        .limit(limit)
+        .offset(offset),
       this.db.select({ totalCount: count() }).from(catalogItems).where(where),
     ]);
+
+    const items = itemsWithCounts.map(({ pack_item_count, ...item }) => item);
 
     return {
       items,

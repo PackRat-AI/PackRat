@@ -1,8 +1,9 @@
-import { neon } from '@neondatabase/serverless';
+import { Pool as NeonPool, neon } from '@neondatabase/serverless';
 import * as schema from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle as drizzleServerless } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import type { Context } from 'hono';
 import { Pool } from 'pg';
@@ -24,15 +25,19 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 // Create database connection based on URL type
-const createConnection = (url: string) => {
+const createConnection = (url: string, useNeonHttp?: boolean) => {
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL (tests)
     const pool = new Pool({ connectionString: url });
     return drizzlePg(pool, { schema });
   } else {
-    // Use Neon serverless for production
-    const sql = neon(url);
-    return drizzle(sql, { schema });
+    // Use Neon for production
+    if (useNeonHttp) {
+      const sql = neon(url);
+      return drizzle(sql, { schema });
+    }
+    const neonPool = new NeonPool({ connectionString: url });
+    return drizzleServerless(neonPool, { schema });
   }
 };
 
@@ -50,5 +55,5 @@ export const createReadOnlyDb = (c: Context) => {
 
 // Create SQL client with appropriate driver for queue workers
 export const createDbClient = (env: Env) => {
-  return createConnection(env.NEON_DATABASE_URL);
+  return createConnection(env.NEON_DATABASE_URL, true);
 };

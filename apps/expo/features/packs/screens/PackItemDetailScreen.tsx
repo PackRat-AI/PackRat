@@ -43,7 +43,7 @@ export function ItemDetailScreen() {
   // Loading state for non-owned items
   if (!isOwnedByUser && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1">
         <View className="flex-1 items-center justify-center p-4">
           <ActivityIndicator />
         </View>
@@ -54,7 +54,7 @@ export function ItemDetailScreen() {
   // Error state for non-owned packs
   if (!isOwnedByUser && isError) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1">
         <View className="flex-1 items-center justify-center p-8">
           <View className="mb-4 rounded-full bg-destructive/10 p-4">
             <Icon name="exclamation" size={32} color="text-destructive" />
@@ -118,11 +118,11 @@ export function ItemDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1">
       <ScrollView>
         <PackItemImage item={item} className="h-64 w-full" resizeMode="contain" />
 
-        <View className="mb-4 bg-card p-4">
+        <View className="mb-4 p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>
           <Text className="mb-3 text-muted-foreground">{item.category}</Text>
 
@@ -181,12 +181,12 @@ export function ItemDetailScreen() {
         {isOwnedByUser && (
           <View className="mb-8 mt-6 px-4">
             <Button
-              variant="primary"
+              variant="secondary"
               onPress={navigateToChat}
-              className="flex-row items-center justify-center rounded-full bg-primary px-4 py-3"
+              className="flex-row items-center justify-center rounded-full  px-4 py-3"
             >
-              <Icon name="message" size={20} color="white" />
-              <Text className="font-semibold text-white">Ask AI About This Item</Text>
+              <Icon name="message-outline" size={20} color="white" />
+              <Text className="text-white">Ask AI About This Item</Text>
             </Button>
           </View>
         )}
