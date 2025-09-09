@@ -3,6 +3,8 @@ import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { CatalogBrowserModal, useBulkAddCatalogItems } from 'expo-app/features/catalog';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
 import { cn } from 'expo-app/lib/cn';
@@ -21,6 +23,9 @@ export function PackDetailScreen() {
   const isOwnedByUser = usePackOwnershipCheck(id as string);
 
   const [activeTab, setActiveTab] = useState('all');
+  const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
+
+  const { addItemsToPack, isLoading: isAddingItems } = useBulkAddCatalogItems();
 
   const packFromStore = usePackDetailsFromStore(id as string); // Using user owned pack from store to ensure component updates when user modifies it
   const {
@@ -44,6 +49,12 @@ export function PackDetailScreen() {
       pathname: `/item/[id]`,
       params: { id: item.id, packId: item.packId },
     });
+  };
+
+  const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
+    if (catalogItems.length > 0) {
+      await addItemsToPack(id as string, catalogItems);
+    }
   };
 
   const getFilteredItems = () => {
@@ -223,20 +234,38 @@ export function PackDetailScreen() {
           {isOwnedByUser && !!filteredItems.length && <PackItemSuggestions pack={pack} />}
 
           {isOwnedByUser && (
-            <Button
-              className="m-4"
-              onPress={() =>
-                router.push({
-                  pathname: '/item/new',
-                  params: { packId: pack.id },
-                })
-              }
-            >
-              <Text>Add New Item</Text>
-            </Button>
+            <View className="gap-3 p-4">
+              <Button
+                variant="secondary"
+                onPress={() => setIsCatalogModalVisible(true)}
+                disabled={isAddingItems}
+              >
+                <Icon name="search" color={colors.foreground} />
+                <Text>Browse Catalog</Text>
+              </Button>
+              <Button
+                onPress={() =>
+                  router.push({
+                    pathname: '/item/new',
+                    params: { packId: pack.id },
+                  })
+                }
+                disabled={isAddingItems}
+              >
+                <Icon name="plus" color={colors.primaryForeground} />
+                <Text>Add New Item</Text>
+              </Button>
+            </View>
           )}
         </View>
       </ScrollView>
+
+      {/* Catalog Browser Modal */}
+      <CatalogBrowserModal
+        visible={isCatalogModalVisible}
+        onClose={() => setIsCatalogModalVisible(false)}
+        onItemsSelected={handleCatalogItemsSelected}
+      />
     </SafeAreaView>
   );
 }
