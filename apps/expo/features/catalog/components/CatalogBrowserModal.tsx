@@ -4,7 +4,7 @@ import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useAtom } from 'jotai';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -116,18 +116,15 @@ export function CatalogBrowserModal({
     />
   );
 
+  const ItemSeparatorComponent = useMemo(() => () => <View className="h-2" />, []);
+
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1">
         {/* Header */}
         <View className="flex-row items-center justify-between border-b border-border p-4">
           <View className="flex-row items-center">
-            <Text className="text-lg font-semibold">Browse Catalog</Text>
-            {selectedItems.size > 0 && (
-              <View className="ml-2 rounded-full bg-primary px-2 py-1">
-                <Text className="text-xs text-primary-foreground">{selectedItems.size}</Text>
-              </View>
-            )}
+            <Text>Browse Catalog</Text>
           </View>
           <TouchableOpacity onPress={handleClose}>
             <Icon name="close" size={24} color={colors.foreground} />
@@ -149,7 +146,7 @@ export function CatalogBrowserModal({
               <CategoriesFilter
                 activeFilter={activeFilter}
                 onFilter={setActiveFilter}
-                data={categories ? ['All', ...categories] : undefined}
+                data={categories ? categories : undefined}
               />
             </View>
           )}
@@ -185,6 +182,7 @@ export function CatalogBrowserModal({
               keyExtractor={(item) => item.id.toString()}
               renderItem={renderItem}
               contentContainerStyle={{ padding: 16 }}
+              ItemSeparatorComponent={ItemSeparatorComponent}
               refreshControl={
                 <RefreshControl
                   refreshing={isRefetching}
@@ -208,15 +206,11 @@ export function CatalogBrowserModal({
         {/* Bottom Actions */}
         {selectedItems.size > 0 && (
           <View className="border-t border-border bg-card p-4">
-            <View className="flex-row gap-3">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onPress={() => setSelectedItems(new Set())}
-              >
+            <View className="flex-row gap-3 items-center justify-end">
+              <Button variant="secondary" onPress={() => setSelectedItems(new Set())}>
                 <Text>Clear Selection</Text>
               </Button>
-              <Button className="flex-1" onPress={handleAddSelected}>
+              <Button onPress={handleAddSelected}>
                 <Text>Add {selectedItems.size} Items</Text>
               </Button>
             </View>
