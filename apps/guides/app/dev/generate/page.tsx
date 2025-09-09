@@ -27,6 +27,7 @@ import { Textarea } from 'guides-app/components/ui/textarea';
 import { Toaster } from 'guides-app/components/ui/toaster';
 import { toast } from 'guides-app/components/ui/use-toast';
 import { assertDefined } from 'guides-app/lib/assertDefined';
+import { searchCatalogForGuides } from 'guides-app/lib/catalogSearchClient';
 import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -53,14 +54,15 @@ type ContentCategory =
 
 type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
 
-// interface ContentRequest {
-//   title: string;
-//   description?: string;
-//   categories: ContentCategory[];
-//   difficulty?: DifficultyLevel;
-//   author?: string;
-//   generateFullContent?: boolean;
-// }
+interface ContentRequest {
+  title: string;
+  description?: string;
+  categories: ContentCategory[];
+  difficulty?: DifficultyLevel;
+  author?: string;
+  generateFullContent?: boolean;
+  includeCatalogLinks?: boolean;
+}
 
 // Category display names
 const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
@@ -94,6 +96,13 @@ export default function GeneratePage() {
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState('');
 
+  // State for catalog search functionality
+  const [includeCatalogLinks, setIncludeCatalogLinks] = useState(false);
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
+  const [catalogResults, setCatalogResults] = useState<any[]>([]);
+  const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
+  const [catalogSearching, setCatalogSearching] = useState(false);
+
   // State for batch generation
   const [batchCount, setBatchCount] = useState(5);
   const [batchCategories, setBatchCategories] = useState<ContentCategory[]>([]);
@@ -112,6 +121,81 @@ export default function GeneratePage() {
     setBatchCategories((prev) =>
       prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
     );
+  };
+
+  // Handle catalog search
+  const handleCatalogSearch = async () => {
+    if (!catalogSearchQuery.trim()) {
+      return;
+    }
+
+    setCatalogSearching(true);
+    try {
+      // Try the local dev endpoint first
+      let result;
+      try {
+        const response = await fetch(`/api/dev/catalog-search?q=${encodeURIComponent(catalogSearchQuery)}&limit=10&minRating=3.5`);
+        if (response.ok) {
+          result = await response.json();
+        }
+      } catch (localError) {
+        console.warn('Local dev endpoint not available, trying direct API call');
+      }
+      
+      // If local dev endpoint failed, try direct API call
+      if (!result) {
+        result = await searchCatalogForGuides(catalogSearchQuery, {
+          limit: 10,
+          minRating: 3.5,
+        });
+      }
+      
+      // If no items found, show mock data to demonstrate the interface
+      if (!result.items || result.items.length === 0) {
+        setCatalogResults([
+          {
+            id: 1,
+            name: `Sample Item (API Error)`,
+            brand: 'Example Brand',
+            productUrl: 'https://example.com',
+            ratingValue: 4.0,
+            categories: ['example'],
+            price: 99.99,
+          },
+        ]);
+      } else {
+        setCatalogResults(result.items);
+      }
+    } catch (error) {
+      console.warn('Catalog search failed:', error);
+      // Show mock data as fallback
+      setCatalogResults([
+        {
+          id: 1,
+          name: `Sample Item (API Error)`,
+          brand: 'Example Brand',
+          productUrl: 'https://example.com',
+          ratingValue: 4.0,
+          categories: ['example'],
+          price: 99.99,
+        },
+      ]);
+    } finally {
+      setCatalogSearching(false);
+    }
+  };
+
+  // Handle catalog item selection
+  const handleCatalogItemToggle = (itemId: number) => {
+    setSelectedCatalogItems((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
   };
 
   // Generate a single post
@@ -150,6 +234,7 @@ export default function GeneratePage() {
           difficulty,
           author: author || undefined,
           generateFullContent: generateFull,
+          includeCatalogLinks,
         }),
       });
 
@@ -232,6 +317,10 @@ export default function GeneratePage() {
     setDifficulty('All Levels');
     setAuthor('');
     setGeneratedContent('');
+    setIncludeCatalogLinks(false);
+    setCatalogSearchQuery('');
+    setCatalogResults([]);
+    setSelectedCatalogItems(new Set());
   };
 
   return (
@@ -339,6 +428,84 @@ export default function GeneratePage() {
                   />
                   <Label htmlFor="generate-full">Generate full content</Label>
                 </div>
+
+                <div className="flex items-center space-x-2">
+                  {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
+                  <Switch
+                    id="include-catalog"
+                    checked={includeCatalogLinks}
+                    onCheckedChange={setIncludeCatalogLinks}
+                  />
+                  <Label htmlFor="include-catalog">Include catalog product links</Label>
+                </div>
+
+                {includeCatalogLinks && (
+                  <div className="space-y-4 p-4 border rounded-md bg-muted/30">
+                    <div className="space-y-2">
+                      <Label htmlFor="catalog-search">Search Catalog</Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          id="catalog-search"
+                          value={catalogSearchQuery}
+                          onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                          placeholder="e.g. backpack, sleeping bag, tent"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleCatalogSearch();
+                            }
+                          }}
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={handleCatalogSearch}
+                          disabled={catalogSearching || !catalogSearchQuery.trim()}
+                        >
+                          {catalogSearching ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Searching...
+                            </>
+                          ) : (
+                            'Search'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {catalogResults.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Select items to include:</Label>
+                        <div className="max-h-48 overflow-y-auto space-y-2">
+                          {catalogResults.map((item) => (
+                            <div key={item.id} className="flex items-center space-x-2 p-2 border rounded">
+                              <Checkbox
+                                id={`catalog-item-${item.id}`}
+                                checked={selectedCatalogItems.has(item.id)}
+                                onCheckedChange={() => handleCatalogItemToggle(item.id)}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium">{item.name}</span>
+                                  {item.brand && <span className="text-sm text-muted-foreground">({item.brand})</span>}
+                                  {item.ratingValue && (
+                                    <span className="text-sm">⭐ {item.ratingValue.toFixed(1)}</span>
+                                  )}
+                                </div>
+                                {item.price && (
+                                  <div className="text-sm text-muted-foreground">${item.price.toFixed(2)}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {selectedCatalogItems.size} of {catalogResults.length} items selected
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button variant="outline" onClick={clearForm}>
