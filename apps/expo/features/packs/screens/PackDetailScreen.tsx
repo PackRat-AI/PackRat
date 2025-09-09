@@ -3,7 +3,8 @@ import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
-import { CatalogBrowserModal, useBulkAddCatalogItems } from 'expo-app/features/catalog';
+import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
+import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
@@ -240,7 +241,7 @@ export function PackDetailScreen() {
                 onPress={() => setIsCatalogModalVisible(true)}
                 disabled={isAddingItems}
               >
-                <Icon name="search" color={colors.foreground} />
+                <Icon name="magnify" color={colors.foreground} />
                 <Text>Browse Catalog</Text>
               </Button>
               <Button
@@ -252,7 +253,7 @@ export function PackDetailScreen() {
                 }
                 disabled={isAddingItems}
               >
-                <Icon name="plus" color={colors.primaryForeground} />
+                <Icon name="plus" color={colors.foreground} />
                 <Text>Add New Item</Text>
               </Button>
             </View>

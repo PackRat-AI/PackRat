@@ -35,7 +35,7 @@ export function CatalogBrowserModal({
   const { colors } = useColorScheme();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [debouncedSearchValue] = useDebounce(searchValue, 150);
 
   const isSearching = debouncedSearchValue.length > 0;
@@ -62,10 +62,7 @@ export function CatalogBrowserModal({
     data: searchResults,
     isLoading: isSearchLoading,
     error: searchError,
-  } = useVectorSearch({
-    query: debouncedSearchValue,
-    enabled: isSearching,
-  });
+  } = useVectorSearch(debouncedSearchValue);
 
   const items = isSearching
     ? searchResults || []
@@ -150,9 +147,9 @@ export function CatalogBrowserModal({
           {categories && (
             <View className="mt-3">
               <CategoriesFilter
-                categories={['All', ...categories]}
                 activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
+                onFilter={setActiveFilter}
+                data={categories ? ['All', ...categories] : undefined}
               />
             </View>
           )}
@@ -167,7 +164,7 @@ export function CatalogBrowserModal({
             </View>
           ) : error ? (
             <View className="flex-1 items-center justify-center p-4">
-              <Icon name="alert-circle" size={48} color={colors.destructive} />
+              <Icon name="exclamation" size={48} color={colors.destructive} />
               <Text className="mt-2 text-center font-semibold">Error loading items</Text>
               <Text className="mt-1 text-center text-muted-foreground">{error.message}</Text>
               <Button className="mt-4" onPress={handleRefresh}>
@@ -176,7 +173,7 @@ export function CatalogBrowserModal({
             </View>
           ) : items.length === 0 ? (
             <View className="flex-1 items-center justify-center p-4">
-              <Icon name="search" size={48} color={colors.muted} />
+              <Icon name="magnify" size={48} color={colors.grey2} />
               <Text className="mt-2 text-center font-semibold">No items found</Text>
               <Text className="mt-1 text-center text-muted-foreground">
                 {isSearching ? 'Try adjusting your search' : 'No catalog items available'}
@@ -185,7 +182,7 @@ export function CatalogBrowserModal({
           ) : (
             <FlatList
               data={items}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item.id.toString()}
               renderItem={renderItem}
               contentContainerStyle={{ padding: 16 }}
               refreshControl={
