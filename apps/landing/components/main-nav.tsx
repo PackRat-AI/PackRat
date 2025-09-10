@@ -49,6 +49,13 @@ export default function MainNav() {
 
   // Handle smooth scrolling when clicking on navigation links
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('http')) {
+      // External link → open in a new tab
+      e.preventDefault();
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     e.preventDefault();
     const targetId = href.substring(1);
     const element = document.getElementById(targetId);
@@ -56,7 +63,7 @@ export default function MainNav() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
       setActiveSection(href);
-      setIsOpen(false); // Close mobile menu after clicking
+      setIsOpen(false);
     }
   };
 
