@@ -17,6 +17,7 @@ import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
+import { GearGapAnalysisTile } from 'expo-app/features/packs/components/GearGapAnalysisTile';
 import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
 import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
 import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
@@ -71,6 +72,11 @@ const tileInfo = {
     title: 'Weight Analysis',
     keywords: ['weight', 'analysis', 'heavy', 'light'],
     component: WeightAnalysisTile,
+  },
+  'gear-gap-analysis': {
+    title: 'Gear Gap Analysis',
+    keywords: ['gear', 'gap', 'missing', 'essential', 'analysis'],
+    component: GearGapAnalysisTile,
   },
   'pack-categories': {
     title: 'Pack Categories',
@@ -172,6 +178,7 @@ export default function DashboardScreen() {
     'gap 1.5',
     'pack-stats',
     'weight-analysis',
+    'gear-gap-analysis',
     'pack-categories',
     ...(featureFlags.enableTrips ? ['gap 2', 'upcoming-trips', 'trail-conditions'] : []),
     'gap 2.5',

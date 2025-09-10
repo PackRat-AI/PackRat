@@ -83,6 +83,14 @@ export default function AppLayout() {
         }}
       />
       <Stack.Screen
+        name="gear-gap-analysis"
+        options={{
+          headerShown: false,
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
         name="pack-categories/[id]"
         options={{
           headerShown: false,
