@@ -10,6 +10,7 @@ import {
 } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { PackWithWeightsSchema, UpdatePackRequestSchema } from '@packrat/api/schemas/packs';
+import { GearGapAnalysisService } from '@packrat/api/services/gearGapAnalysisService';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
@@ -343,6 +344,127 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     .limit(5);
 
   return c.json(similarItems, 200);
+});
+
+// Gear Gap Analysis Route
+const gearGapAnalysisRoute = createRoute({
+  method: 'post',
+  path: '/{packId}/gap-analysis',
+  tags: ['Packs'],
+  summary: 'Get gear gap analysis for pack',
+  description: 'Analyze a pack to identify missing essential items for a specific activity type',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            activityType: z
+              .enum([
+                'hiking',
+                'backpacking',
+                'camping',
+                'climbing',
+                'winter',
+                'desert',
+                'water sports',
+                'skiing',
+                'custom',
+              ])
+              .openapi({
+                example: 'hiking',
+                description: 'Type of outdoor activity to analyze gear for',
+              }),
+          }),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Gear gap analysis completed successfully',
+      content: {
+        'application/json': {
+          schema: z.object({
+            activityType: z.string(),
+            completionPercentage: z.number(),
+            summary: z.object({
+              essentialMissing: z.number(),
+              recommendedMissing: z.number(),
+              optionalMissing: z.number(),
+            }),
+            missingItems: z.array(
+              z.object({
+                name: z.string(),
+                category: z.string(),
+                priority: z.enum(['essential', 'recommended', 'optional']),
+                description: z.string().optional(),
+                alternatives: z.array(z.string()).optional(),
+              }),
+            ),
+            missingByCategory: z.record(
+              z.array(
+                z.object({
+                  name: z.string(),
+                  category: z.string(),
+                  priority: z.enum(['essential', 'recommended', 'optional']),
+                  description: z.string().optional(),
+                  alternatives: z.array(z.string()).optional(),
+                }),
+              ),
+            ),
+          }),
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+packRoutes.openapi(gearGapAnalysisRoute, async (c) => {
+  try {
+    const packId = c.req.param('packId');
+    const { activityType } = await c.req.json();
+
+    const pack = await getPackDetails({ packId, c });
+    if (!pack) {
+      return c.json({ error: 'Pack not found' }, 404);
+    }
+
+    // Extract existing items with name and category
+    const existingItems = pack.items.map((item) => ({
+      name: item.name,
+      category: item.category || 'Other',
+    }));
+
+    // Perform gear gap analysis
+    const gearGapService = new GearGapAnalysisService();
+    const analysis = gearGapService.analyzeGearGap(existingItems, activityType);
+
+    return c.json(analysis, 200);
+  } catch (error) {
+    console.error('Gear gap analysis API error:', error);
+    return c.json({ error: 'Failed to perform gear gap analysis' }, 500);
+  }
 });
 
 const weightHistoryRoute = createRoute({
