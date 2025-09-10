@@ -159,10 +159,6 @@ export const GapAnalysisRequestSchema = z
       example: '3 days',
       description: 'Trip duration for context',
     }),
-    season: z.string().optional().openapi({
-      example: 'Summer',
-      description: 'Season for weather-appropriate suggestions',
-    }),
   })
   .openapi('GapAnalysisRequest');
 

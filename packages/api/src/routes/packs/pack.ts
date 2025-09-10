@@ -502,7 +502,7 @@ packRoutes.openapi(gapAnalysisRoute, async (c) => {
 
   try {
     const body = await c.req.json().catch(() => ({}));
-    const { destination, tripType, duration, season } = body;
+    const { destination, tripType, duration } = body;
 
     // Get pack details with items
     const pack = await getPackDetails({ packId, c });
@@ -556,7 +556,6 @@ Trip Context:
 - Destination: ${destination || 'Not specified'} 
 - Trip Type: ${tripType || 'Not specified'}
 - Duration: ${duration || 'Not specified'}
-- Season: ${season || 'Not specified'}
 
 ${weatherContext}
 
