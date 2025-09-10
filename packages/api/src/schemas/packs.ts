@@ -159,6 +159,14 @@ export const GapAnalysisRequestSchema = z
       example: '3 days',
       description: 'Trip duration for context',
     }),
+    startDate: z.string().optional().openapi({
+      example: '2024-07-15',
+      description: 'Planned start date of the trip (YYYY-MM-DD)',
+    }),
+    endDate: z.string().optional().openapi({
+      example: '2024-07-18',
+      description: 'Planned end date of the trip (YYYY-MM-DD)',
+    }),
   })
   .openapi('GapAnalysisRequest');
 

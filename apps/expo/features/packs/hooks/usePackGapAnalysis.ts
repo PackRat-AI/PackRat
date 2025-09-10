@@ -5,6 +5,8 @@ export interface GapAnalysisRequest {
   destination?: string;
   tripType?: string;
   duration?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface GapAnalysisItem {

@@ -502,7 +502,7 @@ packRoutes.openapi(gapAnalysisRoute, async (c) => {
 
   try {
     const body = await c.req.json().catch(() => ({}));
-    const { destination, tripType, duration } = body;
+    const { destination, tripType, duration, startDate, endDate } = body;
 
     // Get pack details with items
     const pack = await getPackDetails({ packId, c });
@@ -556,6 +556,8 @@ Trip Context:
 - Destination: ${destination || 'Not specified'} 
 - Trip Type: ${tripType || 'Not specified'}
 - Duration: ${duration || 'Not specified'}
+- Start Date: ${startDate || 'Not specified'}
+- End Date: ${endDate || 'Not specified'}
 
 ${weatherContext}
 
@@ -584,7 +586,7 @@ Analyze this pack and return a JSON response with the following structure:
 
 Focus on:
 1. Safety essentials (first aid, navigation, emergency shelter)
-2. Weather protection appropriate for the conditions
+2. Weather protection appropriate for the conditions and season 
 3. Basic comfort items for the trip duration
 4. Food and water considerations 
 5. Trip-specific gear based on destination and activity type
