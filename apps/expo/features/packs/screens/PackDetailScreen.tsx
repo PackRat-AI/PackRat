@@ -17,6 +17,7 @@ import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-n
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
+import { useActiveLocation } from 'expo-app/features/weather/hooks';
 
 export function PackDetailScreen() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export function PackDetailScreen() {
   const [activeTab, setActiveTab] = useState('all');
   const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
+  const { activeLocation } = useActiveLocation();
 
   const { addItemsToPack, isLoading: isAddingItems } = useBulkAddCatalogItems();
   const {
@@ -82,7 +84,9 @@ export function PackDetailScreen() {
     analyzeGaps({
       packId: id as string,
       context: {
-        // You could add location/context here from user preferences or current location
+        destination: activeLocation?.name,
+        tripType: pack.category,
+        startDate: new Date().toISOString().split('T')[0],
       },
     });
   };
