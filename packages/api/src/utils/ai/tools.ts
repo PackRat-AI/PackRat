@@ -161,8 +161,8 @@ export function createTools(c: Context, userId: number) {
       },
     }),
 
-    semanticCatalogSearch: tool({
-      description: 'Search the comprehensive gear database using semantic search.',
+    catalogVectorSearch: tool({
+      description: 'Search the comprehensive gear database using vector search.',
       inputSchema: z.object({
         query: z.string().min(1).describe('Search query to find catalog items'),
         limit: z
@@ -175,19 +175,19 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, limit, offset }) => {
         try {
-          const data = await catalogService.semanticSearch(query, limit || 10, offset || 0);
+          const data = await catalogService.vectorSearch(query, limit || 10, offset || 0);
           return {
             success: true,
             data,
           };
         } catch (error) {
-          console.error('semanticCatalogSearch tool error', error);
-          sentry.setTag('location', 'ai-tool-call/semanticCatalogSearch');
+          console.error('catalogVectorSearch tool error', error);
+          sentry.setTag('location', 'ai-tool-call/catalogVectorSearch');
           sentry.setContext('meta', { query });
           sentry.captureException(error);
           return {
             success: false,
-            error: error instanceof Error ? error.message : 'Failed to perform semantic search',
+            error: error instanceof Error ? error.message : 'Failed to perform vector search',
           };
         }
       },

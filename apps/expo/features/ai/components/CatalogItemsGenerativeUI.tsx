@@ -29,7 +29,7 @@ type CatalogItemsToolInput = {
 };
 
 export type CatalogItemsTool = {
-  type: 'tool-getCatalogItems' | 'tool-semanticCatalogSearch';
+  type: 'tool-getCatalogItems' | 'tool-catalogVectorSearch';
 } & ToolInvocation<CatalogItemsToolInput, CatalogItemsToolOutput>;
 
 interface CatalogItemsGenerativeUIProps {

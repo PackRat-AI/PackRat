@@ -33,7 +33,7 @@ export function ToolInvocationRenderer({ toolInvocation }: ToolInvocationRendere
     case 'tool-getWeatherForLocation':
       return <WeatherGenerativeUI toolInvocation={tool} />;
     case 'tool-getCatalogItems':
-    case 'tool-semanticCatalogSearch':
+    case 'tool-catalogVectorSearch':
       return <CatalogItemsGenerativeUI toolInvocation={tool} />;
     case 'tool-searchPackratOutdoorGuidesRAG':
       return <GuidesRAGGenerativeUI toolInvocation={tool} />;

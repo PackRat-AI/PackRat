@@ -184,7 +184,7 @@ export class CatalogService {
     };
   }
 
-  async semanticSearch(
+  async vectorSearch(
     q: string,
     limit: number = 10,
     offset: number = 0,
@@ -256,7 +256,7 @@ export class CatalogService {
     };
   }
 
-  async batchSemanticSearch(
+  async batchVectorSearch(
     queries: string[],
     limit: number = 5,
   ): Promise<{

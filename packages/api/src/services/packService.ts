@@ -68,7 +68,7 @@ const finalPackSchema = z.object({
 
 type FinalPack = z.infer<typeof finalPackSchema>;
 
-type SemanticSearchResult = (CatalogItem & { similarity: number })[][];
+type VectorSearchResult = (CatalogItem & { similarity: number })[][];
 
 export class PackService {
   private db;
@@ -184,9 +184,9 @@ export class PackService {
     return object;
   }
 
-  private async searchCatalog(items: string[]): Promise<SemanticSearchResult> {
+  private async searchCatalog(items: string[]): Promise<VectorSearchResult> {
     const catalogService = new CatalogService(this.c);
-    const searchResults = await catalogService.batchSemanticSearch(items);
+    const searchResults = await catalogService.batchVectorSearch(items);
     // Map each group to add the missing fields back
     return searchResults.items.map((group) =>
       group.map((item) => ({
