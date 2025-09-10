@@ -6,6 +6,7 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
+import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
 import { cn } from 'expo-app/lib/cn';
@@ -13,7 +14,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { usePackDetailsFromApi, usePackDetailsFromStore } from '../hooks';
+import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
 
@@ -25,8 +26,15 @@ export function PackDetailScreen() {
 
   const [activeTab, setActiveTab] = useState('all');
   const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
+  const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
 
   const { addItemsToPack, isLoading: isAddingItems } = useBulkAddCatalogItems();
+  const {
+    mutate: analyzeGaps,
+    data: gapAnalysis,
+    isPending: isAnalyzing,
+    reset: resetAnalysis,
+  } = usePackGapAnalysis();
 
   const packFromStore = usePackDetailsFromStore(id as string); // Using user owned pack from store to ensure component updates when user modifies it
   const {
@@ -56,6 +64,35 @@ export function PackDetailScreen() {
     if (catalogItems.length > 0) {
       await addItemsToPack(id as string, catalogItems);
     }
+  };
+
+  const handleAnalyzeGaps = () => {
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: `/pack/${pack.id}`,
+          showSignInCopy: 'true',
+        },
+      });
+    }
+
+    resetAnalysis();
+    setIsGapAnalysisModalVisible(true);
+    analyzeGaps({
+      packId: id as string,
+      context: {
+        // You could add location/context here from user preferences or current location
+      },
+    });
+  };
+
+  const handleRetryAnalysis = () => {
+    resetAnalysis();
+    analyzeGaps({
+      packId: id as string,
+      context: {},
+    });
   };
 
   const getFilteredItems = () => {
@@ -169,39 +206,48 @@ export function PackDetailScreen() {
 
         <View>
           <View className="p-4">
-            <Button
-              variant="secondary"
-              onPress={() => {
-                if (!isAuthed.peek()) {
-                  return router.push({
-                    pathname: '/auth',
+            <View className="gap-3">
+              <Button
+                variant="secondary"
+                onPress={() => {
+                  if (!isAuthed.peek()) {
+                    return router.push({
+                      pathname: '/auth',
+                      params: {
+                        redirectTo: JSON.stringify({
+                          pathname: '/ai-chat',
+                          params: {
+                            packId: id,
+                            packName: pack.name,
+                            contextType: 'pack',
+                          },
+                        }),
+                        showSignInCopy: 'true',
+                      },
+                    });
+                  }
+
+                  router.push({
+                    pathname: '/ai-chat',
                     params: {
-                      redirectTo: JSON.stringify({
-                        pathname: '/ai-chat',
-                        params: {
-                          packId: id,
-                          packName: pack.name,
-                          contextType: 'pack',
-                        },
-                      }),
-                      showSignInCopy: 'true',
+                      packId: id,
+                      packName: pack.name,
+                      contextType: 'pack',
                     },
                   });
-                }
+                }}
+              >
+                <Icon name="message-outline" color={colors.foreground} />
+                <Text>Ask AI</Text>
+              </Button>
 
-                router.push({
-                  pathname: '/ai-chat',
-                  params: {
-                    packId: id,
-                    packName: pack.name,
-                    contextType: 'pack',
-                  },
-                });
-              }}
-            >
-              <Icon name="message-outline" color={colors.foreground} />
-              <Text>Ask AI</Text>
-            </Button>
+              {isOwnedByUser && (
+                <Button variant="secondary" onPress={handleAnalyzeGaps} disabled={isAnalyzing}>
+                  <Icon name="magnify-scan" color={colors.foreground} />
+                  <Text>{isAnalyzing ? 'Analyzing...' : 'Analyze Gaps'}</Text>
+                </Button>
+              )}
+            </View>
           </View>
 
           <View className="flex-row border-b border-border">
@@ -266,6 +312,16 @@ export function PackDetailScreen() {
         visible={isCatalogModalVisible}
         onClose={() => setIsCatalogModalVisible(false)}
         onItemsSelected={handleCatalogItemsSelected}
+      />
+
+      {/* Gap Analysis Modal */}
+      <GapAnalysisModal
+        visible={isGapAnalysisModalVisible}
+        onClose={() => setIsGapAnalysisModalVisible(false)}
+        pack={pack}
+        analysis={gapAnalysis || null}
+        isLoading={isAnalyzing}
+        onRetry={handleRetryAnalysis}
       />
     </SafeAreaView>
   );

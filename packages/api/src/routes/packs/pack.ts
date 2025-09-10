@@ -9,9 +9,15 @@ import {
   packWeightHistory,
 } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
-import { PackWithWeightsSchema, UpdatePackRequestSchema } from '@packrat/api/schemas/packs';
+import {
+  GapAnalysisRequestSchema,
+  GapAnalysisResponseSchema,
+  PackWithWeightsSchema,
+  UpdatePackRequestSchema,
+} from '@packrat/api/schemas/packs';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
+import { createTools } from '@packrat/api/utils/ai/tools';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
@@ -432,3 +438,205 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
 });
 
 export { packRoutes };
+
+const gapAnalysisRoute = createRoute({
+  method: 'post',
+  path: '/{packId}/gap-analysis',
+  tags: ['Packs'],
+  summary: 'Analyze gear gaps in pack',
+  description:
+    'Use AI to analyze the pack contents and identify missing gear based on trip context and destination',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: GapAnalysisRequestSchema,
+        },
+      },
+      required: false,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Gap analysis completed successfully',
+      content: {
+        'application/json': {
+          schema: GapAnalysisResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - invalid pack or insufficient data',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+packRoutes.openapi(gapAnalysisRoute, async (c) => {
+  const auth = c.get('user');
+  const packId = c.req.param('packId');
+
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    const { location, destination, tripType, duration, season } = body;
+
+    // Get pack details with items
+    const pack = await getPackDetails({ packId, c });
+    if (!pack) {
+      return c.json({ error: 'Pack not found' }, 404);
+    }
+
+    // Check if pack belongs to user (for owned packs) or is public
+    const isOwned = pack.userId === auth.userId;
+    if (!isOwned && !pack.isPublic) {
+      return c.json({ error: 'Pack not accessible' }, 404);
+    }
+
+    if (!pack.items || pack.items.length === 0) {
+      return c.json({ error: 'Pack has no items to analyze' }, 400);
+    }
+
+    // Build context for AI analysis - context data to be used in prompt
+    // Data is embedded directly in the prompt below
+
+    // Use AI tools to analyze gaps
+    const tools = createTools(c, auth.userId);
+
+    // Get weather context if location provided
+    let weatherContext = '';
+    if (location) {
+      try {
+        const weatherResult = await tools.getWeatherForLocation.execute({ location });
+        if (weatherResult.success) {
+          weatherContext = `Current weather in ${location}: ${JSON.stringify(weatherResult.data)}`;
+        }
+      } catch (error) {
+        console.warn('Weather lookup failed:', error);
+      }
+    }
+
+    // Prepare the gap analysis prompt
+    const gapAnalysisPrompt = `
+You are analyzing a hiking pack for gear gaps. Based on the pack contents and context, identify missing items that could improve safety, comfort, or preparedness.
+
+Pack Details:
+- Name: ${pack.name}
+- Category: ${pack.category || 'General'}
+- Description: ${pack.description || 'No description'}
+- Tags: ${pack.tags?.join(', ') || 'None'}
+- Total Weight: ${pack.totalWeight || 0}g
+- Base Weight: ${pack.baseWeight || 0}g
+- Item Count: ${pack.items.length}
+
+Trip Context:
+- Location: ${location || 'Not specified'}
+- Destination: ${destination || 'Not specified'} 
+- Trip Type: ${tripType || 'Not specified'}
+- Duration: ${duration || 'Not specified'}
+- Season: ${season || 'Not specified'}
+
+${weatherContext}
+
+Current Items in Pack:
+${pack.items
+  .map(
+    (item) =>
+      `- ${item.name} (${item.category || 'Uncategorized'}, ${item.weight}g, qty: ${item.quantity}${item.worn ? ', worn' : ''}${item.consumable ? ', consumable' : ''})`,
+  )
+  .join('\n')}
+
+Categories represented: ${Array.from(new Set(pack.items.map((item) => item.category).filter(Boolean))).join(', ')}
+
+Analyze this pack and return a JSON response with the following structure:
+{
+  "gaps": [
+    {
+      "suggestion": "Item name",
+      "reason": "Detailed explanation of why this item is recommended",
+      "category": "Item category",
+      "priority": "high|medium|low"
+    }
+  ],
+  "summary": "Brief overall assessment of the pack's preparedness"
+}
+
+Focus on:
+1. Safety essentials (first aid, navigation, emergency shelter)
+2. Weather protection appropriate for the conditions
+3. Basic comfort items for the trip duration
+4. Food and water considerations 
+5. Trip-specific gear based on destination and activity type
+
+Limit to maximum 6 recommendations, prioritizing the most important gaps. Only suggest items that are truly missing or inadequate for the described conditions.`;
+
+    // Call the AI for gap analysis
+    const { createAIProvider } = await import('@packrat/api/utils/ai/provider');
+    const { generateObject } = await import('ai');
+    const { getEnv } = await import('@packrat/api/utils/env-validation');
+    const { DEFAULT_MODELS } = await import('@packrat/api/utils/ai/models');
+
+    const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
+      getEnv(c);
+
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareAiBinding: AI,
+    });
+
+    if (!aiProvider) {
+      return c.json({ error: 'AI provider not configured' }, 500);
+    }
+
+    const result = await generateObject({
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
+      prompt: gapAnalysisPrompt,
+      schema: z.object({
+        gaps: z.array(
+          z.object({
+            suggestion: z.string(),
+            reason: z.string(),
+            category: z.string().optional(),
+            priority: z.enum(['high', 'medium', 'low']).optional(),
+          }),
+        ),
+        summary: z.string().optional(),
+      }),
+      temperature: 0.3, // Lower temperature for more consistent analysis
+    });
+
+    return c.json(result.object, 200);
+  } catch (error) {
+    console.error('Gap analysis error:', error);
+    c.get('sentry')?.setTag('location', 'gap-analysis');
+    c.get('sentry')?.setContext('meta', { packId });
+    c.get('sentry')?.captureException(error);
+    return c.json({ error: 'Failed to analyze gear gaps' }, 500);
+  }
+});

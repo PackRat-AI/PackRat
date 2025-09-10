@@ -144,3 +144,62 @@ export const ItemSuggestionsResponseSchema = z
     ),
   })
   .openapi('ItemSuggestionsResponse');
+
+export const GapAnalysisRequestSchema = z
+  .object({
+    location: z.string().optional().openapi({
+      example: 'Yosemite National Park',
+      description: 'Optional location for context-aware gap analysis',
+    }),
+    destination: z.string().optional().openapi({
+      example: 'Half Dome trail',
+      description: 'Optional destination for more specific recommendations',
+    }),
+    tripType: z.string().optional().openapi({
+      example: 'Day hike',
+      description: 'Type of trip (e.g., day hike, backpacking, car camping)',
+    }),
+    duration: z.string().optional().openapi({
+      example: '3 days',
+      description: 'Trip duration for context',
+    }),
+    season: z.string().optional().openapi({
+      example: 'Summer',
+      description: 'Season for weather-appropriate suggestions',
+    }),
+  })
+  .openapi('GapAnalysisRequest');
+
+export const GapAnalysisItemSchema = z
+  .object({
+    suggestion: z.string().openapi({
+      example: 'Sleeping pad',
+      description: 'Name of the missing gear item',
+    }),
+    reason: z.string().openapi({
+      example: 'You have a sleeping bag but no insulation from the ground',
+      description: 'Explanation of why this item is recommended',
+    }),
+    category: z.string().optional().openapi({
+      example: 'Sleep System',
+      description: 'Category of the missing item',
+    }),
+    priority: z.enum(['high', 'medium', 'low']).optional().openapi({
+      example: 'high',
+      description: 'Priority level of the missing item',
+    }),
+  })
+  .openapi('GapAnalysisItem');
+
+export const GapAnalysisResponseSchema = z
+  .object({
+    gaps: z.array(GapAnalysisItemSchema).openapi({
+      description: 'List of identified gaps in the pack',
+    }),
+    summary: z.string().optional().openapi({
+      example:
+        'Your pack looks well-prepared for day hiking, but you might want to consider a few additions for safety and comfort.',
+      description: 'Overall summary of the gap analysis',
+    }),
+  })
+  .openapi('GapAnalysisResponse');
