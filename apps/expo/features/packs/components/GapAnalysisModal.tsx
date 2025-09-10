@@ -58,7 +58,7 @@ export function GapAnalysisModal({
       case 'medium':
         return 'alert-circle';
       case 'low':
-        return 'info';
+        return 'circle';
       default:
         return 'circle';
     }
@@ -123,19 +123,14 @@ export function GapAnalysisModal({
                             )}
                             <Text className="mt-2 text-sm text-muted-foreground">{gap.reason}</Text>
                           </View>
-                          <Icon
-                            name="chevron-right"
-                            size={16}
-                            color={colors.mutedForeground}
-                            className="ml-2 flex-shrink-0"
-                          />
+                          <Icon name="chevron-right" size={16} color={colors.foreground} />
                         </View>
                       </TouchableOpacity>
                     ))}
                   </View>
                 ) : (
                   <View className="items-center py-8">
-                    <Icon name="check-circle" size={48} color={colors.success} />
+                    <Icon name="check-circle" size={48} color={colors.primary} />
                     <Text className="mt-4 text-center font-medium text-foreground">
                       Pack Looks Complete!
                     </Text>

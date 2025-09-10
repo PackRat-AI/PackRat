@@ -123,7 +123,7 @@ export function GapItemCatalogSuggestions({
                       />
                     ) : (
                       <View className="h-16 w-16 items-center justify-center rounded-md bg-muted">
-                        <Icon name="image" size={24} color={colors.mutedForeground} />
+                        <Icon name="image" size={24} color={colors.foreground} />
                       </View>
                     )}
 
@@ -172,7 +172,7 @@ export function GapItemCatalogSuggestions({
             </View>
           ) : (
             <View className="flex-1 items-center justify-center py-8">
-              <Icon name="search" size={48} color={colors.mutedForeground} />
+              <Icon name="search" size={48} color={colors.foreground} />
               <Text className="mt-4 text-center font-medium text-foreground">No Items Found</Text>
               <Text className="mt-2 text-center text-sm text-muted-foreground">
                 No catalog items found for "{gapItem.suggestion}". Try browsing manually.
