@@ -17,7 +17,6 @@ import {
 } from '@packrat/api/schemas/packs';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { createTools } from '@packrat/api/utils/ai/tools';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
@@ -499,6 +498,8 @@ const gapAnalysisRoute = createRoute({
 packRoutes.openapi(gapAnalysisRoute, async (c) => {
   const auth = c.get('user');
   const packId = c.req.param('packId');
+  const { WeatherService } = await import('@packrat/api/services/weatherService');
+  const weatherService = new WeatherService(c);
 
   try {
     const body = await c.req.json().catch(() => ({}));
@@ -523,14 +524,11 @@ packRoutes.openapi(gapAnalysisRoute, async (c) => {
     // Build context for AI analysis - context data to be used in prompt
     // Data is embedded directly in the prompt below
 
-    // Use AI tools to analyze gaps
-    const tools = createTools(c, auth.userId);
-
     // Get weather context if location provided
     let weatherContext = '';
-    if (location) {
+    if (destination) {
       try {
-        const weatherResult = await tools.getWeatherForLocation.execute({ location });
+        const weatherResult = await weatherService.getWeatherForLocation(destination);
         if (weatherResult.success) {
           weatherContext = `Current weather in ${location}: ${JSON.stringify(weatherResult.data)}`;
         }
