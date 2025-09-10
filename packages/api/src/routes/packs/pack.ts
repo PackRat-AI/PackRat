@@ -510,10 +510,10 @@ packRoutes.openapi(gapAnalysisRoute, async (c) => {
       return c.json({ error: 'Pack not found' }, 404);
     }
 
-    // Check if pack belongs to user (for owned packs) or is public
+    // Check if pack belongs to user
     const isOwned = pack.userId === auth.userId;
-    if (!isOwned && !pack.isPublic) {
-      return c.json({ error: 'Pack not accessible' }, 404);
+    if (!isOwned) {
+      return c.json({ error: 'Forbidden' }, 403);
     }
 
     if (!pack.items || pack.items.length === 0) {
