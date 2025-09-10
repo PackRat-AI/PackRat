@@ -147,10 +147,6 @@ export const ItemSuggestionsResponseSchema = z
 
 export const GapAnalysisRequestSchema = z
   .object({
-    location: z.string().optional().openapi({
-      example: 'Yosemite National Park',
-      description: 'Optional location for context-aware gap analysis',
-    }),
     destination: z.string().optional().openapi({
       example: 'Half Dome trail',
       description: 'Optional destination for more specific recommendations',

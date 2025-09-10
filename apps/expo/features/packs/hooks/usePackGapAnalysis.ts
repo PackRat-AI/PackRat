@@ -2,7 +2,6 @@ import { useMutation } from '@tanstack/react-query';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 
 export interface GapAnalysisRequest {
-  location?: string;
   destination?: string;
   tripType?: string;
   duration?: string;
