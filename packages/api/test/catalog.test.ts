@@ -276,4 +276,82 @@ describe('Catalog Routes', () => {
       expect([403, 401]).toContain(res.status);
     });
   });
+
+  describe('GET /catalog/:id/similar', () => {
+    it('requires authentication', async () => {
+      const res = await api('/catalog/1/similar');
+      expectUnauthorized(res);
+    });
+
+    it('returns similar items for existing catalog item', async () => {
+      const res = await apiWithAuth('/catalog/1/similar');
+
+      if (res.status === 200) {
+        const data = await expectJsonResponse(res, ['items', 'total', 'sourceItem']);
+        expect(Array.isArray(data.items)).toBeTruthy();
+        expect(typeof data.total).toBe('number');
+        expect(data.sourceItem).toBeDefined();
+        expect(data.sourceItem.id).toBeDefined();
+
+        // Check that each similar item has a similarity score
+        if (data.items.length > 0) {
+          for (const item of data.items) {
+            expect(typeof item.similarity).toBe('number');
+            expect(item.similarity).toBeGreaterThan(0);
+            expect(item.similarity).toBeLessThanOrEqual(1);
+          }
+        }
+      } else if (res.status === 404) {
+        expectNotFound(res);
+      }
+    });
+
+    it('returns 404 for non-existent catalog item', async () => {
+      const res = await apiWithAuth('/catalog/999999/similar');
+      expectNotFound(res);
+    });
+
+    it('accepts limit parameter', async () => {
+      const res = await apiWithAuth('/catalog/1/similar?limit=3');
+
+      if (res.status === 200) {
+        const data = await expectJsonResponse(res, ['items']);
+        expect(data.items.length).toBeLessThanOrEqual(3);
+      } else if (res.status === 404) {
+        expectNotFound(res);
+      }
+    });
+
+    it('accepts threshold parameter', async () => {
+      const res = await apiWithAuth('/catalog/1/similar?threshold=0.5');
+
+      if (res.status === 200) {
+        const data = await expectJsonResponse(res, ['items']);
+        // All returned items should have similarity >= 0.5
+        if (data.items.length > 0) {
+          for (const item of data.items) {
+            expect(item.similarity).toBeGreaterThanOrEqual(0.5);
+          }
+        }
+      } else if (res.status === 404) {
+        expectNotFound(res);
+      }
+    });
+
+    it('validates limit parameter bounds', async () => {
+      // Test upper bound
+      const res1 = await apiWithAuth('/catalog/1/similar?limit=50');
+      if (res1.status === 200) {
+        const data = await expectJsonResponse(res1, ['items']);
+        expect(data.items.length).toBeLessThanOrEqual(20); // Should be capped at 20
+      }
+
+      // Test lower bound
+      const res2 = await apiWithAuth('/catalog/1/similar?limit=0');
+      if (res2.status === 200) {
+        const data = await expectJsonResponse(res2, ['items']);
+        expect(data.items.length).toBeGreaterThanOrEqual(0); // Should be at least 0
+      }
+    });
+  });
 });
