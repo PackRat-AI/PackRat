@@ -2,7 +2,6 @@ import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
-import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -41,36 +40,58 @@ export function GapAnalysisModal({
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'high':
-        return 'text-red-600';
+        return colors.destructive;
       case 'medium':
-        return 'text-yellow-600';
+        return colors.yellow;
       case 'low':
-        return 'text-green-600';
-      default:
-        return 'text-muted-foreground';
+        return colors.grey2;
     }
   };
 
   const getPriorityIcon = (priority?: string) => {
     switch (priority) {
       case 'high':
-        return 'alert-triangle';
+        return {
+          ios: { name: 'exclamationmark.triangle.fill' as const },
+          materialIcon: {
+            type: 'MaterialCommunityIcons' as const,
+            name: 'alert-circle' as const,
+          },
+        };
       case 'medium':
-        return 'alert-circle';
+        return {
+          ios: { name: 'exclamationmark.circle.fill' as const },
+          materialIcon: {
+            type: 'MaterialCommunityIcons' as const,
+            name: 'alert-circle-outline' as const,
+          },
+        };
       case 'low':
-        return 'circle';
+        return {
+          ios: { name: 'circle.fill' as const },
+          materialIcon: {
+            type: 'MaterialCommunityIcons' as const,
+            name: 'circle' as const,
+          },
+        };
       default:
-        return 'circle';
+        return {
+          ios: { name: 'circle' as const },
+          materialIcon: {
+            type: 'MaterialCommunityIcons' as const,
+            name: 'circle-outline' as const,
+          },
+        };
     }
   };
 
   return (
     <>
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-        <View className="flex-1 bg-background">
+        <View className="flex-1">
           {/* Header */}
           <View className="flex-row items-center justify-between border-b border-border p-4">
-            <Text className="text-lg font-semibold">Gap Analysis</Text>
+            <Text>Gap Analysis</Text>
             <TouchableOpacity onPress={onClose} className="p-1">
               <Icon name="close" size={24} color={colors.foreground} />
             </TouchableOpacity>
@@ -109,11 +130,19 @@ export function GapAnalysisModal({
                             <View className="flex-row items-center gap-2">
                               <Text className="font-medium text-foreground">{gap.suggestion}</Text>
                               {gap.priority && (
-                                <Icon
-                                  name={getPriorityIcon(gap.priority)}
-                                  size={14}
-                                  className={cn('flex-shrink-0', getPriorityColor(gap.priority))}
-                                />
+                                <View className="flex-row items-center gap-2 rounded-full border border-border bg-transparent px-2 py-0.5">
+                                  <Icon
+                                    {...getPriorityIcon(gap.priority)}
+                                    size={14}
+                                    color={getPriorityColor(gap.priority)}
+                                  />
+                                  <Text
+                                    className="text-xs font-medium"
+                                    style={{ color: getPriorityColor(gap.priority) }}
+                                  >
+                                    {gap.priority.charAt(0).toUpperCase() + gap.priority.slice(1)}
+                                  </Text>
+                                </View>
                               )}
                             </View>
                             {gap.category && (
