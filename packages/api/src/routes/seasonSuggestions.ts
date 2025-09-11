@@ -141,6 +141,22 @@ Respond with a JSON object containing an array of pack suggestions. Each suggest
 - season: the season this pack is for
 - activityType: type of activity (e.g., "Day Hiking", "Overnight Backpacking")
 
+Example format:
+{
+  "suggestions": [
+    {
+      "name": "Summer Day Hike Pack",
+      "description": "Perfect for warm summer day hikes",
+      "items": [
+        {"id": 123, "name": "Water Bottle", "quantity": 2, "reason": "Extra hydration for hot weather"},
+        {"id": 456, "name": "Sun Hat", "quantity": 1, "reason": "Protection from UV rays"}
+      ],
+      "season": "Summer",
+      "activityType": "Day Hiking"
+    }
+  ]
+}
+
 Ensure all item IDs match items from the provided inventory list.`;
 
     const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =

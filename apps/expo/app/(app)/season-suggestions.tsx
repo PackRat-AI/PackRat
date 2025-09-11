@@ -116,9 +116,11 @@ export default function SeasonSuggestionsScreen() {
               </Button>
 
               {!activeLocation && (
-                <Text variant="caption" className="text-center text-muted-foreground">
-                  Please set your location in Weather settings to generate suggestions
-                </Text>
+                <View className="mt-2 rounded-xl border border-yellow-200 bg-yellow-50 p-3">
+                  <Text variant="caption" className="text-center text-yellow-800">
+                    Please set your location in Weather settings to generate suggestions
+                  </Text>
+                </View>
               )}
             </View>
           )}
