@@ -3,7 +3,17 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
 import { CatalogItemSchema, ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { cosineDistance, desc, eq, getTableColumns, gt, ne, sql } from 'drizzle-orm';
+import {
+  and,
+  cosineDistance,
+  desc,
+  eq,
+  getTableColumns,
+  gt,
+  isNotNull,
+  ne,
+  sql,
+} from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -97,7 +107,11 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     })
     .from(catalogItems)
     .where(
-      sql`${gt(similarity, threshold)} AND ${ne(catalogItems.id, itemId)} AND ${catalogItems.embedding} IS NOT NULL`,
+      and(
+        gt(similarity, threshold),
+        ne(catalogItems.id, itemId),
+        isNotNull(catalogItems.embedding),
+      ),
     )
     .orderBy(desc(similarity))
     .limit(validLimit);
