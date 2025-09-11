@@ -5,6 +5,7 @@ import { Chip } from 'expo-app/components/initial/Chip';
 import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
 import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
+import { SimilarItems } from 'expo-app/features/catalog/components/SimilarItems';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
@@ -192,6 +193,9 @@ export function CatalogItemDetailScreen() {
               <ItemReviews reviews={item.reviews} />
             </View>
           )}
+
+          {/* Similar Items Section */}
+          <SimilarItems catalogItemId={item.id.toString()} limit={5} threshold={0.1} />
 
           <View className="mt-4">
             <Button variant="secondary" onPress={() => Linking.openURL(item.productUrl as string)}>

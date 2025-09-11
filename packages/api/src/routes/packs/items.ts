@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { packItems, packs } from '@packrat/api/db/schema';
+import { catalogItems, packItems, packs } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import {
   CreatePackItemRequestSchema,
@@ -12,7 +12,7 @@ import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { and, eq } from 'drizzle-orm';
+import { and, cosineDistance, desc, eq, getTableColumns, gt, sql } from 'drizzle-orm';
 
 const packItemsRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -580,6 +580,144 @@ packItemsRoutes.openapi(deleteItemRoute, async (c) => {
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
   return c.json({ success: true, itemId: itemId }, 200);
+});
+
+// Get similar items to a pack item
+const getSimilarItemsRoute = createRoute({
+  method: 'get',
+  path: '/{packId}/items/{itemId}/similar',
+  tags: ['Pack Items'],
+  summary: 'Get similar items to a pack item',
+  description: 'Find catalog and pack items similar to the specified pack item using vector search',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({
+        example: 'p_123456',
+        description: 'Pack ID',
+      }),
+      itemId: z.string().openapi({
+        example: 'pi_123456',
+        description: 'Pack item ID',
+      }),
+    }),
+    query: z.object({
+      limit: z
+        .string()
+        .optional()
+        .transform((val) => (val ? Number(val) : 5))
+        .openapi({
+          example: '5',
+          description: 'Number of similar items to return (default: 5, max: 20)',
+        }),
+      threshold: z
+        .string()
+        .optional()
+        .transform((val) => (val ? Number(val) : 0.1))
+        .openapi({
+          example: '0.1',
+          description: 'Minimum similarity threshold (default: 0.1)',
+        }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'List of similar catalog items',
+      content: {
+        'application/json': {
+          schema: z.object({
+            items: z.array(
+              z
+                .object({
+                  id: z.number(),
+                  name: z.string(),
+                  description: z.string().nullable(),
+                  weight: z.number(),
+                  weightUnit: z.string(),
+                  categories: z.array(z.string()).nullable(),
+                  images: z.array(z.string()).nullable(),
+                  brand: z.string().nullable(),
+                  price: z.number().nullable(),
+                  similarity: z.number(),
+                })
+                .openapi({ description: 'Similar catalog item with similarity score' }),
+            ),
+            total: z.number(),
+            sourceItem: PackItemSchema,
+          }),
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - pack is private',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+packItemsRoutes.openapi(getSimilarItemsRoute, async (c) => {
+  const db = createDb(c);
+  const auth = c.get('user');
+  const { itemId } = c.req.param();
+  const { limit, threshold } = c.req.valid('query');
+
+  // Validate limit
+  const validLimit = Math.min(Math.max(limit, 1), 20);
+
+  // First, get the source pack item with its embedding
+  const sourceItem = await db.query.packItems.findFirst({
+    where: eq(packItems.id, itemId),
+    with: {
+      pack: true,
+    },
+  });
+
+  if (!sourceItem || !sourceItem.embedding) {
+    return c.json({ error: 'Pack item not found or has no embedding' }, 404);
+  }
+
+  // Check if user has access to the pack
+  if (sourceItem.pack.userId !== auth.userId && !sourceItem.pack.isPublic) {
+    return c.json({ error: 'Access denied to private pack' }, 403);
+  }
+
+  // Find similar catalog items
+  const catalogSimilarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+  const { embedding: _catalogEmbedding, ...catalogColumns } = getTableColumns(catalogItems);
+
+  const similarCatalogItems = await db
+    .select({
+      ...catalogColumns,
+      similarity: catalogSimilarity,
+    })
+    .from(catalogItems)
+    .where(sql`${gt(catalogSimilarity, threshold)} AND ${catalogItems.embedding} IS NOT NULL`)
+    .orderBy(desc(catalogSimilarity))
+    .limit(validLimit);
+
+  // Remove embedding from source item for response
+  const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;
+
+  return c.json(
+    {
+      items: similarCatalogItems,
+      total: similarCatalogItems.length,
+      sourceItem: sourceItemData,
+    },
+    200,
+  );
 });
 
 export { packItemsRoutes };
