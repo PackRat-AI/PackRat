@@ -15,6 +15,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, ScrollView, View } from 'react-native';
 import { PackItemImage } from '../components/PackItemImage';
+import { SimilarItemsForPackItem } from '../components/SimilarItemsForPackItem';
 import {
   usePackItemDetailsFromApi,
   usePackItemDetailsFromStore,
@@ -178,6 +179,10 @@ export function ItemDetailScreen() {
             </View>
           )}
         </View>
+
+        {/* Similar Items Section */}
+        <SimilarItemsForPackItem packId={item.packId} itemId={item.id} limit={5} threshold={0.1} />
+
         {isOwnedByUser && (
           <View className="mb-8 mt-6 px-4">
             <Button
