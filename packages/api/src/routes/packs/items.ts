@@ -12,7 +12,7 @@ import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { and, cosineDistance, desc, eq, getTableColumns, gt, sql } from 'drizzle-orm';
+import { and, cosineDistance, desc, eq, getTableColumns, gt, isNotNull, sql } from 'drizzle-orm';
 
 const packItemsRoutes = new OpenAPIHono<{
   Bindings: Env;
