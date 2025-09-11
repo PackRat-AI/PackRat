@@ -1,4 +1,4 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import axiosInstance from 'expo-app/lib/api/client';
@@ -23,7 +23,7 @@ export function GapItemCatalogSuggestions({
   const { colors } = useColorScheme();
   const [suggestions, setSuggestions] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
+  const [addingItemId, setAddingItemId] = useState<number | null>(null);
 
   const fetchCatalogSuggestions = useCallback(async () => {
     setLoading(true);
@@ -48,19 +48,16 @@ export function GapItemCatalogSuggestions({
     }
   }, [visible, gapItem, fetchCatalogSuggestions]);
 
-  const toggleItemSelection = (itemId: number) => {
-    const newSelection = new Set(selectedItems);
-    if (newSelection.has(itemId)) {
-      newSelection.delete(itemId);
-    } else {
-      newSelection.add(itemId);
+  const handleAddItem = async (item: CatalogItem) => {
+    setAddingItemId(item.id);
+    try {
+      await onItemsSelected([item]);
+      onClose();
+    } catch (error) {
+      console.error('Failed to add item:', error);
+    } finally {
+      setAddingItemId(null);
     }
-    setSelectedItems(newSelection);
-  };
-
-  const handleAddSelected = () => {
-    const itemsToAdd = suggestions.filter((item) => selectedItems.has(item.id));
-    onItemsSelected(itemsToAdd);
   };
 
   const formatPrice = (price?: number | null, currency?: string | null) => {
@@ -104,15 +101,7 @@ export function GapItemCatalogSuggestions({
             <View className="p-4">
               <Text className="mb-4 text-base font-medium">Top Matches ({suggestions.length})</Text>
               {suggestions.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  className={`mb-4 rounded-lg border p-4 ${
-                    selectedItems.has(item.id)
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-card'
-                  }`}
-                  onPress={() => toggleItemSelection(item.id)}
-                >
+                <View key={item.id} className="mb-4 rounded-lg border border-border bg-card p-4">
                   <View className="flex-row gap-3">
                     {/* Image */}
                     {item.images?.[0] ? (
@@ -157,17 +146,27 @@ export function GapItemCatalogSuggestions({
                         )}
                       </View>
                     </View>
-
-                    {/* Selection indicator */}
-                    <View className="items-center justify-center">
-                      {selectedItems.has(item.id) ? (
-                        <Icon name="check-circle" size={24} color={colors.primary} />
-                      ) : (
-                        <Icon name="circle" size={24} color={colors.border} />
-                      )}
-                    </View>
                   </View>
-                </TouchableOpacity>
+
+                  {/* Add to Pack Button */}
+                  <TouchableOpacity
+                    className="mt-3 bg-primary rounded-lg p-2 flex-row items-center justify-center gap-2"
+                    onPress={() => handleAddItem(item)}
+                    disabled={addingItemId === item.id}
+                  >
+                    {addingItemId === item.id ? (
+                      <>
+                        <ActivityIndicator size={16} color="white" />
+                        <Text className="text-white font-medium">Adding...</Text>
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="plus" size={16} color="white" />
+                        <Text className="text-white font-medium">Add to Pack</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
           ) : (
@@ -180,22 +179,6 @@ export function GapItemCatalogSuggestions({
             </View>
           )}
         </ScrollView>
-
-        {/* Footer */}
-        {suggestions.length > 0 && (
-          <View className="border-t border-border p-4">
-            <Button
-              onPress={handleAddSelected}
-              disabled={selectedItems.size === 0}
-              className="w-full"
-            >
-              <Icon name="plus" size={16} />
-              <Text>
-                Add {selectedItems.size > 0 ? `${selectedItems.size} ` : ''}Selected Items
-              </Text>
-            </Button>
-          </View>
-        )}
       </View>
     </Modal>
   );
