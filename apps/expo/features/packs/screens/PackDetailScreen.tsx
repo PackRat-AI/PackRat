@@ -9,6 +9,7 @@ import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
+import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,7 +18,6 @@ import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-n
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
-import { useActiveLocation } from 'expo-app/features/weather/hooks';
 
 export function PackDetailScreen() {
   const router = useRouter();

@@ -39,18 +39,20 @@ export function GapAnalysisModal({
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
-      case 'high':
+      case 'must-have':
         return colors.destructive;
-      case 'medium':
+      case 'nice-to-have':
         return colors.yellow;
-      case 'low':
+      case 'optional':
+        return colors.blue;
+      default:
         return colors.grey2;
     }
   };
 
   const getPriorityIcon = (priority?: string) => {
     switch (priority) {
-      case 'high':
+      case 'must-have':
         return {
           ios: { name: 'exclamationmark.triangle.fill' as const },
           materialIcon: {
@@ -58,15 +60,15 @@ export function GapAnalysisModal({
             name: 'alert-circle' as const,
           },
         };
-      case 'medium':
+      case 'nice-to-have':
         return {
-          ios: { name: 'exclamationmark.circle.fill' as const },
+          ios: { name: 'star.fill' as const },
           materialIcon: {
             type: 'MaterialCommunityIcons' as const,
-            name: 'alert-circle-outline' as const,
+            name: 'star' as const,
           },
         };
-      case 'low':
+      case 'optional':
         return {
           ios: { name: 'circle.fill' as const },
           materialIcon: {
@@ -120,12 +122,11 @@ export function GapAnalysisModal({
                   <View>
                     <Text className="mb-4 text-base font-medium">Missing Items</Text>
                     {analysis.gaps.map((gap) => (
-                      <TouchableOpacity
+                      <View
                         key={`${gap.suggestion}-${gap.category}`}
                         className="mb-3 rounded-lg border border-border bg-card p-4"
-                        onPress={() => setSelectedGapItem(gap)}
                       >
-                        <View className="flex-row items-start justify-between">
+                        <View className="flex-row items-start justify-between mb-3">
                           <View className="flex-1">
                             <View className="flex-row items-center gap-2">
                               <Text className="font-medium text-foreground">{gap.suggestion}</Text>
@@ -152,9 +153,15 @@ export function GapAnalysisModal({
                             )}
                             <Text className="mt-2 text-sm text-muted-foreground">{gap.reason}</Text>
                           </View>
-                          <Icon name="chevron-right" size={16} color={colors.foreground} />
                         </View>
-                      </TouchableOpacity>
+                        <TouchableOpacity
+                          className="bg-primary rounded-lg p-3 flex-row items-center justify-center gap-2"
+                          onPress={() => setSelectedGapItem(gap)}
+                        >
+                          <Icon name="search" size={16} color="white" />
+                          <Text className="text-white font-medium">Find it</Text>
+                        </TouchableOpacity>
+                      </View>
                     ))}
                   </View>
                 ) : (
