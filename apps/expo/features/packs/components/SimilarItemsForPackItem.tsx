@@ -92,7 +92,7 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
 
   if (isLoading) {
     return (
-      <View className="mt-6 px-4">
+      <View className="mt-10 p-4">
         <Text className="mb-3 text-lg font-semibold text-foreground">Similar Items</Text>
         <FlatList
           horizontal
@@ -110,7 +110,7 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
   }
 
   return (
-    <View className="mt-6 px-4">
+    <View className="mt-10 p-4">
       <Text className="mb-3 text-lg font-semibold text-foreground">Similar Items</Text>
       <FlatList
         horizontal
