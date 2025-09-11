@@ -21,6 +21,7 @@ import { GearInventoryTile } from 'expo-app/features/packs/components/GearInvent
 import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
 import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
 import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
+import { SeasonSuggestionsTile } from 'expo-app/features/packs/components/SeasonSuggestionsTile';
 import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
 import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
 import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
@@ -46,6 +47,11 @@ const tileInfo = {
     title: 'Recent Packs',
     keywords: ['recent', 'packs', 'history'],
     component: RecentPacksTile,
+  },
+  'season-suggestions': {
+    title: 'Season Suggestions',
+    keywords: ['season', 'suggestions', 'ai', 'seasonal', 'weather', 'recommendations'],
+    component: SeasonSuggestionsTile,
   },
   'ask-packrat-ai': {
     title: 'Ask PackRat AI',
@@ -165,6 +171,7 @@ export default function DashboardScreen() {
   const dashboardLayout = useRef([
     'current-pack',
     'recent-packs',
+    'season-suggestions',
     'gap 1',
     'ask-packrat-ai',
     'reported-ai-content',
