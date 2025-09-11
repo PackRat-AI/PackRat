@@ -8,6 +8,7 @@ export * from './useDetailedPacks';
 export * from './useImageUpload';
 export * from './usePackDetailsFromApi';
 export * from './usePackDetailsFromStore';
+export * from './usePackGapAnalysis';
 export * from './usePackItemDetailsFromApi';
 export * from './usePackItemDetailsFromStore';
 export * from './usePackItemOwnershipCheck';
