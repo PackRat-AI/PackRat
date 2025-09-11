@@ -94,6 +94,7 @@ seasonSuggestionsRoutes.openapi(seasonSuggestionsRoute, async (c) => {
     const db = createDb(c);
 
     // Get user's inventory items (all pack items across all packs owned by user)
+    // We're getting all pack items to represent the user's total inventory
     const userItems = await db.query.packItems.findMany({
       where: eq(packItems.userId, auth.userId),
       with: {

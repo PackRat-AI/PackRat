@@ -1,7 +1,7 @@
 import { packsStore } from 'expo-app/features/packs/store';
 import { nanoid } from 'nanoid/non-secure';
 import { useCallback } from 'react';
-import type { PackInput, PackInStore } from '../types';
+import type { PackInput, PackInStore, PackCategory } from '../types';
 import { useCreatePackItem } from './useCreatePackItem';
 import type { PackSuggestionItem } from './useSeasonSuggestions';
 
@@ -22,7 +22,7 @@ export function useCreatePackWithItems() {
         id,
         name: packData.name,
         description: packData.description,
-        category: packData.category as any,
+        category: packData.category,
         templateId: packData.templateId,
         isPublic: packData.isPublic || false,
         image: packData.image,

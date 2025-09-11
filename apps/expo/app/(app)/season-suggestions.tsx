@@ -3,7 +3,7 @@
 import type { AlertRef } from '@packrat/ui/nativewindui';
 import { Alert, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { useActiveLocation } from 'expo-app/features/weather/hooks';
+import { useActiveLocation } from 'expo-app/features/weather/hooks/useActiveLocation';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -49,7 +49,7 @@ export default function SeasonSuggestionsScreen() {
       const packId = createPackWithItems({
         name: suggestion.name,
         description: suggestion.description,
-        category: suggestion.activityType.toLowerCase().replace(/\s+/g, '-') as any,
+        category: 'hiking', // Default to hiking category
         items: suggestion.items,
       });
       
