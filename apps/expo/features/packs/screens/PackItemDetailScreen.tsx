@@ -196,7 +196,15 @@ export function ItemDetailScreen() {
         )}
 
         {/* Similar Items Section */}
-        <SimilarItemsForPackItem packId={item.packId} itemId={item.id} limit={5} threshold={0.1} />
+        <SimilarItemsForPackItem
+          packId={item.packId}
+          itemId={item.id}
+          itemName={item.name}
+          limit={5}
+          threshold={0.1}
+        />
+
+        <View className="mt-8" />
       </ScrollView>
     </SafeAreaView>
   );

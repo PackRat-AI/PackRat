@@ -195,7 +195,12 @@ export function CatalogItemDetailScreen() {
           )}
 
           {/* Similar Items Section */}
-          <SimilarItems catalogItemId={item.id.toString()} limit={5} threshold={0.1} />
+          <SimilarItems
+            catalogItemId={item.id.toString()}
+            itemName={item.name}
+            limit={5}
+            threshold={0.1}
+          />
 
           <View className="mt-4">
             <Button variant="secondary" onPress={() => Linking.openURL(item.productUrl as string)}>

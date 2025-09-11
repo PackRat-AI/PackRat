@@ -8,6 +8,7 @@ import { FlatList, Pressable, View } from 'react-native';
 interface SimilarItemsForPackItemProps {
   packId: string;
   itemId: string;
+  itemName: string;
   limit?: number;
   threshold?: number;
 }
@@ -73,6 +74,7 @@ const LoadingCard: React.FC = () => (
 export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = ({
   packId,
   itemId,
+  itemName,
   limit = 5,
   threshold = 0.1,
 }) => {
@@ -92,8 +94,8 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
 
   if (isLoading) {
     return (
-      <View className="mt-10 p-4">
-        <Text className="mb-3 text-lg font-semibold text-foreground">Similar Items</Text>
+      <View className="mt-10 px-4">
+        <Text className="mb-3 text-lg font-semibold text-foreground">More like {itemName}</Text>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -110,8 +112,8 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
   }
 
   return (
-    <View className="mt-10 p-4">
-      <Text className="mb-3 text-lg font-semibold text-foreground">Similar Items</Text>
+    <View className="mt-10 px-4">
+      <Text className="mb-3 text-lg font-semibold text-foreground">More like {itemName}</Text>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}

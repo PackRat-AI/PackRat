@@ -7,6 +7,7 @@ import { CatalogItemImage } from './CatalogItemImage';
 
 interface SimilarItemsProps {
   catalogItemId: string;
+  itemName: string;
   limit?: number;
   threshold?: number;
 }
@@ -71,6 +72,7 @@ const LoadingCard: React.FC = () => (
 
 export const SimilarItems: React.FC<SimilarItemsProps> = ({
   catalogItemId,
+  itemName,
   limit = 5,
   threshold = 0.1,
 }) => {
@@ -91,7 +93,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
   if (isLoading) {
     return (
       <View className="mt-6">
-        <Text className="mb-3 text-lg font-semibold text-foreground">Similar Items</Text>
+        <Text className="mb-3 text-lg font-semibold text-foreground">More like {itemName}</Text>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -110,7 +112,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
 
   return (
     <View className="mt-6">
-      <Text className="mb-3 text-lg font-semibold text-foreground">Similar Items</Text>
+      <Text className="mb-3 text-lg font-semibold text-foreground">More like {itemName}</Text>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
