@@ -703,7 +703,7 @@ packItemsRoutes.openapi(getSimilarItemsRoute, async (c) => {
       similarity: catalogSimilarity,
     })
     .from(catalogItems)
-    .where(sql`${gt(catalogSimilarity, threshold)} AND ${catalogItems.embedding} IS NOT NULL`)
+    .where(and(gt(catalogSimilarity, threshold), isNotNull(catalogItems.embedding)))
     .orderBy(desc(catalogSimilarity))
     .limit(validLimit);
 
