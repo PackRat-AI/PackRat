@@ -25,7 +25,13 @@ const PACKS_CONSTRUCTION_SYSTEM_PROMPT = `You are an expert Adventure Planner. Y
               - A pack name and a description.
               - A list of items, where each has a requestedItem description.
               - A list of candidate items for each request, with details like price, weight, rating, tech specs, etc.
-              Your job is to select the best candidate items for each requested item, ensuring the final pack meets the concept.`;
+              Your job is to select the best candidate items for each requested item, ensuring the final pack meets the concept.
+              
+              IMPORTANT IMAGE HANDLING:
+              - Each candidate item may have an "images" array containing multiple image URLs
+              - For each selected item, you MUST populate the "image" field with the first image from the candidate item's "images" array
+              - If a candidate item has no images or an empty images array, set the "image" field to null
+              - Do not modify or process the image URLs, use them exactly as provided`;
 
 const packConceptSchema = z.object({
   name: z.string(),
