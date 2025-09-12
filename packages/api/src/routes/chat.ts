@@ -81,7 +81,9 @@ chatRoutes.openapi(chatRoute, async (c) => {
     packId?: string;
     location?: string;
     date: string;
-  } = {};
+  } = {
+    date: new Date().toISOString(),
+  };
 
   try {
     body = await c.req.json();

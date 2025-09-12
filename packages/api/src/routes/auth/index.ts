@@ -390,7 +390,7 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     .update(users)
     .set({ emailVerified: true })
     .where(eq(users.id, userId))
-    .returning(userWithoutPassword);
+    .returning();
 
   // Delete the verification code
   await db.delete(oneTimePasswords).where(eq(oneTimePasswords.userId, userId));
@@ -420,7 +420,7 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
       message: 'Email verified successfully',
       accessToken,
       refreshToken,
-      user: finalUser,
+      user: finalUser ? (({ passwordHash, ...rest }) => rest)(finalUser) : undefined,
     },
     200,
   );
