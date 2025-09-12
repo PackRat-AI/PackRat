@@ -180,10 +180,10 @@ export default function FeatureSection() {
                     </svg>
                   </div>
                   <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                    {siteConfig.features[2].title}
+                    {siteConfig.features[2]?.title}
                   </h3>
                   <p className="text-base md:text-lg text-muted-foreground">
-                    {siteConfig.features[2].description}
+                    {siteConfig.features[2]?.description}
                   </p>
                   <ul className="space-y-2">
                     <li className="flex items-center">

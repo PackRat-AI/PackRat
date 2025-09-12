@@ -1,12 +1,5 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import {
-  ContextMenu,
-  createContextItem,
-  Sheet,
-  Text,
-  useColorScheme,
-  useSheetRef,
-} from '@packrat/ui/nativewindui';
+import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import type { ToolUIPart, UIMessage } from 'ai';
 import { Markdown } from 'expo-app/components/Markdown';
@@ -15,7 +8,7 @@ import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useState } from 'react';
-import { Pressable, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import { TouchableOpacity, View, type ViewStyle } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { ReportModal } from './ReportModal';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
@@ -38,7 +31,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
 
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 
-  const openBottomSheet = () => {
+  const _openBottomSheet = () => {
     bottomSheetRef.current?.present();
   };
 

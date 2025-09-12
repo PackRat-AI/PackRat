@@ -6,11 +6,12 @@ import {
   Text,
   useColorScheme,
 } from '@packrat-ai/nativewindui';
+import type React from 'react';
 import { Pressable, View } from 'react-native';
 
 interface ToolCardProps {
   text: string;
-  icon?: JSX.Element | 'loading' | 'error' | 'info';
+  icon?: React.ReactElement | 'loading' | 'error' | 'info';
   onPress?: () => void;
 }
 
