@@ -1,5 +1,5 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
-import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { processCatalogETL } from './processCatalogEtl';
 import type { CatalogETLMessage } from './types';
 
@@ -45,7 +45,7 @@ export async function processQueueBatch({
   env,
 }: {
   batch: MessageBatch<CatalogETLMessage>;
-  env: ValidatedEnv;
+  env: Env;
 }): Promise<void> {
   for (const message of batch.messages) {
     try {

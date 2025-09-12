@@ -1,4 +1,4 @@
-import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { createDbClient } from '../../db';
 import { invalidItemLogs, type NewInvalidItemLog } from '../../db/schema';
 import { updateEtlJobProgress } from './updateEtlJobProgress';
@@ -10,7 +10,7 @@ export async function processLogsBatch({
 }: {
   jobId: string;
   logs: NewInvalidItemLog[];
-  env: ValidatedEnv;
+  env: Env;
 }): Promise<void> {
   const db = createDbClient(env);
   try {

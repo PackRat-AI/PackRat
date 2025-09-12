@@ -350,11 +350,7 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
   }
 
   // Find the user by email
-  const user = await db
-    .select(userWithoutPassword)
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()))
-    .limit(1);
+  const user = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
 
   if (user.length === 0) {
     return c.json({ error: 'User not found' }, 404);
@@ -414,13 +410,15 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     c,
   });
 
+  const { passwordHash: _passwordHash, ...userWithoutPassword } = finalUser;
+
   return c.json(
     {
       success: true,
       message: 'Email verified successfully',
       accessToken,
       refreshToken,
-      user: finalUser ? (({ passwordHash, ...rest }) => rest)(finalUser) : undefined,
+      user: userWithoutPassword,
     },
     200,
   );
