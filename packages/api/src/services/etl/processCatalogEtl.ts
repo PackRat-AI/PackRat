@@ -1,7 +1,7 @@
 import { createDbClient } from '@packrat/api/db';
 import { etlJobs, type NewCatalogItem, type NewInvalidItemLog } from '@packrat/api/db/schema';
 import { mapCsvRowToItem } from '@packrat/api/utils/csv-utils';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { ValidatedEnv } from '@packrat/api/utils/env-validation';
 import { parse } from 'csv-parse';
 import { eq, sql } from 'drizzle-orm';
 import { R2BucketService } from '../r2-bucket';
@@ -31,7 +31,7 @@ export async function processCatalogETL({
   env,
 }: {
   message: CatalogETLMessage;
-  env: Env;
+  env: ValidatedEnv;
 }): Promise<void> {
   const { objectKey } = message.data;
   const jobId = message.id;
