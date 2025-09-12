@@ -55,7 +55,7 @@ export const routeDefinition = createRoute({
         'application/json': {
           schema: z.object({
             items: z.array(
-              CatalogItemSchema.omit({ embedding: true }).extend({
+              CatalogItemSchema.extend({
                 similarity: z.number().openapi({
                   example: 0.85,
                   description: 'Similarity score (0-1, higher is more similar)',
@@ -63,7 +63,7 @@ export const routeDefinition = createRoute({
               }),
             ),
             total: z.number(),
-            sourceItem: CatalogItemSchema.omit({ embedding: true }),
+            sourceItem: CatalogItemSchema,
           }),
         },
       },
