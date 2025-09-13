@@ -92,15 +92,15 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
           id: obj.key.replace(/\.(mdx?|md)$/, ''), // Remove .mdx or .md extension
           key: obj.key,
           title:
-            frontmatter.title ||
+            (frontmatter.title as string) ||
             obj.customMetadata?.title ||
             obj.key.replace(/\.(mdx?|md)$/, '').replace(/-/g, ' '),
           category: obj.customMetadata?.category || 'general',
-          categories: frontmatter.categories || [],
-          description: frontmatter.description || obj.customMetadata?.description || '',
-          author: frontmatter.author,
-          readingTime: frontmatter.readingTime,
-          difficulty: frontmatter.difficulty,
+          categories: (frontmatter.categories as string[]) || [],
+          description: (frontmatter.description as string) || obj.customMetadata?.description || '',
+          author: frontmatter.author as string,
+          readingTime: frontmatter.readingTime as number,
+          difficulty: frontmatter.difficulty as string,
           createdAt: obj.uploaded.toISOString(),
           updatedAt: obj.uploaded.toISOString(),
         };

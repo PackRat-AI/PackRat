@@ -138,14 +138,14 @@ const getItemRoute = createRoute({
           schema: PackItemSchema.extend({
             catalogItem: z
               .object({
-                id: z.string(),
+                id: z.number(),
                 name: z.string(),
                 brand: z.string().nullable(),
-                category: z.string().nullable(),
+                categories: z.array(z.string()).nullable(),
                 description: z.string().nullable(),
                 price: z.number().nullable(),
                 weight: z.number().nullable(),
-                image: z.string().nullable(),
+                images: z.array(z.string()).nullable(),
               })
               .nullable(),
             pack: z
@@ -198,29 +198,13 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
   }
 
   const isOwner = item.userId === userId;
-  const isPublic = item.pack?.isPublic;
+  const isPublic = item.pack.isPublic;
 
   if (!isOwner && !isPublic) {
     return c.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
-  // Map item to ensure nullable fields are handled
-  const mappedItem = {
-    ...item,
-    consumable: item.consumable ?? false,
-    worn: item.worn ?? false,
-    deleted: item.deleted ?? false,
-    createdAt: item.createdAt.toISOString(),
-    updatedAt: item.updatedAt.toISOString(),
-    pack: item.pack
-      ? {
-          ...item.pack,
-          isPublic: item.pack.isPublic ?? false,
-        }
-      : null,
-  };
-
-  return c.json(mappedItem, 200);
+  return c.json(item, 200);
 });
 
 // Add an item to a pack
@@ -257,7 +241,7 @@ const addItemRoute = createRoute({
     },
   },
   responses: {
-    200: {
+    201: {
       description: 'Item added to pack successfully',
       content: {
         'application/json': {
@@ -393,6 +377,14 @@ const updateItemRoute = createRoute({
         },
       },
     },
+    400: {
+      description: 'Bad request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
     404: {
       description: 'Item not found',
       content: {
@@ -507,19 +499,8 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
   // Update the pack's updatedAt timestamp
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
-  // Map the updated item to ensure proper format
-  const mappedUpdatedItem = {
-    ...updatedItem,
-    consumable: updatedItem.consumable ?? false,
-    worn: updatedItem.worn ?? false,
-    deleted: updatedItem.deleted ?? false,
-    createdAt: updatedItem.createdAt.toISOString(),
-    updatedAt: updatedItem.updatedAt.toISOString(),
-    embedding: undefined, // Don't send embedding in response
-    templateItemId: updatedItem.templateItemId ?? null,
-  };
-
-  return c.json(mappedUpdatedItem, 200);
+  updatedItem.embedding = null; // Don't send embedding in response
+  return c.json(updatedItem, 200);
 });
 
 // Delete a pack item
