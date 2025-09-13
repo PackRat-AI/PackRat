@@ -410,6 +410,7 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     c,
   });
 
+  assertDefined(finalUser);
   const { passwordHash: _passwordHash, ...userWithoutPassword } = finalUser;
 
   return c.json(
@@ -1167,6 +1168,8 @@ authRoutes.openapi(appleRoute, async (c) => {
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
+
+  assertDefined(user);
 
   const refreshToken = generateRefreshToken();
   await db.insert(refreshTokens).values({
