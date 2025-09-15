@@ -1,4 +1,4 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -15,6 +15,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, ScrollView, View } from 'react-native';
 import { PackItemImage } from '../components/PackItemImage';
+import { SimilarItemsForPackItem } from '../components/SimilarItemsForPackItem';
 import {
   usePackItemDetailsFromApi,
   usePackItemDetailsFromStore,
@@ -37,6 +38,8 @@ export function ItemDetailScreen() {
     id: id as string,
     enabled: !isOwnedByUser,
   }); // Fetch non user owned items from api
+
+  const { colors } = useColorScheme();
 
   const item = (isOwnedByUser ? itemFromStore : itemFromApi) as PackItem;
 
@@ -122,7 +125,7 @@ export function ItemDetailScreen() {
       <ScrollView>
         <PackItemImage item={item} className="h-64 w-full" resizeMode="contain" />
 
-        <View className="mb-4 p-4">
+        <View className="p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>
           <Text className="mb-3 text-muted-foreground">{item.category}</Text>
 
@@ -171,25 +174,37 @@ export function ItemDetailScreen() {
             )}
           </View>
 
-          {itemHasNotes && (
+          {itemHasNotes && itemNotes && (
             <View className="mt-2">
               <Text className="mb-1 text-xs text-muted-foreground">NOTES</Text>
-              <Text className="text-foreground">{itemNotes}</Text>
+              <Text style={{ color: colors.foreground }}>{itemNotes}</Text>
             </View>
           )}
         </View>
+
         {isOwnedByUser && (
-          <View className="mb-8 mt-6 px-4">
+          <View className="mt-2 px-4">
             <Button
               variant="secondary"
               onPress={navigateToChat}
               className="flex-row items-center justify-center rounded-full  px-4 py-3"
             >
-              <Icon name="message-outline" size={20} color="white" />
-              <Text className="text-white">Ask AI About This Item</Text>
+              <Icon name="message-outline" size={20} color={colors.foreground} />
+              <Text style={{ color: colors.foreground }}>Ask AI About This Item</Text>
             </Button>
           </View>
         )}
+
+        {/* Similar Items Section */}
+        <SimilarItemsForPackItem
+          packId={item.packId}
+          itemId={item.id}
+          itemName={item.name}
+          limit={5}
+          threshold={0.1}
+        />
+
+        <View className="mt-8" />
       </ScrollView>
     </SafeAreaView>
   );

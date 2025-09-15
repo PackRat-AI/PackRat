@@ -51,12 +51,6 @@ export const PackWithWeightsSchema = PackSchema.extend({
   baseWeight: z
     .number()
     .openapi({ example: 4000, description: 'Base weight (excluding consumables) in grams' }),
-  wornWeight: z.number().openapi({ example: 1000, description: 'Weight of worn items in grams' }),
-  packWeight: z
-    .number()
-    .openapi({ example: 4500, description: 'Pack weight (excluding worn items) in grams' }),
-  foodWeight: z.number().openapi({ example: 500, description: 'Food weight in grams' }),
-  waterWeight: z.number().openapi({ example: 1000, description: 'Water weight in grams' }),
 }).openapi('PackWithWeights');
 
 export const CreatePackRequestSchema = z

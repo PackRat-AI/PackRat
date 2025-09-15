@@ -1,5 +1,5 @@
 import type { MessageBatch, Queue } from '@cloudflare/workers-types';
-import type { Env } from '@packrat/api/utils/env-validation';
+import type { Env } from '@packrat/api/types/env';
 import { processCatalogETL } from './processCatalogEtl';
 import type { CatalogETLMessage } from './types';
 
@@ -12,10 +12,10 @@ export async function queueCatalogETL({
   objectKeys: string[];
   jobId: string;
 }): Promise<string> {
-  const promises = [];
+  const promises: Promise<void>[] = [];
 
   const batchSize = 100; // maximum batch size Cloudflare allows
-  let batch = [];
+  let batch: { body: CatalogETLMessage }[] = [];
 
   for (const objectKey of objectKeys) {
     if (batch.length === batchSize) {

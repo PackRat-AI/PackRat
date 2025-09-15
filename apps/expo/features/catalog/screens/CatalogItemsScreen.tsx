@@ -6,7 +6,7 @@ import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -86,6 +86,8 @@ function CatalogItemsScreen() {
       fetchNextPage();
     }
   };
+
+  const ItemSeparatorComponent = useMemo(() => () => <View className="h-2" />, []);
 
   return (
     <SafeAreaView className="flex-1">
@@ -167,6 +169,7 @@ function CatalogItemsScreen() {
         activeFilter={activeFilter}
         error={categoriesError}
         retry={refetchCategories}
+        className="px-4 py-2"
       />
 
       <FlatList
@@ -174,10 +177,9 @@ function CatalogItemsScreen() {
         data={paginatedItems}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
-          <View className="px-4 pt-4">
-            <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
-          </View>
+          <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
         )}
+        ItemSeparatorComponent={ItemSeparatorComponent}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
@@ -197,7 +199,7 @@ function CatalogItemsScreen() {
           </View>
         }
         ListHeaderComponent={
-          <View className="px-4 pb-0 pt-2">
+          <View className="mb-4">
             <View className="flex-row items-center justify-between">
               <Text className="text-muted-foreground">{totalItemsText}</Text>
             </View>
@@ -241,7 +243,7 @@ function CatalogItemsScreen() {
             )}
           </View>
         }
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
       />
     </SafeAreaView>
   );

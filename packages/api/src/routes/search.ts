@@ -48,48 +48,38 @@ const searchVectorRoute = createRoute({
 });
 
 searchRoutes.openapi(searchVectorRoute, async (c) => {
-  try {
-    const auth = c.get('user');
-    if (!auth) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
+  const db = createDb(c);
+  const { q } = c.req.query();
+  const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
+    getEnv(c);
 
-    const db = createDb(c);
-    const { q } = c.req.query();
-    const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-      getEnv(c);
+  const embedding = await generateEmbedding({
+    value: q ?? '',
+    openAiApiKey: OPENAI_API_KEY,
+    provider: AI_PROVIDER,
+    cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+    cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+    cloudflareAiBinding: AI,
+  });
 
-    const embedding = await generateEmbedding({
-      value: q ?? '',
-      openAiApiKey: OPENAI_API_KEY,
-      provider: AI_PROVIDER,
-      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-      cloudflareAiBinding: AI,
-    });
-
-    if (!embedding) {
-      return c.json({ error: 'Failed to generate embedding', code: 'EMBEDDING_ERROR' }, 500);
-    }
-
-    const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
-
-    const similarItems = await db
-      .select({
-        id: catalogItems.id,
-        name: catalogItems.name,
-        similarity,
-      })
-      .from(catalogItems)
-      .where(gt(similarity, 0.1))
-      .orderBy(desc(similarity))
-      .limit(10);
-
-    return c.json(similarItems, 200);
-  } catch (error) {
-    console.error('Error performing vector search:', error);
-    return c.json({ error: 'Internal server error', code: 'SEARCH_ERROR' }, 500);
+  if (!embedding) {
+    return c.json({ error: 'Failed to generate embedding', code: 'EMBEDDING_ERROR' }, 500);
   }
+
+  const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, embedding)})`;
+
+  const similarItems = await db
+    .select({
+      id: catalogItems.id,
+      name: catalogItems.name,
+      similarity,
+    })
+    .from(catalogItems)
+    .where(gt(similarity, 0.1))
+    .orderBy(desc(similarity))
+    .limit(10);
+
+  return c.json(similarItems, 200);
 });
 
 export { searchRoutes };
