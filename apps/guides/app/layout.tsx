@@ -17,7 +17,9 @@ export const metadata = {
   title: 'PackRat Guides | Hiking & Outdoor Adventures',
   description: 'Expert hiking and outdoor guides to help you prepare for your next adventure',
   icons: {
-    icon: '/PackRat.ico',
+    icon: [{ url: '/PackRat.ico', type: 'image/x-icon' }],
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
   },
 };
 
