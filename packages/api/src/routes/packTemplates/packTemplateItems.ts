@@ -10,7 +10,7 @@ import {
 } from '@packrat/api/schemas/packTemplates';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const packTemplateItemsRoutes = new OpenAPIHono<{
@@ -76,19 +76,25 @@ packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
   const db = createDb(c);
   const templateId = c.req.param('templateId');
 
+  // Check if the template exists
+  const template = await db.query.packTemplates.findFirst({
+    where: eq(packTemplates.id, templateId),
+  });
+
+  if (!template) {
+    return c.json({ error: 'Template not found' }, 404);
+  }
+
+  // Check access permissions
+  const hasAccess = template.isAppTemplate || template.userId === auth.userId;
+  if (!hasAccess) {
+    return c.json({ error: 'Access denied to this template' }, 403);
+  }
+
   const items = await db
     .select()
     .from(packTemplateItems)
-    .leftJoin(packTemplates, eq(packTemplates.id, packTemplateItems.packTemplateId))
-    .where(
-      and(
-        eq(packTemplateItems.packTemplateId, templateId),
-        or(
-          eq(packTemplateItems.userId, auth.userId), // user can access items of their own templates
-          eq(packTemplates.isAppTemplate, true), // or items of app templates
-        ),
-      ),
-    );
+    .where(eq(packTemplateItems.packTemplateId, templateId));
 
   return c.json(items, 200);
 });
