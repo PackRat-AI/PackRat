@@ -51,7 +51,7 @@ export function PackDetailScreen() {
     if (isPackingMode) {
       setPackedItems((prev) => ({
         ...prev,
-        [item.id!]: !prev[item.id!],
+        [item.id]: !prev[item.id],
       }));
     } else {
       router.push({
@@ -245,10 +245,10 @@ export function PackDetailScreen() {
                   <View
                     className={cn(
                       'h-5 w-5 rounded border border-gray-400 items-center justify-center',
-                      packedItems[item.id!] ? 'bg-primary' : 'bg-background',
+                      packedItems[item.id] ? 'bg-primary' : 'bg-background',
                     )}
                   >
-                    {packedItems[item.id!] && <Icon name="check" size={16} color="white" />}
+                    {packedItems[item.id] && <Icon name="check" size={16} color="white" />}
                   </View>
                 )}
                 <View className="flex-1">
