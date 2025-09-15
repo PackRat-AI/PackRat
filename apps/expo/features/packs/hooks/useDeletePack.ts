@@ -6,6 +6,7 @@ export function useDeletePack() {
     // Soft delete by setting deleted flag
     // @ts-ignore: Safe because Legend-State uses Proxy
     getPackItems(id).forEach((item) => packItemsStore[item.id].deleted.set(true));
+    // @ts-ignore: Safe because Legend-State uses Proxy
     packsStore[id].deleted.set(true);
   }, []);
 

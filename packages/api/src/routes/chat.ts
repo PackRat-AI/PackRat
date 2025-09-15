@@ -45,26 +45,10 @@ const chatRoute = createRoute({
     200: {
       description: 'Streaming AI response',
       content: {
-        'text/plain': {
+        'text/event-stream': {
           schema: z.string().openapi({
             description: 'Streaming text response from the AI',
           }),
-        },
-      },
-    },
-    400: {
-      description: 'Bad request - Invalid message format',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },
