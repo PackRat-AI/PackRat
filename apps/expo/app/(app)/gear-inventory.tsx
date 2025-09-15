@@ -1,4 +1,4 @@
-import { Text } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';
@@ -48,7 +48,8 @@ export default function GearInventoryScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <ScrollView className="flex-1">
+      <LargeTitleHeader title="Gear Inventory" />
+      <ScrollView className="flex-1 px-4">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">
             {items?.length} items in your inventory
