@@ -26,7 +26,7 @@ export function GapAnalysisModal({
   isLoading,
   onRetry,
 }: GapAnalysisModalProps) {
-  const { colors } = useColorScheme();
+  const { isDarkColorScheme, colors } = useColorScheme();
   const [selectedGapItem, setSelectedGapItem] = useState<GapAnalysisItem | null>(null);
   const { addItemsToPack } = useBulkAddCatalogItems();
 
@@ -39,18 +39,20 @@ export function GapAnalysisModal({
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
-      case 'high':
-        return colors.destructive;
-      case 'medium':
+      case 'must-have':
+        return isDarkColorScheme ? '#ef4444' : colors.destructive;
+      case 'nice-to-have':
         return colors.yellow;
-      case 'low':
+      case 'optional':
+        return colors.primary;
+      default:
         return colors.grey2;
     }
   };
 
   const getPriorityIcon = (priority?: string) => {
     switch (priority) {
-      case 'high':
+      case 'must-have':
         return {
           ios: { name: 'exclamationmark.triangle.fill' as const },
           materialIcon: {
@@ -58,15 +60,15 @@ export function GapAnalysisModal({
             name: 'alert-circle' as const,
           },
         };
-      case 'medium':
+      case 'nice-to-have':
         return {
-          ios: { name: 'exclamationmark.circle.fill' as const },
+          ios: { name: 'star.fill' as const },
           materialIcon: {
             type: 'MaterialCommunityIcons' as const,
-            name: 'alert-circle-outline' as const,
+            name: 'star' as const,
           },
         };
-      case 'low':
+      case 'optional':
         return {
           ios: { name: 'circle.fill' as const },
           materialIcon: {
@@ -85,11 +87,25 @@ export function GapAnalysisModal({
     }
   };
 
+  const getPriorityLabel = (priority?: string) => {
+    switch (priority) {
+      case 'must-have':
+        return 'Must-Have';
+      case 'nice-to-have':
+        return 'Nice-to-Have';
+      case 'optional':
+        return 'Optional';
+      default:
+        throw new Error('Unknown priority level');
+    }
+  };
+
+  console.log('Gap Analysis:', JSON.stringify(analysis, null, 2));
+
   return (
     <>
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-        <View className="flex-1">
-          {/* Header */}
+        <View className="flex-1 bg-background">
           <View className="flex-row items-center justify-between border-b border-border p-4">
             <Text>Gap Analysis</Text>
             <TouchableOpacity onPress={onClose} className="p-1">
@@ -108,29 +124,21 @@ export function GapAnalysisModal({
               </View>
             ) : analysis ? (
               <View>
-                {/* Summary */}
-                {analysis.summary && (
-                  <View className="mb-6 rounded-lg bg-muted p-4">
-                    <Text className="text-sm text-muted-foreground">{analysis.summary}</Text>
-                  </View>
-                )}
-
-                {/* Gap Items */}
                 {analysis.gaps.length > 0 ? (
                   <View>
-                    <Text className="mb-4 text-base font-medium">Missing Items</Text>
                     {analysis.gaps.map((gap) => (
-                      <TouchableOpacity
-                        key={`${gap.suggestion}-${gap.category}`}
-                        className="mb-3 rounded-lg border border-border bg-card p-4"
-                        onPress={() => setSelectedGapItem(gap)}
+                      <View
+                        key={gap.suggestion}
+                        className="mb-4 justify-between rounded-lg border border-border bg-card p-4"
                       >
-                        <View className="flex-row items-start justify-between">
-                          <View className="flex-1">
-                            <View className="flex-row items-center gap-2">
-                              <Text className="font-medium text-foreground">{gap.suggestion}</Text>
-                              {gap.priority && (
-                                <View className="flex-row items-center gap-2 rounded-full border border-border bg-transparent px-2 py-0.5">
+                        <View className="flex-1">
+                          <View className="flex-row items-start gap-2">
+                            <Text className="font-medium text-foreground flex-1">
+                              {gap.suggestion}
+                            </Text>
+                            {gap.priority && (
+                              <View>
+                                <View className="flex-row self-end items-center gap-2 rounded-full border border-border bg-transparent px-2 py-0.5">
                                   <Icon
                                     {...getPriorityIcon(gap.priority)}
                                     size={14}
@@ -140,21 +148,22 @@ export function GapAnalysisModal({
                                     className="text-xs font-medium"
                                     style={{ color: getPriorityColor(gap.priority) }}
                                   >
-                                    {gap.priority.charAt(0).toUpperCase() + gap.priority.slice(1)}
+                                    {getPriorityLabel(gap.priority)}
                                   </Text>
                                 </View>
-                              )}
-                            </View>
-                            {gap.category && (
-                              <Text className="mt-1 text-xs text-muted-foreground">
-                                {gap.category}
-                              </Text>
+                              </View>
                             )}
-                            <Text className="mt-2 text-sm text-muted-foreground">{gap.reason}</Text>
                           </View>
-                          <Icon name="chevron-right" size={16} color={colors.foreground} />
+                          <Text className="mt-2 text-sm text-muted-foreground">{gap.reason}</Text>
                         </View>
-                      </TouchableOpacity>
+                        <Button
+                          onPress={() => setSelectedGapItem(gap)}
+                          className="self-end mr-1 mt-2"
+                          variant="secondary"
+                        >
+                          <Text className="text-base">Find Gear</Text>
+                        </Button>
+                      </View>
                     ))}
                   </View>
                 ) : (
@@ -171,8 +180,12 @@ export function GapAnalysisModal({
               </View>
             ) : (
               <View className="flex-1 items-center justify-center py-8">
-                <View className="bg-destructive/10 mb-4 rounded-full p-4">
-                  <Icon name="exclamation" size={32} color="text-destructive" />
+                <View className="bg-destructive/10 dark:bg-destructive/90 mb-4 rounded-full p-4">
+                  <Icon
+                    name="exclamation"
+                    size={32}
+                    color={isDarkColorScheme ? '#ef4444' : colors.destructive}
+                  />
                 </View>
                 <Text className="mb-2 text-center text-lg font-medium text-foreground">
                   Analysis Failed
@@ -181,7 +194,7 @@ export function GapAnalysisModal({
                   Unable to analyze your pack. Please try again.
                 </Text>
                 <Button onPress={onRetry} variant="secondary">
-                  <Icon name="restart" size={16} />
+                  <Icon name="restart" size={20} color={colors.foreground} />
                   <Text>Retry Analysis</Text>
                 </Button>
               </View>

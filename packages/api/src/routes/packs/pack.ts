@@ -575,8 +575,7 @@ Analyze this pack and return a JSON response with the following structure:
     {
       "suggestion": "Item name",
       "reason": "Detailed explanation of why this item is recommended",
-      "category": "Item category",
-      "priority": "high|medium|low"
+      "priority": "must-have|nice-to-have|optional"
     }
   ],
   "summary": "Brief overall assessment of the pack's preparedness"
@@ -620,8 +619,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           z.object({
             suggestion: z.string(),
             reason: z.string(),
-            category: z.string().optional(),
-            priority: z.enum(['high', 'medium', 'low']).optional(),
+            priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional(),
           }),
         ),
         summary: z.string().optional(),

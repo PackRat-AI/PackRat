@@ -30,7 +30,7 @@ export function GapItemCatalogSuggestions({
     try {
       // Use vector search to find relevant catalog items
       const response = await axiosInstance.post('/api/catalog/vector-search', {
-        query: `${gapItem.suggestion} ${gapItem.category || ''} hiking outdoor gear`,
+        query: gapItem.suggestion,
         limit: 6,
       });
       setSuggestions(response.data.items || []);
@@ -40,7 +40,7 @@ export function GapItemCatalogSuggestions({
     } finally {
       setLoading(false);
     }
-  }, [gapItem.suggestion, gapItem.category]);
+  }, [gapItem.suggestion]);
 
   useEffect(() => {
     if (visible && gapItem) {
@@ -77,32 +77,26 @@ export function GapItemCatalogSuggestions({
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View className="flex-1 bg-background">
         {/* Header */}
-        <View className="flex-row items-center justify-between border-b border-border p-4">
+        <View className="flex-row items-center gap-2 justify-between border-b border-border p-4">
           <View className="flex-1">
-            <Text className="text-lg font-semibold">Catalog Suggestions</Text>
-            <Text className="text-sm text-muted-foreground">{gapItem.suggestion}</Text>
+            <Text className="text-lg font-semibold">{gapItem.suggestion}</Text>
+            <Text className="text-sm text-muted-foreground" numberOfLines={1}>
+              {gapItem.reason}
+            </Text>
           </View>
           <TouchableOpacity onPress={onClose} className="p-1">
             <Icon name="close" size={24} color={colors.foreground} />
           </TouchableOpacity>
         </View>
 
-        {/* Content */}
         <ScrollView className="flex-1">
-          {/* Gap Item Info */}
-          <View className="border-b border-border bg-muted p-4">
-            <Text className="mb-2 font-medium text-foreground">{gapItem.suggestion}</Text>
-            <Text className="text-sm text-muted-foreground">{gapItem.reason}</Text>
-          </View>
-
           {loading ? (
             <View className="flex-1 items-center justify-center py-8">
               <ActivityIndicator />
-              <Text className="mt-4 text-muted-foreground">Finding similar items...</Text>
+              <Text className="mt-4 text-muted-foreground">Looking up gear from catalog...</Text>
             </View>
           ) : suggestions.length > 0 ? (
             <View className="p-4">
-              <Text className="mb-4 text-base font-medium">Top Matches ({suggestions.length})</Text>
               {suggestions.map((item) => (
                 <TouchableOpacity
                   key={item.id}
@@ -163,7 +157,7 @@ export function GapItemCatalogSuggestions({
                       {selectedItems.has(item.id) ? (
                         <Icon name="check-circle" size={24} color={colors.primary} />
                       ) : (
-                        <Icon name="circle" size={24} color={colors.border} />
+                        <Icon name="circle-outline" size={24} color={colors.grey2} />
                       )}
                     </View>
                   </View>

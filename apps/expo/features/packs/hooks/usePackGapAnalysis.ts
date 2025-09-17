@@ -12,8 +12,7 @@ export interface GapAnalysisRequest {
 export interface GapAnalysisItem {
   suggestion: string;
   reason: string;
-  category?: string;
-  priority?: 'high' | 'medium' | 'low';
+  priority?: 'must-have' | 'nice-to-have' | 'optional';
 }
 
 export interface GapAnalysisResponse {
