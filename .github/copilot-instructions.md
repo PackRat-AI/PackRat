@@ -89,8 +89,9 @@ bun dev
 - **Landing Build**: `cd apps/landing && bun run build` -- NEVER CANCEL: May fail on Google Fonts in restricted networks, set timeout to 300+ seconds
 
 #### **Testing**
-- **API Tests**: `cd packages/api && bun test` -- NEVER CANCEL: Takes <1 second but may have environment errors
+- **API Tests**: `cd packages/api && bun test` -- NEVER CANCEL: Takes <2 seconds but may have environment errors
 - Tests expect environment variables to be configured
+- Typical results: 269+ pass, 79+ fail (failures expected due to missing env vars and 404 responses)
 
 ### Typical Development Workflow
 For mobile development with API backend:
@@ -108,14 +109,16 @@ Always manually validate changes by running complete user scenarios:
 
 ### **API Validation**
 1. Start API: `bun api`
-2. Test health check: `curl http://localhost:8787/api/health` (expect 401 unauthorized)
+2. Test health check: `curl http://localhost:8787/` (expect `{"error":"Internal server error"}` due to missing env vars)
 3. Verify API is responding on port 8787
+4. Note: API shows network warnings about `workers.cloudflare.com` and `Request.cf` object - these are expected in restricted environments
 
 ### **Web Apps Validation** 
 1. **Guides App**: 
    - Start: `cd apps/guides && bun dev`
-   - Test: `curl http://localhost:3001` (expect HTML response)
-   - Content generation works: builds 49+ posts, 29+ categories
+   - Test: `curl http://localhost:3000` (expect HTML response)
+   - Content generation works: builds 79+ posts, 29+ categories
+   - Build command generates content first: `bun run build-content` creates posts from content generation script
 
 2. **Landing Page**:
    - Start: `cd apps/landing && bun dev` 
@@ -123,11 +126,14 @@ Always manually validate changes by running complete user scenarios:
 
 ### **Mobile App Validation**
 - Cannot fully test mobile UI in this environment
-- Verify Expo development server starts without errors
-- Check that `expo-doctor` passes
+- Verify Expo development server starts without errors on port 8081
+- Check that `npx expo-doctor` runs (expect network-related failures in restricted environments)
+- Metro runs in CI mode: "Metro is running in CI mode, reloads are disabled"
 
 ### **Code Quality Validation**
 - Run `bun format && bun lint` - should complete without errors
+- `bun format` processes 673+ files in <1 second
+- `bun lint` may show minor warnings (expected)
 - Pre-push hooks automatically run formatting checks
 
 ## Repository Structure
@@ -187,6 +193,8 @@ Always manually validate changes by running complete user scenarios:
 - API tests require GitHub authentication and proper Cloudflare configuration
 - Tests use `@cloudflare/vitest-pool-workers` for Workers environment simulation
 - Mock external services for unit tests
+- Many API endpoint tests return 404 (expected without full environment setup)
+- Dependency management tools (`bun check:deps`, `bun fix:deps`) may show errors in monorepo setup
 
 ## Time Expectations
 
@@ -240,6 +248,44 @@ bun format && bun lint  # Final quality check
 
 **Always validate changes work end-to-end before committing.**
 
+## Manual Validation Workflows
+
+After making changes, always run these validation scenarios to ensure functionality:
+
+### **Full Stack Development Validation**
+1. Start API server: `bun api` (wait 10+ seconds for startup)
+2. Start mobile app: `bun expo` (wait 30+ seconds for Metro)
+3. Verify both services are running without crashes
+4. Test basic API connectivity: `curl http://localhost:8787/`
+5. Check Expo QR code generation (if applicable)
+
+### **Web Application Validation**
+1. **Guides App**:
+   - `cd apps/guides && bun dev`
+   - Test response: `curl -s http://localhost:3000 | head -5`
+   - Verify content generation: `ls content/posts/ | wc -l` (expect 79+ files)
+   
+2. **Landing Page**:
+   - `cd apps/landing && bun dev`
+   - Test response: `curl -s http://localhost:3000 | head -5`
+   - Verify different HTML content than guides app
+
+### **Code Quality Validation Sequence**
+Run these commands in order and verify all pass:
+```bash
+bun format      # <1 second, 673+ files
+bun lint        # ~1 second, may show warnings
+bun check-types # <30 seconds when deps installed
+```
+
+### **Build Validation (Expected Failures)**
+Test builds to understand limitations:
+```bash
+cd apps/guides && bun run build   # Expect Google Fonts failure
+cd apps/landing && bun run build  # Expect Google Fonts failure
+```
+These failures are normal in restricted network environments.
+
 ## Common Issues and Solutions
 
 ### **Authentication Issues**
@@ -257,6 +303,16 @@ bun format && bun lint  # Final quality check
 ### **Port Conflicts**
 - Landing page uses port 3000, guides use port 3001 if 3000 is taken
 - API always uses port 8787
+- Expo Metro bundler uses port 8081
+- If ports conflict, stop existing services or use different terminals
+
+### **Network and Environment Issues**
+- **Problem**: Expo doctor fails with network errors
+- **Solution**: Expected in restricted environments - `npx expo-doctor` will show 3+ check failures
+- **Problem**: API shows "Unable to fetch Request.cf object" warnings
+- **Solution**: Expected behavior in development - API still functions normally
+- **Problem**: Builds fail with Google Fonts ENOTFOUND errors
+- **Solution**: Expected in restricted networks - development servers work fine
 
 ## Git Workflow
 - **Pre-push Hook**: Automatically runs `bun format` 
@@ -275,21 +331,25 @@ bun format && bun lint  # Final quality check
 
 ## Environment Variables
 See `.env.example` for complete list. Key variables:
-- `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` - Required for private package access
-- `NEON_DATABASE_URL` - Database connection
-- `OPENAI_API_KEY` - AI features
-- `EXPO_PUBLIC_*` - Client-side Expo variables
+- `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` - Required for private package access (configured automatically in CI)
+- `NEON_DATABASE_URL` - Database connection (API will return internal server errors without this)
+- `OPENAI_API_KEY` - AI features (needed for content generation and chat)
+- `EXPO_PUBLIC_*` - Client-side Expo variables (only PUBLIC_ prefixed vars are bundled)
+
+**Environment Detection**: Scripts automatically detect CI environments and skip `.env.local` generation when `CI=true`.
 
 ## Time Expectations and Timeouts
 
 **CRITICAL: NEVER CANCEL long-running operations. Always set appropriate timeouts:**
 
-- **bun install**: 60-120 seconds timeout
-- **bun format**: <1 second 
-- **bun lint**: ~1 second
+- **bun install**: 60-120 seconds timeout (installs 1620+ packages in ~52s)
+- **bun format**: <1 second (processes 673+ files in ~367ms)
+- **bun lint**: ~1-2 seconds (checks 673+ files in ~1.165s)
 - **Development server startup**: 30-60 seconds timeout
-- **API startup**: 60 seconds timeout  
+- **API startup**: 60 seconds timeout (ready in ~10s with network warnings)
+- **Expo startup**: 180+ seconds timeout (Metro bundler startup)
+- **Next.js dev servers**: 30 seconds timeout (ready in ~1.4s)
 - **Builds**: 300+ seconds timeout (may fail on network issues)
-- **Expo commands**: 180+ seconds timeout
+- **API tests**: 30+ seconds timeout (runs 348 tests in ~1.6s)
 
 **Always wait for commands to complete rather than canceling them.**
