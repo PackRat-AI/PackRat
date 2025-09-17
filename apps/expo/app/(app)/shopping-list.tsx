@@ -12,7 +12,7 @@ const SHOPPING_LIST = [
   {
     id: '1',
     name: 'Ultralight Rain Pants',
-    priority: 'must-have',
+    priority: 'High',
     estimatedCost: '$89',
     notes: 'Need for upcoming trip, looking at Outdoor Research Helium',
     category: 'Clothing',
@@ -21,7 +21,7 @@ const SHOPPING_LIST = [
   {
     id: '2',
     name: 'Titanium Stakes (6)',
-    priority: 'nice-to-have',
+    priority: 'Medium',
     estimatedCost: '$24',
     notes: 'Replace bent aluminum stakes',
     category: 'Shelter',
@@ -30,7 +30,7 @@ const SHOPPING_LIST = [
   {
     id: '3',
     name: 'Fuel Canister',
-    priority: 'must-have',
+    priority: 'High',
     estimatedCost: '$8',
     notes: 'Need for next weekend trip',
     category: 'Cooking',
@@ -39,7 +39,7 @@ const SHOPPING_LIST = [
   {
     id: '4',
     name: 'Merino Wool Socks',
-    priority: 'nice-to-have',
+    priority: 'Medium',
     estimatedCost: '$18',
     notes: 'Darn Tough preferred',
     category: 'Clothing',
@@ -48,7 +48,7 @@ const SHOPPING_LIST = [
   {
     id: '5',
     name: 'Trekking Pole Tip Protectors',
-    priority: 'optional',
+    priority: 'Low',
     estimatedCost: '$6',
     notes: 'For travel and storage',
     category: 'Accessories',
@@ -57,7 +57,7 @@ const SHOPPING_LIST = [
   {
     id: '6',
     name: 'Backpack Rain Cover',
-    priority: 'nice-to-have',
+    priority: 'Medium',
     estimatedCost: '$35',
     notes: 'Size medium for 50L pack',
     category: 'Accessories',
@@ -66,7 +66,7 @@ const SHOPPING_LIST = [
   {
     id: '7',
     name: 'Rechargeable Headlamp',
-    priority: 'must-have',
+    priority: 'High',
     estimatedCost: '$45',
     notes: 'Black Diamond or Petzl',
     category: 'Electronics',
@@ -75,36 +75,21 @@ const SHOPPING_LIST = [
 ];
 
 function PriorityBadge({ priority }: { priority: string }) {
-  const getColorAndIcon = () => {
+  const getColor = () => {
     switch (priority) {
-      case 'must-have':
-        return {
-          bgColor: 'bg-red-500',
-          iconName: 'exclamation-triangle' as const,
-        };
-      case 'nice-to-have':
-        return {
-          bgColor: 'bg-amber-500',
-          iconName: 'star' as const,
-        };
-      case 'optional':
-        return {
-          bgColor: 'bg-blue-500',
-          iconName: 'circle' as const,
-        };
+      case 'High':
+        return 'bg-red-500';
+      case 'Medium':
+        return 'bg-amber-500';
+      case 'Low':
+        return 'bg-green-500';
       default:
-        return {
-          bgColor: 'bg-gray-500',
-          iconName: 'circle' as const,
-        };
+        return 'bg-gray-500';
     }
   };
 
-  const { bgColor, iconName } = getColorAndIcon();
-
   return (
-    <View className={cn('rounded-full px-2 py-1 flex-row items-center gap-1', bgColor)}>
-      <Icon name={iconName} size={10} color="white" />
+    <View className={cn('rounded-full px-2 py-1', getColor())}>
       <Text variant="caption2" className="font-medium text-white">
         {priority}
       </Text>
