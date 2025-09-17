@@ -3,7 +3,7 @@ import { Icon } from '@roninoss/icons';
 import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import type { GapAnalysisItem, GapAnalysisResponse } from '../hooks/usePackGapAnalysis';
 import type { Pack } from '../types';
@@ -28,11 +28,22 @@ export function GapAnalysisModal({
 }: GapAnalysisModalProps) {
   const { colors } = useColorScheme();
   const [selectedGapItem, setSelectedGapItem] = useState<GapAnalysisItem | null>(null);
+  const [addressedGaps, setAddressedGaps] = useState<Set<string>>(new Set());
   const { addItemsToPack } = useBulkAddCatalogItems();
 
+  // Reset addressed gaps when analysis changes
+  useEffect(() => {
+    if (analysis) {
+      setAddressedGaps(new Set());
+    }
+  }, [analysis]);
+
   const handleAddItems = async (catalogItems: CatalogItem[]) => {
-    if (catalogItems.length > 0) {
+    if (catalogItems.length > 0 && selectedGapItem) {
       await addItemsToPack(pack.id, catalogItems);
+      // Mark this gap as addressed
+      const gapKey = `${selectedGapItem.suggestion}-${selectedGapItem.category}`;
+      setAddressedGaps(prev => new Set(prev).add(gapKey));
       setSelectedGapItem(null);
     }
   };
@@ -121,15 +132,33 @@ export function GapAnalysisModal({
                 {analysis.gaps.length > 0 ? (
                   <View>
                     <Text className="mb-4 text-base font-medium">Missing Items</Text>
-                    {analysis.gaps.map((gap) => (
+                    {analysis.gaps.map((gap) => {
+                      const gapKey = `${gap.suggestion}-${gap.category}`;
+                      const isAddressed = addressedGaps.has(gapKey);
+                      
+                      return (
                       <View
-                        key={`${gap.suggestion}-${gap.category}`}
-                        className="mb-3 rounded-lg border border-border bg-card p-4"
+                        key={gapKey}
+                        className={`mb-3 rounded-lg border bg-card p-4 ${
+                          isAddressed ? 'border-green-500 bg-green-50 dark:bg-green-950' : 'border-border'
+                        }`}
                       >
                         <View className="flex-row items-start justify-between mb-3">
                           <View className="flex-1">
                             <View className="flex-row items-center gap-2">
-                              <Text className="font-medium text-foreground">{gap.suggestion}</Text>
+                              <Text className={`font-medium ${
+                                isAddressed ? 'text-green-700 dark:text-green-300' : 'text-foreground'
+                              }`}>
+                                {gap.suggestion}
+                              </Text>
+                              {isAddressed && (
+                                <View className="flex-row items-center gap-1 rounded-full bg-green-100 dark:bg-green-800 px-2 py-0.5">
+                                  <Icon name="check" size={12} color={colors.green} />
+                                  <Text className="text-xs font-medium text-green-700 dark:text-green-300">
+                                    Added
+                                  </Text>
+                                </View>
+                              )}
                               {gap.priority && (
                                 <View className="flex-row items-center gap-2 rounded-full border border-border bg-transparent px-2 py-0.5">
                                   <Icon
@@ -147,22 +176,37 @@ export function GapAnalysisModal({
                               )}
                             </View>
                             {gap.category && (
-                              <Text className="mt-1 text-xs text-muted-foreground">
+                              <Text className={`mt-1 text-xs ${
+                                isAddressed ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                              }`}>
                                 {gap.category}
                               </Text>
                             )}
-                            <Text className="mt-2 text-sm text-muted-foreground">{gap.reason}</Text>
+                            <Text className={`mt-2 text-sm ${
+                              isAddressed ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                            }`}>
+                              {gap.reason}
+                            </Text>
                           </View>
                         </View>
-                        <TouchableOpacity
-                          className="bg-primary rounded-lg p-3 flex-row items-center justify-center gap-2"
-                          onPress={() => setSelectedGapItem(gap)}
-                        >
-                          <Icon name="search" size={16} color="white" />
-                          <Text className="text-white font-medium">Find it</Text>
-                        </TouchableOpacity>
+                        {!isAddressed ? (
+                          <TouchableOpacity
+                            className="bg-primary rounded-lg p-3 flex-row items-center justify-center gap-2"
+                            onPress={() => setSelectedGapItem(gap)}
+                          >
+                            <Icon name="search" size={16} color="white" />
+                            <Text className="text-white font-medium">Find it</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <View className="bg-green-100 dark:bg-green-800 rounded-lg p-3 flex-row items-center justify-center gap-2">
+                            <Icon name="check-circle" size={16} color={colors.green} />
+                            <Text className="text-green-700 dark:text-green-300 font-medium">
+                              Item Added to Pack
+                            </Text>
+                          </View>
+                        )}
                       </View>
-                    ))}
+                    )})
                   </View>
                 ) : (
                   <View className="items-center py-8">

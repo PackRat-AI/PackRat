@@ -24,6 +24,7 @@ export function GapItemCatalogSuggestions({
   const [suggestions, setSuggestions] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [addingItemId, setAddingItemId] = useState<number | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
 
   const fetchCatalogSuggestions = useCallback(async () => {
     setLoading(true);
@@ -49,7 +50,10 @@ export function GapItemCatalogSuggestions({
   }, [visible, gapItem, fetchCatalogSuggestions]);
 
   const handleAddItem = async (item: CatalogItem) => {
+    if (isAdding) return; // Prevent multiple simultaneous additions
+    
     setAddingItemId(item.id);
+    setIsAdding(true);
     try {
       await onItemsSelected([item]);
       onClose();
@@ -57,6 +61,7 @@ export function GapItemCatalogSuggestions({
       console.error('Failed to add item:', error);
     } finally {
       setAddingItemId(null);
+      setIsAdding(false);
     }
   };
 
@@ -150,9 +155,11 @@ export function GapItemCatalogSuggestions({
 
                   {/* Add to Pack Button */}
                   <TouchableOpacity
-                    className="mt-3 bg-primary rounded-lg p-2 flex-row items-center justify-center gap-2"
+                    className={`mt-3 rounded-lg p-2 flex-row items-center justify-center gap-2 ${
+                      isAdding ? 'bg-gray-400' : 'bg-primary'
+                    }`}
                     onPress={() => handleAddItem(item)}
-                    disabled={addingItemId === item.id}
+                    disabled={isAdding}
                   >
                     {addingItemId === item.id ? (
                       <>
