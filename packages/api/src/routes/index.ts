@@ -7,7 +7,6 @@ import { chatRoutes } from './chat';
 import { guidesRoutes } from './guides';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
-import { searchRoutes } from './search';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
@@ -31,7 +30,6 @@ protectedRoutes.route('/weather', weatherRoutes);
 protectedRoutes.route('/pack-templates', packTemplatesRoutes);
 protectedRoutes.route('/user', userRoutes);
 protectedRoutes.route('/upload', uploadRoutes);
-protectedRoutes.route('/search', searchRoutes);
 
 const routes = new OpenAPIHono();
 
