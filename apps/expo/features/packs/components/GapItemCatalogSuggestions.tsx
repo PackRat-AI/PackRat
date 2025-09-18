@@ -11,7 +11,7 @@ import type { GapAnalysisItem } from '../hooks/usePackGapAnalysis';
 interface GapItemCatalogSuggestionsProps {
   visible: boolean;
   onClose: () => void;
-  suggestions?: CatalogItem[];
+  suggestions?: (CatalogItem & { similarity: number })[];
   isLoading: boolean;
   isAdding: boolean;
   gapItem: GapAnalysisItem;
@@ -126,6 +126,17 @@ export function GapItemCatalogSuggestions({
                           </View>
                         )}
                       </View>
+                      <Text
+                        className={`text-xs font-medium mt-4 ${
+                          item.similarity >= 0.8
+                            ? 'text-primary'
+                            : item.similarity >= 0.5
+                              ? 'text-foreground'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
+                        {Math.round(item.similarity * 100)}% confident
+                      </Text>
                     </View>
 
                     {/* Selection indicator */}
