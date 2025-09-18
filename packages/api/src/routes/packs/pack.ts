@@ -539,7 +539,7 @@ packRoutes.openapi(gapAnalysisRoute, async (c) => {
     if (destination) {
       try {
         const weatherResult = await weatherService.getWeatherForLocation(destination);
-        weatherContext = `Current weather in ${location}: ${JSON.stringify(weatherResult)}`;
+        weatherContext = `Current weather in ${destination}: ${JSON.stringify(weatherResult)}`;
       } catch (error) {
         console.warn('Weather lookup failed:', error);
       }
