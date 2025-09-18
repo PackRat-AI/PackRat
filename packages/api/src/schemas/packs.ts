@@ -180,6 +180,14 @@ export const GapAnalysisItemSchema = z
       example: 'You have a sleeping bag but no insulation from the ground',
       description: 'Explanation of why this item is recommended',
     }),
+    consumable: z.boolean().openapi({
+      example: false,
+      description: 'Indicates if the item is consumable',
+    }),
+    worn: z.boolean().openapi({
+      example: false,
+      description: 'Indicates if the item is typically worn',
+    }),
     category: z.string().optional().openapi({
       example: 'Sleep System',
       description: 'Category of the missing item',

@@ -1,66 +1,42 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, cn, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
-import axiosInstance from 'expo-app/lib/api/client';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useCallback, useEffect, useState } from 'react';
-import { Image, Modal, ScrollView, TouchableOpacity, View } from 'react-native';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
+import { useState } from 'react';
+import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import type { GapAnalysisItem } from '../hooks/usePackGapAnalysis';
 
 interface GapItemCatalogSuggestionsProps {
   visible: boolean;
   onClose: () => void;
+  suggestions?: CatalogItem[];
+  isLoading: boolean;
+  isAdding: boolean;
   gapItem: GapAnalysisItem;
-  onItemsSelected: (items: CatalogItem[]) => void;
+  onAddItem: (items: CatalogItem) => void;
+  onRetry: () => void;
 }
 
 export function GapItemCatalogSuggestions({
   visible,
   onClose,
+  suggestions,
+  isLoading,
+  isAdding,
+  onRetry,
   gapItem,
-  onItemsSelected,
+  onAddItem,
 }: GapItemCatalogSuggestionsProps) {
-  const { colors } = useColorScheme();
-  const [suggestions, setSuggestions] = useState<CatalogItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-
-  const fetchCatalogSuggestions = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Use vector search to find relevant catalog items
-      const response = await axiosInstance.post('/api/catalog/vector-search', {
-        query: gapItem.suggestion,
-        limit: 6,
-      });
-      setSuggestions(response.data.items || []);
-    } catch (error) {
-      console.error('Failed to fetch catalog suggestions:', error);
-      setSuggestions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [gapItem.suggestion]);
-
-  useEffect(() => {
-    if (visible && gapItem) {
-      fetchCatalogSuggestions();
-    }
-  }, [visible, gapItem, fetchCatalogSuggestions]);
-
-  const toggleItemSelection = (itemId: number) => {
-    const newSelection = new Set(selectedItems);
-    if (newSelection.has(itemId)) {
-      newSelection.delete(itemId);
-    } else {
-      newSelection.add(itemId);
-    }
-    setSelectedItems(newSelection);
-  };
+  const { isDarkColorScheme, colors } = useColorScheme();
+  const [selectedItem, setSelectedItem] = useState<number | null>(null);
 
   const handleAddSelected = () => {
-    const itemsToAdd = suggestions.filter((item) => selectedItems.has(item.id));
-    onItemsSelected(itemsToAdd);
+    assertDefined(suggestions);
+    const itemToAdd = suggestions.find((item) => selectedItem === item.id);
+    assertDefined(itemToAdd);
+    onAddItem(itemToAdd);
   };
 
   const formatPrice = (price?: number | null, currency?: string | null) => {
@@ -89,104 +65,128 @@ export function GapItemCatalogSuggestions({
           </TouchableOpacity>
         </View>
 
-        <ScrollView className="flex-1">
-          {loading ? (
+        <ScrollView contentContainerClassName={cn(!suggestions && 'flex-1')}>
+          {isLoading ? (
             <View className="flex-1 items-center justify-center py-8">
-              <ActivityIndicator />
-              <Text className="mt-4 text-muted-foreground">Looking up gear from catalog...</Text>
+              <ActivityIndicator size="large" />
+              <Text className="mt-4 text-muted-foreground">Looking up gears...</Text>
             </View>
-          ) : suggestions.length > 0 ? (
-            <View className="p-4">
-              {suggestions.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  className={`mb-4 rounded-lg border p-4 ${
-                    selectedItems.has(item.id)
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border bg-card'
-                  }`}
-                  onPress={() => toggleItemSelection(item.id)}
-                >
-                  <View className="flex-row gap-3">
-                    {/* Image */}
-                    {item.images?.[0] ? (
-                      <Image
-                        source={{ uri: item.images[0] }}
-                        className="h-16 w-16 rounded-md bg-muted"
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View className="h-16 w-16 items-center justify-center rounded-md bg-muted">
-                        <Icon name="image" size={24} color={colors.foreground} />
-                      </View>
-                    )}
-
-                    {/* Content */}
-                    <View className="flex-1">
-                      <Text className="font-medium text-foreground" numberOfLines={2}>
-                        {item.name}
-                      </Text>
-                      {item.brand && (
-                        <Text className="text-sm text-muted-foreground">{item.brand}</Text>
-                      )}
-
-                      <View className="mt-2 flex-row items-center gap-4">
-                        {item.price && (
-                          <Text className="text-sm font-medium text-foreground">
-                            {formatPrice(item.price, item.currency)}
-                          </Text>
-                        )}
-                        {item.weight && (
-                          <Text className="text-sm text-muted-foreground">
-                            {formatWeight(item.weight, item.weightUnit)}
-                          </Text>
-                        )}
-                        {item.ratingValue && (
-                          <View className="flex-row items-center gap-1">
-                            <Icon name="star" size={12} color={colors.yellow} />
-                            <Text className="text-sm text-muted-foreground">
-                              {item.ratingValue.toFixed(1)}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-
-                    {/* Selection indicator */}
-                    <View className="items-center justify-center">
-                      {selectedItems.has(item.id) ? (
-                        <Icon name="check-circle" size={24} color={colors.primary} />
+          ) : suggestions ? (
+            suggestions.length > 0 ? (
+              <View className="p-4">
+                {suggestions.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    className={`mb-4 rounded-lg border p-4 ${
+                      selectedItem === item.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-card'
+                    }`}
+                    onPress={() => setSelectedItem(item.id)}
+                  >
+                    <View className="flex-row gap-3">
+                      {/* Image */}
+                      {item.images?.[0] ? (
+                        <CatalogItemImage
+                          imageUrl={item.images[0]}
+                          className="h-16 w-16 rounded-md bg-muted"
+                          resizeMode="cover"
+                        />
                       ) : (
-                        <Icon name="circle-outline" size={24} color={colors.grey2} />
+                        <View className="h-16 w-16 items-center justify-center rounded-md bg-muted">
+                          <Icon name="image" size={24} color={colors.foreground} />
+                        </View>
                       )}
+
+                      {/* Content */}
+                      <View className="flex-1">
+                        <Text className="font-medium text-foreground" numberOfLines={2}>
+                          {item.name}
+                        </Text>
+                        {item.brand && (
+                          <Text className="text-sm text-muted-foreground">{item.brand}</Text>
+                        )}
+
+                        <View className="mt-2 flex-row items-center gap-4">
+                          {item.price && (
+                            <Text className="text-sm font-medium text-foreground">
+                              {formatPrice(item.price, item.currency)}
+                            </Text>
+                          )}
+                          {item.weight && (
+                            <Text className="text-sm text-muted-foreground">
+                              {formatWeight(item.weight, item.weightUnit)}
+                            </Text>
+                          )}
+                          {item.ratingValue && (
+                            <View className="flex-row items-center gap-1">
+                              <Icon name="star" size={12} color={colors.yellow} />
+                              <Text className="text-sm text-muted-foreground">
+                                {item.ratingValue.toFixed(1)}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+
+                      {/* Selection indicator */}
+                      <View className="items-center justify-center">
+                        {selectedItem === item.id ? (
+                          <Icon name="check-circle" size={24} color={colors.primary} />
+                        ) : (
+                          <Icon name="circle-outline" size={24} color={colors.grey2} />
+                        )}
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View className="flex-1 items-center justify-center py-8 mt-32">
+                <Icon
+                  materialIcon={{ name: 'search', type: 'MaterialIcons' }}
+                  ios={{ name: 'magnifyingglass' }}
+                  size={48}
+                  color={colors.foreground}
+                />
+                <Text className="mt-4 text-center font-medium text-foreground">No Gears Found</Text>
+                <Text className="mt-2 mx-8 text-center text-sm text-muted-foreground">
+                  No "{gapItem.suggestion}" gears found.{'\n'} Try browsing manually.
+                </Text>
+              </View>
+            )
           ) : (
             <View className="flex-1 items-center justify-center py-8">
-              <Icon name="search" size={48} color={colors.foreground} />
-              <Text className="mt-4 text-center font-medium text-foreground">No Items Found</Text>
-              <Text className="mt-2 text-center text-sm text-muted-foreground">
-                No catalog items found for "{gapItem.suggestion}". Try browsing manually.
+              <View className="bg-destructive/10 dark:bg-destructive/90 mb-4 rounded-full p-4">
+                <Icon
+                  name="exclamation"
+                  size={32}
+                  color={isDarkColorScheme ? '#ef4444' : colors.destructive}
+                />
+              </View>
+              <Text className="mb-2 text-center text-lg font-medium text-foreground">
+                Unable to Load Gears
               </Text>
+              <Text className="mb-6 text-center text-sm text-muted-foreground">
+                Please try again.
+              </Text>
+              <Button onPress={onRetry} variant="secondary">
+                <Text>Retry</Text>
+              </Button>
             </View>
           )}
         </ScrollView>
 
         {/* Footer */}
-        {suggestions.length > 0 && (
+        {suggestions && suggestions.length > 0 && (
           <View className="border-t border-border p-4">
             <Button
               onPress={handleAddSelected}
-              disabled={selectedItems.size === 0}
+              disabled={selectedItem === null || isAdding}
               className="w-full"
             >
-              <Icon name="plus" size={16} />
-              <Text>
-                Add {selectedItems.size > 0 ? `${selectedItems.size} ` : ''}Selected Items
-              </Text>
+              {isAdding && <ActivityIndicator size="small" color="#fff" />}
+              <Text>{isAdding ? 'Adding...' : 'Add to Pack'}</Text>
             </Button>
           </View>
         )}

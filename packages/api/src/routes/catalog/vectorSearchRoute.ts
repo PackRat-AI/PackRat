@@ -10,7 +10,7 @@ import type { Variables } from '@packrat/api/types/variables';
 import type { Context } from 'hono';
 
 export const routeDefinition = createRoute({
-  method: 'post',
+  method: 'get',
   path: '/vector-search',
   tags: ['Catalog'],
   summary: 'Vector search catalog items',
@@ -49,7 +49,7 @@ export const routeDefinition = createRoute({
 
 export async function handler(c: Context<{ Bindings: Env; Variables: Variables }>) {
   try {
-    const { query, limit = 10, offset = 0 } = await c.req.json();
+    const { q: query, limit = 10, offset = 0 } = await c.req.valid('query');
 
     if (!query || query.trim() === '') {
       return c.json({ error: 'Query is required' }, 400);

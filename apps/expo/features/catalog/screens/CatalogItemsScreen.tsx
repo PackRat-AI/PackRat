@@ -61,7 +61,7 @@ function CatalogItemsScreen() {
     // isLoading: isVectorLoading,
     // isFetching: isVectorFetching,
     error: vectorError,
-  } = useVectorSearch({ query: '' });
+  } = useVectorSearch({ query: '', limit: 10 });
 
   const paginatedItems: CatalogItem[] = (
     paginatedData?.pages.flatMap((page) => page.items) ?? []

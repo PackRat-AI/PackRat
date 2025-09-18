@@ -1,3 +1,5 @@
+export * from './useAddCatalogItem';
+export * from './useBulkAddCatalogItems';
 export * from './useCategoriesCount';
 export * from './useCreatePack';
 export * from './useCreatePackItem';

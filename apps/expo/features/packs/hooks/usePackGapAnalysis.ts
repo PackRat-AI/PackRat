@@ -12,6 +12,8 @@ export interface GapAnalysisRequest {
 export interface GapAnalysisItem {
   suggestion: string;
   reason: string;
+  consumable?: boolean;
+  worn?: boolean;
   priority?: 'must-have' | 'nice-to-have' | 'optional';
 }
 
@@ -26,10 +28,13 @@ export const analyzePackGaps = async (
   context?: GapAnalysisRequest,
 ): Promise<GapAnalysisResponse> => {
   try {
+    console.log('launching gap analysis with context:', context);
     const response = await axiosInstance.post(`/api/packs/${packId}/gap-analysis`, context || {});
+    console.log('Gap Analysis Response:', response.data);
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
+    console.log('Gap Analysis Error:', JSON.stringify(error));
     throw new Error(`Failed to analyze pack gaps: ${message}`);
   }
 };

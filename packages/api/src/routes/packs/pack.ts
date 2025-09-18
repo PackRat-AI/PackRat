@@ -506,10 +506,12 @@ packRoutes.openapi(gapAnalysisRoute, async (c) => {
     const { destination, tripType, duration, startDate, endDate } = body;
 
     // Get pack details with items
-    const pack = await getPackDetails({ packId, c });
-    if (!pack) {
+    const packDetails = await getPackDetails({ packId, c });
+    if (!packDetails) {
       return c.json({ error: 'Pack not found' }, 404);
     }
+
+    const pack = computePackWeights(packDetails);
 
     // Check if pack belongs to user
     const isOwned = pack.userId === auth.userId;
@@ -575,6 +577,8 @@ Analyze this pack and return a JSON response with the following structure:
     {
       "suggestion": "Item name",
       "reason": "Detailed explanation of why this item is recommended",
+      "consumable": true|false,
+      "worn": true|false,
       "priority": "must-have|nice-to-have|optional"
     }
   ],
@@ -619,6 +623,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
           z.object({
             suggestion: z.string(),
             reason: z.string(),
+            consumable: z.boolean(),
+            worn: z.boolean(),
             priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional(),
           }),
         ),

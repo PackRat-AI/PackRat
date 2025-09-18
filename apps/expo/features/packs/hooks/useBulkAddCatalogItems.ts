@@ -2,8 +2,8 @@ import { useCreatePackItem } from 'expo-app/features/packs';
 import type { WeightUnit } from 'expo-app/types';
 import { useState } from 'react';
 import Toast from 'react-native-toast-message';
-import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
-import type { CatalogItem } from '../types';
+import { cacheCatalogItemImage } from '../../catalog/lib/cacheCatalogItemImage';
+import type { CatalogItem } from '../../catalog/types';
 
 export function useBulkAddCatalogItems() {
   const [isLoading, setIsLoading] = useState(false);

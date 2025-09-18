@@ -341,11 +341,11 @@ export const VectorSearchQuerySchema = z
       example: 'lightweight tent for backpacking',
       description: 'Search query string',
     }),
-    limit: z.number().int().min(1).max(50).optional().default(10).openapi({
+    limit: z.coerce.number().int().min(1).max(50).optional().default(10).openapi({
       example: 10,
       description: 'Maximum number of results to return',
     }),
-    offset: z.number().int().min(0).optional().default(0).openapi({
+    offset: z.coerce.number().int().min(0).optional().default(0).openapi({
       example: 0,
       description: 'Number of results to skip for pagination',
     }),
