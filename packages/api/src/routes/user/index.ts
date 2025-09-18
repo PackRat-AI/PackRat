@@ -77,14 +77,17 @@ userRoutes.openapi(getUserProfileRoute, async (c) => {
       return c.json({ error: 'User not found', code: 'USER_NOT_FOUND' }, 404);
     }
 
-    return c.json({
-      success: true,
-      user: {
-        ...user,
-        createdAt: user.createdAt?.toISOString() || null,
-        updatedAt: user.updatedAt?.toISOString() || null,
+    return c.json(
+      {
+        success: true,
+        user: {
+          ...user,
+          createdAt: user.createdAt?.toISOString() || null,
+          updatedAt: user.updatedAt?.toISOString() || null,
+        },
       },
-    });
+      200,
+    );
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return c.json(
@@ -199,16 +202,7 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
       .update(users)
       .set(updateData)
       .where(eq(users.id, auth.userId))
-      .returning({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        emailVerified: users.emailVerified,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      });
+      .returning();
 
     if (!updatedUser) {
       return c.json({ error: 'User not found', code: 'USER_NOT_FOUND' }, 404);
@@ -218,15 +212,23 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
       ? 'Profile updated successfully. Please verify your new email address.'
       : 'Profile updated successfully';
 
-    return c.json({
-      success: true,
-      message,
-      user: {
-        ...updatedUser,
-        createdAt: updatedUser.createdAt?.toISOString() || null,
-        updatedAt: updatedUser.updatedAt?.toISOString() || null,
+    return c.json(
+      {
+        success: true,
+        message,
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          role: updatedUser.role,
+          emailVerified: updatedUser.emailVerified,
+          createdAt: updatedUser.createdAt?.toISOString() || null,
+          updatedAt: updatedUser.updatedAt?.toISOString() || null,
+        },
       },
-    });
+      200,
+    );
   } catch (error) {
     console.error('Error updating user profile:', error);
     return c.json(

@@ -14,7 +14,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Image, Pressable, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
@@ -27,6 +27,9 @@ export function PackDetailScreen() {
 
   const [activeTab, setActiveTab] = useState('all');
   const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
+  const [isPackingMode, setIsPackingMode] = useState(false);
+  const [packedItems, setPackedItems] = useState<Record<string, boolean>>({});
+
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
   const { activeLocation } = useActiveLocation();
 
@@ -38,7 +41,7 @@ export function PackDetailScreen() {
     reset: resetAnalysis,
   } = usePackGapAnalysis();
 
-  const packFromStore = usePackDetailsFromStore(id as string); // Using user owned pack from store to ensure component updates when user modifies it
+  const packFromStore = usePackDetailsFromStore(id as string);
   const {
     pack: packFromApi,
     isLoading,
@@ -48,7 +51,7 @@ export function PackDetailScreen() {
   } = usePackDetailsFromApi({
     id: id as string,
     enabled: !isOwnedByUser,
-  }); // Fetch non user owned packs from api
+  });
 
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
@@ -56,10 +59,17 @@ export function PackDetailScreen() {
 
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
-    router.push({
-      pathname: `/item/[id]`,
-      params: { id: item.id, packId: item.packId },
-    });
+    if (isPackingMode) {
+      setPackedItems((prev) => ({
+        ...prev,
+        [item.id]: !prev[item.id],
+      }));
+    } else {
+      router.push({
+        pathname: `/item/[id]`,
+        params: { id: item.id, packId: item.packId },
+      });
+    }
   };
 
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
@@ -101,7 +111,6 @@ export function PackDetailScreen() {
 
   const getFilteredItems = () => {
     if (!pack?.items) return [];
-
     switch (activeTab) {
       case 'worn':
         return pack.items.filter((item) => item.worn);
@@ -120,7 +129,6 @@ export function PackDetailScreen() {
   const getTabTextStyle = (tab: string) =>
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
 
-  // Loading state for non-owned packs
   if (!isOwnedByUser && isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
@@ -131,7 +139,6 @@ export function PackDetailScreen() {
     );
   }
 
-  // Error state for non-owned packs
   if (!isOwnedByUser && isError) {
     return (
       <SafeAreaView className="flex-1 bg-background">
@@ -230,7 +237,6 @@ export function PackDetailScreen() {
                       },
                     });
                   }
-
                   router.push({
                     pathname: '/ai-chat',
                     params: {
@@ -244,6 +250,16 @@ export function PackDetailScreen() {
                 <Icon name="message-outline" color={colors.foreground} />
                 <Text>Ask AI</Text>
               </Button>
+
+              {isOwnedByUser && (
+                <Button
+                  variant={isPackingMode ? 'primary' : 'secondary'}
+                  onPress={() => setIsPackingMode(!isPackingMode)}
+                >
+                  <Icon name="check" color={colors.foreground} />
+                  <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
+                </Button>
+              )}
 
               {isOwnedByUser && (
                 <Button variant="secondary" onPress={handleAnalyzeGaps} disabled={isAnalyzing}>
@@ -275,9 +291,28 @@ export function PackDetailScreen() {
 
           {filteredItems.length > 0 ? (
             filteredItems.map((item) => (
-              <View key={item.id} className="px-4 pt-3">
-                <PackItemCard item={item} onPress={handleItemPress} />
-              </View>
+              <Pressable
+                key={item.id}
+                className="px-4 pt-3 flex-row items-center gap-3"
+                onPress={() => handleItemPress(item)}
+              >
+                {isPackingMode && (
+                  <View
+                    className={cn(
+                      'h-5 w-5 rounded border border-gray-400 items-center justify-center',
+                      packedItems[item.id] ? 'bg-primary' : 'bg-background',
+                    )}
+                  >
+                    {packedItems[item.id] && <Icon name="check" size={16} color="white" />}
+                  </View>
+                )}
+                <View className="flex-1">
+                  <PackItemCard
+                    item={item}
+                    onPress={!isPackingMode ? handleItemPress : undefined}
+                  />
+                </View>
+              </Pressable>
             ))
           ) : (
             <View className="items-center justify-center p-4">
@@ -285,7 +320,6 @@ export function PackDetailScreen() {
             </View>
           )}
 
-          {/* AI Suggestions Section */}
           {isOwnedByUser && !!filteredItems.length && <PackItemSuggestions pack={pack} />}
 
           {isOwnedByUser && (
@@ -315,7 +349,6 @@ export function PackDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Catalog Browser Modal */}
       <CatalogBrowserModal
         visible={isCatalogModalVisible}
         onClose={() => setIsCatalogModalVisible(false)}

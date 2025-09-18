@@ -250,7 +250,7 @@ export class R2BucketService {
         return null;
       }
 
-      const r2Object = this.createR2Object(key, response);
+      const r2Object = this.createR2Object(key, { ...response });
 
       let streamConsumed = false;
       let webStream: ReadableStream<Uint8Array>;
