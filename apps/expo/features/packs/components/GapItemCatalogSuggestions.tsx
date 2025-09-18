@@ -77,66 +77,64 @@ export function GapItemCatalogSuggestions({
                 {suggestions.map((item) => (
                   <TouchableOpacity
                     key={item.id}
-                    className={`mb-4 rounded-lg border p-4 ${
+                    className={`mb-4 rounded-lg flex-row gap-3 border p-4 ${
                       selectedItem === item.id
                         ? 'border-primary bg-primary/5'
                         : 'border-border bg-card'
                     }`}
                     onPress={() => setSelectedItem(item.id)}
                   >
-                    <View className="flex-row gap-3">
-                      {/* Image */}
-                      {item.images?.[0] ? (
-                        <CatalogItemImage
-                          imageUrl={item.images[0]}
-                          className="h-16 w-16 rounded-md bg-muted"
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View className="h-16 w-16 items-center justify-center rounded-md bg-muted">
-                          <Icon name="image" size={24} color={colors.foreground} />
-                        </View>
+                    {/* Image */}
+                    {item.images?.[0] ? (
+                      <CatalogItemImage
+                        imageUrl={item.images[0]}
+                        className="h-16 w-16 rounded-md bg-muted"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="h-16 w-16 items-center justify-center rounded-md bg-muted">
+                        <Icon name="image" size={24} color={colors.foreground} />
+                      </View>
+                    )}
+
+                    {/* Content */}
+                    <View className="flex-1">
+                      <Text className="font-medium text-foreground" numberOfLines={2}>
+                        {item.name}
+                      </Text>
+                      {item.brand && (
+                        <Text className="text-sm text-muted-foreground">{item.brand}</Text>
                       )}
 
-                      {/* Content */}
-                      <View className="flex-1">
-                        <Text className="font-medium text-foreground" numberOfLines={2}>
-                          {item.name}
-                        </Text>
-                        {item.brand && (
-                          <Text className="text-sm text-muted-foreground">{item.brand}</Text>
+                      <View className="mt-2 flex-row items-center gap-4">
+                        {item.price && (
+                          <Text className="text-sm font-medium text-foreground">
+                            {formatPrice(item.price, item.currency)}
+                          </Text>
                         )}
-
-                        <View className="mt-2 flex-row items-center gap-4">
-                          {item.price && (
-                            <Text className="text-sm font-medium text-foreground">
-                              {formatPrice(item.price, item.currency)}
-                            </Text>
-                          )}
-                          {item.weight && (
+                        {item.weight && (
+                          <Text className="text-sm text-muted-foreground">
+                            {formatWeight(item.weight, item.weightUnit)}
+                          </Text>
+                        )}
+                        {item.ratingValue && (
+                          <View className="flex-row items-center gap-1">
+                            <Icon name="star" size={12} color={colors.yellow} />
                             <Text className="text-sm text-muted-foreground">
-                              {formatWeight(item.weight, item.weightUnit)}
+                              {item.ratingValue.toFixed(1)}
                             </Text>
-                          )}
-                          {item.ratingValue && (
-                            <View className="flex-row items-center gap-1">
-                              <Icon name="star" size={12} color={colors.yellow} />
-                              <Text className="text-sm text-muted-foreground">
-                                {item.ratingValue.toFixed(1)}
-                              </Text>
-                            </View>
-                          )}
-                        </View>
-                      </View>
-
-                      {/* Selection indicator */}
-                      <View className="items-center justify-center">
-                        {selectedItem === item.id ? (
-                          <Icon name="check-circle" size={24} color={colors.primary} />
-                        ) : (
-                          <Icon name="circle-outline" size={24} color={colors.grey2} />
+                          </View>
                         )}
                       </View>
+                    </View>
+
+                    {/* Selection indicator */}
+                    <View className="items-center justify-center">
+                      {selectedItem === item.id ? (
+                        <Icon name="check-circle" size={24} color={colors.primary} />
+                      ) : (
+                        <Icon name="circle-outline" size={24} color={colors.grey2} />
+                      )}
                     </View>
                   </TouchableOpacity>
                 ))}
