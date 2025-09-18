@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
 import { backfillEmbeddingsRoute } from './backfillEmbeddingsRoute';
 import * as createCatalogItemRoute from './createCatalogItemRoute';
 import * as deleteCatalogItemRoute from './deleteCatalogItemRoute';
@@ -11,7 +12,7 @@ import * as queueCatalogEtlRoute from './queueCatalogEtlRoute';
 import * as updateCatalogItemRoute from './updateCatalogItemRoute';
 import * as vectorSearchRoute from './vectorSearchRoute';
 
-const catalogRoutes = new OpenAPIHono<{ Bindings: Env }>();
+const catalogRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
 catalogRoutes.openapi(getCatalogItemsRoute.routeDefinition, getCatalogItemsRoute.handler);
 catalogRoutes.openapi(vectorSearchRoute.routeDefinition, vectorSearchRoute.handler);

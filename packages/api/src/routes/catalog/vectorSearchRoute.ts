@@ -5,9 +5,7 @@ import {
   VectorSearchResponseSchema,
 } from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
-import type { Env } from '@packrat/api/types/env';
-import type { Variables } from '@packrat/api/types/variables';
-import type { Context } from 'hono';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -47,9 +45,9 @@ export const routeDefinition = createRoute({
   },
 });
 
-export async function handler(c: Context<{ Bindings: Env; Variables: Variables }>) {
+export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   try {
-    const { q: query, limit = 10, offset = 0 } = await c.req.valid('query');
+    const { q: query, limit = 10, offset = 0 } = c.req.valid('query');
 
     if (!query || query.trim() === '') {
       return c.json({ error: 'Query is required' }, 400);
@@ -63,4 +61,4 @@ export async function handler(c: Context<{ Bindings: Env; Variables: Variables }
     console.error('Vector search error:', error);
     return c.json({ error: 'Failed to search catalog items' }, 500);
   }
-}
+};

@@ -484,6 +484,14 @@ const gapAnalysisRoute = createRoute({
         },
       },
     },
+    403: {
+      description: 'Forbidden',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
     500: {
       description: 'Internal server error',
       content: {
@@ -531,9 +539,7 @@ packRoutes.openapi(gapAnalysisRoute, async (c) => {
     if (destination) {
       try {
         const weatherResult = await weatherService.getWeatherForLocation(destination);
-        if (weatherResult.success) {
-          weatherContext = `Current weather in ${location}: ${JSON.stringify(weatherResult.data)}`;
-        }
+        weatherContext = `Current weather in ${location}: ${JSON.stringify(weatherResult)}`;
       } catch (error) {
         console.warn('Weather lookup failed:', error);
       }
@@ -639,6 +645,6 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     c.get('sentry')?.setTag('location', 'gap-analysis');
     c.get('sentry')?.setContext('meta', { packId });
     c.get('sentry')?.captureException(error);
-    return c.json({ error: 'Failed to analyze gear gaps' }, 500);
+    throw error;
   }
 });

@@ -1,9 +1,8 @@
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
-import type { PackItem } from 'expo-app/types';
 import { useState } from 'react';
 import Toast from 'react-native-toast-message';
-import type { WeightUnit } from '../types';
+import type { PackItem, WeightUnit } from '../types';
 import { useCreatePackItem } from './useCreatePackItem';
 
 export function useAddCatalogItem() {

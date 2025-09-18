@@ -186,8 +186,8 @@ export const GapAnalysisItemSchema = z
       example: 'Sleep System',
       description: 'Category of the missing item',
     }),
-    priority: z.enum(['high', 'medium', 'low']).optional().openapi({
-      example: 'high',
+    priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional().openapi({
+      example: 'must-have',
       description: 'Priority level of the missing item',
     }),
   })
