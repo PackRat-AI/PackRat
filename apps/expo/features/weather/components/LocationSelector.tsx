@@ -2,11 +2,11 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
+import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
-import { useLocations } from '../hooks';
+import { useActiveLocation, useLocations } from '../hooks';
 import type { WeatherLocation } from '../types';
 
 type LocationSelectorProps = {
@@ -33,7 +33,8 @@ export function LocationSelector({
   const { colors } = useColorScheme();
   const router = useRouter();
   const { locationsState } = useLocations();
-  const [selectedLocation, setSelectedLocation] = useState<WeatherLocation>();
+  const { activeLocation } = useActiveLocation();
+  const [selectedLocation, setSelectedLocation] = useState<WeatherLocation | null>(activeLocation);
 
   // Get the locations array safely
   const locations = locationsState.state === 'hasData' ? locationsState.data : [];
@@ -85,8 +86,13 @@ export function LocationSelector({
                     <Text className="font-medium">{location.name}</Text>
                     <Text className="text-xs text-muted-foreground">{location.condition}</Text>
                   </View>
-                  <View>
-                    {/* <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" /> */}
+                  <View className="flex-row gap-2 items-center">
+                    {location.id === activeLocation?.id && (
+                      <>
+                        <Text variant="callout">Default</Text>
+                        <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
+                      </>
+                    )}
                     <Text className="text-2xl">{location.temperature}°</Text>
                   </View>
                 </Pressable>
@@ -108,7 +114,7 @@ export function LocationSelector({
             <Button
               onPress={() => {
                 onClose();
-                assertDefined(selectedLocation);
+                assertNonNull(selectedLocation);
                 onSelect(selectedLocation);
               }}
               disabled={!selectedLocation}
