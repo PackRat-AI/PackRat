@@ -10,6 +10,7 @@ interface GapAnalysisModalProps {
   visible: boolean;
   onClose: () => void;
   pack: Pack;
+  location?: string;
   analysis: GapAnalysisResponse | null;
   isLoading: boolean;
   onRetry: () => void;
@@ -20,19 +21,52 @@ export function GapAnalysisModal({
   onClose,
   pack,
   analysis,
+  location,
   isLoading,
   onRetry,
 }: GapAnalysisModalProps) {
   const { isDarkColorScheme, colors } = useColorScheme();
-
-  console.log('analysis', analysis);
 
   return (
     <>
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
         <View className="flex-1 bg-background">
           <View className="flex-row items-center justify-between border-b border-border p-4">
-            <Text>Gap Analysis</Text>
+            <View className="flex-1">
+              <Text
+                variant="footnote"
+                className="uppercase text-xs"
+                style={{ color: colors.grey2 }}
+              >
+                Gap Analysis
+              </Text>
+              <Text numberOfLines={1}>{pack.name}</Text>
+              <View className="flex-row items-center gap-2">
+                <View className="flex-row items-center gap-1">
+                  <Icon
+                    materialIcon={{ type: 'MaterialCommunityIcons', name: 'hiking' }}
+                    ios={{ name: 'figure.hiking' }}
+                    size={16}
+                    color={colors.grey}
+                  />
+                  <Text className="text-sm text-muted-foreground">{pack.category}</Text>
+                </View>
+                {location && (
+                  <>
+                    <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
+                    <View className="flex-row items-center gap-1">
+                      <Icon
+                        materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
+                        ios={{ name: 'mappin' }}
+                        size={16}
+                        color={colors.grey}
+                      />
+                      <Text className="text-sm text-muted-foreground">{location}</Text>
+                    </View>
+                  </>
+                )}
+              </View>
+            </View>
             <TouchableOpacity onPress={onClose} className="p-1">
               <Icon name="close" size={24} color={colors.foreground} />
             </TouchableOpacity>
