@@ -9,7 +9,8 @@ import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
-import { useActiveLocation } from 'expo-app/features/weather/hooks';
+import { LocationPicker } from 'expo-app/features/weather/components';
+import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -30,8 +31,10 @@ export function PackDetailScreen() {
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>({});
 
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
-  const { activeLocation } = useActiveLocation();
+
+  const [location, setLocation] = useState<WeatherLocation>();
 
   const { addItemsToPack, isLoading: isAddingItems } = useBulkAddCatalogItems();
   const {
@@ -78,7 +81,7 @@ export function PackDetailScreen() {
     }
   };
 
-  const handleAnalyzeGaps = () => {
+  const handleAnalyzeGapsPress = () => {
     if (!isAuthed.peek()) {
       return router.push({
         pathname: '/auth',
@@ -89,12 +92,18 @@ export function PackDetailScreen() {
       });
     }
 
+    setIsLocationPickerOpen(true);
+  };
+
+  const handleLocationSelect = (location?: WeatherLocation) => {
+    setLocation(location);
+    setIsLocationPickerOpen(false);
     resetAnalysis();
     setIsGapAnalysisModalVisible(true);
     analyzeGaps({
       packId: id as string,
       context: {
-        destination: activeLocation?.name,
+        destination: location?.name,
         tripType: pack.category,
         startDate: new Date().toISOString().split('T')[0],
       },
@@ -105,7 +114,11 @@ export function PackDetailScreen() {
     resetAnalysis();
     analyzeGaps({
       packId: id as string,
-      context: {},
+      context: {
+        destination: location?.name,
+        tripType: pack.category,
+        startDate: new Date().toISOString().split('T')[0],
+      },
     });
   };
 
@@ -262,7 +275,7 @@ export function PackDetailScreen() {
               )}
 
               {isOwnedByUser && (
-                <Button variant="secondary" onPress={handleAnalyzeGaps} disabled={isAnalyzing}>
+                <Button variant="secondary" onPress={handleAnalyzeGapsPress} disabled={isAnalyzing}>
                   <Icon
                     ios={{ name: 'text.viewfinder' }}
                     materialIcon={{ type: 'MaterialCommunityIcons', name: 'magnify-scan' }}
@@ -355,11 +368,22 @@ export function PackDetailScreen() {
         onItemsSelected={handleCatalogItemsSelected}
       />
 
-      {/* Gap Analysis Modal */}
+      {/* Gap Analysis Flow*/}
+      <LocationPicker
+        subtitle="Get enhanced analysis with weather and terrain data."
+        title="Select Location"
+        open={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        skipText="Skip"
+        onSkip={handleLocationSelect}
+        selectText="Continue"
+        onSelect={handleLocationSelect}
+      />
       <GapAnalysisModal
         visible={isGapAnalysisModalVisible}
         onClose={() => setIsGapAnalysisModalVisible(false)}
         pack={pack}
+        location={location?.name}
         analysis={gapAnalysis || null}
         isLoading={isAnalyzing}
         onRetry={handleRetryAnalysis}
