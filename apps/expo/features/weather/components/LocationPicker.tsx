@@ -9,7 +9,7 @@ import { Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-nati
 import { useActiveLocation, useLocations } from '../hooks';
 import type { WeatherLocation } from '../types';
 
-type LocationSelectorProps = {
+type LocationPickerProps = {
   open: boolean;
   onClose: () => void;
   title?: string;
@@ -20,7 +20,7 @@ type LocationSelectorProps = {
   onSkip?: () => void;
 };
 
-export function LocationSelector({
+export function LocationPicker({
   open,
   onClose,
   title = 'Select Location',
@@ -29,7 +29,7 @@ export function LocationSelector({
   onSkip,
   selectText = 'Done',
   skipText,
-}: LocationSelectorProps) {
+}: LocationPickerProps) {
   const { colors } = useColorScheme();
   const router = useRouter();
   const { locationsState } = useLocations();
@@ -49,7 +49,7 @@ export function LocationSelector({
       <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
         <View className="flex-1 bg-background">
           <View className="px-4 mb-4 py-2 border-b border-border flex-row gap-2 justify-between items-center">
-            <View className="flex-row items-center gap-2">
+            <View className="flex-row flex-1 items-center gap-2">
               <TouchableOpacity onPress={onClose}>
                 <Icon name="close" size={20} color={colors.foreground} />
               </TouchableOpacity>

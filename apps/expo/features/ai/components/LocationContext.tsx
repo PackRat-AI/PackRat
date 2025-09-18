@@ -1,6 +1,6 @@
 import { Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
+import { LocationPicker } from 'expo-app/features/weather/components/LocationPicker';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -13,7 +13,7 @@ interface LocationContextProps {
 
 export function LocationContext({ location, onSetLocation }: LocationContextProps) {
   const { colors } = useColorScheme();
-  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   if (!location) {
     return (
@@ -34,7 +34,7 @@ export function LocationContext({ location, onSetLocation }: LocationContextProp
     <>
       <View className="px-4 py-2">
         <TouchableOpacity
-          onPress={() => setShowLocationSelector(true)}
+          onPress={() => setShowLocationPicker(true)}
           className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2"
         >
           <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
@@ -43,9 +43,9 @@ export function LocationContext({ location, onSetLocation }: LocationContextProp
           <Icon name="chevron-down" size={16} color={colors.grey2} />
         </TouchableOpacity>
       </View>
-      <LocationSelector
-        open={showLocationSelector}
-        onClose={() => setShowLocationSelector(false)}
+      <LocationPicker
+        open={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
         subtitle="Choose location for AI context"
         onSelect={onSetLocation}
       />
