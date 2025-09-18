@@ -38,6 +38,7 @@ export function LocationSelector({
 
   // Get the locations array safely
   const locations = locationsState.state === 'hasData' ? locationsState.data : [];
+  const hasLocations = locations.length > 0;
 
   const handleSearchLocation = () => {
     router.push('/weather/search');
@@ -67,37 +68,59 @@ export function LocationSelector({
               />
             </TouchableOpacity>
           </View>
-          <ScrollView>
-            <View className="gap-2 p-4">
-              {locations.map((location) => (
-                <Pressable
-                  key={location.id}
-                  onPress={() => setSelectedLocation(location)}
-                  className={cn(
-                    'flex-row items-center rounded-lg p-2 border border-border bg-card',
-                    location.id === selectedLocation?.id && 'border-primary',
-                  )}
-                  style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}
-                >
-                  <View className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-neutral-300 dark:bg-neutral-600">
-                    <Icon name="map-marker-radius-outline" size={18} color={colors.grey} />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="font-medium">{location.name}</Text>
-                    <Text className="text-xs text-muted-foreground">{location.condition}</Text>
-                  </View>
-                  <View className="flex-row gap-2 items-center">
-                    {location.id === activeLocation?.id && (
-                      <>
-                        <Text variant="callout">Default</Text>
-                        <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
-                      </>
+          <ScrollView contentContainerStyle={!hasLocations && { flex: 1 }}>
+            {hasLocations ? (
+              <View className="gap-2 p-4">
+                {locations.map((location) => (
+                  <Pressable
+                    key={location.id}
+                    onPress={() => setSelectedLocation(location)}
+                    className={cn(
+                      'flex-row items-center rounded-lg p-2 border border-border bg-card',
+                      location.id === selectedLocation?.id && 'border-primary',
                     )}
-                    <Text className="text-2xl">{location.temperature}°</Text>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
+                    style={({ pressed }) => (pressed ? { opacity: 0.7 } : {})}
+                  >
+                    <View className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-neutral-300 dark:bg-neutral-600">
+                      <Icon name="map-marker-radius-outline" size={18} color={colors.grey} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="font-medium">{location.name}</Text>
+                      <Text className="text-xs text-muted-foreground">{location.condition}</Text>
+                    </View>
+                    <View className="flex-row gap-2 items-center">
+                      {location.id === activeLocation?.id && (
+                        <>
+                          <Text variant="callout">Default</Text>
+                          <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
+                        </>
+                      )}
+                      <Text className="text-2xl">{location.temperature}°</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            ) : (
+              <View className="flex-1 items-center justify-center p-8 gap-4 mt-8">
+                <View className="h-16 w-16 rounded-full items-center justify-center bg-neutral-300 dark:bg-neutral-600">
+                  <Icon
+                    materialIcon={{ name: 'location-searching', type: 'MaterialIcons' }}
+                    ios={{ name: 'location' }}
+                    size={32}
+                    color={colors.grey}
+                  />
+                </View>
+                <View className="items-center gap-1">
+                  <Text className="text-base font-semibold">No locations yet</Text>
+                  <Text className="text-xs text-muted-foreground text-center">
+                    Add a location to get more useful information.
+                  </Text>
+                </View>
+                <Button variant="secondary" onPress={handleSearchLocation}>
+                  <Text>Look Up</Text>
+                </Button>
+              </View>
+            )}
           </ScrollView>
           <View className="px-4 pb-2 flex-row self-end items-center gap-2 justify-between">
             {onSkip && (
