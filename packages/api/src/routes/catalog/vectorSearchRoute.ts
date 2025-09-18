@@ -49,10 +49,6 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   try {
     const { q: query, limit = 10, offset = 0 } = c.req.valid('query');
 
-    if (!query || query.trim() === '') {
-      return c.json({ error: 'Query is required' }, 400);
-    }
-
     const catalogService = new CatalogService(c);
     const result = await catalogService.vectorSearch(query, limit, offset);
 
