@@ -28,9 +28,7 @@ export const analyzePackGaps = async (
   context?: GapAnalysisRequest,
 ): Promise<GapAnalysisResponse> => {
   try {
-    console.log('launching gap analysis with context:', context);
     const response = await axiosInstance.post(`/api/packs/${packId}/gap-analysis`, context || {});
-    console.log('Gap Analysis Response:', response.data);
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);

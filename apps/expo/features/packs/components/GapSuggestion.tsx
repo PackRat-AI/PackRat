@@ -124,7 +124,6 @@ export function GapSuggestion({ gap, packId }: GapSuggestionProps) {
         <Text className="mt-2 text-sm text-muted-foreground">{gap.reason}</Text>
         <Button
           onPress={() => {
-            console.log('Searching for gear with query:', gap.suggestion);
             setVectorQuery(gap.suggestion);
             setCatalogSuggestionsModalVisible(true);
           }}
