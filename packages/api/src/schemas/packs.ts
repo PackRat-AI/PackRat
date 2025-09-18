@@ -138,3 +138,70 @@ export const ItemSuggestionsResponseSchema = z
     ),
   })
   .openapi('ItemSuggestionsResponse');
+
+export const GapAnalysisRequestSchema = z
+  .object({
+    destination: z.string().optional().openapi({
+      example: 'Half Dome trail',
+      description: 'Optional destination for more specific recommendations',
+    }),
+    tripType: z.string().optional().openapi({
+      example: 'Day hike',
+      description: 'Type of trip (e.g., day hike, backpacking, car camping)',
+    }),
+    duration: z.string().optional().openapi({
+      example: '3 days',
+      description: 'Trip duration for context',
+    }),
+    startDate: z.string().optional().openapi({
+      example: '2024-07-15',
+      description: 'Planned start date of the trip (YYYY-MM-DD)',
+    }),
+    endDate: z.string().optional().openapi({
+      example: '2024-07-18',
+      description: 'Planned end date of the trip (YYYY-MM-DD)',
+    }),
+  })
+  .openapi('GapAnalysisRequest');
+
+export const GapAnalysisItemSchema = z
+  .object({
+    suggestion: z.string().openapi({
+      example: 'Sleeping pad',
+      description: 'Name of the missing gear item',
+    }),
+    reason: z.string().openapi({
+      example: 'You have a sleeping bag but no insulation from the ground',
+      description: 'Explanation of why this item is recommended',
+    }),
+    consumable: z.boolean().openapi({
+      example: false,
+      description: 'Indicates if the item is consumable',
+    }),
+    worn: z.boolean().openapi({
+      example: false,
+      description: 'Indicates if the item is typically worn',
+    }),
+    category: z.string().optional().openapi({
+      example: 'Sleep System',
+      description: 'Category of the missing item',
+    }),
+    priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional().openapi({
+      example: 'must-have',
+      description: 'Priority level of the missing item',
+    }),
+  })
+  .openapi('GapAnalysisItem');
+
+export const GapAnalysisResponseSchema = z
+  .object({
+    gaps: z.array(GapAnalysisItemSchema).openapi({
+      description: 'List of identified gaps in the pack',
+    }),
+    summary: z.string().optional().openapi({
+      example:
+        'Your pack looks well-prepared for day hiking, but you might want to consider a few additions for safety and comfort.',
+      description: 'Overall summary of the gap analysis',
+    }),
+  })
+  .openapi('GapAnalysisResponse');

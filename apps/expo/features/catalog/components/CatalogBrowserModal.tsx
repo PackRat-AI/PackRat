@@ -62,7 +62,7 @@ export function CatalogBrowserModal({
     data: searchResults,
     isLoading: isSearchLoading,
     error: searchError,
-  } = useVectorSearch(debouncedSearchValue);
+  } = useVectorSearch({ query: debouncedSearchValue, limit: 20 });
 
   const items = isSearching
     ? searchResults || []
@@ -81,7 +81,7 @@ export function CatalogBrowserModal({
   };
 
   const handleAddSelected = () => {
-    const selectedCatalogItems = items.filter((item) => selectedItems.has(item.id));
+    const selectedCatalogItems = items.filter((item: CatalogItem) => selectedItems.has(item.id));
     onItemsSelected(selectedCatalogItems);
     setSelectedItems(new Set());
     onClose();
