@@ -2,6 +2,7 @@ import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
@@ -19,7 +20,6 @@ import { useCatalogItemsInfinite } from '../hooks';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 import { useVectorSearch } from '../hooks/useVectorSearch';
 import type { CatalogItem } from '../types';
-import { CatalogItemSelectCard } from './CatalogItemSelectCard';
 
 type CatalogBrowserModalProps = {
   visible: boolean;
@@ -108,10 +108,10 @@ export function CatalogBrowserModal({
   };
 
   const renderItem = ({ item }: { item: CatalogItem }) => (
-    <CatalogItemSelectCard
+    <HorizontalCatalogItemCard
       item={item}
-      isSelected={selectedItems.has(item.id)}
-      onToggle={() => handleItemToggle(item)}
+      selected={selectedItems.has(item.id)}
+      onSelect={handleItemToggle}
     />
   );
 
@@ -206,10 +206,14 @@ export function CatalogBrowserModal({
         {selectedItems.size > 0 && (
           <View className="border-t border-border bg-card p-4">
             <View className="flex-row gap-3 items-center justify-end">
-              <Button variant="secondary" onPress={() => setSelectedItems(new Set())}>
+              <Button
+                variant="secondary"
+                className="mb-1"
+                onPress={() => setSelectedItems(new Set())}
+              >
                 <Text>Clear Selection</Text>
               </Button>
-              <Button onPress={handleAddSelected}>
+              <Button onPress={handleAddSelected} className="mb-1" variant="tonal">
                 <Text>Add {selectedItems.size} Items</Text>
               </Button>
             </View>

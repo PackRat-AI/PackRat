@@ -1,12 +1,12 @@
 import { ActivityIndicator, Button, cn, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useState } from 'react';
 import { Modal, ScrollView, TouchableOpacity, View } from 'react-native';
 import type { GapAnalysisItem } from '../hooks/usePackGapAnalysis';
+import { HorizontalCatalogItemCard } from './HorizontalCatalogItemCard';
 
 interface GapItemCatalogSuggestionsProps {
   visible: boolean;
@@ -39,16 +39,6 @@ export function GapItemCatalogSuggestions({
     onAddItem(itemToAdd);
   };
 
-  const formatPrice = (price?: number | null, currency?: string | null) => {
-    if (!price) return '';
-    return `${currency || '$'}${price.toFixed(2)}`;
-  };
-
-  const formatWeight = (weight?: number | null, unit?: string | null) => {
-    if (!weight) return '';
-    return `${weight}${unit || 'g'}`;
-  };
-
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
       <View className="flex-1 bg-background">
@@ -75,79 +65,12 @@ export function GapItemCatalogSuggestions({
             suggestions.length > 0 ? (
               <View className="p-4">
                 {suggestions.map((item) => (
-                  <TouchableOpacity
+                  <HorizontalCatalogItemCard
                     key={item.id}
-                    className={`mb-4 rounded-lg flex-row gap-3 border p-4 ${
-                      selectedItem === item.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border bg-card'
-                    }`}
-                    onPress={() => setSelectedItem(item.id)}
-                  >
-                    {/* Image */}
-                    {item.images?.[0] ? (
-                      <CatalogItemImage
-                        imageUrl={item.images[0]}
-                        className="h-16 w-16 rounded-md bg-muted"
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View className="h-16 w-16 items-center justify-center rounded-md bg-muted">
-                        <Icon name="image" size={24} color={colors.foreground} />
-                      </View>
-                    )}
-
-                    {/* Content */}
-                    <View className="flex-1">
-                      <Text className="font-medium text-foreground" numberOfLines={2}>
-                        {item.name}
-                      </Text>
-                      {item.brand && (
-                        <Text className="text-sm text-muted-foreground">{item.brand}</Text>
-                      )}
-
-                      <View className="mt-2 flex-row items-center gap-4">
-                        {item.price && (
-                          <Text className="text-sm font-medium text-foreground">
-                            {formatPrice(item.price, item.currency)}
-                          </Text>
-                        )}
-                        {item.weight && (
-                          <Text className="text-sm text-muted-foreground">
-                            {formatWeight(item.weight, item.weightUnit)}
-                          </Text>
-                        )}
-                        {item.ratingValue && (
-                          <View className="flex-row items-center gap-1">
-                            <Icon name="star" size={12} color={colors.yellow} />
-                            <Text className="text-sm text-muted-foreground">
-                              {item.ratingValue.toFixed(1)}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text
-                        className={`text-xs font-medium mt-4 ${
-                          item.similarity >= 0.8
-                            ? 'text-primary'
-                            : item.similarity >= 0.5
-                              ? 'text-foreground'
-                              : 'text-muted-foreground'
-                        }`}
-                      >
-                        {Math.round(item.similarity * 100)}% confident
-                      </Text>
-                    </View>
-
-                    {/* Selection indicator */}
-                    <View className="items-center justify-center">
-                      {selectedItem === item.id ? (
-                        <Icon name="check-circle" size={24} color={colors.primary} />
-                      ) : (
-                        <Icon name="circle-outline" size={24} color={colors.grey2} />
-                      )}
-                    </View>
-                  </TouchableOpacity>
+                    item={item}
+                    onSelect={(item) => setSelectedItem(item.id)}
+                    selected={selectedItem === item.id}
+                  />
                 ))}
               </View>
             ) : (
