@@ -29,7 +29,7 @@ function CatalogItemsScreen() {
   const { colors } = useColorScheme();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
-  const [debouncedSearchValue] = useDebounce(searchValue, 150);
+  const [debouncedSearchValue] = useDebounce(searchValue, 400);
 
   const isSearching = debouncedSearchValue.length > 0;
 
@@ -49,27 +49,23 @@ function CatalogItemsScreen() {
     isFetchingNextPage,
     error: paginatedError,
   } = useCatalogItemsInfinite({
-    query: debouncedSearchValue,
     category: activeFilter === 'All' ? undefined : activeFilter,
     limit: 20,
     sort: { field: 'usage', order: 'desc' },
   });
 
-  // Disabled for now
   const {
-    data: vectorResults,
-    // isLoading: isVectorLoading,
-    // isFetching: isVectorFetching,
+    data: vectorResult,
+    isLoading: isVectorLoading,
+    isFetching: _isVectorFetching,
     error: vectorError,
-  } = useVectorSearch({ query: '', limit: 10 });
+  } = useVectorSearch({ query: debouncedSearchValue, limit: 10 });
+  const searchResults = vectorResult?.items;
 
   const paginatedItems: CatalogItem[] = (
     paginatedData?.pages.flatMap((page) => page.items) ?? []
   ).filter((item) => Boolean(item?.id));
 
-  const results = vectorResults ?? paginatedItems;
-
-  const isLoading = isPaginatedLoading;
   const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;
 
   const totalItemsText = `${Number(totalItems).toLocaleString()} ${
@@ -101,28 +97,25 @@ function CatalogItemsScreen() {
           content: (
             <View style={{ flex: 1, backgroundColor: colors.background }}>
               {isSearching ? (
-                isLoading ? (
+                isVectorLoading ? (
                   <View className="flex-1 items-center justify-center p-6">
                     <ActivityIndicator className="text-primary" size="large" />
                   </View>
                 ) : (
                   <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
                     <View className="px-4 pt-2">
-                      <View className="flex-row items-center justify-between">
-                        <Text className="text-muted-foreground">{totalItemsText}</Text>
-                        {results.length > 0 && (
-                          <Text className="text-xs text-muted-foreground">
-                            {results.length} results
-                          </Text>
-                        )}
-                      </View>
+                      {searchResults.length > 0 && (
+                        <Text className="text-xs text-muted-foreground">
+                          {searchResults.length} results
+                        </Text>
+                      )}
                     </View>
-                    {results.map((item: CatalogItem) => (
+                    {searchResults.map((item: CatalogItem) => (
                       <View className="px-4 pt-4" key={item.id}>
                         <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
                       </View>
                     ))}
-                    {results.length === 0 && (
+                    {searchResults.length === 0 && (
                       <View className="flex-1 items-center justify-center p-8">
                         {vectorError ? (
                           <>
@@ -186,7 +179,7 @@ function CatalogItemsScreen() {
         ListFooterComponent={
           <View className="py-4">
             {isFetchingNextPage ? (
-              <ActivityIndicator className="text-primary" size="large" />
+              <ActivityIndicator className="text-primary" />
             ) : hasNextPage ? (
               <Text className="text-center text-xs text-muted-foreground">
                 Scroll to load more items
@@ -211,11 +204,11 @@ function CatalogItemsScreen() {
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
             {isPaginatedLoading ? (
-              <ActivityIndicator color={colors.primary} />
+              <ActivityIndicator color={colors.primary} size="large" />
             ) : paginatedError ? (
               <>
                 <View className="bg-destructive/10 mb-4 rounded-full p-4">
-                  <Icon name="close-circle" size={32} color="text-destructive" />
+                  <Icon name="close" size={32} color="text-destructive" />
                 </View>
                 <Text className="mb-1 text-lg font-medium text-foreground">
                   Error loading items

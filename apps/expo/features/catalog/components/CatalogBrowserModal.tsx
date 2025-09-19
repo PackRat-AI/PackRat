@@ -36,7 +36,7 @@ export function CatalogBrowserModal({
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [debouncedSearchValue] = useDebounce(searchValue, 150);
+  const [debouncedSearchValue] = useDebounce(searchValue, 400);
 
   const isSearching = debouncedSearchValue.length > 0;
 
@@ -52,20 +52,19 @@ export function CatalogBrowserModal({
     isFetchingNextPage,
     error: paginatedError,
   } = useCatalogItemsInfinite({
-    query: debouncedSearchValue,
     category: activeFilter === 'All' ? undefined : activeFilter,
     limit: 20,
     sort: { field: 'createdAt', order: 'desc' },
   });
 
   const {
-    data: searchResults,
+    data: searchResult,
     isLoading: isSearchLoading,
     error: searchError,
   } = useVectorSearch({ query: debouncedSearchValue, limit: 20 });
 
   const items = isSearching
-    ? searchResults || []
+    ? searchResult?.items || []
     : paginatedData?.pages.flatMap((page) => page.items) || [];
   const isLoading = isSearching ? isSearchLoading : isPaginatedLoading;
   const error = isSearching ? searchError : paginatedError;
@@ -141,7 +140,7 @@ export function CatalogBrowserModal({
             placeholder="Search catalog items..."
           />
 
-          {categories && (
+          {!isSearching && categories && (
             <View className="mt-3">
               <CategoriesFilter
                 activeFilter={activeFilter}
