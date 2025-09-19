@@ -10,8 +10,10 @@ export function CatalogItemImage({ imageUrl, ...imageProps }: PackItemImageProps
   const { colors } = useColorScheme();
   if (!imageUrl)
     return (
-      <View className={`items-center justify-center bg-muted ${imageProps.className}`}>
-        <Icon name="image" size={24} color={colors.foreground} />
+      <View
+        className={`items-center justify-center bg-neutral-300 dark:bg-neutral-600 ${imageProps.className}`}
+      >
+        <Icon name="image" size={24} color={colors.grey} />
       </View>
     );
 

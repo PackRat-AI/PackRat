@@ -15,7 +15,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
@@ -64,17 +64,18 @@ export function PackDetailScreen() {
 
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
-    if (isPackingMode) {
-      setPackedItems((prev) => ({
-        ...prev,
-        [item.id]: !prev[item.id],
-      }));
-    } else {
-      router.push({
-        pathname: `/item/[id]`,
-        params: { id: item.id, packId: item.packId },
-      });
-    }
+    router.push({
+      pathname: `/item/[id]`,
+      params: { id: item.id, packId: item.packId },
+    });
+  };
+
+  const handleItemSelect = (item: PackItem) => {
+    if (!item.id) return;
+    setPackedItems((prev) => ({
+      ...prev,
+      [item.id]: !prev[item.id],
+    }));
   };
 
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
@@ -372,30 +373,17 @@ export function PackDetailScreen() {
           </View>
 
           {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
-              <Pressable
-                key={item.id}
-                className="px-4 pt-3 flex-row items-center gap-3"
-                onPress={() => handleItemPress(item)}
-              >
-                {isPackingMode && (
-                  <View
-                    className={cn(
-                      'h-5 w-5 rounded border border-gray-400 items-center justify-center',
-                      packedItems[item.id] ? 'bg-primary' : 'bg-background',
-                    )}
-                  >
-                    {packedItems[item.id] && <Icon name="check" size={16} color="white" />}
-                  </View>
-                )}
-                <View className="flex-1">
-                  <PackItemCard
-                    item={item}
-                    onPress={!isPackingMode ? handleItemPress : undefined}
-                  />
-                </View>
-              </Pressable>
-            ))
+            <View className="p-4">
+              {filteredItems.map((item) => (
+                <PackItemCard
+                  key={item.id}
+                  item={item}
+                  {...(isPackingMode
+                    ? { onSelect: handleItemSelect, selected: !!packedItems[item.id] }
+                    : { onPress: handleItemPress })}
+                />
+              ))}
+            </View>
           ) : (
             <View className="items-center justify-center p-4">
               <Text className="text-muted-foreground">No items found</Text>
