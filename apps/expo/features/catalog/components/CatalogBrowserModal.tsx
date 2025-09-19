@@ -214,7 +214,9 @@ export function CatalogBrowserModal({
                 <Text>Clear Selection</Text>
               </Button>
               <Button onPress={handleAddSelected} className="mb-1" variant="tonal">
-                <Text>Add {selectedItems.size} Items</Text>
+                <Text>
+                  Add {selectedItems.size} {selectedItems.size > 1 ? 'Items' : 'Item'}
+                </Text>
               </Button>
             </View>
           </View>
