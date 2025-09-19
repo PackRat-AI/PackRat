@@ -1,4 +1,5 @@
-import { Text } from '@packrat-ai/nativewindui';
+import { useColorScheme } from '@packrat/ui/nativewindui';
+import { Icon } from '@roninoss/icons';
 import { Image, type ImageProps, Platform, View } from 'react-native';
 
 interface PackItemImageProps extends Omit<ImageProps, 'source'> {
@@ -6,12 +7,13 @@ interface PackItemImageProps extends Omit<ImageProps, 'source'> {
 }
 
 export function CatalogItemImage({ imageUrl, ...imageProps }: PackItemImageProps) {
+  const { colors } = useColorScheme();
   if (!imageUrl)
     return (
       <View
-        className={`items-center justify-center bg-[#ddd] dark:bg-neutral-600 p-2 ${imageProps.className}`}
+        className={`items-center justify-center bg-neutral-300 dark:bg-neutral-600 ${imageProps.className}`}
       >
-        <Text className="text-muted-foreground text-center dark:text-neutral-900">No image</Text>
+        <Icon name="image" size={24} color={colors.grey} />
       </View>
     );
 
