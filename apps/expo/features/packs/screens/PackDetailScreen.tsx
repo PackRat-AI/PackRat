@@ -335,7 +335,7 @@ export function PackDetailScreen() {
 
         <View>
           <View className="p-4">
-            <View className="gap-4 flex-row">
+            <View className="gap-4 flex-row items-center">
               <Button variant="secondary" onPress={handleAskAI} className="flex-1">
                 <Text>Ask AI</Text>
               </Button>
