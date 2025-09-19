@@ -144,6 +144,7 @@ export class PackService {
           category: pack.category,
           tags: pack.tags,
           isPublic: true,
+          isAIGenerated: true,
           localCreatedAt: new Date(),
           localUpdatedAt: new Date(),
         });
@@ -153,6 +154,7 @@ export class PackService {
             ...item,
             id: crypto.randomUUID(),
             packId,
+            isAIGenerated: true,
             userId: this.userId,
           })),
         );

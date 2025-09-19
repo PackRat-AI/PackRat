@@ -3,7 +3,7 @@ import { Icon } from '@roninoss/icons';
 import { Image, type ImageProps, Platform, View } from 'react-native';
 
 interface PackItemImageProps extends Omit<ImageProps, 'source'> {
-  imageUrl?: string;
+  imageUrl?: string | null;
 }
 
 export function CatalogItemImage({ imageUrl, ...imageProps }: PackItemImageProps) {

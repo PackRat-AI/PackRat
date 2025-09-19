@@ -17,6 +17,7 @@ export const PackItemSchema = z
     catalogItemId: z.number().int().nullable().openapi({ example: 12345 }),
     userId: z.number().int().openapi({ example: 1 }),
     deleted: z.boolean().openapi({ example: false }),
+    isAIGenerated: z.boolean().openapi({ example: false }),
     templateItemId: z.string().nullable().openapi({ example: 'pti_123456' }),
     createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
     updatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
@@ -40,6 +41,7 @@ export const PackSchema = z
       .nullable()
       .openapi({ example: ['backpacking', 'summer', 'mountains'] }),
     deleted: z.boolean().openapi({ example: false }),
+    isAIGenerated: z.boolean().openapi({ example: false }),
     createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
     updatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
     items: z.array(PackItemSchema).optional(),

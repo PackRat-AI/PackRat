@@ -23,6 +23,7 @@ export interface PackItem {
   catalogItem?: CatalogItem | null;
   userId?: number;
   deleted: boolean;
+  isAIGenerated: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

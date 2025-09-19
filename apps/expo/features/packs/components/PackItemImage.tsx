@@ -5,6 +5,7 @@ import { Image, type ImageProps, View } from 'react-native';
 import { usePackItemOwnershipCheck } from '../hooks';
 import type { PackItem } from '../types';
 import { CachedImage } from './CachedImage';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 
 interface PackItemImageProps extends Omit<ImageProps, 'source'> {
   item: PackItem;
@@ -13,6 +14,10 @@ interface PackItemImageProps extends Omit<ImageProps, 'source'> {
 export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
   const isItemOwnedByUser = usePackItemOwnershipCheck(item.id);
   const { colors } = useColorScheme();
+
+  if (item.isAIGenerated) {
+    return <CatalogItemImage imageUrl={item.image} {...imageProps} />;
+  }
 
   if (!item.image)
     return (
