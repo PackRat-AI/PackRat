@@ -119,7 +119,7 @@ export function CatalogBrowserModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <SafeAreaView className="flex-1">
+      <SafeAreaView className="flex-1 bg-background">
         {/* Header */}
         <View className="flex-row items-center justify-between border-b border-border p-4">
           <View className="flex-row items-center">
