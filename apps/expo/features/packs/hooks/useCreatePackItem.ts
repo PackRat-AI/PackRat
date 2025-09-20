@@ -14,6 +14,7 @@ export function useCreatePackItem() {
         ...itemData,
         category: itemData.category || 'general',
         packId,
+        isAIGenerated: false,
         deleted: false,
       };
 

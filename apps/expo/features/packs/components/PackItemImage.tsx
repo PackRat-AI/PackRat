@@ -1,5 +1,6 @@
 import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { buildPackItemImageUrl } from 'expo-app/lib/utils/buildPackItemImageUrl';
 import { Image, type ImageProps, View } from 'react-native';
 import { usePackItemOwnershipCheck } from '../hooks';
@@ -13,6 +14,10 @@ interface PackItemImageProps extends Omit<ImageProps, 'source'> {
 export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
   const isItemOwnedByUser = usePackItemOwnershipCheck(item.id);
   const { colors } = useColorScheme();
+
+  if (item.isAIGenerated) {
+    return <CatalogItemImage imageUrl={item.image} {...imageProps} />;
+  }
 
   if (!item.image)
     return (

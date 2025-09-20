@@ -6,17 +6,20 @@ import {
   LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
+import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { SafeAreaView, TextInput, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { useGeneratePacks } from '../hooks/useGeneratedPacks';
 
 export function AIPacksScreen() {
   const { colors } = useColorScheme();
   const alertRef = useRef<AlertRef>(null);
-  const generatePacksMutation = useGeneratePacks();
+  const { mutateAsync: generatePacks, isPending, generatedPacksFromStore } = useGeneratePacks();
+  const [packsModalVisible, setPacksModalVisible] = useState(false);
   const router = useRouter();
 
   const form = useForm({
@@ -25,7 +28,7 @@ export function AIPacksScreen() {
     },
     onSubmit: async ({ value }) => {
       try {
-        const packs = await generatePacksMutation.mutateAsync(value);
+        const packs = await generatePacks(value);
         alertRef.current?.alert({
           title: 'Packs Generated',
           message: `Successfully generated ${packs.length} packs.`,
@@ -33,9 +36,9 @@ export function AIPacksScreen() {
           buttons: [
             { text: 'Return', onPress: () => {} },
             {
-              text: 'Go to Packs',
+              text: 'View',
               onPress: () => {
-                router.push({ pathname: '/packs', params: { view: 'all' } });
+                setPacksModalVisible(true);
               },
             },
           ],
@@ -93,12 +96,8 @@ export function AIPacksScreen() {
           </form.Field>
 
           <View className="mt-4">
-            <Button
-              onPress={handleGeneratePacks}
-              disabled={generatePacksMutation.isPending}
-              className="w-full"
-            >
-              {generatePacksMutation.isPending ? (
+            <Button onPress={handleGeneratePacks} disabled={isPending} className="w-full">
+              {isPending ? (
                 <View className="flex-row items-center space-x-2">
                   <ActivityIndicator size="small" />
                   <Text>Generating...</Text>
@@ -118,6 +117,45 @@ export function AIPacksScreen() {
       </View>
 
       <Alert title="" buttons={[]} ref={alertRef} />
+
+      <Modal
+        visible={packsModalVisible}
+        animationType="slide"
+        onRequestClose={() => setPacksModalVisible(false)}
+      >
+        <SafeAreaView className="flex-1 bg-background">
+          <View className="flex-row items-center justify-between border-b border-border p-4">
+            <View className="flex-row items-center">
+              <Text>Generated Packs</Text>
+            </View>
+            <TouchableOpacity onPress={() => setPacksModalVisible(false)}>
+              <Icon name="close" size={24} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView className="flex-1 gap-2 px-4 py-6">
+            {generatedPacksFromStore.every((pack) => !!pack) ? (
+              generatedPacksFromStore.map((pack) => (
+                <PackCard
+                  key={pack.id}
+                  pack={pack}
+                  onPress={(pack) => {
+                    router.push({
+                      pathname: '/pack/[id]',
+                      params: { id: pack.id },
+                    });
+                  }}
+                />
+              ))
+            ) : (
+              <View className="flex-1 items-center justify-center p-8">
+                <Text className="text-center text-muted-foreground mt-2">
+                  Waiting for packs to sync.
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
