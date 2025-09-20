@@ -32,6 +32,7 @@ export function CatalogItemImage({ imageUrl, ...imageProps }: PackItemImageProps
           : {}),
       }}
       {...imageProps}
+      className={`bg-muted ${imageProps.className}`}
     />
   );
 }
