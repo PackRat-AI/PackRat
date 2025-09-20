@@ -18,7 +18,7 @@ import { useGeneratePacks } from '../hooks/useGeneratedPacks';
 export function AIPacksScreen() {
   const { colors } = useColorScheme();
   const alertRef = useRef<AlertRef>(null);
-  const generatePacksMutation = useGeneratePacks();
+  const { mutateAsync: generatePacks, isPending, generatedPacksFromStore } = useGeneratePacks();
   const [packsModalVisible, setPacksModalVisible] = useState(false);
   const router = useRouter();
 
@@ -28,7 +28,7 @@ export function AIPacksScreen() {
     },
     onSubmit: async ({ value }) => {
       try {
-        const packs = await generatePacksMutation.mutateAsync(value);
+        const packs = await generatePacks(value);
         alertRef.current?.alert({
           title: 'Packs Generated',
           message: `Successfully generated ${packs.length} packs.`,
@@ -96,12 +96,8 @@ export function AIPacksScreen() {
           </form.Field>
 
           <View className="mt-4">
-            <Button
-              onPress={handleGeneratePacks}
-              disabled={generatePacksMutation.isPending}
-              className="w-full"
-            >
-              {generatePacksMutation.isPending ? (
+            <Button onPress={handleGeneratePacks} disabled={isPending} className="w-full">
+              {isPending ? (
                 <View className="flex-row items-center space-x-2">
                   <ActivityIndicator size="small" />
                   <Text>Generating...</Text>
@@ -137,8 +133,8 @@ export function AIPacksScreen() {
             </TouchableOpacity>
           </View>
           <ScrollView className="flex-1 gap-2 px-4 py-6">
-            {generatePacksMutation.data?.length &&
-              generatePacksMutation.data.map((pack) => (
+            {generatedPacksFromStore.every((pack) => !!pack) ? (
+              generatedPacksFromStore.map((pack) => (
                 <PackCard
                   key={pack.id}
                   pack={pack}
@@ -149,7 +145,14 @@ export function AIPacksScreen() {
                     });
                   }}
                 />
-              ))}
+              ))
+            ) : (
+              <View className="flex-1 items-center justify-center p-8">
+                <Text className="text-center text-muted-foreground mt-2">
+                  Waiting for packs to sync.
+                </Text>
+              </View>
+            )}
           </ScrollView>
         </SafeAreaView>
       </Modal>
