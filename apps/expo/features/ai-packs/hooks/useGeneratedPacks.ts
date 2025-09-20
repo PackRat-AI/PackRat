@@ -5,7 +5,9 @@ import type { GenerationRequest } from '../types';
 
 const generatePacks = async (request: GenerationRequest): Promise<Pack[]> => {
   try {
-    const response = await axiosInstance.post('/api/packs/generate-packs', request);
+    const response = await axiosInstance.post('/api/packs/generate-packs', request, {
+      timeout: 0,
+    });
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
