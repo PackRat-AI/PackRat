@@ -1,4 +1,4 @@
-import { LargeTitleHeader, SearchInput, Text } from '@packrat/ui/nativewindui';
+import { Button, LargeTitleHeader, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { cn } from 'expo-app/lib/cn';
@@ -132,13 +132,13 @@ function LocationsScreen() {
         )}
       />
 
-      <View className="px-4 py-2">
+      <View className="p-4">
         <SearchInput
           ref={searchInputRef}
           placeholder="Search saved locations"
           value={searchQuery}
           onChangeText={handleSearchChange}
-          containerClassName="bg-muted"
+          containerClassName="border border-border"
           onFocus={() => setIsSearchFocused(true)}
           onBlur={() => {
             // Only unfocus if search is empty
@@ -230,22 +230,16 @@ function LocationsScreen() {
           )}
 
           {showEmptyState && (
-            <View className="flex-1 items-center justify-center">
+            <View className="flex-1 items-center mt-16">
               <Icon name="map-marker-radius-outline" size={64} color={colors.grey2} />
               <Text className="mt-4 text-center text-lg font-medium">No saved locations</Text>
               <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
                 Add locations to track weather conditions for your hiking trips and get personalized
                 recommendations
               </Text>
-              <TouchableOpacity
-                className="mt-2 rounded-full bg-primary px-6 py-3"
-                onPress={handleAddLocation}
-              >
-                <Text className="font-medium text-white">Add Your First Location</Text>
-              </TouchableOpacity>
-              <Text className="mt-4 text-xs text-muted-foreground">
-                Location data helps PackRat AI provide better advice
-              </Text>
+              <Button variant="primary" onPress={handleAddLocation}>
+                <Text className="font-medium text-white">Add Location</Text>
+              </Button>
             </View>
           )}
         </ScrollView>
