@@ -1,4 +1,4 @@
-import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Button, LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
@@ -17,6 +17,7 @@ export default function SeasonSuggestionsScreen() {
   const seasonSuggestionsMutation = useSeasonSuggestions();
   const createPackWithItems = useCreatePackWithItems();
   const [creatingPackIndex, setCreatingPackIndex] = useState<number | null>(null);
+  const { colors } = useColorScheme();
 
   const handleGenerateSuggestions = (location: WeatherLocation) => {
     setIsLocationPickerOpen(false);
@@ -91,10 +92,31 @@ export default function SeasonSuggestionsScreen() {
 
           {seasonSuggestionsMutation.data && (
             <View className="mt-6 gap-4">
-              <Text variant="title3" className="mb-4">
-                {seasonSuggestionsMutation.data.season} Suggestions for{' '}
-                {seasonSuggestionsMutation.data.location}
-              </Text>
+              <View className="flex-row items-center gap-2 mb-4">
+                <View className="flex-row items-center gap-1">
+                  <Icon
+                    materialIcon={{ type: 'MaterialIcons', name: 'eco' }}
+                    ios={{ name: 'leaf' }}
+                    size={16}
+                    color={colors.grey}
+                  />
+                  <Text className="text-base text-muted-foreground">
+                    {seasonSuggestionsMutation.data.season}
+                  </Text>
+                </View>
+                <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
+                <View className="flex-row items-center gap-1">
+                  <Icon
+                    materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
+                    ios={{ name: 'mappin' }}
+                    size={16}
+                    color={colors.grey}
+                  />
+                  <Text className="text-base text-muted-foreground">
+                    {seasonSuggestionsMutation.data.location}
+                  </Text>
+                </View>
+              </View>
 
               {seasonSuggestionsMutation.data.suggestions.map((suggestion, index) => (
                 <View key={suggestion.name} className="rounded-xl border border-border bg-card p-4">
