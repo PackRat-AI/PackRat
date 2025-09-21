@@ -20,26 +20,30 @@ export const PackSuggestionSchema = z.object({
     example: 'Perfect for warm summer day hikes with moderate temperatures',
     description: 'Description explaining why this pack is suitable',
   }),
-  items: z.array(z.object({
-    id: z.number().openapi({
-      example: 123,
-      description: 'ID of the item from user inventory',
+  items: z
+    .array(
+      z.object({
+        id: z.number().openapi({
+          example: 123,
+          description: 'ID of the item from user inventory',
+        }),
+        name: z.string().openapi({
+          example: 'Ultralight Rain Jacket',
+          description: 'Name of the item',
+        }),
+        quantity: z.number().default(1).openapi({
+          example: 1,
+          description: 'Recommended quantity of this item',
+        }),
+        reason: z.string().optional().openapi({
+          example: 'Essential for unexpected summer showers',
+          description: 'Explanation for including this item',
+        }),
+      }),
+    )
+    .openapi({
+      description: 'List of items to include in the pack',
     }),
-    name: z.string().openapi({
-      example: 'Ultralight Rain Jacket',
-      description: 'Name of the item',
-    }),
-    quantity: z.number().default(1).openapi({
-      example: 1,
-      description: 'Recommended quantity of this item',
-    }),
-    reason: z.string().optional().openapi({
-      example: 'Essential for unexpected summer showers',
-      description: 'Explanation for including this item',
-    }),
-  })).openapi({
-    description: 'List of items to include in the pack',
-  }),
   season: z.string().openapi({
     example: 'Summer',
     description: 'Season this pack is designed for',

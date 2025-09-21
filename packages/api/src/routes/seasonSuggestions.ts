@@ -24,7 +24,7 @@ const seasonSuggestionsRoutes = new OpenAPIHono<{
 function getSeason(date: string, location: string): string {
   const dateObj = new Date(date);
   const month = dateObj.getMonth() + 1; // getMonth() returns 0-11
-  
+
   // Basic season determination for Northern Hemisphere (can be enhanced with location-specific logic)
   if (month >= 3 && month <= 5) return 'Spring';
   if (month >= 6 && month <= 8) return 'Summer';
@@ -36,9 +36,12 @@ function getSeason(date: string, location: string): string {
  * Formats user inventory items for AI processing
  */
 function formatInventoryForAI(items: any[]): string {
-  return items.map(item => 
-    `- ID: ${item.id}, Name: ${item.name} (${item.weight}${item.weightUnit}, Category: ${item.category || 'general'})`
-  ).join('\n');
+  return items
+    .map(
+      (item) =>
+        `- ID: ${item.id}, Name: ${item.name} (${item.weight}${item.weightUnit}, Category: ${item.category || 'general'})`,
+    )
+    .join('\n');
 }
 
 const seasonSuggestionsRoute = createRoute({
@@ -46,7 +49,8 @@ const seasonSuggestionsRoute = createRoute({
   path: '/',
   tags: ['Season Suggestions'],
   summary: 'Get seasonal pack suggestions',
-  description: 'Generate personalized pack recommendations based on user inventory, location, and seasonal context',
+  description:
+    'Generate personalized pack recommendations based on user inventory, location, and seasonal context',
   security: [{ bearerAuth: [] }],
   request: {
     body: {
@@ -103,12 +107,15 @@ seasonSuggestionsRoutes.openapi(seasonSuggestionsRoute, async (c) => {
     });
 
     // Filter out deleted items and ensure we have the minimum required
-    const activeItems = userItems.filter(item => !item.deleted);
-    
+    const activeItems = userItems.filter((item) => !item.deleted);
+
     if (activeItems.length < 20) {
-      return c.json({ 
-        error: `Insufficient inventory items. You have ${activeItems.length} items, but need at least 20 items to generate seasonal suggestions.` 
-      }, 400);
+      return c.json(
+        {
+          error: `Insufficient inventory items. You have ${activeItems.length} items, but need at least 20 items to generate seasonal suggestions.`,
+        },
+        400,
+      );
     }
 
     const season = getSeason(date, location);
@@ -176,7 +183,7 @@ Ensure all item IDs match items from the provided inventory list.`;
 
     // Generate suggestions using AI
     const model = aiProvider(DEFAULT_MODELS.OPENAI_CHAT);
-    
+
     const result = await model.generate({
       prompt: systemPrompt,
       temperature: 0.7,
@@ -200,7 +207,6 @@ Ensure all item IDs match items from the provided inventory list.`;
       location,
       season,
     });
-
   } catch (error) {
     console.error('Season suggestions error:', error);
     c.get('sentry').setContext('seasonSuggestions', {
@@ -209,7 +215,7 @@ Ensure all item IDs match items from the provided inventory list.`;
       userId: auth.userId,
     });
     c.get('sentry').captureException(error);
-    
+
     return c.json({ error: 'Failed to generate season suggestions' }, 500);
   }
 });
