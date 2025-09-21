@@ -18,7 +18,7 @@ import {
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocationSearch } from '../hooks';
 import type { LocationSearchResult } from '../types';
 
@@ -27,7 +27,6 @@ const RECENT_SEARCHES_KEY = 'packrat_recent_location_searches';
 
 export default function LocationSearchScreen() {
   const { colors } = useColorScheme();
-  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
@@ -383,28 +382,20 @@ export default function LocationSearchScreen() {
             </TouchableOpacity>
           ))}
         </View>
-
-        <View className="border-border/30 mt-8 items-center border-t pt-6">
-          <Text className="text-center text-sm font-medium">First time adding a location?</Text>
-          <Text className="mt-1 px-4 text-center text-xs text-muted-foreground">
-            Search for your city above or select from popular cities to add your first weather
-            location
-          </Text>
-        </View>
       </View>
     );
   };
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <SafeAreaView className="flex-1 bg-background">
       {/* Search Input */}
-      <View className="px-4 py-2">
+      <View className="px-4">
         <SearchInput
           ref={searchInputRef}
-          placeholder="Search for a city"
+          placeholder="Search for a city, trail or park"
           value={query}
           onChangeText={handleSearchChange}
-          containerClassName="bg-muted"
+          containerClassName="border border-border"
           autoFocus
           clearButtonMode="while-editing"
         />
@@ -430,6 +421,6 @@ export default function LocationSearchScreen() {
           keyboardShouldPersistTaps="handled"
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
