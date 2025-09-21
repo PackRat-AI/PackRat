@@ -1,6 +1,7 @@
+import { createOpenAI } from '@ai-sdk/openai';
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { packItems } from '@packrat/api/db/schema';
+import { type PackItem, packItems } from '@packrat/api/db/schema';
 import {
   ErrorResponseSchema,
   SeasonSuggestionsRequestSchema,
@@ -8,9 +9,10 @@ import {
 } from '@packrat/api/schemas/seasonSuggestions';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
+import { z } from 'zod';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 
 const seasonSuggestionsRoutes = new OpenAPIHono<{
@@ -19,23 +21,9 @@ const seasonSuggestionsRoutes = new OpenAPIHono<{
 }>();
 
 /**
- * Determines the season based on date and location
- */
-function getSeason(date: string, location: string): string {
-  const dateObj = new Date(date);
-  const month = dateObj.getMonth() + 1; // getMonth() returns 0-11
-
-  // Basic season determination for Northern Hemisphere (can be enhanced with location-specific logic)
-  if (month >= 3 && month <= 5) return 'Spring';
-  if (month >= 6 && month <= 8) return 'Summer';
-  if (month >= 9 && month <= 11) return 'Fall';
-  return 'Winter';
-}
-
-/**
  * Formats user inventory items for AI processing
  */
-function formatInventoryForAI(items: any[]): string {
+function formatInventoryForAI(items: PackItem[]): string {
   return items
     .map(
       (item) =>
@@ -93,50 +81,43 @@ const seasonSuggestionsRoute = createRoute({
 seasonSuggestionsRoutes.openapi(seasonSuggestionsRoute, async (c) => {
   const auth = c.get('user');
   const { location, date } = await c.req.json();
+  const db = createDb(c);
 
-  try {
-    const db = createDb(c);
+  // Get user's inventory items (all pack items across all packs owned by user)
+  // We're getting all pack items to represent the user's total inventory
+  const items = await db.query.packItems.findMany({
+    where: and(eq(packItems.userId, auth.userId), eq(packItems.deleted, false)),
+    with: {
+      catalogItem: true,
+    },
+  });
 
-    // Get user's inventory items (all pack items across all packs owned by user)
-    // We're getting all pack items to represent the user's total inventory
-    const items = await db.query.packItems.findMany({
-      where: and(eq(packItems.userId, auth.userId), eq(packItems.deleted, false)),
-      with: {
-        catalogItem: true,
+  if (items.length < 20) {
+    return c.json(
+      {
+        error: `Insufficient inventory items. You have ${items.length} items, but need at least 20 items to generate seasonal suggestions.`,
       },
-    });
+      400,
+    );
+  }
 
-    if (items.length < 20) {
-      return c.json(
-        {
-          error: `Insufficient inventory items. You have ${items.length} items, but need at least 20 items to generate seasonal suggestions.`,
-        },
-        400,
-      );
-    }
+  const inventoryFormatted = formatInventoryForAI(items);
 
-    const season = getSeason(date, location);
-    const inventoryFormatted = formatInventoryForAI(items);
-
-    // Build AI prompt for seasonal pack suggestions
-    const systemPrompt = `
-You are PackRat AI, a specialized assistant for creating seasonal hiking pack recommendations.
+  // Build AI prompt for seasonal pack suggestions
+  const systemPrompt = `
+You are a specialized assistant for creating seasonal hiking pack recommendations.
 
 Based on the user's available inventory items, current location, and date, provide 2-3 optimal pack configurations suitable for the current season.
 
 User Location: ${location}
 Date: ${date}
-Season: ${season}
 Available Inventory Items:
 ${inventoryFormatted}
 
 Guidelines:
-- Consider the ${season.toLowerCase()} season and typical weather conditions in ${location}
+- Focus on essential items for the season conditions
 - Create practical pack configurations using ONLY items from the user's inventory
-- Each pack should serve different activity types (day hike, overnight, weekend trip, etc.)
 - Explain why each item is recommended for the season/conditions
-- Focus on essential items for ${season.toLowerCase()} conditions
-- Consider weight efficiency and multi-use items
 
 Respond with a JSON object containing an array of pack suggestions. Each suggestion should have:
 - name: descriptive pack name
@@ -155,66 +136,52 @@ Example format:
         {"id": 123, "name": "Water Bottle", "quantity": 2, "reason": "Extra hydration for hot weather"},
         {"id": 456, "name": "Sun Hat", "quantity": 1, "reason": "Protection from UV rays"}
       ],
-      "season": "Summer",
       "activityType": "Day Hiking"
-    }
-  ]
+      }
+    ],
+    "season": "Summer"
 }
 
 Ensure all item IDs match items from the provided inventory list.`;
 
-    const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
-      getEnv(c);
+  // Generate suggestions using AI
+  const { OPENAI_API_KEY } = getEnv(c);
+  const openai = createOpenAI({
+    apiKey: OPENAI_API_KEY,
+  });
+  const { object } = await generateObject({
+    model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+    schema: z.object({
+      suggestions: z.array(
+        z.object({
+          name: z.string(),
+          description: z.string(),
+          items: z.array(
+            z.object({
+              id: z.number(),
+              name: z.string(),
+              quantity: z.number().min(1),
+              reason: z.string(),
+            }),
+          ),
+          activityType: z.string(),
+        }),
+      ),
+      season: z.string(),
+    }),
+    system: systemPrompt,
+    prompt: 'Generate',
+    temperature: 0.8,
+  });
 
-    const aiProvider = createAIProvider({
-      openAiApiKey: OPENAI_API_KEY,
-      provider: AI_PROVIDER,
-      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-      cloudflareAiBinding: AI,
-    });
+  const { suggestions, season } = object;
 
-    if (!aiProvider) {
-      return c.json({ error: 'AI provider not configured' }, 500);
-    }
-
-    // Generate suggestions using AI
-    const model = aiProvider(DEFAULT_MODELS.OPENAI_CHAT);
-
-    const result = await model.generate({
-      prompt: systemPrompt,
-      temperature: 0.7,
-      maxOutputTokens: 2000,
-    });
-
-    let suggestions;
-    try {
-      // Parse AI response as JSON
-      const aiResponse = result.response.text;
-      const parsed = JSON.parse(aiResponse);
-      suggestions = Array.isArray(parsed) ? parsed : parsed.suggestions || [];
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      return c.json({ error: 'Failed to generate valid suggestions' }, 500);
-    }
-
-    return c.json({
-      suggestions,
-      totalInventoryItems: items.length,
-      location,
-      season,
-    });
-  } catch (error) {
-    console.error('Season suggestions error:', error);
-    c.get('sentry').setContext('seasonSuggestions', {
-      location,
-      date,
-      userId: auth.userId,
-    });
-    c.get('sentry').captureException(error);
-
-    return c.json({ error: 'Failed to generate season suggestions' }, 500);
-  }
+  return c.json({
+    suggestions,
+    totalInventoryItems: items.length,
+    location,
+    season,
+  });
 });
 
 export { seasonSuggestionsRoutes };

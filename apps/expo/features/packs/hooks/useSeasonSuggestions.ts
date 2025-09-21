@@ -17,7 +17,6 @@ export interface PackSuggestion {
   name: string;
   description: string;
   items: PackSuggestionItem[];
-  season: string;
   activityType: string;
 }
 
@@ -32,7 +31,9 @@ const generateSeasonSuggestions = async (
   data: SeasonSuggestionsRequest,
 ): Promise<SeasonSuggestionsResponse> => {
   try {
-    const response = await axiosInstance.post('/api/season-suggestions', data);
+    const response = await axiosInstance.post('/api/season-suggestions', data, {
+      timeout: 0,
+    });
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
