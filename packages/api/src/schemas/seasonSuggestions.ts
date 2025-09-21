@@ -26,13 +26,17 @@ export const PackSuggestionSchema = z.object({
       z.object({
         name: z.string().openapi({ example: 'Sleeping Bag' }),
         description: z.string().nullable().openapi({ example: 'Down sleeping bag rated to -5°C' }),
-        weight: z.number().openapi({ example: 850, description: 'Weight in grams' }),
+        weight: z.number().int().openapi({ example: 850, description: 'Weight in grams' }),
         weightUnit: z.string().openapi({ example: 'g' }),
         quantity: z.number().int().min(1).openapi({ example: 1 }),
         category: z.string().nullable().openapi({ example: 'Sleep System' }),
         consumable: z.boolean().openapi({ example: false }),
         worn: z.boolean().openapi({ example: false }),
-        image: z.string().nullable().openapi({ example: 'https://example.com/image.jpg' }),
+        image: z
+          .string()
+          .nullable()
+          .optional()
+          .openapi({ example: 'https://example.com/image.jpg' }),
         notes: z.string().nullable().openapi({ example: 'Great for cold weather' }),
         catalogItemId: z.number().int().nullable().openapi({ example: 12345 }),
       }),

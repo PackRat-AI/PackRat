@@ -23,7 +23,7 @@ const seasonSuggestionsRoutes = new OpenAPIHono<{
 /**
  * Formats user inventory items for AI processing
  */
-function formatInventoryForAI(items: PackItem[]): string {
+function formatInventoryForAI(items: Omit<PackItem, 'embedding'>[]): string {
   return items
     .map(
       (item) =>
@@ -157,7 +157,7 @@ ${inventoryFormatted}`;
 
         return {
           name: invItem.name,
-          description: invItem.description,
+          description: invItem.description ?? null,
           weight: invItem.weight,
           weightUnit: invItem.weightUnit,
           quantity: item.quantity,
@@ -169,7 +169,7 @@ ${inventoryFormatted}`;
           catalogItemId: invItem.catalogItemId,
         };
       })
-      .filter((item): item is PackItem & { reason: string } => !!item), // Filter out undefined items
+      .filter((item): item is NonNullable<typeof item> => !!item),
   }));
 
   return c.json(

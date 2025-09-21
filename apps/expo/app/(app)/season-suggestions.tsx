@@ -7,6 +7,7 @@ import {
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
 import { LocationPicker } from 'expo-app/features/weather/components';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
@@ -23,6 +24,7 @@ export default function SeasonSuggestionsScreen() {
     setIsLocationPickerOpen(false);
 
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    assertDefined(currentDate);
 
     seasonSuggestionsMutation.mutate({
       location: location.name,
