@@ -8,9 +8,12 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
-import { useSeasonSuggestions, type PackSuggestion } from '../features/packs/hooks/useSeasonSuggestions';
-import { useHasMinimumInventory } from '../features/packs/hooks/useHasMinimumInventory';
-import { useCreatePackWithItems } from '../features/packs/hooks/useCreatePackWithItems';
+import {
+  useSeasonSuggestions,
+  type PackSuggestion,
+} from 'expo-app/features/packs/hooks/useSeasonSuggestions';
+import { useHasMinimumInventory } from 'expo-app/features/packs/hooks/useHasMinimumInventory';
+import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
@@ -34,7 +37,7 @@ export default function SeasonSuggestionsScreen() {
     }
 
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    
+
     seasonSuggestionsMutation.mutate({
       location: activeLocation.name,
       date: currentDate,
@@ -43,7 +46,7 @@ export default function SeasonSuggestionsScreen() {
 
   const handleCreatePack = async (suggestion: PackSuggestion, index: number) => {
     setCreatingPackIndex(index);
-    
+
     try {
       // Create the pack with items
       const packId = createPackWithItems({
@@ -52,7 +55,7 @@ export default function SeasonSuggestionsScreen() {
         category: 'hiking', // Default to hiking category
         items: suggestion.items,
       });
-      
+
       // Navigate to the created pack
       router.push(`/pack/${packId}`);
     } catch (error) {
@@ -70,7 +73,7 @@ export default function SeasonSuggestionsScreen() {
           headerLargeTitle: false,
         }}
       />
-      
+
       <ScrollView className="flex-1 px-4">
         <View className="py-6">
           <View className="mb-6">
@@ -91,8 +94,8 @@ export default function SeasonSuggestionsScreen() {
                 </Text>
               </View>
               <Text variant="body" className="text-orange-700">
-                You need at least 20 items in your inventory to generate seasonal suggestions. 
-                You currently have {currentItemCount} items.
+                You need at least 20 items in your inventory to generate seasonal suggestions. You
+                currently have {currentItemCount} items.
               </Text>
             </View>
           ) : (
@@ -139,9 +142,10 @@ export default function SeasonSuggestionsScreen() {
           {seasonSuggestionsMutation.data && (
             <View className="mt-6 space-y-4">
               <Text variant="title3" className="mb-4">
-                {seasonSuggestionsMutation.data.season} Suggestions for {seasonSuggestionsMutation.data.location}
+                {seasonSuggestionsMutation.data.season} Suggestions for{' '}
+                {seasonSuggestionsMutation.data.location}
               </Text>
-              
+
               {seasonSuggestionsMutation.data.suggestions.map((suggestion, index) => (
                 <View key={index} className="rounded-xl border border-gray-200 bg-card p-4">
                   <View className="mb-3">
@@ -155,7 +159,7 @@ export default function SeasonSuggestionsScreen() {
                       {suggestion.description}
                     </Text>
                   </View>
-                  
+
                   <View className="mb-4">
                     <Text variant="subheadline" className="mb-2 font-medium">
                       Recommended Items ({suggestion.items.length})
@@ -168,7 +172,7 @@ export default function SeasonSuggestionsScreen() {
                       </View>
                     ))}
                   </View>
-                  
+
                   <Button
                     variant="secondary"
                     onPress={() => handleCreatePack(suggestion, index)}
