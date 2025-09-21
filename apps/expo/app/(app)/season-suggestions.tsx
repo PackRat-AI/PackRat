@@ -5,28 +5,26 @@ import {
   type PackSuggestion,
   useSeasonSuggestions,
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
-import { useActiveLocation } from 'expo-app/features/weather/hooks/useActiveLocation';
+import { LocationPicker } from 'expo-app/features/weather/components';
+import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
-  const { activeLocation } = useActiveLocation();
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const seasonSuggestionsMutation = useSeasonSuggestions();
   const createPackWithItems = useCreatePackWithItems();
   const [creatingPackIndex, setCreatingPackIndex] = useState<number | null>(null);
 
-  const handleGenerateSuggestions = () => {
-    if (!activeLocation) {
-      // TODO: Show location not available alert
-      return;
-    }
+  const handleGenerateSuggestions = (location: WeatherLocation) => {
+    setIsLocationPickerOpen(false);
 
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
     seasonSuggestionsMutation.mutate({
-      location: activeLocation.name,
+      location: location.name,
       date: currentDate,
     });
   };
@@ -57,38 +55,28 @@ export default function SeasonSuggestionsScreen() {
             </Text>
           </View>
 
-          <View className="space-y-4">
-            <Button
-              onPress={handleGenerateSuggestions}
-              disabled={seasonSuggestionsMutation.isPending || !activeLocation}
-              className="w-full"
-            >
-              {seasonSuggestionsMutation.isPending ? (
-                <View className="flex-row items-center">
-                  <ActivityIndicator size="small" color="white" />
-                  <Text className="ml-2 text-white">Generating suggestions...</Text>
-                </View>
-              ) : (
-                <View className="flex-row items-center">
-                  <Icon
-                    materialIcon={{ type: 'MaterialIcons', name: 'auto-awesome' }}
-                    ios={{ name: 'sparkles' }}
-                    size={18}
-                    color="white"
-                  />
-                  <Text className="ml-2 text-white">Generate Season Suggestions</Text>
-                </View>
-              )}
-            </Button>
-
-            {!activeLocation && (
-              <View className="mt-2 rounded-xl border border-yellow-200 bg-yellow-50 p-3">
-                <Text variant="caption" className="text-center text-yellow-800">
-                  Please set your location in Weather settings to generate suggestions
-                </Text>
+          <Button
+            onPress={() => setIsLocationPickerOpen(true)}
+            disabled={seasonSuggestionsMutation.isPending}
+            className="w-full"
+          >
+            {seasonSuggestionsMutation.isPending ? (
+              <View className="flex-row items-center">
+                <ActivityIndicator size="small" color="white" />
+                <Text className="ml-2 text-white">Generating suggestions...</Text>
+              </View>
+            ) : (
+              <View className="flex-row items-center">
+                <Icon
+                  materialIcon={{ type: 'MaterialIcons', name: 'auto-awesome' }}
+                  ios={{ name: 'sparkles' }}
+                  size={18}
+                  color="white"
+                />
+                <Text className="ml-2 text-white">Generate Season Suggestions</Text>
               </View>
             )}
-          </View>
+          </Button>
 
           {seasonSuggestionsMutation.error && (
             <View className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
@@ -158,6 +146,14 @@ export default function SeasonSuggestionsScreen() {
           )}
         </View>
       </ScrollView>
+
+      <LocationPicker
+        open={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        title="Select Location"
+        onSelect={handleGenerateSuggestions}
+        selectText="Next"
+      />
     </View>
   );
 }
