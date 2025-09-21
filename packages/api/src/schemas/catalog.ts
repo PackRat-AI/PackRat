@@ -334,3 +334,37 @@ export const UpdateCatalogItemRequestSchema = z
 export const CatalogCategoriesResponseSchema = z
   .array(z.string().openapi({ example: 'Tents' }))
   .openapi('CatalogCategoriesResponse');
+
+export const VectorSearchQuerySchema = z
+  .object({
+    q: z.string().min(1).openapi({
+      example: 'lightweight tent for backpacking',
+      description: 'Search query string',
+    }),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(10).openapi({
+      example: 10,
+      description: 'Maximum number of results to return',
+    }),
+    offset: z.coerce.number().int().min(0).optional().default(0).openapi({
+      example: 0,
+      description: 'Number of results to skip for pagination',
+    }),
+  })
+  .openapi('VectorSearchQuery');
+
+export const SimilarItemSchema = CatalogItemSchema.extend({
+  similarity: z.number().min(0).max(1).openapi({
+    example: 0.85,
+    description: 'Similarity score between 0 and 1',
+  }),
+}).openapi('SimilarItem');
+
+export const VectorSearchResponseSchema = z
+  .object({
+    items: z.array(SimilarItemSchema),
+    total: z.number().openapi({ example: 150 }),
+    limit: z.number().openapi({ example: 10 }),
+    offset: z.number().openapi({ example: 0 }),
+    nextOffset: z.number().openapi({ example: 10 }),
+  })
+  .openapi('VectorSearchResponse');

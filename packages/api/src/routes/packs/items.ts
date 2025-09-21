@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { packItems, packs } from '@packrat/api/db/schema';
+import { catalogItems, packItems, packs } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import {
   CreatePackItemRequestSchema,
@@ -12,7 +12,7 @@ import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { and, eq } from 'drizzle-orm';
+import { and, cosineDistance, desc, eq, getTableColumns, gt, isNotNull, sql } from 'drizzle-orm';
 
 const packItemsRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -138,14 +138,14 @@ const getItemRoute = createRoute({
           schema: PackItemSchema.extend({
             catalogItem: z
               .object({
-                id: z.string(),
+                id: z.number(),
                 name: z.string(),
                 brand: z.string().nullable(),
-                category: z.string().nullable(),
+                categories: z.array(z.string()).nullable(),
                 description: z.string().nullable(),
                 price: z.number().nullable(),
                 weight: z.number().nullable(),
-                image: z.string().nullable(),
+                images: z.array(z.string()).nullable(),
               })
               .nullable(),
             pack: z
@@ -198,29 +198,13 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
   }
 
   const isOwner = item.userId === userId;
-  const isPublic = item.pack?.isPublic;
+  const isPublic = item.pack.isPublic;
 
   if (!isOwner && !isPublic) {
     return c.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
-  // Map item to ensure nullable fields are handled
-  const mappedItem = {
-    ...item,
-    consumable: item.consumable ?? false,
-    worn: item.worn ?? false,
-    deleted: item.deleted ?? false,
-    createdAt: item.createdAt.toISOString(),
-    updatedAt: item.updatedAt.toISOString(),
-    pack: item.pack
-      ? {
-          ...item.pack,
-          isPublic: item.pack.isPublic ?? false,
-        }
-      : null,
-  };
-
-  return c.json(mappedItem, 200);
+  return c.json(item, 200);
 });
 
 // Add an item to a pack
@@ -257,7 +241,7 @@ const addItemRoute = createRoute({
     },
   },
   responses: {
-    200: {
+    201: {
       description: 'Item added to pack successfully',
       content: {
         'application/json': {
@@ -393,6 +377,14 @@ const updateItemRoute = createRoute({
         },
       },
     },
+    400: {
+      description: 'Bad request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
     404: {
       description: 'Item not found',
       content: {
@@ -507,19 +499,8 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
   // Update the pack's updatedAt timestamp
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, updatedItem.packId));
 
-  // Map the updated item to ensure proper format
-  const mappedUpdatedItem = {
-    ...updatedItem,
-    consumable: updatedItem.consumable ?? false,
-    worn: updatedItem.worn ?? false,
-    deleted: updatedItem.deleted ?? false,
-    createdAt: updatedItem.createdAt.toISOString(),
-    updatedAt: updatedItem.updatedAt.toISOString(),
-    embedding: undefined, // Don't send embedding in response
-    templateItemId: updatedItem.templateItemId ?? null,
-  };
-
-  return c.json(mappedUpdatedItem, 200);
+  updatedItem.embedding = null; // Don't send embedding in response
+  return c.json(updatedItem, 200);
 });
 
 // Delete a pack item
@@ -580,6 +561,144 @@ packItemsRoutes.openapi(deleteItemRoute, async (c) => {
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
   return c.json({ success: true, itemId: itemId }, 200);
+});
+
+// Get similar items to a pack item
+const getSimilarItemsRoute = createRoute({
+  method: 'get',
+  path: '/{packId}/items/{itemId}/similar',
+  tags: ['Pack Items'],
+  summary: 'Get similar items to a pack item',
+  description: 'Find catalog and pack items similar to the specified pack item using vector search',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({
+        example: 'p_123456',
+        description: 'Pack ID',
+      }),
+      itemId: z.string().openapi({
+        example: 'pi_123456',
+        description: 'Pack item ID',
+      }),
+    }),
+    query: z.object({
+      limit: z
+        .string()
+        .optional()
+        .transform((val) => (val ? Number(val) : 5))
+        .openapi({
+          example: '5',
+          description: 'Number of similar items to return (default: 5, max: 20)',
+        }),
+      threshold: z
+        .string()
+        .optional()
+        .transform((val) => (val ? Number(val) : 0.1))
+        .openapi({
+          example: '0.1',
+          description: 'Minimum similarity threshold (default: 0.1)',
+        }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'List of similar catalog items',
+      content: {
+        'application/json': {
+          schema: z.object({
+            items: z.array(
+              z
+                .object({
+                  id: z.number(),
+                  name: z.string(),
+                  description: z.string().nullable(),
+                  weight: z.number(),
+                  weightUnit: z.string(),
+                  categories: z.array(z.string()).nullable(),
+                  images: z.array(z.string()).nullable(),
+                  brand: z.string().nullable(),
+                  price: z.number().nullable(),
+                  similarity: z.number(),
+                })
+                .openapi({ description: 'Similar catalog item with similarity score' }),
+            ),
+            total: z.number(),
+            sourceItem: PackItemSchema,
+          }),
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - pack is private',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack item not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+packItemsRoutes.openapi(getSimilarItemsRoute, async (c) => {
+  const db = createDb(c);
+  const auth = c.get('user');
+  const { itemId } = c.req.param();
+  const { limit, threshold } = c.req.valid('query');
+
+  // Validate limit
+  const validLimit = Math.min(Math.max(limit, 1), 20);
+
+  // First, get the source pack item with its embedding
+  const sourceItem = await db.query.packItems.findFirst({
+    where: eq(packItems.id, itemId),
+    with: {
+      pack: true,
+    },
+  });
+
+  if (!sourceItem || !sourceItem.embedding) {
+    return c.json({ error: 'Pack item not found or has no embedding' }, 404);
+  }
+
+  // Check if user has access to the pack
+  if (sourceItem.pack.userId !== auth.userId && !sourceItem.pack.isPublic) {
+    return c.json({ error: 'Access denied to private pack' }, 403);
+  }
+
+  // Find similar catalog items
+  const catalogSimilarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+  const { embedding: _catalogEmbedding, ...catalogColumns } = getTableColumns(catalogItems);
+
+  const similarCatalogItems = await db
+    .select({
+      ...catalogColumns,
+      similarity: catalogSimilarity,
+    })
+    .from(catalogItems)
+    .where(and(gt(catalogSimilarity, threshold), isNotNull(catalogItems.embedding)))
+    .orderBy(desc(catalogSimilarity))
+    .limit(validLimit);
+
+  // Remove embedding from source item for response
+  const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;
+
+  return c.json(
+    {
+      items: similarCatalogItems,
+      total: similarCatalogItems.length,
+      sourceItem: sourceItemData,
+    },
+    200,
+  );
 });
 
 export { packItemsRoutes };

@@ -76,10 +76,11 @@ export const packs = pgTable('packs', {
     .notNull(),
   templateId: text('template_id').references(() => packTemplates.id),
 
-  isPublic: boolean('is_public').default(false),
+  isPublic: boolean('is_public').notNull().default(false),
   image: text('image'),
   tags: jsonb('tags').$type<string[]>(),
-  deleted: boolean('deleted').default(false),
+  deleted: boolean('deleted').notNull().default(false),
+  isAIGenerated: boolean('is_ai_generated').notNull().default(false),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(), // for controlling sync. controlled by server.
@@ -190,8 +191,8 @@ export const packItems = pgTable(
     weightUnit: text('weight_unit').notNull(),
     quantity: integer('quantity').default(1).notNull(),
     category: text('category'),
-    consumable: boolean('consumable').default(false),
-    worn: boolean('worn').default(false),
+    consumable: boolean('consumable').notNull().default(false),
+    worn: boolean('worn').notNull().default(false),
     image: text('image'),
     notes: text('notes'),
     packId: text('pack_id')
@@ -201,7 +202,8 @@ export const packItems = pgTable(
     userId: integer('user_id')
       .references(() => users.id)
       .notNull(),
-    deleted: boolean('deleted').default(false),
+    deleted: boolean('deleted').notNull().default(false),
+    isAIGenerated: boolean('is_ai_generated').notNull().default(false),
     templateItemId: text('template_item_id').references(() => packTemplateItems.id),
     embedding: vector('embedding', { dimensions: 1536 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -239,8 +241,8 @@ export const packTemplates = pgTable('pack_templates', {
     .notNull(),
   image: text('image'),
   tags: jsonb('tags').$type<string[]>(),
-  isAppTemplate: boolean('is_app_template').default(false),
-  deleted: boolean('deleted').default(false),
+  isAppTemplate: boolean('is_app_template').notNull().default(false),
+  deleted: boolean('deleted').notNull().default(false),
 
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
@@ -258,8 +260,8 @@ export const packTemplateItems = pgTable('pack_template_items', {
   weightUnit: text('weight_unit').notNull(),
   quantity: integer('quantity').default(1).notNull(),
   category: text('category'),
-  consumable: boolean('consumable').default(false),
-  worn: boolean('worn').default(false),
+  consumable: boolean('consumable').notNull().default(false),
+  worn: boolean('worn').notNull().default(false),
   image: text('image'),
   notes: text('notes'),
   packTemplateId: text('pack_template_id')
@@ -269,7 +271,7 @@ export const packTemplateItems = pgTable('pack_template_items', {
   userId: integer('user_id')
     .references(() => users.id)
     .notNull(),
-  deleted: boolean('deleted').default(false),
+  deleted: boolean('deleted').notNull().default(false),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

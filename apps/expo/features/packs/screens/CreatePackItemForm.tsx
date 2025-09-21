@@ -45,7 +45,7 @@ const itemFormSchema = z.object({
 });
 
 // Type inference
-// type ItemFormValues = z.infer<typeof itemFormSchema>;
+type ItemFormValues = z.infer<typeof itemFormSchema>;
 
 // Weight units
 const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];
@@ -89,11 +89,11 @@ export const CreatePackItemForm = ({
   }, []);
 
   const form = useForm({
-    defaultValues: existingItem || {
+    defaultValues: (existingItem as ItemFormValues) || {
       name: '',
       description: '',
       weight: 0,
-      weightUnit: 'g',
+      weightUnit: 'g' as WeightUnit,
       quantity: 0,
       category: '',
       consumable: false,
@@ -191,10 +191,11 @@ export const CreatePackItemForm = ({
   };
 
   // Determine what image to show in the UI
+  const imageFieldValue = form.getFieldValue('image') as string | null;
   const displayImage = selectedImage
     ? { uri: selectedImage.uri }
-    : form.getFieldValue('image')
-      ? { uri: ImageCacheManager.cacheDirectory + form.getFieldValue('image') }
+    : imageFieldValue
+      ? { uri: ImageCacheManager.cacheDirectory + imageFieldValue }
       : null;
 
   return (

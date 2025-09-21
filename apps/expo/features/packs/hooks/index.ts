@@ -1,3 +1,5 @@
+export * from './useAddCatalogItem';
+export * from './useBulkAddCatalogItems';
 export * from './useCategoriesCount';
 export * from './useCreatePack';
 export * from './useCreatePackItem';
@@ -10,6 +12,7 @@ export * from './useHasMinimumInventory';
 export * from './useImageUpload';
 export * from './usePackDetailsFromApi';
 export * from './usePackDetailsFromStore';
+export * from './usePackGapAnalysis';
 export * from './usePackItemDetailsFromApi';
 export * from './usePackItemDetailsFromStore';
 export * from './usePackItemOwnershipCheck';

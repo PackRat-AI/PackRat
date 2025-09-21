@@ -2,6 +2,7 @@ import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
@@ -19,7 +20,6 @@ import { useCatalogItemsInfinite } from '../hooks';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 import { useVectorSearch } from '../hooks/useVectorSearch';
 import type { CatalogItem } from '../types';
-import { CatalogItemSelectCard } from './CatalogItemSelectCard';
 
 type CatalogBrowserModalProps = {
   visible: boolean;
@@ -36,7 +36,7 @@ export function CatalogBrowserModal({
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
-  const [debouncedSearchValue] = useDebounce(searchValue, 150);
+  const [debouncedSearchValue] = useDebounce(searchValue, 400);
 
   const isSearching = debouncedSearchValue.length > 0;
 
@@ -52,20 +52,19 @@ export function CatalogBrowserModal({
     isFetchingNextPage,
     error: paginatedError,
   } = useCatalogItemsInfinite({
-    query: debouncedSearchValue,
     category: activeFilter === 'All' ? undefined : activeFilter,
     limit: 20,
     sort: { field: 'createdAt', order: 'desc' },
   });
 
   const {
-    data: searchResults,
+    data: searchResult,
     isLoading: isSearchLoading,
     error: searchError,
-  } = useVectorSearch(debouncedSearchValue);
+  } = useVectorSearch({ query: debouncedSearchValue, limit: 20 });
 
   const items = isSearching
-    ? searchResults || []
+    ? searchResult?.items || []
     : paginatedData?.pages.flatMap((page) => page.items) || [];
   const isLoading = isSearching ? isSearchLoading : isPaginatedLoading;
   const error = isSearching ? searchError : paginatedError;
@@ -81,7 +80,7 @@ export function CatalogBrowserModal({
   };
 
   const handleAddSelected = () => {
-    const selectedCatalogItems = items.filter((item) => selectedItems.has(item.id));
+    const selectedCatalogItems = items.filter((item: CatalogItem) => selectedItems.has(item.id));
     onItemsSelected(selectedCatalogItems);
     setSelectedItems(new Set());
     onClose();
@@ -109,10 +108,10 @@ export function CatalogBrowserModal({
   };
 
   const renderItem = ({ item }: { item: CatalogItem }) => (
-    <CatalogItemSelectCard
+    <HorizontalCatalogItemCard
       item={item}
-      isSelected={selectedItems.has(item.id)}
-      onToggle={() => handleItemToggle(item)}
+      selected={selectedItems.has(item.id)}
+      onSelect={handleItemToggle}
     />
   );
 
@@ -120,7 +119,7 @@ export function CatalogBrowserModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <SafeAreaView className="flex-1">
+      <SafeAreaView className="flex-1 bg-background">
         {/* Header */}
         <View className="flex-row items-center justify-between border-b border-border p-4">
           <View className="flex-row items-center">
@@ -141,7 +140,7 @@ export function CatalogBrowserModal({
             placeholder="Search catalog items..."
           />
 
-          {categories && (
+          {!isSearching && categories && (
             <View className="mt-3">
               <CategoriesFilter
                 activeFilter={activeFilter}
@@ -207,11 +206,17 @@ export function CatalogBrowserModal({
         {selectedItems.size > 0 && (
           <View className="border-t border-border bg-card p-4">
             <View className="flex-row gap-3 items-center justify-end">
-              <Button variant="secondary" onPress={() => setSelectedItems(new Set())}>
+              <Button
+                variant="secondary"
+                className="mb-1"
+                onPress={() => setSelectedItems(new Set())}
+              >
                 <Text>Clear Selection</Text>
               </Button>
-              <Button onPress={handleAddSelected}>
-                <Text>Add {selectedItems.size} Items</Text>
+              <Button onPress={handleAddSelected} className="mb-1" variant="tonal">
+                <Text>
+                  Add {selectedItems.size} {selectedItems.size > 1 ? 'Items' : 'Item'}
+                </Text>
               </Button>
             </View>
           </View>

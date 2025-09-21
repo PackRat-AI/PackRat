@@ -171,7 +171,7 @@ export const UpdatePackTemplateRequestSchema = z
       example: 'Weekend Backpacking Template',
       description: 'Template name',
     }),
-    description: z.string().optional().openapi({
+    description: z.string().nullable().openapi({
       example: 'Essential gear for a 2-3 day backpacking trip',
       description: 'Template description',
     }),
@@ -179,13 +179,13 @@ export const UpdatePackTemplateRequestSchema = z
       example: 'Backpacking',
       description: 'Template category',
     }),
-    image: z.string().url().optional().openapi({
+    image: z.string().url().nullable().openapi({
       example: 'https://example.com/template-image.jpg',
       description: 'Template image URL',
     }),
     tags: z
       .array(z.string())
-      .optional()
+      .nullable()
       .openapi({
         example: ['backpacking', 'weekend', 'hiking'],
         description: 'Template tags for categorization',
@@ -237,7 +237,7 @@ export const CreatePackTemplateItemRequestSchema = z
       example: false,
       description: 'Whether this item is worn (not carried)',
     }),
-    image: z.string().url().optional().openapi({
+    image: z.string().url().nullable().openapi({
       example: 'https://example.com/tent.jpg',
       description: 'Item image URL',
     }),

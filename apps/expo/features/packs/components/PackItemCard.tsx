@@ -1,13 +1,12 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { Alert, type AlertRef, Button, Text } from '@packrat/ui/nativewindui';
+import { Alert, type AlertRef, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
 import {
   useDeletePackItem,
   usePackItemDetailsFromStore,
@@ -16,13 +15,25 @@ import {
 import type { PackItem } from '../types';
 import { PackItemImage } from './PackItemImage';
 
-type PackItemCardProps = {
+type Base = {
   item: PackItem;
   onPress?: (item: PackItem) => void;
   isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
 };
 
-export function PackItemCard({ item: itemArg, onPress, isGenUI = false }: PackItemCardProps) {
+type PackItemCardProps =
+  | Base
+  | (Base & {
+      onSelect: (item: PackItem) => void;
+      selected: boolean;
+    });
+
+export function PackItemCard({
+  item: itemArg,
+  onPress,
+  isGenUI = false,
+  ...restProps
+}: PackItemCardProps) {
   const router = useRouter();
   const { showActionSheetWithOptions } = useActionSheet();
   const alertRef = useRef<AlertRef>(null);
@@ -33,6 +44,8 @@ export function PackItemCard({ item: itemArg, onPress, isGenUI = false }: PackIt
 
   const deleteItem = useDeletePackItem();
   const { colors } = useColorScheme();
+
+  const isSelectable = 'onSelect' in restProps;
 
   const handleActionsPress = () => {
     const options =
@@ -93,62 +106,71 @@ export function PackItemCard({ item: itemArg, onPress, isGenUI = false }: PackIt
   };
 
   return (
-    <Pressable
-      className="mb-3 flex-row overflow-hidden rounded-lg bg-card shadow-sm"
-      onPress={() => onPress?.(item)}
-    >
-      <View className="flex-1 p-2">
-        <View className="flex-row items-start justify-between gap-2 mb-2">
-          <PackItemImage
-            item={item}
-            className="w-32 h-20 rounded-lg border border-neutral-200 dark:border-neutral-700"
-            resizeMode="cover"
-          />
-          <View className="flex-1 py-1">
-            <Text
-              className="text-foreground tracking-tight leading-6"
-              variant="title3"
-              numberOfLines={2}
-            >
-              {item.name}
-            </Text>
-            <Text variant="footnote" className="text-muted-foreground">
-              {item.category}
-            </Text>
-          </View>
-        </View>
+    <>
+      <TouchableWithoutFeedback
+        key={item.id}
+        onPress={() => (isSelectable ? restProps.onSelect(item) : onPress?.(item))}
+      >
+        <View
+          className={`mb-4 rounded-lg flex-row gap-3 border p-4 ${
+            isSelectable && restProps.selected
+              ? 'border-primary bg-primary/5'
+              : 'border-border bg-card'
+          }`}
+        >
+          {/* Image */}
+          <PackItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />
 
-        <View className="flex-row pl-1 items-start justify-between">
-          <View className="mt-2 flex-row items-center gap-2">
-            <WeightBadge
-              weight={item.weight * item.quantity}
-              unit={item.weightUnit}
-              textClassName="font-normal"
-              containerClassName="py-0.5"
-            />
-
-            <View className="rounded-full bg-muted dark:bg-neutral-700 px-2 py-0.5">
-              <Text className="text-xs dark:text-neutral-200">Qty: {item.quantity}</Text>
+          {/* Content */}
+          <View className="flex-1">
+            <View className="flex-row gap-2 justify-between items-start">
+              <Text className="flex-1 font-medium text-foreground" numberOfLines={2}>
+                {item.name}
+              </Text>
+              {!isSelectable && (
+                <Pressable onPress={handleActionsPress}>
+                  <Icon name="dots-horizontal" size={20} color={colors.grey2} />
+                </Pressable>
+              )}
             </View>
+            <Text className="text-sm text-muted-foreground mb-2">{item.category}</Text>
 
-            {item.consumable && (
-              <View className={cn('rounded-full px-2 py-0.5', 'bg-amber-100')}>
-                <Text className={cn('text-xs', 'text-amber-600')}>Consumable</Text>
-              </View>
-            )}
+            <View className="flex-row items-center gap-4 flex-wrap">
+              {item.consumable && (
+                <View className={cn('rounded-full px-2 py-0.5', 'bg-amber-100')}>
+                  <Text className={cn('text-xs', 'text-amber-600')}>Consumable</Text>
+                </View>
+              )}
 
-            {item.worn && (
-              <View className={cn('rounded-full px-2 py-0.5', 'bg-emerald-100')}>
-                <Text className={cn('text-xs', 'text-emerald-600')}>Worn</Text>
-              </View>
-            )}
+              {item.worn && (
+                <View className={cn('rounded-full px-2 py-0.5', 'bg-emerald-100')}>
+                  <Text className={cn('text-xs', 'text-emerald-600')}>Worn</Text>
+                </View>
+              )}
+            </View>
+            <View className="mt-2 flex-row items-center gap-4 flex-wrap">
+              <Text className="text-sm font-medium text-foreground">
+                {item.weight}
+                {item.weightUnit}
+              </Text>
+
+              <Text className="text-sm text-muted-foreground">{item.quantity} qty</Text>
+            </View>
           </View>
-          <Button variant="plain" size="icon" onPress={handleActionsPress}>
-            <Icon name="dots-horizontal" size={20} color={colors.grey2} />
-          </Button>
+
+          {/* Selection indicator */}
+          {isSelectable && (
+            <View className="items-center justify-center">
+              {restProps.selected ? (
+                <Icon name="check-circle" size={24} color={colors.primary} />
+              ) : (
+                <Icon name="circle-outline" size={24} color={colors.grey2} />
+              )}
+            </View>
+          )}
         </View>
-        <Alert title="" buttons={[]} ref={alertRef} />
-      </View>
-    </Pressable>
+      </TouchableWithoutFeedback>
+      <Alert title="" buttons={[]} ref={alertRef} />
+    </>
   );
 }

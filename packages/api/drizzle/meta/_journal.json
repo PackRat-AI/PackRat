@@ -218,6 +218,20 @@
       "when": 1756207248298,
       "tag": "0029_legal_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1757790647629,
+      "tag": "0030_careless_vindicator",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1758301845482,
+      "tag": "0031_organic_switch",
+      "breakpoints": true
     }
   ]
 }

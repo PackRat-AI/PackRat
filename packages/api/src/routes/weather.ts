@@ -180,16 +180,19 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
       if (currentData?.location) {
         // Create a single result from the current conditions response
-        return c.json([
-          {
-            id: currentData.location.id,
-            name: currentData.location.name,
-            region: currentData.location.region,
-            country: currentData.location.country,
-            lat: Number.parseFloat(String(currentData.location.lat)),
-            lon: Number.parseFloat(String(currentData.location.lon)),
-          },
-        ]);
+        return c.json(
+          [
+            {
+              id: currentData.location.id,
+              name: currentData.location.name,
+              region: currentData.location.region,
+              country: currentData.location.country,
+              lat: Number.parseFloat(String(currentData.location.lat)),
+              lon: Number.parseFloat(String(currentData.location.lon)),
+            },
+          ],
+          200,
+        );
       }
     }
 

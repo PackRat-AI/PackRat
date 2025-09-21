@@ -6,9 +6,10 @@ import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
+import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
+import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { BlurView } from 'expo-blur';
@@ -72,6 +73,7 @@ export default function AIChat() {
   const textInputHeight = useSharedValue(17);
   const params = useLocalSearchParams();
   const { activeLocation } = useActiveLocation();
+  const [location, setLocation] = React.useState<WeatherLocation | null>(activeLocation);
   const scrollViewRef = React.useRef<ScrollView>(null);
 
   const context = {
@@ -80,7 +82,7 @@ export default function AIChat() {
     packId: params.packId as string,
     packName: params.packName as string,
     contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
-    location: activeLocation ? activeLocation.name : undefined,
+    location: location ? location.name : undefined,
   };
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
@@ -198,7 +200,7 @@ export default function AIChat() {
         >
           <View>
             <View style={{ height: HEADER_HEIGHT + insets.top }} />
-            <LocationSelector />
+            <LocationContext location={location} onSetLocation={setLocation} />
             <DateSeparator
               date={new Date().toLocaleDateString('en-US', {
                 weekday: 'short',
