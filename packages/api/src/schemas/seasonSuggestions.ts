@@ -20,38 +20,26 @@ export const PackSuggestionSchema = z.object({
     example: 'Perfect for warm summer day hikes with moderate temperatures',
     description: 'Description explaining why this pack is suitable',
   }),
+  category: z.string().nullable().openapi({ example: 'Backpacking' }),
   items: z
     .array(
       z.object({
-        id: z.number().openapi({
-          example: 123,
-          description: 'ID of the item from user inventory',
-        }),
-        name: z.string().openapi({
-          example: 'Ultralight Rain Jacket',
-          description: 'Name of the item',
-        }),
-        quantity: z.number().default(1).openapi({
-          example: 1,
-          description: 'Recommended quantity of this item',
-        }),
-        reason: z.string().optional().openapi({
-          example: 'Essential for unexpected summer showers',
-          description: 'Explanation for including this item',
-        }),
+        name: z.string().openapi({ example: 'Sleeping Bag' }),
+        description: z.string().nullable().openapi({ example: 'Down sleeping bag rated to -5°C' }),
+        weight: z.number().openapi({ example: 850, description: 'Weight in grams' }),
+        weightUnit: z.string().openapi({ example: 'g' }),
+        quantity: z.number().int().min(1).openapi({ example: 1 }),
+        category: z.string().nullable().openapi({ example: 'Sleep System' }),
+        consumable: z.boolean().openapi({ example: false }),
+        worn: z.boolean().openapi({ example: false }),
+        image: z.string().nullable().openapi({ example: 'https://example.com/image.jpg' }),
+        notes: z.string().nullable().openapi({ example: 'Great for cold weather' }),
+        catalogItemId: z.number().int().nullable().openapi({ example: 12345 }),
       }),
     )
     .openapi({
       description: 'List of items to include in the pack',
     }),
-  season: z.string().openapi({
-    example: 'Summer',
-    description: 'Season this pack is designed for',
-  }),
-  activityType: z.string().openapi({
-    example: 'Day Hiking',
-    description: 'Type of outdoor activity this pack supports',
-  }),
 });
 
 export const SeasonSuggestionsResponseSchema = z.object({

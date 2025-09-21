@@ -1,24 +1,15 @@
 import { useMutation } from '@tanstack/react-query';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import type { PackInput, PackItemInput } from '../types';
 
 export interface SeasonSuggestionsRequest {
   location: string;
   date: string;
 }
 
-export interface PackSuggestionItem {
-  id: number;
-  name: string;
-  quantity: number;
-  reason?: string;
-}
-
-export interface PackSuggestion {
-  name: string;
-  description: string;
-  items: PackSuggestionItem[];
-  activityType: string;
-}
+export type PackSuggestion = PackInput & {
+  items: PackItemInput[];
+};
 
 export interface SeasonSuggestionsResponse {
   suggestions: PackSuggestion[];

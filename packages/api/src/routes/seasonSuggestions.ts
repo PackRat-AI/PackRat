@@ -87,8 +87,8 @@ seasonSuggestionsRoutes.openapi(seasonSuggestionsRoute, async (c) => {
   // We're getting all pack items to represent the user's total inventory
   const items = await db.query.packItems.findMany({
     where: and(eq(packItems.userId, auth.userId), eq(packItems.deleted, false)),
-    with: {
-      catalogItem: true,
+    columns: {
+      embedding: false,
     },
   });
 
@@ -105,44 +105,14 @@ seasonSuggestionsRoutes.openapi(seasonSuggestionsRoute, async (c) => {
 
   // Build AI prompt for seasonal pack suggestions
   const systemPrompt = `
-You are a specialized assistant for creating seasonal hiking pack recommendations.
+You are a specialized assistant for creating seasonal advencture pack recommendations.
 
 Based on the user's available inventory items, current location, and date, provide 2-3 optimal pack configurations suitable for the current season.
 
 User Location: ${location}
 Date: ${date}
 Available Inventory Items:
-${inventoryFormatted}
-
-Guidelines:
-- Focus on essential items for the season conditions
-- Create practical pack configurations using ONLY items from the user's inventory
-- Explain why each item is recommended for the season/conditions
-
-Respond with a JSON object containing an array of pack suggestions. Each suggestion should have:
-- name: descriptive pack name
-- description: brief explanation of the pack's purpose
-- items: array of items with id, name, quantity, and reason
-- season: the season this pack is for
-- activityType: type of activity (e.g., "Day Hiking", "Overnight Backpacking")
-
-Example format:
-{
-  "suggestions": [
-    {
-      "name": "Summer Day Hike Pack",
-      "description": "Perfect for warm summer day hikes",
-      "items": [
-        {"id": 123, "name": "Water Bottle", "quantity": 2, "reason": "Extra hydration for hot weather"},
-        {"id": 456, "name": "Sun Hat", "quantity": 1, "reason": "Protection from UV rays"}
-      ],
-      "activityType": "Day Hiking"
-      }
-    ],
-    "season": "Summer"
-}
-
-Ensure all item IDs match items from the provided inventory list.`;
+${inventoryFormatted}`;
 
   // Generate suggestions using AI
   const { OPENAI_API_KEY } = getEnv(c);
@@ -152,36 +122,65 @@ Ensure all item IDs match items from the provided inventory list.`;
   const { object } = await generateObject({
     model: openai(DEFAULT_MODELS.OPENAI_CHAT),
     schema: z.object({
+      season: z.string(),
       suggestions: z.array(
         z.object({
           name: z.string(),
           description: z.string(),
+          category: z.string(),
+          tags: z.array(z.string()).optional(),
           items: z.array(
             z.object({
-              id: z.number(),
+              id: z.string().describe('Inventory item ID'),
               name: z.string(),
               quantity: z.number().min(1),
               reason: z.string(),
             }),
           ),
-          activityType: z.string(),
         }),
       ),
-      season: z.string(),
     }),
     system: systemPrompt,
     prompt: 'Generate',
     temperature: 0.8,
   });
 
-  const { suggestions, season } = object;
+  const suggestions = object.suggestions.map((suggestion) => ({
+    ...suggestion,
+    items: suggestion.items
+      .map((item) => {
+        const invItem = items.find((invItem) => invItem.id === item.id);
 
-  return c.json({
-    suggestions,
-    totalInventoryItems: items.length,
-    location,
-    season,
-  });
+        if (!invItem) {
+          return undefined;
+        }
+
+        return {
+          name: invItem.name,
+          description: invItem.description,
+          weight: invItem.weight,
+          weightUnit: invItem.weightUnit,
+          quantity: item.quantity,
+          category: invItem.category,
+          consumable: invItem.consumable,
+          worn: invItem.worn,
+          image: invItem.image,
+          notes: item.reason,
+          catalogItemId: invItem.catalogItemId,
+        };
+      })
+      .filter((item): item is PackItem & { reason: string } => !!item), // Filter out undefined items
+  }));
+
+  return c.json(
+    {
+      suggestions,
+      totalInventoryItems: items.length,
+      location,
+      season: object.season,
+    },
+    200,
+  );
 });
 
 export { seasonSuggestionsRoutes };

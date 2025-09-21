@@ -3,17 +3,17 @@
 import type { AlertRef } from '@packrat/ui/nativewindui';
 import { Alert, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
+import { useHasMinimumInventory } from 'expo-app/features/packs/hooks/useHasMinimumInventory';
+import {
+  type PackSuggestion,
+  useSeasonSuggestions,
+} from 'expo-app/features/packs/hooks/useSeasonSuggestions';
 import { useActiveLocation } from 'expo-app/features/weather/hooks/useActiveLocation';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, TouchableOpacity, View } from 'react-native';
-import {
-  useSeasonSuggestions,
-  type PackSuggestion,
-} from 'expo-app/features/packs/hooks/useSeasonSuggestions';
-import { useHasMinimumInventory } from 'expo-app/features/packs/hooks/useHasMinimumInventory';
-import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function SeasonSuggestionsScreen() {
 
   const handleGenerateSuggestions = () => {
     if (!hasMinimumItems) {
-      alertRef.current?.present();
+      alertRef.current?.show();
       return;
     }
 
@@ -49,12 +49,7 @@ export default function SeasonSuggestionsScreen() {
 
     try {
       // Create the pack with items
-      const packId = createPackWithItems({
-        name: suggestion.name,
-        description: suggestion.description,
-        category: 'hiking', // Default to hiking category
-        items: suggestion.items,
-      });
+      const packId = createPackWithItems(suggestion);
 
       // Navigate to the created pack
       router.push(`/pack/${packId}`);
@@ -147,13 +142,16 @@ export default function SeasonSuggestionsScreen() {
               </Text>
 
               {seasonSuggestionsMutation.data.suggestions.map((suggestion, index) => (
-                <View key={index} className="rounded-xl border border-gray-200 bg-card p-4">
+                <View
+                  key={suggestion.name}
+                  className="rounded-xl border border-gray-200 bg-card p-4"
+                >
                   <View className="mb-3">
                     <Text variant="headline" className="mb-1">
                       {suggestion.name}
                     </Text>
                     <Text variant="caption" className="text-primary font-medium">
-                      {suggestion.activityType} • {suggestion.season}
+                      {suggestion.category}
                     </Text>
                     <Text variant="body" className="mt-2 text-muted-foreground">
                       {suggestion.description}
@@ -164,8 +162,8 @@ export default function SeasonSuggestionsScreen() {
                     <Text variant="subheadline" className="mb-2 font-medium">
                       Recommended Items ({suggestion.items.length})
                     </Text>
-                    {suggestion.items.map((item, itemIndex) => (
-                      <View key={itemIndex} className="flex-row items-start py-1">
+                    {suggestion.items.map((item) => (
+                      <View key={item.name} className="flex-row items-start py-1">
                         <Text variant="body" className="flex-1">
                           • {item.name} {item.quantity > 1 && `(${item.quantity})`}
                         </Text>
