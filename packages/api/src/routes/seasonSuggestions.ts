@@ -10,7 +10,7 @@ import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
 
 const seasonSuggestionsRoutes = new OpenAPIHono<{
@@ -99,27 +99,24 @@ seasonSuggestionsRoutes.openapi(seasonSuggestionsRoute, async (c) => {
 
     // Get user's inventory items (all pack items across all packs owned by user)
     // We're getting all pack items to represent the user's total inventory
-    const userItems = await db.query.packItems.findMany({
-      where: eq(packItems.userId, auth.userId),
+    const items = await db.query.packItems.findMany({
+      where: and(eq(packItems.userId, auth.userId), eq(packItems.deleted, false)),
       with: {
         catalogItem: true,
       },
     });
 
-    // Filter out deleted items and ensure we have the minimum required
-    const activeItems = userItems.filter((item) => !item.deleted);
-
-    if (activeItems.length < 20) {
+    if (items.length < 20) {
       return c.json(
         {
-          error: `Insufficient inventory items. You have ${activeItems.length} items, but need at least 20 items to generate seasonal suggestions.`,
+          error: `Insufficient inventory items. You have ${items.length} items, but need at least 20 items to generate seasonal suggestions.`,
         },
         400,
       );
     }
 
     const season = getSeason(date, location);
-    const inventoryFormatted = formatInventoryForAI(activeItems);
+    const inventoryFormatted = formatInventoryForAI(items);
 
     // Build AI prompt for seasonal pack suggestions
     const systemPrompt = `
@@ -203,7 +200,7 @@ Ensure all item IDs match items from the provided inventory list.`;
 
     return c.json({
       suggestions,
-      totalInventoryItems: activeItems.length,
+      totalInventoryItems: items.length,
       location,
       season,
     });
