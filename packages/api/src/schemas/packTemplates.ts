@@ -237,10 +237,7 @@ export const CreatePackTemplateItemRequestSchema = z
       example: false,
       description: 'Whether this item is worn (not carried)',
     }),
-    image: z.string().url().nullable().openapi({
-      example: 'https://example.com/tent.jpg',
-      description: 'Item image URL',
-    }),
+    image: z.string().nullish().openapi({ example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg' }),
     notes: z.string().optional().openapi({
       example: 'Great for summer conditions',
       description: 'Additional notes about the item',
