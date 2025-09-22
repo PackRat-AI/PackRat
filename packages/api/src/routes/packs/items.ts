@@ -226,14 +226,6 @@ const addItemRoute = createRoute({
             id: z
               .string()
               .openapi({ example: 'pi_123456', description: 'Client-generated item ID' }),
-            catalogItemId: z
-              .number()
-              .optional()
-              .openapi({ example: 12345, description: 'Reference to catalog item' }),
-            consumable: z.boolean().optional().default(false),
-            worn: z.boolean().optional().default(false),
-            notes: z.string().optional(),
-            weightUnit: z.string().optional().default('g'),
           }),
         },
       },

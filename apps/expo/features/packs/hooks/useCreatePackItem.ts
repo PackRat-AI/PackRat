@@ -11,8 +11,17 @@ export function useCreatePackItem() {
 
       const newItem: PackItem = {
         id,
-        ...itemData,
+        name: itemData.name,
+        description: itemData.description,
+        weight: itemData.weight,
+        weightUnit: itemData.weightUnit,
+        quantity: itemData.quantity,
         category: itemData.category || 'general',
+        consumable: itemData.consumable,
+        worn: itemData.worn,
+        notes: itemData.notes,
+        image: itemData.image,
+        catalogItemId: itemData.catalogItemId,
         packId,
         isAIGenerated: false,
         deleted: false,
