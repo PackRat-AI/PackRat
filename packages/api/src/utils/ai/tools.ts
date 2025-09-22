@@ -3,6 +3,7 @@ import {
   CatalogService,
   PackItemService,
   PackService,
+  PackTemplateService,
   WeatherService,
 } from '@packrat/api/services';
 import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
@@ -13,6 +14,7 @@ import { z } from 'zod';
 export function createTools(c: Context, userId: number) {
   const packService = new PackService(c, userId);
   const packItemService = new PackItemService(c, userId);
+  const packTemplateService = new PackTemplateService(c, userId);
   const weatherService = new WeatherService(c);
   const catalogService = new CatalogService(c);
   const aiService = new AIService(c);
@@ -56,6 +58,47 @@ export function createTools(c: Context, userId: number) {
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get pack details',
+          };
+        }
+      },
+    }),
+
+    getPackTemplateDetails: tool({
+      description:
+        'Get detailed information about a specific pack template including all template items, weights, and categories. Use this to see what items should be in a pack created from a template.',
+      inputSchema: z.object({
+        templateId: z.string().describe('The ID of the pack template to get details for'),
+      }),
+      execute: async ({ templateId }) => {
+        try {
+          const template = await packTemplateService.getPackTemplateDetails(templateId);
+
+          if (!template) {
+            return {
+              success: false,
+              error: 'Pack template not found',
+            };
+          }
+
+          const categories = Array.from(
+            new Set(template.items.map((item) => item.category || 'Uncategorized')),
+          );
+
+          return {
+            success: true,
+            data: {
+              ...template,
+              categories,
+            },
+          };
+        } catch (error) {
+          console.error('getPackTemplateDetails tool error', error);
+          sentry.setTag('location', 'ai-tool-call/getPackTemplateDetails');
+          sentry.setContext('meta', { templateId });
+          sentry.captureException(error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to get pack template details',
           };
         }
       },
