@@ -6,6 +6,10 @@ import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
+import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
+import { ActivityPicker } from 'expo-app/features/packs/components/ActivityPicker';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
@@ -16,6 +20,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
 import { TestIds } from 'expo-app/lib/testIds';
+import type { PackCategory } from 'expo-app/types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -41,9 +46,11 @@ export function PackDetailScreen() {
   );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [isActivityPickerOpen, setIsActivityPickerOpen] = useState(false);
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
 
   const [location, setLocation] = useState<WeatherLocation>();
+  const [selectedActivity, setSelectedActivity] = useState<PackCategory>();
 
   const {
     mutate: analyzeGaps,
@@ -181,19 +188,43 @@ export function PackDetailScreen() {
       });
     }
 
+    // Start with activity selection
+    setSelectedActivity(undefined);
+    setLocation(undefined);
+    setIsActivityPickerOpen(true);
+  };
+
+  const handleActivitySelect = (activity: PackCategory) => {
+    setSelectedActivity(activity);
+    setIsActivityPickerOpen(false);
+    // After activity selection, show location picker
+    setIsLocationPickerOpen(true);
+  };
+
+  const handleActivitySkip = () => {
+    setSelectedActivity(undefined);
+    setIsActivityPickerOpen(false);
+    // If skipping activity, still show location picker (but location becomes required)
     setIsLocationPickerOpen(true);
   };
 
   const handleLocationSelect = (location?: WeatherLocation) => {
     setLocation(location);
     setIsLocationPickerOpen(false);
+
+    // Validation: either activity or location must be selected
+    if (!selectedActivity && !location) {
+      // This shouldn't happen due to UI constraints, but handle gracefully
+      return;
+    }
+
     resetAnalysis();
     setIsGapAnalysisModalVisible(true);
     analyzeGaps({
       packId: id as string,
       context: {
         destination: location?.name,
-        tripType: pack.category,
+        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
         startDate: new Date().toISOString().split('T')[0],
       },
     });
@@ -205,7 +236,7 @@ export function PackDetailScreen() {
       packId: id as string,
       context: {
         destination: location?.name,
-        tripType: pack.category,
+        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
         startDate: new Date().toISOString().split('T')[0],
       },
     });
@@ -675,13 +706,24 @@ export function PackDetailScreen() {
       <AddPackItemActions ref={addItemActionsRef} packId={pack.id} />
 
       {/* Gap Analysis Flow*/}
+      <ActivityPicker
+        title="Select Activity"
+        subtitle="Choose the activity type for more accurate gear recommendations."
+        open={isActivityPickerOpen}
+        onClose={() => setIsActivityPickerOpen(false)}
+        skipText="Skip"
+        onSkip={handleActivitySkip}
+        selectText="Continue"
+        onSelect={handleActivitySelect}
+        defaultActivity={pack.category}
+      />
       <LocationPicker
         subtitle="Get enhanced analysis with weather and terrain data."
         title="Select Location"
         open={isLocationPickerOpen}
         onClose={() => setIsLocationPickerOpen(false)}
-        skipText="Skip"
-        onSkip={handleLocationSelect}
+        skipText={selectedActivity ? 'Skip' : undefined} // Only allow skip if activity was selected
+        onSkip={selectedActivity ? handleLocationSelect : undefined} // Only allow skip if activity was selected
         selectText="Continue"
         onSelect={handleLocationSelect}
       />
