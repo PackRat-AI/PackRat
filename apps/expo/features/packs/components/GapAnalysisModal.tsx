@@ -12,6 +12,7 @@ interface GapAnalysisModalProps {
   onClose: () => void;
   pack: Pack;
   location?: string;
+  activity?: string; // The actual activity being used for analysis
   analysis: GapAnalysisResponse | null;
   isLoading: boolean;
   onRetry: () => void;
@@ -23,6 +24,7 @@ export function GapAnalysisModal({
   pack,
   analysis,
   location,
+  activity,
   isLoading,
   onRetry,
 }: GapAnalysisModalProps) {
@@ -46,7 +48,7 @@ export function GapAnalysisModal({
                   size={16}
                   color={colors.grey}
                 />
-                <Text className="text-sm text-muted-foreground">{pack.category}</Text>
+                <Text className="text-sm text-muted-foreground">{activity || pack.category}</Text>
               </View>
               {location && (
                 <>
@@ -64,6 +66,7 @@ export function GapAnalysisModal({
               )}
             </View>
           </View>
+        </View>
           <TouchableOpacity onPress={onClose} className="p-1">
             <Icon name="close" size={24} color={colors.foreground} />
           </TouchableOpacity>

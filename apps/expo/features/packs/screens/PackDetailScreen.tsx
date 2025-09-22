@@ -732,6 +732,7 @@ export function PackDetailScreen() {
         onClose={() => setIsGapAnalysisModalVisible(false)}
         pack={pack}
         location={location?.name}
+        activity={selectedActivity}
         analysis={gapAnalysis || null}
         isLoading={isAnalyzing}
         onRetry={handleRetryAnalysis}
