@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.0.10",
+  "version": "2.0.11",
   "main": "expo-router/entry",
   "scripts": {
     "android": "APP_VARIANT=development expo run:android",
