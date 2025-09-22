@@ -2,6 +2,10 @@ export function assertDefined<T>(val: T | undefined): asserts val is T {
   if (val === undefined) throw new Error('Expects value to be defined');
 }
 
+export function assertNonNull<T>(val: T | null): asserts val is T {
+  if (val === null) throw new Error('Expects value to be non-null');
+}
+
 export function assertIsString(value: unknown): asserts value is string {
   if (typeof value !== 'string') {
     throw new Error('Expected a string');

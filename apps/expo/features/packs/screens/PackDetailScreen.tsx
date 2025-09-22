@@ -1,4 +1,5 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -6,14 +7,16 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
+import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
-import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
+import { LocationPicker } from 'expo-app/features/weather/components';
+import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { usePackDetailsFromApi, usePackDetailsFromStore } from '../hooks';
+import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
 
@@ -28,7 +31,18 @@ export function PackDetailScreen() {
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>({});
 
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
+
+  const [location, setLocation] = useState<WeatherLocation>();
+
   const { addItemsToPack, isLoading: isAddingItems } = useBulkAddCatalogItems();
+  const {
+    mutate: analyzeGaps,
+    data: gapAnalysis,
+    isPending: isAnalyzing,
+    reset: resetAnalysis,
+  } = usePackGapAnalysis();
 
   const packFromStore = usePackDetailsFromStore(id as string);
   const {
@@ -46,25 +60,69 @@ export function PackDetailScreen() {
 
   const { colors } = useColorScheme();
 
+  const bottomSheetRef = useSheetRef();
+
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
-    if (isPackingMode) {
-      setPackedItems((prev) => ({
-        ...prev,
-        [item.id]: !prev[item.id],
-      }));
-    } else {
-      router.push({
-        pathname: `/item/[id]`,
-        params: { id: item.id, packId: item.packId },
-      });
-    }
+    router.push({
+      pathname: `/item/[id]`,
+      params: { id: item.id, packId: item.packId },
+    });
+  };
+
+  const handleItemSelect = (item: PackItem) => {
+    if (!item.id) return;
+    setPackedItems((prev) => ({
+      ...prev,
+      [item.id]: !prev[item.id],
+    }));
   };
 
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
     if (catalogItems.length > 0) {
       await addItemsToPack(id as string, catalogItems);
     }
+  };
+
+  const handleAnalyzeGapsPress = () => {
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: `/pack/${pack.id}`,
+          showSignInCopy: 'true',
+        },
+      });
+    }
+
+    setIsLocationPickerOpen(true);
+  };
+
+  const handleLocationSelect = (location?: WeatherLocation) => {
+    setLocation(location);
+    setIsLocationPickerOpen(false);
+    resetAnalysis();
+    setIsGapAnalysisModalVisible(true);
+    analyzeGaps({
+      packId: id as string,
+      context: {
+        destination: location?.name,
+        tripType: pack.category,
+        startDate: new Date().toISOString().split('T')[0],
+      },
+    });
+  };
+
+  const handleRetryAnalysis = () => {
+    resetAnalysis();
+    analyzeGaps({
+      packId: id as string,
+      context: {
+        destination: location?.name,
+        tripType: pack.category,
+        startDate: new Date().toISOString().split('T')[0],
+      },
+    });
   };
 
   const getFilteredItems = () => {
@@ -79,6 +137,10 @@ export function PackDetailScreen() {
     }
   };
 
+  const handleMoreActionsPress = () => {
+    bottomSheetRef.current?.present();
+  };
+
   const filteredItems = getFilteredItems();
 
   const getTabStyle = (tab: string) =>
@@ -86,6 +148,104 @@ export function PackDetailScreen() {
 
   const getTabTextStyle = (tab: string) =>
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
+
+  // New unified handler to avoid duplicate Ask AI logic
+  const handleAskAI = () => {
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: JSON.stringify({
+            pathname: '/ai-chat',
+            params: {
+              packId: id,
+              packName: pack.name,
+              contextType: 'pack',
+            },
+          }),
+          showSignInCopy: 'true',
+        },
+      });
+    }
+    router.push({
+      pathname: '/ai-chat',
+      params: {
+        packId: id,
+        packName: pack.name,
+        contextType: 'pack',
+      },
+    });
+  };
+
+  // Prepare bottom sheet actions with consistent structure
+  const actions = [
+    {
+      key: 'ask-ai',
+      label: 'Ask AI',
+      icon: <Icon name="message-outline" color={colors.foreground} />,
+      onPress: handleAskAI,
+      show: true,
+      variant: 'secondary' as const,
+      disabled: false,
+    },
+    {
+      key: 'packing',
+      label: isPackingMode ? 'Done Packing' : 'Start Packing',
+      icon: <Icon name="check" color={colors.foreground} />,
+      onPress: () => setIsPackingMode(!isPackingMode),
+      show: isOwnedByUser,
+      variant: isPackingMode ? ('primary' as const) : ('secondary' as const),
+      disabled: false,
+    },
+    {
+      key: 'analyze',
+      label: isAnalyzing ? 'Analyzing...' : 'Analyze Gaps',
+      icon: (
+        <Icon
+          ios={{ name: 'text.viewfinder' }}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'magnify-scan' }}
+          color={colors.foreground}
+        />
+      ),
+      onPress: handleAnalyzeGapsPress,
+      show: isOwnedByUser,
+      variant: 'secondary' as const,
+      disabled: isAnalyzing,
+    },
+    {
+      key: 'browse',
+      label: 'Browse Catalog',
+      icon: <Icon name="magnify" color={colors.foreground} />,
+      onPress: () => setIsCatalogModalVisible(true),
+      show: isOwnedByUser,
+      variant: 'secondary' as const,
+      disabled: isAddingItems,
+    },
+  ];
+
+  type ActionItem = {
+    key: string;
+    label: string;
+    icon: React.ReactNode;
+    onPress: () => void;
+    show: boolean;
+    variant: 'primary' | 'secondary';
+    disabled: boolean;
+  };
+
+  type PlaceholderItem = {
+    key: string;
+    placeholder: true;
+  };
+
+  const visibleActions = actions.filter((a) => a.show);
+  const normalizedActions: (ActionItem | PlaceholderItem)[] = [...visibleActions];
+  if (normalizedActions.length % 2 === 1) {
+    normalizedActions.push({ key: '__placeholder__', placeholder: true });
+  }
+
+  // Consistent sizing classes for action buttons (full-width inside 1/2 column)
+  const actionBtnClass = 'w-full h-14 flex-row items-center justify-center gap-2';
 
   if (!isOwnedByUser && isLoading) {
     return (
@@ -174,49 +334,27 @@ export function PackDetailScreen() {
         </View>
 
         <View>
-          <View className="p-4 flex-row justify-between items-center">
-            <Button
-              variant="secondary"
-              onPress={() => {
-                if (!isAuthed.peek()) {
-                  return router.push({
-                    pathname: '/auth',
-                    params: {
-                      redirectTo: JSON.stringify({
-                        pathname: '/ai-chat',
-                        params: {
-                          packId: id,
-                          packName: pack.name,
-                          contextType: 'pack',
-                        },
-                      }),
-                      showSignInCopy: 'true',
-                    },
-                  });
-                }
-                router.push({
-                  pathname: '/ai-chat',
-                  params: {
-                    packId: id,
-                    packName: pack.name,
-                    contextType: 'pack',
-                  },
-                });
-              }}
-            >
-              <Icon name="message-outline" color={colors.foreground} />
-              <Text>Ask AI</Text>
-            </Button>
-
-            {isOwnedByUser && (
-              <Button
-                variant={isPackingMode ? 'primary' : 'secondary'}
-                onPress={() => setIsPackingMode(!isPackingMode)}
-              >
-                <Icon name="check" color={colors.foreground} />
-                <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
+          <View className="p-4">
+            <View className="gap-4 flex-row items-center">
+              <Button variant="secondary" onPress={handleAskAI} className="flex-1">
+                <Text>Ask AI</Text>
               </Button>
-            )}
+
+              {isOwnedByUser && (
+                <Button
+                  variant={isPackingMode ? 'primary' : 'secondary'}
+                  onPress={() => setIsPackingMode(!isPackingMode)}
+                >
+                  <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
+                </Button>
+              )}
+
+              {isOwnedByUser && (
+                <Button variant="secondary" size="icon" onPress={handleMoreActionsPress}>
+                  <Icon name="dots-horizontal" size={20} color={colors.grey2} />
+                </Button>
+              )}
+            </View>
           </View>
 
           <View className="flex-row border-b border-border">
@@ -235,69 +373,89 @@ export function PackDetailScreen() {
           </View>
 
           {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
-              <Pressable
-                key={item.id}
-                className="px-4 pt-3 flex-row items-center gap-3"
-                onPress={() => handleItemPress(item)}
-              >
-                {isPackingMode && (
-                  <View
-                    className={cn(
-                      'h-5 w-5 rounded border border-gray-400 items-center justify-center',
-                      packedItems[item.id] ? 'bg-primary' : 'bg-background',
-                    )}
-                  >
-                    {packedItems[item.id] && <Icon name="check" size={16} color="white" />}
-                  </View>
-                )}
-                <View className="flex-1">
-                  <PackItemCard
-                    item={item}
-                    onPress={!isPackingMode ? handleItemPress : undefined}
-                  />
-                </View>
-              </Pressable>
-            ))
+            <View className="p-4">
+              {filteredItems.map((item) => (
+                <PackItemCard
+                  key={item.id}
+                  item={item}
+                  {...(isPackingMode
+                    ? { onSelect: handleItemSelect, selected: !!packedItems[item.id] }
+                    : { onPress: handleItemPress })}
+                />
+              ))}
+            </View>
           ) : (
             <View className="items-center justify-center p-4">
               <Text className="text-muted-foreground">No items found</Text>
             </View>
           )}
-
-          {isOwnedByUser && !!filteredItems.length && <PackItemSuggestions pack={pack} />}
-
-          {isOwnedByUser && (
-            <View className="gap-3 p-4">
-              <Button
-                variant="secondary"
-                onPress={() => setIsCatalogModalVisible(true)}
-                disabled={isAddingItems}
-              >
-                <Icon name="magnify" color={colors.foreground} />
-                <Text>Browse Catalog</Text>
-              </Button>
-              <Button
-                onPress={() =>
-                  router.push({
-                    pathname: '/item/new',
-                    params: { packId: pack.id },
-                  })
-                }
-                disabled={isAddingItems}
-              >
-                <Icon name="plus" color={colors.foreground} />
-                <Text>Add New Item</Text>
-              </Button>
-            </View>
-          )}
         </View>
       </ScrollView>
+
+      <Sheet
+        ref={bottomSheetRef}
+        enableDynamicSizing={true}
+        enablePanDownToClose
+        backgroundStyle={{ backgroundColor: colors.card }}
+        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+      >
+        <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
+          <View>
+            <Text variant="heading" className="text-center mb-6">
+              Actions
+            </Text>
+          </View>
+          {/* Revamped consistent 2-column action layout */}
+          <View className="flex-row flex-wrap -mx-1">
+            {normalizedActions.map((action) => (
+              <View key={action.key} className="w-1/2 px-1 mb-3">
+                {'placeholder' in action ? (
+                  <View className={actionBtnClass} />
+                ) : (
+                  <Button
+                    variant={action.variant}
+                    onPress={() => {
+                      bottomSheetRef.current?.close();
+                      action.onPress();
+                    }}
+                    disabled={action.disabled}
+                    className={actionBtnClass}
+                  >
+                    {action.icon}
+                    <Text numberOfLines={1}>{action.label}</Text>
+                  </Button>
+                )}
+              </View>
+            ))}
+          </View>
+        </BottomSheetView>
+      </Sheet>
 
       <CatalogBrowserModal
         visible={isCatalogModalVisible}
         onClose={() => setIsCatalogModalVisible(false)}
         onItemsSelected={handleCatalogItemsSelected}
+      />
+
+      {/* Gap Analysis Flow*/}
+      <LocationPicker
+        subtitle="Get enhanced analysis with weather and terrain data."
+        title="Select Location"
+        open={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        skipText="Skip"
+        onSkip={handleLocationSelect}
+        selectText="Continue"
+        onSelect={handleLocationSelect}
+      />
+      <GapAnalysisModal
+        visible={isGapAnalysisModalVisible}
+        onClose={() => setIsGapAnalysisModalVisible(false)}
+        pack={pack}
+        location={location?.name}
+        analysis={gapAnalysis || null}
+        isLoading={isAnalyzing}
+        onRetry={handleRetryAnalysis}
       />
     </SafeAreaView>
   );
