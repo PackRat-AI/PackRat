@@ -1,7 +1,7 @@
-import { ListItem, Text, Button } from '@packrat/ui/nativewindui';
+import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { isAuthed } from 'expo-app/features/auth/store';
 import { useOnDeviceAI } from 'expo-app/features/ai/hooks/useOnDeviceAI';
+import { isAuthed } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { type Href, useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
@@ -16,7 +16,7 @@ export function AIChatTile() {
       contextType: 'general',
     },
   };
-  
+
   const handlePress = () => {
     if (!isAuthed.peek()) {
       // AI featuer is protected. Redirect user to the auth page if not authenticated.

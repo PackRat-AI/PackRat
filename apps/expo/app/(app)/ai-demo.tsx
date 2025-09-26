@@ -1,11 +1,13 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { OnDeviceAIStatus, OnDeviceCapabilitiesInfo } from 'expo-app/features/ai/components/OnDeviceAIStatus';
+import {
+  OnDeviceAIStatus,
+  OnDeviceCapabilitiesInfo,
+} from 'expo-app/features/ai/components/OnDeviceAIStatus';
 import { useOnDeviceAI } from 'expo-app/features/ai/hooks/useOnDeviceAI';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useRouter } from 'expo-router';
-import * as React from 'react';
-import { ScrollView, View, TouchableOpacity } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AIDemo() {
@@ -23,7 +25,7 @@ export default function AIDemo() {
         }}
       />
 
-      <ScrollView 
+      <ScrollView
         className="flex-1 bg-background"
         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
@@ -45,7 +47,7 @@ export default function AIDemo() {
               Device Capabilities
             </Text>
             <OnDeviceAIStatus />
-            
+
             {capabilities && (
               <View className="mt-3">
                 <OnDeviceCapabilitiesInfo capabilities={capabilities} />
@@ -58,7 +60,7 @@ export default function AIDemo() {
             <Text variant="title2" className="mb-3">
               Try Different AI Modes
             </Text>
-            
+
             <View className="space-y-3">
               {/* Cloud-based AI */}
               <TouchableCard
@@ -75,7 +77,7 @@ export default function AIDemo() {
                 description={
                   isOnDeviceAvailable
                     ? `Fast, private AI using ${recommendedProvider}`
-                    : "On-device AI not available on this device"
+                    : 'On-device AI not available on this device'
                 }
                 icon={recommendedProvider === 'apple' ? 'apple-logo' : 'cpu'}
                 color={isOnDeviceAvailable ? colors.success : colors.muted.foreground}
@@ -100,30 +102,30 @@ export default function AIDemo() {
             <Text variant="title2" className="mb-3">
               Feature Comparison
             </Text>
-            
+
             <View className="bg-card rounded-lg p-4">
-              <ComparisonRow 
+              <ComparisonRow
                 feature="Response Speed"
                 cloud="Moderate (network dependent)"
                 onDevice="Fast (local processing)"
                 cloudIcon="wifi"
                 onDeviceIcon="flash"
               />
-              <ComparisonRow 
+              <ComparisonRow
                 feature="Privacy"
                 cloud="Data sent to servers"
                 onDevice="Fully private, no data sent"
                 cloudIcon="cloud-upload"
                 onDeviceIcon="shield-checkmark"
               />
-              <ComparisonRow 
+              <ComparisonRow
                 feature="Offline Usage"
                 cloud="Requires internet"
                 onDevice="Works offline*"
                 cloudIcon="wifi-off"
                 onDeviceIcon="checkmark-circle"
               />
-              <ComparisonRow 
+              <ComparisonRow
                 feature="Model Variety"
                 cloud="Multiple advanced models"
                 onDevice="Device-optimized models"
@@ -132,7 +134,7 @@ export default function AIDemo() {
                 isLast
               />
             </View>
-            
+
             <Text variant="caption2" className="text-muted-foreground mt-2">
               * Some features may require internet for initial setup or specific capabilities
             </Text>
@@ -169,7 +171,14 @@ interface TouchableCardProps {
   onPress: () => void;
 }
 
-function TouchableCard({ title, description, icon, color, disabled = false, onPress }: TouchableCardProps) {
+function TouchableCard({
+  title,
+  description,
+  icon,
+  color,
+  disabled = false,
+  onPress,
+}: TouchableCardProps) {
   return (
     <Button
       variant="outline"
@@ -187,9 +196,7 @@ function TouchableCard({ title, description, icon, color, disabled = false, onPr
             {description}
           </Text>
         </View>
-        {!disabled && (
-          <Icon name="chevron-right" size={16} color={color} />
-        )}
+        {!disabled && <Icon name="chevron-right" size={16} color={color} />}
       </View>
     </Button>
   );
@@ -204,9 +211,16 @@ interface ComparisonRowProps {
   isLast?: boolean;
 }
 
-function ComparisonRow({ feature, cloud, onDevice, cloudIcon, onDeviceIcon, isLast = false }: ComparisonRowProps) {
+function ComparisonRow({
+  feature,
+  cloud,
+  onDevice,
+  cloudIcon,
+  onDeviceIcon,
+  isLast = false,
+}: ComparisonRowProps) {
   const { colors } = useColorScheme();
-  
+
   return (
     <View className={`py-3 ${!isLast ? 'border-b border-border' : ''}`}>
       <Text variant="subhead" className="font-medium mb-2">
@@ -232,7 +246,7 @@ function ComparisonRow({ feature, cloud, onDevice, cloudIcon, onDeviceIcon, isLa
 
 function BulletPoint({ text }: { text: string }) {
   const { colors } = useColorScheme();
-  
+
   return (
     <View className="flex-row items-start gap-2">
       <Icon name="ellipse" size={6} color={colors.muted.foreground} style={{ marginTop: 6 }} />

@@ -1,5 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
-import { detectDeviceCapabilities, type DeviceCapabilities, type OnDeviceProvider } from '../providers/on-device-ai';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  type DeviceCapabilities,
+  detectDeviceCapabilities,
+  type OnDeviceProvider,
+} from '../providers/on-device-ai';
 
 export interface UseOnDeviceAIReturn {
   capabilities: DeviceCapabilities | null;
@@ -22,7 +26,7 @@ export function useOnDeviceAI(): UseOnDeviceAIReturn {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const detected = await detectDeviceCapabilities();
       setCapabilities(detected);
     } catch (err) {

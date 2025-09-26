@@ -1,6 +1,6 @@
-import type { CoreMessage } from 'ai';
 import { apple } from '@react-native-ai/apple';
 import { mlc } from '@react-native-ai/mlc';
+import type { CoreMessage } from 'ai';
 import { Platform } from 'react-native';
 
 export type OnDeviceProvider = 'apple' | 'mlc';
@@ -10,13 +10,13 @@ export interface OnDeviceAIConfig {
   appleOptions?: {
     availableTools?: Record<string, any>;
   };
-  
+
   // MLC configuration
   mlcOptions?: {
     modelId?: string;
     downloadProgressCallback?: (progress: { progress: number; modelId: string }) => void;
   };
-  
+
   // Fallback configuration
   fallbackToCloud?: boolean;
 }
@@ -47,10 +47,11 @@ export async function detectDeviceCapabilities(): Promise<DeviceCapabilities> {
   // MLC is available on both iOS and Android
   supportsMLC = true; // MLC can work on most devices but may be slow
 
-  const recommendedProvider: OnDeviceProvider | null = 
-    supportsAppleIntelligence ? 'apple' : 
-    supportsMLC ? 'mlc' : 
-    null;
+  const recommendedProvider: OnDeviceProvider | null = supportsAppleIntelligence
+    ? 'apple'
+    : supportsMLC
+      ? 'mlc'
+      : null;
 
   return {
     supportsAppleIntelligence,
@@ -80,7 +81,7 @@ export class OnDeviceAIProvider {
 
   async initialize(): Promise<void> {
     this.capabilities = await detectDeviceCapabilities();
-    
+
     // Initialize MLC model if it's the recommended provider
     if (this.capabilities.recommendedProvider === 'mlc') {
       await this.initializeMLC();
@@ -91,12 +92,12 @@ export class OnDeviceAIProvider {
     try {
       const modelId = this.config.mlcOptions?.modelId ?? 'Llama-3.2-3B-Instruct';
       this.mlcModel = mlc.languageModel(modelId);
-      
+
       // Prepare the model (download if needed)
       if (this.config.mlcOptions?.downloadProgressCallback) {
         await this.mlcModel.download(this.config.mlcOptions.downloadProgressCallback);
       }
-      
+
       await this.mlcModel.prepare();
     } catch (error) {
       console.error('Failed to initialize MLC:', error);
@@ -110,7 +111,7 @@ export class OnDeviceAIProvider {
       temperature?: number;
       maxTokens?: number;
       stream?: boolean;
-    } = {}
+    } = {},
   ): Promise<string> {
     if (!this.capabilities) {
       throw new Error('OnDeviceAIProvider not initialized. Call initialize() first.');
@@ -135,18 +136,20 @@ export class OnDeviceAIProvider {
     options: {
       temperature?: number;
       maxTokens?: number;
-    }
+    },
   ): Promise<string> {
     try {
       const appleProvider = apple();
-      
+
       // Convert CoreMessage format to Apple's format
-      const appleMessages = messages.map(msg => ({
+      const appleMessages = messages.map((msg) => ({
         role: msg.role,
-        content: typeof msg.content === 'string' ? msg.content : 
-                Array.isArray(msg.content) ? 
-                msg.content.map(c => c.type === 'text' ? c.text : '').join('') : 
-                String(msg.content)
+        content:
+          typeof msg.content === 'string'
+            ? msg.content
+            : Array.isArray(msg.content)
+              ? msg.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
+              : String(msg.content),
       }));
 
       const result = await appleProvider.doGenerate({
@@ -156,8 +159,8 @@ export class OnDeviceAIProvider {
       });
 
       return result.content
-        .filter(c => c.type === 'text')
-        .map(c => c.text)
+        .filter((c) => c.type === 'text')
+        .map((c) => c.text)
         .join('');
     } catch (error) {
       console.error('Apple AI generation failed:', error);
@@ -170,7 +173,7 @@ export class OnDeviceAIProvider {
     options: {
       temperature?: number;
       maxTokens?: number;
-    }
+    },
   ): Promise<string> {
     if (!this.mlcModel) {
       throw new Error('MLC model not initialized');
@@ -178,12 +181,14 @@ export class OnDeviceAIProvider {
 
     try {
       // Convert CoreMessage format to MLC's format
-      const mlcMessages = messages.map(msg => ({
+      const mlcMessages = messages.map((msg) => ({
         role: msg.role as 'system' | 'user' | 'assistant',
-        content: typeof msg.content === 'string' ? msg.content : 
-                Array.isArray(msg.content) ? 
-                msg.content.map(c => c.type === 'text' ? c.text : '').join('') : 
-                String(msg.content)
+        content:
+          typeof msg.content === 'string'
+            ? msg.content
+            : Array.isArray(msg.content)
+              ? msg.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
+              : String(msg.content),
       }));
 
       const result = await this.mlcModel.doGenerate({
@@ -193,8 +198,8 @@ export class OnDeviceAIProvider {
       });
 
       return result.content
-        .filter(c => c.type === 'text')
-        .map(c => c.text)
+        .filter((c) => c.type === 'text')
+        .map((c) => c.text)
         .join('');
     } catch (error) {
       console.error('MLC AI generation failed:', error);
@@ -207,7 +212,7 @@ export class OnDeviceAIProvider {
     options: {
       temperature?: number;
       maxTokens?: number;
-    } = {}
+    } = {},
   ): Promise<ReadableStream> {
     if (!this.capabilities) {
       throw new Error('OnDeviceAIProvider not initialized. Call initialize() first.');
@@ -229,16 +234,18 @@ export class OnDeviceAIProvider {
     options: {
       temperature?: number;
       maxTokens?: number;
-    }
+    },
   ): Promise<ReadableStream> {
     const appleProvider = apple();
-    
-    const appleMessages = messages.map(msg => ({
+
+    const appleMessages = messages.map((msg) => ({
       role: msg.role,
-      content: typeof msg.content === 'string' ? msg.content : 
-              Array.isArray(msg.content) ? 
-              msg.content.map(c => c.type === 'text' ? c.text : '').join('') : 
-              String(msg.content)
+      content:
+        typeof msg.content === 'string'
+          ? msg.content
+          : Array.isArray(msg.content)
+            ? msg.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
+            : String(msg.content),
     }));
 
     const result = await appleProvider.doStream({
@@ -255,18 +262,20 @@ export class OnDeviceAIProvider {
     options: {
       temperature?: number;
       maxTokens?: number;
-    }
+    },
   ): Promise<ReadableStream> {
     if (!this.mlcModel) {
       throw new Error('MLC model not initialized');
     }
 
-    const mlcMessages = messages.map(msg => ({
+    const mlcMessages = messages.map((msg) => ({
       role: msg.role as 'system' | 'user' | 'assistant',
-      content: typeof msg.content === 'string' ? msg.content : 
-              Array.isArray(msg.content) ? 
-              msg.content.map(c => c.type === 'text' ? c.text : '').join('') : 
-              String(msg.content)
+      content:
+        typeof msg.content === 'string'
+          ? msg.content
+          : Array.isArray(msg.content)
+            ? msg.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
+            : String(msg.content),
     }));
 
     const result = await this.mlcModel.doStream({

@@ -1,12 +1,11 @@
-import type { ChatTransport, UIMessage, UIMessageChunk, ChatRequestOptions } from 'ai';
-import type { CoreMessage } from 'ai';
+import type { ChatRequestOptions, ChatTransport, CoreMessage, UIMessage, UIMessageChunk } from 'ai';
 import { DefaultChatTransport } from 'ai';
-import { OnDeviceAIProvider, type OnDeviceAIConfig, type DeviceCapabilities } from './on-device-ai';
+import { type DeviceCapabilities, type OnDeviceAIConfig, OnDeviceAIProvider } from './on-device-ai';
 
 export interface OnDeviceChatTransportConfig {
   // On-device AI configuration
   onDeviceConfig?: OnDeviceAIConfig;
-  
+
   // Cloud fallback configuration (existing DefaultChatTransport config)
   cloudConfig?: {
     api: string;
@@ -15,7 +14,7 @@ export interface OnDeviceChatTransportConfig {
     credentials?: RequestCredentials;
     fetch?: typeof globalThis.fetch;
   };
-  
+
   // Transport behavior
   preferOnDevice?: boolean;
   fallbackToCloud?: boolean;
@@ -25,7 +24,9 @@ export interface OnDeviceChatTransportConfig {
 /**
  * Chat transport that uses on-device AI with optional cloud fallback
  */
-export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage> implements ChatTransport<UI_MESSAGE> {
+export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage>
+  implements ChatTransport<UI_MESSAGE>
+{
   private onDeviceProvider: OnDeviceAIProvider | null = null;
   private cloudTransport: DefaultChatTransport<UI_MESSAGE> | null = null;
   private config: OnDeviceChatTransportConfig;
@@ -56,24 +57,26 @@ export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage> implements Chat
       this.isInitialized = true;
     } catch (error) {
       console.warn('Failed to initialize on-device AI provider:', error);
-      
+
       if (this.config.onDeviceOnly) {
         throw new Error('On-device AI initialization failed and onDeviceOnly is enabled');
       }
-      
+
       // Continue without on-device AI
       this.onDeviceProvider = null;
       this.isInitialized = true;
     }
   }
 
-  async sendMessages(options: {
-    trigger: 'submit-message' | 'regenerate-message';
-    chatId: string;
-    messageId: string | undefined;
-    messages: UI_MESSAGE[];
-    abortSignal: AbortSignal | undefined;
-  } & ChatRequestOptions): Promise<ReadableStream<UIMessageChunk>> {
+  async sendMessages(
+    options: {
+      trigger: 'submit-message' | 'regenerate-message';
+      chatId: string;
+      messageId: string | undefined;
+      messages: UI_MESSAGE[];
+      abortSignal: AbortSignal | undefined;
+    } & ChatRequestOptions,
+  ): Promise<ReadableStream<UIMessageChunk>> {
     if (!this.isInitialized) {
       await this.initialize();
     }
@@ -89,9 +92,11 @@ export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage> implements Chat
     }
   }
 
-  async reconnectToStream(options: {
-    chatId: string;
-  } & ChatRequestOptions): Promise<ReadableStream<UIMessageChunk>> {
+  async reconnectToStream(
+    options: {
+      chatId: string;
+    } & ChatRequestOptions,
+  ): Promise<ReadableStream<UIMessageChunk>> {
     // For on-device AI, we don't support stream reconnection
     // Fall back to cloud transport if available
     if (!this.config.onDeviceOnly && this.cloudTransport) {
@@ -131,13 +136,17 @@ export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage> implements Chat
 
     try {
       // Convert UI messages to CoreMessage format
-      const coreMessages: CoreMessage[] = options.messages.map(msg => ({
+      const coreMessages: CoreMessage[] = options.messages.map((msg) => ({
         role: msg.role as CoreMessage['role'],
-        content: typeof msg.content === 'string' 
-          ? msg.content 
-          : Array.isArray(msg.content)
-            ? msg.content.map(part => part.type === 'text' ? part.text : '').join('')
-            : msg.parts?.filter(p => p.type === 'text').map(p => p.text).join('') || '',
+        content:
+          typeof msg.content === 'string'
+            ? msg.content
+            : Array.isArray(msg.content)
+              ? msg.content.map((part) => (part.type === 'text' ? part.text : '')).join('')
+              : msg.parts
+                  ?.filter((p) => p.type === 'text')
+                  .map((p) => p.text)
+                  .join('') || '',
       }));
 
       // Get streaming response from on-device provider
@@ -148,7 +157,6 @@ export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage> implements Chat
 
       // Convert the provider stream to UIMessageChunk format
       return this.convertProviderStreamToUIMessageChunks(stream, options.chatId);
-
     } catch (error) {
       console.error('On-device generation failed:', error);
 
@@ -169,14 +177,14 @@ export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage> implements Chat
 
   private convertProviderStreamToUIMessageChunks(
     providerStream: ReadableStream,
-    chatId: string
+    chatId: string,
   ): ReadableStream<UIMessageChunk> {
     const messageId = `msg-${Date.now()}`;
-    
+
     return new ReadableStream<UIMessageChunk>({
       async start(controller) {
         const reader = providerStream.getReader();
-        
+
         try {
           controller.enqueue({
             type: 'message-start',
@@ -184,11 +192,11 @@ export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage> implements Chat
             messageId,
           });
 
-          let fullContent = '';
-          
+          let _fullContent = '';
+
           while (true) {
             const { done, value } = await reader.read();
-            
+
             if (done) {
               controller.enqueue({
                 type: 'message-end',
@@ -201,7 +209,7 @@ export class OnDeviceChatTransport<UI_MESSAGE extends UIMessage> implements Chat
 
             // Handle different types of stream parts
             if (value.type === 'text-delta') {
-              fullContent += value.delta;
+              _fullContent += value.delta;
               controller.enqueue({
                 type: 'text-delta',
                 chatId,

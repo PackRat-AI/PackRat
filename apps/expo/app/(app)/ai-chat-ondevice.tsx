@@ -7,8 +7,8 @@ import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
 import { OnDeviceAIStatus } from 'expo-app/features/ai/components/OnDeviceAIStatus';
-import { OnDeviceChatTransport } from 'expo-app/features/ai/providers/on-device-chat-transport';
 import { useOnDeviceAI } from 'expo-app/features/ai/hooks/useOnDeviceAI';
+import { OnDeviceChatTransport } from 'expo-app/features/ai/providers/on-device-chat-transport';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
@@ -81,7 +81,7 @@ export default function OnDeviceAIChat() {
   locationRef.current = context.location;
 
   const token = useAtomValue(tokenAtom);
-  
+
   // Create custom transport that supports on-device AI
   const transport = React.useMemo(() => {
     return new OnDeviceChatTransport({
@@ -111,11 +111,18 @@ export default function OnDeviceAIChat() {
         }),
       },
     });
-  }, [preferOnDevice, isOnDeviceAvailable, token]);
+  }, [
+    preferOnDevice,
+    isOnDeviceAvailable,
+    token,
+    context.contextType,
+    context.itemId,
+    context.packId,
+  ]);
 
   const [input, setInput] = React.useState('');
-  const [lastUserMessage, setLastUserMessage] = React.useState('');
-  const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
+  const [_lastUserMessage, setLastUserMessage] = React.useState('');
+  const [_previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport,
@@ -140,7 +147,7 @@ export default function OnDeviceAIChat() {
 
   const handleSubmit = React.useCallback(() => {
     if (!input.trim()) return;
-    
+
     setLastUserMessage(input);
     sendMessage({ content: input, role: 'user' });
     setInput('');
@@ -154,7 +161,7 @@ export default function OnDeviceAIChat() {
     if (messages.length > 0) {
       setTimeout(scrollToBottom, 100);
     }
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   const suggestions = getContextualSuggestions(context);
   const greeting = getContextualGreeting(context);
@@ -184,17 +191,26 @@ export default function OnDeviceAIChat() {
       >
         {/* Custom Header with On-Device AI Status */}
         {Platform.OS === 'ios' ? (
-          <BlurView intensity={100} style={{
-            position: 'absolute',
-            zIndex: 50,
-            top: 0,
-            left: 0,
-            right: 0,
-            paddingTop: insets.top
-          }}>
+          <BlurView
+            intensity={100}
+            style={{
+              position: 'absolute',
+              zIndex: 50,
+              top: 0,
+              left: 0,
+              right: 0,
+              paddingTop: insets.top,
+            }}
+          >
             <View className="flex-row items-center justify-between px-4 pb-2">
               <View className="flex-row items-center">
-                <Button variant="plain" size="icon" onPress={() => {/* navigation back */}}>
+                <Button
+                  variant="plain"
+                  size="icon"
+                  onPress={() => {
+                    /* navigation back */
+                  }}
+                >
                   <Icon size={30} color={colors.primary} name="chevron-left" />
                 </Button>
               </View>
@@ -221,7 +237,14 @@ export default function OnDeviceAIChat() {
               className="flex-row items-center justify-between gap-2 px-3 pb-2"
             >
               <View className="flex-row items-center">
-                <Button variant="plain" size="icon" className="opacity-70" onPress={() => {/* navigation back */}}>
+                <Button
+                  variant="plain"
+                  size="icon"
+                  className="opacity-70"
+                  onPress={() => {
+                    /* navigation back */
+                  }}
+                >
                   <Icon
                     color={colors.foreground}
                     name={Platform.select({
@@ -261,12 +284,12 @@ export default function OnDeviceAIChat() {
           {showSettings && (
             <View className="mx-4 mb-4">
               <OnDeviceAIStatus />
-              
+
               <View className="mt-3 p-3 bg-card rounded-lg">
                 <Text variant="subhead" className="font-medium mb-2">
                   AI Preferences
                 </Text>
-                
+
                 <TouchableOpacity
                   className="flex-row items-center justify-between py-2"
                   onPress={() => setPreferOnDevice(!preferOnDevice)}
@@ -288,10 +311,10 @@ export default function OnDeviceAIChat() {
           )}
 
           {/* Location Context */}
-          <LocationContext 
-            location={location} 
-            onLocationChange={setLocation} 
-            contextType={context.contextType} 
+          <LocationContext
+            location={location}
+            onLocationChange={setLocation}
+            contextType={context.contextType}
           />
 
           {/* Chat Messages */}
@@ -301,7 +324,7 @@ export default function OnDeviceAIChat() {
                 <ErrorState error={error} onRetry={() => window.location.reload()} />
               </View>
             )}
-            
+
             {messages.length === 0 && !isLoading && (
               <View className="flex-1 justify-center items-center py-8">
                 <Icon name="chatbox" size={48} color={colors.muted.foreground} />
@@ -313,7 +336,7 @@ export default function OnDeviceAIChat() {
                     ? 'Ask me anything about outdoor activities, gear, or planning your next adventure.'
                     : `Get personalized suggestions for your ${context.contextType}.`}
                 </Text>
-                
+
                 {/* Quick Suggestions */}
                 <View className="flex-row flex-wrap justify-center gap-2">
                   {suggestions.slice(0, 3).map((suggestion, index) => (
@@ -373,7 +396,7 @@ export default function OnDeviceAIChat() {
           }
         />
       </KeyboardStickyView>
-      
+
       {isArrowButtonVisible && status === 'ready' && (
         <TouchableOpacity
           onPress={scrollToBottom}
@@ -450,7 +473,7 @@ function Composer({
             blurOnSubmit={false}
           />
         </Animated.View>
-        
+
         {isLoading ? (
           <Button variant="ghost" size="icon" onPress={stop}>
             <View className="h-6 w-6 rounded-full bg-destructive items-center justify-center">
@@ -458,12 +481,7 @@ function Composer({
             </View>
           </Button>
         ) : (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onPress={handleSubmit}
-            disabled={!input.trim()}
-          >
+          <Button variant="ghost" size="icon" onPress={handleSubmit} disabled={!input.trim()}>
             <Icon
               name="arrow-up"
               size={20}
