@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "configure:deps": "bun run .github/scripts/configure-deps.ts",
+    "configure:deps:manual": "export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token) && bun install",
     "clean": "bun run .github/scripts/clean.ts",
     "env": "bun run .github/scripts/env.ts",
     "lefthook": "lefthook install",
