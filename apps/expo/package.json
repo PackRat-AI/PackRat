@@ -35,7 +35,7 @@
     "update:development": "APP_VARIANT=development eas update --branch development --environment development",
     "update:preview": "APP_VARIANT=preview eas update --branch preview --environment preview",
     "update:production": "eas update --branch production --environment production",
-    "upgrade-expo": "bun install expo@latest && expo install --fix && expo-doctor"
+    "upgrade-expo": "bun install expo@latest && expo install --fix && expo-doctor --verbose"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.11",
