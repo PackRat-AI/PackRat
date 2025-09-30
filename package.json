@@ -37,8 +37,6 @@
     "lefthook": "^1.11.14"
   },
   "overrides": {
-    "@roninoss/icons": {
-      "@expo/vector-icons": "15.0.2"
-    }
+    "@expo/vector-icons": "15.0.2"
   }
 }
