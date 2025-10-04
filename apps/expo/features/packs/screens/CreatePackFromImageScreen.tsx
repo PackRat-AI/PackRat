@@ -11,7 +11,7 @@ import { useForm } from '@tanstack/react-form';
 import { useImageUpload } from 'expo-app/features/packs/hooks/useImageUpload';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
@@ -27,11 +27,13 @@ import {
 import { z } from 'zod';
 import type { DetectedItemWithMatches } from '../hooks/useImageDetection';
 import { useAnalyzeImage, useCreatePackFromImage } from '../hooks/useImageDetection';
+import { useCreatePackItem } from '../hooks/useCreatePackItem';
+import type { PackItemInput } from '../types';
 
 const packFromImageSchema = z.object({
-  packName: z.string().min(1, 'Pack name is required'),
-  packDescription: z.string(),
-  isPublic: z.boolean(),
+  packName: z.string().optional(),
+  packDescription: z.string().optional(),
+  isPublic: z.boolean().optional(),
   minConfidence: z.number().min(0).max(1),
 });
 
@@ -40,18 +42,22 @@ type PackFromImageFormValues = z.infer<typeof packFromImageSchema>;
 export function CreatePackFromImageScreen() {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { packId } = useLocalSearchParams();
   const { selectedImage, pickImage, takePhoto, deleteImage } = useImageUpload();
   const [analysisResult, setAnalysisResult] = useState<DetectedItemWithMatches[] | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const analyzeImageMutation = useAnalyzeImage();
   const createPackMutation = useCreatePackFromImage();
+  const createPackItem = useCreatePackItem();
+  
+  const isAddingToExistingPack = Boolean(packId);
 
   const form = useForm<PackFromImageFormValues>({
     defaultValues: {
-      packName: '',
-      packDescription: '',
-      isPublic: false,
+      packName: isAddingToExistingPack ? undefined : '',
+      packDescription: isAddingToExistingPack ? undefined : '',
+      isPublic: isAddingToExistingPack ? undefined : false,
       minConfidence: 0.5,
     },
     onSubmit: async ({ value }) => {
@@ -66,37 +72,91 @@ export function CreatePackFromImageScreen() {
       }
 
       try {
-        // Upload image to get URL if needed
-        const imageFileName = await handleImageUpload();
-        if (!imageFileName) {
-          Alert.alert('Error', 'Failed to upload image');
+        const highConfidenceItems = analysisResult.filter(
+          (item) => item.detected.confidence >= (value.minConfidence || 0.5)
+        );
+
+        if (highConfidenceItems.length === 0) {
+          Alert.alert(
+            'No Items Found',
+            'No items detected with sufficient confidence. Try a clearer image or lower confidence threshold.'
+          );
           return;
         }
 
-        // Get public URL for the image
-        const imageUrl = `${ImageCacheManager.cacheDirectory}${imageFileName}`;
+        if (isAddingToExistingPack) {
+          // Add items to existing pack
+          for (const itemWithMatches of highConfidenceItems) {
+            const { detected, catalogMatches } = itemWithMatches;
+            const bestMatch = catalogMatches[0]; // Highest similarity match
 
-        const result = await createPackMutation.mutateAsync({
-          imageUrl,
-          packName: value.packName,
-          packDescription: value.packDescription,
-          isPublic: value.isPublic,
-          minConfidence: value.minConfidence,
-        });
+            createPackItem({
+              packId: packId as string,
+              itemData: {
+                name: bestMatch?.name || detected.name,
+                description: bestMatch?.description || detected.description,
+                weight: bestMatch?.weight || 100,
+                weightUnit: bestMatch?.weightUnit || 'g',
+                quantity: detected.quantity,
+                category: detected.category,
+                consumable: false,
+                worn: false,
+                image: bestMatch?.image,
+                notes: `AI detected from image (confidence: ${Math.round(detected.confidence * 100)}%)`,
+                catalogItemId: bestMatch?.id,
+              },
+            });
+          }
 
-        Alert.alert(
-          'Success!',
-          `Pack "${result.pack.name}" created with ${result.pack.itemsCount} items detected from your image.`,
-          [
-            {
-              text: 'View Pack',
-              onPress: () => router.replace(`/pack/${result.pack.id}`),
-            },
-          ],
-        );
+          Alert.alert(
+            'Success!',
+            `Added ${highConfidenceItems.length} items to your pack from the image.`,
+            [
+              {
+                text: 'View Pack',
+                onPress: () => router.replace(`/pack/${packId}`),
+              },
+            ],
+          );
+        } else {
+          // Create new pack with items
+          if (!value.packName) {
+            Alert.alert('Error', 'Pack name is required when creating a new pack');
+            return;
+          }
+
+          // Upload image to get URL if needed
+          const imageFileName = await handleImageUpload();
+          if (!imageFileName) {
+            Alert.alert('Error', 'Failed to upload image');
+            return;
+          }
+
+          // Get public URL for the image
+          const imageUrl = `${ImageCacheManager.cacheDirectory}${imageFileName}`;
+          
+          const result = await createPackMutation.mutateAsync({
+            imageUrl,
+            packName: value.packName,
+            packDescription: value.packDescription || '',
+            isPublic: value.isPublic || false,
+            minConfidence: value.minConfidence,
+          });
+
+          Alert.alert(
+            'Success!',
+            `Pack "${result.pack.name}" created with ${result.pack.itemsCount} items detected from your image.`,
+            [
+              {
+                text: 'View Pack',
+                onPress: () => router.replace(`/pack/${result.pack.id}`),
+              },
+            ]
+          );
+        }
       } catch (error) {
-        console.error('Error creating pack from image:', error);
-        Alert.alert('Error', error instanceof Error ? error.message : 'Failed to create pack');
+        console.error('Error processing image:', error);
+        Alert.alert('Error', error instanceof Error ? error.message : 'Failed to process image');
       }
     },
   });
@@ -174,7 +234,7 @@ export function CreatePackFromImageScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Create Pack from Photo',
+          title: isAddingToExistingPack ? 'Add Items from Photo' : 'Create Pack from Photo',
           headerBackVisible: true,
         }}
       />
@@ -281,54 +341,56 @@ export function CreatePackFromImageScreen() {
                 </FormSection>
               )}
 
-              {/* Pack Details Form */}
-              <FormSection
-                ios={{ title: 'Pack Details' }}
-                footnote="Enter basic information for your new pack"
-              >
-                <form.Field name="packName">
-                  {(field) => (
-                    <FormItem>
-                      <TextField
-                        placeholder="Pack Name"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChangeText={field.handleChange}
-                        leftView={
-                          <View className="ios:pl-2 justify-center pl-2">
-                            <Icon name="backpack" size={16} color={colors.grey3} />
-                          </View>
-                        }
-                      />
-                      {field.state.meta.errors.length > 0 && (
-                        <Text className="text-destructive text-sm mt-1">
-                          {field.state.meta.errors[0]}
-                        </Text>
-                      )}
-                    </FormItem>
-                  )}
-                </form.Field>
+              {/* Pack Details Form - only show when creating new pack */}
+              {!isAddingToExistingPack && (
+                <FormSection
+                  ios={{ title: 'Pack Details' }}
+                  footnote="Enter basic information for your new pack"
+                >
+                  <form.Field name="packName">
+                    {(field) => (
+                      <FormItem>
+                        <TextField
+                          placeholder="Pack Name"
+                          value={field.state.value || ''}
+                          onBlur={field.handleBlur}
+                          onChangeText={field.handleChange}
+                          leftView={
+                            <View className="ios:pl-2 justify-center pl-2">
+                              <Icon name="backpack" size={16} color={colors.grey3} />
+                            </View>
+                          }
+                        />
+                        {field.state.meta.errors.length > 0 && (
+                          <Text className="text-destructive text-sm mt-1">
+                            {field.state.meta.errors[0]}
+                          </Text>
+                        )}
+                      </FormItem>
+                    )}
+                  </form.Field>
 
-                <form.Field name="packDescription">
-                  {(field) => (
-                    <FormItem>
-                      <TextField
-                        placeholder="Description (optional)"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChangeText={field.handleChange}
-                        multiline
-                        numberOfLines={3}
-                        leftView={
-                          <View className="ios:pl-2 justify-center pl-2">
-                            <Icon name="file-text" size={16} color={colors.grey3} />
-                          </View>
-                        }
-                      />
-                    </FormItem>
-                  )}
-                </form.Field>
-              </FormSection>
+                  <form.Field name="packDescription">
+                    {(field) => (
+                      <FormItem>
+                        <TextField
+                          placeholder="Description (optional)"
+                          value={field.state.value || ''}
+                          onBlur={field.handleBlur}
+                          onChangeText={field.handleChange}
+                          multiline
+                          numberOfLines={3}
+                          leftView={
+                            <View className="ios:pl-2 justify-center pl-2">
+                              <Icon name="file-text" size={16} color={colors.grey3} />
+                            </View>
+                          }
+                        />
+                      </FormItem>
+                    )}
+                  </form.Field>
+                </FormSection>
+              )}
 
               {/* Settings */}
               <FormSection ios={{ title: 'Settings' }}>
@@ -345,19 +407,21 @@ export function CreatePackFromImageScreen() {
                   )}
                 </form.Field>
 
-                <form.Field name="isPublic">
-                  {(field) => (
-                    <FormItem>
-                      <View className="flex-row items-center justify-between">
-                        <Text>Make Pack Public</Text>
-                        <Switch value={field.state.value} onValueChange={field.handleChange} />
-                      </View>
-                    </FormItem>
-                  )}
-                </form.Field>
+                {!isAddingToExistingPack && (
+                  <form.Field name="isPublic">
+                    {(field) => (
+                      <FormItem>
+                        <View className="flex-row items-center justify-between">
+                          <Text>Make Pack Public</Text>
+                          <Switch value={field.state.value || false} onValueChange={field.handleChange} />
+                        </View>
+                      </FormItem>
+                    )}
+                  </form.Field>
+                )}
               </FormSection>
 
-              {/* Create Pack Button */}
+              {/* Action Button */}
               <View className="p-4 pb-8">
                 <Button
                   onPress={form.handleSubmit}
@@ -367,7 +431,9 @@ export function CreatePackFromImageScreen() {
                   {createPackMutation.isPending ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
-                    `Create Pack with ${highConfidenceItems.length} Items`
+                    isAddingToExistingPack 
+                      ? `Add ${highConfidenceItems.length} Items to Pack`
+                      : `Create Pack with ${highConfidenceItems.length} Items`
                   )}
                 </Button>
               </View>

@@ -13,11 +13,10 @@ import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Pressable,
   SafeAreaView,
@@ -48,29 +47,12 @@ const filterOptions: FilterOption[] = [
 
 function CreatePackIconButton() {
   const { colors } = useColorScheme();
-  const router = useRouter();
-
-  const handleCreatePress = () => {
-    Alert.alert('Create Pack', 'Choose how to create your pack', [
-      {
-        text: 'From Photo',
-        onPress: () => router.push('/pack/new-from-image'),
-      },
-      {
-        text: 'Manual',
-        onPress: () => router.push('/pack/new'),
-      },
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-    ]);
-  };
-
   return (
-    <Pressable onPress={handleCreatePress}>
-      <Icon name="plus" color={colors.foreground} />
-    </Pressable>
+    <Link href="/pack/new" asChild>
+      <Pressable>
+        <Icon name="plus" color={colors.foreground} />
+      </Pressable>
+    </Link>
   );
 }
 
@@ -111,20 +93,7 @@ export function PackListScreen() {
   );
 
   const handleCreatePack = () => {
-    Alert.alert('Create Pack', 'Choose how to create your pack', [
-      {
-        text: 'From Photo',
-        onPress: () => router.push('/pack/new-from-image'),
-      },
-      {
-        text: 'Manual',
-        onPress: () => router.push('/pack/new'),
-      },
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-    ]);
+    router.push({ pathname: '/pack/new' });
   };
 
   const handleRetryAllPacks = () => {
