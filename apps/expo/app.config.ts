@@ -57,6 +57,7 @@ export default (): ExpoConfig =>
         'expo-secure-store',
         'expo-web-browser',
         'expo-apple-authentication',
+        '@react-native-ai/mlc',
       ],
       experiments: {
         typedRoutes: true,
