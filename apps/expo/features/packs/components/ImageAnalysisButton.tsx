@@ -1,6 +1,5 @@
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import React from 'react';
 import { ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 
 interface ImageAnalysisButtonProps {
@@ -9,7 +8,11 @@ interface ImageAnalysisButtonProps {
   disabled?: boolean;
 }
 
-export function ImageAnalysisButton({ onPress, isAnalyzing, disabled = false }: ImageAnalysisButtonProps) {
+export function ImageAnalysisButton({
+  onPress,
+  isAnalyzing,
+  disabled = false,
+}: ImageAnalysisButtonProps) {
   const { colors } = useColorScheme();
 
   if (isAnalyzing) {
@@ -32,12 +35,8 @@ export function ImageAnalysisButton({ onPress, isAnalyzing, disabled = false }: 
         disabled ? 'bg-muted' : 'bg-primary'
       }`}
     >
-      <Icon 
-        name="camera" 
-        size={20} 
-        color={disabled ? colors.grey3 : colors.background} 
-      />
-      <Text 
+      <Icon name="camera" size={20} color={disabled ? colors.grey3 : colors.background} />
+      <Text
         className={`ml-2 font-medium ${
           disabled ? 'text-muted-foreground' : 'text-primary-foreground'
         }`}

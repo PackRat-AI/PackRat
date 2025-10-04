@@ -194,7 +194,8 @@ export function createTools(c: Context, userId: number) {
     }),
 
     analyzeGearImage: tool({
-      description: 'Analyze an image of outdoor gear to identify and find similar items in the catalog.',
+      description:
+        'Analyze an image of outdoor gear to identify and find similar items in the catalog.',
       inputSchema: z.object({
         imageUrl: z.string().url().describe('URL of the image to analyze for outdoor gear items'),
         vectorSearchLimit: z
@@ -207,24 +208,27 @@ export function createTools(c: Context, userId: number) {
       execute: async ({ imageUrl, vectorSearchLimit = 5 }) => {
         try {
           // Import the ImageAnalysisService here to avoid circular dependencies
-          const { ImageAnalysisService } = await import('@packrat/api/services/imageAnalysisService');
+          const { ImageAnalysisService } = await import(
+            '@packrat/api/services/imageAnalysisService'
+          );
           const imageAnalysisService = new ImageAnalysisService(c);
-          
+
           // Step 1: Analyze the image
           const analysisResult = await imageAnalysisService.analyzeImage(imageUrl);
-          
+
           // Step 2: Perform vector search for each detected item
           const itemsWithSearch = await Promise.all(
             analysisResult.items.map(async (item) => {
               try {
                 // Create search query from detected item
-                const searchQuery = `${item.name} ${item.description} ${item.brand || ''} ${item.model || ''} ${item.category}`.trim();
-                
+                const searchQuery =
+                  `${item.name} ${item.description} ${item.brand || ''} ${item.model || ''} ${item.category}`.trim();
+
                 // Perform vector search
                 const vectorSearchResult = await catalogService.vectorSearch(
                   searchQuery,
                   vectorSearchLimit,
-                  0
+                  0,
                 );
 
                 return {
@@ -247,7 +251,7 @@ export function createTools(c: Context, userId: number) {
                   vectorSearchResults: [],
                 };
               }
-            })
+            }),
           );
 
           return {

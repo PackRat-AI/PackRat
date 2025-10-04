@@ -13,7 +13,8 @@ export const routeDefinition = createRoute({
   path: '/analyze-image',
   tags: ['Catalog'],
   summary: 'Analyze gear image with AI vision',
-  description: 'Use OpenAI vision model to detect outdoor gear items in an image and find similar items via vector search',
+  description:
+    'Use OpenAI vision model to detect outdoor gear items in an image and find similar items via vector search',
   security: [{ bearerAuth: [] }],
   request: {
     body: {
@@ -62,7 +63,7 @@ export const routeDefinition = createRoute({
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const startTime = Date.now();
-  
+
   try {
     const { imageUrl, includeVectorSearch = true, vectorSearchLimit = 5 } = c.req.valid('json');
 
@@ -70,11 +71,14 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     try {
       new URL(imageUrl);
     } catch {
-      return c.json({
-        success: false,
-        error: 'Invalid image URL format',
-        code: 'INVALID_IMAGE_URL',
-      }, 400);
+      return c.json(
+        {
+          success: false,
+          error: 'Invalid image URL format',
+          code: 'INVALID_IMAGE_URL',
+        },
+        400,
+      );
     }
 
     // Initialize services
@@ -82,16 +86,19 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const catalogService = new CatalogService(c);
 
     // Step 1: Analyze the image with OpenAI Vision
-    let analysisResult;
+    let analysisResult: Awaited<ReturnType<ImageAnalysisService['analyzeImage']>>;
     try {
       analysisResult = await imageAnalysisService.analyzeImage(imageUrl);
     } catch (error) {
       console.error('Vision analysis failed:', error);
-      return c.json({
-        success: false,
-        error: 'Failed to analyze image with AI vision model',
-        code: 'VISION_ANALYSIS_FAILED',
-      }, 500);
+      return c.json(
+        {
+          success: false,
+          error: 'Failed to analyze image with AI vision model',
+          code: 'VISION_ANALYSIS_FAILED',
+        },
+        500,
+      );
     }
 
     // Step 2: If requested, perform vector search for each detected item
@@ -103,13 +110,14 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
         try {
           // Create search query from detected item
-          const searchQuery = `${item.name} ${item.description} ${item.brand || ''} ${item.model || ''} ${item.category}`.trim();
-          
+          const searchQuery =
+            `${item.name} ${item.description} ${item.brand || ''} ${item.model || ''} ${item.category}`.trim();
+
           // Perform vector search
           const vectorSearchResult = await catalogService.vectorSearch(
             searchQuery,
             vectorSearchLimit,
-            0
+            0,
           );
 
           // Transform the results to match our schema
@@ -136,27 +144,31 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
             vectorSearchResults: [],
           };
         }
-      })
+      }),
     );
 
     const processingTimeMs = Date.now() - startTime;
 
-    return c.json({
-      success: true,
-      items: itemsWithSearch,
-      totalItemsFound: analysisResult.totalItemsFound,
-      analysisConfidence: analysisResult.analysisConfidence,
-      processingTimeMs,
-    }, 200);
-
+    return c.json(
+      {
+        success: true,
+        items: itemsWithSearch,
+        totalItemsFound: analysisResult.totalItemsFound,
+        analysisConfidence: analysisResult.analysisConfidence,
+        processingTimeMs,
+      },
+      200,
+    );
   } catch (error) {
-    const processingTimeMs = Date.now() - startTime;
     console.error('Image analysis route error:', error);
-    
-    return c.json({
-      success: false,
-      error: 'Internal server error during image analysis',
-      code: 'INTERNAL_ERROR',
-    }, 500);
+
+    return c.json(
+      {
+        success: false,
+        error: 'Internal server error during image analysis',
+        code: 'INTERNAL_ERROR',
+      },
+      500,
+    );
   }
 };

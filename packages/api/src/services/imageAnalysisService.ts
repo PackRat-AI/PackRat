@@ -1,9 +1,9 @@
 import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateText } from 'ai';
 import type { Context } from 'hono';
-import { getEnv } from '@packrat/api/utils/env-validation';
 
 export interface DetectedItem {
   name: string;
@@ -103,7 +103,7 @@ export class ImageAnalysisService {
       } catch (parseError) {
         console.error('Failed to parse vision analysis response:', parseError);
         console.error('Raw response:', response.text);
-        
+
         // Fallback: try to extract items from text response
         analysisResult = this.parseTextualResponse(response.text);
       }
@@ -112,11 +112,13 @@ export class ImageAnalysisService {
       return this.validateAndCleanResult(analysisResult);
     } catch (error) {
       console.error('Image analysis error:', error);
-      throw new Error(`Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
-  private parseTextualResponse(text: string): ImageAnalysisResult {
+  private parseTextualResponse(_text: string): ImageAnalysisResult {
     // Fallback parser for cases where the model doesn't return valid JSON
     // This is a simple implementation - could be enhanced with more sophisticated parsing
     return {
@@ -148,8 +150,8 @@ export class ImageAnalysisService {
     ]);
 
     const cleanedItems = (result.items || [])
-      .filter((item: any) => item && typeof item === 'object')
-      .map((item: any) => ({
+      .filter((item: unknown) => item && typeof item === 'object')
+      .map((item: Record<string, unknown>) => ({
         name: String(item.name || '').trim(),
         description: String(item.description || '').trim(),
         category: validCategories.has(item.category) ? item.category : 'Other',

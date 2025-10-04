@@ -23,8 +23,8 @@ import { z } from 'zod';
 import { ImageAnalysisButton } from '../components/ImageAnalysisButton';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImageUpload } from '../hooks/useImageUpload';
-import { ImageAnalysisModal } from './ImageAnalysisModal';
 import type { PackItem, PackItemInput } from '../types';
+import { ImageAnalysisModal } from './ImageAnalysisModal';
 
 // Define Zod schema
 const itemFormSchema = z.object({
@@ -193,19 +193,22 @@ export const CreatePackItemForm = ({
     }
   };
 
-  const handleImageAnalysisItemSelect = useCallback((itemData: any) => {
-    // Pre-fill the form with data from image analysis
-    if (itemData.name) {
-      form.setFieldValue('name', itemData.name);
-    }
-    if (itemData.description) {
-      form.setFieldValue('description', itemData.description);
-    }
-    if (itemData.category) {
-      form.setFieldValue('category', itemData.category);
-    }
-    // Note: We don't pre-fill weight, quantity etc. as these are specific to the user's item
-  }, [form]);
+  const handleImageAnalysisItemSelect = useCallback(
+    (itemData: Partial<DetectedItem | VectorSearchResult>) => {
+      // Pre-fill the form with data from image analysis
+      if (itemData.name) {
+        form.setFieldValue('name', itemData.name);
+      }
+      if (itemData.description) {
+        form.setFieldValue('description', itemData.description);
+      }
+      if (itemData.category) {
+        form.setFieldValue('category', itemData.category);
+      }
+      // Note: We don't pre-fill weight, quantity etc. as these are specific to the user's item
+    },
+    [form],
+  );
 
   // Determine what image to show in the UI
   const imageFieldValue = form.getFieldValue('image') as string | null;
@@ -481,13 +484,12 @@ export const CreatePackItemForm = ({
           )}
         </form.Subscribe>
       </ScrollView>
-      
+
       {/* Image Analysis Modal */}
       <ImageAnalysisModal
         visible={showImageAnalysis}
         onClose={() => setShowImageAnalysis(false)}
         onItemSelect={handleImageAnalysisItemSelect}
-        packId={packId}
       />
     </KeyboardAvoidingView>
   );
