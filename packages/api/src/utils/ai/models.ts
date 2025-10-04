@@ -16,6 +16,9 @@ export enum OpenAIModels {
   GPT_4_TURBO = 'gpt-4-turbo',
   GPT_3_5_TURBO = 'gpt-3.5-turbo',
 
+  // Vision Models (GPT-4o has built-in vision capabilities)
+  GPT_4O_VISION = 'gpt-4o',
+
   // Embedding Models
   TEXT_EMBEDDING_3_SMALL = 'text-embedding-3-small',
   TEXT_EMBEDDING_3_LARGE = 'text-embedding-3-large',
@@ -39,6 +42,7 @@ export const DEFAULT_MODELS = {
   CHAT: CloudflareAIModels.LLAMA_2_7B_CHAT_INT8,
   EMBEDDING: CloudflareAIModels.BGE_BASE_EN_V1_5,
   OPENAI_CHAT: OpenAIModels.GPT_4O,
+  OPENAI_VISION: OpenAIModels.GPT_4O_VISION,
   OPENAI_EMBEDDING: OpenAIModels.TEXT_EMBEDDING_3_SMALL,
   PERPLEXITY_SEARCH: PerplexityModels.SONAR_PRO,
 } as const;

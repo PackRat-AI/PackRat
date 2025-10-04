@@ -193,6 +193,84 @@ export function createTools(c: Context, userId: number) {
       },
     }),
 
+    analyzeGearImage: tool({
+      description: 'Analyze an image of outdoor gear to identify and find similar items in the catalog.',
+      inputSchema: z.object({
+        imageUrl: z.string().url().describe('URL of the image to analyze for outdoor gear items'),
+        vectorSearchLimit: z
+          .number()
+          .min(1)
+          .max(10)
+          .optional()
+          .describe('Number of similar catalog items to find per detected item (default: 5)'),
+      }),
+      execute: async ({ imageUrl, vectorSearchLimit = 5 }) => {
+        try {
+          // Import the ImageAnalysisService here to avoid circular dependencies
+          const { ImageAnalysisService } = await import('@packrat/api/services/imageAnalysisService');
+          const imageAnalysisService = new ImageAnalysisService(c);
+          
+          // Step 1: Analyze the image
+          const analysisResult = await imageAnalysisService.analyzeImage(imageUrl);
+          
+          // Step 2: Perform vector search for each detected item
+          const itemsWithSearch = await Promise.all(
+            analysisResult.items.map(async (item) => {
+              try {
+                // Create search query from detected item
+                const searchQuery = `${item.name} ${item.description} ${item.brand || ''} ${item.model || ''} ${item.category}`.trim();
+                
+                // Perform vector search
+                const vectorSearchResult = await catalogService.vectorSearch(
+                  searchQuery,
+                  vectorSearchLimit,
+                  0
+                );
+
+                return {
+                  ...item,
+                  vectorSearchResults: vectorSearchResult.items.map((catalogItem) => ({
+                    id: String(catalogItem.id),
+                    name: catalogItem.name,
+                    description: catalogItem.description || '',
+                    brand: catalogItem.brand || undefined,
+                    category: catalogItem.categories?.[0] || undefined,
+                    similarity: catalogItem.similarity,
+                    price: catalogItem.price || undefined,
+                    imageUrl: catalogItem.images?.[0] || undefined,
+                  })),
+                };
+              } catch (vectorError) {
+                console.error('Vector search failed for item:', item.name, vectorError);
+                return {
+                  ...item,
+                  vectorSearchResults: [],
+                };
+              }
+            })
+          );
+
+          return {
+            success: true,
+            data: {
+              items: itemsWithSearch,
+              totalItemsFound: analysisResult.totalItemsFound,
+              analysisConfidence: analysisResult.analysisConfidence,
+            },
+          };
+        } catch (error) {
+          console.error('analyzeGearImage tool error', error);
+          sentry.setTag('location', 'ai-tool-call/analyzeGearImage');
+          sentry.setContext('meta', { imageUrl, vectorSearchLimit });
+          sentry.captureException(error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to analyze gear image',
+          };
+        }
+      },
+    }),
+
     searchPackratOutdoorGuidesRAG: tool({
       description:
         'Search the Packrat outdoor guides knowledge base using RAG (Retrieval-Augmented Generation).',
