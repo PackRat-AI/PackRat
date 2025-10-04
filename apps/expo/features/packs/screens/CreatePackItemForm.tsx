@@ -22,9 +22,10 @@ import {
 import { z } from 'zod';
 import { ImageAnalysisButton } from '../components/ImageAnalysisButton';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
+import type { DetectedItem, VectorSearchResult } from '../hooks/useImageAnalysis';
 import { useImageUpload } from '../hooks/useImageUpload';
-import type { PackItem, PackItemInput } from '../types';
 import { ImageAnalysisModal } from './ImageAnalysisModal';
+import type { PackItem, PackItemInput } from '../types';
 
 // Define Zod schema
 const itemFormSchema = z.object({

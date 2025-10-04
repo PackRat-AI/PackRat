@@ -150,11 +150,15 @@ export class ImageAnalysisService {
     ]);
 
     const cleanedItems = (result.items || [])
-      .filter((item: unknown) => item && typeof item === 'object')
-      .map((item: Record<string, unknown>) => ({
+      .filter((item: unknown): item is Record<string, unknown> => 
+        Boolean(item && typeof item === 'object' && item !== null)
+      )
+      .map((item) => ({
         name: String(item.name || '').trim(),
         description: String(item.description || '').trim(),
-        category: validCategories.has(item.category) ? item.category : 'Other',
+        category: typeof item.category === 'string' && validCategories.has(item.category) 
+          ? item.category 
+          : 'Other',
         confidence: Math.max(0.1, Math.min(1.0, Number(item.confidence) || 0.1)),
         brand: item.brand ? String(item.brand).trim() : undefined,
         model: item.model ? String(item.model).trim() : undefined,
