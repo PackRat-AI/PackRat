@@ -6,7 +6,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
@@ -20,9 +20,12 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
+import { ImageAnalysisButton } from '../components/ImageAnalysisButton';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
+import type { DetectedItem, VectorSearchResult } from '../hooks/useImageAnalysis';
 import { useImageUpload } from '../hooks/useImageUpload';
 import type { PackItem, PackItemInput } from '../types';
+import { ImageAnalysisModal } from './ImageAnalysisModal';
 
 // Define Zod schema
 const itemFormSchema = z.object({
@@ -78,6 +81,7 @@ export const CreatePackItemForm = ({
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
   const [descriptionHeight, setDescriptionHeight] = useState(40);
+  const [showImageAnalysis, setShowImageAnalysis] = useState(false);
 
   const hasMounted = useRef(false);
 
@@ -189,6 +193,23 @@ export const CreatePackItemForm = ({
       setImageChanged(true);
     }
   };
+
+  const handleImageAnalysisItemSelect = useCallback(
+    (itemData: Partial<DetectedItem | VectorSearchResult>) => {
+      // Pre-fill the form with data from image analysis
+      if (itemData.name) {
+        form.setFieldValue('name', itemData.name);
+      }
+      if (itemData.description) {
+        form.setFieldValue('description', itemData.description);
+      }
+      if (itemData.category) {
+        form.setFieldValue('category', itemData.category);
+      }
+      // Note: We don't pre-fill weight, quantity etc. as these are specific to the user's item
+    },
+    [form],
+  );
 
   // Determine what image to show in the UI
   const imageFieldValue = form.getFieldValue('image') as string | null;
@@ -413,6 +434,15 @@ export const CreatePackItemForm = ({
                 </FormItem>
               )}
             </form.Field>
+
+            {/* AI Image Analysis Button */}
+            <View className="mt-4">
+              <ImageAnalysisButton
+                onPress={() => setShowImageAnalysis(true)}
+                isAnalyzing={false}
+                disabled={false}
+              />
+            </View>
           </FormSection>
 
           <FormSection ios={{ title: 'Notes' }} footnote="Additional information">
@@ -455,6 +485,13 @@ export const CreatePackItemForm = ({
           )}
         </form.Subscribe>
       </ScrollView>
+
+      {/* Image Analysis Modal */}
+      <ImageAnalysisModal
+        visible={showImageAnalysis}
+        onClose={() => setShowImageAnalysis(false)}
+        onItemSelect={handleImageAnalysisItemSelect}
+      />
     </KeyboardAvoidingView>
   );
 };
