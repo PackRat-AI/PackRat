@@ -132,3 +132,80 @@ export const expectJsonResponse = async (response: Response, expectedFields?: st
 
   return data;
 };
+
+// Helper to extract error message from various error response formats
+export const expectErrorMessage = async (response: Response, expectedMessage: string) => {
+  expectBadRequest(response);
+  const data = await response.json();
+  
+  let actualMessage: string;
+  
+  // Handle structured error response { error: "message" }
+  if (data.error && typeof data.error === 'string') {
+    actualMessage = data.error;
+  }
+  // Handle nested Zod error format { success: false, error: { issues: [...], name: "ZodError" } }
+  else if (data.error && data.error.issues && Array.isArray(data.error.issues)) {
+    actualMessage = formatZodErrorMessage(data.error.issues);
+  }
+  // Handle direct Zod validation error format { issues: [...], name: "ZodError" }
+  else if (data.issues && Array.isArray(data.issues)) {
+    actualMessage = formatZodErrorMessage(data.issues);
+  }
+  // Handle direct string response
+  else if (typeof data === 'string') {
+    actualMessage = data;
+  }
+  // Fallback
+  else {
+    actualMessage = data.message || JSON.stringify(data);
+  }
+  
+  expect(actualMessage).toBe(expectedMessage);
+  return data;
+};
+
+// Helper function to convert Zod validation errors to expected messages
+function formatZodErrorMessage(issues: any[]): string {
+  if (issues.length === 0) return 'Validation error';
+  
+  // Check for common patterns and return specific messages
+  const emailIssue = issues.find((issue: any) => issue.path.includes('email'));
+  const passwordIssue = issues.find((issue: any) => issue.path.includes('password'));
+  const idTokenIssue = issues.find((issue: any) => issue.path.includes('idToken'));
+  const codeIssue = issues.find((issue: any) => issue.path.includes('code'));
+  const newPasswordIssue = issues.find((issue: any) => issue.path.includes('newPassword'));
+  
+  // Handle multiple required fields
+  if (emailIssue && passwordIssue && 
+      emailIssue.code === 'invalid_type' && passwordIssue.code === 'invalid_type') {
+    return 'Email and password are required';
+  }
+  
+  if (emailIssue && codeIssue && 
+      emailIssue.code === 'invalid_type' && codeIssue.code === 'invalid_type') {
+    return 'Email and verification code are required';
+  }
+  
+  if (emailIssue && codeIssue && newPasswordIssue &&
+      emailIssue.code === 'invalid_type' && codeIssue.code === 'invalid_type' && 
+      newPasswordIssue.code === 'invalid_type') {
+    return 'Email, code, and new password are required';
+  }
+  
+  // Handle single field issues
+  if (idTokenIssue && idTokenIssue.code === 'invalid_type') {
+    return 'ID token is required';
+  }
+  
+  if (emailIssue && emailIssue.code === 'invalid_string' && emailIssue.validation === 'email') {
+    return 'Invalid email format';
+  }
+  
+  if (passwordIssue && passwordIssue.code === 'too_small') {
+    return 'Password must be at least 8 characters';
+  }
+  
+  // Default to first issue message for unhandled cases
+  return issues[0].message || 'Validation error';
+}

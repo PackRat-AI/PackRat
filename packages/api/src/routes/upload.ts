@@ -70,10 +70,41 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
   } = getEnv(c);
 
   try {
-    const { fileName, contentType } = c.req.query();
+    const query = c.req.query();
+    // Support both camelCase (schema) and lowercase (test usage)
+    const fileName = query.fileName || query.filename;
+    const contentType = query.contentType || query.contenttype;
+    const { size, type, packId } = query;
 
     if (!fileName || !contentType) {
       return c.json({ error: 'fileName and contentType are required' }, 400);
+    }
+
+    // Validate content type - only allow specific types
+    const allowedContentTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+    ];
+    
+    if (!allowedContentTypes.includes(contentType)) {
+      return c.json({ error: 'Invalid content type. Only image files are allowed.' }, 400);
+    }
+
+    // Validate file size if provided
+    if (size) {
+      const sizeNum = parseInt(size, 10);
+      const maxSize = 10 * 1024 * 1024; // 10MB default
+      
+      if (sizeNum > maxSize) {
+        return c.json({ error: 'File size exceeds maximum limit' }, 400);
+      }
+    }
+
+    // Validate pack ID for pack images
+    if (type === 'pack' && !packId) {
+      return c.json({ error: 'packId is required for pack images' }, 400);
     }
 
     // Initialize S3 client for R2

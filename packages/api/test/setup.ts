@@ -56,11 +56,42 @@ vi.mock('hono/adapter', async () => {
 });
 
 // Mock the database module to use our test database (node-postgres version)
-vi.mock('@packrat/api/db', () => ({
-  createDb: vi.fn(() => testDb),
-  createReadOnlyDb: vi.fn(() => testDb),
-  createDbClient: vi.fn(() => testDb),
-}));
+vi.mock('@packrat/api/db', async () => {
+  let mockDb: any;
+  
+  const createMockDb = () => {
+    if (!mockDb) {
+      const { drizzle } = await import('drizzle-orm/node-postgres');
+      const { Client } = await import('pg');
+      const schema = await import('../src/db/schema');
+      
+      const client = new Client({
+        host: 'localhost',
+        port: 5433,
+        database: 'packrat_test',
+        user: 'test_user',
+        password: 'test_password',
+      });
+      
+      // Connect synchronously for tests
+      try {
+        client.connect();
+        mockDb = drizzle(client, { schema: schema });
+      } catch (error) {
+        console.warn('⚠️ Mock database connection failed, using null mock');
+        // Create a null mock that will cause tests to fail gracefully
+        mockDb = null;
+      }
+    }
+    return mockDb;
+  };
+
+  return {
+    createDb: vi.fn(() => createMockDb()),
+    createReadOnlyDb: vi.fn(() => createMockDb()),
+    createDbClient: vi.fn(() => createMockDb()),
+  };
+});
 
 // Setup PostgreSQL connection for tests
 beforeAll(async () => {
