@@ -72,14 +72,29 @@ analyzeImageRoutes.openapi(analyzeImageRoute, async (c) => {
   try {
     const { imageUrl, matchLimit } = c.req.valid('json');
 
+    // Validate image URL format
+    if (!imageUrl || !imageUrl.startsWith('http')) {
+      return c.json({ error: 'Invalid image URL format' }, 400);
+    }
+
     const imageDetectionService = new ImageDetectionService(c);
     const result = await imageDetectionService.detectAndMatchItems(imageUrl, matchLimit);
 
     return c.json(result, 200);
   } catch (error) {
     console.error('Error analyzing image:', error);
+    c.get('sentry').captureException(error);
 
     if (error instanceof Error) {
+      // Check for specific error types that should return 400 instead of 500
+      if (
+        error.message.includes('Invalid image') ||
+        error.message.includes('Unsupported image format') ||
+        error.message.includes('Image too large')
+      ) {
+        return c.json({ error: error.message }, 400);
+      }
+
       return c.json({ error: `Failed to analyze image: ${error.message}` }, 500);
     }
 

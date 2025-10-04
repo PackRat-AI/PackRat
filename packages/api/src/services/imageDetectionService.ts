@@ -99,49 +99,66 @@ export class ImageDetectionService {
     detectedItems: DetectedItemWithMatches[];
     summary: string;
   }> {
-    // First, detect items in the image
-    const analysis = await this.analyzeImage(imageUrl);
+    try {
+      // First, detect items in the image
+      const analysis = await this.analyzeImage(imageUrl);
 
-    // Filter out low-confidence detections
-    const highConfidenceItems = analysis.items.filter((item) => item.confidence >= 0.5);
-
-    // Find catalog matches for each detected item
-    const catalogService = new CatalogService(this.c);
-    const itemsWithMatches: DetectedItemWithMatches[] = [];
-
-    for (const detected of highConfidenceItems) {
-      // Create search query combining name and description
-      const searchQuery = `${detected.name} ${detected.description}`.trim();
-
-      try {
-        const searchResult = await catalogService.vectorSearch(searchQuery, matchLimit);
-
-        itemsWithMatches.push({
-          detected,
-          catalogMatches: searchResult.items.map((item) => ({
-            id: item.id,
-            name: item.name,
-            description: item.description,
-            weight: item.weight,
-            weightUnit: item.weightUnit,
-            image: item.images?.[0] || null,
-            similarity: item.similarity,
-          })),
-        });
-      } catch (error) {
-        console.error(`Failed to search catalog for item: ${detected.name}`, error);
-        // Include the detected item even if catalog search fails
-        itemsWithMatches.push({
-          detected,
-          catalogMatches: [],
-        });
+      // If no items detected, return early
+      if (!analysis.items || analysis.items.length === 0) {
+        return {
+          detectedItems: [],
+          summary: analysis.summary || 'No outdoor gear items were detected in the image.',
+        };
       }
-    }
 
-    return {
-      detectedItems: itemsWithMatches,
-      summary: analysis.summary,
-    };
+      // Filter out low-confidence detections
+      const highConfidenceItems = analysis.items.filter((item) => item.confidence >= 0.5);
+
+      // Find catalog matches for each detected item
+      const catalogService = new CatalogService(this.c);
+
+      // Process items in parallel for better performance
+      const matchPromises = highConfidenceItems.map(async (detected) => {
+        // Create search query combining name and description
+        const searchQuery = `${detected.name} ${detected.description}`.trim();
+
+        try {
+          const searchResult = await catalogService.vectorSearch(searchQuery, matchLimit);
+
+          return {
+            detected,
+            catalogMatches: searchResult.items.map((item) => ({
+              id: item.id,
+              name: item.name,
+              description: item.description,
+              weight: item.weight,
+              weightUnit: item.weightUnit,
+              image: item.images?.[0] || null,
+              similarity: item.similarity,
+            })),
+          };
+        } catch (error) {
+          console.error(`Failed to search catalog for item: ${detected.name}`, error);
+          // Include the detected item even if catalog search fails
+          return {
+            detected,
+            catalogMatches: [],
+          };
+        }
+      });
+
+      const itemsWithMatches = await Promise.all(matchPromises);
+
+      return {
+        detectedItems: itemsWithMatches,
+        summary: analysis.summary,
+      };
+    } catch (error) {
+      console.error('Error in detectAndMatchItems:', error);
+      throw new Error(
+        `Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
   /**
