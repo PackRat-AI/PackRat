@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { analyzeImageRoutes } from './analyzeImage';
 import { generatePacksRoute } from './generatePacksRoute';
 import { packItemsRoutes } from './items';
 import { packsListRoutes } from './list';
@@ -10,5 +11,6 @@ packsRoutes.route('/', packsListRoutes);
 packsRoutes.route('/', packRoutes);
 packsRoutes.route('/', packItemsRoutes);
 packsRoutes.route('/', generatePacksRoute);
+packsRoutes.route('/', analyzeImageRoutes);
 
 export { packsRoutes };

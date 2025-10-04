@@ -15,7 +15,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
@@ -177,6 +177,37 @@ export function PackDetailScreen() {
     });
   };
 
+  const handleAddFromPhoto = () => {
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: `/pack/${pack.id}`,
+          showSignInCopy: 'true',
+        },
+      });
+    }
+
+    Alert.alert(
+      'Add Items from Photo',
+      'Choose how to add items to your pack',
+      [
+        {
+          text: 'Take Photo',
+          onPress: () => router.push(`/pack/new-from-image?packId=${pack.id}`),
+        },
+        {
+          text: 'Select from Gallery',
+          onPress: () => router.push(`/pack/new-from-image?packId=${pack.id}&source=gallery`),
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
   // Prepare bottom sheet actions with consistent structure
   const actions = [
     {
@@ -211,6 +242,15 @@ export function PackDetailScreen() {
       show: isOwnedByUser,
       variant: 'secondary' as const,
       disabled: isAnalyzing,
+    },
+    {
+      key: 'add-from-photo',
+      label: 'Add from Photo',
+      icon: <Icon name="camera" color={colors.foreground} />,
+      onPress: handleAddFromPhoto,
+      show: isOwnedByUser,
+      variant: 'secondary' as const,
+      disabled: false,
     },
     {
       key: 'browse',
