@@ -11,6 +11,7 @@ import { useForm } from '@tanstack/react-form';
 import { useImageUpload } from 'expo-app/features/packs/hooks/useImageUpload';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -24,6 +25,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 import { useCreatePackItem } from '../hooks/useCreatePackItem';
 import type { DetectedItemWithMatches } from '../hooks/useImageDetection';
@@ -183,6 +185,14 @@ export function CreatePackFromImageScreen() {
     setIsAnalyzing(true);
     try {
       const remoteFileName = await uploadImage(selectedImage.fileName, selectedImage.uri);
+      if (!remoteFileName) {
+        Toast.show({
+          type: 'error',
+          text1: "Couldn't Upload Image",
+        });
+        setIsAnalyzing(false);
+        return;
+      }
       const result = await analyzeImageMutation.mutateAsync({
         image: remoteFileName,
         matchLimit: 3,
