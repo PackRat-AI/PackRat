@@ -7,10 +7,10 @@ import { packRoutes } from './pack';
 
 const packsRoutes = new OpenAPIHono();
 
+packsRoutes.route('/', analyzeImageRoutes);
 packsRoutes.route('/', packsListRoutes);
 packsRoutes.route('/', packRoutes);
 packsRoutes.route('/', packItemsRoutes);
 packsRoutes.route('/', generatePacksRoute);
-packsRoutes.route('/', analyzeImageRoutes);
 
 export { packsRoutes };
