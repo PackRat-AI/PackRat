@@ -148,7 +148,7 @@ export const CreatePackItemForm = ({
         options,
         cancelButtonIndex,
         containerStyle: {
-          backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
+          backgroundColor: colors.card,
         },
         textStyle: {
           color: colors.foreground,
