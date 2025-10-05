@@ -43,9 +43,9 @@ export const DetectedItemWithMatchesSchema = z
 
 export const AnalyzeImageRequestSchema = z
   .object({
-    imageUrl: z.string().url().openapi({
-      example: 'https://packrat-bucket.r2.dev/123-gear-layout.jpg',
-      description: 'URL of the image to analyze. Must be accessible publicly or a presigned URL.',
+    image: z.string().openapi({
+      example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg',
+      description: 'Object key of the image to analyze.',
     }),
     matchLimit: z.number().int().min(1).max(10).optional().default(3).openapi({
       example: 3,

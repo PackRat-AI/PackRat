@@ -25,10 +25,10 @@ import {
   View,
 } from 'react-native';
 import { z } from 'zod';
+import { useCreatePackItem } from '../hooks/useCreatePackItem';
 import type { DetectedItemWithMatches } from '../hooks/useImageDetection';
 import { useAnalyzeImage, useCreatePackFromImage } from '../hooks/useImageDetection';
-import { useCreatePackItem } from '../hooks/useCreatePackItem';
-import type { PackItemInput } from '../types';
+import { uploadImage } from '../utils';
 
 const packFromImageSchema = z.object({
   packName: z.string().optional(),
@@ -50,7 +50,7 @@ export function CreatePackFromImageScreen() {
   const analyzeImageMutation = useAnalyzeImage();
   const createPackMutation = useCreatePackFromImage();
   const createPackItem = useCreatePackItem();
-  
+
   const isAddingToExistingPack = Boolean(packId);
 
   const form = useForm<PackFromImageFormValues>({
@@ -73,13 +73,13 @@ export function CreatePackFromImageScreen() {
 
       try {
         const highConfidenceItems = analysisResult.filter(
-          (item) => item.detected.confidence >= (value.minConfidence || 0.5)
+          (item) => item.detected.confidence >= (value.minConfidence || 0.5),
         );
 
         if (highConfidenceItems.length === 0) {
           Alert.alert(
             'No Items Found',
-            'No items detected with sufficient confidence. Try a clearer image or lower confidence threshold.'
+            'No items detected with sufficient confidence. Try a clearer image or lower confidence threshold.',
           );
           return;
         }
@@ -134,7 +134,7 @@ export function CreatePackFromImageScreen() {
 
           // Get public URL for the image
           const imageUrl = `${ImageCacheManager.cacheDirectory}${imageFileName}`;
-          
+
           const result = await createPackMutation.mutateAsync({
             imageUrl,
             packName: value.packName,
@@ -151,7 +151,7 @@ export function CreatePackFromImageScreen() {
                 text: 'View Pack',
                 onPress: () => router.replace(`/pack/${result.pack.id}`),
               },
-            ]
+            ],
           );
         }
       } catch (error) {
@@ -182,9 +182,9 @@ export function CreatePackFromImageScreen() {
 
     setIsAnalyzing(true);
     try {
-      // For the demo, we'll use the local URI. In production, you'd upload first.
+      const remoteFileName = await uploadImage(selectedImage.fileName, selectedImage.uri);
       const result = await analyzeImageMutation.mutateAsync({
-        imageUrl: selectedImage.uri,
+        image: remoteFileName,
         matchLimit: 3,
       });
 
@@ -278,7 +278,7 @@ export function CreatePackFromImageScreen() {
                       className="h-64 items-center justify-center rounded-lg border border-dashed border-input bg-muted p-4"
                       onPress={handleAddImage}
                     >
-                      <Icon name="camera" size={48} color={colors.muted.foreground} />
+                      <Icon name="camera" size={48} color={colors.grey2} />
                       <Text className="mt-2 text-muted-foreground">Tap to add gear photo</Text>
                       <Text className="text-center text-xs text-muted-foreground mt-1">
                         Lay out your gear and take a clear photo for best results
@@ -413,7 +413,10 @@ export function CreatePackFromImageScreen() {
                       <FormItem>
                         <View className="flex-row items-center justify-between">
                           <Text>Make Pack Public</Text>
-                          <Switch value={field.state.value || false} onValueChange={field.handleChange} />
+                          <Switch
+                            value={field.state.value || false}
+                            onValueChange={field.handleChange}
+                          />
                         </View>
                       </FormItem>
                     )}
@@ -430,10 +433,10 @@ export function CreatePackFromImageScreen() {
                 >
                   {createPackMutation.isPending ? (
                     <ActivityIndicator size="small" color="#ffffff" />
+                  ) : isAddingToExistingPack ? (
+                    <Text>Add {highConfidenceItems.length} Items to Pack</Text>
                   ) : (
-                    isAddingToExistingPack 
-                      ? `Add ${highConfidenceItems.length} Items to Pack`
-                      : `Create Pack with ${highConfidenceItems.length} Items`
+                    <Text>Create Pack with {highConfidenceItems.length} Items</Text>
                   )}
                 </Button>
               </View>

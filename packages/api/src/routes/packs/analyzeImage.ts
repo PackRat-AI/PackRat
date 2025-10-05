@@ -1,3 +1,4 @@
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packItems, packs } from '@packrat/api/db/schema';
@@ -11,6 +12,8 @@ import { ErrorResponseSchema } from '@packrat/api/schemas/upload';
 import { ImageDetectionService } from '@packrat/api/services/imageDetectionService';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
+import { getEnv } from '@packrat/api/utils/env-validation';
+import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
 
 const analyzeImageRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
@@ -70,15 +73,26 @@ const analyzeImageRoute = createRoute({
 
 analyzeImageRoutes.openapi(analyzeImageRoute, async (c) => {
   try {
-    const { imageUrl, matchLimit } = c.req.valid('json');
+    const auth = c.get('user');
+    const { image, matchLimit } = c.req.valid('json');
 
-    // Validate image URL format
-    if (!imageUrl || !imageUrl.startsWith('http')) {
-      return c.json({ error: 'Invalid image URL format' }, 400);
+    if (!image.startsWith(`${auth.userId}-`)) {
+      return c.json({ error: 'Unauthorized' }, 403);
     }
+
+    const { PACKRAT_BUCKET_R2_BUCKET_NAME, PACKRAT_BUCKET } = getEnv(c);
+    const command = new GetObjectCommand({
+      Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
+      Key: image,
+    });
+    const imageUrl = await getPresignedUrl(c, command, {
+      expiresIn: 3600,
+    });
 
     const imageDetectionService = new ImageDetectionService(c);
     const result = await imageDetectionService.detectAndMatchItems(imageUrl, matchLimit);
+
+    await PACKRAT_BUCKET.delete(image);
 
     return c.json(result, 200);
   } catch (error) {
@@ -161,12 +175,12 @@ analyzeImageRoutes.openapi(createPackFromImageRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { imageUrl, packName, packDescription, isPublic, minConfidence } = c.req.valid('json');
+    const { image, packName, packDescription, isPublic, minConfidence } = c.req.valid('json');
 
     const imageDetectionService = new ImageDetectionService(c);
 
     // Analyze the image
-    const analysisResult = await imageDetectionService.detectAndMatchItems(imageUrl, 3);
+    const analysisResult = await imageDetectionService.detectAndMatchItems(image, 3);
 
     // Filter items by confidence threshold
     const highConfidenceItems = analysisResult.detectedItems.filter(

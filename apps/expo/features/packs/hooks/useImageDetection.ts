@@ -44,11 +44,11 @@ export interface CreatePackFromImageResponse {
  * Hook to analyze an image and detect gear items
  */
 export function useAnalyzeImage() {
-  return useMutation<AnalyzeImageResponse, Error, { imageUrl: string; matchLimit?: number }>({
-    mutationFn: async ({ imageUrl, matchLimit = 3 }) => {
+  return useMutation<AnalyzeImageResponse, Error, { image: string; matchLimit?: number }>({
+    mutationFn: async ({ image, matchLimit = 3 }) => {
       try {
         const response = await axiosInstance.post('/api/packs/analyze-image', {
-          imageUrl,
+          image,
           matchLimit,
         });
         return response.data;
