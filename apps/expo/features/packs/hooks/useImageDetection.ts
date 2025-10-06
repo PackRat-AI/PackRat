@@ -47,10 +47,16 @@ export function useAnalyzeImage() {
   return useMutation<AnalyzeImageResponse, Error, { image: string; matchLimit?: number }>({
     mutationFn: async ({ image, matchLimit = 3 }) => {
       try {
-        const response = await axiosInstance.post('/api/packs/analyze-image', {
-          image,
-          matchLimit,
-        });
+        const response = await axiosInstance.post(
+          '/api/packs/analyze-image',
+          {
+            image,
+            matchLimit,
+          },
+          {
+            timeout: 0,
+          },
+        );
         return response.data;
       } catch (error) {
         const { message } = handleApiError(error);
