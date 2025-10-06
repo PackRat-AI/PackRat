@@ -188,24 +188,20 @@ export function PackDetailScreen() {
       });
     }
 
-    Alert.alert(
-      'Add Items from Photo',
-      'Choose how to add items to your pack',
-      [
-        {
-          text: 'Take Photo',
-          onPress: () => router.push(`/pack/new-from-image?packId=${pack.id}`),
-        },
-        {
-          text: 'Select from Gallery',
-          onPress: () => router.push(`/pack/new-from-image?packId=${pack.id}&source=gallery`),
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+    Alert.alert('Add Items from Photo', 'Choose how to add items to your pack', [
+      {
+        text: 'Take Photo',
+        onPress: () => router.push(`/pack/new-from-image?packId=${pack.id}`),
+      },
+      {
+        text: 'Select from Gallery',
+        onPress: () => router.push(`/pack/new-from-image?packId=${pack.id}&source=gallery`),
+      },
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+    ]);
   };
 
   // Prepare bottom sheet actions with consistent structure
@@ -213,7 +209,7 @@ export function PackDetailScreen() {
     {
       key: 'ask-ai',
       label: 'Ask AI',
-      icon: <Icon name="message-outline" color={colors.foreground} />,
+      icon: <Icon size={20} name="message-outline" color={colors.foreground} />,
       onPress: handleAskAI,
       show: true,
       variant: 'secondary' as const,
@@ -222,7 +218,7 @@ export function PackDetailScreen() {
     {
       key: 'packing',
       label: isPackingMode ? 'Done Packing' : 'Start Packing',
-      icon: <Icon name="check" color={colors.foreground} />,
+      icon: <Icon size={20} name="check" color={colors.foreground} />,
       onPress: () => setIsPackingMode(!isPackingMode),
       show: isOwnedByUser,
       variant: isPackingMode ? ('primary' as const) : ('secondary' as const),
@@ -233,6 +229,7 @@ export function PackDetailScreen() {
       label: isAnalyzing ? 'Analyzing...' : 'Analyze Gaps',
       icon: (
         <Icon
+          size={20}
           ios={{ name: 'text.viewfinder' }}
           materialIcon={{ type: 'MaterialCommunityIcons', name: 'magnify-scan' }}
           color={colors.foreground}
@@ -246,7 +243,7 @@ export function PackDetailScreen() {
     {
       key: 'add-from-photo',
       label: 'Add from Photo',
-      icon: <Icon name="camera" color={colors.foreground} />,
+      icon: <Icon size={20} name="camera-outline" color={colors.foreground} />,
       onPress: handleAddFromPhoto,
       show: isOwnedByUser,
       variant: 'secondary' as const,
@@ -255,7 +252,7 @@ export function PackDetailScreen() {
     {
       key: 'browse',
       label: 'Browse Catalog',
-      icon: <Icon name="magnify" color={colors.foreground} />,
+      icon: <Icon size={20} name="magnify" color={colors.foreground} />,
       onPress: () => setIsCatalogModalVisible(true),
       show: isOwnedByUser,
       variant: 'secondary' as const,
@@ -285,7 +282,7 @@ export function PackDetailScreen() {
   }
 
   // Consistent sizing classes for action buttons (full-width inside 1/2 column)
-  const actionBtnClass = 'w-full h-14 flex-row items-center justify-center gap-2';
+  const actionBtnClass = 'w-full h-14 flex-row items-center justify-start gap-2';
 
   if (!isOwnedByUser && isLoading) {
     return (
@@ -440,11 +437,6 @@ export function PackDetailScreen() {
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
         <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
-          <View>
-            <Text variant="heading" className="text-center mb-6">
-              Actions
-            </Text>
-          </View>
           {/* Revamped consistent 2-column action layout */}
           <View className="flex-row flex-wrap -mx-1">
             {normalizedActions.map((action) => (
@@ -462,7 +454,7 @@ export function PackDetailScreen() {
                     className={actionBtnClass}
                   >
                     {action.icon}
-                    <Text numberOfLines={1}>{action.label}</Text>
+                    <Text className="text-sm font-normal pr-8">{action.label}</Text>
                   </Button>
                 )}
               </View>
