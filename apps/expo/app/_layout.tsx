@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
+import { COLORS } from '@packrat-ai/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
@@ -33,7 +34,9 @@ export {
 
 function RootLayout() {
   useInitialAndroidBarSync();
-  const { colorScheme, isDarkColorScheme, colors } = useColorScheme();
+  const { colorScheme, isDarkColorScheme } = useColorScheme();
+
+  const inverseColors = COLORS[isDarkColorScheme ? 'light' : 'dark'];
 
   const toastConfig = {
     success: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
@@ -42,7 +45,7 @@ function RootLayout() {
         style={{
           borderLeftWidth: 0,
           borderRadius: Platform.OS === 'ios' ? 12 : 4,
-          backgroundColor: colors.card,
+          backgroundColor: inverseColors.card,
           marginTop: Platform.OS === 'ios' ? 40 : 0,
           marginHorizontal: 12,
           shadowOpacity: Platform.OS === 'ios' ? 0.15 : 0,
@@ -53,7 +56,7 @@ function RootLayout() {
         text1Style={{
           fontSize: 15,
           fontWeight: '500',
-          color: colors.foreground,
+          color: inverseColors.foreground,
         }}
       />
     ),
@@ -63,7 +66,7 @@ function RootLayout() {
         style={{
           borderLeftWidth: 0,
           borderRadius: Platform.OS === 'ios' ? 12 : 4,
-          backgroundColor: colors.destructive,
+          backgroundColor: inverseColors.destructive,
           marginTop: Platform.OS === 'ios' ? 40 : 0,
           marginHorizontal: 12,
         }}
