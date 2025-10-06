@@ -75,7 +75,7 @@ export function CreatePackFromImageScreen() {
       }
 
       if (!analysisResult || analysisResult.length === 0) {
-        Alert.alert('Error', 'Please analyze the image first to detect items');
+        Alert.alert('Error', 'Please scan the image first to detect items');
         return;
       }
 
@@ -103,7 +103,7 @@ export function CreatePackFromImageScreen() {
                 consumable: false,
                 worn: false,
                 image: catalogItem.images?.[0],
-                notes: `Added from photo analysis (${Math.round(catalogItem.similarity * 100)}% match)`,
+                notes: `Added from photo scanning (${Math.round(catalogItem.similarity * 100)}% match)`,
                 catalogItemId: catalogItem.id,
               },
             });
@@ -149,7 +149,7 @@ export function CreatePackFromImageScreen() {
                 consumable: false,
                 worn: false,
                 image: catalogItem.images?.[0],
-                notes: `Added from photo analysis (${Math.round(catalogItem.similarity * 100)}% match)`,
+                notes: `Added from photo scanning (${Math.round(catalogItem.similarity * 100)}% match)`,
                 catalogItemId: catalogItem.id,
               },
             });
@@ -218,13 +218,13 @@ export function CreatePackFromImageScreen() {
         );
       } else {
         Alert.alert(
-          'Analysis Complete',
-          `Detected ${result.detectedItems.length} items in your image. Review the results below and adjust the pack name if needed.`,
+          'Scanning Complete',
+          `Scanned ${result.detectedItems.length} items in your image. Review the results below and adjust the pack name if needed.`,
         );
       }
     } catch (error) {
-      console.error('Error analyzing image:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to analyze image');
+      console.error('Error scanning image:', error);
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to scan image');
     } finally {
       setIsAnalyzing(false);
     }
@@ -259,7 +259,7 @@ export function CreatePackFromImageScreen() {
 
   const handleProceedToReview = () => {
     if (!analysisResult || analysisResult.length === 0) {
-      Alert.alert('Error', 'Please analyze the image first to detect items');
+      Alert.alert('Error', 'Please scan the image first to detect items');
       return;
     }
     setCurrentStep('review');
@@ -342,7 +342,7 @@ export function CreatePackFromImageScreen() {
                           className="absolute bottom-2 right-2 rounded-full bg-blue-500 px-4 py-2"
                           onPress={handleAnalyzeImage}
                         >
-                          <Text className="font-medium text-white">Analyze Items</Text>
+                          <Text className="font-medium text-white">Scan Items</Text>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -361,14 +361,14 @@ export function CreatePackFromImageScreen() {
                 </FormItem>
               </FormSection>
 
-              {/* Analysis Progress */}
+              {/* Scanning Progress */}
               {isAnalyzing && (
-                <FormSection ios={{ title: 'AI Analysis' }}>
+                <FormSection ios={{ title: 'Items Scanning' }}>
                   <FormItem>
                     <View className="flex-row items-center justify-center py-4">
                       <ActivityIndicator size="large" color={colors.primary} />
                       <Text className="ml-2 text-muted-foreground">
-                        Analyzing your gear photo...
+                        Scanning your gear photo...
                       </Text>
                     </View>
                   </FormItem>
