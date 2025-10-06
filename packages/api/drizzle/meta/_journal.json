@@ -232,6 +232,13 @@
       "when": 1758301845482,
       "tag": "0031_organic_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1759739632530,
+      "tag": "0032_secret_monster_badoon",
+      "breakpoints": true
     }
   ]
 }
