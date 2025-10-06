@@ -52,6 +52,7 @@ export function CreatePackFromImageScreen() {
   const [analysisResult, setAnalysisResult] = useState<DetectedItemWithMatches[] | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
+  const [currentStep, setCurrentStep] = useState<'selection' | 'review'>('selection');
 
   const analyzeImageMutation = useAnalyzeImage();
   const createPackMutation = useCreatePackFromImage();
@@ -243,6 +244,7 @@ export function CreatePackFromImageScreen() {
     }
     setAnalysisResult(null);
     setSelectedCatalogItems(new Set());
+    setCurrentStep('selection');
   };
 
   const handleCatalogItemToggle = (item: CatalogItem) => {
@@ -253,6 +255,18 @@ export function CreatePackFromImageScreen() {
       newSelected.add(item.id);
     }
     setSelectedCatalogItems(newSelected);
+  };
+
+  const handleProceedToReview = () => {
+    if (!analysisResult || analysisResult.length === 0) {
+      Alert.alert('Error', 'Please analyze the image first to detect items');
+      return;
+    }
+    setCurrentStep('review');
+  };
+
+  const handleBackToSelection = () => {
+    setCurrentStep('selection');
   };
 
   const displayImage = selectedImage ? { uri: selectedImage.uri } : null;
@@ -288,7 +302,11 @@ export function CreatePackFromImageScreen() {
     <>
       <Stack.Screen
         options={{
-          title: isAddingToExistingPack ? 'Add Items from Photo' : 'Create Pack from Photo',
+          title: currentStep === 'selection' 
+            ? 'Select Photo'
+            : isAddingToExistingPack 
+              ? 'Review Items to Add' 
+              : 'Review Pack Items',
           headerBackVisible: true,
         }}
       />
@@ -298,7 +316,8 @@ export function CreatePackFromImageScreen() {
       >
         <ScrollView className="flex-1 bg-background">
           <View className="p-4">
-            <Form>
+            {currentStep === 'selection' ? (
+              <Form>
               {/* Image Upload Section */}
               <FormSection
                 ios={{ title: 'Gear Photo' }}
@@ -356,127 +375,161 @@ export function CreatePackFromImageScreen() {
                 </FormSection>
               )}
 
-              {/* Catalog Items Selection */}
-              {uniqueCatalogItems.length > 0 && (
-                <FormSection
-                  ios={{ title: 'Select Items to Add' }}
-                  footnote={`Found ${uniqueCatalogItems.length} catalog matches. Tap to select items for your pack.`}
-                >
+
+
+                {/* Step 1 Action Button */}
+                <View className="p-4 pb-8">
+                  <Button
+                    onPress={handleProceedToReview}
+                    disabled={!selectedImage || !analysisResult}
+                    className="w-full"
+                  >
+                    <Text>Continue to Review ({uniqueCatalogItems.length} items found)</Text>
+                  </Button>
+                </View>
+              </Form>
+            ) : (
+              /* Step 2: Review */
+              <Form>
+                {/* Step Navigation */}
+                <FormSection ios={{ title: 'Review Items' }}>
                   <FormItem>
-                    <View className="gap-2">
-                      {uniqueCatalogItems.map((item) => (
-                        <HorizontalCatalogItemCard
-                          key={item.id}
-                          item={item}
-                          selected={selectedCatalogItems.has(item.id)}
-                          onSelect={handleCatalogItemToggle}
-                        />
-                      ))}
+                    <View className="flex-row items-center justify-between p-4 bg-muted rounded-lg">
+                      <View>
+                        <Text className="font-medium">Selected Photo</Text>
+                        <Text className="text-sm text-muted-foreground">
+                          Found {uniqueCatalogItems.length} catalog matches
+                        </Text>
+                      </View>
+                      <Button variant="outline" size="sm" onPress={handleBackToSelection}>
+                        <Text>Change Photo</Text>
+                      </Button>
                     </View>
                   </FormItem>
                 </FormSection>
-              )}
 
-              {/* Pack Details Form - only show when creating new pack */}
-              {!isAddingToExistingPack && (
-                <FormSection
-                  ios={{ title: 'Pack Details' }}
-                  footnote="Enter basic information for your new pack"
-                >
-                  <form.Field name="packName">
-                    {(field) => (
-                      <FormItem>
-                        <TextField
-                          placeholder="Pack Name"
-                          value={field.state.value || ''}
-                          onBlur={field.handleBlur}
-                          onChangeText={field.handleChange}
-                          leftView={
-                            <View className="ios:pl-2 justify-center pl-2">
-                              <Icon name="backpack" size={16} color={colors.grey3} />
-                            </View>
-                          }
-                        />
-                        {field.state.meta.errors.length > 0 && (
-                          <Text className="text-destructive text-sm mt-1">
-                            {field.state.meta.errors[0]}
-                          </Text>
-                        )}
-                      </FormItem>
-                    )}
-                  </form.Field>
-
-                  <form.Field name="packDescription">
-                    {(field) => (
-                      <FormItem>
-                        <TextField
-                          placeholder="Description (optional)"
-                          value={field.state.value || ''}
-                          onBlur={field.handleBlur}
-                          onChangeText={field.handleChange}
-                          multiline
-                          numberOfLines={3}
-                          leftView={
-                            <View className="ios:pl-2 justify-center pl-2">
-                              <Icon name="file-text" size={16} color={colors.grey3} />
-                            </View>
-                          }
-                        />
-                      </FormItem>
-                    )}
-                  </form.Field>
-                </FormSection>
-              )}
-
-              {/* Settings */}
-              <FormSection ios={{ title: 'Settings' }}>
-                <form.Field name="minConfidence">
-                  {(field) => (
+                {/* Catalog Items Selection */}
+                {uniqueCatalogItems.length > 0 && (
+                  <FormSection
+                    ios={{ title: 'Select Items to Add' }}
+                    footnote={`Found ${uniqueCatalogItems.length} catalog matches. Tap to select items for your pack.`}
+                  >
                     <FormItem>
-                      <View className="flex-row items-center justify-between">
-                        <Text>Confidence Threshold: {Math.round(field.state.value * 100)}%</Text>
-                        <Text className="text-sm text-muted-foreground">
-                          {highConfidenceItems.length} items
-                        </Text>
+                      <View className="gap-2">
+                        {uniqueCatalogItems.map((item) => (
+                          <HorizontalCatalogItemCard
+                            key={item.id}
+                            item={item}
+                            selected={selectedCatalogItems.has(item.id)}
+                            onSelect={handleCatalogItemToggle}
+                          />
+                        ))}
                       </View>
                     </FormItem>
-                  )}
-                </form.Field>
+                  </FormSection>
+                )}
 
+                {/* Pack Details Form - only show when creating new pack */}
                 {!isAddingToExistingPack && (
-                  <form.Field name="isPublic">
+                  <FormSection
+                    ios={{ title: 'Pack Details' }}
+                    footnote="Enter basic information for your new pack"
+                  >
+                    <form.Field name="packName">
+                      {(field) => (
+                        <FormItem>
+                          <TextField
+                            placeholder="Pack Name"
+                            value={field.state.value || ''}
+                            onBlur={field.handleBlur}
+                            onChangeText={field.handleChange}
+                            leftView={
+                              <View className="ios:pl-2 justify-center pl-2">
+                                <Icon name="backpack" size={16} color={colors.grey3} />
+                              </View>
+                            }
+                          />
+                          {field.state.meta.errors.length > 0 && (
+                            <Text className="text-destructive text-sm mt-1">
+                              {field.state.meta.errors[0]}
+                            </Text>
+                          )}
+                        </FormItem>
+                      )}
+                    </form.Field>
+
+                    <form.Field name="packDescription">
+                      {(field) => (
+                        <FormItem>
+                          <TextField
+                            placeholder="Description (optional)"
+                            value={field.state.value || ''}
+                            onBlur={field.handleBlur}
+                            onChangeText={field.handleChange}
+                            multiline
+                            numberOfLines={3}
+                            leftView={
+                              <View className="ios:pl-2 justify-center pl-2">
+                                <Icon name="file-text" size={16} color={colors.grey3} />
+                              </View>
+                            }
+                          />
+                        </FormItem>
+                      )}
+                    </form.Field>
+                  </FormSection>
+                )}
+
+                {/* Settings */}
+                <FormSection ios={{ title: 'Settings' }}>
+                  <form.Field name="minConfidence">
                     {(field) => (
                       <FormItem>
                         <View className="flex-row items-center justify-between">
-                          <Text>Make Pack Public</Text>
-                          <Switch
-                            value={field.state.value || false}
-                            onValueChange={field.handleChange}
-                          />
+                          <Text>Confidence Threshold: {Math.round(field.state.value * 100)}%</Text>
+                          <Text className="text-sm text-muted-foreground">
+                            {selectedCatalogItems.size} items selected
+                          </Text>
                         </View>
                       </FormItem>
                     )}
                   </form.Field>
-                )}
-              </FormSection>
 
-              {/* Action Button */}
-              <View className="p-4 pb-8">
-                <Button
-                  onPress={form.handleSubmit}
-                  disabled={!selectedImage || !analysisResult || selectedCatalogItems.size === 0 || createPackMutation.isPending}
-                  className="w-full"
-                >
-                  {createPackMutation.isPending ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
-                  ) : isAddingToExistingPack ? (
-                    <Text>Add {selectedCatalogItems.size} Items to Pack</Text>
-                  ) : (
-                    <Text>Create Pack with {selectedCatalogItems.size} Items</Text>
+                  {!isAddingToExistingPack && (
+                    <form.Field name="isPublic">
+                      {(field) => (
+                        <FormItem>
+                          <View className="flex-row items-center justify-between">
+                            <Text>Make Pack Public</Text>
+                            <Switch
+                              value={field.state.value || false}
+                              onValueChange={field.handleChange}
+                            />
+                          </View>
+                        </FormItem>
+                      )}
+                    </form.Field>
                   )}
-                </Button>
-              </View>
-            </Form>
+                </FormSection>
+
+                {/* Final Action Button */}
+                <View className="p-4 pb-8">
+                  <Button
+                    onPress={form.handleSubmit}
+                    disabled={selectedCatalogItems.size === 0 || createPackMutation.isPending}
+                    className="w-full"
+                  >
+                    {createPackMutation.isPending ? (
+                      <ActivityIndicator size="small" color="#ffffff" />
+                    ) : isAddingToExistingPack ? (
+                      <Text>Add {selectedCatalogItems.size} Items to Pack</Text>
+                    ) : (
+                      <Text>Create Pack with {selectedCatalogItems.size} Items</Text>
+                    )}
+                  </Button>
+                </View>
+              </Form>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
