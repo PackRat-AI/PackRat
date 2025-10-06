@@ -28,9 +28,12 @@ import {
 import Toast from 'react-native-toast-message';
 import { z } from 'zod';
 import { useCreatePackItem } from '../hooks/useCreatePackItem';
+import { useCreatePack } from '../hooks/useCreatePack';
 import type { DetectedItemWithMatches } from '../hooks/useImageDetection';
 import { useAnalyzeImage, useCreatePackFromImage } from '../hooks/useImageDetection';
 import { uploadImage } from '../utils';
+import type { CatalogItem } from '../../catalog/types';
+import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 
 const packFromImageSchema = z.object({
   packName: z.string().optional(),
@@ -48,10 +51,12 @@ export function CreatePackFromImageScreen() {
   const { selectedImage, pickImage, takePhoto, deleteImage } = useImageUpload();
   const [analysisResult, setAnalysisResult] = useState<DetectedItemWithMatches[] | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
 
   const analyzeImageMutation = useAnalyzeImage();
   const createPackMutation = useCreatePackFromImage();
   const createPackItem = useCreatePackItem();
+  const createPack = useCreatePack();
 
   const isAddingToExistingPack = Boolean(packId);
 
@@ -73,46 +78,39 @@ export function CreatePackFromImageScreen() {
         return;
       }
 
-      try {
-        const highConfidenceItems = analysisResult.filter(
-          (item) => item.detected.confidence >= (value.minConfidence || 0.5),
+      if (selectedCatalogItems.size === 0) {
+        Alert.alert(
+          'No Items Selected',
+          'Please select at least one item to add to your pack.',
         );
+        return;
+      }
 
-        if (highConfidenceItems.length === 0) {
-          Alert.alert(
-            'No Items Found',
-            'No items detected with sufficient confidence. Try a clearer image or lower confidence threshold.',
-          );
-          return;
-        }
-
+      try {
         if (isAddingToExistingPack) {
-          // Add items to existing pack
-          for (const itemWithMatches of highConfidenceItems) {
-            const { detected, catalogMatches } = itemWithMatches;
-            const bestMatch = catalogMatches[0]; // Highest similarity match
-
+          // Add selected catalog items to existing pack
+          for (const catalogItem of selectedCatalogItemsList) {
             createPackItem({
               packId: packId as string,
               itemData: {
-                name: bestMatch?.name || detected.name,
-                description: bestMatch?.description || detected.description,
-                weight: bestMatch?.weight || 100,
-                weightUnit: bestMatch?.weightUnit || 'g',
-                quantity: detected.quantity,
-                category: detected.category,
+                name: catalogItem.name,
+                description: catalogItem.description,
+                weight: catalogItem.weight || 100,
+                weightUnit: catalogItem.weightUnit || 'g',
+                quantity: 1, // Default quantity
+                category: catalogItem.categories?.[0] || 'general',
                 consumable: false,
                 worn: false,
-                image: bestMatch?.image,
-                notes: `AI detected from image (confidence: ${Math.round(detected.confidence * 100)}%)`,
-                catalogItemId: bestMatch?.id,
+                image: catalogItem.images?.[0],
+                notes: `Added from photo analysis (${Math.round(catalogItem.similarity * 100)}% match)`,
+                catalogItemId: catalogItem.id,
               },
             });
           }
 
           Alert.alert(
             'Success!',
-            `Added ${highConfidenceItems.length} items to your pack from the image.`,
+            `Added ${selectedCatalogItems.size} items to your pack from the image.`,
             [
               {
                 text: 'View Pack',
@@ -121,37 +119,48 @@ export function CreatePackFromImageScreen() {
             ],
           );
         } else {
-          // Create new pack with items
+          // Create new pack with selected catalog items
           if (!value.packName) {
             Alert.alert('Error', 'Pack name is required when creating a new pack');
             return;
           }
 
-          // Upload image to get URL if needed
-          const imageFileName = await handleImageUpload();
-          if (!imageFileName) {
-            Alert.alert('Error', 'Failed to upload image');
-            return;
-          }
-
-          // Get public URL for the image
-          const imageUrl = `${ImageCacheManager.cacheDirectory}${imageFileName}`;
-
-          const result = await createPackMutation.mutateAsync({
-            imageUrl,
-            packName: value.packName,
-            packDescription: value.packDescription || '',
+          // Create the pack
+          const newPackId = createPack({
+            name: value.packName,
+            description: value.packDescription || '',
+            category: 'mixed',
             isPublic: value.isPublic || false,
-            minConfidence: value.minConfidence,
+            tags: [],
           });
+
+          // Add selected catalog items to the new pack
+          for (const catalogItem of selectedCatalogItemsList) {
+            createPackItem({
+              packId: newPackId,
+              itemData: {
+                name: catalogItem.name,
+                description: catalogItem.description,
+                weight: catalogItem.weight || 100,
+                weightUnit: catalogItem.weightUnit || 'g',
+                quantity: 1, // Default quantity
+                category: catalogItem.categories?.[0] || 'general',
+                consumable: false,
+                worn: false,
+                image: catalogItem.images?.[0],
+                notes: `Added from photo analysis (${Math.round(catalogItem.similarity * 100)}% match)`,
+                catalogItemId: catalogItem.id,
+              },
+            });
+          }
 
           Alert.alert(
             'Success!',
-            `Pack "${result.pack.name}" created with ${result.pack.itemsCount} items detected from your image.`,
+            `Pack "${value.packName}" created with ${selectedCatalogItems.size} items from your image.`,
             [
               {
                 text: 'View Pack',
-                onPress: () => router.replace(`/pack/${result.pack.id}`),
+                onPress: () => router.replace(`/pack/${newPackId}`),
               },
             ],
           );
@@ -199,6 +208,7 @@ export function CreatePackFromImageScreen() {
       });
 
       setAnalysisResult(result.detectedItems);
+      setSelectedCatalogItems(new Set()); // Reset selection when analyzing new image
 
       if (result.detectedItems.length === 0) {
         Alert.alert(
@@ -232,6 +242,17 @@ export function CreatePackFromImageScreen() {
       deleteImage(selectedImage.uri);
     }
     setAnalysisResult(null);
+    setSelectedCatalogItems(new Set());
+  };
+
+  const handleCatalogItemToggle = (item: CatalogItem) => {
+    const newSelected = new Set(selectedCatalogItems);
+    if (newSelected.has(item.id)) {
+      newSelected.delete(item.id);
+    } else {
+      newSelected.add(item.id);
+    }
+    setSelectedCatalogItems(newSelected);
   };
 
   const displayImage = selectedImage ? { uri: selectedImage.uri } : null;
@@ -239,6 +260,29 @@ export function CreatePackFromImageScreen() {
     analysisResult?.filter(
       (item) => item.detected.confidence >= form.getFieldValue('minConfidence'),
     ) || [];
+
+  // Get all catalog items from analysis results with their similarity scores
+  const allCatalogItems: (CatalogItem & { similarity: number })[] = 
+    analysisResult?.flatMap(item => 
+      item.catalogMatches.map(match => ({
+        ...match,
+        similarity: match.similarity,
+      }))
+    ) || [];
+
+  // Get unique catalog items (in case same item matches multiple detections)
+  const uniqueCatalogItems = allCatalogItems.reduce((acc, item) => {
+    const existing = acc.find(existing => existing.id === item.id);
+    if (!existing || item.similarity > existing.similarity) {
+      acc = acc.filter(existing => existing.id !== item.id);
+      acc.push(item);
+    }
+    return acc;
+  }, [] as (CatalogItem & { similarity: number })[]);
+
+  const selectedCatalogItemsList = uniqueCatalogItems.filter(item => 
+    selectedCatalogItems.has(item.id)
+  );
 
   return (
     <>
@@ -312,41 +356,23 @@ export function CreatePackFromImageScreen() {
                 </FormSection>
               )}
 
-              {/* Analysis Results */}
-              {analysisResult && analysisResult.length > 0 && (
+              {/* Catalog Items Selection */}
+              {uniqueCatalogItems.length > 0 && (
                 <FormSection
-                  ios={{ title: 'Detected Items' }}
-                  footnote={`Found ${analysisResult.length} items (${highConfidenceItems.length} above confidence threshold)`}
+                  ios={{ title: 'Select Items to Add' }}
+                  footnote={`Found ${uniqueCatalogItems.length} catalog matches. Tap to select items for your pack.`}
                 >
                   <FormItem>
-                    <ScrollView horizontal className="py-2">
-                      {analysisResult.map((item, index) => (
-                        <View
-                          key={`${item.detected.name}-${index}`}
-                          className={`mr-3 rounded-lg border p-3 w-48 ${
-                            item.detected.confidence >= form.getFieldValue('minConfidence')
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                              : 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
-                          }`}
-                        >
-                          <Text className="font-semibold text-sm" numberOfLines={1}>
-                            {item.detected.name}
-                          </Text>
-                          <Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>
-                            {item.detected.description}
-                          </Text>
-                          <Text className="text-xs mt-1">
-                            Confidence: {Math.round(item.detected.confidence * 100)}%
-                          </Text>
-                          <Text className="text-xs">Category: {item.detected.category}</Text>
-                          {item.catalogMatches.length > 0 && (
-                            <Text className="text-xs text-green-600 dark:text-green-400 mt-1">
-                              ✓ Found in catalog
-                            </Text>
-                          )}
-                        </View>
+                    <View className="gap-2">
+                      {uniqueCatalogItems.map((item) => (
+                        <HorizontalCatalogItemCard
+                          key={item.id}
+                          item={item}
+                          selected={selectedCatalogItems.has(item.id)}
+                          onSelect={handleCatalogItemToggle}
+                        />
                       ))}
-                    </ScrollView>
+                    </View>
                   </FormItem>
                 </FormSection>
               )}
@@ -438,15 +464,15 @@ export function CreatePackFromImageScreen() {
               <View className="p-4 pb-8">
                 <Button
                   onPress={form.handleSubmit}
-                  disabled={!selectedImage || !analysisResult || createPackMutation.isPending}
+                  disabled={!selectedImage || !analysisResult || selectedCatalogItems.size === 0 || createPackMutation.isPending}
                   className="w-full"
                 >
                   {createPackMutation.isPending ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : isAddingToExistingPack ? (
-                    <Text>Add {highConfidenceItems.length} Items to Pack</Text>
+                    <Text>Add {selectedCatalogItems.size} Items to Pack</Text>
                   ) : (
-                    <Text>Create Pack with {highConfidenceItems.length} Items</Text>
+                    <Text>Create Pack with {selectedCatalogItems.size} Items</Text>
                   )}
                 </Button>
               </View>
