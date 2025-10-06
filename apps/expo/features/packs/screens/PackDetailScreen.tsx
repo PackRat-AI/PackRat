@@ -1,3 +1,4 @@
+import { useActionSheet } from '@expo/react-native-action-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
@@ -16,7 +17,12 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
+import {
+  useImagePicker,
+  usePackDetailsFromApi,
+  usePackDetailsFromStore,
+  usePackGapAnalysis,
+} from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
 
@@ -43,6 +49,9 @@ export function PackDetailScreen() {
     isPending: isAnalyzing,
     reset: resetAnalysis,
   } = usePackGapAnalysis();
+
+  const { pickImage, takePhoto } = useImagePicker();
+  const { showActionSheetWithOptions } = useActionSheet();
 
   const packFromStore = usePackDetailsFromStore(id as string);
   const {
@@ -187,21 +196,51 @@ export function PackDetailScreen() {
         },
       });
     }
+    const options = ['Take Photo', 'Choose from Library', 'Cancel'];
+    const cancelButtonIndex = 2;
 
-    Alert.alert('Add Items from Photo', 'Choose how to add items to your pack', [
+    showActionSheetWithOptions(
       {
-        text: 'Take Photo',
-        onPress: () => router.push(`/pack/new-from-image?packId=${pack.id}`),
+        options,
+        cancelButtonIndex,
+        containerStyle: {
+          backgroundColor: colors.card,
+        },
+        textStyle: {
+          color: colors.foreground,
+        },
       },
-      {
-        text: 'Select from Gallery',
-        onPress: () => router.push(`/pack/new-from-image?packId=${pack.id}&source=gallery`),
+      async (selectedIndex) => {
+        try {
+          switch (selectedIndex) {
+            case 0: {
+              // Take Photo
+              const fileInfo = await takePhoto();
+              router.push({
+                pathname: '/pack/items-scan',
+                params: { packId: pack.id, ...fileInfo },
+              });
+              break;
+            }
+            case 1: {
+              // Choose from Library
+              const fileInfo = await pickImage();
+              router.push({
+                pathname: '/pack/items-scan',
+                params: { packId: pack.id, ...fileInfo },
+              });
+              break;
+            }
+            case cancelButtonIndex:
+              // Canceled
+              return;
+          }
+        } catch (err) {
+          console.error('Error handling image:', err);
+          Alert.alert('Error', 'Failed to process image. Please try again.');
+        }
       },
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-    ]);
+    );
   };
 
   // Prepare bottom sheet actions with consistent structure
