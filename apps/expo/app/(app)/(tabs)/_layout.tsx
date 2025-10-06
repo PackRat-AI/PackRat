@@ -31,6 +31,7 @@ export default function TabLayout() {
       >
         <Tabs.Screen name="(home)" options={INDEX_OPTIONS} />
         <Tabs.Screen name="packs" options={PACK_LIST_OPTIONS} />
+        <Tabs.Screen name="trips" options={TRIP_LIST_OPTIONS} />
         <Tabs.Screen name="catalog" options={ITEMS_CATALOG_OPTIONS} />
         <Tabs.Screen name="profile" options={PROFILE_OPTIONS} />
         <Tabs.Screen
@@ -53,6 +54,13 @@ const PACK_LIST_OPTIONS = {
   title: 'Packs',
   tabBarIcon: ({ color, size }: { color: string; size: number }) => (
     <Icon name="backpack" size={size} color={color} />
+  ),
+} as const;
+
+const TRIP_LIST_OPTIONS = {
+  title: 'Trips',
+  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+    <Icon name="map" size={size} color={color} />
   ),
 } as const;
 
