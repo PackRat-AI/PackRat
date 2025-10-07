@@ -172,8 +172,8 @@ export function ItemsScanScreen() {
           ) : (
             <View className="flex-1 items-center justify-center px-8 py-16">
               <View className="items-center mb-8">
-                <View className="bg-muted rounded-full p-6 mb-4">
-                  <Icon name="search" size={48} color={colors.muted_foreground} />
+                <View className="bg-neutral-300 dark:bg-neutral-600 rounded-full p-6 mb-4">
+                  <Icon name="camera-outline" size={48} color={colors.grey} />
                 </View>
                 <Text className="text-xl font-semibold text-center mb-2">No Items Found</Text>
                 <Text className="text-center text-muted-foreground text-base leading-6">
@@ -182,11 +182,11 @@ export function ItemsScanScreen() {
                 </Text>
               </View>
 
-              <View className="w-full space-y-3">
+              <View className="w-full gap-3 mb-4">
                 <Text className="text-sm font-medium text-foreground mb-2">
                   Tips for better scanning:
                 </Text>
-                <View className="flex-row items-start space-x-3 mb-2">
+                <View className="flex-row items-start gap-3 mb-2">
                   <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
                     <Icon name="lightbulb" size={12} color={colors.primary} />
                   </View>
@@ -194,15 +194,20 @@ export function ItemsScanScreen() {
                     Spread items on a contrasting background
                   </Text>
                 </View>
-                <View className="flex-row items-start space-x-3 mb-2">
+                <View className="flex-row items-start gap-3 mb-2">
                   <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
-                    <Icon name="sun" size={12} color={colors.primary} />
+                    <Icon
+                      materialIcon={{ type: 'MaterialIcons', name: 'wb-sunny' }}
+                      ios={{ name: 'sun.max' }}
+                      size={12}
+                      color={colors.primary}
+                    />
                   </View>
                   <Text className="flex-1 text-sm text-muted-foreground">
                     Use good lighting (natural light works best)
                   </Text>
                 </View>
-                <View className="flex-row items-start space-x-3 mb-2">
+                <View className="flex-row items-start gap-3 mb-2">
                   <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
                     <Icon name="eye" size={12} color={colors.primary} />
                   </View>
@@ -212,10 +217,11 @@ export function ItemsScanScreen() {
                 </View>
               </View>
 
-              <Button variant="outline" onPress={handleAddImage} className="mt-6 w-full">
-                <Icon name="camera" size={16} color={colors.foreground} />
-                <Text className="ml-2">Try Another Photo</Text>
-              </Button>
+              <View className="w-full">
+                <Button variant="secondary" onPress={handleAddImage}>
+                  <Text>Try Another Photo</Text>
+                </Button>
+              </View>
             </View>
           )
         ) : (
