@@ -1,6 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { uploadImage } from '../utils';
+import type { SelectedImage } from './useImagePicker';
 
 export interface DetectedItem {
   name: string;
@@ -15,9 +17,7 @@ export interface DetectedItemWithMatches {
   catalogMatches: (CatalogItem & { similarity: number })[];
 }
 
-export interface AnalyzeImageResponse {
-  detectedItems: DetectedItemWithMatches[];
-}
+export type AnalyzeImageResponse = DetectedItemWithMatches[];
 
 export interface CreatePackFromImageResponse {
   pack: {
@@ -34,8 +34,16 @@ export interface CreatePackFromImageResponse {
  * Hook to analyze an image and detect gear items
  */
 export function useImageDetection() {
-  return useMutation<AnalyzeImageResponse, Error, { image: string; matchLimit?: number }>({
-    mutationFn: async ({ image, matchLimit = 3 }) => {
+  return useMutation<
+    AnalyzeImageResponse,
+    Error,
+    { selectedImage: SelectedImage; matchLimit?: number }
+  >({
+    mutationFn: async ({ selectedImage, matchLimit = 3 }) => {
+      const image = await uploadImage(selectedImage.fileName, selectedImage.uri);
+      if (!image) {
+        throw new Error("Couldn't upload image");
+      }
       try {
         const response = await axiosInstance.post(
           '/api/packs/analyze-image',

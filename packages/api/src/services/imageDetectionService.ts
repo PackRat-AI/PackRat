@@ -89,9 +89,7 @@ export class ImageDetectionService {
   async detectAndMatchItems(
     imageUrl: string,
     matchLimit: number = 3,
-  ): Promise<{
-    detectedItems: DetectedItemWithMatches[];
-  }> {
+  ): Promise<DetectedItemWithMatches[]> {
     try {
       // First, detect items in the image
       const analysis = await this.analyzeImage(imageUrl);
@@ -123,9 +121,7 @@ export class ImageDetectionService {
         }),
       );
 
-      return {
-        detectedItems: itemsWithMatches,
-      };
+      return itemsWithMatches;
     } catch (error) {
       console.error('Error in detectAndMatchItems:', error);
       throw new Error(

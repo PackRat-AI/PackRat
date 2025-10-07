@@ -55,9 +55,7 @@ export const AnalyzeImageRequestSchema = z
   .openapi('AnalyzeImageRequest');
 
 export const AnalyzeImageResponseSchema = z
-  .object({
-    detectedItems: z.array(DetectedItemWithMatchesSchema),
-  })
+  .array(DetectedItemWithMatchesSchema)
   .openapi('AnalyzeImageResponse');
 
 export const CreatePackFromImageRequestSchema = z

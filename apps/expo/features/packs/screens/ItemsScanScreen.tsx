@@ -10,9 +10,8 @@ import Toast from 'react-native-toast-message';
 import type { CatalogItem } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 import { useBulkAddCatalogItems } from '../hooks';
-import type { DetectedItemWithMatches } from '../hooks/useImageDetection';
 import { useImageDetection } from '../hooks/useImageDetection';
-import { uploadImage } from '../utils';
+import { ErrorState } from 'expo-app/components/ErrorState';
 
 export function ItemsScanScreen() {
   const router = useRouter();
@@ -20,47 +19,21 @@ export function ItemsScanScreen() {
   const { packId, ...fileInfo } = useLocalSearchParams();
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
   const { showActionSheetWithOptions } = useActionSheet();
-  const [analysisResult, setAnalysisResult] = useState<DetectedItemWithMatches[] | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
 
-  const analyzeImageMutation = useImageDetection();
+  const { mutate: scanImage, isPending: isScanning, data } = useImageDetection();
   const { addItemsToPack } = useBulkAddCatalogItems();
+  
 
   const handleAnalyzeImage = useCallback(async () => {
     assertNonNull(selectedImage);
-    setIsAnalyzing(true);
-    try {
-      const remoteFileName = await uploadImage(selectedImage.fileName, selectedImage.uri);
-      if (!remoteFileName) {
-        Toast.show({
-          type: 'error',
-          text1: "Couldn't Upload Image",
-        });
-        setIsAnalyzing(false);
-        return;
-      }
-      const result = await analyzeImageMutation.mutateAsync({
-        image: remoteFileName,
-        matchLimit: 1,
-      });
+    scanImage({
+      selectedImage,
+      matchLimit: 1,
+    });
 
-      setAnalysisResult(result.detectedItems);
-      setSelectedCatalogItems(new Set()); // Reset selection when analyzing new image
-
-      if (result.detectedItems.length === 0) {
-        Alert.alert(
-          'No Items Detected',
-          'No outdoor gear items were detected in this image. Try taking a clearer photo with better lighting, or ensure your gear is laid out visibly.',
-        );
-      }
-    } catch (error) {
-      console.error('Error analyzing image:', error);
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to analyze image');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  }, [selectedImage, analyzeImageMutation]);
+    setSelectedCatalogItems(new Set()); // Reset selection when analyzing new image
+  }, [selectedImage, scanImage]);
 
   useEffect(() => {
     handleAnalyzeImage();
@@ -119,7 +92,7 @@ export function ItemsScanScreen() {
 
   // Get all catalog items from analysis results with their similarity scores
   const allCatalogItems: (CatalogItem & { similarity: number })[] =
-    analysisResult?.flatMap((item) =>
+    data?.flatMap((item) =>
       item.catalogMatches.map((match) => ({
         ...match,
         similarity: match.similarity * item.detected.confidence,
@@ -173,27 +146,34 @@ export function ItemsScanScreen() {
       </View>
 
       <ScrollView className="flex-1 bg-background">
-        {/* Analysis Progress */}
-        {isAnalyzing && (
+        {isScanning ? (
           <View className="items-center mt-32 justify-center py-4">
             <ActivityIndicator size="large" color={colors.primary} />
             <Text className="ml-2 text-muted-foreground">Scanning for items...</Text>
           </View>
-        )}
-
-        {/* Catalog Items Selection */}
-        {uniqueCatalogItems.length > 0 && (
-          <View className="gap-2 p-4">
-            <Text variant="footnote">Identified {uniqueCatalogItems.length} items</Text>
-            {uniqueCatalogItems.map((item) => (
-              <HorizontalCatalogItemCard
-                key={item.id}
-                item={item}
-                selected={selectedCatalogItems.has(item.id)}
-                onSelect={handleCatalogItemToggle}
-              />
-            ))}
-          </View>
+        ) : data ? (
+          uniqueCatalogItems.length > 0 ? (
+            <View className="gap-2 p-4">
+              <Text variant="footnote">Identified {uniqueCatalogItems.length} items</Text>
+              {uniqueCatalogItems.map((item) => (
+                <HorizontalCatalogItemCard
+                  key={item.id}
+                  item={item}
+                  selected={selectedCatalogItems.has(item.id)}
+                  onSelect={handleCatalogItemToggle}
+                />
+              ))}
+            </View>
+          ) : (
+            <Text>No items detected in the image.</Text>
+          )
+        ) : (
+          <ErrorState
+            title="An Error Occured"
+            text="Please try again"
+            onRetry={handleAnalyzeImage}
+            className="mt-36"
+          />
         )}
       </ScrollView>
       {/* Action Button */}
@@ -201,7 +181,7 @@ export function ItemsScanScreen() {
         <View className="border-t border-border p-4 pb-8">
           <Button
             onPress={handleCatalogItemsSelected}
-            disabled={!analysisResult || selectedCatalogItems.size === 0}
+            disabled={!data || selectedCatalogItems.size === 0}
             className="w-full"
             variant="tonal"
           >
