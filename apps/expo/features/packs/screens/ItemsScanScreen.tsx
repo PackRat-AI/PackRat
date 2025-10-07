@@ -40,6 +40,19 @@ export function ItemsScanScreen() {
     handleAnalyzeImage();
   }, []);
 
+  // Auto-select all detected catalog items by default after scan completes
+  useEffect(() => {
+    if (data?.length && selectedCatalogItems.size === 0) {
+      const ids = new Set<number>();
+      for (const detection of data) {
+        for (const match of detection.catalogMatches) {
+          ids.add(match.id);
+        }
+      }
+      setSelectedCatalogItems(ids);
+    }
+  }, [data, selectedCatalogItems.size]);
+
   const handleAddImage = () => {
     const options = ['Take Photo', 'Choose from Library', 'Cancel'];
     const cancelButtonIndex = 2;
