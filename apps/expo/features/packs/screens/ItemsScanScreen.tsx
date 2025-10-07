@@ -19,6 +19,7 @@ export function ItemsScanScreen() {
   const router = useRouter();
   const { colors } = useColorScheme();
   const { packId, ...fileInfo } = useLocalSearchParams();
+  const [hasRunInitialScanOnMount, setHasRunInitialScanOnMount] = useState(false);
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
   const { showActionSheetWithOptions } = useActionSheet();
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
@@ -37,8 +38,11 @@ export function ItemsScanScreen() {
   }, [selectedImage, scanImage]);
 
   useEffect(() => {
-    handleAnalyzeImage();
-  }, []);
+    if (!hasRunInitialScanOnMount) {
+      handleAnalyzeImage();
+      setHasRunInitialScanOnMount(true);
+    }
+  }, [handleAnalyzeImage, hasRunInitialScanOnMount]);
 
   // Auto-select all detected catalog items by default after scan completes
   useEffect(() => {
@@ -73,12 +77,14 @@ export function ItemsScanScreen() {
           switch (selectedIndex) {
             case 0: {
               // Take Photo
-              await takePhoto();
+              const file = await takePhoto();
+              if (!file) return;
               break;
             }
             case 1: {
               // Choose from Library
-              await pickImage();
+              const file = await pickImage();
+              if (!file) return;
               break;
             }
             case cancelButtonIndex:
