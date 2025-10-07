@@ -6,13 +6,14 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, View } from 'react-native';
+import { Image, ScrollView, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import type { CatalogItem } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 import { useBulkAddCatalogItems } from '../hooks';
 import { useImageDetection } from '../hooks/useImageDetection';
 import { ErrorState } from 'expo-app/components/ErrorState';
+import { appAlert } from 'expo-app/app/_layout';
 
 export function ItemsScanScreen() {
   const router = useRouter();
@@ -24,7 +25,6 @@ export function ItemsScanScreen() {
 
   const { mutate: scanImage, isPending: isScanning, data } = useImageDetection();
   const { addItemsToPack } = useBulkAddCatalogItems();
-  
 
   const handleAnalyzeImage = useCallback(async () => {
     assertNonNull(selectedImage);
@@ -75,7 +75,11 @@ export function ItemsScanScreen() {
           handleAnalyzeImage();
         } catch (err) {
           console.error('Error handling image:', err);
-          Alert.alert('Error', 'Failed to process image. Please try again.');
+          appAlert.current?.alert({
+            title: 'Error',
+            message: 'Failed to process image. Please try again.',
+            buttons: [{ text: 'OK', style: 'default' }],
+          });
         }
       },
     );
@@ -171,14 +175,13 @@ export function ItemsScanScreen() {
                 <View className="bg-muted rounded-full p-6 mb-4">
                   <Icon name="search" size={48} color={colors.muted_foreground} />
                 </View>
-                <Text className="text-xl font-semibold text-center mb-2">
-                  No Items Found
-                </Text>
+                <Text className="text-xl font-semibold text-center mb-2">No Items Found</Text>
                 <Text className="text-center text-muted-foreground text-base leading-6">
-                  We couldn't identify any outdoor gear in this photo. Try taking a clearer image with better lighting.
+                  We couldn't identify any outdoor gear in this photo. Try taking a clearer image
+                  with better lighting.
                 </Text>
               </View>
-              
+
               <View className="w-full space-y-3">
                 <Text className="text-sm font-medium text-foreground mb-2">
                   Tips for better scanning:
@@ -208,12 +211,8 @@ export function ItemsScanScreen() {
                   </Text>
                 </View>
               </View>
-              
-              <Button 
-                variant="outline" 
-                onPress={handleAddImage}
-                className="mt-6 w-full"
-              >
+
+              <Button variant="outline" onPress={handleAddImage} className="mt-6 w-full">
                 <Icon name="camera" size={16} color={colors.foreground} />
                 <Text className="ml-2">Try Another Photo</Text>
               </Button>

@@ -2,6 +2,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
@@ -16,7 +17,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import {
   useImagePicker,
   usePackDetailsFromApi,
@@ -239,7 +240,11 @@ export function PackDetailScreen() {
           }
         } catch (err) {
           console.error('Error handling image:', err);
-          Alert.alert('Error', 'Failed to process image. Please try again.');
+          appAlert.current?.alert({
+            title: 'Error',
+            message: 'Failed to process image. Please try again.',
+            buttons: [{ text: 'OK', style: 'default' }],
+          });
         }
       },
     );

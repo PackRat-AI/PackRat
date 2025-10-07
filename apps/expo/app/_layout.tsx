@@ -4,12 +4,13 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
-import { COLORS } from '@packrat-ai/nativewindui';
+import { Alert, type AlertRef, COLORS } from '@packrat-ai/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
+import { useRef } from 'react';
 import type { JSX } from 'react/jsx-runtime';
 import { Platform } from 'react-native';
 import type { BaseToastProps } from 'react-native-toast-message';
@@ -32,8 +33,13 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
+export let appAlert: React.RefObject<AlertRef | null>;
+
 function RootLayout() {
   useInitialAndroidBarSync();
+
+  appAlert = useRef<AlertRef>(null);
+
   const { colorScheme, isDarkColorScheme } = useColorScheme();
 
   const inverseColors = COLORS[isDarkColorScheme ? 'light' : 'dark'];
@@ -91,6 +97,7 @@ function RootLayout() {
             <Stack.Screen name="(app)" />
             <Stack.Screen name="auth" />
           </Stack>
+          <Alert title="" buttons={[]} ref={appAlert} />
         </NavThemeProvider>
       </Providers>
       <Toast config={toastConfig} position={Platform.OS === 'ios' ? 'top' : 'bottom'} />
