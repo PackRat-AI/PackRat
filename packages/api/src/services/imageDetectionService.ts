@@ -117,37 +117,18 @@ export class ImageDetectionService {
       // Find catalog matches for each detected item
       const catalogService = new CatalogService(this.c);
 
-      // Process items in parallel for better performance
-      const matchPromises = highConfidenceItems.map(async (detected) => {
-        // Create search query combining name and description
-        const searchQuery = `${detected.name} ${detected.description}`.trim();
+      const searchQueries = highConfidenceItems.map((detected) =>
+        `${detected.name} ${detected.description}`.trim(),
+      );
+      const result = await catalogService.batchVectorSearch(searchQueries, matchLimit);
 
-        try {
-          const searchResult = await catalogService.vectorSearch(searchQuery, matchLimit);
-
-          return {
-            detected,
-            catalogMatches: searchResult.items.map((item) => ({
-              id: item.id,
-              name: item.name,
-              description: item.description,
-              weight: item.weight,
-              weightUnit: item.weightUnit,
-              image: item.images?.[0] || null,
-              similarity: item.similarity,
-            })),
-          };
-        } catch (error) {
-          console.error(`Failed to search catalog for item: ${detected.name}`, error);
-          // Include the detected item even if catalog search fails
-          return {
-            detected,
-            catalogMatches: [],
-          };
-        }
-      });
-
-      const itemsWithMatches = await Promise.all(matchPromises);
+      // Combine detected items with their catalog matches
+      const itemsWithMatches: DetectedItemWithMatches[] = highConfidenceItems.map(
+        (detected, index) => ({
+          detected,
+          catalogMatches: result.items[index],
+        }),
+      );
 
       return {
         detectedItems: itemsWithMatches,
