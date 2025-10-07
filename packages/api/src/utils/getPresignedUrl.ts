@@ -1,11 +1,11 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { type GetObjectCommand, type PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Context } from 'hono';
 import { getEnv } from './env-validation';
 
 export async function getPresignedUrl(
   c: Context,
-  command: Parameters<typeof getSignedUrl>[1],
+  command: GetObjectCommand | PutObjectCommand,
   options: Parameters<typeof getSignedUrl>[2],
 ): Promise<string> {
   const { R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, CLOUDFLARE_ACCOUNT_ID } = getEnv(c);

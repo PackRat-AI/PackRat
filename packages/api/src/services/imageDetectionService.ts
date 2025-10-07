@@ -96,10 +96,7 @@ export class ImageDetectionService {
 
       // If no items detected, return early
       if (!analysis.items || analysis.items.length === 0) {
-        return {
-          detectedItems: [],
-          summary: analysis.summary || 'No outdoor gear items were detected in the image.',
-        };
+        return [];
       }
 
       // Filter out low-confidence detections
@@ -114,12 +111,15 @@ export class ImageDetectionService {
       const result = await catalogService.batchVectorSearch(searchQueries, matchLimit);
 
       // Combine detected items with their catalog matches
-      const itemsWithMatches: DetectedItemWithMatches[] = highConfidenceItems.map(
-        (detected, index) => ({
+      const itemsWithMatches: DetectedItemWithMatches[] = highConfidenceItems
+        .map((detected, index) => ({
           detected,
           catalogMatches: result.items[index],
-        }),
-      );
+        }))
+        .filter(
+          (item): item is DetectedItemWithMatches =>
+            item.catalogMatches !== undefined && item.catalogMatches.length > 0,
+        );
 
       return itemsWithMatches;
     } catch (error) {
