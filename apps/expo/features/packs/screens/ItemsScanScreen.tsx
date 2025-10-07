@@ -250,7 +250,7 @@ export function ItemsScanScreen() {
           )
         ) : (
           <ErrorState
-            title="An Error Occured"
+            title="An Error Occurred"
             text="Please try again"
             onRetry={handleAnalyzeImage}
             className="mt-36"
