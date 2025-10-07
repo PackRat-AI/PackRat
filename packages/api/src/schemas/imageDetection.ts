@@ -9,6 +9,9 @@ export const DetectedItemSchema = z
       .openapi({ example: 'Lightweight down sleeping bag, appears to be rated for cold weather' }),
     quantity: z.number().int().positive().openapi({ example: 1 }),
     category: z.string().openapi({ example: 'Sleep System' }),
+    consumable: z.boolean().default(false).describe('Whether the item is consumable'),
+    worn: z.boolean().default(false).describe('Whether the item is worn'),
+    notes: z.string().nullable().optional(),
     confidence: z.number().min(0).max(1).openapi({
       example: 0.85,
       description: 'Confidence level in the identification (0-1)',

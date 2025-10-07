@@ -9,6 +9,9 @@ export interface DetectedItem {
   description: string;
   quantity: number;
   category: string;
+  consumable: boolean;
+  worn: boolean;
+  notes: string;
   confidence: number;
 }
 

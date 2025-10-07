@@ -27,6 +27,9 @@ const detectedItemSchema = z.object({
     .describe('Brief description including key characteristics optimized for catalog search'),
   quantity: z.number().int().positive().default(1).describe('Number of this item visible'),
   category: z.string().describe('Category of outdoor gear (e.g., Sleep System, Clothing, etc.)'),
+  consumable: z.boolean().default(false).describe('Whether the item is consumable'),
+  worn: z.boolean().default(false).describe('Whether the item is worn'),
+  notes: z.string().nullable().optional(),
   confidence: z.number().min(0).max(1).describe('Confidence level in the identification (0-1)'),
 });
 

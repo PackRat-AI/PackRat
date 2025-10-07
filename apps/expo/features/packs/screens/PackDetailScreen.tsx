@@ -8,7 +8,7 @@ import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
+import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
@@ -90,7 +90,7 @@ export function PackDetailScreen() {
 
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
     if (catalogItems.length > 0) {
-      await addItemsToPack(id as string, catalogItems);
+      await addItemsToPack(id as string, catalogItems as CatalogItemWithPackItemFields[]);
     }
   };
 

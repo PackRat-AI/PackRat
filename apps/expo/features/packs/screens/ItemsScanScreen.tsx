@@ -10,7 +10,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import Toast from 'react-native-toast-message';
-import type { CatalogItem } from '../../catalog/types';
+import type { CatalogItem, CatalogItemWithPackItemFields } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 import { useBulkAddCatalogItems } from '../hooks';
 import { useImageDetection } from '../hooks/useImageDetection';
@@ -115,11 +115,16 @@ export function ItemsScanScreen() {
   };
 
   // Get all catalog items from analysis results with their similarity scores
-  const allCatalogItems: (CatalogItem & { similarity: number })[] =
+  const allCatalogItems: (CatalogItemWithPackItemFields & { similarity: number })[] =
     data?.flatMap((item) =>
       item.catalogMatches.map((match) => ({
         ...match,
+        description: match.description || item.detected.description,
         similarity: match.similarity * item.detected.confidence,
+        quantity: item.detected.quantity,
+        consumable: item.detected.consumable,
+        worn: item.detected.worn,
+        category: item.detected.category,
       })),
     ) || [];
 
@@ -133,7 +138,7 @@ export function ItemsScanScreen() {
       }
       return acc;
     },
-    [] as (CatalogItem & { similarity: number })[],
+    [] as (CatalogItemWithPackItemFields & { similarity: number })[],
   );
 
   const selectedCatalogItemsList = uniqueCatalogItems.filter((item) =>
