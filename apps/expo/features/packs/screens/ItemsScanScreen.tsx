@@ -11,7 +11,7 @@ import type { CatalogItem } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 import { useBulkAddCatalogItems } from '../hooks';
 import type { DetectedItemWithMatches } from '../hooks/useImageDetection';
-import { useAnalyzeImage } from '../hooks/useImageDetection';
+import { useImageDetection } from '../hooks/useImageDetection';
 import { uploadImage } from '../utils';
 
 export function ItemsScanScreen() {
@@ -24,7 +24,7 @@ export function ItemsScanScreen() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
 
-  const analyzeImageMutation = useAnalyzeImage();
+  const analyzeImageMutation = useImageDetection();
   const { addItemsToPack } = useBulkAddCatalogItems();
 
   const handleAnalyzeImage = useCallback(async () => {
@@ -42,7 +42,7 @@ export function ItemsScanScreen() {
       }
       const result = await analyzeImageMutation.mutateAsync({
         image: remoteFileName,
-        matchLimit: 3,
+        matchLimit: 1,
       });
 
       setAnalysisResult(result.detectedItems);
@@ -52,11 +52,6 @@ export function ItemsScanScreen() {
         Alert.alert(
           'No Items Detected',
           'No outdoor gear items were detected in this image. Try taking a clearer photo with better lighting, or ensure your gear is laid out visibly.',
-        );
-      } else {
-        Alert.alert(
-          'Analysis Complete',
-          `Detected ${result.detectedItems.length} items in your image. Review the results below and adjust the pack name if needed.`,
         );
       }
     } catch (error) {
@@ -127,7 +122,7 @@ export function ItemsScanScreen() {
     analysisResult?.flatMap((item) =>
       item.catalogMatches.map((match) => ({
         ...match,
-        similarity: match.similarity,
+        similarity: match.similarity * item.detected.confidence,
       })),
     ) || [];
 

@@ -57,11 +57,6 @@ export const AnalyzeImageRequestSchema = z
 export const AnalyzeImageResponseSchema = z
   .object({
     detectedItems: z.array(DetectedItemWithMatchesSchema),
-    summary: z.string().openapi({
-      example:
-        'Detected a well-organized backpacking setup with sleeping system, shelter, and essential gear items laid out for packing.',
-      description: 'AI-generated summary of the gear layout observed',
-    }),
   })
   .openapi('AnalyzeImageResponse');
 

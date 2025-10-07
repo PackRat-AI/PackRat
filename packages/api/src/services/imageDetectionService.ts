@@ -4,13 +4,14 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import type { CatalogItem } from '../db/schema';
 import { CatalogService } from './catalogService';
 
 const ITEM_DETECTION_SYSTEM_PROMPT = `You are an expert gear identification assistant specializing in outdoor and adventure equipment. 
 
 When analyzing images of items laid out for packing, identify each visible item with the following guidelines:
 - Focus on outdoor gear, camping equipment, hiking tools, and travel items
-- Be specific about item names (e.g., "down sleeping bag" not just "bag")
+- Be as precise as possible in identifying items (e.g., "The North Face Eco Trail Down 20°F Sleeping Bag" not just "sleeping bag")
 - Include relevant descriptive details that would help match items in a gear catalog
 - Ignore background items like floors, tables, or walls
 - Only identify items that would typically be packed for outdoor adventures
@@ -20,8 +21,10 @@ When analyzing images of items laid out for packing, identify each visible item 
 Be thorough but focused on packable outdoor gear and equipment.`;
 
 const detectedItemSchema = z.object({
-  name: z.string().describe('Specific name of the detected item optimized for catalog search'),
-  description: z.string().describe('Brief description including key characteristics'),
+  name: z.string().describe('Specific name of the detected item'),
+  description: z
+    .string()
+    .describe('Brief description including key characteristics optimized for catalog search'),
   quantity: z.number().int().positive().default(1).describe('Number of this item visible'),
   category: z.string().describe('Category of outdoor gear (e.g., Sleep System, Clothing, etc.)'),
   confidence: z.number().min(0).max(1).describe('Confidence level in the identification (0-1)'),
@@ -29,7 +32,6 @@ const detectedItemSchema = z.object({
 
 const imageAnalysisSchema = z.object({
   items: z.array(detectedItemSchema).describe('Array of detected outdoor gear items'),
-  summary: z.string().describe('Brief summary of the gear layout observed'),
 });
 
 type DetectedItem = z.infer<typeof detectedItemSchema>;
@@ -37,15 +39,7 @@ type ImageAnalysisResult = z.infer<typeof imageAnalysisSchema>;
 
 export interface DetectedItemWithMatches {
   detected: DetectedItem;
-  catalogMatches: Array<{
-    id: number;
-    name: string;
-    description: string | null;
-    weight: number | null;
-    weightUnit: string | null;
-    image: string | null;
-    similarity: number;
-  }>;
+  catalogMatches: Array<Omit<CatalogItem, 'embedding'> & { similarity: number }>;
 }
 
 export class ImageDetectionService {
@@ -68,13 +62,13 @@ export class ImageDetectionService {
       model: openai(DEFAULT_MODELS.OPENAI_CHAT),
       schema: imageAnalysisSchema,
       system: ITEM_DETECTION_SYSTEM_PROMPT,
-      messages: [
+      prompt: [
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: 'Please identify all the outdoor gear and equipment items visible in this image. Focus on items that would typically be packed for outdoor adventures.',
+              text: 'Please identify all the outdoor gear and equipment items visible in this image.',
             },
             {
               type: 'image',
@@ -97,7 +91,6 @@ export class ImageDetectionService {
     matchLimit: number = 3,
   ): Promise<{
     detectedItems: DetectedItemWithMatches[];
-    summary: string;
   }> {
     try {
       // First, detect items in the image
@@ -132,7 +125,6 @@ export class ImageDetectionService {
 
       return {
         detectedItems: itemsWithMatches,
-        summary: analysis.summary,
       };
     } catch (error) {
       console.error('Error in detectAndMatchItems:', error);

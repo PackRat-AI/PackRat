@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import type { CatalogItem } from 'expo-app/features/catalog/types';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 
 export interface DetectedItem {
@@ -9,24 +10,13 @@ export interface DetectedItem {
   confidence: number;
 }
 
-export interface CatalogMatch {
-  id: number;
-  name: string;
-  description: string | null;
-  weight: number | null;
-  weightUnit: string | null;
-  image: string | null;
-  similarity: number;
-}
-
 export interface DetectedItemWithMatches {
   detected: DetectedItem;
-  catalogMatches: CatalogMatch[];
+  catalogMatches: (CatalogItem & { similarity: number })[];
 }
 
 export interface AnalyzeImageResponse {
   detectedItems: DetectedItemWithMatches[];
-  summary: string;
 }
 
 export interface CreatePackFromImageResponse {
@@ -43,7 +33,7 @@ export interface CreatePackFromImageResponse {
 /**
  * Hook to analyze an image and detect gear items
  */
-export function useAnalyzeImage() {
+export function useImageDetection() {
   return useMutation<AnalyzeImageResponse, Error, { image: string; matchLimit?: number }>({
     mutationFn: async ({ image, matchLimit = 3 }) => {
       try {
