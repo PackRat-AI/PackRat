@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { CatalogItemSchema } from './catalog';
 
 export const DetectedItemSchema = z
   .object({
@@ -15,29 +16,10 @@ export const DetectedItemSchema = z
   })
   .openapi('DetectedItem');
 
-export const CatalogMatchSchema = z
-  .object({
-    id: z.number().int().openapi({ example: 12345 }),
-    name: z.string().openapi({ example: 'Western Mountaineering UltraLite Sleeping Bag' }),
-    description: z.string().nullable().openapi({
-      example: 'Lightweight down sleeping bag rated to 20°F',
-    }),
-    weight: z.number().nullable().openapi({ example: 850 }),
-    weightUnit: z.string().nullable().openapi({ example: 'g' }),
-    image: z.string().nullable().openapi({
-      example: 'https://example.com/sleeping-bag.jpg',
-    }),
-    similarity: z.number().min(0).max(1).openapi({
-      example: 0.92,
-      description: 'Similarity score with the detected item (0-1)',
-    }),
-  })
-  .openapi('CatalogMatch');
-
 export const DetectedItemWithMatchesSchema = z
   .object({
     detected: DetectedItemSchema,
-    catalogMatches: z.array(CatalogMatchSchema),
+    catalogMatches: z.array(CatalogItemSchema),
   })
   .openapi('DetectedItemWithMatches');
 
@@ -57,35 +39,3 @@ export const AnalyzeImageRequestSchema = z
 export const AnalyzeImageResponseSchema = z
   .array(DetectedItemWithMatchesSchema)
   .openapi('AnalyzeImageResponse');
-
-export const CreatePackFromImageRequestSchema = z
-  .object({
-    imageUrl: z.string().url().openapi({
-      example: 'https://packrat-bucket.r2.dev/123-gear-layout.jpg',
-    }),
-    packName: z.string().min(1).max(255).openapi({
-      example: 'Gear from Photo - Weekend Trip',
-    }),
-    packDescription: z.string().optional().openapi({
-      example: 'Pack created from analyzed gear photo',
-    }),
-    isPublic: z.boolean().optional().default(false).openapi({ example: false }),
-    minConfidence: z.number().min(0).max(1).optional().default(0.5).openapi({
-      example: 0.7,
-      description: 'Minimum confidence threshold for including detected items',
-    }),
-  })
-  .openapi('CreatePackFromImageRequest');
-
-export const CreatePackFromImageResponseSchema = z
-  .object({
-    pack: z.object({
-      id: z.string().openapi({ example: 'p_abc123' }),
-      name: z.string().openapi({ example: 'Gear from Photo - Weekend Trip' }),
-      description: z.string().nullable(),
-      itemsCount: z.number().int().openapi({ example: 8 }),
-    }),
-    detectedItems: z.array(DetectedItemWithMatchesSchema),
-    summary: z.string(),
-  })
-  .openapi('CreatePackFromImageResponse');

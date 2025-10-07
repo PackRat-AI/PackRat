@@ -19,17 +19,6 @@ export interface DetectedItemWithMatches {
 
 export type AnalyzeImageResponse = DetectedItemWithMatches[];
 
-export interface CreatePackFromImageResponse {
-  pack: {
-    id: string;
-    name: string;
-    description: string | null;
-    itemsCount: number;
-  };
-  detectedItems: DetectedItemWithMatches[];
-  summary: string;
-}
-
 /**
  * Hook to analyze an image and detect gear items
  */
