@@ -216,19 +216,21 @@ export function PackDetailScreen() {
             case 0: {
               // Take Photo
               const fileInfo = await takePhoto();
-              router.push({
-                pathname: '/pack/items-scan',
-                params: { packId: pack.id, ...fileInfo },
-              });
+              if (fileInfo)
+                router.push({
+                  pathname: '/pack/items-scan',
+                  params: { packId: pack.id, ...fileInfo },
+                });
               break;
             }
             case 1: {
               // Choose from Library
               const fileInfo = await pickImage();
-              router.push({
-                pathname: '/pack/items-scan',
-                params: { packId: pack.id, ...fileInfo },
-              });
+              if (fileInfo)
+                router.push({
+                  pathname: '/pack/items-scan',
+                  params: { packId: pack.id, ...fileInfo },
+                });
               break;
             }
             case cancelButtonIndex:
