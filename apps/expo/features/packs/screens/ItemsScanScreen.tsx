@@ -1,6 +1,8 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { appAlert } from 'expo-app/app/_layout';
+import { ErrorState } from 'expo-app/components/ErrorState';
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertNonNull } from 'expo-app/utils/typeAssertions';
@@ -12,8 +14,6 @@ import type { CatalogItem } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 import { useBulkAddCatalogItems } from '../hooks';
 import { useImageDetection } from '../hooks/useImageDetection';
-import { ErrorState } from 'expo-app/components/ErrorState';
-import { appAlert } from 'expo-app/app/_layout';
 
 export function ItemsScanScreen() {
   const router = useRouter();
