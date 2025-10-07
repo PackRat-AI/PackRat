@@ -1,5 +1,6 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { Icon } from '@roninoss/icons';
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertNonNull } from 'expo-app/utils/typeAssertions';
@@ -165,7 +166,58 @@ export function ItemsScanScreen() {
               ))}
             </View>
           ) : (
-            <Text>No items detected in the image.</Text>
+            <View className="flex-1 items-center justify-center px-8 py-16">
+              <View className="items-center mb-8">
+                <View className="bg-muted rounded-full p-6 mb-4">
+                  <Icon name="search" size={48} color={colors.muted_foreground} />
+                </View>
+                <Text className="text-xl font-semibold text-center mb-2">
+                  No Items Found
+                </Text>
+                <Text className="text-center text-muted-foreground text-base leading-6">
+                  We couldn't identify any outdoor gear in this photo. Try taking a clearer image with better lighting.
+                </Text>
+              </View>
+              
+              <View className="w-full space-y-3">
+                <Text className="text-sm font-medium text-foreground mb-2">
+                  Tips for better scanning:
+                </Text>
+                <View className="flex-row items-start space-x-3 mb-2">
+                  <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
+                    <Icon name="lightbulb" size={12} color={colors.primary} />
+                  </View>
+                  <Text className="flex-1 text-sm text-muted-foreground">
+                    Spread items on a contrasting background
+                  </Text>
+                </View>
+                <View className="flex-row items-start space-x-3 mb-2">
+                  <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
+                    <Icon name="sun" size={12} color={colors.primary} />
+                  </View>
+                  <Text className="flex-1 text-sm text-muted-foreground">
+                    Use good lighting (natural light works best)
+                  </Text>
+                </View>
+                <View className="flex-row items-start space-x-3 mb-2">
+                  <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
+                    <Icon name="eye" size={12} color={colors.primary} />
+                  </View>
+                  <Text className="flex-1 text-sm text-muted-foreground">
+                    Ensure items are clearly visible and not overlapping
+                  </Text>
+                </View>
+              </View>
+              
+              <Button 
+                variant="outline" 
+                onPress={handleAddImage}
+                className="mt-6 w-full"
+              >
+                <Icon name="camera" size={16} color={colors.foreground} />
+                <Text className="ml-2">Try Another Photo</Text>
+              </Button>
+            </View>
           )
         ) : (
           <ErrorState
