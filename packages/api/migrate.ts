@@ -33,14 +33,13 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 async function runMigrations() {
-  // if (!process.env.NEON_DATABASE_URL) {
-  //   throw new Error('NEON_DATABASE_URL is not set');
-  // }
+  if (!process.env.NEON_DATABASE_URL) {
+    throw new Error('NEON_DATABASE_URL is not set');
+  }
 
   console.log('Running migrations...');
 
-  const url = "postgresql://neondb_owner:npg_apXyL23OlAui@ep-raspy-river-a4md89e7-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
-
+  const url = process.env.NEON_DATABASE_URL;
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL
     console.log('Using PostgreSQL migrations...');
