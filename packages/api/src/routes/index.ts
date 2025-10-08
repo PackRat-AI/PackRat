@@ -11,6 +11,7 @@ import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
+import { tripsRoutes } from './trips';
 
 const publicRoutes = new OpenAPIHono();
 
@@ -26,6 +27,8 @@ protectedRoutes.use(authMiddleware);
 protectedRoutes.route('/catalog', catalogRoutes);
 protectedRoutes.route('/guides', guidesRoutes);
 protectedRoutes.route('/packs', packsRoutes);
+protectedRoutes.route('/trips', tripsRoutes);
+
 protectedRoutes.route('/chat', chatRoutes);
 protectedRoutes.route('/weather', weatherRoutes);
 protectedRoutes.route('/pack-templates', packTemplatesRoutes);

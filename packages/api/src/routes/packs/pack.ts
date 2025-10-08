@@ -222,8 +222,10 @@ const deletePackRoute = createRoute({
 
 packRoutes.openapi(deletePackRoute, async (c) => {
   const db = createDb(c);
+  const auth = c.get('user');
+  const packId = c.req.param('packId');
+
   try {
-    const packId = c.req.param('packId');
     await db.delete(packs).where(eq(packs.id, packId));
     return c.json({ success: true }, 200);
   } catch (error) {
@@ -569,11 +571,11 @@ ${weatherContext}
 
 Current Items in Pack:
 ${pack.items
-  .map(
-    (item) =>
-      `- ${item.name} (${item.category || 'Uncategorized'}, ${item.weight}g, qty: ${item.quantity}${item.worn ? ', worn' : ''}${item.consumable ? ', consumable' : ''})`,
-  )
-  .join('\n')}
+        .map(
+          (item) =>
+            `- ${item.name} (${item.category || 'Uncategorized'}, ${item.weight}g, qty: ${item.quantity}${item.worn ? ', worn' : ''}${item.consumable ? ', consumable' : ''})`,
+        )
+        .join('\n')}
 
 Categories represented: ${Array.from(new Set(pack.items.map((item) => item.category).filter(Boolean))).join(', ')}
 

@@ -285,18 +285,15 @@ export const trips = pgTable('trips', {
   endDate: timestamp('end_date'),
   location: text('location'),
   notes: text('notes'),
-  isPublic: boolean('is_public').default(false),
-
-  userId: integer('user_id')
-    .references(() => users.id, { onDelete: 'cascade' }) // delete trips if user deleted
-    .notNull(),
-
-  packId: text('pack_id')
-    .references(() => packs.id, { onDelete: 'set null' }), // keep trip but remove pack link
-
+  userId: integer('user_id').references(() => users.id).notNull(),
+  packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
+  localCreatedAt: timestamp('local_created_at').notNull(),
+  localUpdatedAt: timestamp('local_updated_at').notNull(),
+  deleted: boolean('deleted').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
 
 
 // Define relations

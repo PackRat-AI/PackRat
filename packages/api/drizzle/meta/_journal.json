@@ -239,6 +239,20 @@
       "when": 1759739632530,
       "tag": "0032_secret_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1759915528201,
+      "tag": "0033_nappy_gambit",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1759939243033,
+      "tag": "0034_lazy_silk_fever",
+      "breakpoints": true
     }
   ]
 }

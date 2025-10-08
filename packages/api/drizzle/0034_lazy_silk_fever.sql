@@ -1,0 +1,1 @@
+ALTER TABLE "trips" DROP COLUMN "is_public";

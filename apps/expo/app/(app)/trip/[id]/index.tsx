@@ -1,5 +1,5 @@
-import { PackDetailScreen } from 'expo-app/features/packs/screens/PackDetailScreen';
+import { TripDetailScreen } from 'expo-app/features/trips/screens/TripDetailScreen';
 
-export default function PackDetailScreenRoute() {
-  return <PackDetailScreen />;
+export default function TripDetailScreenRoute() {
+  return <TripDetailScreen />;
 }

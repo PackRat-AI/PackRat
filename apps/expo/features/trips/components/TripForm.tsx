@@ -9,17 +9,25 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useRouter } from 'expo-router';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
 import type { Trip } from '../types';
 
 const tripFormSchema = z.object({
   name: z.string().min(1, 'Trip name is required'),
-  description: z.string(),
-  location: z.string(),
-  startDate: z.string(),
-  endDate: z.string(),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  packId: z.string().nullable().optional(),
 });
 
 export const TripForm = ({ trip }: { trip?: Trip }) => {
@@ -36,18 +44,10 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       location: trip?.location || '',
       startDate: trip?.startDate || '',
       endDate: trip?.endDate || '',
+      packId: trip?.packs|| '',
     },
     validators: {
-      onChange: (values) => {
-        const result = tripFormSchema.safeParse(values);
-        if (!result.success) {
-          return result.error.issues.map((issue) => ({
-            path: issue.path.join('.'),
-            message: issue.message,
-          }));
-        }
-        return [];
-      },
+      onChange: tripFormSchema,
     },
     onSubmit: async ({ value }) => {
       if (isEditingExistingTrip) {
@@ -60,12 +60,22 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   });
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1">
-      <Stack.Screen options={{ title: isEditingExistingTrip ? 'Edit Trip' : 'New Trip' }} />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1"
+    >
+      <Stack.Screen
+        options={{
+          title: isEditingExistingTrip ? 'Edit Trip' : 'New Trip',
+        }}
+      />
 
       <ScrollView contentContainerClassName="p-8">
         <Form>
-          <FormSection ios={{ title: 'Trip Details' }} footnote="Enter trip information">
+          <FormSection
+            ios={{ title: 'Trip Details' }}
+            footnote="Enter trip information"
+          >
             {/* Name */}
             <form.Field name="name">
               {(field) => (
@@ -75,7 +85,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
-                    errorMessage={field.state.meta.errors.map((err) => err?.message).join(', ')}
+                    errorMessage={field.state.meta.errors
+                      .map((err) => err?.message)
+                      .join(', ')}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="map" size={16} color={colors.grey3} />
@@ -127,7 +139,26 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               )}
             </form.Field>
 
-            {/* Dates */}
+            {/* Pack ID */}
+            <form.Field name="packId">
+              {(field) => (
+                <FormItem>
+                  <TextField
+                    placeholder="Pack ID (optional)"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChangeText={field.handleChange}
+                    leftView={
+                      <View className="ios:pl-2 justify-center pl-2">
+                        <Icon name="archive" size={16} color={colors.grey3} />
+                      </View>
+                    }
+                  />
+                </FormItem>
+              )}
+            </form.Field>
+
+            {/* Start Date */}
             <form.Field name="startDate">
               {(field) => (
                 <FormItem>
@@ -146,6 +177,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               )}
             </form.Field>
 
+            {/* End Date */}
             <form.Field name="endDate">
               {(field) => (
                 <FormItem>
@@ -182,8 +214,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     ? 'Updating...'
                     : 'Creating...'
                   : isEditingExistingTrip
-                    ? 'Update Trip'
-                    : 'Create Trip'}
+                  ? 'Update Trip'
+                  : 'Create Trip'}
               </Text>
             </Pressable>
           )}
@@ -192,5 +224,3 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     </KeyboardAvoidingView>
   );
 };
-
-
