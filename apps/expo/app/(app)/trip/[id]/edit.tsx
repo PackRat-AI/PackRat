@@ -1,5 +1,5 @@
-import { EditPackScreen } from 'expo-app/features/packs/screens/EditPackScreen';
+import { EditTripScreen } from 'expo-app/features/trips/screens/EditTripScreen';
 
-export default function EditPackScreenRoute() {
-  return <EditPackScreen />;
+export default function EditTripScreenRoute() {
+  return <EditTripScreen />;
 }

@@ -7,6 +7,7 @@ import { SafeAreaView, ScrollView, View } from 'react-native';
 import { useRef } from 'react';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
+import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
 import type { Trip } from '../types';
 
 export function TripDetailScreen() {
@@ -17,6 +18,7 @@ export function TripDetailScreen() {
 
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const deleteTrip = useDeleteTrip();
+  const packs = useDetailedPacks();
 
   if (!trip) {
     return (
@@ -25,6 +27,9 @@ export function TripDetailScreen() {
       </SafeAreaView>
     );
   }
+
+  const pack = packs.find((p) => p.id === trip.packId);
+  console.log('Linked pack:', pack);
 
   const handleDelete = () => {
     alertRef.current?.alert({
@@ -89,7 +94,7 @@ export function TripDetailScreen() {
           )}
 
           {/* Notes */}
-          <View>
+          <View className="mb-6">
             <Text className="text-lg font-semibold text-foreground mb-2">Notes</Text>
             {trip.notes ? (
               <Text className="text-sm text-muted-foreground leading-relaxed">
@@ -100,7 +105,39 @@ export function TripDetailScreen() {
             )}
           </View>
 
-          
+          {/* 🧳 Linked Pack Section */}
+          {pack ? (
+            <View className="mb-6">
+              <Text className="text-lg font-semibold text-foreground mb-2">Pack</Text>
+              <Card className="rounded-xl bg-card border border-border">
+                <View className="p-3 border-b border-border bg-card">
+                  <Text className="text-base font-semibold text-foreground text-center">
+                    {pack.name}
+                  </Text>
+                </View>
+                <View className="p-3">
+                  <Text className="text-sm text-muted-foreground">
+                    Items: {pack.items.length}
+                  </Text>
+                  <Text className="text-sm text-muted-foreground">
+                    Total Weight: {pack.totalWeight?.toFixed(2) ?? 0} kg
+                  </Text>
+                </View>
+                <View className="p-3 flex-row justify-center">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => router.push(`/pack/${pack.id}`)}
+                    className="flex-row items-center gap-2"
+                  >
+                    <Text className="text-sm">View Pack</Text>
+                  </Button>
+                </View>
+              </Card>
+            </View>
+          ) : (
+            <Text className="text-sm text-muted-foreground italic">No pack linked to this trip.</Text>
+          )}
         </View>
       </ScrollView>
 

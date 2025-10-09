@@ -34,6 +34,7 @@ export function TripsListScreen() {
   const searchBarRef = useRef<any>(null);
   const { colors } = useColorScheme();
 
+  console.log('Fetched trips:', trips);
   const handleTripPress = useCallback(
     (trip: Trip) => {
       router.push({ pathname: '/trip/[id]', params: { id: trip.id } });

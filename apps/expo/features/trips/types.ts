@@ -6,11 +6,14 @@ export interface Trip {
   id: string;
   name: string;
   description?: string;
-  location?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
   startDate?: string;
   endDate?: string;
   userId?: number;
-  packs?: Pack[]; // Optional packs added to the trip
+  packId?: Pack['id'];
   deleted: boolean;
   createdAt?: string;
   updatedAt?: string;
