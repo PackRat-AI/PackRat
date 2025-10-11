@@ -78,7 +78,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
                 <Icon name="map-marker-outline" size={14} color={colors.primary} />
                 <Text className="ml-1 text-sm text-muted-foreground">
                   {trip.location.name
-                    ? trip.location.name
+                    ? trip.location.name.split(',')[0]
                     : `${trip.location.latitude.toFixed(3)}, ${trip.location.longitude.toFixed(3)}`}
                 </Text>
               </View>

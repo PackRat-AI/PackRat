@@ -73,7 +73,7 @@ export function TripDetailScreen() {
                 <View className="p-3 border-b border-border bg-card">
                   <Text className="text-base font-semibold text-foreground text-center">
                     {trip.location.name
-                      ? trip.location.name
+                      ? trip.location.name.split(',')[0]
                       : `${trip.location.latitude.toFixed(3)}, ${trip.location.longitude.toFixed(3)}`}
                   </Text>
                 </View>

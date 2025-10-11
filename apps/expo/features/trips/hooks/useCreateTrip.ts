@@ -8,7 +8,6 @@ export function useCreateTrip() {
   const createTrip = useCallback((tripData: TripInput) => {
     const id = nanoid();
     const timestamp = new Date().toISOString();
-    console.log("Creating trip with id:", id, timestamp);
 
     const newTrip: TripInStore = {
       id,

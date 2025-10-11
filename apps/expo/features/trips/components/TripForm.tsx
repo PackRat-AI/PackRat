@@ -31,9 +31,9 @@ const tripFormSchema = z.object({
   name: z.string().min(1, 'Trip name is required'),
   description: z.string().optional(),
   location: z.object({
-    latitude: z.number(),
-    longitude: z.number(),
-    name: z.string().optional(),
+      latitude: z.number(),
+      longitude: z.number(),
+      name: z.string().optional(),
   }).optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -58,14 +58,15 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   );
 
   const [showPackModal, setShowPackModal] = useState(false);
+    const formatDate = (isoString?: string) => isoString?.split('T')[0] || '';
 
   const form = useForm({
     defaultValues: {
       name: trip?.name || '',
       description: trip?.description || '',
       location: location || null,
-      startDate: trip?.startDate || '',
-      endDate: trip?.endDate || '',
+      startDate: formatDate(trip?.startDate || ''),
+      endDate: formatDate(trip?.endDate || ''),
       packId: trip?.packId || '',
     },
     validators: { onChange: tripFormSchema },
@@ -134,18 +135,33 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             {/* Location */}
             <FormItem>
               <View className="flex-row justify-between items-center">
-                <Pressable
-                  onPress={() => router.push('/trip/location-search')}
-                  className="flex-1 p-3 border border-border rounded-lg mr-2 bg-card"
-                >
-                  <Text>
-                    {location
-                      ? location.name
+                {isEditingExistingTrip ? (
+                  <Pressable
+                    onPress={() => router.push('/trip/location-search')}
+                    className="flex-1 p-3 border border-border rounded-lg mr-2 bg-card"
+                  >
+                    <Text>
+                      {trip?.location
+                        ? trip.location.name
+                          ? trip.location.name.split(',')[0]
+                          : `${trip.location.latitude.toFixed(3)}, ${trip.location.longitude.toFixed(3)}`
+                        : 'Add Location'}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={() => router.push('/trip/location-search')}
+                    className="flex-1 p-3 border border-border rounded-lg mr-2 bg-card"
+                  >
+                    <Text>
+                      {location
                         ? location.name
-                        : `${location.latitude.toFixed(3)}, ${location.longitude.toFixed(3)}`
-                      : 'Add Location'}
-                  </Text>
-                </Pressable>
+                          ? location.name.split(',')[0]
+                          : `${location.latitude.toFixed(3)}, ${location.longitude.toFixed(3)}`
+                        : 'Add Location'}
+                    </Text>
+                  </Pressable>
+                )}
 
                 {location && (
                   <Pressable onPress={() => setLocation(null)}>
