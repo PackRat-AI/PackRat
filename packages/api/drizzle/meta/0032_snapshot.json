@@ -1,5 +1,5 @@
 {
-  "id": "d3c2afc0-9aa1-4a87-b8c4-3ba872dd37de",
+  "id": "dc30490f-32c2-4794-b1d2-7bc2eab2ce9f",
   "prevId": "07c62114-0dba-46fb-bb76-f380531a1545",
   "version": "7",
   "dialect": "postgresql",
@@ -1481,7 +1481,7 @@
         },
         "location": {
           "name": "location",
-          "type": "text",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -1490,13 +1490,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_public": {
-          "name": "is_public",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
         },
         "user_id": {
           "name": "user_id",
@@ -1509,6 +1502,25 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "local_created_at": {
+          "name": "local_created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "local_updated_at": {
+          "name": "local_updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deleted": {
+          "name": "deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -1537,7 +1549,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
+          "onDelete": "no action",
           "onUpdate": "no action"
         },
         "trips_pack_id_packs_id_fk": {

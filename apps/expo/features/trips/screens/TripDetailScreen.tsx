@@ -9,6 +9,8 @@ import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
 import type { Trip } from '../types';
+import MapView, { Marker } from 'react-native-maps';
+
 
 export function TripDetailScreen() {
   const router = useRouter();
@@ -63,26 +65,48 @@ export function TripDetailScreen() {
             )}
           </View>
 
-          {/* Location */}
+
           {trip.location && (
             <View className="mb-6">
               <Text className="text-lg font-semibold text-foreground mb-2">Location</Text>
               <Card className="rounded-xl bg-card border border-border">
                 <View className="p-3 border-b border-border bg-card">
                   <Text className="text-base font-semibold text-foreground text-center">
-                    {trip.location}
+                    {trip.location.name
+                      ? trip.location.name
+                      : `${trip.location.latitude.toFixed(3)}, ${trip.location.longitude.toFixed(3)}`}
                   </Text>
                 </View>
-                {/* Placeholder Map */}
-                <View className="w-full h-36 bg-muted items-center justify-center">
-                  <Icon name="map-outline" size={48} color={colors.grey2} />
-                  <Text className="text-muted-foreground mt-2 text-xs">Map Preview Coming Soon</Text>
+
+                <View className="w-full h-36 overflow-hidden rounded-b-xl">
+                  <MapView
+                    style={{ flex: 1 }}
+                    initialRegion={{
+                      latitude: trip.location.latitude,
+                      longitude: trip.location.longitude,
+                      latitudeDelta: 0.05,
+                      longitudeDelta: 0.05,
+                    }}
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: trip.location.latitude,
+                        longitude: trip.location.longitude,
+                      }}
+                      title={trip.location.name || 'Trip Location'}
+                    />
+                  </MapView>
                 </View>
+
                 <View className="p-3 flex-row justify-center">
                   <Button
                     variant="secondary"
                     size="sm"
-                    onPress={() => console.log(`Open ${trip.location} in Maps`)}
+                    onPress={() => {
+                      const { latitude, longitude } = trip.location!;
+                      const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                      router.push(url);
+                    }}
                     className="flex-row items-center gap-2"
                   >
                     <Icon name="map-marker-outline" size={16} color={colors.primary} />
@@ -92,6 +116,7 @@ export function TripDetailScreen() {
               </Card>
             </View>
           )}
+
 
           {/* Notes */}
           <View className="mb-6">

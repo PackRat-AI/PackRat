@@ -40,13 +40,13 @@ export function TripCard({ trip, onPress }: TripCardProps) {
       },
       (selectedIndex) => {
         switch (selectedIndex) {
-          case 0:
+          case 0: // View Details
             onPress?.(trip);
             break;
-          case editIndex:
+          case editIndex: // Edit
             router.push({ pathname: '/trip/[id]/edit', params: { id: trip.id } });
             break;
-          case destructiveButtonIndex:
+          case destructiveButtonIndex: // Delete
             alertRef.current?.alert({
               title: 'Delete trip?',
               message: 'Are you sure you want to delete this trip? This action cannot be undone.',
@@ -67,29 +67,38 @@ export function TripCard({ trip, onPress }: TripCardProps) {
       onPress={() => onPress?.(trip)}
     >
       <View className="p-4">
+        {/* Header */}
         <View className="mb-2 flex-row items-start justify-between">
           <View className="flex-1">
             <Text className="text-lg font-semibold text-foreground">{trip.name}</Text>
 
+            {/* Location */}
             {trip.location && (
               <View className="flex-row items-center mt-1">
                 <Icon name="map-marker-outline" size={14} color={colors.primary} />
-                <Text className="ml-1 text-sm text-muted-foreground">{trip.location}</Text>
+                <Text className="ml-1 text-sm text-muted-foreground">
+                  {trip.location.name
+                    ? trip.location.name
+                    : `${trip.location.latitude.toFixed(3)}, ${trip.location.longitude.toFixed(3)}`}
+                </Text>
               </View>
             )}
           </View>
 
+          {/* Actions Button */}
           <Button variant="plain" size="icon" onPress={handleActionsPress}>
             <Icon name="dots-horizontal" size={20} color={colors.grey2} />
           </Button>
         </View>
 
+        {/* Description */}
         {trip.description && (
           <Text className="text-sm text-muted-foreground mt-2" numberOfLines={2}>
             {trip.description}
           </Text>
         )}
 
+        {/* Alert */}
         <Alert title="" buttons={[]} ref={alertRef} />
       </View>
     </Pressable>

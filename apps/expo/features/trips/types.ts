@@ -6,10 +6,14 @@ export interface Trip {
   id: string;
   name: string;
   description?: string;
+
+  // ✅ Structured location instead of string
   location?: {
     latitude: number;
     longitude: number;
+    name?: string; // optional friendly name (e.g., "Goa Beach" or reverse-geocoded label)
   };
+
   startDate?: string;
   endDate?: string;
   userId?: number;
@@ -21,10 +25,15 @@ export interface Trip {
   localUpdatedAt?: string;
 }
 
-
 export type TripInStore = Omit<Trip, 'trips'>;
 
 export type TripInput = Omit<
   TripInStore,
-  'id' | 'userId' | 'deleted' | 'createdAt' | 'updatedAt' | 'localCreatedAt' | 'localUpdatedAt'
+  | 'id'
+  | 'userId'
+  | 'deleted'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'localCreatedAt'
+  | 'localUpdatedAt'
 >;

@@ -283,7 +283,7 @@ export const trips = pgTable('trips', {
   description: text('description'),
   startDate: timestamp('start_date'),
   endDate: timestamp('end_date'),
-  location: text('location'),
+  location: jsonb('location').$type<{ latitude: number; longitude: number; name?: string }>(),
   notes: text('notes'),
   userId: integer('user_id').references(() => users.id).notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
@@ -293,6 +293,7 @@ export const trips = pgTable('trips', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
 
 
 
