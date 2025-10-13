@@ -1,6 +1,7 @@
 import { Badge, Text } from '@packrat/ui/nativewindui';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Icon, type IconProps } from '@roninoss/icons';
+import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -62,6 +63,7 @@ const TRIP_LIST_OPTIONS = {
   tabBarIcon: ({ color, size }: { color: string; size: number }) => (
     <Icon name="map" size={size} color={color} />
   ),
+  href: featureFlags.enableTrips ? 'trips' : null
 } as const;
 
 const ITEMS_CATALOG_OPTIONS = {
