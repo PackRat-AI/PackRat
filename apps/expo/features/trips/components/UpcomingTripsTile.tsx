@@ -4,25 +4,40 @@ import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { View } from 'react-native';
+import { useTrips } from 'expo-app/features/trips/hooks';
 
 export function UpcomingTripsTile() {
   const router = useRouter();
-
+  const { colors } = useColorScheme();
   const alertRef = useRef<AlertRef>(null);
 
+  // ✅ get all trips
+  const trips = useTrips();
+
+  // ✅ derive upcoming trips (in future)
+  const upcomingTrips = useMemo(
+    () => trips.filter((t) => new Date(t.startDate) > new Date()),
+    [trips]
+  );
+
+  // ✅ when tapped
   const handlePress = () => {
-    // if (!currentPack) return alertRef.current?.show();
+    if (upcomingTrips.length === 0) {
+      alertRef.current?.show();
+      return;
+    }
     router.push('/upcoming-trips');
   };
 
+  // ✅ feature flag — hide completely if disabled
   if (!featureFlags.enableTrips) return null;
 
   return (
     <>
       <ListItem
-        className={'ios:pl-0 pl-2'}
+        className="ios:pl-0 pl-2"
         titleClassName="text-lg"
         leftView={
           <View className="px-3">
@@ -33,24 +48,36 @@ export function UpcomingTripsTile() {
         }
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-            <View className="h-5 w-5 items-center justify-center rounded-full bg-primary">
-              <Text variant="footnote" className="font-bold leading-4 text-primary-foreground">
-                {0}
+            {/* ✅ dynamically show upcoming trip count */}
+            <View
+              className={`h-5 w-5 items-center justify-center rounded-full ${
+                upcomingTrips.length > 0 ? 'bg-primary' : 'bg-muted'
+              }`}
+            >
+              <Text
+                variant="footnote"
+                className={`font-bold leading-4 ${
+                  upcomingTrips.length > 0
+                    ? 'text-primary-foreground'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                {upcomingTrips.length}
               </Text>
             </View>
             <ChevronRight />
           </View>
         }
-        item={{
-          title: 'Upcoming Trips',
-        }}
+        item={{ title: 'Upcoming Trips' }}
         onPress={handlePress}
         target="Cell"
         index={0}
       />
+
+      {/* ✅ Alert for when no trips exist */}
       <Alert
         title="No Trips Yet"
-        message="Create trips, see which ones are near the corner!"
+        message="Create trips to start seeing your upcoming adventures!"
         materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[

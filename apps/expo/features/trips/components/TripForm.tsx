@@ -17,6 +17,7 @@ import {
   Text,
   View,
   Modal,
+  Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
@@ -37,11 +38,15 @@ const tripFormSchema = z.object({
       longitude: z.number(),
       name: z.string().optional(),
     })
+    .nullable()
     .optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  packId: z.string().nullable().optional(),
+  startDate: z.string().min(1, 'Start date is required'),
+  endDate: z.string().min(1, 'End date is required'),
+  packId: z.string().optional().nullable(),
 });
+
+
+
 
 export const TripForm = ({ trip }: { trip?: Trip }) => {
   const router = useRouter();
@@ -61,26 +66,32 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
   const formatDate = (isoString?: string) => isoString?.split('T')[0] || '';
 
-  const form = useForm({
-    defaultValues: {
-      name: trip?.name || '',
-      description: trip?.description || '',
-      location: location || null,
-      startDate: formatDate(trip?.startDate || ''),
-      endDate: formatDate(trip?.endDate || ''),
-      packId: trip?.packId || '',
-    },
-    validators: { onChange: tripFormSchema },
-    onSubmit: async ({ value }) => {
-      if (location) value.location = location;
+ const form = useForm({
+  defaultValues: {
+    name: trip?.name || '',
+    description: trip?.description || '',
+    location: location ?? null,
+    startDate: formatDate(trip?.startDate || ''),
+    endDate: formatDate(trip?.endDate || ''),
+    packId: trip?.packId ?? null,
+  },
+  validators: { onChange: tripFormSchema },
+  onSubmit: async ({ value }) => {
+    if (location) value.location = location;
+    try {
       if (isEditingExistingTrip) {
         await updateTrip({ ...trip, ...value });
+        Alert.alert('Success', 'Trip updated successfully');
       } else {
         await createTrip(value);
+        Alert.alert('Success', 'Trip created successfully');
       }
       router.back();
-    },
-  });
+    } catch (e) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  },
+});
 
   const handleDateChange = (field: any, event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
