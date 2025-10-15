@@ -190,7 +190,6 @@ tripRoutes.openapi(updateTripRoute, async (c) => {
         if ('startDate' in data) updateData.startDate = data.startDate ? new Date(data.startDate) : null;
         if ('endDate' in data) updateData.endDate = data.endDate ? new Date(data.endDate) : null;
         if ('notes' in data) updateData.notes = data.notes ?? null;
-        if ('isPublic' in data) updateData.isPublic = data.isPublic;
         if ('packId' in data) updateData.packId = data.packId ?? null;
         if ('deleted' in data) updateData.deleted = data.deleted;
         if ('localUpdatedAt' in data) updateData.localUpdatedAt = new Date();
