@@ -98,8 +98,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       if (event.type === 'set' && selectedDate) {
         field.handleChange(selectedDate.toISOString().split('T')[0]);
       }
-      setShowStartPicker(false);
-      setShowEndPicker(false);
+      
     } else {
       if (selectedDate) {
         field.handleChange(selectedDate.toISOString().split('T')[0]);
