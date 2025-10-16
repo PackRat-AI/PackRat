@@ -7,6 +7,7 @@
   ],
   "scripts": {
     "configure:deps": "bun run .github/scripts/configure-deps.ts",
+    "configure:deps:manual": "export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token) && bun install",
     "clean": "bun run .github/scripts/clean.ts",
     "env": "bun run .github/scripts/env.ts",
     "lefthook": "lefthook install",
@@ -28,12 +29,15 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.4",
-    "@manypkg/cli": "^0.24.0",
+    "@manypkg/cli": "^0.25.1",
     "@types/bun": "^1.2.17",
     "@types/fs-extra": "^11.0.4",
     "@types/glob": "^9.0.0",
     "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
     "lefthook": "^1.11.14"
+  },
+  "overrides": {
+    "@expo/vector-icons": "15.0.2"
   }
 }
