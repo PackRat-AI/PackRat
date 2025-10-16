@@ -2,14 +2,14 @@ import type { WeightUnit } from 'expo-app/types';
 import { useState } from 'react';
 import Toast from 'react-native-toast-message';
 import { cacheCatalogItemImage } from '../../catalog/lib/cacheCatalogItemImage';
-import type { CatalogItem } from '../../catalog/types';
+import type { CatalogItemWithPackItemFields } from '../../catalog/types';
 import { useCreatePackItem } from './useCreatePackItem';
 
 export function useBulkAddCatalogItems() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackItem();
 
-  const addItemsToPack = async (packId: string, catalogItems: CatalogItem[]) => {
+  const addItemsToPack = async (packId: string, catalogItems: CatalogItemWithPackItemFields[]) => {
     if (catalogItems.length === 0) return;
 
     setIsLoading(true);
@@ -28,11 +28,11 @@ export function useBulkAddCatalogItems() {
             description: catalogItem.description ?? undefined,
             weight: catalogItem.weight || 0,
             weightUnit: (catalogItem.weightUnit ?? 'g') as WeightUnit,
-            quantity: 1, // Default quantity
-            category: '', // Let user categorize later if needed
-            consumable: false, // Default to non-consumable
-            worn: false, // Default to not worn
-            notes: '', // No default notes
+            quantity: catalogItem.quantity || 1,
+            category: catalogItem.category || '',
+            consumable: catalogItem.consumable || false,
+            worn: catalogItem.worn || false,
+            notes: catalogItem.notes || '',
             image: cachedImageFilename,
             catalogItemId: catalogItem.id,
           },

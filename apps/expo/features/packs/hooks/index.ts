@@ -9,7 +9,7 @@ export * from './useDeletePack';
 export * from './useDeletePackItem';
 export * from './useDetailedPacks';
 export * from './useHasMinimumInventory';
-export * from './useImageUpload';
+export * from './useImagePicker';
 export * from './usePackDetailsFromApi';
 export * from './usePackDetailsFromStore';
 export * from './usePackGapAnalysis';

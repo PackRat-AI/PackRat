@@ -10,11 +10,13 @@ export type SelectedImage = {
   type: string;
 };
 
-export function useImageUpload() {
-  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
+export function useImagePicker(selectedImageInit?: SelectedImage) {
+  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(
+    selectedImageInit || null,
+  );
 
   // Pick image from gallery
-  const pickImage = async (): Promise<void> => {
+  const pickImage = async (): Promise<SelectedImage | undefined> => {
     try {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
@@ -24,7 +26,6 @@ export function useImageUpload() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
         quality: 0.8,
       });
 
@@ -41,6 +42,7 @@ export function useImageUpload() {
         const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
 
         setSelectedImage({ uri, fileName, type });
+        return { uri, fileName, type };
       }
     } catch (err) {
       console.error('Error picking image:', err);
@@ -49,7 +51,7 @@ export function useImageUpload() {
   };
 
   // Take photo with camera
-  const takePhoto = async (): Promise<void> => {
+  const takePhoto = async (): Promise<SelectedImage | undefined> => {
     try {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
       if (!permissionResult.granted) {
@@ -58,7 +60,6 @@ export function useImageUpload() {
 
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
-        aspect: [4, 3],
         quality: 0.8,
       });
 
@@ -72,6 +73,7 @@ export function useImageUpload() {
         const type = 'image/jpeg';
 
         setSelectedImage({ uri, fileName, type });
+        return { uri, fileName, type };
       }
     } catch (err) {
       console.error('Error taking photo:', err);
