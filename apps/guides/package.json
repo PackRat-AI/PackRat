@@ -8,9 +8,11 @@
     "build": "bun run build-content && next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "bunx rimraf .next node_modules out .vercel"
+    "clean": "bunx rimraf .next node_modules out .vercel",
+    "sync-to-r2": "bun run scripts/sync-to-r2.ts"
   },
   "dependencies": {
+    "@packrat/api": "workspace:*",
     "@ai-sdk/openai": "^2.0.11",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",

@@ -1,0 +1,65 @@
+name: Sync Guides to R2 Bucket
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/guides/content/posts/**'
+      - 'apps/guides/scripts/**'
+      - '.github/workflows/sync-guides-r2.yml'
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: 'Force sync all guides'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  sync-guides:
+    runs-on: ubuntu-latest
+    name: Sync Guides to R2
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          
+      - name: Authenticate with GitHub for private packages
+        run: |
+          echo "PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+          
+      - name: Install dependencies
+        run: bun install
+        timeout-minutes: 5
+        
+      - name: Build guides content
+        run: |
+          cd apps/guides
+          bun run build-content
+          
+      - name: Sync guides to R2 bucket
+        run: |
+          cd apps/guides
+          bun run sync-to-r2
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: ${{ secrets.PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME }}
+          FORCE_SYNC: ${{ github.event.inputs.force_sync }}
+          
+      - name: Report sync status
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ Guides successfully synced to R2 bucket"
+          else
+            echo "❌ Guide sync failed"
+            exit 1
+          fi
