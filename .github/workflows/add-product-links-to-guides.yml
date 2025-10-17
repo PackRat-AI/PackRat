@@ -1,0 +1,78 @@
+name: Add Product Links to Modified Guides
+
+on:
+  push:
+    branches: ["development"]
+    paths:
+      - "apps/guides/content/posts/**"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  add-product-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      - name: Check for modified guides
+        id: check_modified
+        run: |
+          # Get the list of modified guide files
+          modified_guides=$(git diff --name-only HEAD~1 HEAD -- apps/guides/content/posts/*.mdx || echo "")
+          
+          if [ -z "$modified_guides" ]; then
+            echo "No guide files were modified"
+            echo "has_modified_guides=false" >> $GITHUB_OUTPUT
+          else
+            echo "Modified guides:"
+            echo "$modified_guides"
+            echo "has_modified_guides=true" >> $GITHUB_OUTPUT
+            # Save modified files for the next step
+            echo "$modified_guides" > modified_guides.txt
+          fi
+
+      - name: Add product links to modified guides
+        if: steps.check_modified.outputs.has_modified_guides == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          PACKRAT_API_KEY: ${{ secrets.PACKRAT_API_KEY }}
+        run: |
+          bun run .github/scripts/add-product-links.ts
+
+      - name: Commit and push changes
+        if: steps.check_modified.outputs.has_modified_guides == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Check if there are any changes to commit
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add apps/guides/content/posts/*.mdx
+            git commit -m "🤖 Auto-add product links to modified guides
+
+            - Automatically detected equipment mentions in modified guides
+            - Used AI-powered vector search to find relevant product links
+            - Added affiliate links and product recommendations
+            
+            [skip ci]"
+            git push
+          fi
