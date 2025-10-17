@@ -42,6 +42,7 @@ jobs:
         timeout-minutes: 5
         
       - name: Sync guides to R2 bucket
+        id: sync-step
         run: |
           cd apps/guides
           bun run sync-to-r2
@@ -55,7 +56,7 @@ jobs:
       - name: Report sync status
         if: always()
         run: |
-          if [ $? -eq 0 ]; then
+          if [ "${{ steps.sync-step.outcome }}" = "success" ]; then
             echo "✅ Guides successfully synced to R2 bucket"
           else
             echo "❌ Guide sync failed"
