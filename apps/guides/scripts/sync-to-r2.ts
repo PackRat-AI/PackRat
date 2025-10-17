@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 
 import fs from 'fs';
-import matter from 'gray-matter';
 import path from 'path';
 import { R2BucketService } from '../../../packages/api/src/services/r2-bucket';
 import type { Env } from '../../../packages/api/src/types/env';
@@ -95,30 +94,6 @@ async function syncGuidesToR2() {
 
         // Read and parse file content
         const fileContent = fs.readFileSync(filePath, 'utf8');
-        const { data: frontmatter } = matter(fileContent);
-
-        // Prepare metadata for R2 storage
-        const rawMetadata = {
-          title: frontmatter.title || file.replace(/\.(mdx?|md)$/, ''),
-          description: frontmatter.description || '',
-          categories: frontmatter.categories || [],
-          author: frontmatter.author || '',
-          date: frontmatter.date || new Date().toISOString(),
-          difficulty: frontmatter.difficulty || '',
-          readingTime: frontmatter.readingTime ?? '',
-          uploadedAt: new Date().toISOString(),
-        };
-
-        // Normalize metadata to string values (R2/S3 metadata headers must be strings)
-        const metadata: Record<string, string> = {};
-        for (const [key, value] of Object.entries(rawMetadata)) {
-          if (value === undefined || value === null) continue;
-          metadata[key] = Array.isArray(value)
-            ? JSON.stringify(value)
-            : typeof value === 'object'
-              ? JSON.stringify(value)
-              : String(value);
-        }
 
         // Upload to R2 with metadata
         await bucket.put(fileKey, fileContent, {
@@ -126,7 +101,6 @@ async function syncGuidesToR2() {
             contentType: 'text/markdown',
             cacheControl: 'public, max-age=3600', // Cache for 1 hour
           },
-          customMetadata: metadata,
         });
 
         console.log(`✅ Successfully uploaded ${file}`);
