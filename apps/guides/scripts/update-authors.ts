@@ -198,6 +198,41 @@ function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
   updatePostAuthor(post, newAuthor);
 }
 
+// Update all posts by a specific author
+function updatePostsByAuthor(oldAuthor: string, newAuthor: string): void {
+  if (!isValidAuthor(newAuthor)) {
+    console.error(chalk.red(`Error: "${newAuthor}" is not a valid author.`));
+    console.log(chalk.yellow('Use "list-authors" command to see available authors.'));
+    return;
+  }
+
+  const posts = getAllPosts();
+  const postsToUpdate = posts.filter((post) => post.author === oldAuthor);
+
+  if (postsToUpdate.length === 0) {
+    console.error(chalk.red(`No posts found with author "${oldAuthor}".`));
+    console.log(chalk.yellow('Current authors in the system:'));
+    const authors = Array.from(new Set(posts.map((post) => post.author))).sort();
+    authors.forEach((author) => console.log(`  - ${author}`));
+    return;
+  }
+
+  console.log(chalk.blue(`Found ${postsToUpdate.length} posts by "${oldAuthor}"`));
+
+  let updatedCount = 0;
+  postsToUpdate.forEach((post) => {
+    if (updatePostAuthor(post, newAuthor)) {
+      updatedCount++;
+    }
+  });
+
+  console.log(
+    chalk.green(
+      `✓ Successfully updated ${updatedCount} of ${postsToUpdate.length} posts from "${oldAuthor}" to "${newAuthor}"`,
+    ),
+  );
+}
+
 // Rebalance authors to be more evenly distributed
 function rebalanceAuthors(): void {
   const posts = getAllPosts();
@@ -276,8 +311,9 @@ function showHelp(): void {
   console.log('Commands:');
   console.log('  distribution     Show current author distribution');
   console.log('  list-authors     List all available authors');
-  console.log('  update-slug <slug> <author>     Update author for specific post by slug');
-  console.log('  update-title <title> <author>   Update author for post by title search');
+  console.log('  update-slug <slug> <author>        Update author for specific post by slug');
+  console.log('  update-title <title> <author>      Update author for post by title search');
+  console.log('  update-author <old-author> <new-author>  Update all posts by specific author');
   console.log('  rebalance        Redistribute posts to balance author counts');
   console.log('  find <title>     Find posts matching title search');
   console.log('  help             Show this help message\n');
@@ -288,6 +324,7 @@ function showHelp(): void {
     '  bun run scripts/update-authors.ts update-slug "first-backpacking-trip" "Alex Morgan"',
   );
   console.log('  bun run scripts/update-authors.ts update-title "hiking" "Jamie Rivera"');
+  console.log('  bun run scripts/update-authors.ts update-author "Unknown" "Alex Morgan"');
   console.log('  bun run scripts/update-authors.ts rebalance');
 }
 
@@ -331,6 +368,18 @@ if (isMainModule()) {
         assertDefined(args[1]);
         assertDefined(args[2]);
         updatePostsByTitle(args[1], args[2]);
+        break;
+
+      case 'update-author':
+        if (args.length < 3) {
+          console.error(
+            chalk.red('Error: Missing arguments. Usage: update-author <old-author> <new-author>'),
+          );
+          process.exit(1);
+        }
+        assertDefined(args[1]);
+        assertDefined(args[2]);
+        updatePostsByAuthor(args[1], args[2]);
         break;
 
       case 'find': {
@@ -378,6 +427,7 @@ export {
   updatePostAuthor,
   updatePostBySlug,
   updatePostsByTitle,
+  updatePostsByAuthor,
   rebalanceAuthors,
   findPostsByTitle,
   isValidAuthor,
