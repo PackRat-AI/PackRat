@@ -1,3 +1,4 @@
+---
 name: Add Product Links to Modified Guides
 
 on:
@@ -34,8 +35,9 @@ jobs:
         id: check_modified
         run: |
           # Get the list of modified guide files
-          modified_guides=$(git diff --name-only HEAD~1 HEAD -- apps/guides/content/posts/*.mdx || echo "")
-          
+          modified_guides=$(git diff --name-only HEAD~1 HEAD -- \
+            apps/guides/content/posts/*.mdx || echo "")
+
           if [ -z "$modified_guides" ]; then
             echo "No guide files were modified"
             echo "has_modified_guides=false" >> $GITHUB_OUTPUT
@@ -53,15 +55,17 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           PACKRAT_API_KEY: ${{ secrets.PACKRAT_API_KEY }}
+          PACKRAT_API_URL: ${{ vars.PACKRAT_API_URL ||
+            'https://api.packrat.ai' }}
         run: |
-          bun run .github/scripts/add-product-links.ts
+          bun run .github/scripts/add-product-links-production.ts
 
       - name: Commit and push changes
         if: steps.check_modified.outputs.has_modified_guides == 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           # Check if there are any changes to commit
           if git diff --quiet; then
             echo "No changes to commit"
@@ -72,7 +76,7 @@ jobs:
             - Automatically detected equipment mentions in modified guides
             - Used AI-powered vector search to find relevant product links
             - Added affiliate links and product recommendations
-            
+
             [skip ci]"
             git push
           fi
