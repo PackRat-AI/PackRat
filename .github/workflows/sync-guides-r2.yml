@@ -21,6 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Sync Guides to R2
     
+    permissions:
+      contents: read
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,11 +41,6 @@ jobs:
         run: bun install
         timeout-minutes: 5
         
-      - name: Build guides content
-        run: |
-          cd apps/guides
-          bun run build-content
-          
       - name: Sync guides to R2 bucket
         run: |
           cd apps/guides
