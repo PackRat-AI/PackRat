@@ -1,4 +1,3 @@
----
 name: Add Product Links to Modified Guides
 
 on:
@@ -55,8 +54,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
           PACKRAT_API_KEY: ${{ secrets.PACKRAT_API_KEY }}
-          PACKRAT_API_URL: ${{ vars.PACKRAT_API_URL ||
-            'https://api.packrat.ai' }}
+          PACKRAT_API_URL: ${{ vars.PACKRAT_API_URL || 'https://api.packrat.ai' }}
         run: |
           bun run .github/scripts/add-product-links-production.ts
 

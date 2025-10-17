@@ -50,7 +50,7 @@ interface ApiResponse {
 // Configuration
 const MODIFIED_GUIDES_FILE = 'modified_guides.txt';
 const CONTENT_DIR = path.join(process.cwd(), 'apps/guides/content/posts');
-const API_BASE_URL = process.env.PACKRAT_API_URL || 'http://localhost:8787';
+const API_BASE_URL = process.env.PACKRAT_API_URL || 'https://api.packrat.ai';
 
 // Simple frontmatter parser
 function parseFrontmatter(content: string): { data: any; content: string } {
@@ -94,8 +94,12 @@ function stringifyFrontmatter(content: string, data: any): string {
   for (const [key, value] of Object.entries(data)) {
     if (Array.isArray(value)) {
       frontmatter += `${key}: [${value.map(v => `"${v}"`).join(', ')}]\n`;
-    } else {
+    } else if (typeof value === 'string') {
       frontmatter += `${key}: "${value}"\n`;
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      frontmatter += `${key}: ${value}\n`;
+    } else {
+      frontmatter += `${key}: "${String(value)}"\n`;
     }
   }
   frontmatter += '---\n\n';
@@ -120,6 +124,11 @@ async function searchCatalogAPI(query: string): Promise<ProductLink[]> {
     }
 
     const data: ApiResponse = await response.json();
+    
+    if (!data.items || !Array.isArray(data.items)) {
+      log.warning(`API response missing items array for query: ${query}`);
+      return [];
+    }
     
     return data.items.map(item => ({
       id: item.id || item._id || 'unknown',
