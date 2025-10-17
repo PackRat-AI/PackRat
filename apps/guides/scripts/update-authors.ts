@@ -213,6 +213,12 @@ function rebalanceAuthors(): void {
     currentDistribution[author] = posts.filter((post) => post.author === author);
   });
 
+  // Pre-compute author counts for efficient tracking during reassignment
+  const authorCounts: Record<string, number> = {};
+  mainAuthors.forEach((author) => {
+    authorCounts[author] = currentDistribution[author]?.length || 0;
+  });
+
   // Find posts that need reassignment (authored by non-main authors or over-represented authors)
   const postsToReassign: PostMetadata[] = [];
 
@@ -229,6 +235,8 @@ function rebalanceAuthors(): void {
     if (authorPosts.length > targetPerAuthor) {
       const excess = authorPosts.slice(targetPerAuthor);
       postsToReassign.push(...excess);
+      // Update the count to reflect posts that will be reassigned
+      authorCounts[author] = targetPerAuthor;
     }
   });
 
@@ -239,23 +247,17 @@ function rebalanceAuthors(): void {
 
   console.log(chalk.yellow(`Found ${postsToReassign.length} posts to reassign`));
 
-  // Assign posts to authors with the fewest posts
+  // Assign posts to authors with the fewest posts (O(n log n) instead of O(n²))
   let updatedCount = 0;
   postsToReassign.forEach((post) => {
-    // Find author with least posts
-    const authorCounts = mainAuthors.map((author) => ({
-      author,
-      count:
-        posts.filter((p) => p.author === author && !postsToReassign.includes(p)).length +
-        postsToReassign.slice(0, postsToReassign.indexOf(post)).filter((p) => p.author === author)
-          .length,
-    }));
+    // Find author with least posts using pre-computed counts
+    const authorWithLeast = mainAuthors.reduce((min, author) =>
+      authorCounts[author] < authorCounts[min] ? author : min,
+    );
 
-    authorCounts.sort((a, b) => a.count - b.count);
-    const targetAuthor = authorCounts[0]?.author;
-
-    if (targetAuthor && targetAuthor !== post.author) {
-      if (updatePostAuthor(post, targetAuthor as ValidAuthor)) {
+    if (authorWithLeast !== post.author) {
+      if (updatePostAuthor(post, authorWithLeast as ValidAuthor)) {
+        authorCounts[authorWithLeast]++;
         updatedCount++;
       }
     }
@@ -290,7 +292,12 @@ function showHelp(): void {
 }
 
 // Main execution
-if (require.main === module) {
+function isMainModule(): boolean {
+  // For Bun/ES modules: check if this file was executed directly
+  return import.meta.url === `file://${process.argv[1]}`;
+}
+
+if (isMainModule()) {
   const args = process.argv.slice(2);
   const command = args[0];
 
@@ -309,6 +316,8 @@ if (require.main === module) {
           console.error(chalk.red('Error: Missing arguments. Usage: update-slug <slug> <author>'));
           process.exit(1);
         }
+        assertDefined(args[1]);
+        assertDefined(args[2]);
         updatePostBySlug(args[1], args[2]);
         break;
 
@@ -319,6 +328,8 @@ if (require.main === module) {
           );
           process.exit(1);
         }
+        assertDefined(args[1]);
+        assertDefined(args[2]);
         updatePostsByTitle(args[1], args[2]);
         break;
 
@@ -327,6 +338,7 @@ if (require.main === module) {
           console.error(chalk.red('Error: Missing title to search. Usage: find <title>'));
           process.exit(1);
         }
+        assertDefined(args[1]);
         const matchingPosts = findPostsByTitle(args[1]);
         if (matchingPosts.length === 0) {
           console.log(chalk.yellow(`No posts found matching: "${args[1]}"`));
