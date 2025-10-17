@@ -221,7 +221,7 @@ function updatePostsByAuthor(oldAuthor: string, newAuthor: string): void {
 
   let updatedCount = 0;
   postsToUpdate.forEach((post) => {
-    if (updatePostAuthor(post, newAuthor)) {
+    if (updatePostAuthor(post, newAuthor as ValidAuthor)) {
       updatedCount++;
     }
   });
@@ -311,9 +311,9 @@ function showHelp(): void {
   console.log('Commands:');
   console.log('  distribution     Show current author distribution');
   console.log('  list-authors     List all available authors');
-  console.log('  update-slug <slug> <author>        Update author for specific post by slug');
-  console.log('  update-title <title> <author>      Update author for post by title search');
-  console.log('  update-author <old-author> <new-author>  Update all posts by specific author');
+  console.log('  update-slug <slug> <author>         Update author for specific post by slug');
+  console.log('  update-title <title> <author>       Update author for post by title search');
+  console.log('  update-author <old-author> <new-author>    Update all posts by specific author');
   console.log('  rebalance        Redistribute posts to balance author counts');
   console.log('  find <title>     Find posts matching title search');
   console.log('  help             Show this help message\n');
