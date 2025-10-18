@@ -1,0 +1,153 @@
+name: Extract Products from Modified Guides
+
+on:
+  push:
+    branches: [development]
+    paths:
+      - 'apps/guides/content/posts/**/*.mdx'
+  pull_request:
+    branches: [development]
+    paths:
+      - 'apps/guides/content/posts/**/*.mdx'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  extract-products:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/development' || github.base_ref == 'development'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      - name: Get modified guide files
+        id: changed-files
+        run: |
+          # Get list of modified .mdx files in the guides content directory
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # For pull requests, compare against base branch
+            changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} -- 'apps/guides/content/posts/*.mdx' | tr '\n' ' ')
+          else
+            # For pushes, compare against previous commit
+            changed_files=$(git diff --name-only HEAD~1 HEAD -- 'apps/guides/content/posts/*.mdx' | tr '\n' ' ')
+          fi
+          
+          echo "changed_files=$changed_files" >> $GITHUB_OUTPUT
+          echo "Modified guide files: $changed_files"
+
+      - name: Extract products from modified guides
+        if: steps.changed-files.outputs.changed_files != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PACKRAT_API_KEY: ${{ secrets.PACKRAT_API_KEY }}
+          PACKRAT_API_URL: ${{ secrets.PACKRAT_API_URL }}
+          EXPO_PUBLIC_API_URL: http://localhost:8787
+        run: |
+          # Run the extraction script for all modified files
+          echo "Running product extraction script..."
+          bun .github/scripts/extract-guide-products.ts ${{ steps.changed-files.outputs.changed_files }}
+
+      - name: Create or update product links file
+        if: steps.changed-files.outputs.changed_files != ''
+        run: |
+          # Create a summary file of processed guides
+          output_file="apps/guides/extracted-products-$(date +%Y%m%d-%H%M%S).json"
+          
+          if [ -f extracted_products.log ]; then
+            # Create a JSON summary of the extraction process
+            echo "{" > "$output_file"
+            echo "  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"," >> "$output_file"
+            echo "  \"processedFiles\": [" >> "$output_file"
+            
+            first=true
+            for file in ${{ steps.changed-files.outputs.changed_files }}; do
+              if [ -f "$file" ]; then
+                [ "$first" = true ] && first=false || echo "," >> "$output_file"
+                echo "    \"$file\"" >> "$output_file"
+              fi
+            done
+            
+            echo "  ]," >> "$output_file"
+            echo "  \"status\": \"completed\"" >> "$output_file"
+            echo "}" >> "$output_file"
+            
+            echo "Created extraction summary: $output_file"
+          fi
+
+      - name: Commit extracted product data
+        if: steps.changed-files.outputs.changed_files != '' && github.event_name == 'push'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action - Product Extractor"
+          
+          # Add any generated files
+          if ls apps/guides/extracted-products-*.json 1> /dev/null 2>&1; then
+            git add apps/guides/extracted-products-*.json
+            git add extracted_products.log 2>/dev/null || true
+            
+            if ! git diff --staged --quiet; then
+              git commit -m "Extract products from modified guides [automated]
+
+              Modified files:
+              ${{ steps.changed-files.outputs.changed_files }}
+              
+              Generated product extraction data for guides modified in this push."
+              git push
+            else
+              echo "No changes to commit"
+            fi
+          else
+            echo "No extraction files to commit"
+          fi
+
+      - name: Comment on PR with extraction results
+        if: steps.changed-files.outputs.changed_files != '' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Check if extraction log exists
+            if (fs.existsSync('extracted_products.log')) {
+              const logContent = fs.readFileSync('extracted_products.log', 'utf8');
+              
+              const comment = `## 🎯 Product Extraction Results
+              
+              Product extraction has been completed for the modified guide files in this PR.
+              
+              ### Processed Files
+              \`\`\`
+              ${{ steps.changed-files.outputs.changed_files }}
+              \`\`\`
+              
+              ### Extraction Log
+              \`\`\`
+              ${logContent}
+              \`\`\`
+              
+              _This comment was generated automatically by the product extraction workflow._`;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            } else {
+              console.log('No extraction results to report');
+            }
