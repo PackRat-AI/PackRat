@@ -3,7 +3,7 @@ name: Sync Guides to R2 Bucket
 on:
   push:
     branches:
-      - main
+      - development
     paths:
       - 'apps/guides/content/posts/**'
       - 'apps/guides/scripts/**'
