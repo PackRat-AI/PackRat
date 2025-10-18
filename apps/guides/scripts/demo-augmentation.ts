@@ -155,7 +155,8 @@ async function demoAugmentation() {
   console.log(chalk.gray('3. Run: bun run apps/guides/scripts/demo-augmentation.ts'));
 }
 
-// Run the demo
+// Run the demo (following existing codebase pattern)
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 if (require.main === module) {
   demoAugmentation().catch((error) => {
     console.error(chalk.red('Demo error:'), error);

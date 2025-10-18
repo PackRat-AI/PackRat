@@ -285,7 +285,8 @@ async function main() {
   }
 }
 
-// Run the script
+// Run the script (following existing codebase pattern)
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 if (require.main === module) {
   main().catch((error) => {
     console.error(chalk.red('Fatal error:'), error);
