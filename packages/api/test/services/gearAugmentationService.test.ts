@@ -28,12 +28,8 @@ const mockEnv = {
 };
 
 describe('GearAugmentationService', () => {
-  let gearAugmentationService: GearAugmentationService;
-
-  beforeAll(async () => {
-    // Initialize service with mock environment
-    gearAugmentationService = new GearAugmentationService(mockEnv, false);
-  });
+  // Initialize service with mock environment
+  const gearAugmentationService = new GearAugmentationService(mockEnv, false);
 
   describe('extractGearMentions', () => {
     test('should return empty array for empty content', async () => {
