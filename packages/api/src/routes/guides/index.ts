@@ -1,6 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
+import * as augmentGuideRoute from './augmentGuideRoute';
+import * as extractGearsRoute from './extractGearsRoute';
 import * as getCategoriesRoute from './getCategoriesRoute';
 import * as getGuideRoute from './getGuideRoute';
 import * as getGuidesRoute from './getGuidesRoute';
@@ -12,5 +14,7 @@ guidesRoutes.openapi(getGuidesRoute.routeDefinition, getGuidesRoute.handler);
 guidesRoutes.openapi(getCategoriesRoute.routeDefinition, getCategoriesRoute.handler);
 guidesRoutes.openapi(searchGuidesRoute.routeDefinition, searchGuidesRoute.handler);
 guidesRoutes.openapi(getGuideRoute.routeDefinition, getGuideRoute.handler);
+guidesRoutes.openapi(augmentGuideRoute.routeDefinition, augmentGuideRoute.handler);
+guidesRoutes.openapi(extractGearsRoute.routeDefinition, extractGearsRoute.handler);
 
 export { guidesRoutes };

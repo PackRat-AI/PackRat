@@ -1,4 +1,5 @@
 import { openai } from '@ai-sdk/openai';
+import { GearAugmentationService } from '@packrat/api/services';
 import { generateText } from 'ai';
 import chalk from 'chalk';
 import { format } from 'date-fns';
@@ -35,6 +36,7 @@ interface ContentRequest {
   difficulty?: DifficultyLevel;
   author?: string;
   generateFullContent?: boolean;
+  enableProductAugmentation?: boolean;
 }
 
 interface ContentMetadata {
@@ -390,6 +392,38 @@ async function generatePost(
     let content = '';
     if (request.generateFullContent) {
       content = await generateMdxContent(metadata, existingContent);
+
+      // Augment with product links if enabled and API key available
+      if (request.enableProductAugmentation && process.env.OPENAI_API_KEY) {
+        try {
+          console.log(chalk.blue(`  🔗 Augmenting with product links...`));
+
+          // Create mock environment for augmentation service
+          const mockEnv = {
+            OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+            AI_PROVIDER: (process.env.AI_PROVIDER || 'openai') as 'openai',
+            CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || '',
+            CLOUDFLARE_AI_GATEWAY_ID: process.env.CLOUDFLARE_AI_GATEWAY_ID || '',
+            AI: {},
+            NEON_DATABASE_URL: process.env.NEON_DATABASE_URL || '',
+          };
+
+          const gearAugmentationService = new GearAugmentationService(mockEnv, false);
+          const augmentationResult = await gearAugmentationService.augmentGuide(content, 3, 0.3);
+
+          if (augmentationResult.totalProductsAdded > 0) {
+            content = augmentationResult.augmentedContent;
+            console.log(
+              chalk.green(`  ✓ Added ${augmentationResult.totalProductsAdded} product links`),
+            );
+          } else {
+            console.log(chalk.yellow(`  ⚠️  No relevant products found for augmentation`));
+          }
+        } catch (augmentationError) {
+          console.error(chalk.red(`  ❌ Product augmentation failed:`), augmentationError);
+          // Continue without augmentation on error
+        }
+      }
     } else {
       content = `# ${metadata.title}\n\n${metadata.description}\n\n## Introduction\n\nThis is a placeholder for the full article content.`;
     }
@@ -435,6 +469,7 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
         difficulty: topic.difficulty,
         author: topic.author,
         generateFullContent: true,
+        enableProductAugmentation: true,
       };
 
       // Pass existing content to generatePost for context
