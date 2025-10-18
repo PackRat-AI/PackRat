@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "clean": "bunx rimraf .next node_modules out .vercel",
-    "sync-to-r2": "bun run scripts/sync-to-r2.ts"
+    "sync-to-r2": "bun run scripts/sync-to-r2.ts",
+    "update-authors": "bun run scripts/update-authors.ts"
   },
   "dependencies": {
     "@packrat/api": "workspace:*",
@@ -47,6 +48,7 @@
     "@tanstack/react-query-devtools": "^5.70.0",
     "ai": "^5.0.11",
     "autoprefixer": "^10.4.21",
+    "chalk": "^5.6.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
