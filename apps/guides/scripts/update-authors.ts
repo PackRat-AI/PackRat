@@ -21,13 +21,13 @@ interface PostMetadata {
 function getUniqueAuthors(): string[] {
   const posts = getAllPosts();
   const authors = new Set<string>();
-  
+
   posts.forEach((post) => {
     if (post.author && post.author !== 'Unknown') {
       authors.add(post.author);
     }
   });
-  
+
   return Array.from(authors).sort();
 }
 
@@ -106,10 +106,10 @@ function showAuthorDistribution(): void {
 // List all available authors
 function listAvailableAuthors(): void {
   const authors = getUniqueAuthors();
-  
+
   console.log(chalk.blue('\n=== Available Authors ==='));
   console.log(chalk.blue(`Found ${authors.length} authors in existing content:`));
-  
+
   authors.forEach((author, index) => {
     console.log(`  ${index + 1}. ${author}`);
   });
@@ -175,7 +175,7 @@ function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
   }
 
   console.log(chalk.blue(`Found ${matchingPosts.length} posts by "${currentAuthor}"`));
-  
+
   let updatedCount = 0;
   matchingPosts.forEach((post) => {
     if (updatePostAuthor(post, newAuthor)) {
@@ -183,20 +183,21 @@ function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
     }
   });
 
-  console.log(chalk.green(`✓ Updated ${updatedCount} posts from "${currentAuthor}" to "${newAuthor}"`));
+  console.log(
+    chalk.green(`✓ Updated ${updatedCount} posts from "${currentAuthor}" to "${newAuthor}"`),
+  );
 }
 
 // Rebalance authors to be more evenly distributed
 function rebalanceAuthors(): void {
   const posts = getAllPosts();
-  const allAuthors = getUniqueAuthors();
   
   // Use the top 6 most active authors for rebalancing (similar to original logic)
   const distribution: Record<string, number> = {};
   posts.forEach((post) => {
     distribution[post.author] = (distribution[post.author] || 0) + 1;
   });
-  
+
   const mainAuthors = Object.entries(distribution)
     .sort(([, countA], [, countB]) => countB - countA)
     .slice(0, 6)
@@ -206,7 +207,7 @@ function rebalanceAuthors(): void {
 
   console.log(chalk.blue(`\n=== Rebalancing Authors ===`));
   console.log(chalk.blue(`Using top ${mainAuthors.length} authors for rebalancing:`));
-  mainAuthors.forEach(author => console.log(`  - ${author}`));
+  mainAuthors.forEach((author) => console.log(`  - ${author}`));
   console.log(chalk.blue(`Target per author: ~${targetPerAuthor} posts`));
 
   // Get current distribution for main authors only
@@ -341,7 +342,9 @@ if (isMainModule()) {
       case 'update-by-author':
         if (args.length < 3) {
           console.error(
-            chalk.red('Error: Missing arguments. Usage: update-by-author <current-author> <new-author>'),
+            chalk.red(
+              'Error: Missing arguments. Usage: update-by-author <current-author> <new-author>',
+            ),
           );
           process.exit(1);
         }
