@@ -8,32 +8,7 @@ import path from 'path';
 // Configuration
 const POSTS_DIR = path.join(process.cwd(), 'content/posts');
 
-// Predefined list of authors (from generate-content.ts)
-const AUTHORS = [
-  'Alex Morgan',
-  'Jamie Rivera',
-  'Sam Washington',
-  'Taylor Chen',
-  'Jordan Smith',
-  'Casey Johnson',
-] as const;
-
-// Additional authors found in existing content
-const ADDITIONAL_AUTHORS = [
-  'Dr. Amanda Rivera',
-  'Thomas Reynolds',
-  'Michael Chen',
-  'Marcus Johnson',
-  'Alex Thompson',
-  'Jordan Williams',
-  'Lisa Chen',
-  'Sarah Johnson',
-  'Jamie Rodriguez',
-] as const;
-
-const ALL_AUTHORS = [...AUTHORS, ...ADDITIONAL_AUTHORS] as const;
-
-type ValidAuthor = (typeof ALL_AUTHORS)[number];
+// No longer using predefined author lists - using actual MDX content as source of truth
 
 interface PostMetadata {
   title: string;
@@ -42,9 +17,18 @@ interface PostMetadata {
   filePath: string;
 }
 
-// Validate if an author name is in the predefined list
-function isValidAuthor(author: string): author is ValidAuthor {
-  return ALL_AUTHORS.includes(author as ValidAuthor);
+// Get all unique authors from existing MDX files
+function getUniqueAuthors(): string[] {
+  const posts = getAllPosts();
+  const authors = new Set<string>();
+  
+  posts.forEach((post) => {
+    if (post.author && post.author !== 'Unknown') {
+      authors.add(post.author);
+    }
+  });
+  
+  return Array.from(authors).sort();
 }
 
 // Get all posts with their metadata
@@ -73,7 +57,7 @@ function getAllPosts(): PostMetadata[] {
 }
 
 // Update author in a specific post
-function updatePostAuthor(post: PostMetadata, newAuthor: ValidAuthor): boolean {
+function updatePostAuthor(post: PostMetadata, newAuthor: string): boolean {
   try {
     const fileContent = fs.readFileSync(post.filePath, 'utf8');
     const { data, content } = matter(fileContent);
@@ -115,40 +99,24 @@ function showAuthorDistribution(): void {
   console.log(chalk.blue('\nAuthor Distribution:'));
   sortedAuthors.forEach(([author, count]) => {
     const percentage = ((count / posts.length) * 100).toFixed(1);
-    const isValid = isValidAuthor(author);
-    const status = isValid ? chalk.green('✓') : chalk.yellow('⚠');
-    console.log(`${status} ${author}: ${count} posts (${percentage}%)`);
+    console.log(`${chalk.green('✓')} ${author}: ${count} posts (${percentage}%)`);
   });
-
-  // Show invalid authors if any
-  const invalidAuthors = sortedAuthors.filter(([author]) => !isValidAuthor(author));
-  if (invalidAuthors.length > 0) {
-    console.log(chalk.yellow('\nNote: Authors marked with ⚠ are not in the predefined list'));
-  }
 }
 
 // List all available authors
 function listAvailableAuthors(): void {
+  const authors = getUniqueAuthors();
+  
   console.log(chalk.blue('\n=== Available Authors ==='));
-  console.log(chalk.blue('Main Authors (from generator):'));
-  AUTHORS.forEach((author, index) => {
+  console.log(chalk.blue(`Found ${authors.length} authors in existing content:`));
+  
+  authors.forEach((author, index) => {
     console.log(`  ${index + 1}. ${author}`);
-  });
-
-  console.log(chalk.blue('\nAdditional Authors (found in content):'));
-  ADDITIONAL_AUTHORS.forEach((author, index) => {
-    console.log(`  ${AUTHORS.length + index + 1}. ${author}`);
   });
 }
 
 // Update a specific post by slug
 function updatePostBySlug(slug: string, newAuthor: string): void {
-  if (!isValidAuthor(newAuthor)) {
-    console.error(chalk.red(`Error: "${newAuthor}" is not a valid author.`));
-    console.log(chalk.yellow('Use "list-authors" command to see available authors.'));
-    return;
-  }
-
   const posts = getAllPosts();
   const post = posts.find((p) => p.slug === slug);
 
@@ -172,11 +140,6 @@ function findPostsByTitle(searchTitle: string): PostMetadata[] {
 
 // Update posts by title search
 function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
-  if (!isValidAuthor(newAuthor)) {
-    console.error(chalk.red(`Error: "${newAuthor}" is not a valid author.`));
-    return;
-  }
-
   const matchingPosts = findPostsByTitle(searchTitle);
 
   if (matchingPosts.length === 0) {
@@ -198,13 +161,52 @@ function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
   updatePostAuthor(post, newAuthor);
 }
 
+// Update all posts by current author name
+function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
+  const posts = getAllPosts();
+  const matchingPosts = posts.filter((post) => post.author === currentAuthor);
+
+  if (matchingPosts.length === 0) {
+    console.error(chalk.red(`No posts found with author: "${currentAuthor}"`));
+    console.log(chalk.yellow('Available authors:'));
+    const authors = getUniqueAuthors();
+    authors.forEach((author) => console.log(`  - ${author}`));
+    return;
+  }
+
+  console.log(chalk.blue(`Found ${matchingPosts.length} posts by "${currentAuthor}"`));
+  
+  let updatedCount = 0;
+  matchingPosts.forEach((post) => {
+    if (updatePostAuthor(post, newAuthor)) {
+      updatedCount++;
+    }
+  });
+
+  console.log(chalk.green(`✓ Updated ${updatedCount} posts from "${currentAuthor}" to "${newAuthor}"`));
+}
+
 // Rebalance authors to be more evenly distributed
 function rebalanceAuthors(): void {
   const posts = getAllPosts();
-  const mainAuthors = [...AUTHORS]; // Only use main authors for rebalancing
+  const allAuthors = getUniqueAuthors();
+  
+  // Use the top 6 most active authors for rebalancing (similar to original logic)
+  const distribution: Record<string, number> = {};
+  posts.forEach((post) => {
+    distribution[post.author] = (distribution[post.author] || 0) + 1;
+  });
+  
+  const mainAuthors = Object.entries(distribution)
+    .sort(([, countA], [, countB]) => countB - countA)
+    .slice(0, 6)
+    .map(([author]) => author);
+
   const targetPerAuthor = Math.ceil(posts.length / mainAuthors.length);
 
   console.log(chalk.blue(`\n=== Rebalancing Authors ===`));
+  console.log(chalk.blue(`Using top ${mainAuthors.length} authors for rebalancing:`));
+  mainAuthors.forEach(author => console.log(`  - ${author}`));
   console.log(chalk.blue(`Target per author: ~${targetPerAuthor} posts`));
 
   // Get current distribution for main authors only
@@ -224,7 +226,7 @@ function rebalanceAuthors(): void {
 
   // Add posts from non-main authors
   posts.forEach((post) => {
-    if (!mainAuthors.includes(post.author as (typeof AUTHORS)[number])) {
+    if (!mainAuthors.includes(post.author)) {
       postsToReassign.push(post);
     }
   });
@@ -256,7 +258,7 @@ function rebalanceAuthors(): void {
     );
 
     if (authorWithLeast !== post.author) {
-      if (updatePostAuthor(post, authorWithLeast as ValidAuthor)) {
+      if (updatePostAuthor(post, authorWithLeast)) {
         authorCounts[authorWithLeast]++;
         updatedCount++;
       }
@@ -275,19 +277,22 @@ function showHelp(): void {
 
   console.log('Commands:');
   console.log('  distribution     Show current author distribution');
-  console.log('  list-authors     List all available authors');
-  console.log('  update-slug <slug> <author>     Update author for specific post by slug');
-  console.log('  update-title <title> <author>   Update author for post by title search');
+  console.log('  list-authors     List all available authors from existing content');
+  console.log('  update-slug <slug> <author>         Update author for specific post by slug');
+  console.log('  update-title <title> <author>       Update author for post by title search');
+  console.log('  update-by-author <old> <new>        Update all posts by current author name');
   console.log('  rebalance        Redistribute posts to balance author counts');
   console.log('  find <title>     Find posts matching title search');
   console.log('  help             Show this help message\n');
 
   console.log('Examples:');
   console.log('  bun run scripts/update-authors.ts distribution');
+  console.log('  bun run scripts/update-authors.ts list-authors');
   console.log(
     '  bun run scripts/update-authors.ts update-slug "first-backpacking-trip" "Alex Morgan"',
   );
   console.log('  bun run scripts/update-authors.ts update-title "hiking" "Jamie Rivera"');
+  console.log('  bun run scripts/update-authors.ts update-by-author "Jamie Rivera" "Jamie R."');
   console.log('  bun run scripts/update-authors.ts rebalance');
 }
 
@@ -331,6 +336,18 @@ if (isMainModule()) {
         assertDefined(args[1]);
         assertDefined(args[2]);
         updatePostsByTitle(args[1], args[2]);
+        break;
+
+      case 'update-by-author':
+        if (args.length < 3) {
+          console.error(
+            chalk.red('Error: Missing arguments. Usage: update-by-author <current-author> <new-author>'),
+          );
+          process.exit(1);
+        }
+        assertDefined(args[1]);
+        assertDefined(args[2]);
+        updatePostsByAuthor(args[1], args[2]);
         break;
 
       case 'find': {
@@ -378,11 +395,9 @@ export {
   updatePostAuthor,
   updatePostBySlug,
   updatePostsByTitle,
+  updatePostsByAuthor,
   rebalanceAuthors,
   findPostsByTitle,
-  isValidAuthor,
-  AUTHORS,
-  ALL_AUTHORS,
-  type ValidAuthor,
+  getUniqueAuthors,
   type PostMetadata,
 };
