@@ -1,5 +1,6 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useOnDeviceAI } from 'expo-app/features/ai/hooks/useOnDeviceAI';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { type Href, useRouter } from 'expo-router';
@@ -7,13 +8,15 @@ import { Platform, View } from 'react-native';
 
 export function AIChatTile() {
   const router = useRouter();
+  const { isOnDeviceAvailable, recommendedProvider } = useOnDeviceAI();
 
   const route: Href = {
-    pathname: '/ai-chat',
+    pathname: '/ai-demo', // Changed to demo page to show both options
     params: {
       contextType: 'general',
     },
   };
+
   const handlePress = () => {
     if (!isAuthed.peek()) {
       // AI featuer is protected. Redirect user to the auth page if not authenticated.
@@ -42,9 +45,16 @@ export function AIChatTile() {
       }
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-          <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-            Anything outdoors...
-          </Text>
+          <View className="flex-1">
+            <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
+              Anything outdoors...
+            </Text>
+            {isOnDeviceAvailable && (
+              <Text variant="caption2" className="ios:px-0 px-2 text-success">
+                ✓ On-device ready
+              </Text>
+            )}
+          </View>
           <ChevronRight />
         </View>
       }
