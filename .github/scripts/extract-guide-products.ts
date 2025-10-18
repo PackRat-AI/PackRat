@@ -5,6 +5,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // Simple frontmatter parser since gray-matter might not be available in global scope
+// Note: This is a basic parser that only handles simple key: value pairs
+// For complex YAML structures (arrays, objects, multiline), use a proper YAML parser
 function parseFrontmatter(content: string): { data: Record<string, string>; content: string } {
   const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
   const match = content.match(frontmatterRegex);
@@ -95,7 +97,7 @@ async function extractProductsFromGuide(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.PACKRAT_API_KEY || 'test-key'}`,
+          Authorization: `Bearer ${process.env.PACKRAT_API_KEY || ''}`,
         },
         body: JSON.stringify(payload),
       });

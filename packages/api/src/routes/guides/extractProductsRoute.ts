@@ -96,7 +96,7 @@ Only extract items that are explicitly mentioned or clearly implied as necessary
 
 Guide content:
 ${guideContent}`,
-      temperature: 0.3, // Lower temperature for more consistent results
+      temperature: Number(c.env.OPENAI_TEMPERATURE) || 0.3, // Configurable temperature for consistency
     });
 
     // Step 2: Match extracted gear to catalog products using vector search
@@ -106,7 +106,7 @@ ${guideContent}`,
     for (const gear of extractionResult.gears) {
       try {
         // Create search query from gear information
-        const searchQuery = [gear.name, gear.description, ...gear.keywords, gear.category]
+        const searchQuery = [gear.name, gear.description, ...(gear.keywords || []), gear.category]
           .filter(Boolean)
           .join(' ');
 
