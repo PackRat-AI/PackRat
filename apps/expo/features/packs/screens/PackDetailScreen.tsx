@@ -16,7 +16,7 @@ import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import {
   useImagePicker,
@@ -33,7 +33,8 @@ export function PackDetailScreen() {
 
   const isOwnedByUser = usePackOwnershipCheck(id as string);
 
-  const [activeTab, setActiveTab] = useState('all');
+  const DEFAULT_TAB = 'all';
+  const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>({});
@@ -94,14 +95,14 @@ export function PackDetailScreen() {
 
   const handleSavePackingMode = () => {
     // TODO: Implement save to API/storage
-    console.log('Saving packing state:', packedItems);
+    // Placeholder for future implementation
   };
 
-  const getPackingProgress = () => {
+  const packingProgress = useMemo(() => {
     const totalItems = pack?.items?.length || 0;
     const packedCount = Object.values(packedItems).filter(Boolean).length;
     return { packed: packedCount, total: totalItems };
-  };
+  }, [pack?.items?.length, packedItems]);
 
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
     if (catalogItems.length > 0) {
@@ -457,7 +458,7 @@ export function PackDetailScreen() {
                   variant={isPackingMode ? 'primary' : 'secondary'}
                   onPress={() => {
                     setIsPackingMode(!isPackingMode);
-                    setActiveTab('all'); // Reset tab when toggling mode
+                    setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
                   }}
                 >
                   <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
@@ -488,7 +489,7 @@ export function PackDetailScreen() {
 
                 {/* Progress Text */}
                 <Text variant="subhead" className="text-muted-foreground">
-                  {getPackingProgress().packed} of {getPackingProgress().total} items packed
+                  {packingProgress.packed} of {packingProgress.total} items packed
                 </Text>
 
                 {/* Save Button */}
