@@ -542,30 +542,53 @@ export function PackDetailScreen() {
       {isPackingMode && (
         <View className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border">
           <View className="flex-row items-center justify-between">
-            {/* Reset Button */}
-            <Button
-              variant="secondary"
-              size="icon"
-              onPress={handleResetPackingMode}
-              className="h-9 w-9"
-            >
-              <Icon name="restart" size={18} color={colors.grey2} />
-            </Button>
-
-            {/* Progress Text */}
-            <Text variant="subhead" className="text-muted-foreground">
-              {packingProgress.packed} of {packingProgress.total} items packed
-            </Text>
-
-            {/* Save Button */}
-            <Button
-              variant="secondary"
-              size="icon"
-              onPress={handleSavePackingMode}
-              className="h-9 w-9"
-            >
-              <Icon name="check" size={18} color={colors.grey2} />
-            </Button>
+            <View className="flex-row items-center gap-2">
+              {/* Close Button */}
+              <Button
+                variant="plain"
+                size="icon"
+                onPress={() => {
+                  appAlert.current?.alert({
+                    title: 'Exit Packing Mode?',
+                    message: "If you don't save, your packing state will be lost.",
+                    buttons: [
+                      {
+                        text: 'Exit without Saving',
+                        style: 'destructive',
+                        onPress() {
+                          setIsPackingMode(!isPackingMode);
+                          setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+                        },
+                      },
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Save',
+                        style: 'default',
+                        onPress() {
+                          handleSavePackingMode();
+                        },
+                      },
+                    ],
+                  });
+                }}
+              >
+                <Icon name="close" size={20} color={colors.grey2} />
+              </Button>
+              {/* Progress Text */}
+              <Text variant="subhead" className="text-muted-foreground">
+                {packingProgress.packed} of {packingProgress.total} items packed
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              {/* Reset Button */}
+              <Button variant="plain" size="sm" onPress={handleResetPackingMode}>
+                <Text>Reset</Text>
+              </Button>
+              {/* Save Button */}
+              <Button variant="plain" size="sm" onPress={handleSavePackingMode}>
+                <Text>Save</Text>
+              </Button>
+            </View>
           </View>
         </View>
       )}
