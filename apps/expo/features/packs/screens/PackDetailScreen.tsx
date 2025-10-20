@@ -398,7 +398,7 @@ export function PackDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <ScrollView stickyHeaderIndices={[2]}>
+      <ScrollView stickyHeaderIndices={[2]} contentContainerClassName="pb-24">
         {pack.image && (
           <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
         )}
