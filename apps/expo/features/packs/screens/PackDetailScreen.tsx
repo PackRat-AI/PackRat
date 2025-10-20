@@ -398,11 +398,12 @@ export function PackDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <ScrollView>
+      <ScrollView stickyHeaderIndices={[2]}>
         {pack.image && (
           <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
         )}
 
+        {/* Header */}
         <View className="mb-4 p-4">
           <View className="mb-2">
             <Text className="text-2xl font-bold text-foreground">{pack.name}</Text>
@@ -446,111 +447,76 @@ export function PackDetailScreen() {
           )}
         </View>
 
-        <View>
-          <View className="p-4">
-            <View className="gap-4 flex-row items-center">
-              <Button variant="secondary" onPress={handleAskAI} className="flex-1">
-                <Text>Ask AI</Text>
+        {/* Actions */}
+        <View className="p-4">
+          <View className="gap-4 flex-row items-center">
+            <Button variant="secondary" onPress={handleAskAI} className="flex-1">
+              <Text>Ask AI</Text>
+            </Button>
+
+            {isOwnedByUser && (
+              <Button
+                variant={isPackingMode ? 'primary' : 'secondary'}
+                onPress={() => {
+                  setIsPackingMode(!isPackingMode);
+                  setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+                }}
+              >
+                <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
               </Button>
+            )}
 
-              {isOwnedByUser && (
-                <Button
-                  variant={isPackingMode ? 'primary' : 'secondary'}
-                  onPress={() => {
-                    setIsPackingMode(!isPackingMode);
-                    setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-                  }}
-                >
-                  <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
-                </Button>
-              )}
-
-              {isOwnedByUser && (
-                <Button variant="secondary" size="icon" onPress={handleMoreActionsPress}>
-                  <Icon name="dots-horizontal" size={20} color={colors.grey2} />
-                </Button>
-              )}
-            </View>
-          </View>
-
-          {/* Packing Mode Toolbar */}
-          {isPackingMode && (
-            <View className="px-4 py-3 bg-muted/50 border-b border-border">
-              <View className="flex-row items-center justify-between">
-                {/* Reset Button */}
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onPress={handleResetPackingMode}
-                  className="h-9 w-9"
-                >
-                  <Icon name="refresh" size={18} color={colors.grey2} />
-                </Button>
-
-                {/* Progress Text */}
-                <Text variant="subhead" className="text-muted-foreground">
-                  {packingProgress.packed} of {packingProgress.total} items packed
-                </Text>
-
-                {/* Save Button */}
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onPress={handleSavePackingMode}
-                  className="h-9 w-9"
-                >
-                  <Icon name="check" size={18} color={colors.grey2} />
-                </Button>
-              </View>
-            </View>
-          )}
-
-          <View className="flex-row border-b border-border">
-            {isPackingMode ? (
-              <>
-                <TouchableOpacity
-                  className={getTabStyle('all')}
-                  onPress={() => setActiveTab('all')}
-                >
-                  <Text className={getTabTextStyle('all')}>All</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={getTabStyle('unpacked')}
-                  onPress={() => setActiveTab('unpacked')}
-                >
-                  <Text className={getTabTextStyle('unpacked')}>Unpacked</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={getTabStyle('packed')}
-                  onPress={() => setActiveTab('packed')}
-                >
-                  <Text className={getTabTextStyle('packed')}>Packed</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity
-                  className={getTabStyle('all')}
-                  onPress={() => setActiveTab('all')}
-                >
-                  <Text className={getTabTextStyle('all')}>All Items</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={getTabStyle('worn')}
-                  onPress={() => setActiveTab('worn')}
-                >
-                  <Text className={getTabTextStyle('worn')}>Worn</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  className={getTabStyle('consumable')}
-                  onPress={() => setActiveTab('consumable')}
-                >
-                  <Text className={getTabTextStyle('consumable')}>Consumable</Text>
-                </TouchableOpacity>
-              </>
+            {isOwnedByUser && (
+              <Button variant="secondary" size="icon" onPress={handleMoreActionsPress}>
+                <Icon name="dots-horizontal" size={20} color={colors.grey2} />
+              </Button>
             )}
           </View>
+        </View>
 
+        {/* Tabs */}
+        <View className="flex-row bg-background sticky border-b border-border">
+          {isPackingMode ? (
+            <>
+              <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+                <Text className={getTabTextStyle('all')}>All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('unpacked')}
+                onPress={() => setActiveTab('unpacked')}
+              >
+                <Text className={getTabTextStyle('unpacked')}>Unpacked</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('packed')}
+                onPress={() => setActiveTab('packed')}
+              >
+                <Text className={getTabTextStyle('packed')}>Packed</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+                <Text className={getTabTextStyle('all')}>All Items</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('worn')}
+                onPress={() => setActiveTab('worn')}
+              >
+                <Text className={getTabTextStyle('worn')}>Worn</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('consumable')}
+                onPress={() => setActiveTab('consumable')}
+              >
+                <Text className={getTabTextStyle('consumable')}>Consumable</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {/* Content */}
+        <View>
           {filteredItems.length > 0 ? (
             <View className="p-4">
               {filteredItems.map((item) => (
@@ -571,6 +537,38 @@ export function PackDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Packing Mode Toolbar */}
+      {isPackingMode && (
+        <View className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border">
+          <View className="flex-row items-center justify-between">
+            {/* Reset Button */}
+            <Button
+              variant="secondary"
+              size="icon"
+              onPress={handleResetPackingMode}
+              className="h-9 w-9"
+            >
+              <Icon name="restart" size={18} color={colors.grey2} />
+            </Button>
+
+            {/* Progress Text */}
+            <Text variant="subhead" className="text-muted-foreground">
+              {packingProgress.packed} of {packingProgress.total} items packed
+            </Text>
+
+            {/* Save Button */}
+            <Button
+              variant="secondary"
+              size="icon"
+              onPress={handleSavePackingMode}
+              className="h-9 w-9"
+            >
+              <Icon name="check" size={18} color={colors.grey2} />
+            </Button>
+          </View>
+        </View>
+      )}
 
       <Sheet
         ref={bottomSheetRef}
