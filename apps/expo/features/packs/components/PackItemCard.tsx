@@ -19,6 +19,7 @@ type Base = {
   item: PackItem;
   onPress?: (item: PackItem) => void;
   isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
+  packed?: boolean; // Whether the item is packed (for dimming effect)
 };
 
 type PackItemCardProps =
@@ -32,6 +33,7 @@ export function PackItemCard({
   item: itemArg,
   onPress,
   isGenUI = false,
+  packed = false,
   ...restProps
 }: PackItemCardProps) {
   const router = useRouter();
@@ -116,7 +118,7 @@ export function PackItemCard({
             isSelectable && restProps.selected
               ? 'border-primary bg-primary/5'
               : 'border-border bg-card'
-          }`}
+          } ${packed ? 'opacity-50' : ''}`}
         >
           {/* Image */}
           <PackItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />

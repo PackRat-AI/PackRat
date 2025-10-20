@@ -88,6 +88,21 @@ export function PackDetailScreen() {
     }));
   };
 
+  const handleResetPackingMode = () => {
+    setPackedItems({});
+  };
+
+  const handleSavePackingMode = () => {
+    // TODO: Implement save to API/storage
+    console.log('Saving packing state:', packedItems);
+  };
+
+  const getPackingProgress = () => {
+    const totalItems = pack?.items?.length || 0;
+    const packedCount = Object.values(packedItems).filter(Boolean).length;
+    return { packed: packedCount, total: totalItems };
+  };
+
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
     if (catalogItems.length > 0) {
       await addItemsToPack(id as string, catalogItems as CatalogItemWithPackItemFields[]);
@@ -137,13 +152,27 @@ export function PackDetailScreen() {
 
   const getFilteredItems = () => {
     if (!pack?.items) return [];
-    switch (activeTab) {
-      case 'worn':
-        return pack.items.filter((item) => item.worn);
-      case 'consumable':
-        return pack.items.filter((item) => item.consumable);
-      default:
-        return pack.items;
+
+    if (isPackingMode) {
+      // In packing mode, filter by packing status
+      switch (activeTab) {
+        case 'unpacked':
+          return pack.items.filter((item) => !packedItems[item.id]);
+        case 'packed':
+          return pack.items.filter((item) => packedItems[item.id]);
+        default:
+          return pack.items;
+      }
+    } else {
+      // Regular mode, filter by item properties
+      switch (activeTab) {
+        case 'worn':
+          return pack.items.filter((item) => item.worn);
+        case 'consumable':
+          return pack.items.filter((item) => item.consumable);
+        default:
+          return pack.items;
+      }
     }
   };
 
@@ -426,7 +455,10 @@ export function PackDetailScreen() {
               {isOwnedByUser && (
                 <Button
                   variant={isPackingMode ? 'primary' : 'secondary'}
-                  onPress={() => setIsPackingMode(!isPackingMode)}
+                  onPress={() => {
+                    setIsPackingMode(!isPackingMode);
+                    setActiveTab('all'); // Reset tab when toggling mode
+                  }}
                 >
                   <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
                 </Button>
@@ -440,19 +472,82 @@ export function PackDetailScreen() {
             </View>
           </View>
 
+          {/* Packing Mode Toolbar */}
+          {isPackingMode && (
+            <View className="px-4 py-3 bg-muted/50 border-b border-border">
+              <View className="flex-row items-center justify-between">
+                {/* Reset Button */}
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onPress={handleResetPackingMode}
+                  className="h-9 w-9"
+                >
+                  <Icon name="refresh" size={18} color={colors.grey2} />
+                </Button>
+
+                {/* Progress Text */}
+                <Text variant="subhead" className="text-muted-foreground">
+                  {getPackingProgress().packed} of {getPackingProgress().total} items packed
+                </Text>
+
+                {/* Save Button */}
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onPress={handleSavePackingMode}
+                  className="h-9 w-9"
+                >
+                  <Icon name="check" size={18} color={colors.grey2} />
+                </Button>
+              </View>
+            </View>
+          )}
+
           <View className="flex-row border-b border-border">
-            <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
-              <Text className={getTabTextStyle('all')}>All Items</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className={getTabStyle('worn')} onPress={() => setActiveTab('worn')}>
-              <Text className={getTabTextStyle('worn')}>Worn</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={getTabStyle('consumable')}
-              onPress={() => setActiveTab('consumable')}
-            >
-              <Text className={getTabTextStyle('consumable')}>Consumable</Text>
-            </TouchableOpacity>
+            {isPackingMode ? (
+              <>
+                <TouchableOpacity
+                  className={getTabStyle('all')}
+                  onPress={() => setActiveTab('all')}
+                >
+                  <Text className={getTabTextStyle('all')}>All</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={getTabStyle('unpacked')}
+                  onPress={() => setActiveTab('unpacked')}
+                >
+                  <Text className={getTabTextStyle('unpacked')}>Unpacked</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={getTabStyle('packed')}
+                  onPress={() => setActiveTab('packed')}
+                >
+                  <Text className={getTabTextStyle('packed')}>Packed</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  className={getTabStyle('all')}
+                  onPress={() => setActiveTab('all')}
+                >
+                  <Text className={getTabTextStyle('all')}>All Items</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={getTabStyle('worn')}
+                  onPress={() => setActiveTab('worn')}
+                >
+                  <Text className={getTabTextStyle('worn')}>Worn</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className={getTabStyle('consumable')}
+                  onPress={() => setActiveTab('consumable')}
+                >
+                  <Text className={getTabTextStyle('consumable')}>Consumable</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
           {filteredItems.length > 0 ? (
@@ -461,6 +556,7 @@ export function PackDetailScreen() {
                 <PackItemCard
                   key={item.id}
                   item={item}
+                  packed={isPackingMode && !!packedItems[item.id]}
                   {...(isPackingMode
                     ? { onSelect: handleItemSelect, selected: !!packedItems[item.id] }
                     : { onPress: handleItemPress })}
