@@ -6,6 +6,7 @@ A TypeScript script for managing and updating authors in PackRat guides. This sc
 
 - **View Distribution**: See current author distribution across all guides
 - **List Authors**: View all valid authors (predefined + existing custom authors)
+- **Update by Author**: Change the author for all posts by a specific current author
 - **Update by Slug**: Update a specific post's author using its slug
 - **Update by Title**: Find and update posts by title search
 - **Find Posts**: Search for posts by title
@@ -47,7 +48,18 @@ bun run update-authors list-authors
 ```
 Shows all valid authors (main authors from generator + additional authors found in content).
 
-#### 3. Update Post by Slug
+#### 3. Update Posts by Author
+```bash
+bun run update-authors update-by-author <current-author> <new-author>
+```
+Updates all posts currently authored by the specified author to a new author. Lists available authors if none match.
+
+**Example:**
+```bash
+bun run update-authors update-by-author "Jamie Rivera" "Jamie R."
+```
+
+#### 4. Update Post by Slug
 ```bash
 bun run update-authors update-slug <slug> <author>
 ```
@@ -58,7 +70,7 @@ Updates a specific post's author using its slug (filename without .mdx).
 bun run update-authors update-slug "first-backpacking-trip-step-by-step-planning-guide" "Alex Morgan"
 ```
 
-#### 4. Update Post by Title Search
+#### 5. Update Post by Title Search
 ```bash
 bun run update-authors update-title <search-term> <author>
 ```
@@ -69,7 +81,7 @@ Finds posts by title search and updates the author. Shows multiple matches if fo
 bun run update-authors update-title "hiking" "Jamie Rivera"
 ```
 
-#### 5. Find Posts
+#### 6. Find Posts
 ```bash
 bun run update-authors find <search-term>
 ```
@@ -80,7 +92,7 @@ Search for posts matching a title term. Useful for finding the correct slug or e
 bun run update-authors find "backpacking"
 ```
 
-#### 6. Rebalance Authors
+#### 7. Rebalance Authors
 ```bash
 bun run update-authors rebalance
 ```
