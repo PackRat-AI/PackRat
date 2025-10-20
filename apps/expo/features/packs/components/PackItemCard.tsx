@@ -19,7 +19,6 @@ type Base = {
   item: PackItem;
   onPress?: (item: PackItem) => void;
   isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
-  packed?: boolean; // Whether the item is packed (for dimming effect)
 };
 
 type PackItemCardProps =
@@ -27,13 +26,13 @@ type PackItemCardProps =
   | (Base & {
       onSelect: (item: PackItem) => void;
       selected: boolean;
+      dimOnSelect?: boolean;
     });
 
 export function PackItemCard({
   item: itemArg,
   onPress,
   isGenUI = false,
-  packed = false,
   ...restProps
 }: PackItemCardProps) {
   const router = useRouter();
@@ -116,9 +115,12 @@ export function PackItemCard({
         <View
           className={`mb-4 rounded-lg flex-row gap-3 border p-4 ${
             isSelectable && restProps.selected
-              ? 'border-primary bg-primary/5'
+              ? cn(
+                  'border-primary bg-primary/5',
+                  restProps.dimOnSelect && 'border-neutral-300 opacity-50',
+                )
               : 'border-border bg-card'
-          } ${packed ? 'opacity-50' : ''}`}
+          }`}
         >
           {/* Image */}
           <PackItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />
@@ -164,7 +166,11 @@ export function PackItemCard({
           {isSelectable && (
             <View className="items-center justify-center">
               {restProps.selected ? (
-                <Icon name="check-circle" size={24} color={colors.primary} />
+                <Icon
+                  name="check-circle"
+                  size={24}
+                  color={restProps.dimOnSelect ? colors.grey2 : colors.primary}
+                />
               ) : (
                 <Icon name="circle-outline" size={24} color={colors.grey2} />
               )}

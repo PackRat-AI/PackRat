@@ -557,7 +557,7 @@ export function PackDetailScreen() {
                 <PackItemCard
                   key={item.id}
                   item={item}
-                  packed={isPackingMode && !!packedItems[item.id]}
+                  dimOnSelect={isPackingMode && !!packedItems[item.id]}
                   {...(isPackingMode
                     ? { onSelect: handleItemSelect, selected: !!packedItems[item.id] }
                     : { onPress: handleItemPress })}
