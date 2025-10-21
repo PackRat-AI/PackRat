@@ -108,6 +108,22 @@ export function PackDetailScreen() {
   };
 
   const handleExitPackingMode = () => {
+    const exitPackingMode = () => {
+      setIsPackingMode(!isPackingMode);
+      setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+      setPackedItems(packingModeStore[id as string].get());
+    };
+
+    const packingState = packingModeStore[id as string].get();
+
+    if (
+      Object.entries(packedItems).every(([key, val]) =>
+        packingState[key] ? packingState[key] === val : val === false,
+      )
+    )
+      // Skip confirmation if nothing has changed
+      return exitPackingMode();
+
     appAlert.current?.alert({
       title: 'Exit Packing Mode?',
       message: "If you don't save, your packing state will be lost.",
@@ -115,11 +131,7 @@ export function PackDetailScreen() {
         {
           text: 'Exit without Saving',
           style: 'destructive',
-          onPress() {
-            setIsPackingMode(!isPackingMode);
-            setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-            setPackedItems(packingModeStore[id as string].get());
-          },
+          onPress: exitPackingMode,
         },
         { text: 'Cancel', style: 'cancel' },
         {
