@@ -11,6 +11,7 @@ import {
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -112,6 +113,8 @@ export default function ResetPasswordScreen() {
     code: string;
   }>();
 
+  const { resetPassword } = useAuthActions();
+
   const form = useForm({
     defaultValues: {
       password: '',
@@ -125,22 +128,7 @@ export default function ResetPasswordScreen() {
         setIsLoading(true);
 
         // Call the API to reset the password
-        const response = await fetch('/api/auth/reset-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: params.email,
-            code: params.code,
-            newPassword: value.password,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to reset password');
-        }
+        await resetPassword(params.email, params.code, value.password);
 
         // Show success message and navigate to login
         Alert.alert('Success', 'Your password has been reset successfully', [
@@ -150,6 +138,7 @@ export default function ResetPasswordScreen() {
           },
         ]);
       } catch (error) {
+        console.log('Reset password error:', error);
         Alert.alert('Error', error instanceof Error ? error.message : 'Failed to reset password');
       } finally {
         setIsLoading(false);
