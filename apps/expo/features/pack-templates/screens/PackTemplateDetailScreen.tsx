@@ -172,7 +172,7 @@ export function PackTemplateDetailScreen() {
               <View key={item.id} className="px-4 pt-3">
                 <PackTemplateItemCard
                   item={item}
-                  belongsToFeaturedTemplate={packTemplate.isAppTemplate}
+                  belongsToAppTemplate={packTemplate.isAppTemplate}
                   onPress={handleItemPress}
                 />
               </View>
