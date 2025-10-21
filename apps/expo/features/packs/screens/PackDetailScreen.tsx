@@ -334,7 +334,14 @@ export function PackDetailScreen() {
     {
       key: 'packing',
       label: isPackingMode ? 'Done Packing' : 'Start Packing',
-      icon: <Icon size={20} name="check" color={colors.foreground} />,
+      icon: (
+        <Icon
+          size={20}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'bag-personal-outline' }}
+          ios={{ name: 'backpack' }}
+          color={isPackingMode ? '#fff' : colors.foreground}
+        />
+      ),
       onPress: handleTogglePackingMode,
       show: isOwnedByUser,
       variant: isPackingMode ? ('primary' as const) : ('secondary' as const),
