@@ -16,8 +16,9 @@ import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {
   useImagePicker,
   usePackDetailsFromApi,
@@ -25,6 +26,7 @@ import {
   usePackGapAnalysis,
 } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
+import { packingModeStore } from '../store/packingMode';
 import type { Pack, PackItem } from '../types';
 
 export function PackDetailScreen() {
@@ -33,10 +35,13 @@ export function PackDetailScreen() {
 
   const isOwnedByUser = usePackOwnershipCheck(id as string);
 
-  const [activeTab, setActiveTab] = useState('all');
+  const DEFAULT_TAB = 'all';
+  const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
   const [isPackingMode, setIsPackingMode] = useState(false);
-  const [packedItems, setPackedItems] = useState<Record<string, boolean>>({});
+  const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
+    packingModeStore[id as string].get() || {},
+  );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
@@ -88,6 +93,69 @@ export function PackDetailScreen() {
     }));
   };
 
+  const handleResetPackingMode = () => {
+    setPackedItems({});
+  };
+
+  const handleSavePackingMode = () => {
+    packingModeStore[id as string].set({ ...packedItems });
+    setIsPackingMode(false);
+    setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+    Toast.show({
+      type: 'success',
+      text1: 'Packing state saved',
+    });
+  };
+
+  const handleExitPackingMode = () => {
+    const exitPackingMode = () => {
+      setIsPackingMode(!isPackingMode);
+      setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+      setPackedItems(packingModeStore[id as string].get());
+    };
+
+    const packingState = packingModeStore[id as string].get();
+
+    if (
+      Object.entries(packedItems).every(([key, val]) =>
+        packingState[key] ? packingState[key] === val : val === false,
+      )
+    )
+      // Skip confirmation if nothing has changed
+      return exitPackingMode();
+
+    appAlert.current?.alert({
+      title: 'Exit Packing Mode?',
+      message: "If you don't save, your packing state will be lost.",
+      buttons: [
+        {
+          text: 'Exit without Saving',
+          style: 'destructive',
+          onPress: exitPackingMode,
+        },
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          style: 'default',
+          onPress() {
+            handleSavePackingMode();
+          },
+        },
+      ],
+    });
+  };
+
+  const handleTogglePackingMode = () => {
+    if (isPackingMode) return handleExitPackingMode();
+    setIsPackingMode(true);
+  };
+
+  const packingProgress = useMemo(() => {
+    const totalItems = pack?.items?.length || 0;
+    const packedCount = Object.values(packedItems).filter(Boolean).length;
+    return { packed: packedCount, total: totalItems };
+  }, [pack?.items?.length, packedItems]);
+
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
     if (catalogItems.length > 0) {
       await addItemsToPack(id as string, catalogItems as CatalogItemWithPackItemFields[]);
@@ -137,13 +205,27 @@ export function PackDetailScreen() {
 
   const getFilteredItems = () => {
     if (!pack?.items) return [];
-    switch (activeTab) {
-      case 'worn':
-        return pack.items.filter((item) => item.worn);
-      case 'consumable':
-        return pack.items.filter((item) => item.consumable);
-      default:
-        return pack.items;
+
+    if (isPackingMode) {
+      // In packing mode, filter by packing status
+      switch (activeTab) {
+        case 'unpacked':
+          return pack.items.filter((item) => !packedItems[item.id]);
+        case 'packed':
+          return pack.items.filter((item) => packedItems[item.id]);
+        default:
+          return pack.items;
+      }
+    } else {
+      // Regular mode, filter by item properties
+      switch (activeTab) {
+        case 'worn':
+          return pack.items.filter((item) => item.worn);
+        case 'consumable':
+          return pack.items.filter((item) => item.consumable);
+        default:
+          return pack.items;
+      }
     }
   };
 
@@ -264,8 +346,15 @@ export function PackDetailScreen() {
     {
       key: 'packing',
       label: isPackingMode ? 'Done Packing' : 'Start Packing',
-      icon: <Icon size={20} name="check" color={colors.foreground} />,
-      onPress: () => setIsPackingMode(!isPackingMode),
+      icon: (
+        <Icon
+          size={20}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'bag-personal-outline' }}
+          ios={{ name: 'backpack' }}
+          color={isPackingMode ? '#fff' : colors.foreground}
+        />
+      ),
+      onPress: handleTogglePackingMode,
       show: isOwnedByUser,
       variant: isPackingMode ? ('primary' as const) : ('secondary' as const),
       disabled: false,
@@ -368,11 +457,12 @@ export function PackDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <ScrollView>
+      <ScrollView stickyHeaderIndices={[2]} contentContainerClassName="pb-24">
         {pack.image && (
           <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
         )}
 
+        {/* Header */}
         <View className="mb-4 p-4">
           <View className="mb-2">
             <Text className="text-2xl font-bold text-foreground">{pack.name}</Text>
@@ -416,51 +506,80 @@ export function PackDetailScreen() {
           )}
         </View>
 
-        <View>
-          <View className="p-4">
-            <View className="gap-4 flex-row items-center">
-              <Button variant="secondary" onPress={handleAskAI} className="flex-1">
-                <Text>Ask AI</Text>
+        {/* Actions */}
+        <View className="p-4">
+          <View className="gap-4 flex-row items-center">
+            <Button variant="secondary" onPress={handleAskAI} className="flex-1">
+              <Text>Ask AI</Text>
+            </Button>
+
+            {isOwnedByUser && (
+              <Button
+                variant={isPackingMode ? 'primary' : 'secondary'}
+                onPress={handleTogglePackingMode}
+              >
+                <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
               </Button>
+            )}
 
-              {isOwnedByUser && (
-                <Button
-                  variant={isPackingMode ? 'primary' : 'secondary'}
-                  onPress={() => setIsPackingMode(!isPackingMode)}
-                >
-                  <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
-                </Button>
-              )}
-
-              {isOwnedByUser && (
-                <Button variant="secondary" size="icon" onPress={handleMoreActionsPress}>
-                  <Icon name="dots-horizontal" size={20} color={colors.grey2} />
-                </Button>
-              )}
-            </View>
+            {isOwnedByUser && (
+              <Button variant="secondary" size="icon" onPress={handleMoreActionsPress}>
+                <Icon name="dots-horizontal" size={20} color={colors.grey2} />
+              </Button>
+            )}
           </View>
+        </View>
 
-          <View className="flex-row border-b border-border">
-            <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
-              <Text className={getTabTextStyle('all')}>All Items</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className={getTabStyle('worn')} onPress={() => setActiveTab('worn')}>
-              <Text className={getTabTextStyle('worn')}>Worn</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={getTabStyle('consumable')}
-              onPress={() => setActiveTab('consumable')}
-            >
-              <Text className={getTabTextStyle('consumable')}>Consumable</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Tabs */}
+        <View className="flex-row bg-background sticky border-b border-border">
+          {isPackingMode ? (
+            <>
+              <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+                <Text className={getTabTextStyle('all')}>All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('unpacked')}
+                onPress={() => setActiveTab('unpacked')}
+              >
+                <Text className={getTabTextStyle('unpacked')}>Unpacked</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('packed')}
+                onPress={() => setActiveTab('packed')}
+              >
+                <Text className={getTabTextStyle('packed')}>Packed</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+                <Text className={getTabTextStyle('all')}>All Items</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('worn')}
+                onPress={() => setActiveTab('worn')}
+              >
+                <Text className={getTabTextStyle('worn')}>Worn</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('consumable')}
+                onPress={() => setActiveTab('consumable')}
+              >
+                <Text className={getTabTextStyle('consumable')}>Consumable</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
 
+        {/* Content */}
+        <View>
           {filteredItems.length > 0 ? (
             <View className="p-4">
               {filteredItems.map((item) => (
                 <PackItemCard
                   key={item.id}
                   item={item}
+                  dimOnSelect={isPackingMode && !!packedItems[item.id]}
                   {...(isPackingMode
                     ? { onSelect: handleItemSelect, selected: !!packedItems[item.id] }
                     : { onPress: handleItemPress })}
@@ -474,6 +593,34 @@ export function PackDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Packing Mode Toolbar */}
+      {isPackingMode && (
+        <View className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              {/* Close Button */}
+              <Button variant="plain" size="icon" onPress={handleExitPackingMode}>
+                <Icon name="close" size={20} color={colors.grey2} />
+              </Button>
+              {/* Progress Text */}
+              <Text variant="subhead" className="text-muted-foreground">
+                {packingProgress.packed} of {packingProgress.total} items packed
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              {/* Reset Button */}
+              <Button variant="plain" size="sm" onPress={handleResetPackingMode}>
+                <Text>Reset</Text>
+              </Button>
+              {/* Save Button */}
+              <Button variant="plain" size="sm" onPress={handleSavePackingMode}>
+                <Text>Save</Text>
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
 
       <Sheet
         ref={bottomSheetRef}

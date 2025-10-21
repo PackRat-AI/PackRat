@@ -191,7 +191,7 @@ function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
 // Rebalance authors to be more evenly distributed
 function rebalanceAuthors(): void {
   const posts = getAllPosts();
-  
+
   // Use the top 6 most active authors for rebalancing (similar to original logic)
   const distribution: Record<string, number> = {};
   posts.forEach((post) => {
