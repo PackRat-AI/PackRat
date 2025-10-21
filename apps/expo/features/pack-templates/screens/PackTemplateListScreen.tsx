@@ -17,7 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { TemplateCard } from '../components/TemplateCard';
+import { PackTemplateCard } from '../components/PackTemplateCard';
 import { usePackTemplates } from '../hooks';
 import { activeTemplateFilterAtom, templateSearchValueAtom } from '../packTemplateListAtoms';
 import type { PackTemplate } from '../types';
@@ -144,7 +144,7 @@ export function PackTemplateListScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View className="px-4 pt-4">
-            <TemplateCard templateId={item.id} onPress={handleTemplatePress} />
+            <PackTemplateCard templateId={item.id} onPress={handleTemplatePress} />
           </View>
         )}
         ListHeaderComponent={
