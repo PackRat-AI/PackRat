@@ -30,7 +30,7 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
     console.log('template.userId', template.userId);
     console.log('user.id', user?.id);
     const options =
-      user && template.userId === user.id
+      user && (template.userId === user.id || (template.isAppTemplate && user.role === 'ADMIN'))
         ? ['View Details', 'Edit', 'Delete', 'Cancel']
         : ['View Details', 'Cancel'];
 
