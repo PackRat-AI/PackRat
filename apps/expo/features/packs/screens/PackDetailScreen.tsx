@@ -107,6 +107,37 @@ export function PackDetailScreen() {
     });
   };
 
+  const handleExitPackingMode = () => {
+    appAlert.current?.alert({
+      title: 'Exit Packing Mode?',
+      message: "If you don't save, your packing state will be lost.",
+      buttons: [
+        {
+          text: 'Exit without Saving',
+          style: 'destructive',
+          onPress() {
+            setIsPackingMode(!isPackingMode);
+            setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+            setPackedItems(packingModeStore[id as string].get());
+          },
+        },
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          style: 'default',
+          onPress() {
+            handleSavePackingMode();
+          },
+        },
+      ],
+    });
+  };
+
+  const handleTogglePackingMode = () => {
+    if (isPackingMode) return handleExitPackingMode();
+    setIsPackingMode(true);
+  };
+
   const packingProgress = useMemo(() => {
     const totalItems = pack?.items?.length || 0;
     const packedCount = Object.values(packedItems).filter(Boolean).length;
@@ -304,7 +335,7 @@ export function PackDetailScreen() {
       key: 'packing',
       label: isPackingMode ? 'Done Packing' : 'Start Packing',
       icon: <Icon size={20} name="check" color={colors.foreground} />,
-      onPress: () => setIsPackingMode(!isPackingMode),
+      onPress: handleTogglePackingMode,
       show: isOwnedByUser,
       variant: isPackingMode ? ('primary' as const) : ('secondary' as const),
       disabled: false,
@@ -466,10 +497,7 @@ export function PackDetailScreen() {
             {isOwnedByUser && (
               <Button
                 variant={isPackingMode ? 'primary' : 'secondary'}
-                onPress={() => {
-                  setIsPackingMode(!isPackingMode);
-                  setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-                }}
+                onPress={handleTogglePackingMode}
               >
                 <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
               </Button>
@@ -553,35 +581,7 @@ export function PackDetailScreen() {
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-2">
               {/* Close Button */}
-              <Button
-                variant="plain"
-                size="icon"
-                onPress={() => {
-                  appAlert.current?.alert({
-                    title: 'Exit Packing Mode?',
-                    message: "If you don't save, your packing state will be lost.",
-                    buttons: [
-                      {
-                        text: 'Exit without Saving',
-                        style: 'destructive',
-                        onPress() {
-                          setIsPackingMode(!isPackingMode);
-                          setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-                          setPackedItems(packingModeStore[id as string].get());
-                        },
-                      },
-                      { text: 'Cancel', style: 'cancel' },
-                      {
-                        text: 'Save',
-                        style: 'default',
-                        onPress() {
-                          handleSavePackingMode();
-                        },
-                      },
-                    ],
-                  });
-                }}
-              >
+              <Button variant="plain" size="icon" onPress={handleExitPackingMode}>
                 <Icon name="close" size={20} color={colors.grey2} />
               </Button>
               {/* Progress Text */}
