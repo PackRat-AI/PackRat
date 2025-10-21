@@ -18,6 +18,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import {
   useImagePicker,
   usePackDetailsFromApi,
@@ -25,6 +26,7 @@ import {
   usePackGapAnalysis,
 } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
+import { packingModeStore } from '../store/packingMode';
 import type { Pack, PackItem } from '../types';
 
 export function PackDetailScreen() {
@@ -37,7 +39,9 @@ export function PackDetailScreen() {
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
   const [isPackingMode, setIsPackingMode] = useState(false);
-  const [packedItems, setPackedItems] = useState<Record<string, boolean>>({});
+  const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
+    packingModeStore[id as string].get() || {},
+  );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
@@ -94,8 +98,13 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    // TODO: Implement save to API/storage
-    // Placeholder for future implementation
+    packingModeStore[id as string].set({ ...packedItems });
+    setIsPackingMode(false);
+    setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+    Toast.show({
+      type: 'success',
+      text1: 'Packing state saved',
+    });
   };
 
   const packingProgress = useMemo(() => {
@@ -558,6 +567,7 @@ export function PackDetailScreen() {
                         onPress() {
                           setIsPackingMode(!isPackingMode);
                           setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+                          setPackedItems(packingModeStore[id as string].get());
                         },
                       },
                       { text: 'Cancel', style: 'cancel' },
