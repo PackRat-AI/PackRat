@@ -126,6 +126,19 @@ export function PackTemplateListScreen() {
         )}
       />
 
+      <View className="bg-background gap-2 px-4 pb-2">
+        <SegmentedControl
+          enabled={isAuthenticated}
+          values={['All', 'App', 'Yours']}
+          selectedIndex={selectedTemplateTypeIndex}
+          onIndexChange={(index) => {
+            setSelectedTemplateTypeIndex(index);
+          }}
+        />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
+          {filterOptions.map(renderFilterChip)}
+        </ScrollView>
+      </View>
       <FlatList
         data={filteredTemplates}
         keyExtractor={(item) => item.id}
@@ -135,29 +148,11 @@ export function PackTemplateListScreen() {
           </View>
         )}
         ListHeaderComponent={
-          <>
-            <View className="bg-background px-4 py-2">
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
-                {filterOptions.map(renderFilterChip)}
-              </ScrollView>
-            </View>
-            <View className="flex-row items-center justify-between gap-8 px-4 pb-0 pt-2">
-              <Text className="text-muted-foreground">
-                {filteredTemplates.length}{' '}
-                {filteredTemplates.length === 1 ? 'template' : 'templates'}
-              </Text>
-              <View className="flex-1">
-                <SegmentedControl
-                  enabled={isAuthenticated}
-                  values={['All', 'App', 'Yours']}
-                  selectedIndex={selectedTemplateTypeIndex}
-                  onIndexChange={(index) => {
-                    setSelectedTemplateTypeIndex(index);
-                  }}
-                />
-              </View>
-            </View>
-          </>
+          <View className="px-4 pb-0 pt-2">
+            <Text className="text-muted-foreground">
+              {filteredTemplates.length} {filteredTemplates.length === 1 ? 'template' : 'templates'}
+            </Text>
+          </View>
         }
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
