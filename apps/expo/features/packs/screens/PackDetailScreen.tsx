@@ -1,12 +1,14 @@
+import { useActionSheet } from '@expo/react-native-action-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
+import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
@@ -16,7 +18,12 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
+import {
+  useImagePicker,
+  usePackDetailsFromApi,
+  usePackDetailsFromStore,
+  usePackGapAnalysis,
+} from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackItem } from '../types';
 
@@ -43,6 +50,9 @@ export function PackDetailScreen() {
     isPending: isAnalyzing,
     reset: resetAnalysis,
   } = usePackGapAnalysis();
+
+  const { pickImage, takePhoto } = useImagePicker();
+  const { showActionSheetWithOptions } = useActionSheet();
 
   const packFromStore = usePackDetailsFromStore(id as string);
   const {
@@ -80,7 +90,7 @@ export function PackDetailScreen() {
 
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
     if (catalogItems.length > 0) {
-      await addItemsToPack(id as string, catalogItems);
+      await addItemsToPack(id as string, catalogItems as CatalogItemWithPackItemFields[]);
     }
   };
 
@@ -177,12 +187,75 @@ export function PackDetailScreen() {
     });
   };
 
+  const handleAddFromPhoto = () => {
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: `/pack/${pack.id}`,
+          showSignInCopy: 'true',
+        },
+      });
+    }
+    const options = ['Take Photo', 'Choose from Library', 'Cancel'];
+    const cancelButtonIndex = 2;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        containerStyle: {
+          backgroundColor: colors.card,
+        },
+        textStyle: {
+          color: colors.foreground,
+        },
+      },
+      async (selectedIndex) => {
+        try {
+          switch (selectedIndex) {
+            case 0: {
+              // Take Photo
+              const fileInfo = await takePhoto();
+              if (fileInfo)
+                router.push({
+                  pathname: '/pack/items-scan',
+                  params: { packId: pack.id, ...fileInfo },
+                });
+              break;
+            }
+            case 1: {
+              // Choose from Library
+              const fileInfo = await pickImage();
+              if (fileInfo)
+                router.push({
+                  pathname: '/pack/items-scan',
+                  params: { packId: pack.id, ...fileInfo },
+                });
+              break;
+            }
+            case cancelButtonIndex:
+              // Canceled
+              return;
+          }
+        } catch (err) {
+          console.error('Error handling image:', err);
+          appAlert.current?.alert({
+            title: 'Error',
+            message: 'Failed to process image. Please try again.',
+            buttons: [{ text: 'OK', style: 'default' }],
+          });
+        }
+      },
+    );
+  };
+
   // Prepare bottom sheet actions with consistent structure
   const actions = [
     {
       key: 'ask-ai',
       label: 'Ask AI',
-      icon: <Icon name="message-outline" color={colors.foreground} />,
+      icon: <Icon size={20} name="message-outline" color={colors.foreground} />,
       onPress: handleAskAI,
       show: true,
       variant: 'secondary' as const,
@@ -191,7 +264,7 @@ export function PackDetailScreen() {
     {
       key: 'packing',
       label: isPackingMode ? 'Done Packing' : 'Start Packing',
-      icon: <Icon name="check" color={colors.foreground} />,
+      icon: <Icon size={20} name="check" color={colors.foreground} />,
       onPress: () => setIsPackingMode(!isPackingMode),
       show: isOwnedByUser,
       variant: isPackingMode ? ('primary' as const) : ('secondary' as const),
@@ -202,6 +275,7 @@ export function PackDetailScreen() {
       label: isAnalyzing ? 'Analyzing...' : 'Analyze Gaps',
       icon: (
         <Icon
+          size={20}
           ios={{ name: 'text.viewfinder' }}
           materialIcon={{ type: 'MaterialCommunityIcons', name: 'magnify-scan' }}
           color={colors.foreground}
@@ -213,9 +287,18 @@ export function PackDetailScreen() {
       disabled: isAnalyzing,
     },
     {
+      key: 'add-from-photo',
+      label: 'Add from Photo',
+      icon: <Icon size={20} name="camera-outline" color={colors.foreground} />,
+      onPress: handleAddFromPhoto,
+      show: isOwnedByUser,
+      variant: 'secondary' as const,
+      disabled: false,
+    },
+    {
       key: 'browse',
       label: 'Browse Catalog',
-      icon: <Icon name="magnify" color={colors.foreground} />,
+      icon: <Icon size={20} name="magnify" color={colors.foreground} />,
       onPress: () => setIsCatalogModalVisible(true),
       show: isOwnedByUser,
       variant: 'secondary' as const,
@@ -245,7 +328,7 @@ export function PackDetailScreen() {
   }
 
   // Consistent sizing classes for action buttons (full-width inside 1/2 column)
-  const actionBtnClass = 'w-full h-14 flex-row items-center justify-center gap-2';
+  const actionBtnClass = 'w-full h-14 flex-row items-center justify-start gap-2';
 
   if (!isOwnedByUser && isLoading) {
     return (
@@ -400,11 +483,6 @@ export function PackDetailScreen() {
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
         <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
-          <View>
-            <Text variant="heading" className="text-center mb-6">
-              Actions
-            </Text>
-          </View>
           {/* Revamped consistent 2-column action layout */}
           <View className="flex-row flex-wrap -mx-1">
             {normalizedActions.map((action) => (
@@ -422,7 +500,7 @@ export function PackDetailScreen() {
                     className={actionBtnClass}
                   >
                     {action.icon}
-                    <Text numberOfLines={1}>{action.label}</Text>
+                    <Text className="text-sm font-normal pr-8">{action.label}</Text>
                   </Button>
                 )}
               </View>

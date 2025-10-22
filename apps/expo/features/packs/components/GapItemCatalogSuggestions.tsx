@@ -63,7 +63,7 @@ export function GapItemCatalogSuggestions({
             </View>
           ) : suggestions ? (
             suggestions.length > 0 ? (
-              <View className="p-4">
+              <View className="p-4 gap-3">
                 {suggestions.map((item) => (
                   <HorizontalCatalogItemCard
                     key={item.id}
