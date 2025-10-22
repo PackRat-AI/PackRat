@@ -1,33 +1,27 @@
-import {
-  Button,
-  Form,
-  FormItem,
-  FormSection,
-  TextField,
-} from '@packrat/ui/nativewindui';
+import { Button, Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { useAllPacks } from 'expo-app/features/packs/hooks/useAllPacks';
+import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   Text,
   View,
-  Modal,
-  Alert,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
 import { z } from 'zod';
-import { useState } from 'react';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
-import type { Trip } from '../types';
-import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
-import { useAllPacks } from 'expo-app/features/packs/hooks/useAllPacks';
 import { useTripLocation } from '../store/tripLocationStore';
+import type { Trip } from '../types';
 
 const tripFormSchema = z.object({
   name: z.string().min(1, 'Trip name is required'),
@@ -45,9 +39,6 @@ const tripFormSchema = z.object({
   packId: z.string().optional().nullable(),
 });
 
-
-
-
 export const TripForm = ({ trip }: { trip?: Trip }) => {
   const router = useRouter();
   const { colors } = useColorScheme();
@@ -59,14 +50,12 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const localPacks = usePacks();
   const { data: allPacks = [], isLoading } = useAllPacks(true);
   const availablePacks = [...localPacks, ...allPacks].filter(
-    (pack, index, self) => index === self.findIndex((p) => p.id === pack.id)
+    (pack, index, self) => index === self.findIndex((p) => p.id === pack.id),
   );
 
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
-
-
 
   const formatDate = (isoString?: string) => isoString?.split('T')[0] || '';
 
@@ -102,7 +91,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       if (event.type === 'set' && selectedDate) {
         field.handleChange(selectedDate.toISOString().split('T')[0]);
       }
-
     } else {
       if (selectedDate) {
         field.handleChange(selectedDate.toISOString().split('T')[0]);
@@ -183,9 +171,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 </Pressable>
                 {location && (
                   <Pressable onPress={() => setLocation(null)}>
-                    <Text className="text-red-500 font-semibold px-2">
-                      Clear
-                    </Text>
+                    <Text className="text-red-500 font-semibold px-2">Clear</Text>
                   </Pressable>
                 )}
               </View>
@@ -221,9 +207,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         </View>
 
                         {isLoading ? (
-                          <Text className="text-muted-foreground px-3 py-2">
-                            Loading packs...
-                          </Text>
+                          <Text className="text-muted-foreground px-3 py-2">Loading packs...</Text>
                         ) : (
                           <Picker
                             selectedValue={field.state.value || ''}
@@ -259,9 +243,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
                     {showStartPicker && (
                       <DateTimePicker
-                        value={
-                          field.state.value ? new Date(field.state.value) : new Date()
-                        }
+                        value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
                         display="default"
                         onChange={(event, date) => {
@@ -294,9 +276,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
                     {showEndPicker && (
                       <DateTimePicker
-                        value={
-                          field.state.value ? new Date(field.state.value) : new Date()
-                        }
+                        value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
                         display="default"
                         onChange={(event, date) => {
@@ -311,8 +291,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 );
               }}
             </form.Field>
-
-
           </FormSection>
         </Form>
 
@@ -322,8 +300,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             <Pressable
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${!canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-                }`}
+              className={`mt-6 rounded-lg px-4 py-3.5 ${
+                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
+              }`}
             >
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting

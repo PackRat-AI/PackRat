@@ -29,11 +29,5 @@ export type TripInStore = Omit<Trip, 'trips'>;
 
 export type TripInput = Omit<
   TripInStore,
-  | 'id'
-  | 'userId'
-  | 'deleted'
-  | 'createdAt'
-  | 'updatedAt'
-  | 'localCreatedAt'
-  | 'localUpdatedAt'
+  'id' | 'userId' | 'deleted' | 'createdAt' | 'updatedAt' | 'localCreatedAt' | 'localUpdatedAt'
 >;

@@ -1,10 +1,10 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { trips, packs, Trip } from '@packrat/api/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { packs, type Trip, trips } from '@packrat/api/db/schema';
+import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
+import { and, eq } from 'drizzle-orm';
 
 // ------------------------------
 // Initialize Hono instance
@@ -301,7 +301,6 @@ tripRoutes.openapi(deleteTripRoute, async (c) => {
     return c.json({ error: 'Failed to delete trip' }, 500);
   }
 });
-
 
 // ------------------------------
 export { tripRoutes };

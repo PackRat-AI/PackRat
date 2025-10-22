@@ -1,23 +1,23 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import {
   ActivityIndicator,
+  Alert,
   Button,
+  Card,
   Sheet,
   Text,
   useSheetRef,
-  Alert,
-  Card,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView, ScrollView, View } from 'react-native';
 import { useRef } from 'react';
-import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
-import { useDeleteTrip } from '../hooks/useDeleteTrip';
-import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
-import type { Trip } from '../types';
+import { SafeAreaView, ScrollView, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
+import { useDeleteTrip } from '../hooks/useDeleteTrip';
+import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
+import type { Trip } from '../types';
 
 export function TripDetailScreen() {
   const router = useRouter();
@@ -42,8 +42,7 @@ export function TripDetailScreen() {
   const handleDelete = () => {
     alertRef.current?.alert({
       title: 'Delete trip?',
-      message:
-        'Are you sure you want to delete this trip? This action cannot be undone.',
+      message: 'Are you sure you want to delete this trip? This action cannot be undone.',
       buttons: [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -72,15 +71,11 @@ export function TripDetailScreen() {
       >
         {/* Header Section */}
         <View className="p-4">
-          <Text className="text-3xl font-bold text-foreground mb-3">
-            {trip.name}
-          </Text>
+          <Text className="text-3xl font-bold text-foreground mb-3">{trip.name}</Text>
 
           {/* Trip Dates */}
           <View className="mb-6">
-            <Text className="text-lg font-semibold text-foreground mb-2">
-              Dates
-            </Text>
+            <Text className="text-lg font-semibold text-foreground mb-2">Dates</Text>
             <View className="rounded-xl bg-card border border-border">
               <View className="p-3 flex-row justify-between">
                 <View>
@@ -101,26 +96,20 @@ export function TripDetailScreen() {
 
           {/* Details */}
           <View className="mb-6">
-            <Text className="text-lg font-semibold text-foreground mb-2">
-              Details
-            </Text>
+            <Text className="text-lg font-semibold text-foreground mb-2">Details</Text>
             {trip.description ? (
               <Text className="text-sm text-muted-foreground leading-relaxed">
                 {trip.description}
               </Text>
             ) : (
-              <Text className="text-sm text-muted-foreground italic">
-                No details available.
-              </Text>
+              <Text className="text-sm text-muted-foreground italic">No details available.</Text>
             )}
           </View>
 
           {/* Location */}
           {trip.location ? (
             <View className="mb-6">
-              <Text className="text-lg font-semibold text-foreground mb-2">
-                Location
-              </Text>
+              <Text className="text-lg font-semibold text-foreground mb-2">Location</Text>
               <Card className="rounded-xl bg-card border border-border">
                 <View className="p-3 border-b border-border bg-card">
                   <Text className="text-base font-semibold text-foreground text-center">
@@ -132,7 +121,7 @@ export function TripDetailScreen() {
 
                 <View className="w-full h-36 overflow-hidden rounded-b-xl">
                   <MapView
-                  provider={PROVIDER_GOOGLE}
+                    provider={PROVIDER_GOOGLE}
                     style={{ flex: 1 }}
                     initialRegion={{
                       latitude: trip.location.latitude,
@@ -157,45 +146,33 @@ export function TripDetailScreen() {
                     size="sm"
                     onPress={() => {
                       const { latitude, longitude } = trip.location!;
-                      const url =  `https://www.google.com/maps?q=${latitude},${longitude}`;
+                      const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
                       router.push(url);
                     }}
                     className="flex-row items-center gap-2"
                   >
-                    <Icon
-                      name="map-marker-outline"
-                      size={16}
-                      color={colors.primary}
-                    />
+                    <Icon name="map-marker-outline" size={16} color={colors.primary} />
                     <Text className="text-sm">Open in Maps</Text>
                   </Button>
                 </View>
               </Card>
             </View>
-          ):null}
+          ) : null}
 
           {/* Notes */}
           <View className="mb-6">
-            <Text className="text-lg font-semibold text-foreground mb-2">
-              Notes
-            </Text>
+            <Text className="text-lg font-semibold text-foreground mb-2">Notes</Text>
             {trip.notes ? (
-              <Text className="text-sm text-muted-foreground leading-relaxed">
-                {trip.notes}
-              </Text>
+              <Text className="text-sm text-muted-foreground leading-relaxed">{trip.notes}</Text>
             ) : (
-              <Text className="text-sm text-muted-foreground italic">
-                No notes available.
-              </Text>
+              <Text className="text-sm text-muted-foreground italic">No notes available.</Text>
             )}
           </View>
 
           {/* Pack */}
           {pack ? (
             <View className="mb-6">
-              <Text className="text-lg font-semibold text-foreground mb-2">
-                Pack
-              </Text>
+              <Text className="text-lg font-semibold text-foreground mb-2">Pack</Text>
               <Card className="rounded-xl bg-card border border-border">
                 <View className="p-3 border-b border-border bg-card">
                   <Text className="text-base font-semibold text-foreground text-center">
@@ -203,9 +180,7 @@ export function TripDetailScreen() {
                   </Text>
                 </View>
                 <View className="p-3">
-                  <Text className="text-sm text-muted-foreground">
-                    Items: {pack.items.length}
-                  </Text>
+                  <Text className="text-sm text-muted-foreground">Items: {pack.items.length}</Text>
                   <Text className="text-sm text-muted-foreground">
                     Total Weight: {pack.totalWeight?.toFixed(2) ?? 0} kg
                   </Text>

@@ -2,7 +2,7 @@ import { Alert, Button, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { useDeleteTrip} from '../hooks';
+import { useDeleteTrip } from '../hooks';
 
 export function getTripDetailOptions(id: string) {
   return {
@@ -11,7 +11,6 @@ export function getTripDetailOptions(id: string) {
       const { colors } = useColorScheme();
       const router = useRouter();
       const deleteTrip = useDeleteTrip();
-
 
       return (
         <View className="flex-row items-center gap-2">

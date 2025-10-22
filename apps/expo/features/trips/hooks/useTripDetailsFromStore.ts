@@ -9,12 +9,12 @@ import { tripsStore } from 'expo-app/features/trips/store/trips';
  * @returns A trip object with its items and computed stats
  */
 export function useTripDetailsFromStore(id: string) {
-    const trip = use$(() => {
-        // @ts-ignore: Safe because Legend-State uses Proxy
-        const trip_ = tripsStore[id].get();
+  const trip = use$(() => {
+    // @ts-ignore: Safe because Legend-State uses Proxy
+    const trip_ = tripsStore[id].get();
 
-        return trip_
-    });
+    return trip_;
+  });
 
-    return trip;
+  return trip;
 }

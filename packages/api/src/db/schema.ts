@@ -285,7 +285,9 @@ export const trips = pgTable('trips', {
   endDate: timestamp('end_date'),
   location: jsonb('location').$type<{ latitude: number; longitude: number; name?: string }>(),
   notes: text('notes'),
-  userId: integer('user_id').references(() => users.id).notNull(),
+  userId: integer('user_id')
+    .references(() => users.id)
+    .notNull(),
   packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
@@ -293,9 +295,6 @@ export const trips = pgTable('trips', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
-
-
-
 
 // Define relations
 
@@ -344,7 +343,6 @@ export const tripsRelations = relations(trips, ({ one }) => ({
     references: [packs.id],
   }),
 }));
-
 
 // Reported content table
 export const reportedContent = pgTable('reported_content', {

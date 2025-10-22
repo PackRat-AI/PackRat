@@ -1,10 +1,10 @@
-import { useState, useRef } from 'react';
-import { SafeAreaView, View, Text, Alert } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { Button, SearchInput, ActivityIndicator } from '@packrat/ui/nativewindui';
-import { useRouter } from 'expo-router';
-import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
+import { ActivityIndicator, Button, SearchInput } from '@packrat/ui/nativewindui';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
+import { Alert, SafeAreaView, Text, View } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
 
 export default function LocationSearchScreen() {
   const router = useRouter();
@@ -20,10 +20,8 @@ export default function LocationSearchScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const GOOGLE_MAPS_API_KEY =
-    Constants.expoConfig?.extra?.googleMapsApiKey ||
-    process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+    Constants.expoConfig?.extra?.googleMapsApiKey || process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setIsLoading(true);
@@ -37,8 +35,8 @@ export default function LocationSearchScreen() {
 
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-          searchQuery
-        )}&key=${GOOGLE_MAPS_API_KEY}`
+          searchQuery,
+        )}&key=${GOOGLE_MAPS_API_KEY}`,
       );
 
       const data = await response.json();
@@ -63,7 +61,7 @@ export default function LocationSearchScreen() {
             latitudeDelta: 0.2,
             longitudeDelta: 0.2,
           },
-          800
+          800,
         );
       } else {
         console.warn('Google Maps response:', data);
@@ -130,9 +128,7 @@ export default function LocationSearchScreen() {
         {isLoading && <ActivityIndicator />}
         {selectedLocation && (
           <Button onPress={handleConfirm}>
-            <Text className="text-primary-foreground font-semibold">
-              Confirm Location
-            </Text>
+            <Text className="text-primary-foreground font-semibold">Confirm Location</Text>
           </Button>
         )}
       </View>

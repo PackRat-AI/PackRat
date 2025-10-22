@@ -1,7 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-
-import { tripRoutes } from './trip';
 import { tripsListRoutes } from './list';
+import { tripRoutes } from './trip';
 
 const tripsRoutes = new OpenAPIHono();
 

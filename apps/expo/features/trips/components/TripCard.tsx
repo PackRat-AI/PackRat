@@ -1,12 +1,12 @@
-import { Pressable, Text, View } from 'react-native';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Alert, type AlertRef, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { useRef } from 'react';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import type { Trip } from '../types';
+import { useRef } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
+import type { Trip } from '../types';
 
 interface TripCardProps {
   trip: Trip;
@@ -57,7 +57,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             });
             break;
         }
-      }
+      },
     );
   };
 

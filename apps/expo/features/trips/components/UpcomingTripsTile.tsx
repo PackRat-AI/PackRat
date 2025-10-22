@@ -2,11 +2,11 @@ import type { AlertRef } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
+import { useTrips } from 'expo-app/features/trips/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
-import { useRef, useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { View } from 'react-native';
-import { useTrips } from 'expo-app/features/trips/hooks';
 
 export function UpcomingTripsTile() {
   const router = useRouter();
@@ -19,7 +19,7 @@ export function UpcomingTripsTile() {
   // ✅ derive upcoming trips (in future)
   const upcomingTrips = useMemo(
     () => trips.filter((t) => new Date(t.startDate) > new Date()),
-    [trips]
+    [trips],
   );
 
   // ✅ when tapped
@@ -57,9 +57,7 @@ export function UpcomingTripsTile() {
               <Text
                 variant="footnote"
                 className={`font-bold leading-4 ${
-                  upcomingTrips.length > 0
-                    ? 'text-primary-foreground'
-                    : 'text-muted-foreground'
+                  upcomingTrips.length > 0 ? 'text-primary-foreground' : 'text-muted-foreground'
                 }`}
               >
                 {upcomingTrips.length}

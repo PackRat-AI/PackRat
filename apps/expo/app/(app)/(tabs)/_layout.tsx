@@ -63,7 +63,7 @@ const TRIP_LIST_OPTIONS = {
   tabBarIcon: ({ color, size }: { color: string; size: number }) => (
     <Icon name="map" size={size} color={color} />
   ),
-  href: featureFlags.enableTrips ? 'trips' : null
+  href: featureFlags.enableTrips ? 'trips' : null,
 } as const;
 
 const ITEMS_CATALOG_OPTIONS = {
@@ -149,11 +149,11 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             label={
               typeof label === 'function'
                 ? label({
-                  focused: isFocused,
-                  color: isFocused ? colors.foreground : colors.grey2,
-                  children: options.title ?? route.name ?? '',
-                  position: options.tabBarLabelPosition ?? 'below-icon',
-                })
+                    focused: isFocused,
+                    color: isFocused ? colors.foreground : colors.grey2,
+                    children: options.title ?? route.name ?? '',
+                    position: options.tabBarLabelPosition ?? 'below-icon',
+                  })
                 : label
             }
             tabBarItemStyle={options.tabBarItemStyle}

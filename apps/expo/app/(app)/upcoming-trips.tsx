@@ -1,4 +1,3 @@
-
 import {
   Avatar,
   AvatarFallback,
@@ -9,14 +8,14 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { format } from 'date-fns';
+import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
-import { format } from 'date-fns';
-import { useTrips } from 'expo-app/features/trips/hooks';
 
 function formatDate(dateString?: string) {
   if (!dateString) return '—';
@@ -133,9 +132,7 @@ export default function UpcomingTripsScreen() {
     );
   }
 
-  const selectedPack = selectedTrip
-    ? packs.find((p) => p.id === selectedTrip.packId)
-    : undefined;
+  const selectedPack = selectedTrip ? packs.find((p) => p.id === selectedTrip.packId) : undefined;
 
   return (
     <>
@@ -208,9 +205,7 @@ export default function UpcomingTripsScreen() {
                   PACK
                 </Text>
                 <Text variant="subhead" className="mt-1">
-                  {selectedPack
-                    ? `${selectedPack.items.length} items`
-                    : 'No pack assigned'}
+                  {selectedPack ? `${selectedPack.items.length} items` : 'No pack assigned'}
                 </Text>
               </View>
             </View>

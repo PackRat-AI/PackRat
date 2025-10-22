@@ -1,20 +1,12 @@
-import { useCallback, useRef } from 'react';
-import {
-  FlatList,
-  Pressable,
-  SafeAreaView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { ActivityIndicator, LargeTitleHeader } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { LargeTitleHeader, ActivityIndicator } from '@packrat/ui/nativewindui';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-
-import { useAllTrips } from '../hooks/useAllTrips'; // React Query hook
+import { Link, useRouter } from 'expo-router';
+import { useCallback, useRef } from 'react';
+import { FlatList, Pressable, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import { TripCard } from '../components/TripCard';
+import { useAllTrips } from '../hooks/useAllTrips'; // React Query hook
 import type { Trip } from '../types';
 
 function CreateTripIconButton() {
@@ -65,10 +57,7 @@ export function TripsListScreen() {
           <Text className="mb-6 text-center text-muted-foreground">
             {(error as Error)?.message || 'Something went wrong. Please try again.'}
           </Text>
-          <TouchableOpacity
-            className="rounded-lg bg-primary px-4 py-2"
-            onPress={() => refetch()}
-          >
+          <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={() => refetch()}>
             <Text className="font-medium text-primary-foreground">Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -84,10 +73,7 @@ export function TripsListScreen() {
         <Text className="mb-6 text-center text-muted-foreground">
           You haven't created any trips yet.
         </Text>
-        <TouchableOpacity
-          className="rounded-lg bg-primary px-4 py-2"
-          onPress={handleCreateTrip}
-        >
+        <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={handleCreateTrip}>
           <Text className="font-medium text-primary-foreground">Create New Trip</Text>
         </TouchableOpacity>
       </View>

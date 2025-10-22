@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { trips, packs } from '@packrat/api/db/schema';
+import { packs, trips } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
@@ -24,22 +24,24 @@ const LocationSchema = z
   .nullable()
   .optional();
 
-const TripWithPackSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().nullable().optional(),
-  location: LocationSchema,
-  startDate: z.string().nullable().optional(),
-  endDate: z.string().nullable().optional(),
-  notes: z.string().nullable().optional(),
-  userId: z.number(),
-  packId: z.string().nullable().optional(),
-  deleted: z.boolean(),
-  localCreatedAt: z.string().datetime().optional(),
-  localUpdatedAt: z.string().datetime().optional(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-}).openapi('Trip');
+const TripWithPackSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable().optional(),
+    location: LocationSchema,
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+    userId: z.number(),
+    packId: z.string().nullable().optional(),
+    deleted: z.boolean(),
+    localCreatedAt: z.string().datetime().optional(),
+    localUpdatedAt: z.string().datetime().optional(),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  })
+  .openapi('Trip');
 
 // Create Trip Request Schema
 const CreateTripRequestSchema = z.object({
@@ -63,7 +65,8 @@ const listGetRoute = createRoute({
   path: '/',
   tags: ['Trips'],
   summary: 'List user trips',
-  description: 'Get all trips belonging to the authenticated user, optionally including public trips.',
+  description:
+    'Get all trips belonging to the authenticated user, optionally including public trips.',
   security: [{ bearerAuth: [] }],
   request: {
     query: z.object({
@@ -124,9 +127,18 @@ const listPostRoute = createRoute({
     body: { content: { 'application/json': { schema: CreateTripRequestSchema } }, required: true },
   },
   responses: {
-    200: { description: 'Trip created successfully', content: { 'application/json': { schema: TripWithPackSchema } } },
-    400: { description: 'Bad request - missing trip ID or invalid data', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    500: { description: 'Internal server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    200: {
+      description: 'Trip created successfully',
+      content: { 'application/json': { schema: TripWithPackSchema } },
+    },
+    400: {
+      description: 'Bad request - missing trip ID or invalid data',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Internal server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
