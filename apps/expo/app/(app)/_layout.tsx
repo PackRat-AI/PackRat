@@ -172,9 +172,17 @@ export default function AppLayout() {
         options={({ route }) => getPackTemplateDetailOptions((route.params as { id: string })?.id)}
       />
       <Stack.Screen
+        name="pack-templates/[id]/edit"
+        options={{
+          headerTitle: 'Edit Pack Template',
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
         name="templateItem/new"
         options={{
-          headerTitle: 'Create Template item',
+          headerTitle: 'Create Template Item',
           presentation: 'modal',
           animation: 'slide_from_bottom',
         }}
