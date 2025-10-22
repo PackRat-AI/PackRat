@@ -4,7 +4,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
-import { useImageUpload } from 'expo-app/features/packs/hooks/useImageUpload';
+import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
@@ -63,7 +63,7 @@ export const CreatePackTemplateItemForm = ({
     permanentlyPersistImageLocally,
     deleteImage,
     clearSelectedImage,
-  } = useImageUpload();
+  } = useImagePicker();
 
   const initialImageUrl = useRef(existingItem?.image || null);
   const isEditing = !!existingItem;

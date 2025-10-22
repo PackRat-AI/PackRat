@@ -26,6 +26,7 @@ type PackItemCardProps =
   | (Base & {
       onSelect: (item: PackItem) => void;
       selected: boolean;
+      dimOnSelect?: boolean;
     });
 
 export function PackItemCard({
@@ -114,7 +115,10 @@ export function PackItemCard({
         <View
           className={`mb-4 rounded-lg flex-row gap-3 border p-4 ${
             isSelectable && restProps.selected
-              ? 'border-primary bg-primary/5'
+              ? cn(
+                  'border-primary bg-primary/5',
+                  restProps.dimOnSelect && 'border-neutral-300 opacity-50',
+                )
               : 'border-border bg-card'
           }`}
         >
@@ -162,7 +166,11 @@ export function PackItemCard({
           {isSelectable && (
             <View className="items-center justify-center">
               {restProps.selected ? (
-                <Icon name="check-circle" size={24} color={colors.primary} />
+                <Icon
+                  name="check-circle"
+                  size={24}
+                  color={restProps.dimOnSelect ? colors.grey2 : colors.primary}
+                />
               ) : (
                 <Icon name="circle-outline" size={24} color={colors.grey2} />
               )}

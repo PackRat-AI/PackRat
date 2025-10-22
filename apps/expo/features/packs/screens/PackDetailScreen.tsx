@@ -1,12 +1,14 @@
+import { useActionSheet } from '@expo/react-native-action-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
-import type { CatalogItem } from 'expo-app/features/catalog/types';
+import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
@@ -14,10 +16,17 @@ import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
+import Toast from 'react-native-toast-message';
+import {
+  useImagePicker,
+  usePackDetailsFromApi,
+  usePackDetailsFromStore,
+  usePackGapAnalysis,
+} from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
+import { packingModeStore } from '../store/packingMode';
 import type { Pack, PackItem } from '../types';
 
 export function PackDetailScreen() {
@@ -26,10 +35,13 @@ export function PackDetailScreen() {
 
   const isOwnedByUser = usePackOwnershipCheck(id as string);
 
-  const [activeTab, setActiveTab] = useState('all');
+  const DEFAULT_TAB = 'all';
+  const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
   const [isPackingMode, setIsPackingMode] = useState(false);
-  const [packedItems, setPackedItems] = useState<Record<string, boolean>>({});
+  const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
+    packingModeStore[id as string].get() || {},
+  );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
@@ -43,6 +55,9 @@ export function PackDetailScreen() {
     isPending: isAnalyzing,
     reset: resetAnalysis,
   } = usePackGapAnalysis();
+
+  const { pickImage, takePhoto } = useImagePicker();
+  const { showActionSheetWithOptions } = useActionSheet();
 
   const packFromStore = usePackDetailsFromStore(id as string);
   const {
@@ -78,9 +93,72 @@ export function PackDetailScreen() {
     }));
   };
 
+  const handleResetPackingMode = () => {
+    setPackedItems({});
+  };
+
+  const handleSavePackingMode = () => {
+    packingModeStore[id as string].set({ ...packedItems });
+    setIsPackingMode(false);
+    setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+    Toast.show({
+      type: 'success',
+      text1: 'Packing state saved',
+    });
+  };
+
+  const handleExitPackingMode = () => {
+    const exitPackingMode = () => {
+      setIsPackingMode(!isPackingMode);
+      setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+      setPackedItems(packingModeStore[id as string].get());
+    };
+
+    const packingState = packingModeStore[id as string].get();
+
+    if (
+      Object.entries(packedItems).every(([key, val]) =>
+        packingState[key] ? packingState[key] === val : val === false,
+      )
+    )
+      // Skip confirmation if nothing has changed
+      return exitPackingMode();
+
+    appAlert.current?.alert({
+      title: 'Exit Packing Mode?',
+      message: "If you don't save, your packing state will be lost.",
+      buttons: [
+        {
+          text: 'Exit without Saving',
+          style: 'destructive',
+          onPress: exitPackingMode,
+        },
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          style: 'default',
+          onPress() {
+            handleSavePackingMode();
+          },
+        },
+      ],
+    });
+  };
+
+  const handleTogglePackingMode = () => {
+    if (isPackingMode) return handleExitPackingMode();
+    setIsPackingMode(true);
+  };
+
+  const packingProgress = useMemo(() => {
+    const totalItems = pack?.items?.length || 0;
+    const packedCount = Object.values(packedItems).filter(Boolean).length;
+    return { packed: packedCount, total: totalItems };
+  }, [pack?.items?.length, packedItems]);
+
   const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
     if (catalogItems.length > 0) {
-      await addItemsToPack(id as string, catalogItems);
+      await addItemsToPack(id as string, catalogItems as CatalogItemWithPackItemFields[]);
     }
   };
 
@@ -127,13 +205,27 @@ export function PackDetailScreen() {
 
   const getFilteredItems = () => {
     if (!pack?.items) return [];
-    switch (activeTab) {
-      case 'worn':
-        return pack.items.filter((item) => item.worn);
-      case 'consumable':
-        return pack.items.filter((item) => item.consumable);
-      default:
-        return pack.items;
+
+    if (isPackingMode) {
+      // In packing mode, filter by packing status
+      switch (activeTab) {
+        case 'unpacked':
+          return pack.items.filter((item) => !packedItems[item.id]);
+        case 'packed':
+          return pack.items.filter((item) => packedItems[item.id]);
+        default:
+          return pack.items;
+      }
+    } else {
+      // Regular mode, filter by item properties
+      switch (activeTab) {
+        case 'worn':
+          return pack.items.filter((item) => item.worn);
+        case 'consumable':
+          return pack.items.filter((item) => item.consumable);
+        default:
+          return pack.items;
+      }
     }
   };
 
@@ -177,12 +269,75 @@ export function PackDetailScreen() {
     });
   };
 
+  const handleAddFromPhoto = () => {
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: `/pack/${pack.id}`,
+          showSignInCopy: 'true',
+        },
+      });
+    }
+    const options = ['Take Photo', 'Choose from Library', 'Cancel'];
+    const cancelButtonIndex = 2;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        containerStyle: {
+          backgroundColor: colors.card,
+        },
+        textStyle: {
+          color: colors.foreground,
+        },
+      },
+      async (selectedIndex) => {
+        try {
+          switch (selectedIndex) {
+            case 0: {
+              // Take Photo
+              const fileInfo = await takePhoto();
+              if (fileInfo)
+                router.push({
+                  pathname: '/pack/items-scan',
+                  params: { packId: pack.id, ...fileInfo },
+                });
+              break;
+            }
+            case 1: {
+              // Choose from Library
+              const fileInfo = await pickImage();
+              if (fileInfo)
+                router.push({
+                  pathname: '/pack/items-scan',
+                  params: { packId: pack.id, ...fileInfo },
+                });
+              break;
+            }
+            case cancelButtonIndex:
+              // Canceled
+              return;
+          }
+        } catch (err) {
+          console.error('Error handling image:', err);
+          appAlert.current?.alert({
+            title: 'Error',
+            message: 'Failed to process image. Please try again.',
+            buttons: [{ text: 'OK', style: 'default' }],
+          });
+        }
+      },
+    );
+  };
+
   // Prepare bottom sheet actions with consistent structure
   const actions = [
     {
       key: 'ask-ai',
       label: 'Ask AI',
-      icon: <Icon name="message-outline" color={colors.foreground} />,
+      icon: <Icon size={20} name="message-outline" color={colors.foreground} />,
       onPress: handleAskAI,
       show: true,
       variant: 'secondary' as const,
@@ -191,8 +346,15 @@ export function PackDetailScreen() {
     {
       key: 'packing',
       label: isPackingMode ? 'Done Packing' : 'Start Packing',
-      icon: <Icon name="check" color={colors.foreground} />,
-      onPress: () => setIsPackingMode(!isPackingMode),
+      icon: (
+        <Icon
+          size={20}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'bag-personal-outline' }}
+          ios={{ name: 'backpack' }}
+          color={isPackingMode ? '#fff' : colors.foreground}
+        />
+      ),
+      onPress: handleTogglePackingMode,
       show: isOwnedByUser,
       variant: isPackingMode ? ('primary' as const) : ('secondary' as const),
       disabled: false,
@@ -202,6 +364,7 @@ export function PackDetailScreen() {
       label: isAnalyzing ? 'Analyzing...' : 'Analyze Gaps',
       icon: (
         <Icon
+          size={20}
           ios={{ name: 'text.viewfinder' }}
           materialIcon={{ type: 'MaterialCommunityIcons', name: 'magnify-scan' }}
           color={colors.foreground}
@@ -213,9 +376,18 @@ export function PackDetailScreen() {
       disabled: isAnalyzing,
     },
     {
+      key: 'add-from-photo',
+      label: 'Add from Photo',
+      icon: <Icon size={20} name="camera-outline" color={colors.foreground} />,
+      onPress: handleAddFromPhoto,
+      show: isOwnedByUser,
+      variant: 'secondary' as const,
+      disabled: false,
+    },
+    {
       key: 'browse',
       label: 'Browse Catalog',
-      icon: <Icon name="magnify" color={colors.foreground} />,
+      icon: <Icon size={20} name="magnify" color={colors.foreground} />,
       onPress: () => setIsCatalogModalVisible(true),
       show: isOwnedByUser,
       variant: 'secondary' as const,
@@ -245,7 +417,7 @@ export function PackDetailScreen() {
   }
 
   // Consistent sizing classes for action buttons (full-width inside 1/2 column)
-  const actionBtnClass = 'w-full h-14 flex-row items-center justify-center gap-2';
+  const actionBtnClass = 'w-full h-14 flex-row items-center justify-start gap-2';
 
   if (!isOwnedByUser && isLoading) {
     return (
@@ -285,11 +457,12 @@ export function PackDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <ScrollView>
+      <ScrollView stickyHeaderIndices={[2]} contentContainerClassName="pb-24">
         {pack.image && (
           <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
         )}
 
+        {/* Header */}
         <View className="mb-4 p-4">
           <View className="mb-2">
             <Text className="text-2xl font-bold text-foreground">{pack.name}</Text>
@@ -333,51 +506,80 @@ export function PackDetailScreen() {
           )}
         </View>
 
-        <View>
-          <View className="p-4">
-            <View className="gap-4 flex-row items-center">
-              <Button variant="secondary" onPress={handleAskAI} className="flex-1">
-                <Text>Ask AI</Text>
+        {/* Actions */}
+        <View className="p-4">
+          <View className="gap-4 flex-row items-center">
+            <Button variant="secondary" onPress={handleAskAI} className="flex-1">
+              <Text>Ask AI</Text>
+            </Button>
+
+            {isOwnedByUser && (
+              <Button
+                variant={isPackingMode ? 'primary' : 'secondary'}
+                onPress={handleTogglePackingMode}
+              >
+                <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
               </Button>
+            )}
 
-              {isOwnedByUser && (
-                <Button
-                  variant={isPackingMode ? 'primary' : 'secondary'}
-                  onPress={() => setIsPackingMode(!isPackingMode)}
-                >
-                  <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
-                </Button>
-              )}
-
-              {isOwnedByUser && (
-                <Button variant="secondary" size="icon" onPress={handleMoreActionsPress}>
-                  <Icon name="dots-horizontal" size={20} color={colors.grey2} />
-                </Button>
-              )}
-            </View>
+            {isOwnedByUser && (
+              <Button variant="secondary" size="icon" onPress={handleMoreActionsPress}>
+                <Icon name="dots-horizontal" size={20} color={colors.grey2} />
+              </Button>
+            )}
           </View>
+        </View>
 
-          <View className="flex-row border-b border-border">
-            <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
-              <Text className={getTabTextStyle('all')}>All Items</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className={getTabStyle('worn')} onPress={() => setActiveTab('worn')}>
-              <Text className={getTabTextStyle('worn')}>Worn</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={getTabStyle('consumable')}
-              onPress={() => setActiveTab('consumable')}
-            >
-              <Text className={getTabTextStyle('consumable')}>Consumable</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Tabs */}
+        <View className="flex-row bg-background sticky border-b border-border">
+          {isPackingMode ? (
+            <>
+              <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+                <Text className={getTabTextStyle('all')}>All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('unpacked')}
+                onPress={() => setActiveTab('unpacked')}
+              >
+                <Text className={getTabTextStyle('unpacked')}>Unpacked</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('packed')}
+                onPress={() => setActiveTab('packed')}
+              >
+                <Text className={getTabTextStyle('packed')}>Packed</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+                <Text className={getTabTextStyle('all')}>All Items</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('worn')}
+                onPress={() => setActiveTab('worn')}
+              >
+                <Text className={getTabTextStyle('worn')}>Worn</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('consumable')}
+                onPress={() => setActiveTab('consumable')}
+              >
+                <Text className={getTabTextStyle('consumable')}>Consumable</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
 
+        {/* Content */}
+        <View>
           {filteredItems.length > 0 ? (
             <View className="p-4">
               {filteredItems.map((item) => (
                 <PackItemCard
                   key={item.id}
                   item={item}
+                  dimOnSelect={isPackingMode && !!packedItems[item.id]}
                   {...(isPackingMode
                     ? { onSelect: handleItemSelect, selected: !!packedItems[item.id] }
                     : { onPress: handleItemPress })}
@@ -392,6 +594,34 @@ export function PackDetailScreen() {
         </View>
       </ScrollView>
 
+      {/* Packing Mode Toolbar */}
+      {isPackingMode && (
+        <View className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              {/* Close Button */}
+              <Button variant="plain" size="icon" onPress={handleExitPackingMode}>
+                <Icon name="close" size={20} color={colors.grey2} />
+              </Button>
+              {/* Progress Text */}
+              <Text variant="subhead" className="text-muted-foreground">
+                {packingProgress.packed} of {packingProgress.total} items packed
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              {/* Reset Button */}
+              <Button variant="plain" size="sm" onPress={handleResetPackingMode}>
+                <Text>Reset</Text>
+              </Button>
+              {/* Save Button */}
+              <Button variant="plain" size="sm" onPress={handleSavePackingMode}>
+                <Text>Save</Text>
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
       <Sheet
         ref={bottomSheetRef}
         enableDynamicSizing={true}
@@ -400,11 +630,6 @@ export function PackDetailScreen() {
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
       >
         <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
-          <View>
-            <Text variant="heading" className="text-center mb-6">
-              Actions
-            </Text>
-          </View>
           {/* Revamped consistent 2-column action layout */}
           <View className="flex-row flex-wrap -mx-1">
             {normalizedActions.map((action) => (
@@ -422,7 +647,7 @@ export function PackDetailScreen() {
                     className={actionBtnClass}
                   >
                     {action.icon}
-                    <Text numberOfLines={1}>{action.label}</Text>
+                    <Text className="text-sm font-normal pr-8">{action.label}</Text>
                   </Button>
                 )}
               </View>
