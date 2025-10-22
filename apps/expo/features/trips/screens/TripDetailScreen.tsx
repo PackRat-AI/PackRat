@@ -17,7 +17,7 @@ import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
 import type { Trip } from '../types';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 export function TripDetailScreen() {
   const router = useRouter();
@@ -132,6 +132,7 @@ export function TripDetailScreen() {
 
                 <View className="w-full h-36 overflow-hidden rounded-b-xl">
                   <MapView
+                  provider={PROVIDER_GOOGLE}
                     style={{ flex: 1 }}
                     initialRegion={{
                       latitude: trip.location.latitude,

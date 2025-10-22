@@ -63,42 +63,46 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   );
 
   const [showPackModal, setShowPackModal] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+
+
 
   const formatDate = (isoString?: string) => isoString?.split('T')[0] || '';
 
- const form = useForm({
-  defaultValues: {
-    name: trip?.name || '',
-    description: trip?.description || '',
-    location: location ?? null,
-    startDate: formatDate(trip?.startDate || ''),
-    endDate: formatDate(trip?.endDate || ''),
-    packId: trip?.packId ?? null,
-  },
-  validators: { onChange: tripFormSchema },
-  onSubmit: async ({ value }) => {
-    if (location) value.location = location;
-    try {
-      if (isEditingExistingTrip) {
-        await updateTrip({ ...trip, ...value });
-        Alert.alert('Success', 'Trip updated successfully');
-      } else {
-        await createTrip(value);
-        Alert.alert('Success', 'Trip created successfully');
+  const form = useForm({
+    defaultValues: {
+      name: trip?.name || '',
+      description: trip?.description || '',
+      location: location ?? null,
+      startDate: formatDate(trip?.startDate || ''),
+      endDate: formatDate(trip?.endDate || ''),
+      packId: trip?.packId ?? null,
+    },
+    validators: { onChange: tripFormSchema },
+    onSubmit: async ({ value }) => {
+      if (location) value.location = location;
+      try {
+        if (isEditingExistingTrip) {
+          await updateTrip({ ...trip, ...value });
+          Alert.alert('Success', 'Trip updated successfully');
+        } else {
+          await createTrip(value);
+          Alert.alert('Success', 'Trip created successfully');
+        }
+        router.back();
+      } catch (e) {
+        Alert.alert('Error', 'Something went wrong. Please try again.');
       }
-      router.back();
-    } catch (e) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
-    }
-  },
-});
+    },
+  });
 
   const handleDateChange = (field: any, event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       if (event.type === 'set' && selectedDate) {
         field.handleChange(selectedDate.toISOString().split('T')[0]);
       }
-      
+
     } else {
       if (selectedDate) {
         field.handleChange(selectedDate.toISOString().split('T')[0]);
@@ -161,7 +165,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   onPress={() => router.push('/trip/location-search')}
                   className="flex-1 p-3 border border-border rounded-lg mr-2 bg-card"
                 >
-                  <Text>
+                  <Text
+                    className={
+                      location || trip?.location
+                        ? 'text-foreground'
+                        : 'text-muted-foreground font-medium'
+                    }
+                  >
                     {location
                       ? location.name
                         ? location.name.split(',')[0]
@@ -233,50 +243,75 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             </form.Field>
 
             {/* Start Date */}
-            {/* Start Date */}
             <form.Field name="startDate">
-              {(field) => (
-                <FormItem>
-                  <View className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card">
-                    <Text className="text-foreground font-medium">Start Date</Text>
-                    <DateTimePicker
-                      value={
-                        field.state.value
-                          ? new Date(field.state.value)
-                          : new Date()
-                      }
-                      mode="date"
-                      display="default"
-                      onChange={(event, date) => handleDateChange(field, event, date)}
-                    />
-                  </View>
+              {(field) => {
+                return (
+                  <FormItem>
+                    <Pressable
+                      onPress={() => setShowStartPicker(true)}
+                      className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card"
+                    >
+                      <Text className="text-foreground font-medium">Start Date</Text>
+                      <Text className="text-muted-foreground">
+                        {field.state.value || 'Select date'}
+                      </Text>
+                    </Pressable>
 
-
-                </FormItem>
-              )}
+                    {showStartPicker && (
+                      <DateTimePicker
+                        value={
+                          field.state.value ? new Date(field.state.value) : new Date()
+                        }
+                        mode="date"
+                        display="default"
+                        onChange={(event, date) => {
+                          setShowStartPicker(false);
+                          if (date) {
+                            field.handleChange(date.toISOString().split('T')[0]);
+                          }
+                        }}
+                      />
+                    )}
+                  </FormItem>
+                );
+              }}
             </form.Field>
 
             {/* End Date */}
             <form.Field name="endDate">
-              {(field) => (
-                <FormItem>
-                  <View className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card">
-                    <Text className="text-foreground font-medium">End Date</Text>
-                    <DateTimePicker
-                      value={
-                        field.state.value
-                          ? new Date(field.state.value)
-                          : new Date()
-                      }
-                      mode="date"
-                      display="default"
-                      onChange={(event, date) => handleDateChange(field, event, date)}
-                    />
-                  </View>
+              {(field) => {
+                return (
+                  <FormItem>
+                    <Pressable
+                      onPress={() => setShowEndPicker(true)}
+                      className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card"
+                    >
+                      <Text className="text-foreground font-medium">End Date</Text>
+                      <Text className="text-muted-foreground">
+                        {field.state.value || 'Select date'}
+                      </Text>
+                    </Pressable>
 
-                </FormItem>
-              )}
+                    {showEndPicker && (
+                      <DateTimePicker
+                        value={
+                          field.state.value ? new Date(field.state.value) : new Date()
+                        }
+                        mode="date"
+                        display="default"
+                        onChange={(event, date) => {
+                          setShowEndPicker(false);
+                          if (date) {
+                            field.handleChange(date.toISOString().split('T')[0]);
+                          }
+                        }}
+                      />
+                    )}
+                  </FormItem>
+                );
+              }}
             </form.Field>
+
 
           </FormSection>
         </Form>

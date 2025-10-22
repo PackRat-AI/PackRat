@@ -88,6 +88,7 @@ const TAB_BAR = Platform.select({
 const TAB_ICON = {
   '(home)': 'home',
   packs: 'backpack',
+  trips: 'map',
   catalog: 'clipboard-list',
   profile: 'account-circle',
 } as const;
@@ -148,11 +149,11 @@ function MaterialTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             label={
               typeof label === 'function'
                 ? label({
-                    focused: isFocused,
-                    color: isFocused ? colors.foreground : colors.grey2,
-                    children: options.title ?? route.name ?? '',
-                    position: options.tabBarLabelPosition ?? 'below-icon',
-                  })
+                  focused: isFocused,
+                  color: isFocused ? colors.foreground : colors.grey2,
+                  children: options.title ?? route.name ?? '',
+                  position: options.tabBarLabelPosition ?? 'below-icon',
+                })
                 : label
             }
             tabBarItemStyle={options.tabBarItemStyle}
