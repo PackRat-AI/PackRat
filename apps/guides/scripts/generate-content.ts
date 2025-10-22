@@ -353,20 +353,6 @@ async function generateMdxContent(
   return text;
 }
 
-// Create frontmatter for MDX file
-function createFrontmatter(metadata: ContentMetadata): string {
-  return `---
-title: "${metadata.title}"
-description: "${metadata.description}"
-date: ${metadata.date}
-categories: [${metadata.categories.map((c) => `"${c}"`).join(', ')}]
-author: "${metadata.author}"
-readingTime: "${metadata.readingTime}"
-difficulty: "${metadata.difficulty}"
-coverImage: "${metadata.coverImage}"
----`;
-}
-
 // Generate a single post
 async function generatePost(
   request: ContentRequest,
@@ -395,8 +381,7 @@ async function generatePost(
     }
 
     // Combine frontmatter and content
-    const frontmatter = createFrontmatter(metadata);
-    const mdxContent = `${frontmatter}\n\n${content}`;
+    const mdxContent = matter.stringify(content, metadata);
 
     // Write to file
     const filePath = path.join(OUTPUT_DIR, `${metadata.slug}.mdx`);

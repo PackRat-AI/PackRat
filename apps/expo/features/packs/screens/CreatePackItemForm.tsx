@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
-import { useImageUpload } from '../hooks/useImageUpload';
+import { useImagePicker } from '../hooks/useImagePicker';
 import type { PackItem, PackItemInput } from '../types';
 
 // Define Zod schema
@@ -58,7 +58,7 @@ export const CreatePackItemForm = ({
   existingItem?: PackItem;
 }) => {
   const router = useRouter();
-  const { colorScheme, colors } = useColorScheme();
+  const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const createPackItem = useCreatePackItem();
   const updatePackItem = useUpdatePackItem();
@@ -69,7 +69,7 @@ export const CreatePackItemForm = ({
     permanentlyPersistImageLocally,
     deleteImage,
     clearSelectedImage,
-  } = useImageUpload();
+  } = useImagePicker();
 
   // Keep track of the initial image URL for comparison during updates
   const initialImageUrl = useRef(existingItem?.image || null);
@@ -148,7 +148,7 @@ export const CreatePackItemForm = ({
         options,
         cancelButtonIndex,
         containerStyle: {
-          backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
+          backgroundColor: colors.card,
         },
         textStyle: {
           color: colors.foreground,

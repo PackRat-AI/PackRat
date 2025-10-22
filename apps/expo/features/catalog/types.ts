@@ -1,4 +1,5 @@
 import type { WeightUnit } from 'expo-app/types';
+import type { PackItemInput } from '../packs';
 
 export interface CatalogItemLink {
   id: string;
@@ -94,6 +95,8 @@ export interface CatalogItem {
   updatedAt: Date;
 }
 
+export type CatalogItemWithQuantity = CatalogItem & { quantity?: number };
+
 export interface PaginatedCatalogItemsResponse {
   items: CatalogItem[];
   totalCount: number;
@@ -130,3 +133,5 @@ export interface CatalogItemInput {
   links?: CatalogItemLink[];
   reviews?: CatalogItemReview[];
 }
+
+export type CatalogItemWithPackItemFields = CatalogItem & Partial<PackItemInput>;

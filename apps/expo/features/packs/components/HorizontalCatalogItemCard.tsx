@@ -35,7 +35,7 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
       onPress={isSelectable ? () => restProps.onSelect(item) : restProps.onPress}
     >
       <View
-        className={`mb-4 rounded-lg flex-row gap-3 border p-4 ${
+        className={`rounded-lg flex-row gap-3 border p-4 ${
           isSelectable && restProps.selected
             ? 'border-primary bg-primary/5'
             : 'border-border bg-card'
