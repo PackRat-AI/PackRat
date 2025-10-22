@@ -3,12 +3,12 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { appAlert } from 'expo-app/app/_layout';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
-import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { isArray } from 'radash';
 import { Image, Pressable, View } from 'react-native';
 import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';
+import { useWritePermissionCheck } from '../hooks/useWritePermissionCheck';
 import type { PackTemplate } from '../types';
 import { AppTemplateBadge } from './AppTemplateBadge';
 
@@ -20,18 +20,15 @@ type PackTemplateCard = {
 export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
   const template = usePackTemplateDetails(templateId);
   const deleteTemplate = useDeletePackTemplate();
-  const user = useUser();
+  const canWrite = useWritePermissionCheck(templateId);
 
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
 
   const handleActionsPress = () => {
-    console.log('template.userId', template.userId);
-    console.log('user.id', user?.id);
-    const options =
-      user && (template.userId === user.id || (template.isAppTemplate && user.role === 'ADMIN'))
-        ? ['View Details', 'Edit', 'Delete', 'Cancel']
-        : ['View Details', 'Cancel'];
+    const options = canWrite
+      ? ['View Details', 'Edit', 'Delete', 'Cancel']
+      : ['View Details', 'Cancel'];
 
     const cancelButtonIndex = options.length - 1;
     const destructiveButtonIndex = options.indexOf('Delete');
