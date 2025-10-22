@@ -1,7 +1,8 @@
-import { Alert, Button, useColorScheme } from '@packrat-ai/nativewindui';
+import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
+import AddPackTemplateItemActions from '../components/AddPackTemplateItemActions';
 import { useDeletePackTemplate } from '../hooks';
 import { useWritePermissionCheck } from '../hooks/useWritePermissionCheck';
 
@@ -11,6 +12,8 @@ export function getPackTemplateDetailOptions(id: string) {
     headerRight: () => {
       const { colors } = useColorScheme();
       const router = useRouter();
+      const addPackTemplateItemActionsRef = useSheetRef();
+
       const deletePackTemplate = useDeletePackTemplate();
 
       const canWrite = useWritePermissionCheck(id as string);
@@ -49,6 +52,15 @@ export function getPackTemplateDetailOptions(id: string) {
           >
             <Icon name="pencil-box-outline" color={colors.grey2} />
           </Button>
+          <Button
+            variant="plain"
+            size="icon"
+            onPress={() => addPackTemplateItemActionsRef.current?.present()}
+          >
+            <Icon name="plus" color={colors.grey2} />
+          </Button>
+
+          <AddPackTemplateItemActions ref={addPackTemplateItemActionsRef} packTemplateId={id} />
         </View>
       );
     },
