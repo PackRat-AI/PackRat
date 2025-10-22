@@ -531,7 +531,7 @@ export function PackDetailScreen() {
         </View>
 
         {/* Tabs */}
-        <View className="flex-row bg-background sticky border-b border-border">
+        <View className="flex-row bg-background border-b border-border">
           {isPackingMode ? (
             <>
               <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>

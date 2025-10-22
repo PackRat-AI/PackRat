@@ -2,6 +2,7 @@ import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
+import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import 'expo-dev-client';
@@ -167,11 +168,7 @@ export default function AppLayout() {
       />
       <Stack.Screen
         name="pack-templates/[id]/index"
-        options={{
-          headerTitle: 'Pack Template Details',
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
+        options={({ route }) => getPackTemplateDetailOptions((route.params as { id: string })?.id)}
       />
       <Stack.Screen
         name="templateItem/new"

@@ -10,13 +10,12 @@ import { isArray } from 'radash';
 import { Image, Pressable, View } from 'react-native';
 import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';
 import type { PackTemplate } from '../types';
+import { AppTemplateBadge } from './AppTemplateBadge';
 
 type PackTemplateCard = {
   templateId: string;
   onPress: (template: PackTemplate) => void;
 };
-
-const LOGO_SOURCE = require('expo-app/assets/adaptive-icon.png');
 
 export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
   const template = usePackTemplateDetails(templateId);
@@ -134,17 +133,7 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
             </View>
           ) : null}
 
-          {template.isAppTemplate && (
-            <View
-              className="flex-row items-center ml-auto justify-between rounded-md pr-2"
-              style={{ backgroundColor: colors.grey2 }}
-            >
-              <Image source={LOGO_SOURCE} className="h-8 w-8 rounded-md" resizeMode="contain" />
-              <Text className="text-xs text-foreground" style={{ color: colors.background }}>
-                App Template
-              </Text>
-            </View>
-          )}
+          {template.isAppTemplate && <AppTemplateBadge />}
         </View>
       </View>
     </Pressable>
