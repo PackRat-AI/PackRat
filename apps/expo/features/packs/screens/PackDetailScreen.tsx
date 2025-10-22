@@ -48,7 +48,7 @@ export function PackDetailScreen() {
 
   const [location, setLocation] = useState<WeatherLocation>();
 
-  const { addItemsToPack, isLoading: isAddingItems } = useBulkAddCatalogItems();
+  const { addItemsToPack } = useBulkAddCatalogItems();
   const {
     mutate: analyzeGaps,
     data: gapAnalysis,
@@ -76,6 +76,7 @@ export function PackDetailScreen() {
   const { colors } = useColorScheme();
 
   const bottomSheetRef = useSheetRef();
+  const addItemOptionsbottomSheetRef = useSheetRef();
 
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
@@ -269,7 +270,13 @@ export function PackDetailScreen() {
     });
   };
 
+  const handleAddItem = () => {
+    addItemOptionsbottomSheetRef.current?.present();
+  };
+
   const handleAddFromPhoto = () => {
+    addItemOptionsbottomSheetRef.current?.present();
+
     if (!isAuthed.peek()) {
       return router.push({
         pathname: '/auth',
@@ -332,6 +339,21 @@ export function PackDetailScreen() {
     );
   };
 
+  const handleAddFromCatalog = () => {
+    addItemOptionsbottomSheetRef.current?.close();
+
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: `/pack/${id}`,
+          showSignInCopy: 'true',
+        },
+      });
+    }
+    setIsCatalogModalVisible(true);
+  };
+
   // Prepare bottom sheet actions with consistent structure
   const actions = [
     {
@@ -340,6 +362,22 @@ export function PackDetailScreen() {
       icon: <Icon size={20} name="message-outline" color={colors.foreground} />,
       onPress: handleAskAI,
       show: true,
+      variant: 'secondary' as const,
+      disabled: false,
+    },
+    {
+      key: 'add-item',
+      label: 'Add Item',
+      icon: (
+        <Icon
+          size={20}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'cube-outline' }}
+          ios={{ name: 'backpack' }}
+          color={colors.foreground}
+        />
+      ),
+      onPress: handleAddItem,
+      show: isOwnedByUser,
       variant: 'secondary' as const,
       disabled: false,
     },
@@ -374,24 +412,6 @@ export function PackDetailScreen() {
       show: isOwnedByUser,
       variant: 'secondary' as const,
       disabled: isAnalyzing,
-    },
-    {
-      key: 'add-from-photo',
-      label: 'Add from Photo',
-      icon: <Icon size={20} name="camera-outline" color={colors.foreground} />,
-      onPress: handleAddFromPhoto,
-      show: isOwnedByUser,
-      variant: 'secondary' as const,
-      disabled: false,
-    },
-    {
-      key: 'browse',
-      label: 'Browse Catalog',
-      icon: <Icon size={20} name="magnify" color={colors.foreground} />,
-      onPress: () => setIsCatalogModalVisible(true),
-      show: isOwnedByUser,
-      variant: 'secondary' as const,
-      disabled: isAddingItems,
     },
   ];
 
@@ -514,11 +534,8 @@ export function PackDetailScreen() {
             </Button>
 
             {isOwnedByUser && (
-              <Button
-                variant={isPackingMode ? 'primary' : 'secondary'}
-                onPress={handleTogglePackingMode}
-              >
-                <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
+              <Button variant="secondary" onPress={handleAddItem}>
+                <Text>Add Item</Text>
               </Button>
             )}
 
@@ -622,6 +639,7 @@ export function PackDetailScreen() {
         </View>
       )}
 
+      {/* Bottom Sheet for More Actions */}
       <Sheet
         ref={bottomSheetRef}
         enableDynamicSizing={true}
@@ -652,6 +670,56 @@ export function PackDetailScreen() {
                 )}
               </View>
             ))}
+          </View>
+        </BottomSheetView>
+      </Sheet>
+
+      {/* Bottom Sheet for Options of Adding Items */}
+      <Sheet
+        ref={addItemOptionsbottomSheetRef}
+        enableDynamicSizing={true}
+        enablePanDownToClose
+        backgroundStyle={{ backgroundColor: colors.card }}
+        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+      >
+        <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
+          <View className="gap-2 mb-4">
+            <TouchableOpacity
+              className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
+              onPress={() => {
+                addItemOptionsbottomSheetRef.current?.close();
+                router.push({
+                  pathname: '/item/new',
+                  params: { packId: id },
+                });
+              }}
+            >
+              <Icon name="plus" size={20} color={colors.foreground} />
+              <Text className="text-center font-medium">Add Manually</Text>
+              <View className="ml-auto">
+                <Icon name="chevron-right" size={20} color={colors.grey2} />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
+              onPress={handleAddFromPhoto}
+            >
+              <Icon name="camera-outline" size={20} color={colors.foreground} />
+              <Text className="text-center font-medium">Scan Items from Photo</Text>
+              <View className="ml-auto">
+                <Icon name="chevron-right" size={20} color={colors.grey2} />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
+              onPress={handleAddFromCatalog}
+            >
+              <Icon name="cart-outline" size={20} color={colors.foreground} />
+              <Text className="text-center font-medium">Add from Catalog</Text>
+              <View className="ml-auto">
+                <Icon name="chevron-right" size={20} color={colors.grey2} />
+              </View>
+            </TouchableOpacity>
           </View>
         </BottomSheetView>
       </Sheet>
