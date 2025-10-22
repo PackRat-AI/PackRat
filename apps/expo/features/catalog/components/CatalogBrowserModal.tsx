@@ -137,7 +137,7 @@ export function CatalogBrowserModal({
             autoComplete="off"
             value={searchValue}
             onChangeText={setSearchValue}
-            placeholder="Search catalog items..."
+            placeholder="Search..."
           />
 
           {!isSearching && categories && (
@@ -156,7 +156,7 @@ export function CatalogBrowserModal({
           {isLoading && items.length === 0 ? (
             <View className="flex-1 items-center justify-center">
               <ActivityIndicator size="large" color={colors.primary} />
-              <Text className="mt-2 text-muted-foreground">Loading catalog items...</Text>
+              <Text className="mt-2 text-muted-foreground">Loading...</Text>
             </View>
           ) : error ? (
             <View className="flex-1 items-center justify-center p-4">

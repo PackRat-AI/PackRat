@@ -49,15 +49,6 @@ export function getPackTemplateDetailOptions(id: string) {
           >
             <Icon name="pencil-box-outline" color={colors.grey2} />
           </Button>
-          <Button
-            variant="plain"
-            size="icon"
-            onPress={() =>
-              router.push({ pathname: '/templateItem/new', params: { packTemplateId: id } })
-            }
-          >
-            <Icon name="plus" color={colors.grey2} />
-          </Button>
         </View>
       );
     },
