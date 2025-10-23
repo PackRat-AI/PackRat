@@ -64,7 +64,7 @@ export function PackTemplateItemCard({
       (selectedIndex) => {
         switch (selectedIndex) {
           case viewDetailsIndex:
-            onPress?.(item);
+            onPress(item);
             break;
           case editIndex:
             router.push({
