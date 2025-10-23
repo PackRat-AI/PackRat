@@ -64,7 +64,7 @@ export function PackTemplateDetailScreen() {
 
   const handleCreate = () => {
     router.push({
-      pathname: '/pack-templates/new',
+      pathname: '/pack/new',
       params: { templateId: packTemplate.id },
     });
   };
