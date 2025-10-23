@@ -2,28 +2,29 @@ import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewi
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import AddPackItemActions from '../components/AddPackItemActions';
-import { useDeletePack, usePackOwnershipCheck } from '../hooks';
+import AddPackTemplateItemActions from '../components/AddPackTemplateItemActions';
+import { useDeletePackTemplate } from '../hooks';
+import { useWritePermissionCheck } from '../hooks/useWritePermissionCheck';
 
-export function getPackDetailOptions(id: string) {
+export function getPackTemplateDetailOptions(id: string) {
   return {
-    title: 'Pack Details',
+    title: 'Pack Template Details',
     headerRight: () => {
-      const router = useRouter();
-      const addItemActionsRef = useSheetRef();
       const { colors } = useColorScheme();
+      const router = useRouter();
+      const addPackTemplateItemActionsRef = useSheetRef();
 
-      const deletePack = useDeletePack();
+      const deletePackTemplate = useDeletePackTemplate();
 
-      const isOwner = usePackOwnershipCheck(id as string);
+      const canWrite = useWritePermissionCheck(id as string);
 
-      if (!isOwner) return null;
+      if (!canWrite) return null;
 
       return (
         <View className="flex-row items-center gap-2">
           <Alert
-            title="Delete pack?"
-            message="Are you sure you want to delete this pack? This action cannot be undone."
+            title="Delete Pack Template?"
+            message="This action cannot be undone."
             buttons={[
               {
                 text: 'Cancel',
@@ -32,7 +33,7 @@ export function getPackDetailOptions(id: string) {
               {
                 text: 'OK',
                 onPress: () => {
-                  deletePack(id);
+                  deletePackTemplate(id);
                   if (router.canGoBack()) {
                     router.back();
                   }
@@ -47,14 +48,19 @@ export function getPackDetailOptions(id: string) {
           <Button
             variant="plain"
             size="icon"
-            onPress={() => router.push({ pathname: '/pack/[id]/edit', params: { id } })}
+            onPress={() => router.push({ pathname: '/pack-templates/[id]/edit', params: { id } })}
           >
             <Icon name="pencil-box-outline" color={colors.grey2} />
           </Button>
-          <Button variant="plain" size="icon" onPress={() => addItemActionsRef.current?.present()}>
+          <Button
+            variant="plain"
+            size="icon"
+            onPress={() => addPackTemplateItemActionsRef.current?.present()}
+          >
             <Icon name="plus" color={colors.grey2} />
           </Button>
-          <AddPackItemActions ref={addItemActionsRef} packId={id} />
+
+          <AddPackTemplateItemActions ref={addPackTemplateItemActionsRef} packTemplateId={id} />
         </View>
       );
     },

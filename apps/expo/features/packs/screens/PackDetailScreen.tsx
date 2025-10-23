@@ -1,4 +1,3 @@
-import { useActionSheet } from '@expo/react-native-action-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
@@ -6,9 +5,6 @@ import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
-import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
-import { useBulkAddCatalogItems } from 'expo-app/features/catalog/hooks';
-import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
@@ -19,12 +15,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
-import {
-  useImagePicker,
-  usePackDetailsFromApi,
-  usePackDetailsFromStore,
-  usePackGapAnalysis,
-} from '../hooks';
+import AddPackItemActions from '../components/AddPackItemActions';
+import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import { packingModeStore } from '../store/packingMode';
 import type { Pack, PackItem } from '../types';
@@ -37,7 +29,6 @@ export function PackDetailScreen() {
 
   const DEFAULT_TAB = 'all';
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
-  const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
     packingModeStore[id as string].get() || {},
@@ -48,16 +39,12 @@ export function PackDetailScreen() {
 
   const [location, setLocation] = useState<WeatherLocation>();
 
-  const { addItemsToPack, isLoading: isAddingItems } = useBulkAddCatalogItems();
   const {
     mutate: analyzeGaps,
     data: gapAnalysis,
     isPending: isAnalyzing,
     reset: resetAnalysis,
   } = usePackGapAnalysis();
-
-  const { pickImage, takePhoto } = useImagePicker();
-  const { showActionSheetWithOptions } = useActionSheet();
 
   const packFromStore = usePackDetailsFromStore(id as string);
   const {
@@ -76,6 +63,7 @@ export function PackDetailScreen() {
   const { colors } = useColorScheme();
 
   const bottomSheetRef = useSheetRef();
+  const addItemActionsRef = useSheetRef();
 
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
@@ -155,12 +143,6 @@ export function PackDetailScreen() {
     const packedCount = Object.values(packedItems).filter(Boolean).length;
     return { packed: packedCount, total: totalItems };
   }, [pack?.items?.length, packedItems]);
-
-  const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
-    if (catalogItems.length > 0) {
-      await addItemsToPack(id as string, catalogItems as CatalogItemWithPackItemFields[]);
-    }
-  };
 
   const handleAnalyzeGapsPress = () => {
     if (!isAuthed.peek()) {
@@ -269,67 +251,8 @@ export function PackDetailScreen() {
     });
   };
 
-  const handleAddFromPhoto = () => {
-    if (!isAuthed.peek()) {
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: `/pack/${pack.id}`,
-          showSignInCopy: 'true',
-        },
-      });
-    }
-    const options = ['Take Photo', 'Choose from Library', 'Cancel'];
-    const cancelButtonIndex = 2;
-
-    showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex,
-        containerStyle: {
-          backgroundColor: colors.card,
-        },
-        textStyle: {
-          color: colors.foreground,
-        },
-      },
-      async (selectedIndex) => {
-        try {
-          switch (selectedIndex) {
-            case 0: {
-              // Take Photo
-              const fileInfo = await takePhoto();
-              if (fileInfo)
-                router.push({
-                  pathname: '/pack/items-scan',
-                  params: { packId: pack.id, ...fileInfo },
-                });
-              break;
-            }
-            case 1: {
-              // Choose from Library
-              const fileInfo = await pickImage();
-              if (fileInfo)
-                router.push({
-                  pathname: '/pack/items-scan',
-                  params: { packId: pack.id, ...fileInfo },
-                });
-              break;
-            }
-            case cancelButtonIndex:
-              // Canceled
-              return;
-          }
-        } catch (err) {
-          console.error('Error handling image:', err);
-          appAlert.current?.alert({
-            title: 'Error',
-            message: 'Failed to process image. Please try again.',
-            buttons: [{ text: 'OK', style: 'default' }],
-          });
-        }
-      },
-    );
+  const handleAddItem = () => {
+    addItemActionsRef.current?.present();
   };
 
   // Prepare bottom sheet actions with consistent structure
@@ -340,6 +263,22 @@ export function PackDetailScreen() {
       icon: <Icon size={20} name="message-outline" color={colors.foreground} />,
       onPress: handleAskAI,
       show: true,
+      variant: 'secondary' as const,
+      disabled: false,
+    },
+    {
+      key: 'add-item',
+      label: 'Add Item',
+      icon: (
+        <Icon
+          size={20}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'cube-outline' }}
+          ios={{ name: 'backpack' }}
+          color={colors.foreground}
+        />
+      ),
+      onPress: handleAddItem,
+      show: isOwnedByUser,
       variant: 'secondary' as const,
       disabled: false,
     },
@@ -374,24 +313,6 @@ export function PackDetailScreen() {
       show: isOwnedByUser,
       variant: 'secondary' as const,
       disabled: isAnalyzing,
-    },
-    {
-      key: 'add-from-photo',
-      label: 'Add from Photo',
-      icon: <Icon size={20} name="camera-outline" color={colors.foreground} />,
-      onPress: handleAddFromPhoto,
-      show: isOwnedByUser,
-      variant: 'secondary' as const,
-      disabled: false,
-    },
-    {
-      key: 'browse',
-      label: 'Browse Catalog',
-      icon: <Icon size={20} name="magnify" color={colors.foreground} />,
-      onPress: () => setIsCatalogModalVisible(true),
-      show: isOwnedByUser,
-      variant: 'secondary' as const,
-      disabled: isAddingItems,
     },
   ];
 
@@ -514,11 +435,8 @@ export function PackDetailScreen() {
             </Button>
 
             {isOwnedByUser && (
-              <Button
-                variant={isPackingMode ? 'primary' : 'secondary'}
-                onPress={handleTogglePackingMode}
-              >
-                <Text>{isPackingMode ? 'Done Packing' : 'Start Packing'}</Text>
+              <Button variant="secondary" onPress={handleAddItem}>
+                <Text>Add Item</Text>
               </Button>
             )}
 
@@ -531,7 +449,7 @@ export function PackDetailScreen() {
         </View>
 
         {/* Tabs */}
-        <View className="flex-row bg-background sticky border-b border-border">
+        <View className="flex-row bg-background border-b border-border">
           {isPackingMode ? (
             <>
               <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
@@ -622,6 +540,7 @@ export function PackDetailScreen() {
         </View>
       )}
 
+      {/* Bottom Sheet for More Actions */}
       <Sheet
         ref={bottomSheetRef}
         enableDynamicSizing={true}
@@ -656,11 +575,8 @@ export function PackDetailScreen() {
         </BottomSheetView>
       </Sheet>
 
-      <CatalogBrowserModal
-        visible={isCatalogModalVisible}
-        onClose={() => setIsCatalogModalVisible(false)}
-        onItemsSelected={handleCatalogItemsSelected}
-      />
+      {/* Add Item Options Sheet */}
+      <AddPackItemActions ref={addItemActionsRef} packId={pack.id} />
 
       {/* Gap Analysis Flow*/}
       <LocationPicker

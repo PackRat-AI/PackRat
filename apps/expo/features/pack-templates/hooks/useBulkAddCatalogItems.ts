@@ -1,14 +1,17 @@
+import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
+import type { CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import type { WeightUnit } from 'expo-app/types';
 import { useState } from 'react';
-import { cacheCatalogItemImage } from '../../catalog/lib/cacheCatalogItemImage';
-import type { CatalogItemWithPackItemFields } from '../../catalog/types';
-import { useCreatePackItem } from './useCreatePackItem';
+import { useCreatePackTemplateItem } from './useCreatePackTemplateItem';
 
 export function useBulkAddCatalogItems() {
   const [isLoading, setIsLoading] = useState(false);
-  const createItem = useCreatePackItem();
+  const createItem = useCreatePackTemplateItem();
 
-  const addItemsToPack = async (packId: string, catalogItems: CatalogItemWithPackItemFields[]) => {
+  const addItemsToPackTemplate = async (
+    packTemplateId: string,
+    catalogItems: CatalogItemWithPackItemFields[],
+  ) => {
     if (catalogItems.length === 0) return;
 
     setIsLoading(true);
@@ -21,7 +24,7 @@ export function useBulkAddCatalogItems() {
 
         // Create the pack item with default values
         createItem({
-          packId,
+          packTemplateId,
           itemData: {
             name: catalogItem.name,
             description: catalogItem.description ?? undefined,
@@ -38,7 +41,7 @@ export function useBulkAddCatalogItems() {
         });
       }
     } catch (error) {
-      console.error('Error adding items to pack:', error);
+      console.error('Error adding items to pack template:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -46,7 +49,7 @@ export function useBulkAddCatalogItems() {
   };
 
   return {
-    addItemsToPack,
+    addItemsToPackTemplate,
     isLoading,
   };
 }
