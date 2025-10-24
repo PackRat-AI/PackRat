@@ -13,9 +13,9 @@
     "update-authors": "bun run scripts/update-authors.ts"
   },
   "dependencies": {
-    "@packrat/api": "workspace:*",
     "@ai-sdk/openai": "^2.0.11",
     "@hookform/resolvers": "^3.10.0",
+    "@packrat/api": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -52,6 +52,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
+    "commander": "^14.0.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "8.5.1",
     "fs": "^0.0.1-security",
