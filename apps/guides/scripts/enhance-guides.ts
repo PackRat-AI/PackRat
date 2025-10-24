@@ -163,7 +163,28 @@ program
 
       if (options.dryRun) {
         console.log(chalk.yellow('🔍 Dry run mode - no files will be modified'));
-        // TODO: Implement dry run functionality
+        
+        // Show what would be enhanced without making changes
+        const fs = await import('fs');
+        const path = await import('path');
+        const outputDir = path.join(process.cwd(), 'content/posts');
+        
+        if (!fs.existsSync(outputDir)) {
+          console.log(chalk.yellow(`Output directory does not exist: ${outputDir}`));
+          return;
+        }
+
+        const files = fs.readdirSync(outputDir)
+          .filter(file => file.endsWith('.mdx'))
+          .filter(file => !file.includes('-enhanced')) // Skip already enhanced files
+          .filter(file => !options.pattern || file.includes(options.pattern));
+
+        console.log(chalk.blue(`Would enhance ${files.length} guides:`));
+        files.forEach((file, i) => {
+          console.log(`  ${i + 1}. ${file}`);
+        });
+        
+        console.log(chalk.yellow('\n⚠️  Use without --dry-run to actually enhance files'));
         return;
       }
 

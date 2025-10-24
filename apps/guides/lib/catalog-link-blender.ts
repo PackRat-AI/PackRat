@@ -446,7 +446,6 @@ Return only valid JSON.`,
 
     for (const insertion of sortedInsertions) {
       // Find the exact text to replace at the position
-      const _beforeText = enhancedContent.slice(0, insertion.position);
       const afterText = enhancedContent.slice(insertion.position);
 
       // Find the text to replace
