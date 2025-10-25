@@ -7,6 +7,7 @@ import matter from 'gray-matter';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import path from 'path';
 import slugify from 'slugify';
+import { integrateWithGuideGeneration } from '../lib/contentEnhancement';
 
 // Types
 type ContentCategory =
@@ -35,6 +36,7 @@ interface ContentRequest {
   difficulty?: DifficultyLevel;
   author?: string;
   generateFullContent?: boolean;
+  enhanceWithCatalog?: boolean;
 }
 
 interface ContentMetadata {
@@ -376,6 +378,32 @@ async function generatePost(
     let content = '';
     if (request.generateFullContent) {
       content = await generateMdxContent(metadata, existingContent);
+
+      // Optionally enhance with catalog items
+      if (request.enhanceWithCatalog) {
+        try {
+          console.log(chalk.blue(`🔗 Enhancing ${metadata.title} with catalog items...`));
+          const enhancementResult = await integrateWithGuideGeneration(content, {
+            title: metadata.title,
+            categories: metadata.categories.map((c) => CATEGORY_DISPLAY_NAMES[c]),
+            difficulty: metadata.difficulty,
+          });
+          content = enhancementResult.content;
+
+          if (enhancementResult.productsUsed.length > 0) {
+            console.log(
+              chalk.green(
+                `✨ Added ${enhancementResult.productsUsed.length} product recommendations`,
+              ),
+            );
+          }
+        } catch (enhanceError) {
+          console.error(
+            chalk.yellow(`⚠️ Content enhancement failed for ${metadata.title}:`, enhanceError),
+          );
+          // Continue with unenhanced content
+        }
+      }
     } else {
       content = `# ${metadata.title}\n\n${metadata.description}\n\n## Introduction\n\nThis is a placeholder for the full article content.`;
     }
@@ -396,7 +424,11 @@ async function generatePost(
 }
 
 // Generate multiple posts
-async function generatePosts(count: number, categories?: ContentCategory[]): Promise<string[]> {
+async function generatePosts(
+  count: number,
+  categories?: ContentCategory[],
+  enhanceWithCatalog = false,
+): Promise<string[]> {
   try {
     // Get existing content first
     const existingContent = getExistingContent();
@@ -405,6 +437,10 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
     // Generate topic ideas with awareness of existing content
     const topics = await generateTopicIdeas(count, categories, existingContent);
     console.log(chalk.green(`✓ Generated ${topics.length} topic ideas`));
+
+    if (enhanceWithCatalog) {
+      console.log(chalk.blue('🔗 Catalog enhancement enabled for new posts'));
+    }
 
     // Generate content for each topic
     const filePaths: string[] = [];
@@ -420,6 +456,7 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
         difficulty: topic.difficulty,
         author: topic.author,
         generateFullContent: true,
+        enhanceWithCatalog,
       };
 
       // Pass existing content to generatePost for context
@@ -434,7 +471,7 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
       // Add a small delay to avoid rate limiting
       if (i < topics.length - 1) {
         console.log(chalk.yellow('Waiting before next generation...'));
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, enhanceWithCatalog ? 3000 : 2000));
       }
     }
 
@@ -529,6 +566,13 @@ if (require.main === module) {
     process.exit(0);
   }
 
+  // Check for enhance flag
+  const enhanceIndex = args.indexOf('--enhance');
+  const enhanceWithCatalog = enhanceIndex !== -1;
+  if (enhanceIndex !== -1) {
+    args.splice(enhanceIndex, 1); // Remove the flag from args
+  }
+
   const count = (args[0] && Number.parseInt(args[0])) || 5;
   const categoryArgs = args.slice(1) as ContentCategory[];
 
@@ -540,8 +584,11 @@ if (require.main === module) {
       ),
     );
   }
+  if (enhanceWithCatalog) {
+    console.log(chalk.blue('🔗 Content will be enhanced with catalog items'));
+  }
 
-  generatePosts(count, categoryArgs.length > 0 ? categoryArgs : undefined)
+  generatePosts(count, categoryArgs.length > 0 ? categoryArgs : undefined, enhanceWithCatalog)
     .then(() => console.log(chalk.green('Generation complete!')))
     .catch((err) => console.error(chalk.red('Generation failed:'), err));
 }

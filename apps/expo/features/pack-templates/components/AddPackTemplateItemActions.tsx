@@ -3,6 +3,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { appAlert } from 'expo-app/app/_layout';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
@@ -12,7 +13,6 @@ import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useBulkAddCatalogItems } from '../hooks';
-import { appAlert } from 'expo-app/app/_layout';
 
 interface AddPackTemplateItemActionsProps {
   packTemplateId: string;
