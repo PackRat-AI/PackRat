@@ -155,7 +155,7 @@
         "@tanstack/react-query-devtools": "^5.70.0",
         "ai": "^5.0.11",
         "autoprefixer": "^10.4.21",
-        "axios": "^1.7.9",
+        "axios": "^1.12.0",
         "chalk": "^5.6.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -275,7 +275,6 @@
         "@scalar/hono-api-reference": "^0.8.0",
         "@types/nodemailer": "^6.4.17",
         "ai": "^5.0.11",
-        "axios": "^1.7.9",
         "bcryptjs": "^3.0.2",
         "csv-parse": "^5.6.0",
         "drizzle-kit": "^0.30.6",
@@ -3772,6 +3771,8 @@
     "ora/strip-ansi": ["strip-ansi@5.2.0", "", { "dependencies": { "ansi-regex": "^4.1.0" } }, "sha512-DuRs1gKbBqsMKIZlrffwlug8MHkcnpjs5VPmL1PAh+mA30U0DTotfDZ0d2UUsXpPmPmMMJ6W773MaA3J+lbiWA=="],
 
     "p-locate/p-limit": ["p-limit@3.1.0", "", { "dependencies": { "yocto-queue": "^0.1.0" } }, "sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ=="],
+
+    "packrat-guides-app/axios": ["axios@1.12.2", "", { "dependencies": { "follow-redirects": "^1.15.6", "form-data": "^4.0.4", "proxy-from-env": "^1.1.0" } }, "sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw=="],
 
     "pretty-format/ansi-styles": ["ansi-styles@5.2.0", "", {}, "sha512-Cxwpt2SfTzTtXcfOlzGEee8O+c+MmUgGrNiBcXnuWxuFJHe6a5Hz7qwhwe5OgaSYI0IJvkLqWX1ASG+cJOkEiA=="],
 
