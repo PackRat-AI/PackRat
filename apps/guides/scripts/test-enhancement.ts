@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { enhanceGuideContent, validateCatalogApi } from '../lib/contentEnhancement';
+import { enhanceGuideContent } from '../lib/contentEnhancement';
 
 // Test content for enhancement
 const TEST_CONTENT = `
@@ -41,32 +41,12 @@ async function testEnhancement(): Promise<void> {
   console.log(chalk.gray('═'.repeat(50)));
 
   try {
-    // Test 1: API Connection Validation
-    console.log(chalk.blue('\n1. Testing API Connection...'));
-    const isApiValid = await validateCatalogApi({
-      apiBaseUrl: 'http://localhost:8787',
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
-    if (!isApiValid) {
-      console.error(chalk.red('❌ API connection failed. Please ensure:'));
-      console.error(chalk.red('   - The PackRat API is running on localhost:8787'));
-      console.error(chalk.red('   - OPENAI_API_KEY environment variable is set'));
-      console.error(chalk.red('   - The vector search endpoint is accessible'));
-      return;
-    }
-
-    console.log(chalk.green('✅ API connection validated successfully'));
-
-    // Test 2: Content Enhancement
-    console.log(chalk.blue('\n2. Testing Content Enhancement...'));
+    console.log(chalk.blue('\nTesting Content Enhancement...'));
     console.log(chalk.gray('Original content length:'), TEST_CONTENT.length, 'characters');
 
     const result = await enhanceGuideContent(TEST_CONTENT, {
       temperature: 0.3,
       maxSearchResults: 3,
-      apiBaseUrl: 'http://localhost:8787',
-      apiKey: process.env.OPENAI_API_KEY,
     });
 
     console.log(chalk.green('✅ Content enhancement completed'));

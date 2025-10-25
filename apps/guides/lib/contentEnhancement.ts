@@ -3,11 +3,6 @@ import { generateText, tool } from 'ai';
 import axios from 'axios';
 import { z } from 'zod';
 
-// Default models configuration
-const DEFAULT_MODELS = {
-  OPENAI_CHAT: 'gpt-4o-mini',
-} as const;
-
 // System prompt for contextual content enhancement
 const SYSTEM_PROMPT = `You are a content enhancement expert specializing in outdoor adventure guides. Your task is to intelligently integrate relevant catalog items into guide content while maintaining natural flow and readability.
 
@@ -59,7 +54,7 @@ export async function enhanceGuideContent(
     temperature = 0.3,
     maxSearchResults = 5,
     apiBaseUrl = 'http://localhost:8787',
-    apiKey = process.env.OPENAI_API_KEY,
+    apiKey = process.env.PACKRAT_API_KEY,
   } = options;
 
   if (!apiKey) {
@@ -74,9 +69,11 @@ export async function enhanceGuideContent(
     similarity?: number;
   }> = [];
 
+  const MODEL = 'gpt-4o';
+
   try {
     const { text: enhancedContent } = await generateText({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      model: openai(MODEL),
       system: SYSTEM_PROMPT,
       prompt: [
         {
@@ -97,7 +94,7 @@ export async function enhanceGuideContent(
         catalogVectorSearch: tool({
           description:
             'Search items catalog using vector search to find relevant products for the content.',
-          parameters: z.object({
+          inputSchema: z.object({
             query: z
               .string()
               .min(1)
@@ -118,16 +115,20 @@ export async function enhanceGuideContent(
           }),
           execute: async ({ query, limit, offset }) => {
             try {
-              console.log(`🔍 Searching catalog for: "${query}"`);
+              console.log(
+                `🔍 Searching catalog for: "${query}"`,
+                'limit:',
+                limit,
+                'offset:',
+                offset,
+              );
 
               const response = await axios.get(`${apiBaseUrl}/api/catalog/vector-search`, {
                 params: { q: query, limit, offset },
                 headers: {
-                  // TODO: Replace with proper API authentication token
-                  Authorization: `Bearer ${apiKey}`, // Temporary: should use dedicated API key
+                  'X-API-KEY': apiKey,
                   'Content-Type': 'application/json',
                 },
-                timeout: 10000, // 10 second timeout
               });
 
               const searchResults = response.data;
@@ -163,6 +164,7 @@ export async function enhanceGuideContent(
       },
       temperature,
       maxRetries: 3,
+      stopWhen: () => false,
     });
 
     return {
