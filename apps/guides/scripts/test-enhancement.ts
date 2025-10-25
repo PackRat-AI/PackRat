@@ -94,7 +94,6 @@ async function testEnhancement(): Promise<void> {
     }
 
     console.log(chalk.green('\n🎉 All tests completed successfully!'));
-
   } catch (error) {
     console.error(chalk.red('\n❌ Test failed:'), error);
     process.exit(1);
@@ -103,9 +102,8 @@ async function testEnhancement(): Promise<void> {
 
 // Run the test
 if (require.main === module) {
-  testEnhancement()
-    .catch((error) => {
-      console.error(chalk.red('Fatal error:'), error);
-      process.exit(1);
-    });
+  testEnhancement().catch((error) => {
+    console.error(chalk.red('Fatal error:'), error);
+    process.exit(1);
+  });
 }

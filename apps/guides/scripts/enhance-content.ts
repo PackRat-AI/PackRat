@@ -65,7 +65,9 @@ function getContentFiles(pattern?: string): string[] {
     .map((file) => path.join(CONTENT_DIR, file));
 
   if (pattern) {
-    const regex = new RegExp(pattern, 'i');
+    // Escape special regex characters to prevent regex injection
+    const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedPattern, 'i');
     return files.filter((file) => regex.test(path.basename(file)));
   }
 
@@ -106,12 +108,38 @@ function writeEnhancedContent(
  * Check if content already has product links (to avoid re-enhancement)
  */
 function hasProductLinks(content: string): boolean {
-  // Look for markdown links that might be product links
-  const linkPattern = /\[([^\]]+)\]\(https?:\/\/[^)]+\)/g;
-  const links = content.match(linkPattern) || [];
+  // Look for markdown links that might be product links from common outdoor retailers
+  const productDomains = [
+    'rei.com',
+    'backcountry.com',
+    'patagonia.com',
+    'thenorthface.com',
+    'mountainhardwear.com',
+    'marmot.com',
+    'osprey.com',
+    'deuter.com',
+    'amazon.com',
+    'moosejaw.com',
+    'evo.com',
+    'steepandcheap.com',
+  ];
 
-  // Simple heuristic: if there are multiple external links, it might already be enhanced
-  return links.length > 2;
+  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
+  const matches = content.match(linkPattern) || [];
+  let productLinkCount = 0;
+
+  for (const linkMatch of matches) {
+    const urlMatch = linkMatch.match(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/);
+    if (urlMatch) {
+      const url = urlMatch[2];
+      if (productDomains.some((domain) => url.includes(domain))) {
+        productLinkCount++;
+      }
+    }
+  }
+
+  // If there are 2 or more product links, likely already enhanced
+  return productLinkCount >= 2;
 }
 
 /**

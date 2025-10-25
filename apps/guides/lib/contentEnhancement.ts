@@ -123,7 +123,8 @@ export async function enhanceGuideContent(
               const response = await axios.get(`${apiBaseUrl}/api/catalog/vector-search`, {
                 params: { q: query, limit, offset },
                 headers: {
-                  Authorization: `Bearer ${apiKey}`,
+                  // TODO: Replace with proper API authentication token
+                  Authorization: `Bearer ${apiKey}`, // Temporary: should use dedicated API key
                   'Content-Type': 'application/json',
                 },
                 timeout: 10000, // 10 second timeout
@@ -226,7 +227,8 @@ export async function validateCatalogApi(
     const response = await axios.get(`${apiBaseUrl}/api/catalog/vector-search`, {
       params: { q: 'test', limit: 1 },
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        // TODO: Replace with proper API authentication token
+        Authorization: `Bearer ${apiKey}`, // Temporary: should use dedicated API key
         'Content-Type': 'application/json',
       },
       timeout: 5000,

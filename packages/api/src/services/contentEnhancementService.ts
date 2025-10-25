@@ -128,7 +128,8 @@ export class ContentEnhancementService {
                 const response = await axios.get(`${this.apiBaseUrl}/api/catalog/vector-search`, {
                   params: { q: query, limit, offset },
                   headers: {
-                    Authorization: `Bearer ${this.env.OPENAI_API_KEY}`, // Using OPENAI_API_KEY as auth token
+                    // TODO: Replace with proper API authentication token
+                    Authorization: `Bearer ${this.env.OPENAI_API_KEY}`, // Temporary: should use dedicated API key
                     'Content-Type': 'application/json',
                   },
                   timeout: 10000, // 10 second timeout
@@ -138,13 +139,15 @@ export class ContentEnhancementService {
 
                 // Track products for reporting
                 if (searchResults.items) {
-                  searchResults.items.forEach((item: { name: string; productUrl: string }) => {
-                    productsUsed.push({
-                      name: item.name,
-                      url: item.productUrl,
-                      context: query,
-                    });
-                  });
+                  searchResults.items.forEach(
+                    (item: { name: string; productUrl: string; similarity?: number }) => {
+                      productsUsed.push({
+                        name: item.name,
+                        url: item.productUrl,
+                        context: query,
+                      });
+                    },
+                  );
                 }
 
                 return {
@@ -218,7 +221,8 @@ export class ContentEnhancementService {
       const response = await axios.get(`${this.apiBaseUrl}/api/catalog/vector-search`, {
         params: { q: 'test', limit: 1 },
         headers: {
-          Authorization: `Bearer ${this.env.OPENAI_API_KEY}`,
+          // TODO: Replace with proper API authentication token
+          Authorization: `Bearer ${this.env.OPENAI_API_KEY}`, // Temporary: should use dedicated API key
           'Content-Type': 'application/json',
         },
         timeout: 5000,
