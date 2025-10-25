@@ -2,11 +2,7 @@ import chalk from 'chalk';
 import fs from 'fs';
 import matter from 'gray-matter';
 import path from 'path';
-import {
-  type ContentEnhancementOptions,
-  enhanceGuideContent,
-  validateCatalogApi,
-} from '../lib/contentEnhancement';
+import { type ContentEnhancementOptions, enhanceGuideContent } from '../lib/contentEnhancement';
 
 // Configuration
 const CONTENT_DIR = path.join(process.cwd(), 'content/posts');
@@ -105,44 +101,6 @@ function writeEnhancedContent(
 }
 
 /**
- * Check if content already has product links (to avoid re-enhancement)
- */
-function hasProductLinks(content: string): boolean {
-  // Look for markdown links that might be product links from common outdoor retailers
-  const productDomains = [
-    'rei.com',
-    'backcountry.com',
-    'patagonia.com',
-    'thenorthface.com',
-    'mountainhardwear.com',
-    'marmot.com',
-    'osprey.com',
-    'deuter.com',
-    'amazon.com',
-    'moosejaw.com',
-    'evo.com',
-    'steepandcheap.com',
-  ];
-
-  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
-  const matches = content.match(linkPattern) || [];
-  let productLinkCount = 0;
-
-  for (const linkMatch of matches) {
-    const urlMatch = linkMatch.match(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/);
-    if (urlMatch) {
-      const url = urlMatch[2];
-      if (productDomains.some((domain) => url.includes(domain))) {
-        productLinkCount++;
-      }
-    }
-  }
-
-  // If there are 2 or more product links, likely already enhanced
-  return productLinkCount >= 2;
-}
-
-/**
  * Enhance a single content file
  */
 async function enhanceFile(
@@ -163,16 +121,6 @@ async function enhanceFile(
 
     // Parse the file
     const { metadata, content } = parseContentFile(filePath);
-
-    // Check if already enhanced (skip if it has many product links)
-    if (hasProductLinks(content)) {
-      if (options.verbose) {
-        console.log(
-          chalk.yellow(`  ⏭️  Skipping ${fileName} (appears to already have product links)`),
-        );
-      }
-      return { enhanced: false, productsAdded: 0 };
-    }
 
     // Skip if content is too short to enhance meaningfully
     if (content.length < 500) {
@@ -247,17 +195,6 @@ async function enhanceContent(cliOptions: CliOptions): Promise<void> {
     temperature: 0.3,
     maxSearchResults: 5,
   };
-
-  // Validate API connection first
-  console.log(chalk.blue('🔍 Validating catalog API connection...'));
-  const isApiValid = await validateCatalogApi(enhancementOptions);
-
-  if (!isApiValid) {
-    console.error(
-      chalk.red('❌ Could not connect to catalog API. Please ensure the API is running.'),
-    );
-    process.exit(1);
-  }
 
   // Get content files
   const contentFiles = getContentFiles(cliOptions.pattern);
