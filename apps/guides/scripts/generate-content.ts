@@ -7,7 +7,7 @@ import matter from 'gray-matter';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import path from 'path';
 import slugify from 'slugify';
-import { enhanceGuideContent } from '../lib/contentEnhancement';
+import { enhanceGuideContent } from '../lib/enhanceGuideContent';
 
 // Types
 type ContentCategory =

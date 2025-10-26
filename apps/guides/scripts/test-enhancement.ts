@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { enhanceGuideContent } from '../lib/contentEnhancement';
+import { enhanceGuideContent } from '../lib/enhanceGuideContent';
 
 // Test content for enhancement
 const TEST_CONTENT = `

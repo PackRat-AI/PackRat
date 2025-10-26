@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import fs from 'fs';
 import matter from 'gray-matter';
 import path from 'path';
-import { type ContentEnhancementOptions, enhanceGuideContent } from '../lib/contentEnhancement';
+import { type ContentEnhancementOptions, enhanceGuideContent } from '../lib/enhanceGuideContent';
 
 // Configuration
 const CONTENT_DIR = path.join(process.cwd(), 'content/posts');
