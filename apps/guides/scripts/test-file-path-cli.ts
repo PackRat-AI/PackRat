@@ -1,8 +1,8 @@
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
@@ -14,10 +14,11 @@ async function testFilePathCLI(): Promise<void> {
   console.log(chalk.gray('═'.repeat(50)));
 
   const CONTENT_DIR = path.join(process.cwd(), 'content/posts');
-  
+
   // Get some test files
-  const testFiles = fs.readdirSync(CONTENT_DIR)
-    .filter(file => file.endsWith('.mdx'))
+  const testFiles = fs
+    .readdirSync(CONTENT_DIR)
+    .filter((file) => file.endsWith('.mdx'))
     .slice(0, 2); // Just test with 2 files
 
   if (testFiles.length === 0) {
@@ -66,8 +67,8 @@ async function testFilePathCLI(): Promise<void> {
     console.log(chalk.gray(`Command: ${test.command}`));
 
     try {
-      const { stdout, stderr } = await execAsync(test.command);
-      
+      const { stdout } = await execAsync(test.command);
+
       if (test.shouldError) {
         console.log(chalk.red(`  ❌ Expected error but command succeeded`));
         failed++;
@@ -78,24 +79,32 @@ async function testFilePathCLI(): Promise<void> {
       if (test.expectedFiles) {
         const match = stdout.match(/📄 (?:Processing|Found) (\d+) (?:specified |content )?files/);
         const processedFiles = match ? parseInt(match[1]) : 0;
-        
+
         if (processedFiles === test.expectedFiles) {
           console.log(chalk.green(`  ✅ Processed ${processedFiles} files as expected`));
           passed++;
         } else {
-          console.log(chalk.red(`  ❌ Expected ${test.expectedFiles} files, got ${processedFiles}`));
+          console.log(
+            chalk.red(`  ❌ Expected ${test.expectedFiles} files, got ${processedFiles}`),
+          );
           failed++;
         }
       } else {
         console.log(chalk.green(`  ✅ Command executed successfully`));
         passed++;
       }
-
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (test.shouldError) {
         // Check if it's the right kind of error
-        const errorMessage = error.stderr || error.stdout || error.message;
-        if (errorMessage.includes('File not found') || errorMessage.includes('File must be an MDX file')) {
+        const errorMessage =
+          (error as any).stderr ||
+          (error as any).stdout ||
+          (error as Error).message ||
+          'Unknown error';
+        if (
+          errorMessage.includes('File not found') ||
+          errorMessage.includes('File must be an MDX file')
+        ) {
           console.log(chalk.green(`  ✅ Got expected error: ${errorMessage.split('\n')[0]}`));
           passed++;
         } else {
@@ -103,7 +112,9 @@ async function testFilePathCLI(): Promise<void> {
           failed++;
         }
       } else {
-        console.log(chalk.red(`  ❌ Unexpected error: ${(error.stderr || error.message).split('\n')[0]}`));
+        const unexpectedErrorMessage =
+          (error as any).stderr || (error as Error).message || 'Unknown error';
+        console.log(chalk.red(`  ❌ Unexpected error: ${unexpectedErrorMessage.split('\n')[0]}`));
         failed++;
       }
     }
@@ -113,9 +124,9 @@ async function testFilePathCLI(): Promise<void> {
   console.log(chalk.blue('\n📊 Test Summary:'));
   console.log(`${chalk.green('✅ Passed:')} ${passed}`);
   console.log(`${chalk.red('❌ Failed:')} ${failed}`);
-  
+
   if (failed === 0) {
-    console.log(chalk.green('\n🎉 All tests passed! CLI enhancement is working correctly.'), );
+    console.log(chalk.green('\n🎉 All tests passed! CLI enhancement is working correctly.'));
   } else {
     console.log(chalk.red('\n💥 Some tests failed. Please review the implementation.'));
     process.exit(1);

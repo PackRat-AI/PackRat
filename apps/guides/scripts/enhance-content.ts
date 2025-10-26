@@ -23,7 +23,7 @@ interface CliOptions {
   maxFiles?: number;
   apiUrl?: string;
   verbose: boolean;
-  filePaths?: string[];
+  filePaths: string[];
 }
 
 /**
@@ -57,16 +57,17 @@ function getFilesByPaths(filePaths: string[]): string[] {
   for (const filePath of filePaths) {
     let resolvedPath: string;
 
-    // Handle relative paths
+    // Handle path resolution with explicit priority order
     if (path.isAbsolute(filePath)) {
       resolvedPath = filePath;
     } else {
-      // Check if it's relative to current directory first
-      if (fs.existsSync(filePath)) {
-        resolvedPath = path.resolve(filePath);
+      // Priority 1: Try relative to content directory (most common case)
+      const contentPath = path.join(CONTENT_DIR, filePath);
+      if (fs.existsSync(contentPath)) {
+        resolvedPath = contentPath;
       } else {
-        // Try relative to content directory
-        resolvedPath = path.join(CONTENT_DIR, filePath);
+        // Priority 2: Try relative to current directory
+        resolvedPath = path.resolve(filePath);
       }
     }
 
@@ -244,7 +245,7 @@ async function enhanceContent(cliOptions: CliOptions): Promise<void> {
   // Get content files - use file paths if provided, otherwise use pattern-based discovery
   let contentFiles: string[];
 
-  if (cliOptions.filePaths && cliOptions.filePaths.length > 0) {
+  if (cliOptions.filePaths.length > 0) {
     contentFiles = getFilesByPaths(cliOptions.filePaths);
     console.log(chalk.blue(`📄 Processing ${contentFiles.length} specified files`));
   } else {
@@ -363,7 +364,6 @@ function parseArgs(): CliOptions {
       default:
         // Treat any non-option argument as a file path
         if (!arg.startsWith('-')) {
-          if (!options.filePaths) options.filePaths = [];
           options.filePaths.push(arg);
         } else {
           console.error(chalk.red(`Unknown option: ${arg}`));
