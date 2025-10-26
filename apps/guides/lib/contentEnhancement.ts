@@ -4,26 +4,15 @@ import axios from 'axios';
 import { z } from 'zod';
 
 // System prompt for contextual content enhancement
-const SYSTEM_PROMPT = `You are a content enhancement expert specializing in outdoor adventure guides. Your task is to intelligently integrate relevant catalog items into guide content while maintaining natural flow and readability.
-
-Guidelines:
-1. Only suggest products that are directly relevant to the content being discussed
-2. Integrate product links naturally within the text, not as separate lists
-3. Use contextual phrases like "Consider the [Product Name](link)" or "A reliable option is the [Product Name](link)"
-4. Focus on gear that would genuinely enhance the reader's experience
-5. Maintain the original tone and structure of the content
-6. Don't oversell or sound overly promotional
-7. Ensure product suggestions align with the difficulty level and context of the guide
-8. Use the catalogVectorSearch tool to find the most relevant products for specific contexts
-
-When you find relevant products, integrate them seamlessly into the existing content using markdown link syntax: [Product Name](link)`;
+const SYSTEM_PROMPT = `You are a content enhancement expert specializing in outdoor adventure guides. 
+Your task is to contextually weave relevant catalog items into guide content.
+Use the catalogVectorSearch tool to discover useful gear for each context
+Integrate products into the existing content using markdown link syntax: [Product Name](link)
+You may mention multiple options where it makes sense.`;
 
 // User prompt for content enhancement
-const ENHANCEMENT_PROMPT = `Please enhance the following outdoor adventure guide content by intelligently integrating relevant catalog items. Use the catalogVectorSearch tool to find appropriate products that would genuinely help readers with the activities described. 
-
-Integrate product links naturally within the existing text structure. Focus on key gear mentions and opportunities where specific product recommendations would add value.
-
-Return the enhanced content with the same structure and formatting, but with contextual product links seamlessly integrated.`;
+const ENHANCEMENT_PROMPT = `Please enhance the following guide content.
+Return the enhanced content with the same structure and formatting and product links seamlessly integrated.`;
 
 export interface ContentEnhancementOptions {
   temperature?: number;
@@ -101,6 +90,7 @@ export async function enhanceGuideContent(
               .describe('Search query to find catalog items relevant to the current context'),
             limit: z
               .number()
+              .int()
               .min(1)
               .max(50)
               .optional()
@@ -166,6 +156,8 @@ export async function enhanceGuideContent(
       maxRetries: 3,
       stopWhen: () => false,
     });
+
+    console.log('enhanced content:\n', enhancedContent);
 
     return {
       content: enhancedContent,
