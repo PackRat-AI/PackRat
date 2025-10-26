@@ -23,6 +23,7 @@ interface CliOptions {
   maxFiles?: number;
   apiUrl?: string;
   verbose: boolean;
+  filePaths?: string[];
 }
 
 /**
@@ -45,6 +46,50 @@ function createBackup(filePath: string): string {
 
   fs.copyFileSync(filePath, backupPath);
   return backupPath;
+}
+
+/**
+ * Validate and resolve file paths
+ */
+function getFilesByPaths(filePaths: string[]): string[] {
+  const resolvedFiles: string[] = [];
+
+  for (const filePath of filePaths) {
+    let resolvedPath: string;
+
+    // Handle relative paths
+    if (path.isAbsolute(filePath)) {
+      resolvedPath = filePath;
+    } else {
+      // Check if it's relative to current directory first
+      if (fs.existsSync(filePath)) {
+        resolvedPath = path.resolve(filePath);
+      } else {
+        // Try relative to content directory
+        resolvedPath = path.join(CONTENT_DIR, filePath);
+      }
+    }
+
+    // Validate file exists
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(`File not found: ${filePath} (resolved to: ${resolvedPath})`);
+    }
+
+    // Validate it's an MDX file
+    if (!resolvedPath.endsWith('.mdx')) {
+      throw new Error(`File must be an MDX file: ${filePath}`);
+    }
+
+    // Validate it's a file (not directory)
+    const stat = fs.statSync(resolvedPath);
+    if (!stat.isFile()) {
+      throw new Error(`Path is not a file: ${filePath}`);
+    }
+
+    resolvedFiles.push(resolvedPath);
+  }
+
+  return resolvedFiles;
 }
 
 /**
@@ -196,13 +241,21 @@ async function enhanceContent(cliOptions: CliOptions): Promise<void> {
     maxSearchResults: 5,
   };
 
-  // Get content files
-  const contentFiles = getContentFiles(cliOptions.pattern);
+  // Get content files - use file paths if provided, otherwise use pattern-based discovery
+  let contentFiles: string[];
+
+  if (cliOptions.filePaths && cliOptions.filePaths.length > 0) {
+    contentFiles = getFilesByPaths(cliOptions.filePaths);
+    console.log(chalk.blue(`📄 Processing ${contentFiles.length} specified files`));
+  } else {
+    contentFiles = getContentFiles(cliOptions.pattern);
+    console.log(chalk.blue(`📄 Found ${contentFiles.length} content files`));
+  }
+
   const filesToProcess = cliOptions.maxFiles
     ? contentFiles.slice(0, cliOptions.maxFiles)
     : contentFiles;
 
-  console.log(chalk.blue(`📄 Found ${contentFiles.length} content files`));
   if (cliOptions.maxFiles && contentFiles.length > cliOptions.maxFiles) {
     console.log(chalk.yellow(`⚠️  Processing first ${cliOptions.maxFiles} files only`));
   }
@@ -272,6 +325,7 @@ function parseArgs(): CliOptions {
     dryRun: false,
     backup: true,
     verbose: false,
+    filePaths: [],
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -306,6 +360,17 @@ function parseArgs(): CliOptions {
         printHelp();
         process.exit(0);
         break;
+      default:
+        // Treat any non-option argument as a file path
+        if (!arg.startsWith('-')) {
+          if (!options.filePaths) options.filePaths = [];
+          options.filePaths.push(arg);
+        } else {
+          console.error(chalk.red(`Unknown option: ${arg}`));
+          printHelp();
+          process.exit(1);
+        }
+        break;
     }
   }
 
@@ -322,11 +387,16 @@ ${chalk.blue('PackRat Content Enhancement Tool')}
 Enhance existing guide content by intelligently integrating relevant catalog items.
 
 ${chalk.yellow('Usage:')}
+  bun run enhance-content [file1.mdx file2.mdx ...] [options]
   bun run enhance-content [options]
+
+${chalk.yellow('Arguments:')}
+  file1.mdx file2.mdx    Direct file paths to enhance (default mode)
+                         Can be absolute paths, relative paths, or filenames in content/posts/
 
 ${chalk.yellow('Options:')}
   -d, --dry-run          Preview changes without modifying files
-  -p, --pattern <regex>  Only process files matching pattern
+  -p, --pattern <regex>  Only process files matching pattern (legacy mode)
   -n, --max-files <num>  Limit number of files to process
   -u, --api-url <url>    Catalog API base URL (default: http://localhost:8787)
   -v, --verbose          Enable verbose output
@@ -334,9 +404,13 @@ ${chalk.yellow('Options:')}
   -h, --help             Show this help message
 
 ${chalk.yellow('Examples:')}
-  bun run enhance-content --dry-run
+  # Process specific files (recommended)
+  bun run enhance-content hiking-guide.mdx backpacking-tips.mdx --dry-run
+  bun run enhance-content content/posts/my-guide.mdx --verbose
+  
+  # Legacy pattern-based processing
   bun run enhance-content --pattern "hiking|backpacking" --max-files 5
-  bun run enhance-content --api-url http://production-api.com --verbose
+  bun run enhance-content --dry-run  # processes all files
   
 ${chalk.gray('Note: Ensure the PackRat API is running before using this tool.')}
 `);
