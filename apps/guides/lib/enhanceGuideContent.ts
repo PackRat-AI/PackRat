@@ -157,8 +157,6 @@ export async function enhanceGuideContent(
       stopWhen: () => false,
     });
 
-    console.log('enhanced content:\n', enhancedContent);
-
     return {
       content: enhancedContent,
       productsUsed,

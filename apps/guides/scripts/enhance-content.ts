@@ -382,7 +382,7 @@ function parseArgs(): CliOptions {
  */
 function printHelp(): void {
   console.log(`
-${chalk.blue('PackRat Content Enhancement Tool')}
+${chalk.blue('Enhance Guides with Catalog Items')}
 
 Enhance existing guide content by intelligently integrating relevant catalog items.
 
@@ -404,11 +404,11 @@ ${chalk.yellow('Options:')}
   -h, --help             Show this help message
 
 ${chalk.yellow('Examples:')}
-  # Process specific files (recommended)
+  # Process specific files
   bun run enhance-content hiking-guide.mdx backpacking-tips.mdx --dry-run
   bun run enhance-content content/posts/my-guide.mdx --verbose
   
-  # Legacy pattern-based processing
+  # Pattern-based processing
   bun run enhance-content --pattern "hiking|backpacking" --max-files 5
   bun run enhance-content --dry-run  # processes all files
   
