@@ -40,6 +40,7 @@ export function PackDetailScreen() {
   const [isCatalogModalVisible, setIsCatalogModalVisible] = useState(false);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
+    // @ts-ignore: Safe because Legend-State uses Proxy
     packingModeStore[id as string].get() || {},
   );
 
@@ -98,6 +99,7 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
+    // @ts-ignore: Safe because Legend-State uses Proxy
     packingModeStore[id as string].set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
@@ -111,9 +113,11 @@ export function PackDetailScreen() {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+      // @ts-ignore: Safe because Legend-State uses Proxy
       setPackedItems(packingModeStore[id as string].get());
     };
 
+    // @ts-ignore: Safe because Legend-State uses Proxy
     const packingState = packingModeStore[id as string].get();
 
     if (

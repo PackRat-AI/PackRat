@@ -5,6 +5,7 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -31,12 +32,13 @@ const tripFormSchema = z.object({
       longitude: z.number(),
       name: z.string().optional(),
     })
-    .nullable()
     .optional(),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
-  packId: z.string().optional().nullable(),
+  packId: z.string().optional(),
 });
+
+type TripFormValues = z.infer<typeof tripFormSchema>;
 
 export const TripForm = ({ trip }: { trip?: Trip }) => {
   const router = useRouter();
@@ -58,11 +60,11 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     defaultValues: {
       name: trip?.name || '',
       description: trip?.description || '',
-      location: location ?? null,
+      location: location ?? undefined,
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
-      packId: trip?.packId ?? null,
-    },
+      packId: trip?.packId,
+    } as TripFormValues,
     validators: { onChange: tripFormSchema },
     onSubmit: async ({ value }) => {
       if (location) value.location = location;
@@ -228,7 +230,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         onChange={(_event, date) => {
                           setShowStartPicker(false);
                           if (date) {
-                            field.handleChange(date.toISOString().split('T')[0]);
+                            const dateStr = date.toISOString().split('T')[0];
+                            assertDefined(dateStr);
+                            field.handleChange(dateStr);
                           }
                         }}
                       />
@@ -261,7 +265,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         onChange={(_event, date) => {
                           setShowEndPicker(false);
                           if (date) {
-                            field.handleChange(date.toISOString().split('T')[0]);
+                            const dateStr = date.toISOString().split('T')[0];
+                            assertDefined(dateStr);
+                            field.handleChange(dateStr);
                           }
                         }}
                       />

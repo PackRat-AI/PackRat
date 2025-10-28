@@ -1,4 +1,11 @@
-import { ActivityIndicator, Alert, Button, Card, Text } from '@packrat/ui/nativewindui';
+import {
+  ActivityIndicator,
+  Alert,
+  type AlertRef,
+  Button,
+  Card,
+  Text,
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
@@ -7,7 +14,6 @@ import { useRef } from 'react';
 import { SafeAreaView, ScrollView, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
-import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import type { Trip } from '../types';
 
@@ -15,10 +21,9 @@ export function TripDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { colors } = useColorScheme();
-  const alertRef = useRef<Alert>(null);
+  const alertRef = useRef<AlertRef>(null);
 
   const trip = useTripDetailsFromStore(id as string) as Trip;
-  const deleteTrip = useDeleteTrip();
   const packs = useDetailedPacks();
 
   if (!trip) {
@@ -30,25 +35,6 @@ export function TripDetailScreen() {
   }
 
   const pack = packs.find((p) => p.id === trip.packId);
-
-  const handleDelete = () => {
-    alertRef.current?.alert({
-      title: 'Delete trip?',
-      message: 'Are you sure you want to delete this trip? This action cannot be undone.',
-      buttons: [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'OK',
-          onPress: () => {
-            deleteTrip(trip.id);
-            router.back();
-          },
-        },
-      ],
-    });
-  };
-
-  const handleEdit = () => router.push({ pathname: `/trip/${trip.id}/edit` });
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '—';
@@ -153,14 +139,14 @@ export function TripDetailScreen() {
           ) : null}
 
           {/* Notes */}
-          <View className="mb-6">
+          {/* <View className="mb-6">
             <Text className="text-lg font-semibold text-foreground mb-2">Notes</Text>
             {trip.notes ? (
               <Text className="text-sm text-muted-foreground leading-relaxed">{trip.notes}</Text>
             ) : (
               <Text className="text-sm text-muted-foreground italic">No notes available.</Text>
             )}
-          </View>
+          </View> */}
 
           {/* Pack */}
           {pack ? (
@@ -195,16 +181,6 @@ export function TripDetailScreen() {
               No pack linked to this trip.
             </Text>
           )}
-
-          {/* Action Buttons */}
-          <View className="flex-row justify-between mt-8">
-            <Button variant="secondary" onPress={handleEdit}>
-              <Text>Edit</Text>
-            </Button>
-            <Button variant="destructive" onPress={handleDelete}>
-              <Text>Delete</Text>
-            </Button>
-          </View>
         </View>
       </ScrollView>
 

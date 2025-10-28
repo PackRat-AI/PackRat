@@ -156,17 +156,12 @@ tripRoutes.openapi(getTripRoute, async (c) => {
   const db = createDb(c);
   const tripId = c.req.param('tripId');
 
-  try {
-    const trip = await db.query.trips.findFirst({
-      where: and(eq(trips.id, tripId), eq(trips.userId, auth.userId)),
-      with: { pack: true },
-    });
-    if (!trip) return c.json({ error: 'Trip not found' }, 404);
-    return c.json(trip, 200);
-  } catch (error) {
-    console.error('Error fetching trip:', error);
-    return c.json({ error: 'Failed to fetch trip' }, 500);
-  }
+  const trip = await db.query.trips.findFirst({
+    where: and(eq(trips.id, tripId), eq(trips.userId, auth.userId)),
+    with: { pack: true },
+  });
+  if (!trip) return c.json({ error: 'Trip not found' }, 404);
+  return c.json(trip, 200);
 });
 
 // ------------------------------
