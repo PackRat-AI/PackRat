@@ -1,15 +1,7 @@
-import { BottomSheetView } from '@gorhom/bottom-sheet';
-import {
-  ActivityIndicator,
-  Alert,
-  Button,
-  Card,
-  Sheet,
-  Text,
-  useSheetRef,
-} from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Alert, Button, Card, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { SafeAreaView, ScrollView, View } from 'react-native';
@@ -145,7 +137,8 @@ export function TripDetailScreen() {
                     variant="secondary"
                     size="sm"
                     onPress={() => {
-                      const { latitude, longitude } = trip.location!;
+                      assertDefined(trip.location);
+                      const { latitude, longitude } = trip.location;
                       const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
                       router.push(url);
                     }}

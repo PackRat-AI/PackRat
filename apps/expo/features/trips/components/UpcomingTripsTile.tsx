@@ -1,16 +1,14 @@
 import type { AlertRef } from '@packrat/ui/nativewindui';
-import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
+import { Alert, ListItem, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef } from 'react';
 import { View } from 'react-native';
 
 export function UpcomingTripsTile() {
   const router = useRouter();
-  const { colors } = useColorScheme();
   const alertRef = useRef<AlertRef>(null);
 
   // ✅ get all trips
@@ -18,7 +16,7 @@ export function UpcomingTripsTile() {
 
   // ✅ derive upcoming trips (in future)
   const upcomingTrips = useMemo(
-    () => trips.filter((t) => new Date(t.startDate) > new Date()),
+    () => trips.filter((t) => t.startDate && new Date(t.startDate) > new Date()),
     [trips],
   );
 

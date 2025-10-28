@@ -222,7 +222,7 @@ const deletePackRoute = createRoute({
 
 packRoutes.openapi(deletePackRoute, async (c) => {
   const db = createDb(c);
-  const auth = c.get('user');
+  const _auth = c.get('user');
   const packId = c.req.param('packId');
 
   try {

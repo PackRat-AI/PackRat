@@ -1,4 +1,5 @@
-import { use$, useObservable } from '@legendapp/state/react';
+import { observable } from '@legendapp/state';
+import { use$ } from '@legendapp/state/react';
 
 /**
  * Type for the trip location.
@@ -13,7 +14,7 @@ export type TripLocation = {
  * Simple reactive store for the current trip location.
  * Fully local, no backend sync.
  */
-export const tripLocationStore = useObservable<TripLocation | null>(null);
+export const tripLocationStore = observable<TripLocation | null>(null);
 
 /**
  * Hook to use trip location in any component.

@@ -1,4 +1,4 @@
-import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, type LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
@@ -23,8 +23,7 @@ function CreateTripIconButton() {
 export function TripsListScreen() {
   const router = useRouter();
   const trips = useTrips();
-  const searchBarRef = useRef<any>(null);
-  const { colors } = useColorScheme();
+  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
 
   const handleTripPress = useCallback(
     (trip: Trip) => {

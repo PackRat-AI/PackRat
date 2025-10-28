@@ -1,4 +1,4 @@
-import { Button, Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
+import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { Icon } from '@roninoss/icons';
@@ -75,23 +75,11 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
           Alert.alert('Success', 'Trip created successfully');
         }
         router.back();
-      } catch (e) {
+      } catch (_e) {
         Alert.alert('Error', 'Something went wrong. Please try again.');
       }
     },
   });
-
-  const handleDateChange = (field: any, event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      if (event.type === 'set' && selectedDate) {
-        field.handleChange(selectedDate.toISOString().split('T')[0]);
-      }
-    } else {
-      if (selectedDate) {
-        field.handleChange(selectedDate.toISOString().split('T')[0]);
-      }
-    }
-  };
 
   return (
     <KeyboardAvoidingView
@@ -237,7 +225,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
                         display="default"
-                        onChange={(event, date) => {
+                        onChange={(_event, date) => {
                           setShowStartPicker(false);
                           if (date) {
                             field.handleChange(date.toISOString().split('T')[0]);
@@ -270,7 +258,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
                         display="default"
-                        onChange={(event, date) => {
+                        onChange={(_event, date) => {
                           setShowEndPicker(false);
                           if (date) {
                             field.handleChange(date.toISOString().split('T')[0]);

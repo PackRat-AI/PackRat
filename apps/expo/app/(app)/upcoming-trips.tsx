@@ -1,17 +1,7 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  LargeTitleHeader,
-  List,
-  ListItem,
-  Text,
-} from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { LargeTitleHeader, List, ListItem, Text } from '@packrat/ui/nativewindui';
 import { format } from 'date-fns';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -110,11 +100,12 @@ function PackStatus({ status, completion }: { status: string; completion: number
 // }
 
 export default function UpcomingTripsScreen() {
-  const { colors } = useColorScheme();
   const trips = useTrips();
   const packs = useDetailedPacks();
 
-  const upcomingTrips = trips.filter((t) => new Date(t.startDate) > new Date());
+  const upcomingTrips = trips.filter(
+    (t) => !!t.startDate && new Date(t.startDate).getTime() > Date.now(),
+  );
 
   const [selectedTrip, setSelectedTrip] = useState(upcomingTrips[0]);
 
@@ -122,7 +113,7 @@ export default function UpcomingTripsScreen() {
     if (!selectedTrip && upcomingTrips.length > 0) {
       setSelectedTrip(upcomingTrips[0]);
     }
-  }, [upcomingTrips]);
+  }, [upcomingTrips, selectedTrip]);
 
   if (!upcomingTrips.length) {
     return (
