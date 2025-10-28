@@ -84,5 +84,5 @@ export function isWorn(item: Item): boolean {
  * Check if the item has a notes field
  */
 export function hasNotes(item: Item): boolean {
-  return 'notes' in item && item.notes;
+  return 'notes' in item && !!item.notes;
 }

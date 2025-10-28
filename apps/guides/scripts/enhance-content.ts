@@ -332,6 +332,11 @@ function parseArgs(): CliOptions {
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
+    // This check prevents trying to process 'undefined' if an option consumes the last argument
+    if (arg === undefined) {
+      continue;
+    }
+
     switch (arg) {
       case '--dry-run':
       case '-d':
