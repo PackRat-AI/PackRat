@@ -1,4 +1,4 @@
-import { ActivityIndicator, LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
@@ -6,7 +6,7 @@ import { Link, useRouter } from 'expo-router';
 import { useCallback, useRef } from 'react';
 import { FlatList, Pressable, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import { TripCard } from '../components/TripCard';
-import { useAllTrips } from '../hooks/useAllTrips'; // React Query hook
+import { useTrips } from '../hooks';
 import type { Trip } from '../types';
 
 function CreateTripIconButton() {
@@ -22,11 +22,10 @@ function CreateTripIconButton() {
 
 export function TripsListScreen() {
   const router = useRouter();
-  const { data: trips, isLoading, isError, error, refetch } = useAllTrips(true);
+  const trips = useTrips();
   const searchBarRef = useRef<any>(null);
   const { colors } = useColorScheme();
 
-  console.log('Fetched trips:', trips);
   const handleTripPress = useCallback(
     (trip: Trip) => {
       router.push({ pathname: '/trip/[id]', params: { id: trip.id } });
@@ -39,31 +38,6 @@ export function TripsListScreen() {
   };
 
   const renderEmptyState = () => {
-    if (isLoading) {
-      return (
-        <View className="flex-1 items-center justify-center p-8">
-          <ActivityIndicator />
-        </View>
-      );
-    }
-
-    if (isError) {
-      return (
-        <View className="flex-1 items-center justify-center p-8">
-          <View className="bg-destructive/10 mb-4 rounded-full p-4">
-            <Icon name="exclamation" size={32} color="text-destructive" />
-          </View>
-          <Text className="mb-2 text-lg font-medium text-foreground">Failed to load trips</Text>
-          <Text className="mb-6 text-center text-muted-foreground">
-            {(error as Error)?.message || 'Something went wrong. Please try again.'}
-          </Text>
-          <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={() => refetch()}>
-            <Text className="font-medium text-primary-foreground">Try Again</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
     return (
       <View className="flex-1 items-center justify-center p-8">
         <View className="mb-4 rounded-full bg-muted p-4">
