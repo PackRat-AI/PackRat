@@ -102,11 +102,11 @@ export function PackDetailScreen() {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
       // @ts-ignore: Safe because Legend-State uses Proxy
-      setPackedItems(packingModeStore[id as string].get());
+      setPackedItems(packingModeStore[id as string].get() || {});
     };
 
     // @ts-ignore: Safe because Legend-State uses Proxy
-    const packingState = packingModeStore[id as string].get();
+    const packingState = packingModeStore[id as string].get() || {};
 
     if (
       Object.entries(packedItems).every(([key, val]) =>
