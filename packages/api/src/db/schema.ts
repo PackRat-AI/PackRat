@@ -277,6 +277,25 @@ export const packTemplateItems = pgTable('pack_template_items', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const trips = pgTable('trips', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  location: jsonb('location').$type<{ latitude: number; longitude: number; name?: string }>(),
+  notes: text('notes'),
+  userId: integer('user_id')
+    .references(() => users.id)
+    .notNull(),
+  packId: text('pack_id').references(() => packs.id, { onDelete: 'set null' }),
+  localCreatedAt: timestamp('local_created_at').notNull(),
+  localUpdatedAt: timestamp('local_updated_at').notNull(),
+  deleted: boolean('deleted').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Define relations
 
 export const packsRelations = relations(packs, ({ one, many }) => ({
@@ -310,6 +329,17 @@ export const catalogItemsRelations = relations(catalogItems, ({ many }) => ({
 export const packWeightHistoryRelations = relations(packWeightHistory, ({ one }) => ({
   pack: one(packs, {
     fields: [packWeightHistory.packId],
+    references: [packs.id],
+  }),
+}));
+// Trips relations
+export const tripsRelations = relations(trips, ({ one }) => ({
+  user: one(users, {
+    fields: [trips.userId],
+    references: [users.id],
+  }),
+  pack: one(packs, {
+    fields: [trips.packId],
     references: [packs.id],
   }),
 }));
@@ -470,6 +500,9 @@ export type NewPackTemplate = InferInsertModel<typeof packTemplates>;
 
 export type PackTemplateItem = InferSelectModel<typeof packTemplateItems>;
 export type NewPackTemplateItem = InferInsertModel<typeof packTemplateItems>;
+
+export type Trip = InferSelectModel<typeof trips>;
+export type NewTrip = InferInsertModel<typeof trips>;
 
 export type PackTemplateWithItems = PackTemplate & {
   items: PackTemplateItem[];

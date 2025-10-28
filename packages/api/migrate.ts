@@ -40,7 +40,6 @@ async function runMigrations() {
   console.log('Running migrations...');
 
   const url = process.env.NEON_DATABASE_URL;
-
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL
     console.log('Using PostgreSQL migrations...');

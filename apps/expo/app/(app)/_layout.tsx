@@ -6,6 +6,7 @@ import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/u
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
 import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
+import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
@@ -36,6 +37,15 @@ export default function AppLayout() {
       />
       <Stack.Screen name="pack/[id]/edit" options={PACK_EDIT_OPTIONS} />
       <Stack.Screen name="pack/new" options={PACK_NEW_OPTIONS} />
+      <Stack.Screen name="trip/location-search" options={TRIP_LOCATION_SEARCH_OPTIONS} />
+
+      <Stack.Screen
+        name="trip/[id]/index"
+        options={({ route }) => getTripDetailOptions((route.params as { id: string })?.id)}
+      />
+      <Stack.Screen name="trip/[id]/edit" options={TRIP_EDIT_OPTIONS} />
+      <Stack.Screen name="trip/new" options={TRIP_NEW_OPTIONS} />
+
       <Stack.Screen
         name="item/[id]/index"
         options={({ route }) => getPackItemDetailOptions({ route })}
@@ -220,6 +230,24 @@ const MODAL_OPTIONS = {
   animation: 'fade_from_bottom', // for android
   title: 'Settings',
   headerRight: () => <ThemeToggle />,
+} as const;
+
+const TRIP_NEW_OPTIONS = {
+  title: 'Create New Trip',
+  presentation: 'modal',
+  animation: 'slide_from_bottom',
+} as const;
+
+const TRIP_EDIT_OPTIONS = {
+  title: 'Edit Trip',
+  presentation: 'modal',
+  animation: 'slide_from_bottom',
+} as const;
+
+const TRIP_LOCATION_SEARCH_OPTIONS = {
+  title: 'Search Location',
+  presentation: 'modal',
+  animation: 'slide_from_bottom',
 } as const;
 
 const CONSENT_MODAL_OPTIONS = {
