@@ -3,7 +3,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
-import { useAllPacks } from 'expo-app/features/packs/hooks/useAllPacks';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack, useRouter } from 'expo-router';
@@ -47,11 +46,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const isEditingExistingTrip = !!trip;
 
   const { location, setLocation } = useTripLocation();
-  const localPacks = usePacks();
-  const { data: allPacks = [], isLoading } = useAllPacks(true);
-  const availablePacks = [...localPacks, ...allPacks].filter(
-    (pack, index, self) => index === self.findIndex((p) => p.id === pack.id),
-  );
+  const packs = usePacks();
 
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -189,7 +184,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                       <Icon name="archive" size={16} color={colors.grey3} />
                       <Text className="ml-2 text-foreground">
                         {field.state.value
-                          ? availablePacks.find((p) => p.id === field.state.value)?.name
+                          ? packs.find((p) => p.id === field.state.value)?.name
                           : 'Select Pack'}
                       </Text>
                     </View>
@@ -206,19 +201,15 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           </Pressable>
                         </View>
 
-                        {isLoading ? (
-                          <Text className="text-muted-foreground px-3 py-2">Loading packs...</Text>
-                        ) : (
-                          <Picker
-                            selectedValue={field.state.value || ''}
-                            onValueChange={(value) => field.handleChange(value)}
-                          >
-                            <Picker.Item label="No pack selected" value="" />
-                            {availablePacks.map((pack) => (
-                              <Picker.Item key={pack.id} label={pack.name} value={pack.id} />
-                            ))}
-                          </Picker>
-                        )}
+                        <Picker
+                          selectedValue={field.state.value || ''}
+                          onValueChange={(value) => field.handleChange(value)}
+                        >
+                          <Picker.Item label="No pack selected" value="" />
+                          {packs.map((pack) => (
+                            <Picker.Item key={pack.id} label={pack.name} value={pack.id} />
+                          ))}
+                        </Picker>
                       </View>
                     </View>
                   </Modal>
