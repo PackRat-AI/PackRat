@@ -1,9 +1,8 @@
-import { Button, Text } from '@packrat/ui/nativewindui';
+import { Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
-import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import {
   calculateTotalWeight,
   getNotes,
@@ -15,10 +14,13 @@ import {
 } from 'expo-app/lib/utils/itemCalculations';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Image, SafeAreaView, ScrollView, View } from 'react-native';
+import { SafeAreaView, ScrollView, View } from 'react-native';
+import { PackTemplateItemImage } from '../components/PackTemplateItemImage';
 import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
 
 export function PackTemplateItemDetailScreen() {
+  const { colors } = useColorScheme();
+
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const item = usePackTemplateItem(id as string);
@@ -62,20 +64,12 @@ export function PackTemplateItemDetailScreen() {
     });
   };
 
-  const imageUrl = buildPackTemplateItemImageUrl(item.image);
-
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} className="h-64 w-full" resizeMode="cover" />
-        ) : (
-          <View className="h-64 w-full items-center justify-center bg-muted">
-            <Text className="text-muted-foreground">No image</Text>
-          </View>
-        )}
+        <PackTemplateItemImage item={item} className="h-64 w-full" resizeMode="cover" />
 
-        <View className="mb-4 bg-card p-4">
+        <View className="mb-4 p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>
           <Text className="mb-3 text-muted-foreground">{item.category}</Text>
 
@@ -132,14 +126,14 @@ export function PackTemplateItemDetailScreen() {
           )}
         </View>
 
-        <View className="mb-8 mt-6 px-4">
+        <View className="pb-16 mt-4 px-4">
           <Button
-            variant="primary"
+            variant="secondary"
             onPress={navigateToChat}
-            className="flex-row items-center justify-center rounded-full bg-primary px-4 py-3"
+            className="flex-row items-center justify-center rounded-full px-4 py-3"
           >
-            <Icon name="message" size={20} color="white" />
-            <Text className="ml-2 font-semibold text-white">Ask AI About This Item</Text>
+            <Icon name="message-outline" size={20} color={colors.foreground} />
+            <Text className="ml-2 font-semibold">Ask AI About This Item</Text>
           </Button>
         </View>
       </ScrollView>

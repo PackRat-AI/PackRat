@@ -1,6 +1,5 @@
 import type { WeightUnit } from 'expo-app/types';
 import { useState } from 'react';
-import Toast from 'react-native-toast-message';
 import { cacheCatalogItemImage } from '../../catalog/lib/cacheCatalogItemImage';
 import type { CatalogItemWithPackItemFields } from '../../catalog/types';
 import { useCreatePackItem } from './useCreatePackItem';
@@ -38,20 +37,9 @@ export function useBulkAddCatalogItems() {
           },
         });
       }
-
-      const itemCount = catalogItems.length;
-      Toast.show({
-        type: 'success',
-        text1: `${itemCount} ${itemCount === 1 ? 'item' : 'items'} added to pack`,
-        text2: itemCount > 1 ? 'You can edit individual items as needed' : undefined,
-      });
     } catch (error) {
       console.error('Error adding items to pack:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Failed to add items',
-        text2: 'Please try again',
-      });
+      throw error;
     } finally {
       setIsLoading(false);
     }

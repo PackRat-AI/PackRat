@@ -1,15 +1,18 @@
-import { Alert, Button, useColorScheme } from '@packrat-ai/nativewindui';
+import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
+import AddPackItemActions from '../components/AddPackItemActions';
 import { useDeletePack, usePackOwnershipCheck } from '../hooks';
 
 export function getPackDetailOptions(id: string) {
   return {
     title: 'Pack Details',
     headerRight: () => {
-      const { colors } = useColorScheme();
       const router = useRouter();
+      const addItemActionsRef = useSheetRef();
+      const { colors } = useColorScheme();
+
       const deletePack = useDeletePack();
 
       const isOwner = usePackOwnershipCheck(id as string);
@@ -48,13 +51,10 @@ export function getPackDetailOptions(id: string) {
           >
             <Icon name="pencil-box-outline" color={colors.grey2} />
           </Button>
-          <Button
-            variant="plain"
-            size="icon"
-            onPress={() => router.push({ pathname: '/item/new', params: { packId: id } })}
-          >
+          <Button variant="plain" size="icon" onPress={() => addItemActionsRef.current?.present()}>
             <Icon name="plus" color={colors.grey2} />
           </Button>
+          <AddPackItemActions ref={addItemActionsRef} packId={id} />
         </View>
       );
     },

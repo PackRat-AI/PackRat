@@ -7,6 +7,7 @@ import matter from 'gray-matter';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import path from 'path';
 import slugify from 'slugify';
+import { enhanceGuideContent } from '../lib/enhanceGuideContent';
 
 // Types
 type ContentCategory =
@@ -376,6 +377,23 @@ async function generatePost(
     let content = '';
     if (request.generateFullContent) {
       content = await generateMdxContent(metadata, existingContent);
+
+      try {
+        console.log(chalk.blue(`🔗 Enhancing ${metadata.title} with catalog items...`));
+        const enhancementResult = await enhanceGuideContent(content);
+        content = enhancementResult.content;
+
+        if (enhancementResult.productsUsed.length > 0) {
+          console.log(
+            chalk.green(`✨ Embedded ${enhancementResult.productsUsed.length} catalog items`),
+          );
+        }
+      } catch (enhanceError) {
+        console.error(
+          chalk.yellow(`⚠️ Content enhancement failed for ${metadata.title}:`, enhanceError),
+        );
+        // Continue with unenhanced content
+      }
     } else {
       content = `# ${metadata.title}\n\n${metadata.description}\n\n## Introduction\n\nThis is a placeholder for the full article content.`;
     }

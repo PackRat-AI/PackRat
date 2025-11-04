@@ -1,28 +1,24 @@
-import { Alert, Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
-import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import { Button, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Chip } from 'expo-app/components/initial/Chip';
+import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import AddPackTemplateItemActions from '../components/AddPackTemplateItemActions';
+import { AppTemplateBadge } from '../components/AppTemplateBadge';
 import { PackTemplateItemCard } from '../components/PackTemplateItemCard';
-import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';
+import { usePackTemplateDetails } from '../hooks';
 import type { PackTemplateItem } from '../types';
-
-const LOGO_SOURCE = require('expo-app/assets/adaptive-icon.png');
 
 export function PackTemplateDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('all');
+  const addPackTemplateItemActionsRef = useSheetRef();
 
   const packTemplate = usePackTemplateDetails(id as string);
-  const deletePackTemplate = useDeletePackTemplate();
-  const { colors } = useColorScheme();
-
   const user = useUser();
 
   const getTabStyle = (tab: string) => {
@@ -75,15 +71,16 @@ export function PackTemplateDetailScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView>
+      <ScrollView stickyHeaderIndices={[2]}>
         {packTemplate.image && (
           <Image source={{ uri: packTemplate.image }} className="h-48 w-full" resizeMode="cover" />
         )}
 
-        <View className="mb-4 bg-card p-4">
-          <View className="mb-2 flex-row items-center justify-between">
+        {/* Header */}
+        <View className="mb-4 p-4">
+          <View className="mb-2">
             <Text className="text-2xl font-bold text-foreground">{packTemplate.name}</Text>
-            {packTemplate.category && <CategoryBadge category={packTemplate.category} />}
+            {packTemplate.category && <Text variant="footnote">{packTemplate.category}</Text>}
           </View>
 
           {packTemplate.description && (
@@ -92,6 +89,14 @@ export function PackTemplateDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">BASE WEIGHT</Text>
+              <WeightBadge weight={packTemplate.baseWeight || 0} unit="g" type="base" />
+            </View>
+            <View>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+              <WeightBadge weight={packTemplate.totalWeight || 0} unit="g" type="total" />
+            </View>
+            <View>
               <Text className="mb-1 text-xs uppercase text-muted-foreground">ITEMS</Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {packTemplate.items?.length || 0}
@@ -99,13 +104,13 @@ export function PackTemplateDetailScreen() {
             </View>
           </View>
 
-          <View className="flex-row justify-between">
+          <View className="flex-row items-end justify-between">
             {packTemplate.tags && packTemplate.tags.length > 0 && (
               <View className="flex-row flex-wrap">
                 {packTemplate.tags.map((tag) => (
                   <Chip
                     key={tag}
-                    className="mb-1 mr-2"
+                    className="mr-2"
                     textClassName="text-xs text-center"
                     variant="outline"
                   >
@@ -114,65 +119,52 @@ export function PackTemplateDetailScreen() {
                 ))}
               </View>
             )}
-            <View className="ml-auto flex-row items-center">
-              {packTemplate.isAppTemplate && (
-                <View
-                  className="flex-row items-center justify-between rounded-md pr-2"
-                  style={{ backgroundColor: colors.grey2 }}
-                >
-                  <Image source={LOGO_SOURCE} className="h-8 w-8 rounded-md" resizeMode="contain" />
-                  <Text className="text-xs text-foreground" style={{ color: colors.background }}>
-                    App Template
-                  </Text>
-                </View>
-              )}
-              {(!packTemplate.isAppTemplate || user?.role === 'ADMIN') && (
-                <Alert
-                  title="Delete template?"
-                  message="Are you sure you want to delete this pack template? This action cannot be undone."
-                  buttons={[
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'OK',
-                      onPress: () => {
-                        deletePackTemplate(packTemplate.id);
-                        if (router.canGoBack()) {
-                          router.back();
-                        }
-                      },
-                    },
-                  ]}
-                >
-                  <Button variant="plain" size="icon">
-                    <Icon name="trash-can" color={colors.grey2} size={21} />
-                  </Button>
-                </Alert>
-              )}
-            </View>
+            {packTemplate.isAppTemplate && <AppTemplateBadge />}
           </View>
         </View>
 
-        <View className="bg-card">
-          <View className="flex-row border-b border-border">
-            <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
-              <Text className={getTabTextStyle('all')}>All Items</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className={getTabStyle('worn')} onPress={() => setActiveTab('worn')}>
-              <Text className={getTabTextStyle('worn')}>Worn</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={getTabStyle('consumable')}
-              onPress={() => setActiveTab('consumable')}
-            >
-              <Text className={getTabTextStyle('consumable')}>Consumable</Text>
-            </TouchableOpacity>
+        {/* Actions */}
+        <View className="p-4">
+          <View className="gap-4 flex-row items-center">
+            <Button className="flex-1" variant="secondary" onPress={handleCreate}>
+              <Text>Use Template</Text>
+            </Button>
+            {(!packTemplate.isAppTemplate || user?.role === 'ADMIN') && (
+              <Button
+                className="flex-1"
+                variant="secondary"
+                onPress={() => addPackTemplateItemActionsRef.current?.present()}
+              >
+                <Text>Add Item</Text>
+              </Button>
+            )}
           </View>
+        </View>
+
+        {/* Tabs */}
+        <View className="flex-row bg-background border-b border-border">
+          <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+            <Text className={getTabTextStyle('all')}>All Items</Text>
+          </TouchableOpacity>
+          <TouchableOpacity className={getTabStyle('worn')} onPress={() => setActiveTab('worn')}>
+            <Text className={getTabTextStyle('worn')}>Worn</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className={getTabStyle('consumable')}
+            onPress={() => setActiveTab('consumable')}
+          >
+            <Text className={getTabTextStyle('consumable')}>Consumable</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Items List */}
+        <View>
           {filteredItems.length > 0 ? (
             filteredItems.map((item) => (
               <View key={item.id} className="px-4 pt-3">
                 <PackTemplateItemCard
                   item={item}
-                  belongsToFeaturedTemplate={packTemplate.isAppTemplate}
+                  belongsToAppTemplate={packTemplate.isAppTemplate}
                   onPress={handleItemPress}
                 />
               </View>
@@ -182,24 +174,13 @@ export function PackTemplateDetailScreen() {
               <Text className="text-muted-foreground">No items found</Text>
             </View>
           )}
-          {(!packTemplate.isAppTemplate || user?.role === 'ADMIN') && (
-            <Button
-              className="m-4"
-              onPress={() =>
-                router.push({
-                  pathname: '/templateItem/new',
-                  params: { packTemplateId: packTemplate.id },
-                })
-              }
-            >
-              <Text>Add New Item</Text>
-            </Button>
-          )}
-          <Button className="mx-4 mb-8" variant="secondary" onPress={handleCreate}>
-            <Text>Use This Template</Text>
-          </Button>
         </View>
       </ScrollView>
+
+      <AddPackTemplateItemActions
+        ref={addPackTemplateItemActionsRef}
+        packTemplateId={id as string}
+      />
     </SafeAreaView>
   );
 }

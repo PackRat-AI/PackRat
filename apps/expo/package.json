@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.0.12",
+  "version": "2.0.13",
   "main": "expo-router/entry",
   "scripts": {
     "android": "APP_VARIANT=development expo run:android",
@@ -106,6 +106,7 @@
     "react-native-ios-context-menu": "^3.1.0",
     "react-native-ios-utilities": "^5.1.2",
     "react-native-keyboard-controller": "^1.18.3",
+    "react-native-maps": "1.20.1",
     "react-native-pager-view": "6.7.1",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",

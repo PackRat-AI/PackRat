@@ -37,7 +37,7 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.12',
+      version: '2.0.13',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
@@ -73,6 +73,9 @@ export default (): ExpoConfig =>
         supportsTablet: true,
         bundleIdentifier: getBundleIdentifier(),
         usesAppleSignIn: true,
+        config: {
+          googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+        },
         infoPlist: {
           ITSAppUsesNonExemptEncryption: false,
           CFBundleURLTypes: [
@@ -136,6 +139,11 @@ export default (): ExpoConfig =>
           backgroundColor: '#026A9F',
         },
         package: getAndroidPackage(),
+        config: {
+          googleMaps: {
+            apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+          },
+        },
       },
       extra: {
         eas: {
