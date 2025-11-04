@@ -255,12 +255,12 @@ function rebalanceAuthors(): void {
   postsToReassign.forEach((post) => {
     // Find author with least posts using pre-computed counts
     const authorWithLeast = mainAuthors.reduce((min, author) =>
-      (authorCounts[author] ?? 0) < (authorCounts[min] ?? 0) ? author : min,
+      authorCounts[author] < authorCounts[min] ? author : min,
     );
 
     if (authorWithLeast !== post.author) {
       if (updatePostAuthor(post, authorWithLeast)) {
-        authorCounts[authorWithLeast] = (authorCounts[authorWithLeast] ?? 0) + 1;
+        authorCounts[authorWithLeast] = authorCounts[authorWithLeast] + 1;
         updatedCount++;
       }
     }
