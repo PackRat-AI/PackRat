@@ -47,7 +47,7 @@ export async function enhanceGuideContent(
   } = options;
 
   if (!apiKey) {
-    throw new Error('API key is required for content enhancement');
+    throw new Error('PACKRAT_API_KEY environment variable is required for content enhancement');
   }
 
   // Track products used for reporting
