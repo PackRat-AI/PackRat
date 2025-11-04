@@ -14,6 +14,7 @@ export function getPackTemplateItemDetailOptions(id: string) {
       const router = useRouter();
 
       const item = usePackTemplateItem(id);
+      assertDefined(item);
       const canWrite = useWritePermissionCheck(item.packTemplateId as string);
 
       const deleteItem = useDeletePackTemplateItem();
