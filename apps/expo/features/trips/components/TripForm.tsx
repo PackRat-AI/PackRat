@@ -67,13 +67,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     } as TripFormValues,
     validators: { onChange: tripFormSchema },
     onSubmit: async ({ value }) => {
-      if (location) value.location = location;
+      const submitData = { ...value, location: location ?? value.location };
       try {
         if (isEditingExistingTrip) {
-          await updateTrip({ ...trip, ...value });
+          await updateTrip({ ...trip, ...submitData });
           Alert.alert('Success', 'Trip updated successfully');
         } else {
-          await createTrip(value);
+          await createTrip(submitData);
           Alert.alert('Success', 'Trip created successfully');
         }
         router.back();
