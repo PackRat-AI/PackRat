@@ -49,7 +49,7 @@ import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 
 let testClient: Client | null = null;
-let testDb: ReturnType<typeof drizzle>;
+let testDb: ReturnType<typeof drizzle> | null = null;
 let dbConnected = false;
 vi.mock('hono/adapter', async () => {
   const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
