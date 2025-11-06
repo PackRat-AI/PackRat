@@ -27,7 +27,7 @@ async function waitForPostgres(port = 5433) {
   throw new Error('Postgres container did not become ready in time');
 }
 
-export default async function globalSetup() {
+export async function setup() {
   console.log('🐳 Starting Docker Compose for tests...');
   execSync(`docker compose -f ${COMPOSE_FILE} up -d`, { stdio: 'inherit' });
   await waitForPostgres(5433);
