@@ -5,6 +5,7 @@ const bindings = {
   // Environment & Deployment
   ENVIRONMENT: 'development',
   SENTRY_DSN: 'https://test@test.ingest.sentry.io/test',
+  CF_VERSION_METADATA: { id: 'test-version' },
 
   // Database
   NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5433/packrat_test',
@@ -57,6 +58,7 @@ export default defineWorkersConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@packrat/api': resolve(__dirname, 'src'),
     },
   },
   test: {
@@ -64,7 +66,7 @@ export default defineWorkersConfig({
     pool: '@cloudflare/vitest-pool-workers',
     poolOptions: {
       workers: {
-        wrangler: { configPath: './wrangler.toml' },
+        wrangler: { configPath: './wrangler.jsonc' },
       },
     },
   },

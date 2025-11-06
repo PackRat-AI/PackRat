@@ -20,6 +20,7 @@
     "lint": "biome check --write",
     "lint-unsafe": "biome check --write --unsafe",
     "check": "biome check --write",
+    "test": "bun run --cwd packages/api test",
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
