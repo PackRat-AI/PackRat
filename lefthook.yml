@@ -3,7 +3,10 @@ pre-push:
   commands:
     format:
       run: bun format
-      skip: false
+      skip:
+        - merge
+        - ref: main
+        - env: CI
 
     # Ready for when you add linting
     # lint:
