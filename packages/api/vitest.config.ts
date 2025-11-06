@@ -67,7 +67,7 @@ export default defineWorkersConfig({
     pool: '@cloudflare/vitest-pool-workers',
     poolOptions: {
       workers: {
-        wrangler: { configPath: './wrangler.jsonc', enviroment: 'dev' },
+        wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
       },
     },
   },
