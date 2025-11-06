@@ -48,8 +48,10 @@ import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 
-let testClient: Client | null = null;
-let testDb: ReturnType<typeof drizzle> | null = null;
+let testClient: Client;
+let testDb: ReturnType<typeof drizzle>;
+let isConnected = false;
+
 vi.mock('hono/adapter', async () => {
   const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
   return { ...actual, env: () => process.env };
@@ -94,6 +96,7 @@ beforeAll(async () => {
   try {
     await testClient.connect();
     testDb = drizzle(testClient, { schema }) as any;
+    isConnected = true;
     console.log('✅ Test database connected successfully');
 
     // Run migrations using direct PostgreSQL client
@@ -106,21 +109,19 @@ beforeAll(async () => {
       const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
 
       for (const file of sqlFiles) {
-        const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf--8');
+        const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
         await testClient.query(migrationSql);
       }
 
       console.log('✅ Test database migrations completed');
     } catch (error) {
       console.error('❌ Failed to run database migrations:', error);
-      console.log('⚠️  Continuing without migrations - some tests may fail');
+      throw error;
     }
   } catch (error) {
     console.error('❌ Failed to connect to test database:', error);
-    console.log('⚠️  Tests will run with mocked database (some tests may fail)');
-    // Clear testClient so we know connection failed (it was instantiated but not connected)
-    testClient = null;
-    testDb = null;
+    console.log('This is expected in CI where PostgreSQL service should be available');
+    throw error;
   }
 });
 
@@ -157,8 +158,8 @@ afterAll(async () => {
   console.log('🧹 Cleaning up test database connection...');
 
   try {
-    // Close PostgreSQL client connection
-    if (testClient) {
+    // Close PostgreSQL client connection only if it was successfully connected
+    if (isConnected && testClient) {
       await testClient.end();
     }
     console.log('✅ Test database connection closed');
