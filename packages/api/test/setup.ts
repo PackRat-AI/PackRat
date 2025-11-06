@@ -118,7 +118,7 @@ beforeAll(async () => {
   } catch (error) {
     console.error('❌ Failed to connect to test database:', error);
     console.log('⚠️  Tests will run with mocked database (some tests may fail)');
-    // Clear testClient so we know connection failed
+    // Clear testClient so we know connection failed (it was instantiated but not connected)
     testClient = null;
     testDb = null;
   }
