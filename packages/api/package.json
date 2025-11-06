@@ -9,7 +9,7 @@
     "check-types-watch": "tsc --noEmit --watch",
     "db:generate": "drizzle-kit generate --dialect=postgresql --schema=src/db/schema.ts --out=./drizzle",
     "db:migrate": "bun run ./migrate.ts",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.11",
