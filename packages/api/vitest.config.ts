@@ -62,11 +62,13 @@ export default defineWorkersConfig({
     },
   },
   test: {
+    globalSetup: './test/vitest.global-setup.ts',
+    globalTeardown: './test/vitest.global-setup.ts',
     setupFiles: ['./test/setup.ts'],
     pool: '@cloudflare/vitest-pool-workers',
     poolOptions: {
       workers: {
-        wrangler: { configPath: './wrangler.jsonc' },
+        wrangler: { configPath: './wrangler.jsonc', enviroment: 'dev' },
       },
     },
   },

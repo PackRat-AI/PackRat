@@ -120,7 +120,6 @@ beforeAll(async () => {
     }
   } catch (error) {
     console.error('❌ Failed to connect to test database:', error);
-    console.log('This is expected in CI where PostgreSQL service should be available');
     throw error;
   }
 });
