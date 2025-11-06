@@ -127,7 +127,7 @@ beforeEach(async () => {
   try {
     // Run all truncates in a single statement for speed
     const truncateQuery = tablesToTruncate
-      .map(table => `TRUNCATE TABLE "${table}" CASCADE`)
+      .map((table) => `TRUNCATE TABLE "${table}" CASCADE`)
       .join('; ');
     await testClient.query(truncateQuery);
   } catch (_error) {
