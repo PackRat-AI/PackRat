@@ -2,9 +2,9 @@ pre-push:
   parallel: true
   commands:
     format:
-      run: bun format
+      run: ~/.bun/bin/bun format
       skip: false
 
     # Ready for when you add linting
     # lint:
-    #   run: bun lint
+    #   run: ~/.bun/bin/bun lint
