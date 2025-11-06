@@ -1,12 +1,10 @@
 pre-push:
+  skip:
+    - env: CI
   parallel: true
   commands:
     format:
       run: bun format
-      skip:
-        - merge
-        - ref: main
-        - env: CI
 
     # Ready for when you add linting
     # lint:
