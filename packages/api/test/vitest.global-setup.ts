@@ -31,7 +31,7 @@ async function waitForPostgres(port = 5433) {
 
 async function runMigrations() {
   console.log('🔧 Running database migrations...');
-  
+
   const client = new Client({
     host: 'localhost',
     port: 5433,
@@ -42,12 +42,12 @@ async function runMigrations() {
 
   try {
     await client.connect();
-    
+
     // Read and execute all migration files
     const migrationsDir = join(process.cwd(), 'drizzle');
     const files = await readdir(migrationsDir);
     const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
-    
+
     // Skip problematic migration that conflicts with later migrations
     // 0003_flat_hitman.sql creates weight_history with integer pack_id
     // but 0003_mixed_stepford_cuckoos.sql changes packs.id to text
@@ -61,7 +61,7 @@ async function runMigrations() {
         console.log(`  ⏭️  Skipped migration: ${file} (superseded by later migration)`);
         continue;
       }
-      
+
       const migrationSql = await readFile(join(migrationsDir, file), 'utf-8');
       await client.query(migrationSql);
       console.log(`  ✅ Applied migration: ${file}`);
@@ -81,7 +81,7 @@ export async function setup() {
   execSync(`docker compose -f ${COMPOSE_FILE} up -d`, { stdio: 'inherit' });
   await waitForPostgres(5433);
   console.log('🚀 Test database ready!');
-  
+
   // Run migrations after database is ready
   await runMigrations();
 }

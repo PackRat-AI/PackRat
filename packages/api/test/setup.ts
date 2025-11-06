@@ -108,7 +108,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   if (!testClient) return;
 
-  // Truncate all tables except migrations and drizzle metadata using PostgreSQL client
+  // Truncate all tables in a single transaction for better performance
+  // Using CASCADE to handle foreign key constraints
   const tablesToTruncate = [
     'users',
     'packs',
@@ -123,12 +124,14 @@ beforeEach(async () => {
     'weight_history',
   ];
 
-  for (const tableName of tablesToTruncate) {
-    try {
-      await testClient.query(`TRUNCATE TABLE ${tableName} CASCADE`);
-    } catch (_error) {
-      // Ignore errors for non-existent tables
-    }
+  try {
+    // Run all truncates in a single statement for speed
+    const truncateQuery = tablesToTruncate
+      .map(table => `TRUNCATE TABLE "${table}" CASCADE`)
+      .join('; ');
+    await testClient.query(truncateQuery);
+  } catch (_error) {
+    // Ignore errors - tables might not exist yet
   }
 });
 
