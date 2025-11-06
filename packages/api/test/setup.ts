@@ -50,7 +50,6 @@ import * as schema from '../src/db/schema';
 
 let testClient: Client | null = null;
 let testDb: ReturnType<typeof drizzle> | null = null;
-let dbConnected = false;
 vi.mock('hono/adapter', async () => {
   const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
   return { ...actual, env: () => process.env };
@@ -95,7 +94,6 @@ beforeAll(async () => {
   try {
     await testClient.connect();
     testDb = drizzle(testClient, { schema }) as any;
-    dbConnected = true;
     console.log('✅ Test database connected successfully');
 
     // Run migrations using direct PostgreSQL client
@@ -120,13 +118,15 @@ beforeAll(async () => {
   } catch (error) {
     console.error('❌ Failed to connect to test database:', error);
     console.log('⚠️  Tests will run with mocked database (some tests may fail)');
-    // Don't throw - allow tests to run with mocked DB
+    // Clear testClient so we know connection failed
+    testClient = null;
+    testDb = null;
   }
 });
 
 // Clean up database after each test to ensure isolation
 beforeEach(async () => {
-  if (!dbConnected || !testClient) return;
+  if (!testClient) return;
 
   // Truncate all tables except migrations and drizzle metadata using PostgreSQL client
   const tablesToTruncate = [
@@ -158,7 +158,7 @@ afterAll(async () => {
 
   try {
     // Close PostgreSQL client connection
-    if (dbConnected && testClient) {
+    if (testClient) {
       await testClient.end();
     }
     console.log('✅ Test database connection closed');
