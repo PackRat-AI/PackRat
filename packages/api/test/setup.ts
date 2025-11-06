@@ -98,26 +98,6 @@ beforeAll(async () => {
     testDb = drizzle(testClient, { schema }) as any;
     isConnected = true;
     console.log('✅ Test database connected successfully');
-
-    // Run migrations using direct PostgreSQL client
-    const fs = await import('node:fs/promises');
-    const path = await import('node:path');
-    const migrationsDir = path.join(process.cwd(), 'drizzle');
-
-    try {
-      const files = await fs.readdir(migrationsDir);
-      const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
-
-      for (const file of sqlFiles) {
-        const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
-        await testClient.query(migrationSql);
-      }
-
-      console.log('✅ Test database migrations completed');
-    } catch (error) {
-      console.error('❌ Failed to run database migrations:', error);
-      throw error;
-    }
   } catch (error) {
     console.error('❌ Failed to connect to test database:', error);
     throw error;
