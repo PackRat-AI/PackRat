@@ -140,6 +140,7 @@ describe('Pack Templates Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data) || data.items).toBeTruthy();
+      } else if (res.status === 404) {
       expectNotFound(res);
     });
 
@@ -151,11 +152,10 @@ describe('Pack Templates Routes', () => {
       const items = Array.isArray(data) ? data : data.items;
 
       if (items && items.length > 0) {
-        const item = items[0];
-        expect(item.name || item.catalogItem?.name).toBeDefined();
-        expect(item.weight || item.catalogItem?.weight).toBeDefined();
-        expect(item.category || item.catalogItem?.category).toBeDefined();
-      }
+      const item = items[0];
+      expect(item.name || item.catalogItem?.name).toBeDefined();
+      expect(item.weight || item.catalogItem?.weight).toBeDefined();
+      expect(item.category || item.catalogItem?.category).toBeDefined();
     });
 
     it('returns items with quantities', async () => {
@@ -191,6 +191,7 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
+      } else if (res.status === 404) {
       expectNotFound(res);
     });
   });
@@ -204,9 +205,8 @@ describe('Pack Templates Routes', () => {
       const templates = Array.isArray(data) ? data : data.templates;
 
       if (templates && templates.length > 0) {
-        const template = templates[0];
-        expect(template.activity).toBe('hiking');
-      }
+      const template = templates[0];
+      expect(template.activity).toBe('hiking');
     });
 
     it('handles backpacking templates', async () => {
@@ -265,6 +265,7 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
+      } else if (res.status === 400) {
       expectBadRequest(res);
     });
 
@@ -273,10 +274,9 @@ describe('Pack Templates Routes', () => {
 
       // Should either cap the limit or return 400
       if (res.status === 400) {
-        expectBadRequest(res);
+      expectBadRequest(res);
       } else {
-        expect(res.status).toBe(200);
-      }
+      expect(res.status).toBe(200);
     });
   });
 

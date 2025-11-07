@@ -219,8 +219,7 @@ describe('Guides Routes', () => {
       if (Array.isArray(data)) {
         expect(data.length).toBeGreaterThanOrEqual(0);
       }
-        expectBadRequest(res);
-      }
+      expectBadRequest(res);
     });
   });
 });
