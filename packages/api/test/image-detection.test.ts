@@ -48,13 +48,11 @@ describe('Image Detection Routes', () => {
 
       // In test environment, this might fail due to missing OpenAI API key
       // but we can still test the request structure
+      expect([200, 400, 403, 500]).toContain(res.status);
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['detectedItems', 'summary']);
         expect(Array.isArray(data.detectedItems)).toBe(true);
         expect(typeof data.summary).toBe('string');
-      } else {
-        // Expected to fail in test environment without proper API keys or auth
-        expect([400, 403, 500].includes(res.status)).toBe(true);
       }
     });
 
@@ -68,6 +66,7 @@ describe('Image Detection Routes', () => {
       );
 
       // Response structure should be valid regardless of execution success
+      expect([200, 400, 403, 500]).toContain(res.status);
       if (res.status === 200) {
         const data = await expectJsonResponse(res, ['detectedItems', 'summary']);
         expect(Array.isArray(data.detectedItems)).toBe(true);
