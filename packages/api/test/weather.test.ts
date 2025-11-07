@@ -192,10 +192,9 @@ describe('Weather Routes', () => {
 
       const res = await apiWithAuth('/weather/current?location=London');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.location.name).toBe('London');
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.location.name).toBe('London');
 
       global.fetch = originalFetch;
     });
@@ -263,10 +262,9 @@ describe('Weather Routes', () => {
 
       const res = await apiWithAuth('/weather/forecast?lat=40.7128&lon=-74.0060&days=5');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.forecast.forecastday.length).toBe(5);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.forecast.forecastday.length).toBe(5);
 
       global.fetch = originalFetch;
     });
@@ -317,13 +315,9 @@ describe('Weather Routes', () => {
 
       const res = await apiWithAuth('/weather/alerts?lat=40.7128&lon=-74.0060');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['alerts']);
-        expect(data.alerts.alert.length).toBeGreaterThan(0);
-      } else if (res.status === 404) {
-        // Alerts endpoint may not be implemented
-        expect(res.status).toBe(404);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['alerts']);
+      expect(data.alerts.alert.length).toBeGreaterThan(0);
 
       global.fetch = originalFetch;
     });
@@ -342,12 +336,9 @@ describe('Weather Routes', () => {
 
       const res = await apiWithAuth('/weather/alerts?lat=40.7128&lon=-74.0060');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.alerts.alert.length).toBe(0);
-      } else if (res.status === 404) {
-        expect(res.status).toBe(404);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.alerts.alert.length).toBe(0);
 
       global.fetch = originalFetch;
     });

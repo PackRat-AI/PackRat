@@ -44,12 +44,11 @@ describe('Admin Routes', () => {
       // Note: This will likely fail without database setup
       // but tests the auth and route structure
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['users', 'packs', 'items']);
-        expect(typeof data.users).toBe('number');
-        expect(typeof data.packs).toBe('number');
-        expect(typeof data.items).toBe('number');
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['users', 'packs', 'items']);
+      expect(typeof data.users).toBe('number');
+      expect(typeof data.packs).toBe('number');
+      expect(typeof data.items).toBe('number');
     });
   });
 
@@ -57,30 +56,27 @@ describe('Admin Routes', () => {
     it('returns paginated users list', async () => {
       const res = await apiWithBasicAuth('/users-list');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data.users)).toBe(true);
-        expect(typeof data.totalUsers).toBe('number');
-        expect(typeof data.totalPages).toBe('number');
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data.users)).toBe(true);
+      expect(typeof data.totalUsers).toBe('number');
+      expect(typeof data.totalPages).toBe('number');
     });
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithBasicAuth('/users-list?page=2&limit=5');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data.users)).toBe(true);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data.users)).toBe(true);
     });
 
     it('accepts search parameter', async () => {
       const res = await apiWithBasicAuth('/users-list?search=test');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data.users)).toBe(true);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data.users)).toBe(true);
     });
   });
 
