@@ -218,9 +218,6 @@ describe('Catalog Routes', () => {
       if (res.status === 200 || res.status === 204) {
         // Success - item deleted
         expect(res.status).toBeOneOf([200, 204]);
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
     });
 
     it('returns 404 for non-existent item', async () => {

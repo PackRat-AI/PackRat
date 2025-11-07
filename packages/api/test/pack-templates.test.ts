@@ -101,7 +101,6 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res, ['id', 'name']);
       expect(data.id).toBeDefined();
       expect(data.name).toBeDefined();
-      } else if (res.status === 404) {
       expectNotFound(res);
     });
 
@@ -141,7 +140,6 @@ describe('Pack Templates Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data) || data.items).toBeTruthy();
-      } else if (res.status === 404) {
       expectNotFound(res);
     });
 
@@ -185,7 +183,6 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
       expectNotFound(res);
     });
 
@@ -194,7 +191,6 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
       expectNotFound(res);
     });
   });
@@ -261,7 +257,6 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res);
       const templates = Array.isArray(data) ? data : data.templates;
       expect(templates).toBeDefined();
-      } else if (res.status === 400) {
       expectBadRequest(res);
     });
 
@@ -270,7 +265,6 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 400) {
       expectBadRequest(res);
     });
 

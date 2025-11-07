@@ -219,7 +219,6 @@ describe('Guides Routes', () => {
       if (Array.isArray(data)) {
         expect(data.length).toBeGreaterThanOrEqual(0);
       }
-      } else if (res.status === 400) {
         expectBadRequest(res);
       }
     });
