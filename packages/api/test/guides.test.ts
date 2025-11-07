@@ -36,50 +36,44 @@ describe('Guides Routes', () => {
     it('returns guides list', async () => {
       const res = await apiWithAuth('/guides');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.guides).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.guides).toBeTruthy();
     });
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/guides?page=1&limit=10');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/guides?category=backpacking');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts difficulty filter', async () => {
       const res = await apiWithAuth('/guides?difficulty=beginner');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts sorting parameters', async () => {
       const res = await apiWithAuth('/guides?sortBy=title&sortOrder=asc');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts featured filter', async () => {
       const res = await apiWithAuth('/guides?featured=true');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -87,22 +81,20 @@ describe('Guides Routes', () => {
     it('returns available guide categories', async () => {
       const res = await apiWithAuth('/guides/categories');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.categories).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.categories).toBeTruthy();
     });
 
     it('includes category metadata', async () => {
       const res = await apiWithAuth('/guides/categories');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        if (Array.isArray(data) && data.length > 0) {
-          const category = data[0];
-          expect(category).toHaveProperty('name');
-          expect(category).toHaveProperty('slug');
-        }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      if (Array.isArray(data) && data.length > 0) {
+        const category = data[0];
+        expect(category).toHaveProperty('name');
+        expect(category).toHaveProperty('slug');
       }
     });
   });
@@ -128,29 +120,26 @@ describe('Guides Routes', () => {
     it('accepts search filters', async () => {
       const res = await apiWithAuth('/guides/search?q=tent&category=gear&difficulty=intermediate');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts pagination for search results', async () => {
       const res = await apiWithAuth('/guides/search?q=backpacking&page=1&limit=5');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('handles empty search results', async () => {
       const res = await apiWithAuth('/guides/search?q=veryrareunlikelyterm12345');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        if (Array.isArray(data)) {
-          expect(data.length).toBe(0);
-        } else if (data.results) {
-          expect(data.results.length).toBe(0);
-        }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      if (Array.isArray(data)) {
+        expect(data.length).toBe(0);
+      } else if (data.results) {
+        expect(data.results.length).toBe(0);
       }
     });
   });
@@ -159,33 +148,29 @@ describe('Guides Routes', () => {
     it('returns single guide by ID', async () => {
       const res = await apiWithAuth('/guides/1');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['id', 'title']);
-        expect(data.id).toBeDefined();
-        expect(data.title).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['id', 'title']);
+      expect(data.id).toBeDefined();
+      expect(data.title).toBeDefined();
     });
 
     it('returns guide with content', async () => {
       const res = await apiWithAuth('/guides/1');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.content || data.body || data.markdown).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.content || data.body || data.markdown).toBeDefined();
     });
 
     it('returns guide metadata', async () => {
       const res = await apiWithAuth('/guides/1');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        // Common guide metadata fields
-        expect(data.title).toBeDefined();
-        expect(data.category || data.categories).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      // Common guide metadata fields
+      expect(data.title).toBeDefined();
+      expect(data.category || data.categories).toBeDefined();
+    });
     });
 
     it('returns 404 for non-existent guide', async () => {
@@ -203,12 +188,9 @@ describe('Guides Routes', () => {
     it('returns guide by slug', async () => {
       const res = await apiWithAuth('/guides/backpacking-basics');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['id', 'title']);
-        expect(data.slug || data.title).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['id', 'title']);
+      expect(data.slug || data.title).toBeDefined();
     });
 
     it('returns 404 for non-existent slug', async () => {
@@ -222,10 +204,9 @@ describe('Guides Routes', () => {
       const res = await apiWithAuth('/guides?page=invalid&limit=notanumber');
 
       // Should either return 400 or default to valid pagination
+      expect([200, 400]).toContain(res.status);
       if (res.status === 400) {
         expectBadRequest(res);
-      } else {
-        expect(res.status).toBe(200);
       }
     });
 
@@ -233,11 +214,11 @@ describe('Guides Routes', () => {
       const res = await apiWithAuth('/guides?category=nonexistent-category');
 
       // Should return empty results or 400, not crash
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        if (Array.isArray(data)) {
-          expect(data.length).toBeGreaterThanOrEqual(0);
-        }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      if (Array.isArray(data)) {
+        expect(data.length).toBeGreaterThanOrEqual(0);
+      }
       } else if (res.status === 400) {
         expectBadRequest(res);
       }
