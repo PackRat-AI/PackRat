@@ -29,10 +29,9 @@ describe('Search Routes', () => {
     it('performs global search with query parameter', async () => {
       const res = await apiWithAuth('/search?q=tent');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.results || data.items).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.results || data.items).toBeDefined();
     });
 
     it('requires query parameter', async () => {
@@ -46,47 +45,43 @@ describe('Search Routes', () => {
     it('accepts type filters', async () => {
       const res = await apiWithAuth('/search?q=backpack&type=catalog');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.results || data.catalog).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.results || data.catalog).toBeDefined();
     });
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/search?q=hiking&page=1&limit=10');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('returns structured results', async () => {
       const res = await apiWithAuth('/search?q=tent');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
 
-        // Should have different categories of results
-        expect(data.results || data).toBeDefined();
+      // Should have different categories of results
+      expect(data.results || data).toBeDefined();
 
-        if (data.results) {
-          // Could have packs, catalog, guides results
-          expect(data.results.packs || data.results.catalog || data.results.guides).toBeDefined();
-        }
+      if (data.results) {
+        // Could have packs, catalog, guides results
+        expect(data.results.packs || data.results.catalog || data.results.guides).toBeDefined();
       }
     });
 
     it('handles empty search results', async () => {
       const res = await apiWithAuth('/search?q=veryrareunlikelyterm12345');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
 
-        if (data.results) {
-          expect(data.results).toBeDefined();
-        } else if (Array.isArray(data)) {
-          expect(data.length).toBe(0);
-        }
+      if (data.results) {
+        expect(data.results).toBeDefined();
+      } else if (Array.isArray(data)) {
+        expect(data.length).toBe(0);
       }
     });
   });
@@ -95,10 +90,9 @@ describe('Search Routes', () => {
     it('searches packs with query', async () => {
       const res = await apiWithAuth('/search/packs?q=hiking');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.packs).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.packs).toBeTruthy();
     });
 
     it('requires query parameter', async () => {
@@ -109,25 +103,22 @@ describe('Search Routes', () => {
     it('accepts pack-specific filters', async () => {
       const res = await apiWithAuth('/search/packs?q=backpack&activity=hiking&public=true');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts weight range filters', async () => {
       const res = await apiWithAuth('/search/packs?q=lightweight&minWeight=1000&maxWeight=5000');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts creator filter', async () => {
       const res = await apiWithAuth('/search/packs?q=tent&creator=expert');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -135,10 +126,9 @@ describe('Search Routes', () => {
     it('searches catalog items with query', async () => {
       const res = await apiWithAuth('/search/catalog?q=sleeping bag');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.items).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.items).toBeTruthy();
     });
 
     it('requires query parameter', async () => {
@@ -149,33 +139,29 @@ describe('Search Routes', () => {
     it('accepts category filters', async () => {
       const res = await apiWithAuth('/search/catalog?q=tent&category=shelter');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts weight range filters', async () => {
       const res = await apiWithAuth('/search/catalog?q=ultralight&minWeight=0&maxWeight=1000');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts price range filters', async () => {
       const res = await apiWithAuth('/search/catalog?q=backpack&minPrice=100&maxPrice=500');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts brand filter', async () => {
       const res = await apiWithAuth('/search/catalog?q=tent&brand=REI');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -183,10 +169,9 @@ describe('Search Routes', () => {
     it('searches guides with query', async () => {
       const res = await apiWithAuth('/search/guides?q=backpacking basics');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.guides).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.guides).toBeTruthy();
     });
 
     it('requires query parameter', async () => {
@@ -197,25 +182,22 @@ describe('Search Routes', () => {
     it('accepts category filters', async () => {
       const res = await apiWithAuth('/search/guides?q=hiking&category=techniques');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts difficulty filters', async () => {
       const res = await apiWithAuth('/search/guides?q=camping&difficulty=beginner');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts activity filters', async () => {
       const res = await apiWithAuth('/search/guides?q=gear&activity=backpacking');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -223,10 +205,9 @@ describe('Search Routes', () => {
     it('searches users with query', async () => {
       const res = await apiWithAuth('/search/users?q=john');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.users).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.users).toBeTruthy();
     });
 
     it('requires query parameter', async () => {
@@ -237,32 +218,29 @@ describe('Search Routes', () => {
     it('accepts experience level filter', async () => {
       const res = await apiWithAuth('/search/users?q=hiker&experience=expert');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts location filter', async () => {
       const res = await apiWithAuth('/search/users?q=climber&location=colorado');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('respects privacy settings', async () => {
       const res = await apiWithAuth('/search/users?q=test');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        const users = Array.isArray(data) ? data : data.users;
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      const users = Array.isArray(data) ? data : data.users;
 
-        if (users && users.length > 0) {
-          const user = users[0];
-          // Should not expose sensitive info like email
-          expect(user.email).toBeUndefined();
-          expect(user.passwordHash).toBeUndefined();
-        }
+      if (users && users.length > 0) {
+        const user = users[0];
+        // Should not expose sensitive info like email
+        expect(user.email).toBeUndefined();
+        expect(user.passwordHash).toBeUndefined();
       }
     });
   });
@@ -271,43 +249,38 @@ describe('Search Routes', () => {
     it('supports fuzzy search', async () => {
       const res = await apiWithAuth('/search?q=tnt'); // misspelled "tent"
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        // Should still return tent-related results
-        expect(data.results || data).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      // Should still return tent-related results
+      expect(data.results || data).toBeDefined();
     });
 
     it('supports phrase search', async () => {
       const res = await apiWithAuth('/search?q="sleeping bag"');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('supports wildcard search', async () => {
       const res = await apiWithAuth('/search?q=back*');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('supports boolean operators', async () => {
       const res = await apiWithAuth('/search?q=tent AND ultralight');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('supports excluding terms', async () => {
       const res = await apiWithAuth('/search?q=tent -heavy');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -316,33 +289,30 @@ describe('Search Routes', () => {
       // This would typically be logged server-side
       const res = await apiWithAuth('/search?q=popular term');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('provides search suggestions', async () => {
       const res = await apiWithAuth('/search/suggestions?q=tent');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.suggestions).toBeTruthy();
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.suggestions).toBeTruthy();
       } else if (res.status === 404) {
-        // Feature may not be implemented yet
-        expect(res.status).toBe(404);
-      }
+      // Feature may not be implemented yet
+      expect(res.status).toBe(404);
     });
 
     it('provides autocomplete', async () => {
       const res = await apiWithAuth('/search/autocomplete?q=back');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.completions).toBeTruthy();
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.completions).toBeTruthy();
       } else if (res.status === 404) {
-        // Feature may not be implemented yet
-        expect(res.status).toBe(404);
-      }
+      // Feature may not be implemented yet
+      expect(res.status).toBe(404);
     });
   });
 
@@ -363,11 +333,10 @@ describe('Search Routes', () => {
       const specialQuery = encodeURIComponent('tent & backpack @ $100');
       const res = await apiWithAuth(`/search?q=${specialQuery}`);
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
       } else if (res.status === 400) {
-        expectBadRequest(res);
-      }
+      expectBadRequest(res);
     });
 
     it('handles invalid pagination parameters', async () => {
