@@ -103,10 +103,9 @@ describe('Guides Routes', () => {
     it('searches guides with query parameter', async () => {
       const res = await apiWithAuth('/guides/search?q=hiking');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.results).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.results).toBeTruthy();
     });
 
     it('requires query parameter', async () => {

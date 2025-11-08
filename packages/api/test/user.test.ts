@@ -119,10 +119,9 @@ describe('User Routes', () => {
 
       const res = await apiWithAuth('/user/items', httpMethods.post('', newItem));
 
-      if (res.status === 201 || res.status === 200) {
-        const data = await expectJsonResponse(res, ['id']);
-        expect(data.id).toBeDefined();
-      }
+      expect([201, 200]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id']);
+      expect(data.id).toBeDefined();
     });
 
     it('validates required fields', async () => {
@@ -194,9 +193,8 @@ describe('User Routes', () => {
 
       const res = await apiWithAuth('/user/items', httpMethods.post('', itemWithOptionals));
 
-      if (res.status === 201 || res.status === 200) {
-        await expectJsonResponse(res, ['id']);
-      }
+      expect([201, 200]).toContain(res.status);
+      await expectJsonResponse(res, ['id']);
     });
   });
 

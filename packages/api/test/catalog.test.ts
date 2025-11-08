@@ -127,10 +127,9 @@ describe('Catalog Routes', () => {
 
       const res = await apiWithAuth('/catalog/', httpMethods.post('', newItem));
 
-      if (res.status === 201 || res.status === 200) {
-        const data = await expectJsonResponse(res, ['id']);
-        expect(data.id).toBeDefined();
-      }
+      expect([201, 200]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id']);
+      expect(data.id).toBeDefined();
     });
 
     it('validates required fields', async () => {
@@ -228,11 +227,8 @@ describe('Catalog Routes', () => {
     it('queues ETL job (admin only)', async () => {
       const res = await apiWithAdmin('/catalog/queue-etl', httpMethods.post('', {}));
 
-      // This may require admin permissions
-      expect([200, 403]).toContain(res.status);
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('regular users cannot queue ETL', async () => {
@@ -245,10 +241,8 @@ describe('Catalog Routes', () => {
     it('backfills embeddings (admin only)', async () => {
       const res = await apiWithAdmin('/catalog/backfill-embeddings', httpMethods.post('', {}));
 
-      expect([200, 403]).toContain(res.status);
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('regular users cannot backfill embeddings', async () => {

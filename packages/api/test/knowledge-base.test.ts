@@ -304,13 +304,8 @@ describe('Knowledge Base Routes', () => {
 
       const res = await apiWithAuth('/knowledge-base/articles', httpMethods.post('', newArticle));
 
-      // May require admin privileges
-      if (res.status === 403) {
-        expect(res.status).toBe(403);
-      } else if (res.status === 201 || res.status === 200) {
-        await expectJsonResponse(res, ['id']);
-        expect(res.status).toBe(404);
-      }
+      expect([201, 200]).toContain(res.status);
+      await expectJsonResponse(res, ['id']);
     });
 
     it('may allow updating articles (admin only)', async () => {
@@ -321,10 +316,8 @@ describe('Knowledge Base Routes', () => {
 
       const res = await apiWithAuth('/knowledge-base/articles/1', httpMethods.put('', updateData));
 
-      expect([200, 403, 404]).toContain(res.status);
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('may allow deleting articles (admin only)', async () => {
