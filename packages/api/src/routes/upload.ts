@@ -70,10 +70,32 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
   } = getEnv(c);
 
   try {
-    const { fileName, contentType } = c.req.query();
+    const { fileName, contentType, size } = c.req.query();
 
     if (!fileName || !contentType) {
       return c.json({ error: 'fileName and contentType are required' }, 400);
+    }
+
+    // Validate content type - only allow images
+    const allowedContentTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
+    ];
+    if (!allowedContentTypes.includes(contentType.toLowerCase())) {
+      return c.json({ error: 'Invalid content type. Only image files are allowed.' }, 400);
+    }
+
+    // Validate file size - max 10MB
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+    if (size) {
+      const fileSize = Number.parseInt(size, 10);
+      if (Number.isNaN(fileSize) || fileSize > MAX_FILE_SIZE) {
+        return c.json({ error: 'File size exceeds maximum allowed size of 10MB' }, 400);
+      }
     }
 
     // Security check: Ensure the filename starts with the user's ID
