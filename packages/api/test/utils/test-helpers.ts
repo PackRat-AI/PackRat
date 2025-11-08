@@ -62,7 +62,7 @@ export const apiWithAdmin = async (path: string, init?: RequestInit) => {
 export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
   const credentials = btoa('admin:admin-password');
   return app.fetch(
-    new Request(`http://localhost/api${path}`, {
+    new Request(`http://localhost/api/admin${path}`, {
       ...init,
       headers: {
         Authorization: `Basic ${credentials}`,
