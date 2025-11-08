@@ -1,6 +1,5 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
-import { z } from 'zod';
 import {
   ErrorResponseSchema,
   PresignedUploadQuerySchema,
@@ -71,45 +70,22 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
   } = getEnv(c);
 
   try {
-    const { filename, contentType, type, packId } = c.req.query();
+    const { fileName, contentType } = c.req.query();
 
-    if (!filename || !contentType) {
-      return c.json({ error: 'filename and contentType are required' }, 400);
+    if (!fileName || !contentType) {
+      return c.json({ error: 'fileName and contentType are required' }, 400);
     }
 
-    // Validate content type - only allow images and common file types
-    const allowedContentTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-      'application/pdf',
-    ];
-
-    if (!allowedContentTypes.includes(contentType)) {
-      return c.json({ error: 'Invalid content type. Only images are allowed.' }, 400);
-    }
-
-    // Validate pack uploads require packId
-    if (type === 'pack' && !packId) {
-      return c.json({ error: 'packId is required for pack image uploads' }, 400);
-    }
-
-    // Sanitize filename to prevent directory traversal attacks
-    const sanitizedFilename = filename.replace(/\.\./g, '').replace(/\//g, '-');
-
-    // Automatically prepend user ID to filename for security
+    // Security check: Ensure the filename starts with the user's ID
     // This prevents users from overwriting other users' images
-    const secureFileName = sanitizedFilename.startsWith(`${auth.userId}-`)
-      ? sanitizedFilename
-      : `${auth.userId}-${sanitizedFilename}`;
+    if (!fileName.startsWith(`${auth.userId}-`)) {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
 
     // Create the command for putting an object in the bucket
     const command = new PutObjectCommand({
       Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
-      Key: secureFileName,
+      Key: fileName,
       ContentType: contentType,
     });
 
@@ -121,13 +97,12 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
     return c.json(
       {
         url: presignedUrl,
-        key: secureFileName,
       },
       200,
     );
   } catch (error) {
     c.get('sentry').setContext('upload-params', {
-      filename: c.req.query('filename'),
+      fileName: c.req.query('fileName'),
       contentType: c.req.query('contentType'),
       bucketName: PACKRAT_BUCKET_R2_BUCKET_NAME,
       accountId: CLOUDFLARE_ACCOUNT_ID,
@@ -135,154 +110,6 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
       r2SecretAccessKey: !!R2_SECRET_ACCESS_KEY,
     });
     throw error;
-  }
-});
-
-// Get file information endpoint
-const getFileRoute = createRoute({
-  method: 'get',
-  path: '/:key',
-  tags: ['Upload'],
-  summary: 'Get file information',
-  description: 'Retrieve information about an uploaded file',
-  security: [{ bearerAuth: [] }],
-  request: {
-    params: z.object({
-      key: z.string().openapi({
-        description: 'File key in storage',
-        example: 'test-key-123',
-      }),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'File information retrieved successfully',
-      content: {
-        'application/json': {
-          schema: z.object({
-            key: z.string(),
-            url: z.string(),
-          }),
-        },
-      },
-    },
-    404: {
-      description: 'File not found',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-  },
-});
-
-uploadRoutes.openapi(getFileRoute, async (c) => {
-  const { CLOUDFLARE_ACCOUNT_ID, PACKRAT_BUCKET_R2_BUCKET_NAME } = getEnv(c);
-
-  try {
-    const key = c.req.param('key');
-
-    // Construct the R2 public URL for the file
-    const url = `https://${PACKRAT_BUCKET_R2_BUCKET_NAME}.${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
-
-    return c.json(
-      {
-        key,
-        url,
-      },
-      200,
-    );
-  } catch (error) {
-    c.get('sentry').setContext('upload-params', {
-      key: c.req.param('key'),
-    });
-    throw error;
-  }
-});
-
-// Direct file upload endpoint - using regular route to handle FormData properly
-uploadRoutes.post('/', async (c) => {
-  const auth = c.get('user');
-
-  const {
-    R2_ACCESS_KEY_ID,
-    R2_SECRET_ACCESS_KEY,
-    CLOUDFLARE_ACCOUNT_ID,
-    PACKRAT_BUCKET_R2_BUCKET_NAME,
-  } = getEnv(c);
-
-  try {
-    // Try to parse form data, handling both multipart and non-multipart cases
-    let formData;
-    try {
-      formData = await c.req.formData();
-    } catch (e) {
-      console.error('FormData parsing error:', e);
-      // If form data parsing fails, it's likely not multipart/form-data
-      return c.json({ error: 'file is required' }, 400);
-    }
-
-    const file = formData.get('file');
-
-    if (!file) {
-      return c.json({ error: 'file is required' }, 400);
-    }
-
-    if (!(file instanceof File)) {
-      return c.json({ error: 'file must be a File object' }, 400);
-    }
-
-    // Validate file type
-    const allowedContentTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
-    ];
-
-    if (!allowedContentTypes.includes(file.type)) {
-      return c.json({ error: 'Invalid file type. Only images are allowed.' }, 400);
-    }
-
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return c.json({ error: 'File size exceeds maximum allowed size of 10MB' }, 400);
-    }
-
-    // Sanitize filename
-    const sanitizedFilename = file.name.replace(/\.\./g, '').replace(/\//g, '-');
-    const secureFileName = `${auth.userId}-${Date.now()}-${sanitizedFilename}`;
-
-    // For now, just return a mock response since actual R2 upload in test environment
-    // would require full S3 client setup
-    const mockUrl = `https://${PACKRAT_BUCKET_R2_BUCKET_NAME}.${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${secureFileName}`;
-
-    return c.json(
-      {
-        url: mockUrl,
-        key: secureFileName,
-      },
-      200,
-    );
-  } catch (error) {
-    console.error('Upload error:', error);
-    c.get('sentry').setContext('upload-error', {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    return c.json({ error: 'Failed to upload file' }, 500);
   }
 });
 

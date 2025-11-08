@@ -1,5 +1,4 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
-import { z } from 'zod';
 import {
   ErrorResponseSchema,
   LocationSearchResponseSchema,
@@ -220,303 +219,24 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
   }
 });
 
-// Get current weather endpoint
-const currentWeatherQuerySchema = z
-  .object({
-    lat: z.string().optional(),
-    lon: z.string().optional(),
-    location: z.string().optional(),
-  })
-  .openapi('CurrentWeatherQuery');
-
-const currentRoute = createRoute({
-  method: 'get',
-  path: '/current',
-  tags: ['Weather'],
-  summary: 'Get current weather',
-  description: 'Retrieve current weather conditions for a location by coordinates or name',
-  security: [{ bearerAuth: [] }],
-  request: {
-    query: currentWeatherQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Current weather data',
-      content: {
-        'application/json': {
-          schema: z.object({
-            location: z.any(),
-            current: z.any(),
-          }),
-        },
-      },
-    },
-    400: {
-      description: 'Bad request - Valid latitude and longitude or location name required',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-  },
-});
-
-weatherRoutes.openapi(currentRoute, async (c) => {
-  const { WEATHER_API_KEY } = getEnv(c);
-
-  const latParam = c.req.query('lat');
-  const lonParam = c.req.query('lon');
-  const locationParam = c.req.query('location');
-
-  let query: string;
-
-  if (locationParam) {
-    query = locationParam;
-  } else if (latParam && lonParam) {
-    const latitude = Number.parseFloat(latParam);
-    const longitude = Number.parseFloat(lonParam);
-
-    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-      return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
-    }
-
-    // Validate latitude range (-90 to 90)
-    if (latitude < -90 || latitude > 90) {
-      return c.json({ error: 'latitude must be between -90 and 90 degrees' }, 400);
-    }
-
-    // Validate longitude range (-180 to 180)
-    if (longitude < -180 || longitude > 180) {
-      return c.json({ error: 'longitude must be between -180 and 180 degrees' }, 400);
-    }
-
-    query = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-  } else {
-    return c.json(
-      { error: 'Either lat and lon parameters or location parameter are required' },
-      400,
-    );
-  }
-
-  try {
-    const response = await fetch(
-      `${WEATHER_API_BASE_URL}/current.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}&aqi=yes`,
-    );
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-
-    const data: WeatherAPICurrentResponse = await response.json();
-
-    return c.json(data, 200);
-  } catch (error) {
-    console.error('Error fetching current weather:', error);
-    c.get('sentry').setContext('params', {
-      query,
-      weatherApiUrl: WEATHER_API_BASE_URL,
-      weatherApiKey: !!WEATHER_API_KEY,
-    });
-    return c.json({ error: 'Internal server error', code: 'WEATHER_CURRENT_ERROR' }, 500);
-  }
-});
-
-// Get weather forecast endpoint (with lat/lon params)
-const forecastQuerySchema = z
-  .object({
-    lat: z.string().optional(),
-    lon: z.string().optional(),
-    location: z.string().optional(),
-    days: z.string().optional(),
-  })
-  .openapi('ForecastQuery');
-
-const forecastWithCoordsRoute = createRoute({
+// Get weather data endpoint
+const forecastRoute = createRoute({
   method: 'get',
   path: '/forecast',
   tags: ['Weather'],
   summary: 'Get weather forecast',
-  description: 'Retrieve detailed weather forecast data by coordinates or location name',
+  description:
+    'Retrieve detailed weather forecast data including current conditions, daily forecasts, and alerts',
   security: [{ bearerAuth: [] }],
   request: {
-    query: forecastQuerySchema,
+    query: WeatherLocationIdSchema,
   },
   responses: {
     200: {
       description: 'Weather forecast data',
       content: {
         'application/json': {
-          schema: z.object({
-            location: z.any(),
-            current: z.any().optional(),
-            forecast: z.any(),
-            alerts: z.any().optional(),
-          }),
-        },
-      },
-    },
-    400: {
-      description: 'Bad request - Valid parameters required',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-  },
-});
-
-weatherRoutes.openapi(forecastWithCoordsRoute, async (c) => {
-  const { WEATHER_API_KEY } = getEnv(c);
-
-  const latParam = c.req.query('lat');
-  const lonParam = c.req.query('lon');
-  const locationParam = c.req.query('location');
-  const daysParam = c.req.query('days');
-  const idParam = c.req.query('id');
-
-  // If ID is provided, use the existing forecast logic
-  if (idParam) {
-    const id = Number(idParam);
-    if (Number.isNaN(id)) {
-      return c.json({ error: 'Valid location ID is required' }, 400);
-    }
-
-    try {
-      const query = `id:${id}`;
-      const response = await fetch(
-        `${WEATHER_API_BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}&days=10&aqi=yes&alerts=yes`,
-      );
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data: WeatherAPIForecastResponse = await response.json();
-      const result = {
-        ...data,
-        location: {
-          ...data.location,
-          id: Number(id),
-        },
-      };
-
-      return c.json(result, 200);
-    } catch (error) {
-      console.error('Error fetching weather forecast:', error);
-      c.get('sentry').setContext('params', {
-        id: idParam,
-        weatherApiUrl: WEATHER_API_BASE_URL,
-        weatherApiKey: !!WEATHER_API_KEY,
-      });
-      return c.json({ error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' }, 500);
-    }
-  }
-
-  // Otherwise use lat/lon or location
-  let query: string;
-
-  if (locationParam) {
-    query = locationParam;
-  } else if (latParam && lonParam) {
-    const latitude = Number.parseFloat(latParam);
-    const longitude = Number.parseFloat(lonParam);
-
-    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-      return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
-    }
-
-    // Validate latitude range
-    if (latitude < -90 || latitude > 90) {
-      return c.json({ error: 'latitude must be between -90 and 90 degrees' }, 400);
-    }
-
-    // Validate longitude range
-    if (longitude < -180 || longitude > 180) {
-      return c.json({ error: 'longitude must be between -180 and 180 degrees' }, 400);
-    }
-
-    query = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-  } else {
-    return c.json(
-      { error: 'Either lat and lon parameters, location parameter, or id parameter are required' },
-      400,
-    );
-  }
-
-  // Parse and validate days parameter
-  let days = 3; // Default to 3 days
-  if (daysParam) {
-    const parsedDays = Number.parseInt(daysParam, 10);
-    if (Number.isNaN(parsedDays) || parsedDays <= 0) {
-      return c.json({ error: 'days parameter must be a positive number' }, 400);
-    }
-    if (parsedDays > 10) {
-      return c.json({ error: 'days parameter cannot exceed 10' }, 400);
-    }
-    days = parsedDays;
-  }
-
-  try {
-    const response = await fetch(
-      `${WEATHER_API_BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}&days=${days}&aqi=yes&alerts=yes`,
-    );
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-
-    const data: WeatherAPIForecastResponse = await response.json();
-
-    return c.json(data, 200);
-  } catch (error) {
-    console.error('Error fetching weather forecast:', error);
-    c.get('sentry').setContext('params', {
-      query,
-      days,
-      weatherApiUrl: WEATHER_API_BASE_URL,
-      weatherApiKey: !!WEATHER_API_KEY,
-    });
-    return c.json({ error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' }, 500);
-  }
-});
-
-// Get weather alerts endpoint
-const alertsRoute = createRoute({
-  method: 'get',
-  path: '/alerts',
-  tags: ['Weather'],
-  summary: 'Get weather alerts',
-  description: 'Retrieve weather alerts for a location by coordinates',
-  security: [{ bearerAuth: [] }],
-  request: {
-    query: WeatherCoordinateQuerySchema,
-  },
-  responses: {
-    200: {
-      description: 'Weather alerts data',
-      content: {
-        'application/json': {
-          schema: z.object({
-            alerts: z.any(),
-          }),
+          schema: WeatherForecastSchema,
         },
       },
     },
@@ -539,39 +259,22 @@ const alertsRoute = createRoute({
   },
 });
 
-weatherRoutes.openapi(alertsRoute, async (c) => {
+weatherRoutes.openapi(forecastRoute, async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
-  const latParam = c.req.query('lat');
-  const lonParam = c.req.query('lon');
+  const idParam = c.req.query('id');
+  const id = Number(idParam);
 
-  if (!latParam || !lonParam) {
-    return c.json({ error: 'Latitude and longitude parameters are required' }, 400);
+  if (!idParam || Number.isNaN(id)) {
+    return c.json({ error: 'Valid location ID is required' }, 400);
   }
-
-  const latitude = Number.parseFloat(latParam);
-  const longitude = Number.parseFloat(lonParam);
-
-  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-    return c.json({ error: 'Valid latitude and longitude parameters are required' }, 400);
-  }
-
-  // Validate latitude range
-  if (latitude < -90 || latitude > 90) {
-    return c.json({ error: 'latitude must be between -90 and 90 degrees' }, 400);
-  }
-
-  // Validate longitude range
-  if (longitude < -180 || longitude > 180) {
-    return c.json({ error: 'longitude must be between -180 and 180 degrees' }, 400);
-  }
-
-  const query = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
 
   try {
-    // Use forecast endpoint with alerts=yes to get alert data
+    const query = `id:${id}`;
+
+    // Get forecast data with all the details we need
     const response = await fetch(
-      `${WEATHER_API_BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}&days=1&aqi=no&alerts=yes`,
+      `${WEATHER_API_BASE_URL}/forecast.json?key=${WEATHER_API_KEY}&q=${encodeURIComponent(query)}&days=10&aqi=yes&alerts=yes`,
     );
 
     if (!response.ok) {
@@ -579,23 +282,23 @@ weatherRoutes.openapi(alertsRoute, async (c) => {
     }
 
     const data: WeatherAPIForecastResponse = await response.json();
-
-    // Return just the alerts portion
-    return c.json(
-      {
-        alerts: data.alerts || { alert: [] },
+    const result = {
+      ...data,
+      location: {
+        ...data.location,
+        id: Number(id),
       },
-      200,
-    );
+    };
+
+    return c.json(result, 200);
   } catch (error) {
-    console.error('Error fetching weather alerts:', error);
+    console.error('Error fetching weather forecast:', error);
     c.get('sentry').setContext('params', {
-      latitude,
-      longitude,
+      id,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
-    return c.json({ error: 'Internal server error', code: 'WEATHER_ALERTS_ERROR' }, 500);
+    return c.json({ error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' }, 500);
   }
 });
 
