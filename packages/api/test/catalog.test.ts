@@ -42,50 +42,44 @@ describe('Catalog Routes', () => {
     it('returns catalog items list', async () => {
       const res = await apiWithAuth('/catalog/');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.items).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.items).toBeTruthy();
     });
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/catalog/?page=1&limit=10');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/catalog/?category=shelter');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts search query', async () => {
       const res = await apiWithAuth('/catalog/?q=tent');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts weight range filters', async () => {
       const res = await apiWithAuth('/catalog/?minWeight=0&maxWeight=1000');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts sorting parameters', async () => {
       const res = await apiWithAuth('/catalog/?sortBy=weight&sortOrder=asc');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -93,10 +87,9 @@ describe('Catalog Routes', () => {
     it('returns available categories', async () => {
       const res = await apiWithAuth('/catalog/categories');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.categories).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.categories).toBeTruthy();
     });
   });
 
@@ -104,13 +97,10 @@ describe('Catalog Routes', () => {
     it('returns single catalog item', async () => {
       const res = await apiWithAuth('/catalog/1');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['id', 'name']);
-        expect(data.id).toBeDefined();
-        expect(data.name).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['id', 'name']);
+      expect(data.id).toBeDefined();
+      expect(data.name).toBeDefined();
     });
 
     it('returns 404 for non-existent item', async () => {
@@ -137,10 +127,9 @@ describe('Catalog Routes', () => {
 
       const res = await apiWithAuth('/catalog/', httpMethods.post('', newItem));
 
-      if (res.status === 201 || res.status === 200) {
-        const data = await expectJsonResponse(res, ['id']);
-        expect(data.id).toBeDefined();
-      }
+      expect([201, 200]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id']);
+      expect(data.id).toBeDefined();
     });
 
     it('validates required fields', async () => {
@@ -195,12 +184,9 @@ describe('Catalog Routes', () => {
 
       const res = await apiWithAuth('/catalog/1', httpMethods.put('', updateData));
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.id).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBeDefined();
     });
 
     it('returns 404 for non-existent item', async () => {
@@ -228,12 +214,7 @@ describe('Catalog Routes', () => {
     it('deletes catalog item', async () => {
       const res = await apiWithAuth('/catalog/1', httpMethods.delete(''));
 
-      if (res.status === 200 || res.status === 204) {
-        // Success - item deleted
-        expect(res.status).toBeOneOf([200, 204]);
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBeOneOf([200, 204]);
     });
 
     it('returns 404 for non-existent item', async () => {
@@ -246,12 +227,8 @@ describe('Catalog Routes', () => {
     it('queues ETL job (admin only)', async () => {
       const res = await apiWithAdmin('/catalog/queue-etl', httpMethods.post('', {}));
 
-      // This may require admin permissions
-      if (res.status === 403) {
-        expect(res.status).toBe(403);
-      } else if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('regular users cannot queue ETL', async () => {
@@ -264,11 +241,8 @@ describe('Catalog Routes', () => {
     it('backfills embeddings (admin only)', async () => {
       const res = await apiWithAdmin('/catalog/backfill-embeddings', httpMethods.post('', {}));
 
-      if (res.status === 403) {
-        expect(res.status).toBe(403);
-      } else if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('regular users cannot backfill embeddings', async () => {
@@ -286,23 +260,20 @@ describe('Catalog Routes', () => {
     it('returns similar items for existing catalog item', async () => {
       const res = await apiWithAuth('/catalog/1/similar');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['items', 'total', 'sourceItem']);
-        expect(Array.isArray(data.items)).toBeTruthy();
-        expect(typeof data.total).toBe('number');
-        expect(data.sourceItem).toBeDefined();
-        expect(data.sourceItem.id).toBeDefined();
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['items', 'total', 'sourceItem']);
+      expect(Array.isArray(data.items)).toBeTruthy();
+      expect(typeof data.total).toBe('number');
+      expect(data.sourceItem).toBeDefined();
+      expect(data.sourceItem.id).toBeDefined();
 
-        // Check that each similar item has a similarity score
-        if (data.items.length > 0) {
-          for (const item of data.items) {
-            expect(typeof item.similarity).toBe('number');
-            expect(item.similarity).toBeGreaterThan(0);
-            expect(item.similarity).toBeLessThanOrEqual(1);
-          }
+      // Check that each similar item has a similarity score
+      if (data.items.length > 0) {
+        for (const item of data.items) {
+          expect(typeof item.similarity).toBe('number');
+          expect(item.similarity).toBeGreaterThan(0);
+          expect(item.similarity).toBeLessThanOrEqual(1);
         }
-      } else if (res.status === 404) {
-        expectNotFound(res);
       }
     });
 
@@ -314,44 +285,35 @@ describe('Catalog Routes', () => {
     it('accepts limit parameter', async () => {
       const res = await apiWithAuth('/catalog/1/similar?limit=3');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['items']);
-        expect(data.items.length).toBeLessThanOrEqual(3);
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['items']);
+      expect(data.items.length).toBeLessThanOrEqual(3);
     });
 
     it('accepts threshold parameter', async () => {
       const res = await apiWithAuth('/catalog/1/similar?threshold=0.5');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['items']);
-        // All returned items should have similarity >= 0.5
-        if (data.items.length > 0) {
-          for (const item of data.items) {
-            expect(item.similarity).toBeGreaterThanOrEqual(0.5);
-          }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['items']);
+      // All returned items should have similarity >= 0.5
+      if (data.items.length > 0) {
+        for (const item of data.items) {
+          expect(item.similarity).toBeGreaterThanOrEqual(0.5);
         }
-      } else if (res.status === 404) {
-        expectNotFound(res);
       }
     });
 
     it('validates limit parameter bounds', async () => {
       // Test upper bound
       const res1 = await apiWithAuth('/catalog/1/similar?limit=50');
-      if (res1.status === 200) {
-        const data = await expectJsonResponse(res1, ['items']);
-        expect(data.items.length).toBeLessThanOrEqual(20); // Should be capped at 20
-      }
+      expect(res1.status).toBe(200);
+      const data = await expectJsonResponse(res1, ['items']);
+      expect(data.items.length).toBeLessThanOrEqual(20); // Should be capped at 20
 
       // Test lower bound
       const res2 = await apiWithAuth('/catalog/1/similar?limit=0');
-      if (res2.status === 200) {
-        const data = await expectJsonResponse(res2, ['items']);
-        expect(data.items.length).toBeGreaterThanOrEqual(0); // Should be at least 0
-      }
+      const data2 = await expectJsonResponse(res2, ['items']);
+      expect(data2.items.length).toBeGreaterThanOrEqual(0); // Should be at least 0
     });
   });
 });

@@ -46,16 +46,10 @@ describe('Image Detection Routes', () => {
         }),
       );
 
-      // In test environment, this might fail due to missing OpenAI API key
-      // but we can still test the request structure
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['detectedItems', 'summary']);
-        expect(Array.isArray(data.detectedItems)).toBe(true);
-        expect(typeof data.summary).toBe('string');
-      } else {
-        // Expected to fail in test environment without proper API keys or auth
-        expect([400, 403, 500].includes(res.status)).toBe(true);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['detectedItems', 'summary']);
+      expect(Array.isArray(data.detectedItems)).toBe(true);
+      expect(typeof data.summary).toBe('string');
     });
 
     it('accepts matchLimit parameter', async () => {
@@ -67,11 +61,9 @@ describe('Image Detection Routes', () => {
         }),
       );
 
-      // Response structure should be valid regardless of execution success
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['detectedItems', 'summary']);
-        expect(Array.isArray(data.detectedItems)).toBe(true);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['detectedItems', 'summary']);
+      expect(Array.isArray(data.detectedItems)).toBe(true);
     });
 
     it('validates matchLimit range', async () => {

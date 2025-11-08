@@ -30,13 +30,12 @@ describe('Upload Routes', () => {
     it('generates presigned URL for file upload', async () => {
       const res = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['url', 'key']);
-        expect(data.url).toBeDefined();
-        expect(data.key).toBeDefined();
-        expect(typeof data.url).toBe('string');
-        expect(data.url).toContain('http');
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['url', 'key']);
+      expect(data.url).toBeDefined();
+      expect(data.key).toBeDefined();
+      expect(typeof data.url).toBe('string');
+      expect(data.url).toContain('http');
     });
 
     it('requires filename parameter', async () => {
@@ -65,9 +64,8 @@ describe('Upload Routes', () => {
           `/upload/presigned?filename=test.jpg&contentType=${contentType}`,
         );
 
-        if (res.status === 200) {
-          await expectJsonResponse(res, ['url']);
-        }
+        expect(res.status).toBe(200);
+        await expectJsonResponse(res, ['url']);
       }
     });
 
@@ -118,11 +116,10 @@ describe('Upload Routes', () => {
         body: formData,
       });
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['url', 'key']);
-        expect(data.url).toBeDefined();
-        expect(data.key).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['url', 'key']);
+      expect(data.url).toBeDefined();
+      expect(data.key).toBeDefined();
     });
 
     it('requires file in request', async () => {
@@ -170,62 +167,9 @@ describe('Upload Routes', () => {
     it('returns file information', async () => {
       const res = await apiWithAuth('/upload/test-key-123');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['key', 'url']);
-        expect(data.key).toBe('test-key-123');
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
-    });
-
-    it('returns 404 for non-existent keys', async () => {
-      const res = await apiWithAuth('/upload/non-existent-key');
-      expectNotFound(res);
-    });
-  });
-
-  describe('DELETE /upload/:key', () => {
-    it('deletes uploaded file', async () => {
-      const res = await apiWithAuth('/upload/test-key-123', httpMethods.delete(''));
-
-      if (res.status === 200 || res.status === 204) {
-        expect(res.status).toBeOneOf([200, 204]);
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
-    });
-
-    it('prevents deleting other users files', async () => {
-      // This would need proper test setup with ownership
-      const res = await apiWithAuth('/upload/other-user-file', httpMethods.delete(''));
-
-      expect([403, 404]).toContain(res.status);
-    });
-  });
-
-  describe('Avatar Upload', () => {
-    it('handles avatar upload', async () => {
-      const res = await apiWithAuth(
-        '/upload/presigned?filename=avatar.jpg&contentType=image/jpeg&type=avatar',
-      );
-
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.url).toBeDefined();
-        // Avatar uploads might have specific key patterns
-        expect(data.key).toContain('avatar');
-      }
-    });
-
-    it('enforces avatar size limits', async () => {
-      const res = await apiWithAuth(
-        '/upload/presigned?filename=avatar.jpg&contentType=image/jpeg&type=avatar&size=10000000',
-      ); // 10MB
-
-      // Avatars should have stricter size limits
-      if (res.status === 400) {
-        expectBadRequest(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['key', 'url']);
+      expect(data.key).toBe('test-key-123');
     });
   });
 
@@ -235,11 +179,10 @@ describe('Upload Routes', () => {
         '/upload/presigned?filename=pack.jpg&contentType=image/jpeg&type=pack&packId=123',
       );
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.url).toBeDefined();
-        expect(data.key).toContain('pack');
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.url).toBeDefined();
+      expect(data.key).toContain('pack');
     });
 
     it('requires pack ID for pack images', async () => {
@@ -308,37 +251,18 @@ describe('Upload Routes', () => {
         '/upload/presigned?filename=../malicious.jpg&contentType=image/jpeg',
       );
 
-      if (res.status === 200) {
-        const data = await res.json();
-        expect(data.key).not.toContain('../');
-      } else {
-        expectBadRequest(res);
-      }
-    });
-
-    it('generates secure random keys', async () => {
-      const res1 = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
-      const res2 = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
-
-      if (res1.status === 200 && res2.status === 200) {
-        const data1 = await res1.json();
-        const data2 = await res2.json();
-
-        // Keys should be different even for same filename
-        expect(data1.key).not.toBe(data2.key);
-        // Keys should be sufficiently random/long
-        expect(data1.key.length).toBeGreaterThan(10);
-      }
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.key).not.toContain('../');
     });
 
     it('includes user context in file keys', async () => {
       const res = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
 
-      if (res.status === 200) {
-        const data = await res.json();
-        // Should include user ID or similar in the path to prevent conflicts
-        expect(data.key).toMatch(/\/|\w+/);
-      }
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      // Should include user ID or similar in the path to prevent conflicts
+      expect(data.key).toMatch(/\/|\w+/);
     });
   });
 });

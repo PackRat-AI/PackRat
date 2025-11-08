@@ -36,50 +36,44 @@ describe('User Routes', () => {
     it('returns user items list', async () => {
       const res = await apiWithAuth('/user/items');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.items).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.items).toBeTruthy();
     });
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/user/items?page=1&limit=10');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts search query', async () => {
       const res = await apiWithAuth('/user/items?q=tent');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/user/items?category=shelter');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts weight range filters', async () => {
       const res = await apiWithAuth('/user/items?minWeight=100&maxWeight=2000');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts sorting parameters', async () => {
       const res = await apiWithAuth('/user/items?sortBy=name&sortOrder=asc');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -87,13 +81,10 @@ describe('User Routes', () => {
     it('returns single user item', async () => {
       const res = await apiWithAuth('/user/items/1');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['id', 'name']);
-        expect(data.id).toBeDefined();
-        expect(data.name).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['id', 'name']);
+      expect(data.id).toBeDefined();
+      expect(data.name).toBeDefined();
     });
 
     it('returns 404 for non-existent item', async () => {
@@ -128,10 +119,9 @@ describe('User Routes', () => {
 
       const res = await apiWithAuth('/user/items', httpMethods.post('', newItem));
 
-      if (res.status === 201 || res.status === 200) {
-        const data = await expectJsonResponse(res, ['id']);
-        expect(data.id).toBeDefined();
-      }
+      expect([201, 200]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id']);
+      expect(data.id).toBeDefined();
     });
 
     it('validates required fields', async () => {
@@ -203,9 +193,8 @@ describe('User Routes', () => {
 
       const res = await apiWithAuth('/user/items', httpMethods.post('', itemWithOptionals));
 
-      if (res.status === 201 || res.status === 200) {
-        await expectJsonResponse(res, ['id']);
-      }
+      expect([201, 200]).toContain(res.status);
+      await expectJsonResponse(res, ['id']);
     });
   });
 
@@ -221,12 +210,9 @@ describe('User Routes', () => {
 
       const res = await apiWithAuth('/user/items/1', httpMethods.put('', updateData));
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.id).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBeDefined();
     });
 
     it('returns 404 for non-existent item', async () => {
@@ -272,11 +258,8 @@ describe('User Routes', () => {
         }),
       );
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -284,11 +267,7 @@ describe('User Routes', () => {
     it('deletes user item', async () => {
       const res = await apiWithAuth('/user/items/1', httpMethods.delete(''));
 
-      if (res.status === 200 || res.status === 204) {
-        expect(res.status).toBeOneOf([200, 204]);
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect([200, 204]).toContain(res.status);
     });
 
     it('returns 404 for non-existent item', async () => {

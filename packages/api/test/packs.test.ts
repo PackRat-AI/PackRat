@@ -41,50 +41,44 @@ describe('Packs Routes', () => {
     it('returns user packs list', async () => {
       const res = await apiWithAuth('/packs');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.packs).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.packs).toBeTruthy();
     });
 
     it('accepts pagination parameters', async () => {
       const res = await apiWithAuth('/packs?page=1&limit=10');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts search query', async () => {
       const res = await apiWithAuth('/packs?q=hiking');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts activity filter', async () => {
       const res = await apiWithAuth('/packs?activity=hiking');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts weight range filters', async () => {
       const res = await apiWithAuth('/packs?minWeight=1000&maxWeight=5000');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts public filter', async () => {
       const res = await apiWithAuth('/packs?public=true');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -92,13 +86,10 @@ describe('Packs Routes', () => {
     it('returns single pack', async () => {
       const res = await apiWithAuth('/packs/1');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['id', 'name']);
-        expect(data.id).toBeDefined();
-        expect(data.name).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['id', 'name']);
+      expect(data.id).toBeDefined();
+      expect(data.name).toBeDefined();
     });
 
     it('returns 404 for non-existent pack', async () => {
@@ -123,10 +114,9 @@ describe('Packs Routes', () => {
 
       const res = await apiWithAuth('/packs', httpMethods.post('', newPack));
 
-      if (res.status === 201 || res.status === 200) {
-        const data = await expectJsonResponse(res, ['id']);
-        expect(data.id).toBeDefined();
-      }
+      expect([200, 201]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id']);
+      expect(data.id).toBeDefined();
     });
 
     it('validates required fields', async () => {
@@ -166,12 +156,9 @@ describe('Packs Routes', () => {
 
       const res = await apiWithAuth('/packs/1', httpMethods.put('', updateData));
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.id).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBeDefined();
     });
 
     it('returns 404 for non-existent pack', async () => {
@@ -204,11 +191,7 @@ describe('Packs Routes', () => {
     it('deletes pack', async () => {
       const res = await apiWithAuth('/packs/1', httpMethods.delete(''));
 
-      if (res.status === 200 || res.status === 204) {
-        expect(res.status).toBeOneOf([200, 204]);
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect([200, 204]).toContain(res.status);
     });
 
     it('returns 404 for non-existent pack', async () => {
@@ -230,12 +213,9 @@ describe('Packs Routes', () => {
       it('returns pack items', async () => {
         const res = await apiWithAuth('/packs/1/items');
 
-        if (res.status === 200) {
-          const data = await expectJsonResponse(res);
-          expect(Array.isArray(data) || data.items).toBeTruthy();
-        } else if (res.status === 404) {
-          expectNotFound(res);
-        }
+        expect(res.status).toBe(200);
+        const data = await expectJsonResponse(res);
+        expect(Array.isArray(data) || data.items).toBeTruthy();
       });
     });
 
@@ -249,12 +229,9 @@ describe('Packs Routes', () => {
 
         const res = await apiWithAuth('/packs/1/items', httpMethods.post('', newItem));
 
-        if (res.status === 201 || res.status === 200) {
-          const data = await expectJsonResponse(res, ['id']);
-          expect(data.id).toBeDefined();
-        } else if (res.status === 404) {
-          expectNotFound(res);
-        }
+        expect([200, 201]).toContain(res.status);
+        const data = await expectJsonResponse(res, ['id']);
+        expect(data.id).toBeDefined();
       });
 
       it('validates required fields', async () => {
@@ -272,11 +249,8 @@ describe('Packs Routes', () => {
 
         const res = await apiWithAuth('/packs/1/items/1', httpMethods.put('', updateData));
 
-        if (res.status === 200) {
-          await expectJsonResponse(res);
-        } else if (res.status === 404) {
-          expectNotFound(res);
-        }
+        expect(res.status).toBe(200);
+        await expectJsonResponse(res);
       });
     });
 
@@ -284,11 +258,7 @@ describe('Packs Routes', () => {
       it('removes item from pack', async () => {
         const res = await apiWithAuth('/packs/1/items/1', httpMethods.delete(''));
 
-        if (res.status === 200 || res.status === 204) {
-          expect(res.status).toBeOneOf([200, 204]);
-        } else if (res.status === 404) {
-          expectNotFound(res);
-        }
+        expect([200, 204]).toContain(res.status);
       });
     });
   });
@@ -304,10 +274,9 @@ describe('Packs Routes', () => {
 
       const res = await apiWithAuth('/packs/generate', httpMethods.post('', generateRequest));
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.items || data.suggestions).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.items || data.suggestions).toBeDefined();
     });
 
     it('validates generate request', async () => {
