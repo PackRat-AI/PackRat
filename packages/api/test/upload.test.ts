@@ -82,7 +82,7 @@ describe('Upload Routes', () => {
 
     it('requires fileName to start with user ID', async () => {
       const res = await apiWithAuth('/upload/presigned?fileName=test.jpg&contentType=image/jpeg');
-      
+
       // Should reject filenames that don't start with user ID
       expect(res.status).toBe(403);
       const data = await res.json();

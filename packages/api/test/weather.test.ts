@@ -450,7 +450,7 @@ describe('Weather Routes', () => {
     });
   });
 
-  // Error Handling tests use /weather/current which doesn't exist  
+  // Error Handling tests use /weather/current which doesn't exist
   describe.skip('Error Handling', () => {
     it('handles malformed coordinates gracefully', async () => {
       const res = await apiWithAuth('/weather/current?lat=invalid&lon=invalid');
