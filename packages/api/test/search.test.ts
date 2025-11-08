@@ -299,9 +299,6 @@ describe('Search Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data) || data.suggestions).toBeTruthy();
-      } else if (res.status === 404) {
-      // Feature may not be implemented yet
-      expect(res.status).toBe(404);
     });
 
     it('provides autocomplete', async () => {
@@ -310,9 +307,6 @@ describe('Search Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data) || data.completions).toBeTruthy();
-      } else if (res.status === 404) {
-      // Feature may not be implemented yet
-      expect(res.status).toBe(404);
     });
   });
 
@@ -335,8 +329,6 @@ describe('Search Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 400) {
-      expectBadRequest(res);
     });
 
     it('handles invalid pagination parameters', async () => {

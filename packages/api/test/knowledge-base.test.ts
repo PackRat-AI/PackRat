@@ -34,8 +34,6 @@ describe('Knowledge Base Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(data.categories || data.articles || Array.isArray(data)).toBeTruthy();
-      // Feature may not be implemented yet
-      expect(res.status).toBe(404);
     });
 
     it('includes category information', async () => {
@@ -44,7 +42,8 @@ describe('Knowledge Base Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       if (data.categories) {
-      expect(Array.isArray(data.categories)).toBe(true);
+        expect(Array.isArray(data.categories)).toBe(true);
+      }
     });
   });
 
@@ -66,9 +65,10 @@ describe('Knowledge Base Routes', () => {
       const categories = Array.isArray(data) ? data : data.categories;
 
       if (categories && categories.length > 0) {
-      const category = categories[0];
-      expect(category.name || category.title).toBeDefined();
-      expect(category.slug || category.id).toBeDefined();
+        const category = categories[0];
+        expect(category.name || category.title).toBeDefined();
+        expect(category.slug || category.id).toBeDefined();
+      }
     });
   });
 
@@ -87,8 +87,6 @@ describe('Knowledge Base Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
 
     it('accepts category filter', async () => {
@@ -96,8 +94,6 @@ describe('Knowledge Base Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
 
     it('accepts tag filter', async () => {
@@ -105,8 +101,6 @@ describe('Knowledge Base Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
 
     it('accepts featured filter', async () => {
@@ -114,8 +108,6 @@ describe('Knowledge Base Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
   });
 
@@ -128,8 +120,6 @@ describe('Knowledge Base Routes', () => {
       expect(data.id).toBeDefined();
       expect(data.title).toBeDefined();
       expect(data.content || data.body).toBeDefined();
-      } else if (res.status === 404) {
-      expectNotFound(res);
     });
 
     it('includes article metadata', async () => {
@@ -148,7 +138,8 @@ describe('Knowledge Base Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       if (data.relatedArticles) {
-      expect(Array.isArray(data.relatedArticles)).toBe(true);
+        expect(Array.isArray(data.relatedArticles)).toBe(true);
+      }
     });
 
     it('returns 404 for non-existent article', async () => {
@@ -164,18 +155,14 @@ describe('Knowledge Base Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data) || data.results).toBeTruthy();
-      expect(res.status).toBe(404);
     });
 
     it('requires query parameter', async () => {
       const res = await apiWithAuth('/knowledge-base/search');
 
-      if (res.status === 400) {
       expectBadRequest(res);
       const data = await res.json();
       expect(data.error).toContain('query');
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
 
     it('accepts category filter', async () => {
@@ -191,8 +178,6 @@ describe('Knowledge Base Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
 
     it('handles empty search results', async () => {
@@ -202,9 +187,8 @@ describe('Knowledge Base Routes', () => {
       const data = await expectJsonResponse(res);
       const results = Array.isArray(data) ? data : data.results;
       if (results) {
-      expect(results.length).toBe(0);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
+        expect(results.length).toBe(0);
+      }
     });
   });
 
@@ -235,8 +219,6 @@ describe('Knowledge Base Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
 
     it('handles multiple tags', async () => {
@@ -244,8 +226,6 @@ describe('Knowledge Base Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
   });
 
@@ -256,7 +236,8 @@ describe('Knowledge Base Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       if (data.rating || data.votes) {
-      expect(typeof data.rating).toBe('number');
+        expect(typeof data.rating).toBe('number');
+      }
     });
 
     it('may support article comments', async () => {
@@ -270,14 +251,12 @@ describe('Knowledge Base Routes', () => {
 
     it('may support bookmarking articles', async () => {
       const res = await apiWithAuth(
-      '/knowledge-base/articles/1/bookmark',
-      httpMethods.post('', {}),
+        '/knowledge-base/articles/1/bookmark',
+        httpMethods.post('', {}),
       );
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
   });
 
@@ -286,11 +265,10 @@ describe('Knowledge Base Routes', () => {
       const res = await apiWithAuth('/knowledge-base/articles?page=invalid&limit=notanumber');
 
       if (res.status === 400) {
-      expectBadRequest(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
+        expectBadRequest(res);
       } else {
-      expect(res.status).toBe(200);
+        expect(res.status).toBe(200);
+      }
     });
 
     it('handles invalid category filters', async () => {
@@ -301,8 +279,6 @@ describe('Knowledge Base Routes', () => {
       const articles = Array.isArray(data) ? data : data.articles;
       expect(articles).toBeDefined();
       expectBadRequest(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
     });
 
     it('handles very long search queries', async () => {
@@ -310,11 +286,10 @@ describe('Knowledge Base Routes', () => {
       const res = await apiWithAuth(`/knowledge-base/search?q=${longQuery}`);
 
       if (res.status === 400) {
-      expectBadRequest(res);
-      } else if (res.status === 404) {
-      expect(res.status).toBe(404);
+        expectBadRequest(res);
       } else {
-      expect(res.status).toBe(200);
+        expect(res.status).toBe(200);
+      }
     });
   });
 
@@ -334,7 +309,8 @@ describe('Knowledge Base Routes', () => {
         expect(res.status).toBe(403);
       } else if (res.status === 201 || res.status === 200) {
         await expectJsonResponse(res, ['id']);
-      expect(res.status).toBe(404);
+        expect(res.status).toBe(404);
+      }
     });
 
     it('may allow updating articles (admin only)', async () => {

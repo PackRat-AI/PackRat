@@ -91,8 +91,6 @@ describe('Packs Routes', () => {
       expect(data.id).toBeDefined();
       expect(data.name).toBeDefined();
     });
-      }
-    });
 
     it('returns 404 for non-existent pack', async () => {
       const res = await apiWithAuth('/packs/999999');

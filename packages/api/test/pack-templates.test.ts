@@ -140,8 +140,6 @@ describe('Pack Templates Routes', () => {
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data) || data.items).toBeTruthy();
-      } else if (res.status === 404) {
-      expectNotFound(res);
     });
 
     it('returns items with catalog information', async () => {
@@ -151,7 +149,6 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res);
       const items = Array.isArray(data) ? data : data.items;
 
-      if (items && items.length > 0) {
       const item = items[0];
       expect(item.name || item.catalogItem?.name).toBeDefined();
       expect(item.weight || item.catalogItem?.weight).toBeDefined();
@@ -183,7 +180,6 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      expectNotFound(res);
     });
 
     it('accepts optional/required filter', async () => {
@@ -191,8 +187,6 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 404) {
-      expectNotFound(res);
     });
   });
 
@@ -204,7 +198,6 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res);
       const templates = Array.isArray(data) ? data : data.templates;
 
-      if (templates && templates.length > 0) {
       const template = templates[0];
       expect(template.activity).toBe('hiking');
     });
@@ -216,10 +209,8 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res);
       const templates = Array.isArray(data) ? data : data.templates;
 
-      if (templates && templates.length > 0) {
-        const template = templates[0];
-        expect(template.activity).toBe('backpacking');
-      }
+      const template = templates[0];
+      expect(template.activity).toBe('backpacking');
     });
 
     it('handles camping templates', async () => {
@@ -265,8 +256,6 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else if (res.status === 400) {
-      expectBadRequest(res);
     });
 
     it('handles large pagination requests', async () => {
@@ -274,9 +263,10 @@ describe('Pack Templates Routes', () => {
 
       // Should either cap the limit or return 400
       if (res.status === 400) {
-      expectBadRequest(res);
+        expectBadRequest(res);
       } else {
-      expect(res.status).toBe(200);
+        expect(res.status).toBe(200);
+      }
     });
   });
 
@@ -288,9 +278,6 @@ describe('Pack Templates Routes', () => {
       // This endpoint may not exist yet, but testing the concept
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else {
-      // Expected if this feature doesn't exist yet
-      expect([404, 501]).toContain(res.status);
     });
 
     it('supports template customization preview', async () => {
@@ -308,9 +295,6 @@ describe('Pack Templates Routes', () => {
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
-      } else {
-      // Expected if this feature doesn't exist yet
-      expect([404, 501]).toContain(res.status);
     });
   });
 });

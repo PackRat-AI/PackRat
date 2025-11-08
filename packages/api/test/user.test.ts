@@ -271,9 +271,6 @@ describe('User Routes', () => {
 
       expect([200, 204]).toContain(res.status);
     });
-        expectNotFound(res);
-      }
-    });
 
     it('returns 404 for non-existent item', async () => {
       const res = await apiWithAuth('/user/items/999999', httpMethods.delete(''));

@@ -171,7 +171,6 @@ describe('Guides Routes', () => {
       expect(data.title).toBeDefined();
       expect(data.category || data.categories).toBeDefined();
     });
-    });
 
     it('returns 404 for non-existent guide', async () => {
       const res = await apiWithAuth('/guides/999999');

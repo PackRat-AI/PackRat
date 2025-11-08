@@ -215,10 +215,7 @@ describe('Catalog Routes', () => {
     it('deletes catalog item', async () => {
       const res = await apiWithAuth('/catalog/1', httpMethods.delete(''));
 
-      if (res.status === 200 || res.status === 204) {
-        // Success - item deleted
-        expect(res.status).toBeOneOf([200, 204]);
-      expectNotFound(res);
+      expect(res.status).toBeOneOf([200, 204]);
     });
 
     it('returns 404 for non-existent item', async () => {
@@ -317,15 +314,12 @@ describe('Catalog Routes', () => {
       const res1 = await apiWithAuth('/catalog/1/similar?limit=50');
       expect(res1.status).toBe(200);
       const data = await expectJsonResponse(res1, ['items']);
-        expect(data.items.length).toBeLessThanOrEqual(20); // Should be capped at 20
-      }
+      expect(data.items.length).toBeLessThanOrEqual(20); // Should be capped at 20
 
       // Test lower bound
       const res2 = await apiWithAuth('/catalog/1/similar?limit=0');
-      if (res2.status === 200) {
-        const data = await expectJsonResponse(res2, ['items']);
-        expect(data.items.length).toBeGreaterThanOrEqual(0); // Should be at least 0
-      }
+      const data2 = await expectJsonResponse(res2, ['items']);
+      expect(data2.items.length).toBeGreaterThanOrEqual(0); // Should be at least 0
     });
   });
 });
