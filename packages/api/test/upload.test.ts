@@ -4,7 +4,6 @@ import {
   apiWithAuth,
   expectBadRequest,
   expectJsonResponse,
-  expectNotFound,
   expectUnauthorized,
   httpMethods,
 } from './utils/test-helpers';
@@ -49,13 +48,10 @@ describe('Upload Routes', () => {
       const res = await apiWithAuth(
         '/upload/presigned?fileName=1-test.exe&contentType=application/x-executable',
       );
-      // Current implementation doesn't validate content type
-      // So this test is conditional
-      if (res.status === 400) {
-        expectBadRequest(res);
-        const data = await res.json();
-        expect(data.error).toBeDefined();
-      }
+      expectBadRequest(res);
+
+      const data = await res.json();
+      expect(data.error).toBeDefined();
     });
 
     it('accepts image content types', async () => {
@@ -94,111 +90,9 @@ describe('Upload Routes', () => {
         '/upload/presigned?fileName=1-huge.jpg&contentType=image/jpeg&size=50000000',
       ); // 50MB
 
-      // Current implementation doesn't validate file size at presigned URL generation
-      // Size validation would happen during actual upload to R2
-      if (res.status === 400) {
-        expectBadRequest(res);
-        const data = await res.json();
-        expect(data.error).toContain('size');
-      }
-    });
-  });
-
-  // POST /upload endpoint doesn't exist in current implementation
-  // Direct uploads use presigned URLs instead
-  describe.skip('POST /upload', () => {
-    it('handles direct file upload', async () => {
-      // Create a mock file
-      const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-      const formData = new FormData();
-      formData.append('file', mockFile);
-
-      const res = await apiWithAuth('/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      expect(res.status).toBe(200);
-      const data = await expectJsonResponse(res, ['url', 'key']);
-      expect(data.url).toBeDefined();
-      expect(data.key).toBeDefined();
-    });
-
-    it('requires file in request', async () => {
-      const res = await apiWithAuth('/upload', httpMethods.post('', {}));
       expectBadRequest(res);
-
       const data = await res.json();
-      expect(data.error).toContain('file');
-    });
-
-    it('validates file type on direct upload', async () => {
-      const mockFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
-      const formData = new FormData();
-      formData.append('file', mockFile);
-
-      const res = await apiWithAuth('/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      expectBadRequest(res);
-    });
-
-    it('validates file size on direct upload', async () => {
-      // Create a mock large file
-      const largeContent = 'a'.repeat(10000000); // 10MB
-      const mockFile = new File([largeContent], 'large.jpg', { type: 'image/jpeg' });
-      const formData = new FormData();
-      formData.append('file', mockFile);
-
-      const res = await apiWithAuth('/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.status === 400) {
-        expectBadRequest(res);
-        const data = await res.json();
-        expect(data.error).toContain('size');
-      }
-    });
-  });
-
-  // GET /upload/:key endpoint doesn't exist in current implementation
-  describe.skip('GET /upload/:key', () => {
-    it('returns file information', async () => {
-      const res = await apiWithAuth('/upload/test-key-123');
-
-      expect(res.status).toBe(200);
-      const data = await expectJsonResponse(res, ['key', 'url']);
-      expect(data.key).toBe('test-key-123');
-    });
-  });
-
-  // Pack image upload features with type and packId don't exist in current implementation
-  describe.skip('Pack Image Upload', () => {
-    it('handles pack image upload', async () => {
-      const res = await apiWithAuth(
-        '/upload/presigned?filename=pack.jpg&contentType=image/jpeg&type=pack&packId=123',
-      );
-
-      expect(res.status).toBe(200);
-      const data = await expectJsonResponse(res);
-      expect(data.url).toBeDefined();
-      expect(data.key).toContain('pack');
-    });
-
-    it('requires pack ID for pack images', async () => {
-      const res = await apiWithAuth(
-        '/upload/presigned?filename=pack.jpg&contentType=image/jpeg&type=pack',
-      );
-
-      if (res.status === 400) {
-        expectBadRequest(res);
-        const data = await res.json();
-        expect(data.error).toContain('packId');
-      }
+      expect(data.error).toContain('size');
     });
   });
 
@@ -207,10 +101,8 @@ describe('Upload Routes', () => {
       // This would require mocking the cloud storage service
       const res = await apiWithAuth('/upload/presigned?filename=test.jpg&contentType=image/jpeg');
 
-      if (res.status === 500) {
-        const data = await res.json();
-        expect(data.error).toBeDefined();
-      }
+      const data = await res.json();
+      expect(data.error).toBeDefined();
     });
 
     it('handles malformed filenames', async () => {
@@ -226,9 +118,7 @@ describe('Upload Routes', () => {
           `/upload/presigned?filename=${encodeURIComponent(filename)}&contentType=image/jpeg`,
         );
 
-        if (res.status === 400) {
-          expectBadRequest(res);
-        }
+        expectBadRequest(res);
       }
     });
 
@@ -244,10 +134,7 @@ describe('Upload Routes', () => {
         const res = await apiWithAuth(
           `/upload/presigned?fileName=1-test.jpg&contentType=${contentType}`,
         );
-        // Current implementation doesn't validate content type
-        if (res.status === 400) {
-          expectBadRequest(res);
-        }
+        expectBadRequest(res);
       }
     });
   });
