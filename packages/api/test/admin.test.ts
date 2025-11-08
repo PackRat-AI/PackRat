@@ -26,9 +26,7 @@ describe('Admin Routes', () => {
     });
   });
 
-  // NOTE: The root admin route (/) appears to have a routing issue with basic auth
-  // Skipping until the implementation is fixed
-  describe.skip('GET /admin/', () => {
+  describe('GET /admin/', () => {
     it('returns admin dashboard HTML', async () => {
       const res = await apiWithBasicAuth('/');
       expect(res.status).toBe(200);
@@ -43,9 +41,6 @@ describe('Admin Routes', () => {
   describe('GET /admin/stats', () => {
     it('returns system statistics', async () => {
       const res = await apiWithBasicAuth('/stats');
-      // Note: This will likely fail without database setup
-      // but tests the auth and route structure
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['users', 'packs', 'items']);
       expect(typeof data.users).toBe('number');
@@ -60,25 +55,7 @@ describe('Admin Routes', () => {
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      // Note: The API returns an array directly, not an object with pagination info
       expect(Array.isArray(data)).toBe(true);
-    });
-
-    // NOTE: The API doesn't support page parameter, only limit and offset
-    it.skip('accepts pagination parameters', async () => {
-      const res = await apiWithBasicAuth('/users-list?page=2&limit=5');
-
-      expect(res.status).toBe(200);
-      const data = await expectJsonResponse(res);
-      expect(Array.isArray(data.users)).toBe(true);
-    });
-
-    it.skip('accepts search parameter', async () => {
-      const res = await apiWithBasicAuth('/users-list?search=test');
-
-      expect(res.status).toBe(200);
-      const data = await expectJsonResponse(res);
-      expect(Array.isArray(data.users)).toBe(true);
     });
   });
 
@@ -89,7 +66,6 @@ describe('Admin Routes', () => {
       expect(res.headers.get('content-type')).toContain('text/html');
 
       const html = await res.text();
-      // The actual HTML contains "Pack Management" not "Packs Management"
       expect(html).toContain('Pack Management');
     });
 

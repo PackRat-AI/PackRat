@@ -23,7 +23,6 @@ describe('Auth Routes', () => {
       expectBadRequest(res);
 
       const data = await res.json();
-      // API returns Zod validation errors, not custom messages
       expect(data.error || data.issues).toBeDefined();
     });
 
@@ -61,7 +60,6 @@ describe('Auth Routes', () => {
       expectBadRequest(res);
 
       const data = await res.json();
-      // API returns Zod validation errors, not custom messages
       expect(data.error || data.issues).toBeDefined();
     });
 
@@ -76,7 +74,6 @@ describe('Auth Routes', () => {
       expectBadRequest(res);
 
       const data = await res.json();
-      // API returns Zod validation errors, not custom messages
       expect(data.error || data.issues).toBeDefined();
     });
 
@@ -91,7 +88,6 @@ describe('Auth Routes', () => {
       expectBadRequest(res);
 
       const data = await res.json();
-      // API returns Zod validation errors, not custom messages
       expect(data.error || data.issues).toBeDefined();
     });
 
@@ -117,7 +113,6 @@ describe('Auth Routes', () => {
       expectBadRequest(res);
 
       const data = await res.json();
-      // API returns Zod validation errors, not custom messages
       expect(data.error || data.issues).toBeDefined();
     });
 
@@ -175,7 +170,6 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(400);
 
       const data = await res.json();
-      // API returns Zod validation errors, not custom messages
       expect(data.error || data.issues).toBeDefined();
     });
 
@@ -243,7 +237,6 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(400);
 
       const data = await res.json();
-      // API returns Zod validation errors, not custom messages
       expect(data.error || data.issues).toBeDefined();
     });
 

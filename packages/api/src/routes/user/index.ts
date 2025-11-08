@@ -10,7 +10,6 @@ import {
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { eq } from 'drizzle-orm';
-import { userItemsRoutes } from './items';
 
 const userRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -240,7 +239,5 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
     );
   }
 });
-
-userRoutes.route('/', userItemsRoutes);
 
 export { userRoutes };
