@@ -23,7 +23,8 @@ export const PresignedUploadQuerySchema = z
     }),
     size: z.string().optional().openapi({
       example: '1024000',
-      description: 'Size of the file in bytes (optional; used for client-side validation before upload)',
+      description:
+        'Size of the file in bytes (optional; used for client-side validation before upload)',
     }),
   })
   .openapi('PresignedUploadQuery');
