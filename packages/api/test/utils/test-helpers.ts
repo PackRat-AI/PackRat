@@ -41,14 +41,22 @@ export const apiWithAuth = async (
   user: typeof TEST_USER | typeof TEST_ADMIN = TEST_USER,
 ) => {
   const token = await sign({ userId: user.id, role: user.role }, 'secret');
+
+  // Don't set Content-Type for FormData - let the browser/runtime set it automatically
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    ...(init?.headers as Record<string, string>),
+  };
+
+  // Only set Content-Type to application/json if body is not FormData
+  if (!(init?.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   return app.fetch(
     new Request(`http://localhost/api${path}`, {
       ...init,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        ...init?.headers,
-      },
+      headers,
     }),
   );
 };

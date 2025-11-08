@@ -13,11 +13,14 @@ export const ErrorResponseSchema = z
 
 export const PresignedUploadQuerySchema = z
   .object({
-    filename: z.string().optional().openapi({
-      param: { name: 'filename' },
-      example: '123-profile-image.jpg',
-      description: 'Name of the file to upload (should include user ID prefix)',
-    }),
+    filename: z
+      .string()
+      .optional()
+      .openapi({
+        param: { name: 'filename' },
+        example: '123-profile-image.jpg',
+        description: 'Name of the file to upload (should include user ID prefix)',
+      }),
     contentType: z.string().optional().openapi({
       example: 'image/jpeg',
       description: 'MIME type of the file',
