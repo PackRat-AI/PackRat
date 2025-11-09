@@ -46,12 +46,6 @@ describe('Image Detection Routes', () => {
         }),
       );
 
-      // May fail validation if additional required fields exist
-      if (res.status === 400) {
-        expectBadRequest(res);
-        return;
-      }
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['detectedItems', 'summary']);
       expect(Array.isArray(data.detectedItems)).toBe(true);
@@ -66,12 +60,6 @@ describe('Image Detection Routes', () => {
           matchLimit: 5,
         }),
       );
-
-      // May fail validation if additional required fields exist
-      if (res.status === 400) {
-        expectBadRequest(res);
-        return;
-      }
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['detectedItems', 'summary']);

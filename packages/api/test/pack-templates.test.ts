@@ -97,12 +97,6 @@ describe('Pack Templates Routes', () => {
     it('returns single pack template', async () => {
       const res = await apiWithAuth('/pack-templates/1');
 
-      // Template may not exist in test database - accept 404
-      if (res.status === 404) {
-        expectNotFound(res);
-        return;
-      }
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['id', 'name']);
       expect(data.id).toBeDefined();
@@ -112,12 +106,6 @@ describe('Pack Templates Routes', () => {
     it('returns template with metadata', async () => {
       const res = await apiWithAuth('/pack-templates/1');
 
-      // Template may not exist in test database - accept 404
-      if (res.status === 404) {
-        expectNotFound(res);
-        return;
-      }
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(data.activity || data.type).toBeDefined();
@@ -126,12 +114,6 @@ describe('Pack Templates Routes', () => {
 
     it('returns template weight information', async () => {
       const res = await apiWithAuth('/pack-templates/1');
-
-      // Template may not exist in test database - accept 404
-      if (res.status === 404) {
-        expectNotFound(res);
-        return;
-      }
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -154,12 +136,6 @@ describe('Pack Templates Routes', () => {
     it('returns template items list', async () => {
       const res = await apiWithAuth('/pack-templates/1/items');
 
-      // Template may not exist in test database - accept 404
-      if (res.status === 404) {
-        expectNotFound(res);
-        return;
-      }
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data) || data.items).toBeTruthy();
@@ -167,12 +143,6 @@ describe('Pack Templates Routes', () => {
 
     it('returns items with catalog information', async () => {
       const res = await apiWithAuth('/pack-templates/1/items');
-
-      // Template may not exist in test database - accept 404
-      if (res.status === 404) {
-        expectNotFound(res);
-        return;
-      }
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -186,12 +156,6 @@ describe('Pack Templates Routes', () => {
 
     it('returns items with quantities', async () => {
       const res = await apiWithAuth('/pack-templates/1/items');
-
-      // Template may not exist in test database - accept 404
-      if (res.status === 404) {
-        expectNotFound(res);
-        return;
-      }
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -213,15 +177,15 @@ describe('Pack Templates Routes', () => {
     it('accepts category filter', async () => {
       const res = await apiWithAuth('/pack-templates/1/items?category=shelter');
 
-      // Template may not exist in test database - accept 404
-      expect([200, 404]).toContain(res.status);
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts optional/required filter', async () => {
       const res = await apiWithAuth('/pack-templates/1/items?optional=false');
 
-      // Template may not exist in test database - accept 404
-      expect([200, 404]).toContain(res.status);
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -233,11 +197,8 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res);
       const templates = Array.isArray(data) ? data : data.templates;
 
-      // Only check first template if it exists
-      if (templates && templates.length > 0) {
-        const template = templates[0];
-        expect(template.activity).toBe('hiking');
-      }
+      const template = templates[0];
+      expect(template.activity).toBe('hiking');
     });
 
     it('handles backpacking templates', async () => {
@@ -247,11 +208,8 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res);
       const templates = Array.isArray(data) ? data : data.templates;
 
-      // Only check first template if it exists
-      if (templates && templates.length > 0) {
-        const template = templates[0];
-        expect(template.activity).toBe('backpacking');
-      }
+      const template = templates[0];
+      expect(template.activity).toBe('backpacking');
     });
 
     it('handles camping templates', async () => {
@@ -315,8 +273,9 @@ describe('Pack Templates Routes', () => {
       // This would typically be a separate endpoint or parameter
       const res = await apiWithAuth('/pack-templates/1?action=copy');
 
-      // This endpoint may not exist yet - accept 404
-      expect([200, 404]).toContain(res.status);
+      // This endpoint may not exist yet, but testing the concept
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('supports template customization preview', async () => {
@@ -332,8 +291,8 @@ describe('Pack Templates Routes', () => {
         httpMethods.post('', customization),
       );
 
-      // This endpoint may not exist yet - accept 404
-      expect([200, 404]).toContain(res.status);
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 });

@@ -86,12 +86,6 @@ describe('Packs Routes', () => {
     it('returns single pack', async () => {
       const res = await apiWithAuth('/packs/1');
 
-      // Pack may not exist in test database - accept 403 or 404
-      if (res.status === 403 || res.status === 404) {
-        expect([403, 404]).toContain(res.status);
-        return;
-      }
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['id', 'name']);
       expect(data.id).toBeDefined();
@@ -119,12 +113,6 @@ describe('Packs Routes', () => {
       };
 
       const res = await apiWithAuth('/packs', httpMethods.post('', newPack));
-
-      // May get 400 (validation), 403 (auth), or 404 (missing dependencies) in test environment
-      if (res.status === 400 || res.status === 403 || res.status === 404) {
-        expect([400, 403, 404]).toContain(res.status);
-        return;
-      }
 
       expect([200, 201]).toContain(res.status);
       const data = await expectJsonResponse(res, ['id']);
@@ -168,12 +156,6 @@ describe('Packs Routes', () => {
 
       const res = await apiWithAuth('/packs/1', httpMethods.put('', updateData));
 
-      // Pack may not exist or auth issues - accept 403 or 404
-      if (res.status === 403 || res.status === 404) {
-        expect([403, 404]).toContain(res.status);
-        return;
-      }
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(data.id).toBeDefined();
@@ -209,8 +191,7 @@ describe('Packs Routes', () => {
     it('deletes pack', async () => {
       const res = await apiWithAuth('/packs/1', httpMethods.delete(''));
 
-      // Pack may not exist or auth issues - accept 403 or 404
-      expect([200, 204, 403, 404]).toContain(res.status);
+      expect([200, 204]).toContain(res.status);
     });
 
     it('returns 404 for non-existent pack', async () => {
@@ -232,12 +213,6 @@ describe('Packs Routes', () => {
       it('returns pack items', async () => {
         const res = await apiWithAuth('/packs/1/items');
 
-        // Pack may not exist or auth issues - accept 403 or 404
-        if (res.status === 403 || res.status === 404) {
-          expect([403, 404]).toContain(res.status);
-          return;
-        }
-
         expect(res.status).toBe(200);
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.items).toBeTruthy();
@@ -253,12 +228,6 @@ describe('Packs Routes', () => {
         };
 
         const res = await apiWithAuth('/packs/1/items', httpMethods.post('', newItem));
-
-        // Pack may not exist, auth issues, or validation errors - accept 400, 403, or 404
-        if (res.status === 400 || res.status === 403 || res.status === 404) {
-          expect([400, 403, 404]).toContain(res.status);
-          return;
-        }
 
         expect([200, 201]).toContain(res.status);
         const data = await expectJsonResponse(res, ['id']);
@@ -280,8 +249,8 @@ describe('Packs Routes', () => {
 
         const res = await apiWithAuth('/packs/1/items/1', httpMethods.put('', updateData));
 
-        // Pack or item may not exist or auth issues - accept 403 or 404
-        expect([200, 403, 404]).toContain(res.status);
+        expect(res.status).toBe(200);
+        await expectJsonResponse(res);
       });
     });
 
@@ -289,8 +258,7 @@ describe('Packs Routes', () => {
       it('removes item from pack', async () => {
         const res = await apiWithAuth('/packs/1/items/1', httpMethods.delete(''));
 
-        // Pack or item may not exist or auth issues - accept 403 or 404
-        expect([200, 204, 403, 404]).toContain(res.status);
+        expect([200, 204]).toContain(res.status);
       });
     });
   });
@@ -306,12 +274,6 @@ describe('Packs Routes', () => {
 
       const res = await apiWithAuth('/packs/generate', httpMethods.post('', generateRequest));
 
-      // Route may require admin access or not exist - accept 403 or 404
-      if (res.status === 403 || res.status === 404) {
-        expect([403, 404]).toContain(res.status);
-        return;
-      }
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(data.items || data.suggestions).toBeDefined();
@@ -319,8 +281,7 @@ describe('Packs Routes', () => {
 
     it('validates generate request', async () => {
       const res = await apiWithAuth('/packs/generate', httpMethods.post('', {}));
-      // Route may require admin (403) or not exist (404) before validation (400)
-      expect([400, 403, 404]).toContain(res.status);
+      expectBadRequest(res);
     });
 
     it('validates activity parameter', async () => {
@@ -331,8 +292,7 @@ describe('Packs Routes', () => {
           duration: 3,
         }),
       );
-      // Route may require admin (403) or not exist (404) before validation (400)
-      expect([400, 403, 404]).toContain(res.status);
+      expectBadRequest(res);
     });
   });
 });
