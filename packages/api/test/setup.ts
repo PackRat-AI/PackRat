@@ -48,6 +48,7 @@ import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 
+// Test database connection tracking
 let testClient: Client;
 let testDb: ReturnType<typeof drizzle>;
 let isConnected = false;
@@ -73,18 +74,11 @@ vi.mock('google-auth-library', () => ({
   },
 }));
 
-// Mock the database module to use our test database (node-postgres version)
-vi.mock('@packrat/api/db', () => ({
-  createDb: vi.fn(() => testDb),
-  createReadOnlyDb: vi.fn(() => testDb),
-  createDbClient: vi.fn(() => testDb),
-}));
-
 // Setup PostgreSQL connection for tests
 beforeAll(async () => {
   console.log('🔧 Setting up test database connection...');
 
-  // Create direct PostgreSQL client connection for manual database operations
+  // Create a client for managing test data (truncating tables, etc.)
   testClient = new Client({
     host: 'localhost',
     port: 5433,
@@ -95,7 +89,7 @@ beforeAll(async () => {
 
   try {
     await testClient.connect();
-    testDb = drizzle(testClient, { schema }) as any;
+    testDb = drizzle(testClient, { schema });
     isConnected = true;
     console.log('✅ Test database connected successfully');
   } catch (error) {

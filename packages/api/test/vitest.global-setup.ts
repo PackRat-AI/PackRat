@@ -44,6 +44,23 @@ async function runMigrations() {
   try {
     await client.connect();
 
+    // Drop all tables to ensure clean state before migrations
+    console.log('🧹 Dropping existing tables...');
+    await client.query(`
+      DO $$ DECLARE
+        r RECORD;
+      BEGIN
+        FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+          EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+        END LOOP;
+      END $$;
+    `);
+    
+    // Drop extensions that might have been created by previous runs
+    await client.query('DROP EXTENSION IF EXISTS vector CASCADE');
+    
+    console.log('✅ All existing tables and extensions dropped');
+
     // Read and execute all migration files
     const migrationsDir = join(process.cwd(), 'drizzle');
     const files = await readdir(migrationsDir);

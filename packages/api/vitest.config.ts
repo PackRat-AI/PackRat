@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
+import { defineConfig } from 'vitest/config';
 
 const bindings = {
   // Environment & Deployment
@@ -54,7 +54,7 @@ const bindings = {
 
 Object.assign(process.env, bindings);
 
-export default defineWorkersConfig({
+export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -64,10 +64,11 @@ export default defineWorkersConfig({
   test: {
     globalSetup: './test/vitest.global-setup.ts',
     setupFiles: ['./test/setup.ts'],
-    pool: '@cloudflare/vitest-pool-workers',
+    // Use threads pool instead of Cloudflare Workers pool for database tests
+    pool: 'threads',
     poolOptions: {
-      workers: {
-        wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
+      threads: {
+        singleThread: true,
       },
     },
   },
