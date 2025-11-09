@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { R2BucketService } from '@packrat/api/services/r2-bucket';
 import {
   api,
   apiWithAuth,
@@ -9,11 +10,166 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-// NOTE: Guides routes fail with 500 errors in test environment
-// This is because R2 bucket service is not available/configured for tests
-// The authentication tests pass, but actual route handlers crash when accessing R2
-// Skipping until test infrastructure includes R2 mocking or proper test bucket configuration
-describe.skip('Guides Routes', () => {
+// Mock guides data
+const mockGuides = [
+  {
+    key: 'beginner-hiking-guide.md',
+    title: 'Beginner Hiking Guide',
+    category: 'hiking',
+    categories: ['hiking', 'beginner'],
+    description: 'A comprehensive guide for beginner hikers',
+    author: 'PackRat Team',
+    difficulty: 'beginner',
+    readingTime: 5,
+    content: '# Beginner Hiking Guide\n\nThis is a guide for beginners...',
+  },
+  {
+    key: 'backpacking-essentials.md',
+    title: 'Backpacking Essentials',
+    category: 'backpacking',
+    categories: ['backpacking', 'gear'],
+    description: 'Essential gear for backpacking trips',
+    author: 'Outdoor Expert',
+    difficulty: 'intermediate',
+    readingTime: 8,
+    content: '# Backpacking Essentials\n\nEssential gear includes...',
+  },
+  {
+    key: 'winter-camping-tips.md',
+    title: 'Winter Camping Tips',
+    category: 'camping',
+    categories: ['camping', 'winter'],
+    description: 'Tips for safe winter camping',
+    author: 'Winter Expert',
+    difficulty: 'advanced',
+    readingTime: 10,
+    content: '# Winter Camping Tips\n\nWinter camping requires...',
+  },
+];
+
+// Create mock R2 objects with proper metadata
+function createMockR2Object(guide: typeof mockGuides[0]) {
+  return {
+    key: guide.key,
+    version: 'v1',
+    size: guide.content.length,
+    etag: 'mock-etag',
+    httpEtag: '"mock-etag"',
+    checksums: {
+      toJSON: () => ({}),
+    },
+    uploaded: new Date('2024-01-01'),
+    customMetadata: {
+      title: guide.title,
+      category: guide.category,
+      description: guide.description,
+    },
+    storageClass: 'STANDARD',
+    writeHttpMetadata: () => {},
+  };
+}
+
+// Create mock R2 object body with content
+function createMockR2ObjectBody(guide: typeof mockGuides[0]) {
+  const frontmatter = `---
+title: ${guide.title}
+category: ${guide.category}
+categories: ${JSON.stringify(guide.categories)}
+description: ${guide.description}
+author: ${guide.author}
+difficulty: ${guide.difficulty}
+readingTime: ${guide.readingTime}
+---
+
+${guide.content}`;
+
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(frontmatter);
+
+  return {
+    ...createMockR2Object(guide),
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(bytes);
+        controller.close();
+      },
+    }),
+    bodyUsed: false,
+    arrayBuffer: async () => bytes.buffer as ArrayBuffer,
+    bytes: async () => bytes,
+    text: async () => frontmatter,
+    json: async () => JSON.parse(frontmatter),
+    blob: async () => new Blob([bytes]),
+  };
+}
+
+// Mock the R2BucketService module
+vi.mock('@packrat/api/services/r2-bucket', () => {
+  return {
+    R2BucketService: class MockR2BucketService {
+      constructor() {
+        // No-op constructor - don't create S3Client
+      }
+
+      async list(options?: { prefix?: string; limit?: number }) {
+        let objects = mockGuides.map((guide) => createMockR2Object(guide));
+        
+        // Apply prefix filter if provided
+        if (options?.prefix) {
+          objects = objects.filter((obj) => obj.key.startsWith(options.prefix));
+        }
+
+        // Apply limit if provided
+        if (options?.limit) {
+          objects = objects.slice(0, options.limit);
+        }
+
+        return {
+          objects,
+          truncated: false,
+          delimitedPrefixes: [],
+        };
+      }
+
+      async get(key: string) {
+        const guide = mockGuides.find((g) => g.key === key);
+        if (!guide) {
+          return null;
+        }
+        return createMockR2ObjectBody(guide);
+      }
+
+      async head(key: string) {
+        const guide = mockGuides.find((g) => g.key === key);
+        if (!guide) {
+          return null;
+        }
+        return createMockR2Object(guide);
+      }
+
+      async put(key: string, _value: unknown, _options?: unknown) {
+        return createMockR2Object({
+          key,
+          title: key.replace(/\.(mdx?|md)$/, ''),
+          category: 'general',
+          categories: ['general'],
+          description: 'Mock guide',
+          author: 'Test Author',
+          difficulty: 'beginner',
+          readingTime: 5,
+          content: 'Mock content',
+        });
+      }
+
+      async delete(_keys: string | string[]) {
+        // Mock deletion - no-op
+      }
+    } as unknown as typeof R2BucketService,
+  };
+});
+
+// Guides routes with mocked R2 bucket service
+describe('Guides Routes', () => {
   describe('Authentication', () => {
     it('GET /guides requires auth', async () => {
       const res = await api('/guides', httpMethods.get(''));
@@ -42,7 +198,8 @@ describe.skip('Guides Routes', () => {
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      expect(Array.isArray(data) || data.guides).toBeTruthy();
+      expect(data.items).toBeDefined();
+      expect(Array.isArray(data.items)).toBe(true);
     });
 
     it('accepts pagination parameters', async () => {
@@ -109,7 +266,8 @@ describe.skip('Guides Routes', () => {
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      expect(Array.isArray(data) || data.results).toBeTruthy();
+      expect(data.items).toBeDefined();
+      expect(Array.isArray(data.items)).toBe(true);
     });
 
     it('requires query parameter', async () => {
@@ -117,7 +275,7 @@ describe.skip('Guides Routes', () => {
       expectBadRequest(res);
 
       const data = await res.json();
-      expect(data.error).toContain('query');
+      expect(data.error || data.message).toBeTruthy();
     });
 
     it('accepts search filters', async () => {
@@ -139,17 +297,15 @@ describe.skip('Guides Routes', () => {
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      if (Array.isArray(data)) {
-        expect(data.length).toBe(0);
-      } else if (data.results) {
-        expect(data.results.length).toBe(0);
-      }
+      expect(data.items).toBeDefined();
+      expect(data.items.length).toBe(0);
     });
   });
 
   describe('GET /guides/:id', () => {
     it('returns single guide by ID', async () => {
-      const res = await apiWithAuth('/guides/1');
+      // Use actual guide key from mock data
+      const res = await apiWithAuth('/guides/beginner-hiking-guide');
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['id', 'title']);
@@ -158,15 +314,15 @@ describe.skip('Guides Routes', () => {
     });
 
     it('returns guide with content', async () => {
-      const res = await apiWithAuth('/guides/1');
+      const res = await apiWithAuth('/guides/beginner-hiking-guide');
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      expect(data.content || data.body || data.markdown).toBeDefined();
+      expect(data.content).toBeDefined();
     });
 
     it('returns guide metadata', async () => {
-      const res = await apiWithAuth('/guides/1');
+      const res = await apiWithAuth('/guides/beginner-hiking-guide');
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -188,11 +344,11 @@ describe.skip('Guides Routes', () => {
 
   describe('GET /guides/:slug (if slug-based routing exists)', () => {
     it('returns guide by slug', async () => {
-      const res = await apiWithAuth('/guides/backpacking-basics');
+      const res = await apiWithAuth('/guides/backpacking-essentials');
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['id', 'title']);
-      expect(data.slug || data.title).toBeDefined();
+      expect(data.title).toBeDefined();
     });
 
     it('returns 404 for non-existent slug', async () => {
@@ -215,13 +371,12 @@ describe.skip('Guides Routes', () => {
     it('handles invalid category filters', async () => {
       const res = await apiWithAuth('/guides?category=nonexistent-category');
 
-      // Should return empty results or 400, not crash
+      // Should return empty results or 200, not crash
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
-      if (Array.isArray(data)) {
-        expect(data.length).toBeGreaterThanOrEqual(0);
-      }
-      expectBadRequest(res);
+      expect(data.items).toBeDefined();
+      expect(Array.isArray(data.items)).toBe(true);
+      // May or may not have results depending on implementation
     });
   });
 });

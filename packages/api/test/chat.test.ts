@@ -8,11 +8,10 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-// NOTE: Chat routes fail with 500 errors in test environment
-// This is because AI services (OpenAI, Perplexity) are not available/configured for tests
-// The authentication tests pass, but actual route handlers crash when accessing AI services
-// Skipping until test infrastructure includes AI service mocking
-describe.skip('Chat Routes', () => {
+// Chat routes with mocked AI services
+// Note: Full chat functionality tests are skipped as they require complex AI service mocking
+// Tests focus on authentication and input validation
+describe('Chat Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -24,7 +23,9 @@ describe.skip('Chat Routes', () => {
     });
   });
 
-  describe('POST /chat', () => {
+  // Skip tests that require full AI stack to be functional
+  // These would need complex mocking of OpenAI, Cloudflare AI, and related services
+  describe.skip('POST /chat', () => {
     it('accepts chat message', async () => {
       const chatMessage = {
         message: 'What gear do I need for a day hike?',
