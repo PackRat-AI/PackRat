@@ -21,6 +21,11 @@ export const PresignedUploadQuerySchema = z
       example: 'image/jpeg',
       description: 'MIME type of the file',
     }),
+    size: z.string().optional().openapi({
+      example: '1024000',
+      description:
+        'Size of the file in bytes (optional; used for client-side validation before upload)',
+    }),
   })
   .openapi('PresignedUploadQuery');
 

@@ -13,7 +13,7 @@ import {
 describe('Catalog Routes', () => {
   describe('Authentication', () => {
     it('GET /catalog/ requires auth', async () => {
-      const res = await api('/catalog/', httpMethods.get(''));
+      const res = await api('/catalog', httpMethods.get(''));
       expectUnauthorized(res);
     });
 
@@ -23,7 +23,7 @@ describe('Catalog Routes', () => {
     });
 
     it('POST /catalog/ requires auth', async () => {
-      const res = await api('/catalog/', httpMethods.post('', {}));
+      const res = await api('/catalog', httpMethods.post('', {}));
       expectUnauthorized(res);
     });
 
@@ -38,9 +38,9 @@ describe('Catalog Routes', () => {
     });
   });
 
-  describe('GET /catalog/', () => {
+  describe('GET /catalog', () => {
     it('returns catalog items list', async () => {
-      const res = await apiWithAuth('/catalog/');
+      const res = await apiWithAuth('/catalog');
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -48,35 +48,35 @@ describe('Catalog Routes', () => {
     });
 
     it('accepts pagination parameters', async () => {
-      const res = await apiWithAuth('/catalog/?page=1&limit=10');
+      const res = await apiWithAuth('/catalog?page=1&limit=10');
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
     });
 
     it('accepts category filter', async () => {
-      const res = await apiWithAuth('/catalog/?category=shelter');
+      const res = await apiWithAuth('/catalog?category=shelter');
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
     });
 
     it('accepts search query', async () => {
-      const res = await apiWithAuth('/catalog/?q=tent');
+      const res = await apiWithAuth('/catalog?q=tent');
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
     });
 
     it('accepts weight range filters', async () => {
-      const res = await apiWithAuth('/catalog/?minWeight=0&maxWeight=1000');
+      const res = await apiWithAuth('/catalog?minWeight=0&maxWeight=1000');
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
     });
 
     it('accepts sorting parameters', async () => {
-      const res = await apiWithAuth('/catalog/?sortBy=weight&sortOrder=asc');
+      const res = await apiWithAuth('/catalog?sortBy=weight&sortOrder=asc');
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
@@ -115,7 +115,7 @@ describe('Catalog Routes', () => {
     });
   });
 
-  describe('POST /catalog/', () => {
+  describe('POST /catalog', () => {
     it('creates new catalog item', async () => {
       const newItem = {
         name: 'Test Tent',
@@ -125,7 +125,7 @@ describe('Catalog Routes', () => {
         price: 299.99,
       };
 
-      const res = await apiWithAuth('/catalog/', httpMethods.post('', newItem));
+      const res = await apiWithAuth('/catalog', httpMethods.post('', newItem));
 
       expect([201, 200]).toContain(res.status);
       const data = await expectJsonResponse(res, ['id']);
@@ -133,13 +133,13 @@ describe('Catalog Routes', () => {
     });
 
     it('validates required fields', async () => {
-      const res = await apiWithAuth('/catalog/', httpMethods.post('', {}));
+      const res = await apiWithAuth('/catalog', httpMethods.post('', {}));
       expectBadRequest(res);
     });
 
     it('validates name field', async () => {
       const res = await apiWithAuth(
-        '/catalog/',
+        '/catalog',
         httpMethods.post('', {
           category: 'shelter',
           weight: 1200,
@@ -150,7 +150,7 @@ describe('Catalog Routes', () => {
 
     it('validates weight field', async () => {
       const res = await apiWithAuth(
-        '/catalog/',
+        '/catalog',
         httpMethods.post('', {
           name: 'Test Item',
           category: 'shelter',
@@ -162,7 +162,7 @@ describe('Catalog Routes', () => {
 
     it('validates category field', async () => {
       const res = await apiWithAuth(
-        '/catalog/',
+        '/catalog',
         httpMethods.post('', {
           name: 'Test Item',
           category: 'invalid-category',

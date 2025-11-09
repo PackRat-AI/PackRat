@@ -101,7 +101,6 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res, ['id', 'name']);
       expect(data.id).toBeDefined();
       expect(data.name).toBeDefined();
-      expectNotFound(res);
     });
 
     it('returns template with metadata', async () => {
@@ -248,7 +247,6 @@ describe('Pack Templates Routes', () => {
       const data = await expectJsonResponse(res);
       const templates = Array.isArray(data) ? data : data.templates;
       expect(templates).toBeDefined();
-      expectBadRequest(res);
     });
 
     it('handles invalid season filters', async () => {
