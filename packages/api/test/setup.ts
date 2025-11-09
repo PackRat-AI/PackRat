@@ -102,31 +102,41 @@ beforeAll(async () => {
 beforeEach(async () => {
   if (!testClient) return;
 
-  // Truncate all tables in a single transaction for better performance
-  // Using CASCADE to handle foreign key constraints
-  const tablesToTruncate = [
-    'users',
-    'packs',
-    'pack_items',
-    'pack_templates',
-    'pack_template_items',
-    'user_items',
-    'catalog_items',
-    'weather_cache',
-    'password_reset_codes',
-    'verification_codes',
-    'weight_history',
-  ];
-
-  try {
-    // Run all truncates in a single statement for speed
-    const truncateQuery = tablesToTruncate
+  // Get list of all tables in the public schema
+  const result = await testClient.query(`
+    SELECT tablename FROM pg_tables 
+    WHERE schemaname = 'public'
+  `);
+  
+  const tables = result.rows.map((row) => row.tablename);
+  
+  if (tables.length > 0) {
+    // Truncate all tables with CASCADE to handle foreign keys
+    const truncateQuery = tables
       .map((table) => `TRUNCATE TABLE "${table}" CASCADE`)
       .join('; ');
     await testClient.query(truncateQuery);
-  } catch (_error) {
-    // Ignore errors - tables might not exist yet
   }
+
+  // Seed test users for authentication
+  await testClient.query(`
+    INSERT INTO users (id, email, first_name, last_name, role, email_verified, password_hash)
+    VALUES 
+      (1, 'test@example.com', 'Test', 'User', 'user', true, 'hashed_password'),
+      (2, 'admin@example.com', 'Admin', 'User', 'admin', true, 'hashed_password')
+  `);
+
+  // Seed a test catalog item for tests that need existing items
+  // Note: productUrl, sku, name, weight, and weightUnit are required
+  const catalogResult = await testClient.query(`
+    INSERT INTO catalog_items (id, name, product_url, sku, weight, weight_unit, categories)
+    VALUES (1, 'Test Tent', 'https://example.com/tent', 'TEST-SKU-001', 1000, 'g', '["camping","shelter"]')
+    RETURNING *
+  `);
+  console.log('✅ Seeded test data:', {
+    users: 2,
+    catalogItems: catalogResult.rowCount,
+  });
 });
 
 // Cleanup after all tests

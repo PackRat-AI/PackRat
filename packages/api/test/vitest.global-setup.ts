@@ -55,10 +55,10 @@ async function runMigrations() {
         END LOOP;
       END $$;
     `);
-    
+
     // Drop extensions that might have been created by previous runs
     await client.query('DROP EXTENSION IF EXISTS vector CASCADE');
-    
+
     console.log('✅ All existing tables and extensions dropped');
 
     // Read and execute all migration files
