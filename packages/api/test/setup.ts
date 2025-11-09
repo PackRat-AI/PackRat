@@ -73,6 +73,30 @@ vi.mock('google-auth-library', () => ({
   },
 }));
 
+// Mock the embedding service to avoid calling OpenAI API in tests
+vi.mock('@packrat/api/services/embeddingService', () => ({
+  generateEmbedding: vi.fn(async () => {
+    // Return a mock embedding (1536 dimensions for OpenAI)
+    return Array.from({ length: 1536 }, () => Math.random());
+  }),
+  generateManyEmbeddings: vi.fn(async (params: { values: string[] }) => {
+    // Return mock embeddings for each value
+    return params.values.map(() => Array.from({ length: 1536 }, () => Math.random()));
+  }),
+}));
+
+// Mock the ETL queue service to avoid Cloudflare Queue issues in tests
+vi.mock('@packrat/api/services/etl/queue', () => ({
+  queueCatalogETL: vi.fn(async ({ jobId }: { jobId: string }) => {
+    // Mock successful queueing
+    return jobId;
+  }),
+  processQueueBatch: vi.fn(async () => {
+    // Mock successful processing
+    return;
+  }),
+}));
+
 // Mock the database module to use our test database (node-postgres version)
 vi.mock('@packrat/api/db', () => ({
   createDb: vi.fn(() => testDb),

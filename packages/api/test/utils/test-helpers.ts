@@ -132,3 +132,17 @@ export const expectJsonResponse = async (response: Response, expectedFields?: st
 
   return data;
 };
+
+// Helper to create API request with API key authentication
+export const apiWithApiKey = (path: string, init?: RequestInit) => {
+  return app.fetch(
+    new Request(`http://localhost/api${path}`, {
+      ...init,
+      headers: {
+        'X-API-Key': 'test-api-key',
+        'Content-Type': 'application/json',
+        ...init?.headers,
+      },
+    }),
+  );
+};
