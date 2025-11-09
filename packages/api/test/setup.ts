@@ -87,14 +87,14 @@ vi.mock('@packrat/api/services', async (importOriginal) => {
       constructor(_c: unknown) {
         // No-op constructor
       }
-      
+
       async perplexitySearch(_query: string) {
         return {
           answer: 'Mock search result',
           sources: [],
         };
       }
-      
+
       async queryGuidesRAG(_query: string) {
         return {
           answer: 'Mock guide information',
@@ -113,7 +113,7 @@ vi.mock('ai', async () => {
     streamText: vi.fn(({ system, messages }) => {
       // Create a mock stream response
       const mockResponse = `Mock AI response for: ${messages?.[messages.length - 1]?.content || 'query'}`;
-      
+
       return {
         toUIMessageStreamResponse: () => {
           // Return a mock Response with streaming
@@ -121,7 +121,11 @@ vi.mock('ai', async () => {
           const stream = new ReadableStream({
             start(controller) {
               // Send mock streaming data
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', content: mockResponse })}\n\n`));
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ type: 'text', content: mockResponse })}\n\n`,
+                ),
+              );
               controller.close();
             },
           });
@@ -199,7 +203,7 @@ const mockGuides = [
 ];
 
 // Create mock R2 objects with proper metadata
-function createMockR2Object(guide: typeof mockGuides[0]) {
+function createMockR2Object(guide: (typeof mockGuides)[0]) {
   return {
     key: guide.key,
     version: 'v1',
@@ -221,7 +225,7 @@ function createMockR2Object(guide: typeof mockGuides[0]) {
 }
 
 // Create mock R2 object body with content
-function createMockR2ObjectBody(guide: typeof mockGuides[0]) {
+function createMockR2ObjectBody(guide: (typeof mockGuides)[0]) {
   const frontmatter = `---
 title: ${guide.title}
 category: ${guide.category}
@@ -261,7 +265,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
       return {
         list: vi.fn(async (options?: { prefix?: string; limit?: number }) => {
           let objects = mockGuides.map((guide) => createMockR2Object(guide));
-          
+
           // Apply prefix filter if provided
           if (options?.prefix) {
             objects = objects.filter((obj) => obj.key.startsWith(options.prefix));
