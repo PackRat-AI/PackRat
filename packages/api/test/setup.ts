@@ -107,14 +107,12 @@ beforeEach(async () => {
     SELECT tablename FROM pg_tables 
     WHERE schemaname = 'public'
   `);
-  
+
   const tables = result.rows.map((row) => row.tablename);
-  
+
   if (tables.length > 0) {
     // Truncate all tables with CASCADE to handle foreign keys
-    const truncateQuery = tables
-      .map((table) => `TRUNCATE TABLE "${table}" CASCADE`)
-      .join('; ');
+    const truncateQuery = tables.map((table) => `TRUNCATE TABLE "${table}" CASCADE`).join('; ');
     await testClient.query(truncateQuery);
   }
 
