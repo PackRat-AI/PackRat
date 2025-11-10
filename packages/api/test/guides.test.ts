@@ -168,7 +168,6 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
   };
 });
 
-// Guides routes with mocked R2 bucket service
 describe('Guides Routes', () => {
   describe('Authentication', () => {
     it('GET /guides requires auth', async () => {
@@ -304,7 +303,6 @@ describe('Guides Routes', () => {
 
   describe('GET /guides/:id', () => {
     it('returns single guide by ID', async () => {
-      // Use actual guide key from mock data
       const res = await apiWithAuth('/guides/beginner-hiking-guide');
 
       expect(res.status).toBe(200);
@@ -371,12 +369,10 @@ describe('Guides Routes', () => {
     it('handles invalid category filters', async () => {
       const res = await apiWithAuth('/guides?category=nonexistent-category');
 
-      // Should return empty results or 200, not crash
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(data.items).toBeDefined();
       expect(Array.isArray(data.items)).toBe(true);
-      // May or may not have results depending on implementation
     });
   });
 });
