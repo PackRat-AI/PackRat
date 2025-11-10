@@ -84,10 +84,6 @@ vi.mock('@packrat/api/services', async (importOriginal) => {
   return {
     ...actual,
     AIService: class MockAIService {
-      constructor(_c: unknown) {
-        // No-op constructor
-      }
-
       async perplexitySearch(_query: string) {
         return {
           answer: 'Mock search result',
@@ -110,7 +106,7 @@ vi.mock('ai', async () => {
   const actual = await vi.importActual<typeof import('ai')>('ai');
   return {
     ...actual,
-    streamText: vi.fn(({ system, messages }) => {
+    streamText: vi.fn(({ messages }) => {
       // Create a mock stream response
       const mockResponse = `Mock AI response for: ${messages?.[messages.length - 1]?.content || 'query'}`;
 

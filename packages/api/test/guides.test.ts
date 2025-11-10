@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { R2BucketService } from '@packrat/api/services/r2-bucket';
+import { describe, expect, it, vi } from 'vitest';
 import {
   api,
   apiWithAuth,
@@ -107,10 +107,6 @@ ${guide.content}`;
 vi.mock('@packrat/api/services/r2-bucket', () => {
   return {
     R2BucketService: class MockR2BucketService {
-      constructor() {
-        // No-op constructor - don't create S3Client
-      }
-
       async list(options?: { prefix?: string; limit?: number }) {
         let objects = mockGuides.map((guide) => createMockR2Object(guide));
 
