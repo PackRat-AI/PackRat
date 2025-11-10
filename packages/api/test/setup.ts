@@ -43,6 +43,13 @@ process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME = 'test-scrapy-bucket';
 process.env.PACKRAT_GUIDES_RAG_NAME = 'test-rag';
 process.env.PACKRAT_GUIDES_BASE_URL = 'https://guides.test.com';
 
+// Mock Cloudflare AI binding in process.env for test access
+(process.env as any).AI = {
+  autorag: () => ({
+    query: async () => ({ answer: 'Mock RAG result', sources: [] }),
+  }),
+};
+
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
@@ -51,6 +58,264 @@ import * as schema from '../src/db/schema';
 let testClient: Client;
 let testDb: ReturnType<typeof drizzle>;
 let isConnected = false;
+
+// Mock AWS SDK S3Client to prevent actual network calls
+vi.mock('@aws-sdk/client-s3', () => {
+  return {
+    S3Client: vi.fn().mockImplementation(() => ({
+      send: vi.fn(),
+    })),
+    ListObjectsV2Command: vi.fn(),
+    GetObjectCommand: vi.fn(),
+    HeadObjectCommand: vi.fn(),
+    PutObjectCommand: vi.fn(),
+    DeleteObjectCommand: vi.fn(),
+    DeleteObjectsCommand: vi.fn(),
+    CreateMultipartUploadCommand: vi.fn(),
+    UploadPartCommand: vi.fn(),
+    CompleteMultipartUploadCommand: vi.fn(),
+    AbortMultipartUploadCommand: vi.fn(),
+  };
+});
+
+// Mock AI Services
+vi.mock('@packrat/api/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@packrat/api/services')>();
+  return {
+    ...actual,
+    AIService: class MockAIService {
+      async perplexitySearch(_query: string) {
+        return {
+          answer: 'Mock search result',
+          sources: [],
+        };
+      }
+
+      async queryGuidesRAG(_query: string) {
+        return {
+          answer: 'Mock guide information',
+          sources: [],
+        };
+      }
+    },
+  };
+});
+
+// Mock the AI SDK modules before any imports
+vi.mock('ai', async () => {
+  const actual = await vi.importActual<typeof import('ai')>('ai');
+  return {
+    ...actual,
+    streamText: vi.fn(({ messages }) => {
+      // Create a mock stream response
+      const mockResponse = `Mock AI response for: ${messages?.[messages.length - 1]?.content || 'query'}`;
+
+      return {
+        toUIMessageStreamResponse: () => {
+          // Return a mock Response with streaming
+          const encoder = new TextEncoder();
+          const stream = new ReadableStream({
+            start(controller) {
+              // Send mock streaming data
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ type: 'text', content: mockResponse })}\n\n`,
+                ),
+              );
+              controller.close();
+            },
+          });
+
+          return new Response(stream, {
+            headers: {
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-cache',
+              Connection: 'keep-alive',
+            },
+          });
+        },
+      };
+    }),
+  };
+});
+
+// Mock the AI provider module
+vi.mock('@packrat/api/utils/ai/provider', () => ({
+  createAIProvider: vi.fn(() => {
+    // Return a mock provider function
+    return (modelId: string) => ({
+      modelId,
+      provider: 'openai',
+    });
+  }),
+  extractCloudflareLogId: vi.fn(() => null),
+}));
+
+// Mock the AI tools module - need to mock before the import happens
+vi.mock('@packrat/api/utils/ai/tools', () => ({
+  createTools: vi.fn(() => ({})),
+}));
+
+// Mock schema info utility
+vi.mock('@packrat/api/utils/DbUtils', () => ({
+  getSchemaInfo: vi.fn(async () => 'Mock schema info'),
+}));
+
+// Mock guides data
+const mockGuides = [
+  {
+    key: 'beginner-hiking-guide.md',
+    title: 'Beginner Hiking Guide',
+    category: 'hiking',
+    categories: ['hiking', 'beginner'],
+    description: 'A comprehensive guide for beginner hikers',
+    author: 'PackRat Team',
+    difficulty: 'beginner',
+    readingTime: 5,
+    content: '# Beginner Hiking Guide\n\nThis is a guide for beginners...',
+  },
+  {
+    key: 'backpacking-essentials.md',
+    title: 'Backpacking Essentials',
+    category: 'backpacking',
+    categories: ['backpacking', 'gear'],
+    description: 'Essential gear for backpacking trips',
+    author: 'Outdoor Expert',
+    difficulty: 'intermediate',
+    readingTime: 8,
+    content: '# Backpacking Essentials\n\nEssential gear includes...',
+  },
+  {
+    key: 'winter-camping-tips.md',
+    title: 'Winter Camping Tips',
+    category: 'camping',
+    categories: ['camping', 'winter'],
+    description: 'Tips for safe winter camping',
+    author: 'Winter Expert',
+    difficulty: 'advanced',
+    readingTime: 10,
+    content: '# Winter Camping Tips\n\nWinter camping requires...',
+  },
+];
+
+// Create mock R2 objects with proper metadata
+function createMockR2Object(guide: (typeof mockGuides)[0]) {
+  return {
+    key: guide.key,
+    version: 'v1',
+    size: guide.content.length,
+    etag: 'mock-etag',
+    httpEtag: '"mock-etag"',
+    checksums: {
+      toJSON: () => ({}),
+    },
+    uploaded: new Date('2024-01-01'),
+    customMetadata: {
+      title: guide.title,
+      category: guide.category,
+      description: guide.description,
+    },
+    storageClass: 'STANDARD',
+    writeHttpMetadata: () => {},
+  };
+}
+
+// Create mock R2 object body with content
+function createMockR2ObjectBody(guide: (typeof mockGuides)[0]) {
+  const frontmatter = `---
+title: ${guide.title}
+category: ${guide.category}
+categories: ${JSON.stringify(guide.categories)}
+description: ${guide.description}
+author: ${guide.author}
+difficulty: ${guide.difficulty}
+readingTime: ${guide.readingTime}
+---
+
+${guide.content}`;
+
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(frontmatter);
+
+  return {
+    ...createMockR2Object(guide),
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(bytes);
+        controller.close();
+      },
+    }),
+    bodyUsed: false,
+    arrayBuffer: async () => bytes.buffer as ArrayBuffer,
+    bytes: async () => bytes,
+    text: async () => frontmatter,
+    json: async () => JSON.parse(frontmatter),
+    blob: async () => new Blob([bytes]),
+  };
+}
+
+// Mock R2 bucket service
+vi.mock('@packrat/api/services/r2-bucket', () => {
+  return {
+    R2BucketService: vi.fn().mockImplementation(() => {
+      return {
+        list: vi.fn(async (options?: { prefix?: string; limit?: number }) => {
+          let objects = mockGuides.map((guide) => createMockR2Object(guide));
+
+          // Apply prefix filter if provided
+          if (options?.prefix) {
+            objects = objects.filter((obj) => obj.key.startsWith(options.prefix));
+          }
+
+          // Apply limit if provided
+          if (options?.limit) {
+            objects = objects.slice(0, options.limit);
+          }
+
+          return {
+            objects,
+            truncated: false,
+            delimitedPrefixes: [],
+          };
+        }),
+
+        get: vi.fn(async (key: string) => {
+          const guide = mockGuides.find((g) => g.key === key);
+          if (!guide) {
+            return null;
+          }
+          return createMockR2ObjectBody(guide);
+        }),
+
+        head: vi.fn(async (key: string) => {
+          const guide = mockGuides.find((g) => g.key === key);
+          if (!guide) {
+            return null;
+          }
+          return createMockR2Object(guide);
+        }),
+
+        put: vi.fn(async (key: string, _value: unknown, _options?: unknown) => {
+          return createMockR2Object({
+            key,
+            title: key.replace(/\.(mdx?|md)$/, ''),
+            category: 'general',
+            categories: ['general'],
+            description: 'Mock guide',
+            author: 'Test Author',
+            difficulty: 'beginner',
+            readingTime: 5,
+            content: 'Mock content',
+          });
+        }),
+
+        delete: vi.fn(async (_keys: string | string[]) => {
+          // Mock deletion - no-op
+        }),
+      };
+    }),
+  };
+});
 
 vi.mock('hono/adapter', async () => {
   const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');

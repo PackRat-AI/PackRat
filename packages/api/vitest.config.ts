@@ -50,6 +50,13 @@ const bindings = {
   ETL_QUEUE: 'queue',
   LOGS_QUEUE: 'logs-queue',
   EMBEDDINGS_QUEUE: 'embeddings-queue',
+
+  // Mock Cloudflare AI binding
+  AI: {
+    autorag: () => ({
+      query: async () => ({ answer: 'Mock RAG result', sources: [] }),
+    }),
+  } as any,
 };
 
 Object.assign(process.env, bindings);
