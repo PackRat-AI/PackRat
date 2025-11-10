@@ -97,6 +97,16 @@ vi.mock('@packrat/api/services/etl/queue', () => ({
   }),
 }));
 
+vi.mock('@packrat/api/utils/env-validation', () => ({
+  getEnv: vi.fn(() => ({
+    ...process.env,
+    ETL_QUEUE: {
+      send: vi.fn().mockResolvedValue(undefined),
+      sendBatch: vi.fn().mockResolvedValue(undefined),
+    },
+  })),
+}));
+
 // Mock the database module to use our test database (node-postgres version)
 vi.mock('@packrat/api/db', () => ({
   createDb: vi.fn(() => testDb),

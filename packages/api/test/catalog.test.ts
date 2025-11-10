@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { seedCatalogItem } from './utils/db-helpers';
 import {
   api,
-  apiWithAdmin,
   apiWithApiKey,
   apiWithAuth,
   expectBadRequest,
@@ -135,12 +134,9 @@ describe('Catalog Routes', () => {
 
       const res = await apiWithAuth('/catalog', httpMethods.post('', newItem));
 
-      // May return 500 if embedding generation fails in test environment
-      expect([201, 200, 500]).toContain(res.status);
-      if (res.status === 200 || res.status === 201) {
-        const data = await expectJsonResponse(res, ['id']);
-        expect(data.id).toBeDefined();
-      }
+      expect([201, 200]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id']);
+      expect(data.id).toBeDefined();
     });
 
     it('validates required fields', async () => {
@@ -172,24 +168,7 @@ describe('Catalog Routes', () => {
           weightUnit: 'g',
         }),
       );
-      // May return 400 for validation, 500 from embedding service, or 200 if validation is not strict
-      expect([200, 400, 500]).toContain(res.status);
-    });
-
-    it('validates category field', async () => {
-      const res = await apiWithAuth(
-        '/catalog',
-        httpMethods.post('', {
-          name: 'Test Item',
-          productUrl: 'https://example.com/tent',
-          sku: 'TEST-123',
-          weight: 1200,
-          weightUnit: 'g',
-          categories: ['invalid-category'],
-        }),
-      );
-      // Categories are not strictly validated, so this should succeed or fail with embedding error
-      expect([200, 201, 400, 500]).toContain(res.status);
+      expect(res.status).toBe(400);
     });
   });
 
@@ -205,12 +184,9 @@ describe('Catalog Routes', () => {
 
       const res = await apiWithAuth(`/catalog/${seededItem.id}`, httpMethods.put('', updateData));
 
-      // May return 500 if embedding regeneration fails in test environment
-      expect([200, 500]).toContain(res.status);
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.id).toBeDefined();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBeDefined();
     });
 
     it('returns 404 for non-existent item', async () => {
@@ -233,8 +209,7 @@ describe('Catalog Routes', () => {
           weight: -1, // Invalid weight
         }),
       );
-      // May return 400 for validation, 500 from embedding service, or 200 if validation is not strict
-      expect([200, 400, 500]).toContain(res.status);
+      expectBadRequest(res);
     });
   });
 
@@ -255,7 +230,7 @@ describe('Catalog Routes', () => {
   });
 
   describe('POST /catalog/etl', () => {
-    it('queues ETL job (requires API key)', async () => {
+    it('queues ETL job', async () => {
       const res = await apiWithApiKey(
         '/catalog/etl',
         httpMethods.post('', {
@@ -266,8 +241,8 @@ describe('Catalog Routes', () => {
         }),
       );
 
-      // May return 400 if ETL_QUEUE is not properly configured in test environment
-      expect([200, 400]).toContain(res.status);
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('regular users cannot queue ETL without API key', async () => {
@@ -280,21 +255,21 @@ describe('Catalog Routes', () => {
           scraperRevision: 'v1.0.0',
         }),
       );
-      expect([403, 401, 400]).toContain(res.status);
+      expect(res.status).toBe(401);
     });
   });
 
   describe('POST /catalog/backfill-embeddings', () => {
-    it('backfills embeddings (requires API key)', async () => {
+    it('backfills embeddings', async () => {
       const res = await apiWithApiKey('/catalog/backfill-embeddings', httpMethods.post('', {}));
 
-      // May return 500 if EMBEDDINGS_QUEUE is not properly configured in test environment
-      expect([200, 500]).toContain(res.status);
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('regular users cannot backfill embeddings without API key', async () => {
       const res = await apiWithAuth('/catalog/backfill-embeddings', httpMethods.post('', {}));
-      expect([403, 401, 500]).toContain(res.status);
+      expect(res.status).toBe(401);
     });
   });
 
