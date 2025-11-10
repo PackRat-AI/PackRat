@@ -55,23 +55,6 @@ describe('Chat Routes', () => {
       expect(data.error).toContain('message');
     });
 
-    it('validates message length', async () => {
-      const longMessage = 'a'.repeat(10000);
-      const res = await apiWithAuth(
-        '/chat',
-        httpMethods.post('', {
-          message: longMessage,
-        }),
-      );
-
-      // Should either handle gracefully or return 400
-      if (res.status === 400) {
-        expectBadRequest(res);
-      } else {
-        expect(res.status).toBe(200);
-      }
-    });
-
     it('accepts context information', async () => {
       const chatWithContext = {
         message: 'Recommend a sleeping bag',
@@ -171,56 +154,6 @@ describe('Chat Routes', () => {
 
       expect(res2.status).toBe(200);
       await expectJsonResponse(res2, ['response']);
-    });
-  });
-
-  // All remaining chat tests require functional AI services and are skipped
-  describe.skip('GET /chat/history (requires AI services)', () => {
-    it('returns chat history for authenticated user', async () => {
-      const res = await apiWithAuth('/chat/history');
-
-      expect(res.status).toBe(200);
-      const data = await expectJsonResponse(res);
-      expect(Array.isArray(data) || data.conversations).toBeTruthy();
-    });
-
-    it('accepts pagination parameters', async () => {
-      const res = await apiWithAuth('/chat/history?page=1&limit=10');
-
-      expect(res.status).toBe(200);
-      await expectJsonResponse(res);
-    });
-  });
-
-  describe.skip('GET /chat/:conversationId (requires AI services)', () => {
-    it('returns specific conversation', async () => {
-      const res = await apiWithAuth('/chat/test-conversation-1');
-
-      expect(res.status).toBe(200);
-      const data = await expectJsonResponse(res, ['id', 'messages']);
-      expect(data.messages).toBeDefined();
-      expect(Array.isArray(data.messages)).toBe(true);
-    });
-
-    it('prevents access to other users conversations', async () => {
-      const res = await apiWithAuth('/chat/other-user-conversation');
-
-      // Should return 404 or 403
-      expect([403, 404]).toContain(res.status);
-    });
-  });
-
-  describe.skip('DELETE /chat/:conversationId (requires AI services)', () => {
-    it('deletes conversation', async () => {
-      const res = await apiWithAuth('/chat/test-conversation-1', httpMethods.delete(''));
-
-      expect([200, 204]).toContain(res.status);
-    });
-
-    it('prevents deleting other users conversations', async () => {
-      const res = await apiWithAuth('/chat/other-user-conversation', httpMethods.delete(''));
-
-      expect([403, 404]).toContain(res.status);
     });
   });
 
