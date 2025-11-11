@@ -1,8 +1,16 @@
 import { createDb } from '@packrat/api/db';
 import type { InferInsertModel } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { catalogItems, packTemplateItems, packTemplates, users } from '../../src/db/schema';
+import {
+  catalogItems,
+  packItems,
+  packTemplateItems,
+  packTemplates,
+  packs,
+  users,
+} from '../../src/db/schema';
 import { createTestCatalogItem } from '../fixtures/catalog-fixtures';
+import { createTestPack, createTestPackItem } from '../fixtures/pack-fixtures';
 import {
   createTestPackTemplate,
   createTestPackTemplateItem,
@@ -177,6 +185,82 @@ export async function seedPackTemplateItems(
   });
 
   const createdItems = await db.insert(packTemplateItems).values(items).returning();
+
+  return createdItems;
+}
+
+/**
+ * Seeds a pack into the test database
+ * @returns The created pack with id
+ */
+export async function seedPack(overrides?: Partial<InferInsertModel<typeof packs>>) {
+  const db = createDb({} as unknown as Context);
+
+  const packData = createTestPack(overrides);
+
+  const [pack] = await db.insert(packs).values(packData).returning();
+
+  return pack;
+}
+
+/**
+ * Seeds multiple packs into the test database
+ * @returns Array of created packs with ids
+ */
+export async function seedPacks(
+  count: number,
+  overrides?: Partial<InferInsertModel<typeof packs>>,
+) {
+  const db = createDb({} as unknown as Context);
+
+  const packsData = Array.from({ length: count }, (_, i) => {
+    return createTestPack({
+      ...overrides,
+      name: `Test Pack ${i + 1}`,
+    });
+  });
+
+  const createdPacks = await db.insert(packs).values(packsData).returning();
+
+  return createdPacks;
+}
+
+/**
+ * Seeds a pack item into the test database
+ * @returns The created pack item with id
+ */
+export async function seedPackItem(
+  packId: string,
+  overrides?: Partial<InferInsertModel<typeof packItems>>,
+) {
+  const db = createDb({} as unknown as Context);
+
+  const itemData = createTestPackItem(packId, overrides);
+
+  const [item] = await db.insert(packItems).values(itemData).returning();
+
+  return item;
+}
+
+/**
+ * Seeds multiple pack items into the test database
+ * @returns Array of created pack items with ids
+ */
+export async function seedPackItems(
+  packId: string,
+  count: number,
+  overrides?: Partial<InferInsertModel<typeof packItems>>,
+) {
+  const db = createDb({} as unknown as Context);
+
+  const items = Array.from({ length: count }, (_, i) => {
+    return createTestPackItem(packId, {
+      ...overrides,
+      name: `Test Item ${i + 1}`,
+    });
+  });
+
+  const createdItems = await db.insert(packItems).values(items).returning();
 
   return createdItems;
 }

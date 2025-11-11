@@ -19,7 +19,7 @@ export const TEST_USER = {
   email: 'test@example.com',
   firstName: 'Test',
   lastName: 'User',
-  role: 'user' as const,
+  role: 'USER' as const,
 };
 
 export const TEST_ADMIN = {
@@ -27,7 +27,7 @@ export const TEST_ADMIN = {
   email: 'admin@example.com',
   firstName: 'Admin',
   lastName: 'User',
-  role: 'admin' as const,
+  role: 'ADMIN' as const,
 };
 
 // Helper to create authenticated API requests
