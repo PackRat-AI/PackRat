@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { seedCatalogItem, seedPack, seedPackItem, seedTestUser } from './utils/db-helpers';
 import {
   api,
@@ -11,6 +11,38 @@ import {
   httpMethods,
   TEST_USER,
 } from './utils/test-helpers';
+
+// Mock PackService.generatePacks to avoid AI dependencies in tests
+vi.mock('../src/services/packService', async () => {
+  const actual = await vi.importActual<typeof import('../src/services/packService')>(
+    '../src/services/packService',
+  );
+  return {
+    ...actual,
+    PackService: class PackService extends actual.PackService {
+      async generatePacks(count: number) {
+        // Return mock generated packs without calling AI services
+        const mockPacks = [];
+        for (let i = 0; i < count; i++) {
+          mockPacks.push({
+            id: `generated-pack-${i}-${Date.now()}`,
+            userId: this['userId'],
+            name: `Generated Test Pack ${i + 1}`,
+            description: `AI-generated pack for testing purposes ${i + 1}`,
+            category: 'hiking',
+            tags: ['test', 'generated'],
+            isPublic: true,
+            isAIGenerated: true,
+            localCreatedAt: new Date(),
+            localUpdatedAt: new Date(),
+            deleted: false,
+          });
+        }
+        return mockPacks;
+      }
+    },
+  };
+});
 
 describe('Packs Routes', () => {
   let testPackId: string;
