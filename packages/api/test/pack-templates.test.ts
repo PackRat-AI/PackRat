@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   seedPackTemplate,
   seedPackTemplateItem,
@@ -15,8 +15,8 @@ import {
 } from './utils/test-helpers';
 
 describe('Pack Templates Routes', () => {
-  // Seed a test user before all tests
-  beforeAll(async () => {
+  // Seed a test user before each test (after cleanup)
+  beforeEach(async () => {
     await seedTestUser();
   });
   describe('Authentication', () => {

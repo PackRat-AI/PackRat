@@ -1,7 +1,8 @@
 // Environment & Deployment
 process.env.ENVIRONMENT = 'development';
 process.env.SENTRY_DSN = 'https://test@test.ingest.sentry.io/test';
-process.env.CF_VERSION_METADATA = JSON.stringify({ id: 'test-version' });
+// CF_VERSION_METADATA needs to be an object (not a string) for getEnv() to work correctly
+(process.env as any).CF_VERSION_METADATA = { id: 'test-version' };
 
 // Database - Using PostgreSQL Docker container for tests
 process.env.NEON_DATABASE_URL = 'postgres://test_user:test_password@localhost:5433/packrat_test';
@@ -386,6 +387,7 @@ vi.mock('@packrat/api/services/etl/queue', () => ({
 vi.mock('@packrat/api/utils/env-validation', () => ({
   getEnv: vi.fn(() => ({
     ...process.env,
+    CF_VERSION_METADATA: (process.env as any).CF_VERSION_METADATA || { id: 'test-version' },
     ETL_QUEUE: {
       send: vi.fn().mockResolvedValue(undefined),
       sendBatch: vi.fn().mockResolvedValue(undefined),
@@ -404,12 +406,8 @@ vi.mock('@packrat/api/utils/env-validation', () => ({
   })),
 }));
 
-// Mock the database module to use our test database (node-postgres version)
-vi.mock('@packrat/api/db', () => ({
-  createDb: vi.fn(() => testDb),
-  createReadOnlyDb: vi.fn(() => testDb),
-  createDbClient: vi.fn(() => testDb),
-}));
+// Database connection is NOT mocked - tests will use real connections to the test database
+// The test database is configured via environment variables in this file
 
 // Setup PostgreSQL connection for tests
 beforeAll(async () => {
@@ -437,32 +435,51 @@ beforeAll(async () => {
 
 // Clean up database after each test to ensure isolation
 beforeEach(async () => {
-  if (!testClient) return;
-
-  // Truncate all tables in a single transaction for better performance
-  // Using CASCADE to handle foreign key constraints
-  const tablesToTruncate = [
-    'users',
-    'packs',
-    'pack_items',
-    'pack_templates',
-    'pack_template_items',
-    'user_items',
-    'catalog_items',
-    'weather_cache',
-    'password_reset_codes',
-    'verification_codes',
-    'weight_history',
-  ];
+  console.log('🧹 Running beforeEach cleanup...');
+  // Create a temporary connection for cleanup
+  const cleanupClient = new Client({
+    host: 'localhost',
+    port: 5433,
+    database: 'packrat_test',
+    user: 'test_user',
+    password: 'test_password',
+  });
 
   try {
+    await cleanupClient.connect();
+    console.log('🔌 Cleanup client connected');
+    
+    // Truncate all tables in a single transaction for better performance
+    // Using CASCADE to handle foreign key constraints
+    const tablesToTruncate = [
+      'users',
+      'packs',
+      'pack_items',
+      'pack_templates',
+      'pack_template_items',
+      'catalog_items',
+      'trips',
+      'one_time_passwords',
+      'auth_providers',
+      'refresh_tokens',
+      'reported_content',
+      'weight_history',
+      'catalog_item_etl_jobs',
+      'etl_jobs',
+      'invalid_item_logs',
+    ];
+
     // Run all truncates in a single statement for speed
     const truncateQuery = tablesToTruncate
-      .map((table) => `TRUNCATE TABLE "${table}" CASCADE`)
+      .map((table) => `TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`)
       .join('; ');
-    await testClient.query(truncateQuery);
-  } catch (_error) {
-    // Ignore errors - tables might not exist yet
+    await cleanupClient.query(truncateQuery);
+    console.log('✅ Tables truncated successfully');
+  } catch (error) {
+    // Log but don't throw - tables might not exist yet
+    console.warn('⚠️  Warning: Could not truncate tables:', error);
+  } finally {
+    await cleanupClient.end();
   }
 });
 

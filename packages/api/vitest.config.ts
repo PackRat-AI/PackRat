@@ -75,7 +75,14 @@ export default defineWorkersConfig({
     poolOptions: {
       workers: {
         wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
+        singleWorker: true, // Run tests in a single worker to avoid isolation issues
       },
     },
+    // Run tests serially to avoid database conflicts
+    sequence: {
+      shuffle: false,
+    },
+    maxConcurrency: 1,
+    fileParallelism: false,
   },
 });

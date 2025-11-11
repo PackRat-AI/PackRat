@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { seedCatalogItem, seedPack, seedPackItem, seedTestUser } from './utils/db-helpers';
 import {
   api,
@@ -49,8 +49,8 @@ describe('Packs Routes', () => {
   let testPackItemId: string;
   let testCatalogItemId: number;
 
-  // Seed test data before all tests
-  beforeAll(async () => {
+  // Seed test data before each test (after cleanup)
+  beforeEach(async () => {
     await seedTestUser();
 
     // Create a test catalog item for pack items
