@@ -439,29 +439,31 @@ beforeAll(async () => {
 beforeEach(async () => {
   if (!testClient) return;
 
-  // Truncate all tables in a single transaction for better performance
-  // Using CASCADE to handle foreign key constraints
-  const tablesToTruncate = [
-    'users',
-    'packs',
+  // Delete from tables in reverse dependency order to avoid foreign key violations
+  // This is safer than TRUNCATE CASCADE and less prone to deadlocks
+  const tablesToClean = [
+    'weight_history',
+    'verification_codes',
+    'password_reset_codes',
+    'weather_cache',
     'pack_items',
-    'pack_templates',
     'pack_template_items',
+    'packs',
+    'pack_templates',
     'user_items',
     'catalog_items',
-    'weather_cache',
-    'password_reset_codes',
-    'verification_codes',
-    'weight_history',
+    'users',
   ];
 
   try {
-    // Run all truncates in a single statement for speed
-    const truncateQuery = tablesToTruncate
-      .map((table) => `TRUNCATE TABLE "${table}" CASCADE`)
-      .join('; ');
-    await testClient.query(truncateQuery);
-  } catch (_error) {
+    // Delete in a single transaction for atomicity
+    await testClient.query('BEGIN');
+    for (const table of tablesToClean) {
+      await testClient.query(`DELETE FROM "${table}"`);
+    }
+    await testClient.query('COMMIT');
+  } catch (error) {
+    await testClient.query('ROLLBACK');
     // Ignore errors - tables might not exist yet
   }
 });

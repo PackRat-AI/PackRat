@@ -41,8 +41,7 @@ export async function seedTestUser(overrides?: Partial<InferInsertModel<typeof u
   const db = createDb({} as unknown as Context);
 
   const userData = {
-    id: 1, // Default test user ID
-    email: overrides?.email ?? 'test@example.com',
+    email: overrides?.email ?? `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
     emailVerified: overrides?.emailVerified ?? true,
     passwordHash: overrides?.passwordHash ?? null,
     firstName: overrides?.firstName ?? 'Test',

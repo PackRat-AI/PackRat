@@ -77,5 +77,11 @@ export default defineWorkersConfig({
         wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
       },
     },
+    // Run tests sequentially to avoid database deadlocks
+    fileParallelism: false,
+    // Also disable parallel execution within test files
+    sequence: {
+      concurrent: false,
+    },
   },
 });

@@ -3,6 +3,8 @@ import { createDb } from '@packrat/api/db';
 import {
   authProviders,
   oneTimePasswords,
+  packTemplateItems,
+  packTemplates,
   packs,
   refreshTokens,
   users,
@@ -1065,6 +1067,12 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
 
   // Delete auth providers
   await db.delete(authProviders).where(eq(authProviders.userId, userId));
+
+  // Delete pack template items (must be deleted before pack templates)
+  await db.delete(packTemplateItems).where(eq(packTemplateItems.userId, userId));
+
+  // Delete pack templates
+  await db.delete(packTemplates).where(eq(packTemplates.userId, userId));
 
   // Delete all user's packs (cascade will delete pack items)
   await db.delete(packs).where(eq(packs.userId, userId));
