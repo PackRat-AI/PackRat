@@ -30,4 +30,4 @@ jobs:
         run: bun install
         
       - name: Run API tests
-        run: bun run test --cwd packages/api
+        run: bun run --cwd packages/api test

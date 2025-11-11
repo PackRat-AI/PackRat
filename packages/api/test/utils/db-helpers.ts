@@ -4,9 +4,9 @@ import type { Context } from 'hono';
 import {
   catalogItems,
   packItems,
+  packs,
   packTemplateItems,
   packTemplates,
-  packs,
   users,
 } from '../../src/db/schema';
 import { createTestCatalogItem } from '../fixtures/catalog-fixtures';
