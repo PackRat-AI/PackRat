@@ -98,6 +98,7 @@ describe('Catalog Routes', () => {
     it('returns single catalog item', async () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem({ name: 'Test Tent for GET' });
+      if (!seededItem) throw new Error('Failed to seed catalog item');
 
       const res = await apiWithAuth(`/catalog/${seededItem.id}`);
 
@@ -176,6 +177,7 @@ describe('Catalog Routes', () => {
     it('updates existing catalog item', async () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem({ name: 'Original Name' });
+      if (!seededItem) throw new Error('Failed to seed catalog item');
 
       const updateData = {
         name: 'Updated Test Item',
@@ -202,6 +204,7 @@ describe('Catalog Routes', () => {
     it('validates update data', async () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem();
+      if (!seededItem) throw new Error('Failed to seed catalog item');
 
       const res = await apiWithAuth(
         `/catalog/${seededItem.id}`,
@@ -217,6 +220,7 @@ describe('Catalog Routes', () => {
     it('deletes catalog item', async () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem({ name: 'Item to Delete' });
+      if (!seededItem) throw new Error('Failed to seed catalog item');
 
       const res = await apiWithAuth(`/catalog/${seededItem.id}`, httpMethods.delete(''));
 
@@ -282,6 +286,7 @@ describe('Catalog Routes', () => {
     it('returns similar items for existing catalog item', async () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem({ name: 'Test Tent for Similar' });
+      if (!seededItem) throw new Error('Failed to seed catalog item');
 
       const res = await apiWithAuth(`/catalog/${seededItem.id}/similar`);
 
@@ -310,6 +315,7 @@ describe('Catalog Routes', () => {
     it('accepts limit parameter', async () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem({ name: 'Test Tent for Limit' });
+      if (!seededItem) throw new Error('Failed to seed catalog item');
 
       const res = await apiWithAuth(`/catalog/${seededItem.id}/similar?limit=3`);
 
@@ -321,6 +327,7 @@ describe('Catalog Routes', () => {
     it('accepts threshold parameter', async () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem({ name: 'Test Tent for Threshold' });
+      if (!seededItem) throw new Error('Failed to seed catalog item');
 
       const res = await apiWithAuth(`/catalog/${seededItem.id}/similar?threshold=0.5`);
 
@@ -337,6 +344,7 @@ describe('Catalog Routes', () => {
     it('validates limit parameter bounds', async () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem({ name: 'Test Tent for Bounds' });
+      if (!seededItem) throw new Error('Failed to seed catalog item');
 
       // Test upper bound
       const res1 = await apiWithAuth(`/catalog/${seededItem.id}/similar?limit=50`);

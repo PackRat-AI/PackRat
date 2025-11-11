@@ -53,6 +53,7 @@ describe('Pack Templates Routes', () => {
     it('returns single pack template', async () => {
       // Seed a template first
       const seededTemplate = await seedPackTemplate({ name: 'Test Template for GET' });
+      if (!seededTemplate) throw new Error('Failed to seed pack template');
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}`);
 
@@ -65,6 +66,7 @@ describe('Pack Templates Routes', () => {
     it('returns template with metadata', async () => {
       // Seed a template first
       const seededTemplate = await seedPackTemplate();
+      if (!seededTemplate) throw new Error('Failed to seed pack template');
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}`);
 
@@ -84,6 +86,7 @@ describe('Pack Templates Routes', () => {
     it('returns template items list', async () => {
       // Seed a template with items
       const seededTemplate = await seedPackTemplate();
+      if (!seededTemplate) throw new Error('Failed to seed pack template');
       await seedPackTemplateItems(seededTemplate.id, 3);
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}/items`);
@@ -96,6 +99,7 @@ describe('Pack Templates Routes', () => {
     it('returns items with quantities', async () => {
       // Seed a template with items
       const seededTemplate = await seedPackTemplate();
+      if (!seededTemplate) throw new Error('Failed to seed pack template');
       await seedPackTemplateItem(seededTemplate.id, { quantity: 2 });
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}/items`);

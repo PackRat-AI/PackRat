@@ -22,11 +22,29 @@ vi.mock('../src/services/packService', async () => {
     PackService: class PackService extends actual.PackService {
       async generatePacks(count: number) {
         // Return mock generated packs without calling AI services
-        const mockPacks = [];
+        // Access userId through a type assertion since it's private
+        const userId = (this as any).userId as number;
+        const mockPacks: Array<{
+          id: string;
+          userId: number;
+          name: string;
+          description: string;
+          category: string;
+          tags: string[];
+          isPublic: boolean;
+          isAIGenerated: boolean;
+          localCreatedAt: Date;
+          localUpdatedAt: Date;
+          deleted: boolean;
+          createdAt: Date;
+          updatedAt: Date;
+          image: string | null;
+          templateId: string | null;
+        }> = [];
         for (let i = 0; i < count; i++) {
           mockPacks.push({
             id: `generated-pack-${i}-${Date.now()}`,
-            userId: this.userId,
+            userId,
             name: `Generated Test Pack ${i + 1}`,
             description: `AI-generated pack for testing purposes ${i + 1}`,
             category: 'hiking',
@@ -36,6 +54,10 @@ vi.mock('../src/services/packService', async () => {
             localCreatedAt: new Date(),
             localUpdatedAt: new Date(),
             deleted: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            image: null,
+            templateId: null,
           });
         }
         return mockPacks;
@@ -58,6 +80,7 @@ describe('Packs Routes', () => {
       name: 'Test Tent',
       categories: ['shelter'],
     });
+    if (!catalogItem) throw new Error('Failed to seed catalog item');
     testCatalogItemId = catalogItem.id;
 
     // Create a test pack owned by the test user
@@ -66,6 +89,7 @@ describe('Packs Routes', () => {
       name: 'Test Pack',
       category: 'hiking',
     });
+    if (!pack) throw new Error('Failed to seed pack');
     testPackId = pack.id;
 
     // Add some items to the pack
@@ -75,6 +99,7 @@ describe('Packs Routes', () => {
       name: 'Test Tent Item',
       category: 'shelter',
     });
+    if (!packItem) throw new Error('Failed to seed pack item');
     testPackItemId = packItem.id;
   });
 
@@ -209,12 +234,14 @@ describe('Packs Routes', () => {
         firstName: 'Other',
         lastName: 'User',
       });
+      if (!otherUser) throw new Error('Failed to seed other user');
 
       const otherUserPack = await seedPack({
         userId: otherUser.id,
         name: 'Other User Pack',
         category: 'hiking',
       });
+      if (!otherUserPack) throw new Error('Failed to seed other user pack');
 
       const res = await apiWithAuth(
         `/packs/${otherUserPack.id}`,
@@ -236,6 +263,7 @@ describe('Packs Routes', () => {
         name: 'Pack to Delete',
         category: 'hiking',
       });
+      if (!packToDelete) throw new Error('Failed to seed pack to delete');
 
       const res = await apiWithAuth(`/packs/${packToDelete.id}`, httpMethods.delete(''));
 
@@ -255,12 +283,14 @@ describe('Packs Routes', () => {
         firstName: 'Another',
         lastName: 'User',
       });
+      if (!otherUser) throw new Error('Failed to seed another user');
 
       const otherUserPack = await seedPack({
         userId: otherUser.id,
         name: 'Other User Pack',
         category: 'hiking',
       });
+      if (!otherUserPack) throw new Error('Failed to seed other user pack');
 
       const res = await apiWithAuth(`/packs/${otherUserPack.id}`, httpMethods.delete(''));
 
@@ -330,6 +360,7 @@ describe('Packs Routes', () => {
           name: 'Item to Delete',
           category: 'gear',
         });
+        if (!itemToDelete) throw new Error('Failed to seed pack item to delete');
 
         const res = await apiWithAuth(`/packs/items/${itemToDelete.id}`, httpMethods.delete(''));
 
