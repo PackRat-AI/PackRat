@@ -14,7 +14,9 @@ import {
 
 // Mock PackService.generatePacks to avoid AI dependencies in tests
 vi.mock('../src/services/packService', async () => {
-  const actual = await vi.importActual<typeof import('../src/services/packService')>('../src/services/packService');
+  const actual = await vi.importActual<typeof import('../src/services/packService')>(
+    '../src/services/packService',
+  );
   return {
     ...actual,
     PackService: class PackService extends actual.PackService {
