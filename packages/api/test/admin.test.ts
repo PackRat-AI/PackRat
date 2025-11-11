@@ -28,7 +28,7 @@ describe('Admin Routes', () => {
 
   describe('GET /admin/', () => {
     it('returns admin dashboard HTML', async () => {
-      const res = await apiWithBasicAuth('/');
+      const res = await apiWithBasicAuth('');
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('text/html');
 

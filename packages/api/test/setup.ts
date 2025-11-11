@@ -60,10 +60,17 @@ let testDb: ReturnType<typeof drizzle>;
 let isConnected = false;
 
 // Mock AWS SDK S3Client to prevent actual network calls
+vi.mock('@aws-sdk/s3-request-presigner', () => ({
+  getSignedUrl: vi.fn().mockResolvedValue('https://mock-signed-url.com/test.jpg'),
+}));
+
 vi.mock('@aws-sdk/client-s3', () => {
   return {
     S3Client: vi.fn().mockImplementation(() => ({
       send: vi.fn(),
+      config: {
+        endpointProvider: vi.fn(),
+      },
     })),
     ListObjectsV2Command: vi.fn(),
     GetObjectCommand: vi.fn(),
@@ -83,6 +90,20 @@ vi.mock('@packrat/api/services', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@packrat/api/services')>();
   return {
     ...actual,
+    ImageDetectionService: class MockImageDetectionService {
+      async detectAndMatchItems(_imageUrl: string, _matchLimit?: number) {
+        return {
+          detectedItems: [
+            {
+              label: 'backpack',
+              confidence: 0.9,
+              matches: [],
+            },
+          ],
+          summary: 'Detected a backpack.',
+        };
+      }
+    },
     AIService: class MockAIService {
       async perplexitySearch(_query: string) {
         return {
@@ -368,6 +389,17 @@ vi.mock('@packrat/api/utils/env-validation', () => ({
     ETL_QUEUE: {
       send: vi.fn().mockResolvedValue(undefined),
       sendBatch: vi.fn().mockResolvedValue(undefined),
+    },
+    PACKRAT_BUCKET: {
+      delete: vi.fn().mockResolvedValue(undefined),
+      put: vi.fn().mockResolvedValue({
+        key: 'mock-key',
+        checksums: {
+          toJSON: () => ({}),
+        },
+      }),
+      get: vi.fn().mockResolvedValue(null),
+      head: vi.fn().mockResolvedValue(null),
     },
   })),
 }));
