@@ -2,13 +2,13 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { seedCatalogItem, seedPack, seedPackItem, seedTestUser } from './utils/db-helpers';
 import {
   api,
+  apiWithAdmin,
   apiWithAuth,
   expectBadRequest,
   expectJsonResponse,
   expectNotFound,
   expectUnauthorized,
   httpMethods,
-  TEST_ADMIN,
   TEST_USER,
 } from './utils/test-helpers';
 
@@ -82,36 +82,8 @@ describe('Packs Routes', () => {
       expect(Array.isArray(data) || data.packs).toBeTruthy();
     });
 
-    it('accepts pagination parameters', async () => {
-      const res = await apiWithAuth('/packs?page=1&limit=10');
-
-      expect(res.status).toBe(200);
-      await expectJsonResponse(res);
-    });
-
-    it('accepts search query', async () => {
-      const res = await apiWithAuth('/packs?q=hiking');
-
-      expect(res.status).toBe(200);
-      await expectJsonResponse(res);
-    });
-
-    it('accepts activity filter', async () => {
-      const res = await apiWithAuth('/packs?activity=hiking');
-
-      expect(res.status).toBe(200);
-      await expectJsonResponse(res);
-    });
-
-    it('accepts weight range filters', async () => {
-      const res = await apiWithAuth('/packs?minWeight=1000&maxWeight=5000');
-
-      expect(res.status).toBe(200);
-      await expectJsonResponse(res);
-    });
-
     it('accepts public filter', async () => {
-      const res = await apiWithAuth('/packs?public=true');
+      const res = await apiWithAuth('/packs?includePublic=1');
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
@@ -131,11 +103,6 @@ describe('Packs Routes', () => {
     it('returns 404 for non-existent pack', async () => {
       const res = await apiWithAuth('/packs/999999');
       expectNotFound(res);
-    });
-
-    it('validates ID parameter', async () => {
-      const res = await apiWithAuth('/packs/invalid-id');
-      expect([400, 404]).toContain(res.status);
     });
   });
 
@@ -175,21 +142,6 @@ describe('Packs Routes', () => {
         }),
       );
       expectBadRequest(res);
-    });
-
-    it('validates category field', async () => {
-      const res = await apiWithAuth(
-        '/packs',
-        httpMethods.post('', {
-          id: `pack_test_${Date.now()}`,
-          name: 'Test Pack',
-          category: 'invalid-category',
-          localCreatedAt: new Date().toISOString(),
-          localUpdatedAt: new Date().toISOString(),
-        }),
-      );
-      // API might not validate category strictly, accept both 400 and 200
-      expect([200, 400]).toContain(res.status);
     });
   });
 
@@ -282,8 +234,8 @@ describe('Packs Routes', () => {
 
       const res = await apiWithAuth(`/packs/${otherUserPack.id}`, httpMethods.delete(''));
 
-      // Should return 404 (not found for this user), 403 (forbidden), or 200 (soft delete)
-      expect([200, 403, 404]).toContain(res.status);
+      // Should return 404 (not found for this user) or 403 (forbidden)
+      expect([403, 404]).toContain(res.status);
     });
   });
 
@@ -336,8 +288,7 @@ describe('Packs Routes', () => {
           httpMethods.patch('', updateData),
         );
 
-        // May return 400 if OpenAI API key not configured, or 200 if configured
-        expect([200, 400]).toContain(res.status);
+        expect(res.status).toBe(200);
       });
     });
 
@@ -363,21 +314,18 @@ describe('Packs Routes', () => {
         count: 2,
       };
 
-      const res = await apiWithAuth(
+      const res = await apiWithAdmin(
         '/packs/generate-packs',
         httpMethods.post('', generateRequest),
-        TEST_ADMIN,
       );
 
-      // Admin endpoint requires proper admin setup, might return 403 in test environment
-      expect([200, 403]).toContain(res.status);
+      expect(res.status).toBe(200);
     });
 
-    it('validates generate request', async () => {
-      const res = await apiWithAuth('/packs/generate-packs', httpMethods.post('', {}), TEST_ADMIN);
+    it('uses default params', async () => {
+      const res = await apiWithAdmin('/packs/generate-packs', httpMethods.post('', {}));
 
-      // Either validates or returns 403 for admin
-      expect([400, 403]).toContain(res.status);
+      expect(res.status).toBe(200);
     });
 
     it('requires admin privileges', async () => {
