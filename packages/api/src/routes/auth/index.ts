@@ -4,6 +4,8 @@ import {
   authProviders,
   oneTimePasswords,
   packs,
+  packTemplateItems,
+  packTemplates,
   refreshTokens,
   users,
 } from '@packrat/api/db/schema';
@@ -1065,6 +1067,12 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
 
   // Delete auth providers
   await db.delete(authProviders).where(eq(authProviders.userId, userId));
+
+  // Delete pack template items (must be deleted before pack templates)
+  await db.delete(packTemplateItems).where(eq(packTemplateItems.userId, userId));
+
+  // Delete pack templates
+  await db.delete(packTemplates).where(eq(packTemplates.userId, userId));
 
   // Delete all user's packs (cascade will delete pack items)
   await db.delete(packs).where(eq(packs.userId, userId));

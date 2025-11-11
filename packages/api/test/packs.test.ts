@@ -26,7 +26,7 @@ vi.mock('../src/services/packService', async () => {
         for (let i = 0; i < count; i++) {
           mockPacks.push({
             id: `generated-pack-${i}-${Date.now()}`,
-            userId: this['userId'],
+            userId: this.userId,
             name: `Generated Test Pack ${i + 1}`,
             description: `AI-generated pack for testing purposes ${i + 1}`,
             category: 'hiking',
@@ -205,7 +205,6 @@ describe('Packs Routes', () => {
     it('prevents updating other users packs', async () => {
       // Create a different user and their pack
       const otherUser = await seedTestUser({
-        id: 2,
         email: 'other@example.com',
         firstName: 'Other',
         lastName: 'User',
@@ -252,7 +251,6 @@ describe('Packs Routes', () => {
     it('prevents deleting other users packs', async () => {
       // Create a different user and their pack
       const otherUser = await seedTestUser({
-        id: 3,
         email: 'another@example.com',
         firstName: 'Another',
         lastName: 'User',
