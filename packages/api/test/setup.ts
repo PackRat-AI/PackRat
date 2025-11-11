@@ -448,7 +448,7 @@ beforeEach(async () => {
   try {
     await cleanupClient.connect();
     console.log('🔌 Cleanup client connected');
-    
+
     // Truncate all tables in a single transaction for better performance
     // Using CASCADE to handle foreign key constraints
     const tablesToTruncate = [

@@ -8,6 +8,9 @@ import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import type { Context } from 'hono';
 import { Pool } from 'pg';
 
+// Cache for database connections
+const connectionCache = new Map<string, ReturnType<typeof drizzlePg>>();
+
 // Check if we're using a standard PostgreSQL URL (for tests) vs Neon URL
 const isStandardPostgresUrl = (url: string) => {
   // Parse and check the hostname to robustly exclude Neon domains
@@ -26,19 +29,31 @@ const isStandardPostgresUrl = (url: string) => {
 
 // Create database connection based on URL type
 const createConnection = (url: string, useNeonHttp?: boolean) => {
+  // Check cache first
+  const cacheKey = `${url}:${useNeonHttp}`;
+  if (connectionCache.has(cacheKey)) {
+    return connectionCache.get(cacheKey)!;
+  }
+
+  let connection;
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL (tests)
     const pool = new Pool({ connectionString: url });
-    return drizzlePg(pool, { schema });
+    connection = drizzlePg(pool, { schema });
   } else {
     // Use Neon for production
     if (useNeonHttp) {
       const sql = neon(url);
-      return drizzle(sql, { schema });
+      connection = drizzle(sql, { schema }) as any;
+    } else {
+      const neonPool = new NeonPool({ connectionString: url });
+      connection = drizzleServerless(neonPool, { schema }) as any;
     }
-    const neonPool = new NeonPool({ connectionString: url });
-    return drizzleServerless(neonPool, { schema });
   }
+
+  // Cache the connection
+  connectionCache.set(cacheKey, connection as any);
+  return connection;
 };
 
 // Create SQL client with appropriate driver for Hono contexts
