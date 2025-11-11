@@ -3,9 +3,9 @@ import { createDb } from '@packrat/api/db';
 import {
   authProviders,
   oneTimePasswords,
+  packs,
   packTemplateItems,
   packTemplates,
-  packs,
   refreshTokens,
   users,
 } from '@packrat/api/db/schema';

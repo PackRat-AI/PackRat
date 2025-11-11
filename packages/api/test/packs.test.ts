@@ -26,7 +26,7 @@ vi.mock('../src/services/packService', async () => {
         for (let i = 0; i < count; i++) {
           mockPacks.push({
             id: `generated-pack-${i}-${Date.now()}`,
-            userId: this['userId'],
+            userId: this.userId,
             name: `Generated Test Pack ${i + 1}`,
             description: `AI-generated pack for testing purposes ${i + 1}`,
             category: 'hiking',
