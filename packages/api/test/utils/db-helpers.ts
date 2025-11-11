@@ -1,8 +1,12 @@
 import { createDb } from '@packrat/api/db';
 import type { InferInsertModel } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { catalogItems } from '../../src/db/schema';
+import { catalogItems, packTemplateItems, packTemplates, users } from '../../src/db/schema';
 import { createTestCatalogItem } from '../fixtures/catalog-fixtures';
+import {
+  createTestPackTemplate,
+  createTestPackTemplateItem,
+} from '../fixtures/pack-template-fixtures';
 
 /**
  * Generates a mock embedding vector
@@ -19,6 +23,29 @@ function generateMockEmbedding(dimensions = 1536): number[] {
 let skuCounter = 0;
 function generateUniqueSku(): string {
   return `TEST-${Date.now()}-${skuCounter++}-${Math.random().toString(36).substring(7)}`;
+}
+
+/**
+ * Seeds a test user into the database
+ * @returns The created user with id
+ */
+export async function seedTestUser(overrides?: Partial<InferInsertModel<typeof users>>) {
+  const db = createDb({} as unknown as Context);
+
+  const userData = {
+    id: 1, // Default test user ID
+    email: overrides?.email ?? 'test@example.com',
+    emailVerified: overrides?.emailVerified ?? true,
+    passwordHash: overrides?.passwordHash ?? null,
+    firstName: overrides?.firstName ?? 'Test',
+    lastName: overrides?.lastName ?? 'User',
+    role: overrides?.role ?? 'USER',
+    ...overrides,
+  };
+
+  const [user] = await db.insert(users).values(userData).returning();
+
+  return user;
 }
 
 /**
@@ -72,6 +99,84 @@ export async function seedCatalogItems(
   });
 
   const createdItems = await db.insert(catalogItems).values(items).returning();
+
+  return createdItems;
+}
+
+/**
+ * Seeds a pack template into the test database
+ * @returns The created pack template with id
+ */
+export async function seedPackTemplate(
+  overrides?: Partial<InferInsertModel<typeof packTemplates>>,
+) {
+  const db = createDb({} as unknown as Context);
+
+  const templateData = createTestPackTemplate(overrides);
+
+  const [template] = await db.insert(packTemplates).values(templateData).returning();
+
+  return template;
+}
+
+/**
+ * Seeds multiple pack templates into the test database
+ * @returns Array of created pack templates with ids
+ */
+export async function seedPackTemplates(
+  count: number,
+  overrides?: Partial<InferInsertModel<typeof packTemplates>>,
+) {
+  const db = createDb({} as unknown as Context);
+
+  const templates = Array.from({ length: count }, (_, i) => {
+    return createTestPackTemplate({
+      ...overrides,
+      name: `Test Template ${i + 1}`,
+    });
+  });
+
+  const createdTemplates = await db.insert(packTemplates).values(templates).returning();
+
+  return createdTemplates;
+}
+
+/**
+ * Seeds a pack template item into the test database
+ * @returns The created pack template item with id
+ */
+export async function seedPackTemplateItem(
+  packTemplateId: string,
+  overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,
+) {
+  const db = createDb({} as unknown as Context);
+
+  const itemData = createTestPackTemplateItem(packTemplateId, overrides);
+
+  const [item] = await db.insert(packTemplateItems).values(itemData).returning();
+
+  return item;
+}
+
+/**
+ * Seeds multiple pack template items into the test database
+ * @returns Array of created pack template items with ids
+ */
+export async function seedPackTemplateItems(
+  packTemplateId: string,
+  count: number,
+  overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,
+) {
+  const db = createDb({} as unknown as Context);
+
+  const items = Array.from({ length: count }, (_, i) => {
+    return createTestPackTemplateItem(packTemplateId, {
+      ...overrides,
+      name: `Test Item ${i + 1}`,
+    });
+  });
+
+  const createdItems = await db.insert(packTemplateItems).values(items).returning();
 
   return createdItems;
 }
