@@ -1,53 +1,47 @@
-// Environment & Deployment
-process.env.ENVIRONMENT = 'development';
-process.env.SENTRY_DSN = 'https://test@test.ingest.sentry.io/test';
-process.env.CF_VERSION_METADATA = JSON.stringify({ id: 'test-version' });
+const testEnv = {
+  // Environment & Deployment
+  ENVIRONMENT: 'development',
+  SENTRY_DSN: 'https://test@test.ingest.sentry.io/test',
+  CF_VERSION_METADATA: JSON.stringify({ id: 'test-version' }),
 
-// Database - Using PostgreSQL Docker container for tests
-process.env.NEON_DATABASE_URL = 'postgres://test_user:test_password@localhost:5433/packrat_test';
-process.env.NEON_DATABASE_URL_READONLY =
-  'postgres://test_user:test_password@localhost:5433/packrat_test';
+  // Database
+  NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5433/packrat_test',
+  NEON_DATABASE_URL_READONLY: 'postgres://test_user:test_password@localhost:5433/packrat_test',
 
-// Authentication & Security
-process.env.JWT_SECRET = 'secret';
-process.env.PASSWORD_RESET_SECRET = 'secret';
-process.env.GOOGLE_CLIENT_ID = 'test-client-id';
-process.env.ADMIN_USERNAME = 'admin';
-process.env.ADMIN_PASSWORD = 'admin-password';
-process.env.PACKRAT_API_KEY = 'test-api-key';
+  // Authentication & Security
+  JWT_SECRET: 'secret',
+  PASSWORD_RESET_SECRET: 'secret',
+  GOOGLE_CLIENT_ID: 'test-client-id',
+  ADMIN_USERNAME: 'admin',
+  ADMIN_PASSWORD: 'admin-password',
+  PACKRAT_API_KEY: 'test-api-key',
 
-// Email Configuration
-process.env.EMAIL_PROVIDER = 'resend';
-process.env.RESEND_API_KEY = 'key';
-process.env.EMAIL_FROM = 'test@example.com';
+  // Email Configuration
+  EMAIL_PROVIDER: 'resend',
+  RESEND_API_KEY: 'key',
+  EMAIL_FROM: 'test@example.com',
 
-// AI & External APIs
-process.env.OPENAI_API_KEY = 'sk-test-key';
-process.env.AI_PROVIDER = 'openai';
-process.env.PERPLEXITY_API_KEY = 'pplx-test-key';
+  // AI & External APIs
+  OPENAI_API_KEY: 'sk-test-key',
+  AI_PROVIDER: 'openai',
+  PERPLEXITY_API_KEY: 'pplx-test-key',
 
-// Weather Services
-process.env.OPENWEATHER_KEY = 'test-weather-key';
-process.env.WEATHER_API_KEY = 'test-weather-key';
+  // Weather Services
+  OPENWEATHER_KEY: 'test-weather-key',
+  WEATHER_API_KEY: 'test-weather-key',
 
-// Cloudflare R2 Storage (config values)
-process.env.CLOUDFLARE_ACCOUNT_ID = 'test-account-id';
-process.env.CLOUDFLARE_AI_GATEWAY_ID = 'test-gateway-id';
-process.env.R2_ACCESS_KEY_ID = 'test-access-key';
-process.env.R2_SECRET_ACCESS_KEY = 'test-secret-key';
-process.env.PACKRAT_BUCKET_R2_BUCKET_NAME = 'test-bucket';
-process.env.PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME = 'test-guides-bucket';
-process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME = 'test-scrapy-bucket';
+  // Cloudflare R2 Storage
+  CLOUDFLARE_ACCOUNT_ID: 'test-account-id',
+  CLOUDFLARE_AI_GATEWAY_ID: 'test-gateway-id',
+  R2_ACCESS_KEY_ID: 'test-access-key',
+  R2_SECRET_ACCESS_KEY: 'test-secret-key',
+  PACKRAT_BUCKET_R2_BUCKET_NAME: 'test-bucket',
+  PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: 'test-guides-bucket',
+  PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: 'test-scrapy-bucket',
 
-// Content & Guides
-process.env.PACKRAT_GUIDES_RAG_NAME = 'test-rag';
-process.env.PACKRAT_GUIDES_BASE_URL = 'https://guides.test.com';
-
-// Mock Cloudflare AI binding in process.env for test access
-(process.env as any).AI = {
-  autorag: () => ({
-    query: async () => ({ answer: 'Mock RAG result', sources: [] }),
-  }),
+  // Content & Guides
+  PACKRAT_GUIDES_RAG_NAME: 'test-rag',
+  PACKRAT_GUIDES_BASE_URL: 'https://guides.test.com',
 };
 
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -340,7 +334,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
 
 vi.mock('hono/adapter', async () => {
   const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
-  return { ...actual, env: () => process.env };
+  return { ...actual, env: () => testEnv };
 });
 
 // Mock google-auth-library to avoid node:child_process issues in Workers environment
@@ -385,7 +379,7 @@ vi.mock('@packrat/api/services/etl/queue', () => ({
 
 vi.mock('@packrat/api/utils/env-validation', () => ({
   getEnv: vi.fn(() => ({
-    ...process.env,
+    ...testEnv,
     ETL_QUEUE: {
       send: vi.fn().mockResolvedValue(undefined),
       sendBatch: vi.fn().mockResolvedValue(undefined),
@@ -462,7 +456,7 @@ beforeEach(async () => {
       await testClient.query(`DELETE FROM "${table}"`);
     }
     await testClient.query('COMMIT');
-  } catch (error) {
+  } catch (_error) {
     await testClient.query('ROLLBACK');
     // Ignore errors - tables might not exist yet
   }
