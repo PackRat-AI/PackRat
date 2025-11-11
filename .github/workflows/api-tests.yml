@@ -74,4 +74,4 @@ jobs:
           PERPLEXITY_API_KEY: pplx-test-key
           OPENWEATHER_KEY: test-weather-key
           WEATHER_API_KEY: test-weather-key
-        run: bun run test --cwd packages/api
+        run: bun run --cwd packages/api test
