@@ -1,3 +1,4 @@
+import type { Pack } from '@packrat/api/db/schema';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { seedCatalogItem, seedPack, seedPackItem, seedTestUser } from './utils/db-helpers';
 import {
@@ -20,19 +21,28 @@ vi.mock('../src/services/packService', async () => {
   return {
     ...actual,
     PackService: class PackService extends actual.PackService {
+      private readonly _userId: number;
+      constructor(...args: ConstructorParameters<typeof actual.PackService>) {
+        super(...args);
+        // Capture userId (second argument in original constructor)
+        this._userId = args[1] as number;
+      }
       async generatePacks(count: number) {
-        // Return mock generated packs without calling AI services
-        const mockPacks = [];
+        const mockPacks: Pack[] = [];
         for (let i = 0; i < count; i++) {
           mockPacks.push({
             id: `generated-pack-${i}-${Date.now()}`,
-            userId: this.userId,
+            userId: this._userId,
             name: `Generated Test Pack ${i + 1}`,
             description: `AI-generated pack for testing purposes ${i + 1}`,
             category: 'hiking',
             tags: ['test', 'generated'],
             isPublic: true,
             isAIGenerated: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            image: null,
+            templateId: null,
             localCreatedAt: new Date(),
             localUpdatedAt: new Date(),
             deleted: false,

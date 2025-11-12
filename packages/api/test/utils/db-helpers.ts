@@ -1,4 +1,5 @@
 import { createDb } from '@packrat/api/db';
+import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import type { InferInsertModel } from 'drizzle-orm';
 import type { Context } from 'hono';
 import {
@@ -54,6 +55,8 @@ export async function seedTestUser(overrides?: Partial<InferInsertModel<typeof u
 
   const [user] = await db.insert(users).values(userData).returning();
 
+  assertDefined(user);
+
   return user;
 }
 
@@ -78,6 +81,8 @@ export async function seedCatalogItem(overrides?: Partial<InferInsertModel<typeo
   };
 
   const [item] = await db.insert(catalogItems).values(dataWithEmbedding).returning();
+
+  assertDefined(item);
 
   return item;
 }
@@ -125,6 +130,8 @@ export async function seedPackTemplate(
 
   const [template] = await db.insert(packTemplates).values(templateData).returning();
 
+  assertDefined(template);
+
   return template;
 }
 
@@ -164,6 +171,8 @@ export async function seedPackTemplateItem(
 
   const [item] = await db.insert(packTemplateItems).values(itemData).returning();
 
+  assertDefined(item);
+
   return item;
 }
 
@@ -200,6 +209,8 @@ export async function seedPack(overrides?: Partial<InferInsertModel<typeof packs
   const packData = createTestPack(overrides);
 
   const [pack] = await db.insert(packs).values(packData).returning();
+
+  assertDefined(pack);
 
   return pack;
 }
@@ -239,6 +250,8 @@ export async function seedPackItem(
   const itemData = createTestPackItem(packId, overrides);
 
   const [item] = await db.insert(packItems).values(itemData).returning();
+
+  assertDefined(item);
 
   return item;
 }

@@ -279,7 +279,8 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
 
           // Apply prefix filter if provided
           if (options?.prefix) {
-            objects = objects.filter((obj) => obj.key.startsWith(options.prefix));
+            const prefix = options.prefix;
+            objects = objects.filter((obj) => obj.key.startsWith(prefix));
           }
 
           // Apply limit if provided
