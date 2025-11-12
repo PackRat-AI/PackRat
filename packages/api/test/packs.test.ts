@@ -1,3 +1,4 @@
+import type { Pack } from '@packrat/api/db/schema';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { seedCatalogItem, seedPack, seedPackItem, seedTestUser } from './utils/db-helpers';
 import {
@@ -11,7 +12,6 @@ import {
   httpMethods,
   TEST_USER,
 } from './utils/test-helpers';
-import type { Pack } from '@packrat/api/db/schema';
 
 // Mock PackService.generatePacks to avoid AI dependencies in tests
 vi.mock('../src/services/packService', async () => {

@@ -1,4 +1,5 @@
 import { createDb } from '@packrat/api/db';
+import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import type { InferInsertModel } from 'drizzle-orm';
 import type { Context } from 'hono';
 import {
@@ -15,7 +16,6 @@ import {
   createTestPackTemplate,
   createTestPackTemplateItem,
 } from '../fixtures/pack-template-fixtures';
-import { assertDefined } from '@packrat/api/utils/typeAssertions';
 
 /**
  * Generates a mock embedding vector
