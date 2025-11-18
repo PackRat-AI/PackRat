@@ -31,8 +31,11 @@
     "notFound": "Not Found",
     "pageNotFound": "This page doesn't exist.",
     "goToHome": "Go to home screen",
+    "goHome": "Go Home",
     "looksLikeError": "Looks like something went wrong. Retry?",
-    "tryAgain": "Try again"
+    "tryAgain": "Try again",
+    "tryAgainButton": "Try Again",
+    "unexpectedError": "The application encountered an unexpected error. You can try again or go back to the home screen."
   },
   "auth": {
     "signIn": "Sign In",
@@ -97,7 +100,10 @@
     "itemWeight": "Item Weight",
     "itemQuantity": "Item Quantity",
     "addToInventory": "Add to Inventory",
-    "removeFromInventory": "Remove from Inventory"
+    "removeFromInventory": "Remove from Inventory",
+    "consumable": "Consumable",
+    "worn": "Worn",
+    "quantity": "Qty: {{quantity}}"
   },
   "trips": {
     "myTrips": "My Trips",
@@ -112,7 +118,8 @@
     "itemsCatalog": "Items Catalog",
     "searchItems": "Search Items",
     "categories": "Categories",
-    "allCategories": "All Categories"
+    "allCategories": "All Categories",
+    "failedToLoad": "Failed to load categories"
   },
   "welcome": {
     "features": {
@@ -138,6 +145,8 @@
   "ai": {
     "aiChat": "AI Chat",
     "aiAssistant": "AI Assistant",
+    "packratAI": "PackRat AI",
+    "hikingAssistant": "Your Hiking Assistant",
     "askQuestion": "Ask a question...",
     "sendMessage": "Send Message",
     "clearChat": "Clear Chat",

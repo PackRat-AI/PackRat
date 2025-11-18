@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@packrat/ui/nativewindui';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 
 export function CategoriesFilter({
@@ -17,6 +18,8 @@ export function CategoriesFilter({
   retry?: (() => void) | undefined;
   className?: string;
 }) {
+  const { t } = useTranslation();
+  
   const renderFilterChip = (filter: string) => (
     <TouchableOpacity
       key={filter}
@@ -40,14 +43,14 @@ export function CategoriesFilter({
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-2">
               <Ionicons name="alert-circle" size={16} color="#ef4444" />
-              <Text className="text-sm text-destructive">Failed to load categories</Text>
+              <Text className="text-sm text-destructive">{t('catalog.failedToLoad')}</Text>
             </View>
             {retry && (
               <TouchableOpacity
                 onPress={retry}
                 className="ml-2 rounded px-2 py-1 bg-destructive/20"
               >
-                <Text className="text-xs text-destructive font-medium">Retry</Text>
+                <Text className="text-xs text-destructive font-medium">{t('common.retry')}</Text>
               </TouchableOpacity>
             )}
           </View>

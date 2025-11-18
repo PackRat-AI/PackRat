@@ -3,6 +3,7 @@
 import { Button } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
@@ -16,8 +17,8 @@ type ErrorScreenProps = {
 };
 
 export function ErrorScreen({
-  title = 'Something went wrong',
-  message = "We're having trouble loading this page. Please try again.",
+  title,
+  message,
   onRetry,
   showHomeButton = true,
   variant = 'default',
@@ -25,6 +26,7 @@ export function ErrorScreen({
 }: ErrorScreenProps) {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   const handleGoHome = () => {
     router.replace('/');
@@ -49,21 +51,25 @@ export function ErrorScreen({
 
         {/* Content */}
         <View className="mt-6 w-full max-w-sm">
-          <Text className="text-center text-xl font-bold text-foreground">{title}</Text>
-          <Text className="mt-2 text-center text-base text-muted-foreground">{message}</Text>
+          <Text className="text-center text-xl font-bold text-foreground">
+            {title ?? t('errors.somethingWentWrong')}
+          </Text>
+          <Text className="mt-2 text-center text-base text-muted-foreground">
+            {message ?? t('errors.unexpectedError')}
+          </Text>
         </View>
 
         {/* Actions */}
         <View className="mt-4 w-full max-w-sm gap-2">
           {onRetry && (
             <Button onPress={onRetry} variant="primary" className="h-12 w-full">
-              <Text className="font-medium text-primary-foreground">Try Again</Text>
+              <Text className="font-medium text-primary-foreground">{t('errors.tryAgainButton')}</Text>
             </Button>
           )}
 
           {showHomeButton && (
             <Button onPress={handleGoHome} variant="secondary" className="h-12 w-full">
-              <Text className="font-medium text-foreground">Go Home</Text>
+              <Text className="font-medium text-foreground">{t('errors.goHome')}</Text>
             </Button>
           )}
         </View>
