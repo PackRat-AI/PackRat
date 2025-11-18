@@ -2,12 +2,13 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
 import { Modal, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReportContent } from '../hooks/useReportContent';
-import { type ReportReason, reportReasonLabels, reportReasons } from '../lib/reportReasons';
+import { type ReportReason, reportReasonTranslationKeys, reportReasons } from '../lib/reportReasons';
 
 type ReportModalProps = {
   isVisible: boolean;
@@ -27,6 +28,7 @@ export function ReportModal({
   onSuccess,
 }: ReportModalProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const [selectedReason, setSelectedReason] = useState<ReportReason | null>(null);
   const [comment, setComment] = useState('');
   const reportContentMutation = useReportContent();
@@ -63,7 +65,7 @@ export function ReportModal({
           />
           <View className="rounded-t-xl bg-background p-4">
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-lg font-semibold">Report</Text>
+              <Text className="text-lg font-semibold">{t('ai.report')}</Text>
               <TouchableOpacity onPress={onClose}>
                 <Icon name="close" size={20} color={colors.grey2} />
               </TouchableOpacity>
@@ -88,7 +90,7 @@ export function ReportModal({
                     {selectedReason === reason && <Icon name="check" size={12} color="white" />}
                   </View>
                   <Text className={cn(selectedReason === reason && 'font-medium')}>
-                    {reportReasonLabels[reason]}
+                    {t(reportReasonTranslationKeys[reason])}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -96,7 +98,7 @@ export function ReportModal({
 
             <TextInput
               className="mb-4 rounded-md border border-border bg-input p-3 text-foreground"
-              placeholder="We value your feedback. Please provide any additional comments or context.(optional)"
+              placeholder={t('ai.feedbackPlaceholder')}
               placeholderTextColor={colors.grey2}
               multiline
               numberOfLines={3}
@@ -107,13 +109,13 @@ export function ReportModal({
 
             <View className="flex-row justify-end gap-2">
               <Button variant="tonal" onPress={onClose} disabled={reportContentMutation.isPending}>
-                <Text>Cancel</Text>
+                <Text>{t('ai.cancel')}</Text>
               </Button>
               <Button
                 onPress={handleSubmit}
                 disabled={!selectedReason || reportContentMutation.isPending}
               >
-                <Text>{reportContentMutation.isPending ? 'Submitting...' : 'Submit'}</Text>
+                <Text>{reportContentMutation.isPending ? t('ai.submitting') : t('ai.submit')}</Text>
               </Button>
             </View>
           </View>

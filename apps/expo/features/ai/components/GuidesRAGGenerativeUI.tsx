@@ -1,5 +1,6 @@
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRef, useState } from 'react';
 import {
   Dimensions,
@@ -68,6 +69,7 @@ const CARD_SPACING = 16;
 
 export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const scrollViewRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -99,9 +101,9 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
   };
 
   const getRelevanceText = (score: number) => {
-    if (score >= 0.7) return 'Highly Relevant';
-    if (score >= 0.5) return 'Relevant';
-    return 'Somewhat Relevant';
+    if (score >= 0.7) return t('ai.tools.highlyRelevant');
+    if (score >= 0.5) return t('ai.tools.relevant');
+    return t('ai.tools.somewhatRelevant');
   };
 
   const getRelevanceBadgeColor = (score: number) => {
@@ -125,26 +127,28 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
 
   switch (toolInvocation.state) {
     case 'input-streaming':
-      return <ToolCard text="Initiating guide search..." icon="loading" />;
+      return <ToolCard text={t('ai.tools.initiatingGuideSearch')} icon="loading" />;
     case 'input-available':
       return (
-        <ToolCard text={`Searching guides for "${toolInvocation.input.query}"...`} icon="loading" />
+        <ToolCard text={t('ai.tools.searchingGuidesFor', { query: toolInvocation.input.query })} icon="loading" />
       );
     case 'output-available':
       return toolInvocation.output.success ? (
         toolInvocation.output.data.data.length === 0 ? (
-          <ToolCard text="No guides found" icon="info" />
+          <ToolCard text={t('ai.tools.noGuidesFound')} icon="info" />
         ) : (
           <View className="my-4">
             {/* Header */}
             <View className="mb-4 px-4">
               <View className="flex-row items-center gap-2">
                 <Icon name="magnify" size={16} color={colors.primary} />
-                <Text className="text-sm font-medium text-gray-900">Guide Search Results</Text>
+                <Text className="text-sm font-medium text-gray-900">{t('ai.tools.guideSearchResults')}</Text>
               </View>
               <Text className="mt-1 text-xs text-gray-600">
-                Found {toolInvocation.output.data.data.length} guides for "
-                {toolInvocation.input.query}"
+                {t('ai.tools.foundGuides', { 
+                  count: toolInvocation.output.data.data.length,
+                  query: toolInvocation.input.query 
+                })}
               </Text>
             </View>
 
@@ -209,10 +213,10 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
                   <View className="mt-auto flex-row items-center justify-between">
                     <View className="flex-row items-center gap-1">
                       <Icon name="book-open-outline" size={12} color={colors.grey2} />
-                      <Text className="text-xs text-gray-500">PackRat Guides</Text>
+                      <Text className="text-xs text-gray-500">{t('ai.tools.packratGuides')}</Text>
                     </View>
                     <View className="flex-row items-center gap-1">
-                      <Text className="text-xs font-medium text-blue-600">Read More</Text>
+                      <Text className="text-xs font-medium text-blue-600">{t('ai.tools.readMore')}</Text>
                       <Icon name="chevron-right" size={12} color={colors.primary} />
                     </View>
                   </View>
@@ -238,7 +242,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
           </View>
         )
       ) : (
-        <ToolCard text="Error fetching guides search results" icon="error" />
+        <ToolCard text={t('ai.tools.errorFetchingGuides')} icon="error" />
       );
     default:
       return null;

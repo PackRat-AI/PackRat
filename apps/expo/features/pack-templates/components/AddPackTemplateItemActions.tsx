@@ -8,6 +8,7 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { useImagePicker } from 'expo-app/features/packs';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -24,6 +25,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
     const { pickImage, takePhoto } = useImagePicker();
     const { showActionSheetWithOptions } = useActionSheet();
     const { colors } = useColorScheme();
+    const { t } = useTranslation();
 
     const { addItemsToPackTemplate } = useBulkAddCatalogItems();
 
@@ -53,7 +55,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
           },
         });
       }
-      const options = ['Take Photo', 'Choose from Library', 'Cancel'];
+      const options = [t('packTemplates.takePhoto'), t('packTemplates.chooseFromLibrary'), t('common.cancel')];
       const cancelButtonIndex = 2;
 
       showActionSheetWithOptions(
@@ -97,9 +99,9 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
           } catch (err) {
             console.error('Error handling image:', err);
             appAlert.current?.alert({
-              title: 'Error',
-              message: 'Failed to process image. Please try again.',
-              buttons: [{ text: 'OK', style: 'default' }],
+              title: t('packTemplates.error'),
+              message: t('packTemplates.failedToProcessImage'),
+              buttons: [{ text: t('common.ok'), style: 'default' }],
             });
           }
         },
@@ -108,9 +110,10 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
 
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
       await addItemsToPackTemplate(packTemplateId, catalogItems as CatalogItemWithPackItemFields[]);
+      const itemWord = catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Toast.show({
         type: 'success',
-        text1: `Added ${catalogItems.length} ${catalogItems.length === 1 ? 'item' : 'items'}`,
+        text1: t('packTemplates.addedItems', { count: catalogItems.length, itemWord }),
       });
     };
 
@@ -136,7 +139,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
                 }}
               >
                 <Icon name="plus" size={20} color={colors.foreground} />
-                <Text className="text-center font-medium">Add Manually</Text>
+                <Text className="text-center font-medium">{t('packTemplates.addManually')}</Text>
                 <View className="ml-auto">
                   <Icon name="chevron-right" size={20} color={colors.grey2} />
                 </View>
@@ -146,7 +149,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
                 onPress={handleAddFromPhoto}
               >
                 <Icon name="camera-outline" size={20} color={colors.foreground} />
-                <Text className="text-center font-medium">Scan Items from Photo</Text>
+                <Text className="text-center font-medium">{t('packTemplates.scanItemsFromPhoto')}</Text>
                 <View className="ml-auto">
                   <Icon name="chevron-right" size={20} color={colors.grey2} />
                 </View>
@@ -156,7 +159,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
                 onPress={handleAddFromCatalog}
               >
                 <Icon name="cart-outline" size={20} color={colors.foreground} />
-                <Text className="text-center font-medium">Add from Catalog</Text>
+                <Text className="text-center font-medium">{t('packTemplates.addFromCatalog')}</Text>
                 <View className="ml-auto">
                   <Icon name="chevron-right" size={20} color={colors.grey2} />
                 </View>

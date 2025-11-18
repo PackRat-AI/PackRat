@@ -1,5 +1,7 @@
 import { Alert, Button, useColorScheme } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { t } from 'expo-app/lib/i18n';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
@@ -8,9 +10,10 @@ import { useWritePermissionCheck } from '../hooks/useWritePermissionCheck';
 
 export function getPackTemplateItemDetailOptions(id: string) {
   return {
-    title: 'Item Details',
+    title: t('packTemplates.itemDetails'),
     headerRight: () => {
       const { colors } = useColorScheme();
+      const { t } = useTranslation();
       const router = useRouter();
 
       const item = usePackTemplateItem(id);
@@ -25,15 +28,15 @@ export function getPackTemplateItemDetailOptions(id: string) {
       return (
         <View className="flex-row items-center gap-[.4]">
           <Alert
-            title="Delete Item?"
-            message="This action cannot be undone."
+            title={t('packTemplates.deleteItem')}
+            message={t('packTemplates.deleteItemMessage')}
             buttons={[
               {
-                text: 'Cancel',
+                text: t('common.cancel'),
                 style: 'cancel',
               },
               {
-                text: 'OK',
+                text: t('common.ok'),
                 onPress: () => {
                   deleteItem(item.id);
                   router.back();

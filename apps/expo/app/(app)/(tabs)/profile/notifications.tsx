@@ -53,7 +53,7 @@ export default function NotificationsScreen() {
         <Form className="gap-5 px-4 pt-8">
           <FormSection
             materialIconProps={{ name: 'bell-outline' }}
-            footnote="Receive communication including announcements, marketing, recommendations, and updates about products, services, and software."
+            footnote={t('profile.notificationsFootnote')}
           >
             <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row justify-between px-2 pb-4">
               <View className="w-40 flex-row items-center justify-between">

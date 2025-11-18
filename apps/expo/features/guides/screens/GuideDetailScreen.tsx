@@ -1,6 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Markdown } from 'expo-app/components/Markdown';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
@@ -9,6 +10,7 @@ import { useGuideDetails } from '../hooks';
 export const GuideDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const navigation = useNavigation();
 
   const { data: guide, isLoading, error } = useGuideDetails(id || '');
@@ -32,7 +34,7 @@ export const GuideDetailScreen = () => {
   if (error || !guide) {
     return (
       <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900 p-8">
-        <Text className="text-center text-gray-500 dark:text-gray-400">Failed to load guide</Text>
+        <Text className="text-center text-gray-500 dark:text-gray-400">{t('guides.failedToLoad')}</Text>
       </View>
     );
   }
@@ -63,7 +65,7 @@ export const GuideDetailScreen = () => {
           )}
           <View className="flex-row items-center gap-3">
             {guide.author && (
-              <Text className="text-sm text-gray-600 dark:text-gray-400">By {guide.author}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-400">{t('guides.by')} {guide.author}</Text>
             )}
             {guide.readingTime && (
               <Text className="text-sm text-gray-600 dark:text-gray-400">{guide.readingTime}</Text>
@@ -75,7 +77,7 @@ export const GuideDetailScreen = () => {
             )}
           </View>
           <Text className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-            Updated {new Date(guide.updatedAt).toLocaleDateString()}
+            {t('guides.updated')} {new Date(guide.updatedAt).toLocaleDateString()}
           </Text>
         </View>
       </View>

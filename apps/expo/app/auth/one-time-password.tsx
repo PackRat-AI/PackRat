@@ -94,9 +94,9 @@ export default function OneTimePasswordScreen() {
       setCodeValues(Array(NUM_OF_CODE_CHARACTERS).fill(''));
       setErrorIndexes([]);
 
-      Alert.alert('Success', 'Verification code has been resent');
+      Alert.alert(t('common.success'), t('auth.verificationCodeResent'));
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to resend code');
+      Alert.alert(t('common.error'), error instanceof Error ? error.message : t('auth.failedToResendCode'));
     } finally {
       setIsLoading(false);
     }
@@ -111,9 +111,9 @@ export default function OneTimePasswordScreen() {
     if (errorIndexes.length > 0) {
       setErrorIndexes(errorIndexes);
       alertRef.current?.alert({
-        title: 'Error',
-        message: 'Please enter the complete verification code',
-        buttons: [{ text: 'OK' }],
+        title: t('common.error'),
+        message: t('auth.enterCompleteCode'),
+        buttons: [{ text: t('common.ok') }],
       });
       return;
     }
@@ -134,7 +134,7 @@ export default function OneTimePasswordScreen() {
         await verifyEmail(email, code); // Navigation is handled in the function
       }
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'Invalid verification code');
+      Alert.alert(t('common.error'), error instanceof Error ? error.message : t('auth.invalidVerificationCode'));
     } finally {
       setIsLoading(false);
     }
@@ -155,10 +155,10 @@ export default function OneTimePasswordScreen() {
           </View>
           <View className="gap-1">
             <Text variant="title1" className="text-center font-semibold">
-              {mode === 'reset-password' ? 'Reset Password' : 'Verify Your Email'}
+              {mode === 'reset-password' ? t('auth.resetPassword') : t('auth.verifyYourEmail')}
             </Text>
             <Text variant="subhead" className="text-center">
-              We sent the code to{' '}
+              {t('auth.weSentCodeTo')}{' '}
               <Text variant="subhead" className="font-semibold">
                 {email}
               </Text>

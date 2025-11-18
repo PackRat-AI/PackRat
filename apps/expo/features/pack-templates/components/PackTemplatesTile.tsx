@@ -1,6 +1,7 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { usePackTemplates } from '../hooks';
@@ -8,6 +9,7 @@ import { usePackTemplates } from '../hooks';
 export function PackTemplatesTile() {
   const router = useRouter();
   const packTemplates = usePackTemplates();
+  const { t } = useTranslation();
 
   const handlePress = () => {
     router.push('/pack-templates');
@@ -28,12 +30,12 @@ export function PackTemplatesTile() {
       }
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-          <Text className="mr-2">{`${packTemplateCount} templates`}</Text>
+          <Text className="mr-2">{`${packTemplateCount} ${t('packTemplates.templates')}`}</Text>
           <ChevronRight />
         </View>
       }
       item={{
-        title: 'Pack Templates',
+        title: t('packTemplates.packTemplates'),
       }}
       onPress={handlePress}
       target="Cell"

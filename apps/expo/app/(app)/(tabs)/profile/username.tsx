@@ -47,7 +47,7 @@ export default function UsernameScreen() {
         <Form className="gap-5 px-4 pt-8">
           <FormSection
             materialIconProps={{ name: 'account-circle-outline' }}
-            footnote="Choose a unique identifier for your account."
+            footnote={t('profile.usernameFootnote')}
           >
             <FormItem>
               <TextField
@@ -55,14 +55,16 @@ export default function UsernameScreen() {
                 autoFocus
                 autoComplete="username"
                 className="pl-0.5"
-                label={Platform.select({ ios: undefined, default: 'First' })}
+                label={Platform.select({ ios: undefined, default: t('common.username') })}
                 leftView={
                   <View className="ios:w-36 ios:justify-between flex-row items-center pl-2">
-                    {Platform.OS === 'ios' && <Text className="font-medium">{t('common.username')}</Text>}
+                    {Platform.OS === 'ios' && (
+                      <Text className="font-medium">{t('common.username')}</Text>
+                    )}
                     <Text className="text-muted-foreground">@</Text>
                   </View>
                 }
-                placeholder="required"
+                placeholder={t('profile.requiredPlaceholder')}
                 value={username}
                 onChangeText={setUsername}
               />

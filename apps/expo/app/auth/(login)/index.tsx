@@ -48,8 +48,8 @@ export default function LoginScreen() {
       } catch (error) {
         setIsLoading(false);
         Alert.alert(
-          'Login Failed',
-          error instanceof Error ? error.message : 'Invalid email or password',
+          t('auth.loginFailed'),
+          error instanceof Error ? error.message : t('auth.invalidEmailOrPassword'),
         );
       }
     },

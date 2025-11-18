@@ -4,6 +4,7 @@ import { Icon } from '@roninoss/icons';
 import type { ToolUIPart, UIMessage } from 'ai';
 import { Markdown } from 'expo-app/components/Markdown';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
@@ -28,6 +29,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
   const isAI = item.role === 'assistant';
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 
@@ -50,23 +52,23 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
       // Show success feedback
       Toast.show({
         type: 'success',
-        text1: 'Copied',
+        text1: t('ai.copied'),
       });
     } catch (error) {
       console.error('Failed to copy text:', error);
       Toast.show({
         type: 'error',
-        text1: 'Failed to copy text',
+        text1: t('ai.failedToCopyText'),
       });
     }
-  }, [item]);
+  }, [item, t]);
 
   const handleReportSuccess = useCallback(() => {
     Toast.show({
       type: 'success',
-      text1: 'Report submitted',
+      text1: t('ai.reportSubmitted'),
     });
-  }, []);
+  }, [t]);
 
   const handleReport = useCallback(() => setIsReportModalVisible(true), []);
 
@@ -151,7 +153,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
               className="flex-row gap-1 items-center opacity-70"
             >
               <Icon name="flag-outline" size={14} color={colors.grey2} />
-              <Text className="text-xs text-muted-foreground">Report</Text>
+              <Text className="text-xs text-muted-foreground">{t('ai.report')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -159,7 +161,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
               className="flex-row gap-1 items-center opacity-70"
             >
               <Icon name="clipboard-outline" size={14} color={colors.grey2} />
-              <Text className="text-muted-foreground text-xs">Copy</Text>
+              <Text className="text-muted-foreground text-xs">{t('ai.copy')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -181,7 +183,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
         <BottomSheetScrollView className="flex-1 px-4" style={{ flex: 1 }}>
           <View>
             <Text variant="heading" className="text-center mb-6">
-              Select Text
+              {t('ai.selectText')}
             </Text>
 
             <View className="mb-6">
