@@ -312,5 +312,17 @@
     "intermediate": "Intermediate",
     "advanced": "Advanced",
     "expert": "Expert"
+  },
+  "guides": {
+    "guides": "Guides",
+    "searchPlaceholder": "Search guides...",
+    "noGuidesFound": "No guides found for \"{{query}}\"",
+    "noGuidesAvailable": "No guides available",
+    "failedToLoad": "Failed to load guide",
+    "viewAll": "View all",
+    "browseGuides": "Browse helpful guides and tutorials",
+    "by": "By",
+    "updated": "Updated",
+    "all": "All"
   }
 }

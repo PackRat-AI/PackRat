@@ -1,12 +1,14 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 export const GuidesTile = () => {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   const handlePress = () => {
     router.push('/guides');
@@ -31,14 +33,14 @@ export const GuidesTile = () => {
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
           <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-            View all
+            {t('guides.viewAll')}
           </Text>
           <Icon name="chevron-right" size={17} color={colors.grey} />
         </View>
       }
       item={{
-        title: 'Guides',
-        subTitle: 'Browse helpful guides and tutorials',
+        title: t('guides.guides'),
+        subTitle: t('guides.browseGuides'),
       }}
       onPress={handlePress}
       target="Cell"
