@@ -12,6 +12,7 @@ import {
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -76,30 +77,31 @@ const getPasswordStrength = (password: string) => {
     strength++;
   }
 
-  let label = 'Very Weak';
+  let labelKey = 'auth.veryWeak';
   let color = 'bg-red-500';
 
   if (strength === 1) {
-    label = 'Weak';
+    labelKey = 'auth.weak';
     color = 'bg-red-500';
   } else if (strength === 2) {
-    label = 'Fair';
+    labelKey = 'auth.fair';
     color = 'bg-orange-500';
   } else if (strength === 3) {
-    label = 'Good';
+    labelKey = 'auth.good';
     color = 'bg-yellow-500';
   } else if (strength === 4) {
-    label = 'Strong';
+    labelKey = 'auth.strong';
     color = 'bg-green-500';
   } else if (strength === 5) {
-    label = 'Very Strong';
+    labelKey = 'auth.veryStrong';
     color = 'bg-green-700';
   }
 
-  return { strength, label, color };
+  return { strength, labelKey, color };
 };
 
 export default function CredentialsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { signUp } = useAuthActions();
   const [isLoading, setIsLoading] = React.useState(false);
@@ -150,8 +152,8 @@ export default function CredentialsScreen() {
       } catch (error) {
         setIsLoading(false);
         Alert.alert(
-          'Registration Failed',
-          error instanceof Error ? error.message : 'Please check your information and try again.',
+          t('auth.registrationFailed'),
+          error instanceof Error ? error.message : t('auth.checkInformationAndTryAgain'),
         );
       } finally {
         setIsLoading(false);
@@ -177,13 +179,13 @@ export default function CredentialsScreen() {
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
               {Platform.select({
-                ios: 'Set up your credentials',
-                default: 'Create Account',
+                ios: t('auth.setUpCredentials'),
+                default: t('auth.createAccount'),
               })}
             </Text>
             {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">
-                Set up your credentials
+                {t('auth.setUpCredentials')}
               </Text>
             )}
           </View>
@@ -195,12 +197,12 @@ export default function CredentialsScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'Email',
+                          ios: t('common.email'),
                           default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'Email',
+                          default: t('common.email'),
                         })}
                         onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
@@ -229,12 +231,12 @@ export default function CredentialsScreen() {
                         <View>
                           <TextField
                             placeholder={Platform.select({
-                              ios: 'Password',
+                              ios: t('common.password'),
                               default: '',
                             })}
                             label={Platform.select({
                               ios: undefined,
-                              default: 'Password',
+                              default: t('common.password'),
                             })}
                             onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                             onFocus={() => setFocusedTextField('password')}
@@ -254,9 +256,9 @@ export default function CredentialsScreen() {
                           {field.state.value ? (
                             <View className="mt-2 px-1">
                               <View className="mb-1 flex-row justify-between">
-                                <Text className="text-xs text-gray-500">Password strength:</Text>
+                                <Text className="text-xs text-gray-500">{t('auth.passwordStrength')}</Text>
                                 <Text className="text-xs font-medium">
-                                  {passwordStrength.label}
+                                  {t(passwordStrength.labelKey)}
                                 </Text>
                               </View>
                               <View className="h-1 overflow-hidden rounded-full bg-gray-200">
@@ -277,7 +279,7 @@ export default function CredentialsScreen() {
                                     color={field.state.value.length >= 8 ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 8 characters
+                                    {t('auth.atLeast8Characters')}
                                   </Text>
                                 </View>
                                 <View className="flex-row items-center">
@@ -289,7 +291,7 @@ export default function CredentialsScreen() {
                                     color={/[A-Z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 1 uppercase letter
+                                    {t('auth.atLeast1Uppercase')}
                                   </Text>
                                 </View>
                                 <View className="flex-row items-center">
@@ -301,7 +303,7 @@ export default function CredentialsScreen() {
                                     color={/[a-z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 1 lowercase letter
+                                    {t('auth.atLeast1Lowercase')}
                                   </Text>
                                 </View>
                                 <View className="flex-row items-center">
@@ -313,7 +315,7 @@ export default function CredentialsScreen() {
                                     color={/[0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 1 number
+                                    {t('auth.atLeast1Number')}
                                   </Text>
                                 </View>
                                 <View className="flex-row items-center">
@@ -329,7 +331,7 @@ export default function CredentialsScreen() {
                                     }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 1 special character
+                                    {t('auth.atLeast1Special')}
                                   </Text>
                                 </View>
                               </View>
@@ -345,12 +347,12 @@ export default function CredentialsScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'Confirm password',
+                          ios: t('auth.confirmPassword'),
                           default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'Confirm password',
+                          default: t('auth.confirmPassword'),
                         })}
                         onFocus={() => setFocusedTextField('confirm-password')}
                         onBlur={() => {
@@ -372,7 +374,7 @@ export default function CredentialsScreen() {
                 {/* Password visibility checkbox */}
                 <View className="mb-4 mt-2 flex-row items-center">
                   <Checkbox checked={passwordVisible} onCheckedChange={setPasswordVisible} />
-                  <Text className="ml-2 text-sm text-gray-700">Show password</Text>
+                  <Text className="ml-2 text-sm text-gray-700">{t('auth.showPassword')}</Text>
                 </View>
               </FormSection>
             </Form>
@@ -393,7 +395,7 @@ export default function CredentialsScreen() {
                     onPress={() => form.handleSubmit()}
                   >
                     <Text className={disabled ? 'opacity-50' : 'opacity-100'}>
-                      {isLoading ? 'Loading...' : 'Submit'}
+                      {isLoading ? t('common.loading') : t('auth.submit')}
                     </Text>
                   </Button>
                 );
@@ -417,10 +419,10 @@ export default function CredentialsScreen() {
                 >
                   <Text className="text-sm">
                     {isLoading
-                      ? 'Loading...'
+                      ? t('common.loading')
                       : focusedTextField !== 'confirm-password'
-                        ? 'Next'
-                        : 'Submit'}
+                        ? t('auth.next')
+                        : t('auth.submit')}
                   </Text>
                 </Button>
               )}
