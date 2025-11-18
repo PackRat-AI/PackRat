@@ -138,7 +138,10 @@
     "failedToProcessRequest": "Failed to process request",
     "failedToVerifyEmail": "Failed to verify email",
     "failedToResendVerificationEmail": "Failed to resend verification email",
-    "failedToDeleteAccount": "Failed to delete account"
+    "failedToDeleteAccount": "Failed to delete account",
+    "failedToSendCode": "Failed to send verification code",
+    "loginFailed": "Login Failed",
+    "invalidEmailOrPassword": "Invalid email or password"
   },
   "profile": {
     "profile": "Profile",

@@ -55,7 +55,7 @@ export default function ForgotPasswordScreen() {
       } catch (error) {
         Alert.alert(
           t('errors.error'),
-          error instanceof Error ? error.message : 'Failed to send verification code',
+          error instanceof Error ? error.message : t('auth.failedToSendCode'),
         );
       } finally {
         setIsLoading(false);
