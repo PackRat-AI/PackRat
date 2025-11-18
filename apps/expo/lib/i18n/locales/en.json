@@ -251,8 +251,23 @@
     "sendMessage": "Send Message",
     "clearChat": "Clear Chat",
     "aiPacks": "AI Packs",
+    "aiPacksAdmin": "AI Packs Admin",
+    "generatePacksWithAI": "Generate packs with AI",
     "generating": "Generating...",
-    "generationError": "Generation error"
+    "generationError": "Generation error",
+    "generateNewPacks": "Generate New Packs",
+    "enterCount": "Enter count",
+    "numberOfPacksToGenerate": "Number of packs to generate",
+    "generatePacksButton": "Generate Packs",
+    "useFormAbove": "Use the form above to generate packs with AI",
+    "generatePacksConfirm": "Are you sure you want to generate {{count}} packs?",
+    "packsGenerated": "Packs Generated",
+    "successfullyGenerated": "Successfully generated {{count}} packs.",
+    "return": "Return",
+    "view": "View",
+    "failedToGenerate": "Failed to generate packs. Please try again.",
+    "generatedPacks": "Generated Packs",
+    "waitingForSync": "Waiting for packs to sync."
   },
   "weather": {
     "weather": "Weather",
@@ -282,9 +297,7 @@
     "totalEstimatedCost": "Total Estimated Cost",
     "category": "Category",
     "notes": "Notes",
-    "markPurchased": "Mark as Purchased"
-  },
-    "shoppingList": "Shopping List",
+    "markPurchased": "Mark as Purchased",
     "addToList": "Add to List",
     "removeFromList": "Remove from List",
     "clearList": "Clear List"
