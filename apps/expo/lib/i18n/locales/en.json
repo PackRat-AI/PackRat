@@ -1,0 +1,186 @@
+{
+  "common": {
+    "welcome": "Welcome to your",
+    "application": "Application",
+    "continue": "Continue",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "done": "Done",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username"
+  },
+  "errors": {
+    "somethingWentWrong": "Something went wrong",
+    "notFound": "Not Found",
+    "pageNotFound": "This page doesn't exist.",
+    "goToHome": "Go to home screen",
+    "looksLikeError": "Looks like something went wrong. Retry?",
+    "tryAgain": "Try again"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "logOut": "Log Out",
+    "loggedOut": "You're now logged out!",
+    "loggedOutMessage": "What would you like to do?",
+    "stayLoggedOut": "Stay logged out",
+    "signInAgain": "Sign-in again",
+    "logoutFailed": "Logout failed",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password"
+  },
+  "profile": {
+    "profile": "Profile",
+    "editProfile": "Edit Profile",
+    "accountInformation": "Account Information",
+    "memberSince": "Member since {{date}}",
+    "stats": "Stats",
+    "myPacks": "My Packs",
+    "noPacksYet": "No packs created yet",
+    "createNewPack": "Create New Pack",
+    "items": "Items",
+    "public": "Public",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "syncInProgress": "Sync in progress",
+    "syncMessage": "Some data is still syncing. You may lose them if you proceed to log out."
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "packs": "Packs",
+    "trips": "Trips",
+    "catalog": "Catalog",
+    "profile": "Profile",
+    "home": "Home"
+  },
+  "packs": {
+    "currentPack": "Current Pack",
+    "gearInventory": "Gear Inventory",
+    "packDetails": "Pack Details",
+    "packCategories": "Pack Categories",
+    "enterNewPackDetails": "Enter New Pack Details",
+    "visibility": "Visibility",
+    "deletePack": "Delete pack?",
+    "packDeleted": "Pack deleted successfully",
+    "createPack": "Create Pack",
+    "editPack": "Edit Pack",
+    "noPacks": "No packs available",
+    "packName": "Pack Name",
+    "packDescription": "Pack Description",
+    "packWeight": "Pack Weight",
+    "packItems": "Pack Items",
+    "addItem": "Add Item",
+    "removeItem": "Remove Item"
+  },
+  "items": {
+    "itemDetails": "Item Details",
+    "itemName": "Item Name",
+    "itemCategory": "Item Category",
+    "itemWeight": "Item Weight",
+    "itemQuantity": "Item Quantity",
+    "addToInventory": "Add to Inventory",
+    "removeFromInventory": "Remove from Inventory"
+  },
+  "trips": {
+    "myTrips": "My Trips",
+    "createTrip": "Create Trip",
+    "tripDetails": "Trip Details",
+    "tripName": "Trip Name",
+    "tripDate": "Trip Date",
+    "tripLocation": "Trip Location",
+    "noTrips": "No trips available"
+  },
+  "catalog": {
+    "itemsCatalog": "Items Catalog",
+    "searchItems": "Search Items",
+    "categories": "Categories",
+    "allCategories": "All Categories"
+  },
+  "welcome": {
+    "features": {
+      "profileManagement": {
+        "title": "Profile Management",
+        "description": "Easily update and manage your personal information, settings, and preferences"
+      },
+      "secureMessaging": {
+        "title": "Secure Messaging",
+        "description": "Chat securely with friends and family in real-time."
+      },
+      "activityTracking": {
+        "title": "Activity Tracking",
+        "description": "Monitor your daily activities and track your progress over time."
+      }
+    },
+    "byPressingContinue": "By pressing continue, you agree to our",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "thatYouHaveRead": "that you have read our",
+    "privacyPolicy": "Privacy Policy"
+  },
+  "ai": {
+    "aiChat": "AI Chat",
+    "aiAssistant": "AI Assistant",
+    "askQuestion": "Ask a question...",
+    "sendMessage": "Send Message",
+    "clearChat": "Clear Chat",
+    "aiPacks": "AI Packs",
+    "generating": "Generating...",
+    "generationError": "Generation error"
+  },
+  "weather": {
+    "weather": "Weather",
+    "temperature": "Temperature",
+    "conditions": "Conditions",
+    "forecast": "Forecast",
+    "humidity": "Humidity",
+    "windSpeed": "Wind Speed"
+  },
+  "location": {
+    "location": "Location",
+    "currentLocation": "Current Location",
+    "selectLocation": "Select Location",
+    "searchLocation": "Search Location"
+  },
+  "shopping": {
+    "shoppingList": "Shopping List",
+    "addToList": "Add to List",
+    "removeFromList": "Remove from List",
+    "clearList": "Clear List"
+  },
+  "admin": {
+    "admin": "Admin",
+    "adminPanel": "Admin Panel",
+    "manage": "Manage"
+  },
+  "seasons": {
+    "seasonSuggestions": "Season Suggestions",
+    "spring": "Spring",
+    "summer": "Summer",
+    "fall": "Fall",
+    "winter": "Winter"
+  },
+  "experience": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "expert": "Expert"
+  }
+}

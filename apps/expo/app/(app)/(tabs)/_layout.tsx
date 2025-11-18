@@ -5,6 +5,7 @@ import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Tabs } from 'expo-router';
 import type * as React from 'react';
@@ -21,6 +22,44 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
+
+  const INDEX_OPTIONS = {
+    title: t('navigation.dashboard'),
+    tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+      <Icon name="home" size={size} color={color} />
+    ),
+  } as const;
+
+  const PACK_LIST_OPTIONS = {
+    title: t('navigation.packs'),
+    tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+      <Icon name="backpack" size={size} color={color} />
+    ),
+  } as const;
+
+  const TRIP_LIST_OPTIONS = {
+    title: t('navigation.trips'),
+    tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+      <Icon name="map" size={size} color={color} />
+    ),
+    href: featureFlags.enableTrips ? 'trips' : null,
+  } as const;
+
+  const ITEMS_CATALOG_OPTIONS = {
+    title: t('navigation.catalog'),
+    tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+      <Icon name="clipboard-list" size={size} color={color} />
+    ),
+  } as const;
+
+  const PROFILE_OPTIONS = {
+    title: t('navigation.profile'),
+    tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+      <Icon name="account-circle" size={size} color={color} />
+    ),
+  } as const;
+
   return (
     <>
       <Tabs
@@ -43,42 +82,6 @@ export default function TabLayout() {
     </>
   );
 }
-
-const INDEX_OPTIONS = {
-  title: 'Dashboard',
-  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-    <Icon name="home" size={size} color={color} />
-  ),
-} as const;
-
-const PACK_LIST_OPTIONS = {
-  title: 'Packs',
-  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-    <Icon name="backpack" size={size} color={color} />
-  ),
-} as const;
-
-const TRIP_LIST_OPTIONS = {
-  title: 'Trips',
-  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-    <Icon name="map" size={size} color={color} />
-  ),
-  href: featureFlags.enableTrips ? 'trips' : null,
-} as const;
-
-const ITEMS_CATALOG_OPTIONS = {
-  title: 'Catalog',
-  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-    <Icon name="clipboard-list" size={size} color={color} />
-  ),
-} as const;
-
-const PROFILE_OPTIONS = {
-  title: 'Profile',
-  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-    <Icon name="account-circle" size={size} color={color} />
-  ),
-} as const;
 
 const TAB_BAR = Platform.select({
   ios: undefined,

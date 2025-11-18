@@ -1,5 +1,6 @@
 import { Button, cn, Text, useColorScheme } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { View } from 'react-native';
 
 interface ErrorStateProps {
@@ -11,13 +12,14 @@ interface ErrorStateProps {
 }
 
 export const ErrorState = ({
-  title = 'Something went wrong',
+  title,
   text,
-  retryText = 'Retry',
+  retryText,
   className,
   onRetry,
 }: ErrorStateProps) => {
   const { colors, isDarkColorScheme } = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <View className={cn('flex-1 items-center justify-center', className)}>
@@ -28,11 +30,13 @@ export const ErrorState = ({
           color={isDarkColorScheme ? '#ef4444' : colors.destructive}
         />
       </View>
-      <Text className="mb-2 text-center text-lg font-medium text-foreground">{title}</Text>
+      <Text className="mb-2 text-center text-lg font-medium text-foreground">
+        {title ?? t('errors.somethingWentWrong')}
+      </Text>
       {text && <Text className="mb-6 text-center text-sm text-muted-foreground">{text}</Text>}
       {onRetry && (
         <Button onPress={onRetry} variant="secondary">
-          <Text>{retryText}</Text>
+          <Text>{retryText ?? t('common.retry')}</Text>
         </Button>
       )}
     </View>
