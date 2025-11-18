@@ -3,6 +3,7 @@ import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packra
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import {
@@ -32,6 +33,7 @@ const SCREEN_OPTIONS = {
 
 export default function OneTimePasswordScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [countdown, setCountdown] = React.useState(COUNTDOWN_SECONDS_TO_RESEND_CODE);
   const [codeValues, setCodeValues] = React.useState(Array(NUM_OF_CODE_CHARACTERS).fill(''));
   const [errorIndexes, setErrorIndexes] = React.useState<number[]>([]);
@@ -180,7 +182,7 @@ export default function OneTimePasswordScreen() {
           <Animated.View className="flex-row justify-center gap-0.5">
             <Animated.View layout={Platform.select({ ios: LinearTransition })}>
               <Text variant="caption1" className="text-center font-medium opacity-70">
-                Didn't receive the code?{' '}
+                {t('auth.didntReceiveCode')}{' '}
               </Text>
             </Animated.View>
             {countdown > 0 ? (
@@ -190,7 +192,7 @@ export default function OneTimePasswordScreen() {
                 layout={Platform.select({ ios: LinearTransition })}
               >
                 <Text variant="caption1" className="font-normal opacity-70">
-                  Resend in {countdown} second{countdown > 1 ? 's' : ''}
+                  {t('auth.resendIn', { countdown, plural: countdown > 1 ? 's' : '' })}
                 </Text>
               </Animated.View>
             ) : (
@@ -200,7 +202,7 @@ export default function OneTimePasswordScreen() {
                 layout={Platform.select({ ios: LinearTransition })}
               >
                 <Pressable className="active:opacity-70" onPress={resendCode} disabled={isLoading}>
-                  <Text className="text-xs font-semibold opacity-90">Resend</Text>
+                  <Text className="text-xs font-semibold opacity-90">{t('auth.resend')}</Text>
                 </Pressable>
               </Animated.View>
             )}
@@ -212,7 +214,7 @@ export default function OneTimePasswordScreen() {
               <ActivityIndicator color="white" />
             </View>
           ) : (
-            <Text>Continue</Text>
+            <Text>{t('auth.continue')}</Text>
           )}
         </Button>
       </KeyboardAwareScrollView>
