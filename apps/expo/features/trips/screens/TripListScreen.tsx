@@ -1,6 +1,7 @@
 import { LargeTitleHeader, type LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useRef } from 'react';
@@ -22,6 +23,7 @@ function CreateTripIconButton() {
 
 export function TripsListScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const trips = useTrips();
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
 
@@ -42,12 +44,14 @@ export function TripsListScreen() {
         <View className="mb-4 rounded-full bg-muted p-4">
           <Icon name="map-outline" size={32} color="text-muted-foreground" />
         </View>
-        <Text className="mb-1 text-lg font-medium text-foreground">No trips found</Text>
+        <Text className="mb-1 text-lg font-medium text-foreground">
+          {t('trips.noTripsFound')}
+        </Text>
         <Text className="mb-6 text-center text-muted-foreground">
-          You haven't created any trips yet.
+          {t('trips.noTripsYet')}
         </Text>
         <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={handleCreateTrip}>
-          <Text className="font-medium text-primary-foreground">Create New Trip</Text>
+          <Text className="font-medium text-primary-foreground">{t('trips.createNewTrip')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -56,7 +60,7 @@ export function TripsListScreen() {
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
-        title="Trips"
+        title={t('trips.trips')}
         backVisible={false}
         searchBar={{
           iosHideWhenScrolling: true,
@@ -64,7 +68,7 @@ export function TripsListScreen() {
           onChangeText() {}, // no search filtering
           content: (
             <View className="flex-1 items-center justify-center">
-              <Text>Search trips</Text>
+              <Text>{t('trips.searchTrips')}</Text>
             </View>
           ),
         }}
