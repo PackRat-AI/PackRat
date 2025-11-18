@@ -1,6 +1,7 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -26,6 +27,7 @@ const loginFormSchema = z.object({
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = React.useState(false);
   const [focusedTextField, setFocusedTextField] = React.useState<'email' | 'password' | null>(null);
   const { redirectTo } = useLocalSearchParams<{ redirectTo: string }>();
@@ -60,7 +62,7 @@ export default function LoginScreen() {
     <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
       <Stack.Screen
         options={{
-          title: 'Log in',
+          title: t('auth.signIn'),
           headerShadowVisible: false,
           headerLeft() {
             return (
@@ -71,7 +73,7 @@ export default function LoginScreen() {
                   router.back();
                 }}
               >
-                <Text className="text-primary">Cancel</Text>
+                <Text className="text-primary">{t('common.cancel')}</Text>
               </Button>
             );
           },
@@ -92,10 +94,10 @@ export default function LoginScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: 'Welcome back!', default: 'Log in' })}
+              {Platform.select({ ios: t('auth.welcomeBack'), default: t('auth.signIn') })}
             </Text>
             {Platform.OS !== 'ios' && (
-              <Text className="ios:text-sm text-center text-muted-foreground">Welcome back!</Text>
+              <Text className="ios:text-sm text-center text-muted-foreground">{t('auth.welcomeBack')}</Text>
             )}
           </View>
           <View className="ios:pt-4 pt-6">
@@ -163,7 +165,7 @@ export default function LoginScreen() {
               <View className="flex-row">
                 <Link asChild href="/auth/(login)/forgot-password">
                   <Button size="sm" variant="plain" className="px-0.5">
-                    <Text className="text-sm text-primary">Forgot password?</Text>
+                    <Text className="text-sm text-primary">{t('auth.forgotPassword')}</Text>
                   </Button>
                 </Link>
               </View>
@@ -189,7 +191,7 @@ export default function LoginScreen() {
                   disabled={!canSubmit || loading}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{loading ? 'Logging in...' : 'Continue'}</Text>
+                  <Text>{loading ? t('auth.loading') : t('common.continue')}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -203,7 +205,7 @@ export default function LoginScreen() {
                 router.replace('/auth/(create-account)');
               }}
             >
-              <Text className="px-0.5 text-sm text-primary">Create Account</Text>
+              <Text className="px-0.5 text-sm text-primary">{t('auth.createAccount')}</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
@@ -219,7 +221,7 @@ export default function LoginScreen() {
                   }}
                 >
                   <Text className="text-sm">
-                    {loading ? 'Logging in...' : focusedTextField === 'email' ? 'Next' : 'Submit'}
+                    {loading ? t('auth.loading') : focusedTextField === 'email' ? t('auth.next') : t('auth.submit')}
                   </Text>
                 </Button>
               )}
@@ -237,7 +239,7 @@ export default function LoginScreen() {
             });
           }}
         >
-          <Text className="text-sm text-primary">Create Account</Text>
+          <Text className="text-sm text-primary">{t('auth.createAccount')}</Text>
         </Button>
       )}
     </View>
