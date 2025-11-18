@@ -6,6 +6,7 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
 
 // Mock data for shared packs
@@ -135,6 +136,7 @@ function PackOwner({ name, avatar }: { name: string; avatar: string }) {
 }
 
 function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
+  const { t } = useTranslation();
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
       <View className="p-4">
@@ -150,7 +152,7 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
               {pack.totalWeight}
             </Text>
             <Text variant="footnote" className="text-muted-foreground">
-              {pack.sharedItems} items
+              {t('packs.items', { count: pack.sharedItems })}
             </Text>
           </View>
         </View>
@@ -158,13 +160,13 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
         <View className="mt-4 flex-row items-center justify-between">
           <View>
             <Text variant="caption1" className="mb-1 text-muted-foreground">
-              Members
+              {t('packs.members')}
             </Text>
             <MemberAvatars members={pack.members} />
           </View>
           <View>
             <Text variant="caption1" className="text-right text-muted-foreground">
-              Last updated
+              {t('packs.lastUpdatedShort')}
             </Text>
             <Text variant="footnote">{pack.lastUpdated}</Text>
           </View>
@@ -175,13 +177,14 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
 }
 
 export default function SharedPacksScreen() {
+  const { t } = useTranslation();
   return (
     <>
-      <LargeTitleHeader title="Shared Packs" />
+      <LargeTitleHeader title={t('packs.sharedPacks')} />
       <ScrollView className="flex-1">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">
-            Collaborate on packs with friends and family
+            {t('packs.collaborateOnPacks')}
           </Text>
         </View>
 
@@ -193,11 +196,25 @@ export default function SharedPacksScreen() {
 
         <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
           <Text variant="heading" className="mb-2 font-semibold">
-            Sharing Benefits
+            {t('packs.sharingBenefits')}
           </Text>
           <Text variant="body" className="mb-2">
-            • Distribute group gear among members to reduce individual pack weight
+            {t('packs.distributeGroupGear')}
           </Text>
+          <Text variant="body" className="mb-2">
+            {t('packs.sharingBenefit1')}
+          </Text>
+          <Text variant="body" className="mb-2">
+            {t('packs.sharingBenefit2')}
+          </Text>
+          <Text variant="body">
+            {t('packs.sharingBenefit3')}
+          </Text>
+        </View>
+      </ScrollView>
+    </>
+  );
+}
           <Text variant="body" className="mb-2">
             • Coordinate meal planning and shared food items
           </Text>
