@@ -253,15 +253,15 @@ export function ItemsScanScreen() {
 
               <View className="w-full">
                 <Button variant="secondary" onPress={handleAddImage}>
-                  <Text>Try Another Photo</Text>
+                  <Text>{t('packTemplates.takePhoto')}</Text>
                 </Button>
               </View>
             </View>
           )
         ) : (
           <ErrorState
-            title="An Error Occurred"
-            text="Please try again"
+            title={t('packTemplates.anErrorOccurred')}
+            text={t('packTemplates.pleaseTryAgain')}
             onRetry={handleAnalyzeImage}
             className="mt-36"
           />
