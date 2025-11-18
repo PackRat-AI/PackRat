@@ -3,11 +3,13 @@ import { Icon } from '@roninoss/icons';
 import type { Pack } from 'expo-app/features/packs';
 import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { Image, ScrollView, View } from 'react-native';
 
 function RecentPackCard({ pack }: { pack: Pack }) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
@@ -41,7 +43,7 @@ function RecentPackCard({ pack }: { pack: Pack }) {
             <Icon name="clock-outline" size={14} color={colors.grey} />
           </View>
           <Text variant="caption1" className="text-muted-foreground">
-            Last updated: {getRelativeTime(pack.localUpdatedAt)}
+            {t('packs.lastUpdated', { time: getRelativeTime(pack.localUpdatedAt) })}
           </Text>
         </View>
       </View>
@@ -51,15 +53,16 @@ function RecentPackCard({ pack }: { pack: Pack }) {
 
 export default function RecentPacksScreen() {
   const recentPacks = useRecentPacks();
+  const { t } = useTranslation();
 
   return (
     <View className="flex-1">
-      <LargeTitleHeader title="Recent Packs" />
+      <LargeTitleHeader title={t('packs.recentPacks')} />
       {recentPacks.length ? (
         <ScrollView className="flex-1">
           <View className="p-4">
             <Text variant="subhead" className="mb-2 text-muted-foreground">
-              Your recently updated packs
+              {t('packs.recentlyUpdated')}
             </Text>
           </View>
 
@@ -72,7 +75,7 @@ export default function RecentPacksScreen() {
       ) : (
         <View className="flex-1 items-center justify-center">
           <Text variant="body" className="mb-2 text-muted-foreground">
-            No recent packs.
+            {t('packs.noRecentPacks')}
           </Text>
         </View>
       )}

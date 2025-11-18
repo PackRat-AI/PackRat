@@ -133,7 +133,14 @@
     "packWeight": "Pack Weight",
     "packItems": "Pack Items",
     "addItem": "Add Item",
-    "removeItem": "Remove Item"
+    "removeItem": "Remove Item",
+    "recentPacks": "Recent Packs",
+    "recentlyUpdated": "Your recently updated packs",
+    "noRecentPacks": "No recent packs.",
+    "lastUpdated": "Last updated: {{time}}",
+    "itemsInInventory": "{{count}} items in your inventory",
+    "all": "All",
+    "byCategory": "By Category"
   },
   "items": {
     "itemDetails": "Item Details",
@@ -226,7 +233,13 @@
     "spring": "Spring",
     "summer": "Summer",
     "fall": "Fall",
-    "winter": "Winter"
+    "winter": "Winter",
+    "generateSuggestions": "Generate Season Suggestions",
+    "generatingSuggestions": "Generating suggestions...",
+    "personalizedRecommendations": "Get personalized pack recommendations based on your gear inventory and current season.",
+    "recommendedItems": "Recommended Items ({{count}})",
+    "createThisPack": "Create This Pack",
+    "creatingPack": "Creating Pack..."
   },
   "experience": {
     "beginner": "Beginner",
