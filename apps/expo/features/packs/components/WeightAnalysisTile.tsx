@@ -2,12 +2,14 @@ import type { AlertRef } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { type Href, useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Platform, View } from 'react-native';
 import { useCurrentPack } from '../hooks';
 
 export function WeightAnalysisTile() {
+  const { t } = useTranslation();
   const router = useRouter();
   const currentPack = useCurrentPack();
   const alertRef = useRef<AlertRef>(null);
@@ -42,7 +44,7 @@ export function WeightAnalysisTile() {
           </View>
         }
         item={{
-          title: 'Weight Analysis',
+          title: t('packs.weightAnalysis'),
         }}
         onPress={handlePress}
         target="Cell"
@@ -50,13 +52,13 @@ export function WeightAnalysisTile() {
         removeSeparator={Platform.OS === 'ios'}
       />
       <Alert
-        title="No Packs Yet"
-        message="Create a pack to get weight analysis."
+        title={t('packs.noPacksYet')}
+        message={t('packs.createPackForAnalysis')}
         materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
+            text: t('packs.gotIt'),
             style: 'default',
           },
         ]}
