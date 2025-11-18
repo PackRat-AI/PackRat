@@ -10,6 +10,7 @@ import {
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -28,6 +29,7 @@ const emailSchema = z.object({
 
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const alertRef = React.useRef<AlertRef>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const { forgotPassword } = useAuthActions();
@@ -52,7 +54,7 @@ export default function ForgotPasswordScreen() {
         });
       } catch (error) {
         Alert.alert(
-          'Error',
+          t('errors.error'),
           error instanceof Error ? error.message : 'Failed to send verification code',
         );
       } finally {
@@ -65,7 +67,7 @@ export default function ForgotPasswordScreen() {
     <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
       <Stack.Screen
         options={{
-          title: 'Forgot Password',
+          title: t('auth.forgotPasswordTitle'),
           headerShadowVisible: false,
         }}
       />
@@ -85,18 +87,17 @@ export default function ForgotPasswordScreen() {
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
               {Platform.select({
-                ios: "What's your email?",
-                default: 'Forgot password',
+                ios: t('auth.whatsYourEmail'),
+                default: t('auth.forgotPasswordTitle'),
               })}
             </Text>
             {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">
-                What's your email?
+                {t('auth.whatsYourEmail')}
               </Text>
             )}
             <Text className="px-4 pt-2 text-center text-muted-foreground">
-              Enter your email address and we'll send you a verification code to reset your
-              password.
+              {t('auth.forgotPasswordMessage')}
             </Text>
           </View>
           <View className="ios:pt-4 pt-6">
@@ -142,7 +143,7 @@ export default function ForgotPasswordScreen() {
                   onPress={() => form.handleSubmit()}
                   disabled={!canSubmit || isLoading}
                 >
-                  <Text>{isLoading ? 'Sending...' : 'Send Code'}</Text>
+                  <Text>{isLoading ? t('auth.sending') : t('auth.sendCode')}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -156,12 +157,12 @@ export default function ForgotPasswordScreen() {
                 router.replace('/auth/(create-account)');
               }}
             >
-              <Text className="text-sm text-primary">Create Account</Text>
+              <Text className="text-sm text-primary">{t('auth.createAccount')}</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
-                  <Text className="text-sm">{isLoading ? 'Sending...' : 'Send Code'}</Text>
+                  <Text className="text-sm">{isLoading ? t('auth.sending') : t('auth.sendCode')}</Text>
                 </Button>
               )}
             </form.Subscribe>

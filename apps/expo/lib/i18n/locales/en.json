@@ -82,7 +82,9 @@
     "didntReceiveCode": "Didn't receive the code?",
     "resendIn": "Resend in {{countdown}} second{{plural}}",
     "resend": "Resend",
-    "continue": "Continue"
+    "continue": "Continue",
+    "sendCode": "Send Code",
+    "sending": "Sending..."
   },
   "profile": {
     "profile": "Profile",

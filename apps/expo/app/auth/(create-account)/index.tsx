@@ -2,6 +2,7 @@
 
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
@@ -26,6 +27,7 @@ const nameFormSchema = z.object({
 
 export default function InfoScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [focusedTextField, setFocusedTextField] = React.useState<'first-name' | 'last-name' | null>(
     null,
   );
@@ -68,12 +70,12 @@ export default function InfoScreen() {
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
               {Platform.select({
-                ios: "What's your name?",
-                default: 'Create your account',
+                ios: t('auth.whatsYourName'),
+                default: t('auth.createYourAccount'),
               })}
             </Text>
             {Platform.OS !== 'ios' && (
-              <Text className="ios:text-sm text-center text-muted-foreground">Welcome back!</Text>
+              <Text className="ios:text-sm text-center text-muted-foreground">{t('auth.welcomeBack')}</Text>
             )}
           </View>
           <View className="ios:pt-4 pt-6">
@@ -173,7 +175,7 @@ export default function InfoScreen() {
                 router.replace('/auth/(login)');
               }}
             >
-              <Text className="text-sm text-primary">Already have an account?</Text>
+              <Text className="text-sm text-primary">{t('auth.alreadyHaveAccount')}</Text>
             </Button>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, isSubmitting]) => (
@@ -188,7 +190,7 @@ export default function InfoScreen() {
                     form.handleSubmit();
                   }}
                 >
-                  <Text className="text-sm">{isSubmitting ? 'Loading...' : 'Next'}</Text>
+                  <Text className="text-sm">{isSubmitting ? t('auth.loading') : t('auth.next')}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -202,7 +204,7 @@ export default function InfoScreen() {
             router.replace('/auth/(login)');
           }}
         >
-          <Text className="text-sm text-primary">Already have an account?</Text>
+          <Text className="text-sm text-primary">{t('auth.alreadyHaveAccount')}</Text>
         </Button>
       )}
     </View>
