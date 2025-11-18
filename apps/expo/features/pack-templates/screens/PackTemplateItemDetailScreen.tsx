@@ -3,6 +3,7 @@ import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
   getNotes,
@@ -20,6 +21,7 @@ import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
 
 export function PackTemplateItemDetailScreen() {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -79,13 +81,13 @@ export function PackTemplateItemDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">WEIGHT (EACH)</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">{t('packTemplates.weightEach')}</Text>
               <WeightBadge weight={item.weight} unit={weightUnit} />
             </View>
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">QUANTITY</Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">{t('packTemplates.quantity')}</Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
                   {quantity}
                 </Chip>
@@ -94,7 +96,7 @@ export function PackTemplateItemDetailScreen() {
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">{t('packTemplates.totalWeight')}</Text>
                 <WeightBadge weight={totalWeight} unit={weightUnit} />
               </View>
             )}
@@ -104,7 +106,7 @@ export function PackTemplateItemDetailScreen() {
             {isItemConsumable && (
               <View className="flex-row items-center">
                 <Chip textClassName="text-center text-xs" variant="consumable">
-                  Consumable
+                  {t('packTemplates.consumable')}
                 </Chip>
               </View>
             )}
@@ -112,7 +114,7 @@ export function PackTemplateItemDetailScreen() {
             {isItemWorn && (
               <View className="flex-row items-center">
                 <Chip textClassName="text-center text-xs" variant="worn">
-                  Worn
+                  {t('packTemplates.worn')}
                 </Chip>
               </View>
             )}
@@ -120,7 +122,7 @@ export function PackTemplateItemDetailScreen() {
 
           {itemHasNotes && (
             <View className="mt-2">
-              <Text className="mb-1 text-xs text-muted-foreground">NOTES</Text>
+              <Text className="mb-1 text-xs text-muted-foreground">{t('packTemplates.notes')}</Text>
               <Text className="text-foreground">{itemNotes}</Text>
             </View>
           )}
@@ -133,7 +135,7 @@ export function PackTemplateItemDetailScreen() {
             className="flex-row items-center justify-center rounded-full px-4 py-3"
           >
             <Icon name="message-outline" size={20} color={colors.foreground} />
-            <Text className="ml-2 font-semibold">Ask AI About This Item</Text>
+            <Text className="ml-2 font-semibold">{t('packTemplates.askAIAboutItem')}</Text>
           </Button>
         </View>
       </ScrollView>
