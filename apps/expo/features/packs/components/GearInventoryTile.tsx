@@ -2,12 +2,14 @@ import type { AlertRef } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Platform, View } from 'react-native';
 import { useUserPackItems } from '../hooks';
 
 export function GearInventoryTile() {
+  const { t } = useTranslation();
   const router = useRouter();
   const alertRef = useRef<AlertRef>(null);
   const items = useUserPackItems();
@@ -32,12 +34,12 @@ export function GearInventoryTile() {
         }
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-            <Text className="mr-2">{`${gearInventoryCount} items`}</Text>
+            <Text className="mr-2">{t('packs.items', { count: gearInventoryCount })}</Text>
             <ChevronRight />
           </View>
         }
         item={{
-          title: 'Gear Inventory',
+          title: t('packs.gearInventory'),
         }}
         onPress={handlePress}
         target="Cell"
@@ -45,13 +47,13 @@ export function GearInventoryTile() {
         removeSeparator={Platform.OS === 'ios'}
       />
       <Alert
-        title="No Items Yet"
-        message="Create your items or add items to your pack from our items catalog."
+        title={t('packs.noItemsYet')}
+        message={t('packs.createItemsOrAdd')}
         materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
+            text: t('packs.gotIt'),
             style: 'default',
           },
         ]}

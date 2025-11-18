@@ -1,5 +1,6 @@
 import { Alert, Button, useColorScheme } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { t } from 'expo-app/lib/i18n';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
@@ -11,7 +12,7 @@ import {
 
 export function getPackItemDetailOptions({ route }: { route: { params?: { id?: string } } }) {
   return {
-    title: 'Item Details',
+    title: t('packs.itemDetails'),
     headerRight: () => {
       const { colors } = useColorScheme();
       const router = useRouter();
@@ -28,15 +29,15 @@ export function getPackItemDetailOptions({ route }: { route: { params?: { id?: s
       return (
         <View className="flex-row items-center gap-[.4]">
           <Alert
-            title="Delete item?"
-            message="Are you sure you want to delete this item?"
+            title={t('packs.deleteItem')}
+            message={t('packs.deleteItemConfirm')}
             buttons={[
               {
-                text: 'Cancel',
+                text: t('common.cancel'),
                 style: 'cancel',
               },
               {
-                text: 'OK',
+                text: t('common.ok'),
                 onPress: () => {
                   deleteItem(item.id);
                   router.back();
