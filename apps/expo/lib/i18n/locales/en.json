@@ -360,9 +360,7 @@
     "totalEstimatedCost": "Total Estimated Cost",
     "category": "Category",
     "notes": "Notes",
-    "markPurchased": "Mark as Purchased"
-  },
-    "shoppingList": "Shopping List",
+    "markPurchased": "Mark as Purchased",
     "addToList": "Add to List",
     "removeFromList": "Remove from List",
     "clearList": "Clear List"
