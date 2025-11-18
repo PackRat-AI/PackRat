@@ -9,12 +9,13 @@ export const reportReasons = [
 
 export type ReportReason = (typeof reportReasons)[number];
 
-// Human-readable labels for report reasons
-export const reportReasonLabels: Record<ReportReason, string> = {
-  inappropriate_content: 'Inappropriate Content',
-  harmful_advice: 'Harmful or Dangerous Advice',
-  inaccurate_information: 'Inaccurate Information',
-  offensive_language: 'Offensive Language',
-  safety_concern: 'Safety Concern',
-  other: 'Other',
+// Translation keys for report reasons
+// These map to ai.reportReasons.* in the i18n translations
+export const reportReasonTranslationKeys: Record<ReportReason, string> = {
+  inappropriate_content: 'ai.reportReasons.inappropriateContent',
+  harmful_advice: 'ai.reportReasons.harmfulAdvice',
+  inaccurate_information: 'ai.reportReasons.inaccurateInformation',
+  offensive_language: 'ai.reportReasons.offensiveLanguage',
+  safety_concern: 'ai.reportReasons.safetyConcern',
+  other: 'ai.reportReasons.other',
 };

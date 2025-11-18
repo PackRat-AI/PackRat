@@ -11,6 +11,7 @@ import {
   useSheetRef,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Linking, Pressable, View } from 'react-native';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
@@ -49,6 +50,7 @@ interface WebSearchGenerativeUIProps {
 export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIProps) {
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   const handleCardPress = () => {
     bottomSheetRef.current?.present();
@@ -75,11 +77,11 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
 
   switch (toolInvocation.state) {
     case 'input-streaming':
-      return <ToolCard text="Initiating web search..." icon="loading" />;
+      return <ToolCard text={t('ai.tools.initiatingWebSearch')} icon="loading" />;
     case 'input-available':
       return (
         <ToolCard
-          text={`Searching the web for "${toolInvocation.input.query}"...`}
+          text={t('ai.tools.searchingWebFor', { query: toolInvocation.input.query })}
           icon="loading"
         />
       );
@@ -87,7 +89,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
       return toolInvocation.output.success ? (
         <>
           <ToolCard
-            text={`Searched for "${toolInvocation.input.query}"`}
+            text={t('ai.tools.searchedFor', { query: toolInvocation.input.query })}
             onPress={handleCardPress}
             icon={<Fontisto name="world-o" size={16} color={colors.foreground} />}
           />
@@ -98,7 +100,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
                 <View className="mb-6">
                   <View className="flex-row items-center mb-3">
                     <Text variant="heading" className="text-center">
-                      Searched for "{toolInvocation.input.query}"
+                      {t('ai.tools.searchedFor', { query: toolInvocation.input.query })}
                     </Text>
                   </View>
                 </View>
@@ -110,7 +112,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
                       <View className="flex-row items-center mb-3">
                         <Icon name="link" size={16} color={colors.green} />
                         <Text variant="caption1" className="uppercase tracking-wide">
-                          Sources ({toolInvocation.output.data.sources.length})
+                          {t('ai.tools.sources', { count: toolInvocation.output.data.sources.length })}
                         </Text>
                       </View>
                       <View className="gap-3">
@@ -152,7 +154,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
           </Sheet>
         </>
       ) : (
-        <ToolCard text="Couldn't search the web" icon="error" />
+        <ToolCard text={t('ai.tools.couldntSearchWeb')} icon="error" />
       );
 
     case 'output-error':
@@ -161,7 +163,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
           <CardContent className="flex-row items-center justify-between">
             <View className="flex-1 flex-row items-center gap-2 mr-3">
               <Ionicons name="alert-circle-outline" size={16} color={colors.destructive} />
-              <Text variant="caption2">Couldn't search the web</Text>
+              <Text variant="caption2">{t('ai.tools.couldntSearchWeb')}</Text>
             </View>
           </CardContent>
         </Card>
