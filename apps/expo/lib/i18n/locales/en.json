@@ -130,7 +130,25 @@
     "syncInProgress": "Sync in progress",
     "syncMessage": "Some data is still syncing. You may lose them if you proceed to log out.",
     "pushNotifications": "Push Notifications",
-    "emailNotifications": "Email Notifications"
+    "emailNotifications": "Email Notifications",
+    "createYourAccount": "Create Your Account",
+    "joinPackRat": "Join PackRat to unlock all features",
+    "syncDevicesTitle": "Sync Across Devices",
+    "syncDevicesDesc": "Keep your packs in sync everywhere",
+    "weatherIntegrationTitle": "Weather Integration",
+    "weatherIntegrationDesc": "Get weather-based recommendations",
+    "aiChatTitle": "AI Chat & Suggestions",
+    "aiChatDesc": "Smart packing assistance",
+    "sharePacksTitle": "Share Your Packs",
+    "sharePacksDesc": "Share and browse public packs",
+    "nameScreenTitle": "Name",
+    "firstNameLabel": "First",
+    "middleNameLabel": "Middle",
+    "lastNameLabel": "Last",
+    "requiredPlaceholder": "required",
+    "optionalPlaceholder": "optional",
+    "usernameFootnote": "Choose a unique identifier for your account.",
+    "notificationsFootnote": "Receive communication including announcements, marketing, recommendations, and updates about products, services, and software."
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -282,9 +300,7 @@
     "totalEstimatedCost": "Total Estimated Cost",
     "category": "Category",
     "notes": "Notes",
-    "markPurchased": "Mark as Purchased"
-  },
-    "shoppingList": "Shopping List",
+    "markPurchased": "Mark as Purchased",
     "addToList": "Add to List",
     "removeFromList": "Remove from List",
     "clearList": "Clear List"
