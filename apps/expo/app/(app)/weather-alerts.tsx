@@ -2,6 +2,7 @@ import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
 
 // Mock data for weather alerts
@@ -62,6 +63,7 @@ const WEATHER_ALERTS: {
 ];
 
 function AlertSeverity({ severity }: { severity: string }) {
+  const { t } = useTranslation();
   const getColor = () => {
     switch (severity) {
       case 'High':
@@ -75,10 +77,24 @@ function AlertSeverity({ severity }: { severity: string }) {
     }
   };
 
+  // Translate the severity text
+  const getSeverityText = () => {
+    switch (severity) {
+      case 'High':
+        return t('common.high');
+      case 'Moderate':
+        return t('weather.moderate');
+      case 'Low':
+        return t('weather.low');
+      default:
+        return severity;
+    }
+  };
+
   return (
     <View className={cn('rounded-full px-2 py-1', getColor())}>
       <Text variant="caption2" className="font-medium text-white">
-        {severity}
+        {getSeverityText()}
       </Text>
     </View>
   );
@@ -126,13 +142,15 @@ function WeatherAlertCard({ alert }: { alert: (typeof WEATHER_ALERTS)[0] }) {
 }
 
 export default function WeatherAlertsScreen() {
+  const { t } = useTranslation();
+  
   return (
     <>
-      <LargeTitleHeader title="Weather Alerts" />
+      <LargeTitleHeader title={t('weather.weatherAlertsTitle')} />
       <ScrollView className="flex-1">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">
-            Current weather alerts for your planned trips
+            {t('weather.currentWeatherAlerts')}
           </Text>
         </View>
 
@@ -144,7 +162,7 @@ export default function WeatherAlertsScreen() {
 
         <View className="mx-4 my-2 rounded-lg bg-card p-4">
           <Text variant="footnote" className="text-muted-foreground">
-            Weather data last updated: Today, 9:45 AM
+            {t('weather.weatherDataLastUpdated', { date: 'Today, 9:45 AM' })}
           </Text>
         </View>
       </ScrollView>
