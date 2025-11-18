@@ -277,6 +277,7 @@
     "add": "Add",
     "added": "Added",
     "moreLike": "More like {{itemName}}",
+    "ifYouDont": "If you don't save, your packing state will be lost.",
     "categories": {
       "hiking": "Hiking",
       "backpacking": "Backpacking",

@@ -11,6 +11,7 @@ import { LocationPicker } from 'expo-app/features/weather/components';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -22,6 +23,7 @@ import { packingModeStore } from '../store/packingMode';
 import type { Pack, PackItem } from '../types';
 
 export function PackDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
@@ -117,17 +119,17 @@ export function PackDetailScreen() {
       return exitPackingMode();
 
     appAlert.current?.alert({
-      title: 'Exit Packing Mode?',
-      message: "If you don't save, your packing state will be lost.",
+      title: t('packs.exitPackingMode'),
+      message: t('packs.ifYouDont'),
       buttons: [
         {
-          text: 'Exit without Saving',
+          text: t('packs.exitWithoutSaving'),
           style: 'destructive',
           onPress: exitPackingMode,
         },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Save',
+          text: t('common.save'),
           style: 'default',
           onPress() {
             handleSavePackingMode();
