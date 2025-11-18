@@ -1,9 +1,11 @@
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 export default function SyncBanner() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useColorScheme();
 
@@ -16,7 +18,7 @@ export default function SyncBanner() {
     >
       <View className="flex-row items-center gap-2">
         <Icon name="cloud-outline" size={20} color={colors.primary} />
-        <Text className="font-medium text-blue-800">Sync your packs across devices</Text>
+        <Text className="font-medium text-blue-800">{t('packs.syncBanner')}</Text>
       </View>
       <Icon name="chevron-right" size={16} color={colors.primary} />
     </Pressable>
