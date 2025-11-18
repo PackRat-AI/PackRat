@@ -4,6 +4,7 @@ import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
@@ -27,6 +28,7 @@ import type { CatalogItem } from '../types';
 function CatalogItemsScreen() {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
@@ -69,9 +71,12 @@ function CatalogItemsScreen() {
   const totalItems = paginatedData?.pages[0]?.totalCount ?? 0;
 
   const totalItemsText = `${Number(totalItems).toLocaleString()} ${
-    totalItems === 1 ? 'item' : 'items'
+    totalItems === 1 ? t('catalog.item') : t('catalog.items')
   }`;
-  const showingText = `Showing ${paginatedItems.length} of ${Number(totalItems).toLocaleString()} items`;
+  const showingText = t('catalog.showingItems', {
+    current: paginatedItems.length,
+    total: Number(totalItems).toLocaleString(),
+  });
 
   const handleItemPress = (item: CatalogItem) => {
     router.push({ pathname: '/catalog/[id]', params: { id: item.id } });
@@ -88,12 +93,12 @@ function CatalogItemsScreen() {
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
-        title="Catalog"
+        title={t('catalog.title')}
         backVisible={false}
         searchBar={{
           iosHideWhenScrolling: false,
           onChangeText: setSearchValue,
-          placeholder: 'Search catalog items...',
+          placeholder: t('catalog.searchPlaceholder'),
           content: (
             <View style={{ flex: 1, backgroundColor: colors.background }}>
               {isSearching ? (
@@ -106,7 +111,7 @@ function CatalogItemsScreen() {
                     <View className="px-4 pt-2">
                       {searchResults.length > 0 && (
                         <Text className="text-xs text-muted-foreground">
-                          {searchResults.length} results
+                          {searchResults.length} {t('catalog.results')}
                         </Text>
                       )}
                     </View>
@@ -123,10 +128,10 @@ function CatalogItemsScreen() {
                               <Icon name="close-circle" size={32} color="text-destructive" />
                             </View>
                             <Text className="mb-1 text-lg font-medium text-foreground">
-                              Search error
+                              {t('catalog.searchError')}
                             </Text>
                             <Text className="text-center text-muted-foreground">
-                              Unable to search. Please try again.
+                              {t('catalog.unableToSearch')}
                             </Text>
                           </>
                         ) : (
@@ -135,10 +140,10 @@ function CatalogItemsScreen() {
                               <Icon name="magnify" size={32} color="text-muted-foreground" />
                             </View>
                             <Text className="mb-1 text-lg font-medium text-foreground">
-                              No results
+                              {t('catalog.noResults')}
                             </Text>
                             <Text className="text-center text-muted-foreground">
-                              Try adjusting your search or filters.
+                              {t('catalog.tryAdjustingFilters')}
                             </Text>
                           </>
                         )}
@@ -148,7 +153,7 @@ function CatalogItemsScreen() {
                 )
               ) : (
                 <View className="flex-1 items-center justify-center p-4">
-                  <Text className="text-muted-foreground">Search catalog</Text>
+                  <Text className="text-muted-foreground">{t('catalog.searchCatalog')}</Text>
                 </View>
               )}
             </View>
@@ -182,11 +187,11 @@ function CatalogItemsScreen() {
               <ActivityIndicator className="text-primary" />
             ) : hasNextPage ? (
               <Text className="text-center text-xs text-muted-foreground">
-                Scroll to load more items
+                {t('catalog.scrollToLoadMore')}
               </Text>
             ) : paginatedItems.length > 0 ? (
               <Text className="text-center text-xs text-muted-foreground">
-                You've reached the end of the catalog
+                {t('catalog.endOfCatalog')}
               </Text>
             ) : null}
           </View>
@@ -211,16 +216,16 @@ function CatalogItemsScreen() {
                   <Icon name="close" size={32} color="text-destructive" />
                 </View>
                 <Text className="mb-1 text-lg font-medium text-foreground">
-                  Error loading items
+                  {t('catalog.errorLoadingItems')}
                 </Text>
                 <Text className="text-center text-muted-foreground">
-                  {paginatedError.message || 'Something went wrong. Please try again.'}
+                  {paginatedError.message || t('catalog.somethingWentWrong')}
                 </Text>
                 <TouchableOpacity
                   onPress={() => refetch()}
                   className="mt-4 rounded-lg bg-primary px-4 py-2"
                 >
-                  <Text className="font-medium text-primary-foreground">Retry</Text>
+                  <Text className="font-medium text-primary-foreground">{t('catalog.retry')}</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -228,9 +233,9 @@ function CatalogItemsScreen() {
                 <View className="mb-4 rounded-full bg-muted p-4">
                   <Icon name="magnify" size={32} color="text-muted-foreground" />
                 </View>
-                <Text className="mb-1 text-lg font-medium text-foreground">No items found</Text>
+                <Text className="mb-1 text-lg font-medium text-foreground">{t('catalog.noItemsFound')}</Text>
                 <Text className="text-center text-muted-foreground">
-                  Try a different category or refresh.
+                  {t('catalog.tryDifferentCategory')}
                 </Text>
               </>
             )}

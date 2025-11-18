@@ -3,6 +3,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
 import { Image, TouchableOpacity, View } from 'react-native';
 import type { CatalogItem } from '../types';
@@ -14,6 +15,7 @@ type ItemReviewsProps = {
 export function ItemReviews({ reviews }: ItemReviewsProps) {
   const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({});
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   if (!reviews || reviews.length === 0) return null;
 
@@ -36,8 +38,8 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
   return (
     <View className="mb-4">
       <View className="mb-2 flex-row items-center justify-between">
-        <Text variant="callout">Reviews</Text>
-        <Text className="text-sm text-muted-foreground">{reviews.length} reviews</Text>
+        <Text variant="callout">{t('catalog.reviews')}</Text>
+        <Text className="text-sm text-muted-foreground">{t('catalog.reviewsCount', { count: reviews.length })}</Text>
       </View>
 
       {reviews.map((review) => {
@@ -57,7 +59,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                 )}
                 <View className="ml-2">
                   <Text className="font-medium text-foreground">
-                    {review.user_name || 'Anonymous'}
+                    {review.user_name || t('catalog.anonymous')}
                   </Text>
                   <Text className="text-xs text-muted-foreground">{formatDate(review.date)}</Text>
                 </View>
@@ -67,7 +69,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                   <View className="mr-2 flex-row items-center">
                     <Icon name="check-circle-outline" size={14} color={colors.green} />
                     <Text className="ml-1 text-xs text-green-900 dark:text-green-500">
-                      Verified
+                      {t('catalog.verified')}
                     </Text>
                   </View>
                 )}
@@ -98,7 +100,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                   onPress={() => toggleReviewExpansion(review.title)}
                 >
                   <Text className="text-sm text-primary">
-                    {isExpanded ? 'Show less' : 'Read more'}
+                    {isExpanded ? t('catalog.showLess') : t('catalog.readMore')}
                   </Text>
                 </TouchableOpacity>
               )}

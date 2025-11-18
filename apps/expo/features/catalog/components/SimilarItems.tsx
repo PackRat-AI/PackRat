@@ -1,5 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { type SimilarItem, useSimilarCatalogItems } from 'expo-app/features/catalog/hooks';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import type React from 'react';
 import { FlatList, Pressable, View } from 'react-native';
@@ -18,6 +19,8 @@ interface SimilarItemCardProps {
 }
 
 const SimilarItemCard: React.FC<SimilarItemCardProps> = ({ item, onPress }) => {
+  const { t } = useTranslation();
+
   return (
     <Pressable
       onPress={() => onPress(item.id.toString())}
@@ -47,7 +50,7 @@ const SimilarItemCard: React.FC<SimilarItemCardProps> = ({ item, onPress }) => {
           )}
 
           <Text className="text-xs text-muted-foreground">
-            {Math.round(item.similarity * 100)}% match
+            {Math.round(item.similarity * 100)}% {t('catalog.match')}
           </Text>
         </View>
 
@@ -77,6 +80,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
   threshold = 0.1,
 }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useSimilarCatalogItems(catalogItemId, {
     limit,
     threshold,
@@ -93,7 +97,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
   if (isLoading) {
     return (
       <View className="mt-6">
-        <Text className="mb-3 text-lg font-semibold text-foreground">More like {itemName}</Text>
+        <Text className="mb-3 text-lg font-semibold text-foreground">{t('catalog.moreLike', { itemName })}</Text>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -112,7 +116,7 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
 
   return (
     <View className="mt-6">
-      <Text className="mb-3 text-lg font-semibold text-foreground">More like {itemName}</Text>
+      <Text className="mb-3 text-lg font-semibold text-foreground">{t('catalog.moreLike', { itemName })}</Text>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
