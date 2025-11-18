@@ -3,12 +3,14 @@ import { Alert, ListItem, Text, useColorScheme } from '@packrat/ui/nativewindui'
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef } from 'react';
 import { View } from 'react-native';
 
 export function UpcomingTripsTile() {
   const router = useRouter();
+  const { t } = useTranslation();
   const alertRef = useRef<AlertRef>(null);
 
   // ✅ get all trips
@@ -64,7 +66,7 @@ export function UpcomingTripsTile() {
             <ChevronRight />
           </View>
         }
-        item={{ title: 'Upcoming Trips' }}
+        item={{ title: t('trips.upcomingTrips') }}
         onPress={handlePress}
         target="Cell"
         index={0}
@@ -72,13 +74,13 @@ export function UpcomingTripsTile() {
 
       {/* ✅ Alert for when no trips exist */}
       <Alert
-        title="No Trips Yet"
-        message="Create trips to start seeing your upcoming adventures!"
+        title={t('trips.noTripsYetTitle')}
+        message={t('trips.createTripsToSee')}
         materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
+            text: t('trips.gotIt'),
             style: 'default',
           },
         ]}
