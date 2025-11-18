@@ -86,12 +86,12 @@ export default function InfoScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'First Name',
+                          ios: t('auth.firstName'),
                           default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'First Name',
+                          default: t('auth.firstName'),
                         })}
                         onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                         submitBehavior="submit"
@@ -115,12 +115,12 @@ export default function InfoScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'Last Name',
+                          ios: t('auth.lastName'),
                           default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'Last Name',
+                          default: t('auth.lastName'),
                         })}
                         onFocus={() => setFocusedTextField('last-name')}
                         onBlur={() => {
@@ -161,7 +161,7 @@ export default function InfoScreen() {
                   disabled={!canSubmit || isSubmitting}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{isSubmitting ? 'Loading...' : 'Continue'}</Text>
+                  <Text>{isSubmitting ? t('auth.loading') : t('common.continue')}</Text>
                 </Button>
               )}
             </form.Subscribe>
