@@ -1,6 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { type SimilarItem, useSimilarPackItems } from 'expo-app/features/catalog/hooks';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import type React from 'react';
 import { FlatList, Pressable, View } from 'react-native';
@@ -78,6 +79,7 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
   limit = 5,
   threshold = 0.1,
 }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data, isLoading, isError } = useSimilarPackItems(packId, itemId, {
     limit,
@@ -95,7 +97,7 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
   if (isLoading) {
     return (
       <View className="mt-10 px-4">
-        <Text className="mb-3 text-lg font-semibold text-foreground">More like {itemName}</Text>
+        <Text className="mb-3 text-lg font-semibold text-foreground">{t('packs.moreLike', { itemName })}</Text>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -113,7 +115,7 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
 
   return (
     <View className="mt-10 px-4">
-      <Text className="mb-3 text-lg font-semibold text-foreground">More like {itemName}</Text>
+      <Text className="mb-3 text-lg font-semibold text-foreground">{t('packs.moreLike', { itemName })}</Text>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}

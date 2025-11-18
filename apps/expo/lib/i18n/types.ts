@@ -92,6 +92,7 @@ export type TranslationKeys =
   | 'packs.removeItem'
   | 'packs.totalWeight'
   | 'packs.baseWeight'
+  | 'packs.categoriesLabel'
   | 'packs.categories'
   | 'packs.items'
   | 'packs.noCategorizedItems'

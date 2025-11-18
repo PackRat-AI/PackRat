@@ -166,7 +166,7 @@ export default function CurrentPackScreen() {
         <View className="mx-4 mb-6 rounded-lg bg-card">
           <View className="border-border/25 dark:border-border/80 border-b p-4">
             <Text variant="heading" className="font-semibold">
-              {t('packs.categories')}
+              {t('packs.categoriesLabel')}
             </Text>
           </View>
 
