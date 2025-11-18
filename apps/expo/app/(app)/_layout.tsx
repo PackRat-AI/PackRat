@@ -7,6 +7,7 @@ import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templat
 import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
@@ -18,6 +19,7 @@ export {
 
 export default function AppLayout() {
   const isLoading = useAuthInit();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -29,37 +31,37 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={SCREEN_OPTIONS}>
       <Stack.Screen name="(tabs)" options={TABS_OPTIONS} />
-      <Stack.Screen name="modal" options={MODAL_OPTIONS} />
+      <Stack.Screen name="modal" options={getModalOptions(t)} />
       <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
       <Stack.Screen
         name="pack/[id]/index"
         options={({ route }) => getPackDetailOptions((route.params as { id: string })?.id)}
       />
-      <Stack.Screen name="pack/[id]/edit" options={PACK_EDIT_OPTIONS} />
-      <Stack.Screen name="pack/new" options={PACK_NEW_OPTIONS} />
-      <Stack.Screen name="trip/location-search" options={TRIP_LOCATION_SEARCH_OPTIONS} />
+      <Stack.Screen name="pack/[id]/edit" options={getPackEditOptions(t)} />
+      <Stack.Screen name="pack/new" options={getPackNewOptions(t)} />
+      <Stack.Screen name="trip/location-search" options={getTripLocationSearchOptions(t)} />
 
       <Stack.Screen
         name="trip/[id]/index"
         options={({ route }) => getTripDetailOptions((route.params as { id: string })?.id)}
       />
-      <Stack.Screen name="trip/[id]/edit" options={TRIP_EDIT_OPTIONS} />
-      <Stack.Screen name="trip/new" options={TRIP_NEW_OPTIONS} />
+      <Stack.Screen name="trip/[id]/edit" options={getTripEditOptions(t)} />
+      <Stack.Screen name="trip/new" options={getTripNewOptions(t)} />
 
       <Stack.Screen
         name="item/[id]/index"
         options={({ route }) => getPackItemDetailOptions({ route })}
       />
-      <Stack.Screen name="item/[id]/edit" options={ITEM_EDIT_OPTIONS} />
-      <Stack.Screen name="item/new" options={ITEM_NEW_OPTIONS} />
-      <Stack.Screen name="catalog/add-to-pack/index" options={PACK_SELECTION_OPTIONS} />
+      <Stack.Screen name="item/[id]/edit" options={getItemEditOptions(t)} />
+      <Stack.Screen name="item/new" options={getItemNewOptions(t)} />
+      <Stack.Screen name="catalog/add-to-pack/index" options={getPackSelectionOptions(t)} />
       <Stack.Screen
         name="catalog/add-to-pack/details"
-        options={CATALOG_ADD_TO_PACK_ITEM_DETAILS_OPTIONS}
+        options={getCatalogAddToPackItemDetailsOptions(t)}
       />
-      <Stack.Screen name="ai-chat" options={AI_CHAT_OPTIONS} />
-      <Stack.Screen name="catalog/index" options={CATALOG_LIST_OPTIONS} />
-      <Stack.Screen name="catalog/[id]" options={CATALOG_ITEM_DETAIL_OPTIONS} />
+      <Stack.Screen name="ai-chat" options={getAiChatOptions(t)} />
+      <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
+      <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
       <Stack.Screen name="weather" options={{ headerShown: false }} />
 
       <Stack.Screen
@@ -224,81 +226,81 @@ const TABS_OPTIONS = {
   headerShown: false,
 } as const;
 
-// MODALS
-const MODAL_OPTIONS = {
+// MODALS - These functions accept translation function t
+const getModalOptions = (t: any) => ({
   presentation: 'modal',
   animation: 'fade_from_bottom', // for android
-  title: 'Settings',
+  title: t('profile.settings'),
   headerRight: () => <ThemeToggle />,
-} as const;
+} as const);
 
-const TRIP_NEW_OPTIONS = {
-  title: 'Create New Trip',
+const getTripNewOptions = (t: any) => ({
+  title: t('trips.createTrip'),
   presentation: 'modal',
   animation: 'slide_from_bottom',
-} as const;
+} as const);
 
-const TRIP_EDIT_OPTIONS = {
-  title: 'Edit Trip',
+const getTripEditOptions = (t: any) => ({
+  title: t('packs.editPack'),
   presentation: 'modal',
   animation: 'slide_from_bottom',
-} as const;
+} as const);
 
-const TRIP_LOCATION_SEARCH_OPTIONS = {
-  title: 'Search Location',
+const getTripLocationSearchOptions = (t: any) => ({
+  title: t('location.searchLocation'),
   presentation: 'modal',
   animation: 'slide_from_bottom',
-} as const;
+} as const);
 
 const CONSENT_MODAL_OPTIONS = {
   presentation: 'modal',
   animation: 'fade_from_bottom', // for android
 } as const;
 
-const PACK_NEW_OPTIONS = {
-  title: 'Create New Pack',
+const getPackNewOptions = (t: any) => ({
+  title: t('packs.createPack'),
   presentation: 'modal',
   animation: 'fade_from_bottom', // for android
-} as const;
+} as const);
 
-const ITEM_NEW_OPTIONS = {
-  title: 'Create New Item',
+const getItemNewOptions = (t: any) => ({
+  title: t('items.itemName'),
   presentation: 'modal',
   animation: 'fade_from_bottom', // for android
-} as const;
+} as const);
 
-const AI_CHAT_OPTIONS = {
-  title: 'AI Chat',
+const getAiChatOptions = (t: any) => ({
+  title: t('ai.aiChat'),
   header: () => <AiChatHeader />,
   animation: 'fade_from_bottom', // for android
-} as const;
+} as const);
 
-const PACK_SELECTION_OPTIONS = {
-  title: 'Select Pack',
+const getPackSelectionOptions = (t: any) => ({
+  title: t('packs.packName'),
   presentation: 'modal',
   animation: 'fade_from_bottom', // for android
-} as const;
+} as const);
 
-const CATALOG_ADD_TO_PACK_ITEM_DETAILS_OPTIONS = {
-  title: 'Item Details',
+const getCatalogAddToPackItemDetailsOptions = (t: any) => ({
+  title: t('items.itemDetails'),
   animation: 'fade_from_bottom', // for android
-} as const;
+} as const);
 
-const PACK_EDIT_OPTIONS = {
-  title: 'Edit Pack',
+const getPackEditOptions = (t: any) => ({
+  title: t('packs.editPack'),
   presentation: 'modal',
   animation: 'slide_from_bottom',
-} as const;
+} as const);
 
-const ITEM_EDIT_OPTIONS = {
-  title: 'Edit Item',
-} as const;
+const getItemEditOptions = (t: any) => ({
+  title: t('common.edit'),
+} as const);
 
-const CATALOG_LIST_OPTIONS = {
-  title: 'Gear Catalog',
+const getCatalogListOptions = (t: any) => ({
+  title: t('catalog.itemsCatalog'),
   headerLargeTitle: true,
-} as const;
+} as const);
 
-const CATALOG_ITEM_DETAIL_OPTIONS = {
-  title: 'Catalog Item',
-} as const;
+const getCatalogItemDetailOptions = (t: any) => ({
+  title: t('items.itemDetails'),
+} as const);

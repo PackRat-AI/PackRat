@@ -2,6 +2,7 @@ import { Text } from '@packrat/ui/nativewindui';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, ScrollView, View } from 'react-native';
@@ -9,6 +10,7 @@ import { Platform, ScrollView, View } from 'react-native';
 export default function ModalScreen() {
   const { colorScheme } = useColorScheme();
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <ScrollView className="flex-1 px-4 py-6">
@@ -20,7 +22,7 @@ export default function ModalScreen() {
         {isAuthenticated && (
           <View>
             <Text variant="subhead" className="mb-4">
-              Danger Zone
+              {t('profile.dangerZone')}
             </Text>
             <DeleteAccountButton />
           </View>
