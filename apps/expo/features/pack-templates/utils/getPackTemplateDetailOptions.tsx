@@ -1,5 +1,6 @@
 import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { t } from 'expo-app/lib/i18n';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
@@ -9,7 +10,7 @@ import { useWritePermissionCheck } from '../hooks/useWritePermissionCheck';
 
 export function getPackTemplateDetailOptions(id: string) {
   return {
-    title: 'Pack Template Details',
+    title: t('packTemplates.packTemplateDetails'),
     headerRight: () => {
       const { colors } = useColorScheme();
       const { t } = useTranslation();
