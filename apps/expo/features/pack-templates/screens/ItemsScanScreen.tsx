@@ -7,6 +7,7 @@ import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/Ho
 import { useImageDetection } from 'expo-app/features/packs/hooks/useImageDetection';
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -18,6 +19,7 @@ import { useBulkAddCatalogItems } from '../hooks';
 export function ItemsScanScreen() {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const { packTemplateId, ...fileInfo } = useLocalSearchParams();
   const [hasRunInitialScanOnMount, setHasRunInitialScanOnMount] = useState(false);
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
@@ -58,7 +60,7 @@ export function ItemsScanScreen() {
   }, [data, selectedCatalogItems.size]);
 
   const handleAddImage = () => {
-    const options = ['Take Photo', 'Choose from Library', 'Cancel'];
+    const options = [t('packTemplates.takePhoto'), t('packTemplates.chooseFromLibrary'), t('common.cancel')];
     const cancelButtonIndex = 2;
 
     showActionSheetWithOptions(
@@ -95,9 +97,9 @@ export function ItemsScanScreen() {
         } catch (err) {
           console.error('Error handling image:', err);
           appAlert.current?.alert({
-            title: 'Error',
-            message: 'Failed to process image. Please try again.',
-            buttons: [{ text: 'OK', style: 'default' }],
+            title: t('packTemplates.error'),
+            message: t('packTemplates.failedToProcessImage'),
+            buttons: [{ text: t('common.ok'), style: 'default' }],
           });
         }
       },
@@ -149,19 +151,16 @@ export function ItemsScanScreen() {
     router.back();
     try {
       await addItemsToPackTemplate(packTemplateId as string, selectedCatalogItemsList);
+      const itemWord = selectedCatalogItemsList.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Toast.show({
         type: 'success',
-        text1: `Added ${selectedCatalogItemsList.length} ${selectedCatalogItemsList.length === 1 ? 'item' : 'items'}`,
-        text2:
-          selectedCatalogItemsList.length > 1
-            ? 'You can edit individual items as needed'
-            : undefined,
+        text1: t('packTemplates.addedItems', { count: selectedCatalogItemsList.length, itemWord }),
       });
     } catch {
       Toast.show({
         type: 'error',
-        text1: 'Something went wrong',
-        text2: 'Please try again',
+        text1: t('errors.somethingWentWrong'),
+        text2: t('errors.tryAgain'),
       });
     }
   };
@@ -170,7 +169,7 @@ export function ItemsScanScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Scan Items from Photo',
+          title: t('packTemplates.scanItemsFromPhoto'),
           headerBackVisible: true,
         }}
       />
@@ -182,7 +181,7 @@ export function ItemsScanScreen() {
           resizeMode="cover"
         />
         <Button variant="secondary" onPress={handleAddImage}>
-          <Text>Change</Text>
+          <Text>{t('common.edit')}</Text>
         </Button>
       </View>
 
@@ -190,12 +189,12 @@ export function ItemsScanScreen() {
         {isScanning ? (
           <View className="items-center mt-32 justify-center py-4">
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text className="ml-2 text-muted-foreground">Scanning for items...</Text>
+            <Text className="ml-2 text-muted-foreground">{t('packTemplates.analyzing')}</Text>
           </View>
         ) : data ? (
           uniqueCatalogItems.length > 0 ? (
             <View className="gap-2 p-4">
-              <Text variant="footnote">Identified {uniqueCatalogItems.length} items</Text>
+              <Text variant="footnote">{t('packTemplates.addedItems', { count: uniqueCatalogItems.length, itemWord: t('packTemplates.items') })}</Text>
               {uniqueCatalogItems.map((item) => (
                 <HorizontalCatalogItemCard
                   key={item.id}
@@ -211,23 +210,22 @@ export function ItemsScanScreen() {
                 <View className="bg-neutral-300 dark:bg-neutral-600 rounded-full p-6 mb-4">
                   <Icon name="camera-outline" size={48} color={colors.grey} />
                 </View>
-                <Text className="text-xl font-semibold text-center mb-2">No Items Found</Text>
+                <Text className="text-xl font-semibold text-center mb-2">{t('packTemplates.noDetections')}</Text>
                 <Text className="text-center text-muted-foreground text-base leading-6">
-                  We couldn't identify any outdoor gear in this photo. Try taking a clearer image
-                  with better lighting.
+                  {t('packTemplates.tryDifferentImage')}
                 </Text>
               </View>
 
               <View className="w-full gap-3 mb-4">
                 <Text className="text-sm font-medium text-foreground mb-2">
-                  Tips for better scanning:
+                  {t('packTemplates.addManually')}
                 </Text>
                 <View className="flex-row items-start gap-3 mb-2">
                   <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
                     <Icon name="lightbulb" size={12} color={colors.primary} />
                   </View>
                   <Text className="flex-1 text-sm text-muted-foreground">
-                    Spread items on a contrasting background
+                    {t('packTemplates.addManually')}
                   </Text>
                 </View>
                 <View className="flex-row items-start gap-3 mb-2">
