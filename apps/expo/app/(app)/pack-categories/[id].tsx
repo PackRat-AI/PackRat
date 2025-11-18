@@ -4,6 +4,7 @@ import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 
@@ -19,7 +20,8 @@ function CategoryCard({
   };
 }) {
   const { colors } = useColorScheme();
-  const itemLabel = category.items === 1 ? 'item' : 'items';
+  const { t } = useTranslation();
+  const itemLabel = category.items === 1 ? t('items.itemName') : t('packs.items');
 
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
@@ -55,17 +57,18 @@ function CategoryCard({
 export default function PackCategoriesScreen() {
   const params = useLocalSearchParams();
   const pack = usePackDetailsFromStore(params.id as string);
+  const { t } = useTranslation();
 
   const categories = computeCategorySummaries(pack);
 
   return (
     <>
-      <LargeTitleHeader title="Pack Categories" />
+      <LargeTitleHeader title={t('packs.packCategories')} />
       {categories.length ? (
         <ScrollView className="flex-1">
           <View className="p-4">
             <Text variant="subhead" className="mb-2 text-muted-foreground">
-              Organize your gear by functional categories
+              {t('packs.organizeGear')}
             </Text>
           </View>
 
@@ -77,7 +80,7 @@ export default function PackCategoriesScreen() {
         </ScrollView>
       ) : (
         <View className="flex-1 items-center justify-center">
-          <Text>Either there are no items in this pack or they aren't categorized yet.</Text>
+          <Text>{t('packs.noCategorizedItems')}</Text>
         </View>
       )}
     </>

@@ -130,7 +130,8 @@
     "syncInProgress": "Sync in progress",
     "syncMessage": "Some data is still syncing. You may lose them if you proceed to log out.",
     "pushNotifications": "Push Notifications",
-    "emailNotifications": "Email Notifications"
+    "emailNotifications": "Email Notifications",
+    "dangerZone": "Danger Zone"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -180,7 +181,32 @@
     "sharingBenefit3": "• Plan together and ensure nothing essential is forgotten",
     "itemsInInventory": "{{count}} items in your inventory",
     "all": "All",
-    "byCategory": "By Category"
+    "byCategory": "By Category",
+    "totalWeight": "Total Weight",
+    "baseWeight": "Base Weight",
+    "categories": "Categories",
+    "items": "Items",
+    "noCategorizedItems": "Either there are no items in this pack or they aren't categorized yet.",
+    "organizeGear": "Organize your gear by functional categories",
+    "packStats": "Pack Stats",
+    "weightHistory": "Weight History",
+    "categoryDistribution": "Category Distribution",
+    "packWeightOverMonths": "Pack weight over the last 6 months (g)",
+    "weightDistribution": "Weight distribution by category",
+    "packInsights": "Pack Insights",
+    "lighterThanSimilar": "Your pack is lighter than 78% of similar hikers",
+    "basedOnData": "Based on data from 1,245 Appalachian Trail hikers",
+    "reducedWeight": "You've reduced your pack weight by 12% this year",
+    "weightReduction": "From 14.2 lbs in January to 12.4 lbs now",
+    "heaviestCategory": "Your heaviest category is Shelter (18.5% of total)",
+    "considerUltralight": "Consider ultralight alternatives to reduce weight",
+    "noStatsAvailable": "No stats available for this pack yet.",
+    "weightAnalysis": "Weight Analysis",
+    "consumablesWeight": "Consumables Weight",
+    "wornWeight": "Worn Weight",
+    "weightBreakdown": "Weight Breakdown",
+    "detailedAnalysis": "Detailed analysis of your pack weight by category",
+    "addItemsForBreakdown": "Add items and categorize them for weight breakdown."
   },
   "items": {
     "itemDetails": "Item Details",
@@ -255,6 +281,10 @@
     "generatePacksWithAI": "Generate packs with AI",
     "generating": "Generating...",
     "generationError": "Generation error",
+    "askAnythingOutdoors": "Ask anything outdoors",
+    "askAboutItem": "Ask about this item...",
+    "askAboutPack": "Ask about this pack...",
+    "suggestions": "SUGGESTIONS"
     "generateNewPacks": "Generate New Packs",
     "enterCount": "Enter count",
     "numberOfPacksToGenerate": "Number of packs to generate",
@@ -275,13 +305,23 @@
     "conditions": "Conditions",
     "forecast": "Forecast",
     "humidity": "Humidity",
-    "windSpeed": "Wind Speed"
+    "windSpeed": "Wind Speed",
+    "addLocation": "Add Location"
   },
   "location": {
     "location": "Location",
     "currentLocation": "Current Location",
     "selectLocation": "Select Location",
-    "searchLocation": "Search Location"
+    "searchLocation": "Search Location",
+    "searchForPlace": "Search for a place",
+    "searchButton": "Search",
+    "confirmLocation": "Confirm Location",
+    "notFound": "Not Found",
+    "noLocationFound": "No location found for that search.",
+    "searchError": "Error",
+    "somethingWentWrong": "Something went wrong while searching.",
+    "missingApiKey": "Missing API Key",
+    "apiKeyNotConfigured": "Google Maps API key is not configured."
   },
   "shopping": {
     "shoppingList": "Shopping List",
