@@ -2,6 +2,7 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -23,18 +24,23 @@ type LocationPickerProps = {
 export function LocationPicker({
   open,
   onClose,
-  title = 'Select Location',
+  title,
   subtitle,
   onSelect,
   onSkip,
-  selectText = 'Done',
+  selectText,
   skipText,
 }: LocationPickerProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const { locationsState } = useLocations();
   const { activeLocation } = useActiveLocation();
   const [selectedLocation, setSelectedLocation] = useState<WeatherLocation | null>(activeLocation);
+  
+  // Use translations for default values
+  const displayTitle = title ?? t('location.selectLocation');
+  const displaySelectText = selectText ?? t('common.done');
 
   // Get the locations array safely
   const locations = locationsState.state === 'hasData' ? locationsState.data : [];
@@ -54,7 +60,7 @@ export function LocationPicker({
                 <Icon name="close" size={20} color={colors.foreground} />
               </TouchableOpacity>
               <View>
-                <Text className="text-lg font-semibold">{title}</Text>
+                <Text className="text-lg font-semibold">{displayTitle}</Text>
                 {subtitle && <Text className="text-xs text-muted-foreground">{subtitle}</Text>}
               </View>
             </View>
@@ -91,7 +97,7 @@ export function LocationPicker({
                     <View className="flex-row gap-2 items-center">
                       {location.id === activeLocation?.id && (
                         <>
-                          <Text variant="callout">Default</Text>
+                          <Text variant="callout">{t('common.default')}</Text>
                           <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
                         </>
                       )}
@@ -111,13 +117,13 @@ export function LocationPicker({
                   />
                 </View>
                 <View className="items-center gap-1">
-                  <Text className="text-base font-semibold">No locations yet</Text>
+                  <Text className="text-base font-semibold">{t('weather.noSavedLocations')}</Text>
                   <Text className="text-xs text-muted-foreground text-center">
-                    Add a location to get more useful information.
+                    {t('weather.addLocation')}
                   </Text>
                 </View>
                 <Button variant="secondary" onPress={handleSearchLocation}>
-                  <Text>Look Up</Text>
+                  <Text>{t('location.searchButton')}</Text>
                 </Button>
               </View>
             )}
@@ -143,7 +149,7 @@ export function LocationPicker({
               disabled={!selectedLocation}
               variant="tonal"
             >
-              <Text>{selectText}</Text>
+              <Text>{displaySelectText}</Text>
             </Button>
           </View>
         </View>
