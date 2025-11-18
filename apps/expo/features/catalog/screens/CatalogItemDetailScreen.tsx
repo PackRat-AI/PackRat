@@ -7,6 +7,7 @@ import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { SimilarItems } from 'expo-app/features/catalog/components/SimilarItems';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
@@ -20,6 +21,7 @@ export function CatalogItemDetailScreen() {
   const { id } = useLocalSearchParams();
   const { data: item, isLoading, isError, refetch } = useCatalogItemDetails(id as string);
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const MATERIAL_LENGTH_THRESHOLD = 60;
 
   const handleAddToPack = () => {
@@ -36,8 +38,8 @@ export function CatalogItemDetailScreen() {
   if (isError) {
     return (
       <ErrorScreen
-        title="Error loading item"
-        message="Please try again later."
+        title={t('catalog.errorLoadingItem')}
+        message={t('catalog.pleaseTryAgainLater')}
         onRetry={refetch}
         variant="destructive"
       />
@@ -47,7 +49,7 @@ export function CatalogItemDetailScreen() {
   if (!item) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center">
-        <NotFoundScreen title="Item not found" message="Please try again later." />
+        <NotFoundScreen title={t('catalog.itemNotFound')} message={t('catalog.pleaseTryAgainLater')} />
       </SafeAreaView>
     );
   }
@@ -87,7 +89,7 @@ export function CatalogItemDetailScreen() {
 
           {item.categories && item.categories.length > 0 && (
             <View className="mb-4">
-              <Text className="mb-2 text-xs uppercase text-muted-foreground">CATEGORIES</Text>
+              <Text className="mb-2 text-xs uppercase text-muted-foreground">{t('catalog.categoriesLabel')}</Text>
               <View className="flex-row flex-wrap gap-2">
                 {item.categories.map((category) => (
                   <Chip key={category} textClassName="text-xs" variant="outline">
@@ -104,19 +106,19 @@ export function CatalogItemDetailScreen() {
 
           <View className="mb-4 flex-row flex-wrap gap-1">
             <View className="mb-2 mr-4">
-              <Text className="text-xs uppercase text-muted-foreground">WEIGHT</Text>
+              <Text className="text-xs uppercase text-muted-foreground">{t('catalog.weightLabel')}</Text>
               <Chip textClassName="text-center" variant="secondary">
                 <RNText>
                   {item.weight !== undefined && item.weightUnit
                     ? `${item.weight} ${item.weightUnit}`
-                    : 'Not specified'}
+                    : t('catalog.notSpecified')}
                 </RNText>
               </Chip>
             </View>
 
             {item.material && (
               <View className="mb-2 mr-4">
-                <Text className="text-xs uppercase text-muted-foreground">MATERIAL</Text>
+                <Text className="text-xs uppercase text-muted-foreground">{t('catalog.materialLabel')}</Text>
                 {item.material.length < MATERIAL_LENGTH_THRESHOLD ? (
                   <Chip textClassName="text-center" variant="secondary">
                     <RNText>{item.material}</RNText>
@@ -129,10 +131,10 @@ export function CatalogItemDetailScreen() {
 
             {item.usageCount && item.usageCount > 0 ? (
               <View className="mb-2">
-                <Text className="text-xs uppercase text-muted-foreground">USED IN</Text>
+                <Text className="text-xs uppercase text-muted-foreground">{t('catalog.usedInLabel')}</Text>
                 <Chip textClassName="text-center" variant="secondary">
                   <RNText>
-                    {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
+                    {item.usageCount} {item.usageCount === 1 ? t('catalog.pack') : t('catalog.packs')}
                   </RNText>
                 </Chip>
               </View>
@@ -160,10 +162,10 @@ export function CatalogItemDetailScreen() {
               />
               <Text className="ml-1 text-sm text-foreground">
                 {item.availability === 'in_stock'
-                  ? 'In Stock'
+                  ? t('catalog.inStock')
                   : item.availability === 'out_of_stock'
-                    ? 'Out of Stock'
-                    : 'Pre-order'}
+                    ? t('catalog.outOfStock')
+                    : t('catalog.preorder')}
               </Text>
             </View>
           )}
@@ -171,7 +173,7 @@ export function CatalogItemDetailScreen() {
           {item.techs && Object.keys(item.techs).length > 0 && (
             <View className="mt-8">
               <Text variant="callout" className="mb-2">
-                Specifications
+                {t('catalog.specifications')}
               </Text>
               <View className="rounded-lg p-3 gap-4">
                 {Object.entries(item.techs).map(([key, value]) => (
@@ -204,13 +206,13 @@ export function CatalogItemDetailScreen() {
 
           <View className="mt-4">
             <Button variant="secondary" onPress={() => Linking.openURL(item.productUrl as string)}>
-              <Text className="text-foreground">View on Retailer Site</Text>
+              <Text className="text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
             </Button>
           </View>
 
           <View className="mt-2">
             <Button onPress={handleAddToPack}>
-              <Text>Add to Pack</Text>
+              <Text>{t('catalog.addToPack')}</Text>
             </Button>
           </View>
         </View>
