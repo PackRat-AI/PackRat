@@ -93,7 +93,7 @@ function CatalogItemsScreen() {
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
-        title={t('catalog.catalog')}
+        title={t('catalog.title')}
         backVisible={false}
         searchBar={{
           iosHideWhenScrolling: false,

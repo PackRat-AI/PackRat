@@ -11,7 +11,7 @@ export function CatalogItemsAuthWall() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <LargeTitleHeader title={t('catalog.catalog')} backVisible={false} />
+      <LargeTitleHeader title={t('catalog.title')} backVisible={false} />
 
       <View className="flex-1 px-6 py-8">
         <View className="mb-8 items-center justify-center">

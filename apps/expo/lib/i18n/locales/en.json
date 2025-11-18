@@ -220,7 +220,7 @@
     "categories": "Categories",
     "allCategories": "All Categories",
     "failedToLoad": "Failed to load categories",
-    "catalog": "Catalog",
+    "title": "Catalog",
     "searchPlaceholder": "Search catalog items...",
     "results": "results",
     "searchError": "Search error",
