@@ -201,7 +201,18 @@
     "tripName": "Trip Name",
     "tripDate": "Trip Date",
     "tripLocation": "Trip Location",
-    "noTrips": "No trips available"
+    "noTrips": "No trips available",
+    "upcomingTrips": "Upcoming Trips",
+    "plannedAdventures": "Your planned adventures",
+    "noUpcomingTrips": "No upcoming trips yet.",
+    "notStarted": "Not Started",
+    "inProgress": "In Progress",
+    "complete": "Complete",
+    "unknown": "Unknown",
+    "destination": "Destination",
+    "duration": "Duration",
+    "packWeight": "Pack Weight",
+    "days": "{{count}} days"
   },
   "catalog": {
     "itemsCatalog": "Items Catalog",
