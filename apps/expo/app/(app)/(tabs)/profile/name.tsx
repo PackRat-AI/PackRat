@@ -1,5 +1,6 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
@@ -8,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NameScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [form, setForm] = React.useState({
     first: 'Zach',
     middle: 'Danger',
@@ -44,7 +46,7 @@ export default function NameScreen() {
                 variant="plain"
                 onPress={router.back}
               >
-                <Text className={cn(canSave && 'text-primary')}>Save</Text>
+                <Text className={cn(canSave && 'text-primary')}>{t('common.save')}</Text>
               </Button>
             ),
           }),
@@ -114,7 +116,7 @@ export default function NameScreen() {
                 disabled={!canSave}
                 onPress={router.back}
               >
-                <Text>Save</Text>
+                <Text>{t('common.save')}</Text>
               </Button>
             </View>
           )}

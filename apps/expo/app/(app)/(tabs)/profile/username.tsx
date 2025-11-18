@@ -1,5 +1,6 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
@@ -8,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function UsernameScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [username, setUsername] = React.useState('mrzachnugent');
 
   const canSave = !!username && username !== 'mrzachnugent';
@@ -15,7 +17,7 @@ export default function UsernameScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Username',
+          title: t('common.username'),
           headerTransparent: Platform.OS === 'ios',
           headerBlurEffect: 'systemMaterial',
           headerRight: Platform.select({
@@ -28,7 +30,7 @@ export default function UsernameScreen() {
                   router.back();
                 }}
               >
-                <Text className={cn(canSave && 'text-primary')}>Save</Text>
+                <Text className={cn(canSave && 'text-primary')}>{t('common.save')}</Text>
               </Button>
             ),
           }),
@@ -56,7 +58,7 @@ export default function UsernameScreen() {
                 label={Platform.select({ ios: undefined, default: 'First' })}
                 leftView={
                   <View className="ios:w-36 ios:justify-between flex-row items-center pl-2">
-                    {Platform.OS === 'ios' && <Text className="font-medium">Username</Text>}
+                    {Platform.OS === 'ios' && <Text className="font-medium">{t('common.username')}</Text>}
                     <Text className="text-muted-foreground">@</Text>
                   </View>
                 }
@@ -75,7 +77,7 @@ export default function UsernameScreen() {
                   router.back();
                 }}
               >
-                <Text>Save</Text>
+                <Text>{t('common.save')}</Text>
               </Button>
             </View>
           )}

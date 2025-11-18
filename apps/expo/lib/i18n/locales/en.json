@@ -64,7 +64,9 @@
     "notifications": "Notifications",
     "settings": "Settings",
     "syncInProgress": "Sync in progress",
-    "syncMessage": "Some data is still syncing. You may lose them if you proceed to log out."
+    "syncMessage": "Some data is still syncing. You may lose them if you proceed to log out.",
+    "pushNotifications": "Push Notifications",
+    "emailNotifications": "Email Notifications"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -73,6 +75,12 @@
     "catalog": "Catalog",
     "profile": "Profile",
     "home": "Home"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "searchPlaceholder": "Search dashboard",
+    "noResults": "No matching tiles found",
+    "tryDifferent": "Try different keywords or clear your search"
   },
   "packs": {
     "currentPack": "Current Pack",
