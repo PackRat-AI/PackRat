@@ -10,6 +10,7 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
@@ -17,6 +18,7 @@ import { useGeneratePacks } from '../hooks/useGeneratedPacks';
 
 export function AIPacksScreen() {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const alertRef = useRef<AlertRef>(null);
   const { mutateAsync: generatePacks, isPending, generatedPacksFromStore } = useGeneratePacks();
   const [packsModalVisible, setPacksModalVisible] = useState(false);
@@ -30,13 +32,13 @@ export function AIPacksScreen() {
       try {
         const packs = await generatePacks(value);
         alertRef.current?.alert({
-          title: 'Packs Generated',
-          message: `Successfully generated ${packs.length} packs.`,
+          title: t('ai.packsGenerated'),
+          message: t('ai.successfullyGenerated', { count: packs.length }),
           materialIcon: { name: 'backpack', color: colors.green },
           buttons: [
-            { text: 'Return', onPress: () => {} },
+            { text: t('ai.return'), onPress: () => {} },
             {
-              text: 'View',
+              text: t('ai.view'),
               onPress: () => {
                 setPacksModalVisible(true);
               },
@@ -45,10 +47,10 @@ export function AIPacksScreen() {
         });
       } catch (error) {
         alertRef.current?.alert({
-          title: 'Error',
-          message: 'Failed to generate packs. Please try again.',
+          title: t('common.error'),
+          message: t('ai.failedToGenerate'),
           materialIcon: { name: 'exclamation', color: colors.destructive },
-          buttons: [{ text: 'OK', onPress: () => {} }],
+          buttons: [{ text: t('common.ok'), onPress: () => {} }],
         });
         console.error('Error generating packs:', error);
       }
@@ -57,13 +59,13 @@ export function AIPacksScreen() {
 
   const handleGeneratePacks = () => {
     alertRef.current?.alert({
-      title: 'Generate Packs',
-      message: `Are you sure you want to generate ${form.getFieldValue('count')} packs?`,
+      title: t('ai.generatePacksButton'),
+      message: t('ai.generatePacksConfirm', { count: form.getFieldValue('count') }),
       materialIcon: { name: 'information-outline', color: colors.primary },
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Generate',
+          text: t('ai.generatePacksButton'),
           onPress: () => form.handleSubmit(),
           style: 'default',
         },
@@ -73,12 +75,12 @@ export function AIPacksScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <LargeTitleHeader title="AI Packs Admin" backVisible={true} />
+      <LargeTitleHeader title={t('ai.aiPacksAdmin')} backVisible={true} />
 
       <View className="px-4 py-6 space-y-6">
         {/* Generation Form */}
         <View className="bg-card p-4 rounded-xl">
-          <Text className="text-lg font-semibold mb-4">Generate New Packs</Text>
+          <Text className="text-lg font-semibold mb-4">{t('ai.generateNewPacks')}</Text>
 
           <form.Field name="count">
             {(field) => (
@@ -88,9 +90,9 @@ export function AIPacksScreen() {
                   value={field.state.value.toString()}
                   onChangeText={(text) => field.handleChange(Number.parseInt(text) || 1)}
                   keyboardType="numeric"
-                  placeholder="Enter count"
+                  placeholder={t('ai.enterCount')}
                 />
-                <Text variant="caption2">Number of packs to generate</Text>
+                <Text variant="caption2">{t('ai.numberOfPacksToGenerate')}</Text>
               </View>
             )}
           </form.Field>
@@ -100,10 +102,10 @@ export function AIPacksScreen() {
               {isPending ? (
                 <View className="flex-row items-center space-x-2">
                   <ActivityIndicator size="small" />
-                  <Text>Generating...</Text>
+                  <Text>{t('ai.generating')}</Text>
                 </View>
               ) : (
-                <Text>Generate Packs</Text>
+                <Text>{t('ai.generatePacksButton')}</Text>
               )}
             </Button>
           </View>
@@ -112,7 +114,7 @@ export function AIPacksScreen() {
 
       <View className="items-center justify-center p-8">
         <Text className="text-center text-muted-foreground mt-2">
-          Use the form above to generate packs with AI
+          {t('ai.useFormAbove')}
         </Text>
       </View>
 
@@ -126,7 +128,7 @@ export function AIPacksScreen() {
         <SafeAreaView className="flex-1 bg-background">
           <View className="flex-row items-center justify-between border-b border-border p-4">
             <View className="flex-row items-center">
-              <Text>Generated Packs</Text>
+              <Text>{t('ai.generatedPacks')}</Text>
             </View>
             <TouchableOpacity onPress={() => setPacksModalVisible(false)}>
               <Icon name="close" size={24} color={colors.foreground} />
@@ -149,7 +151,7 @@ export function AIPacksScreen() {
             ) : (
               <View className="flex-1 items-center justify-center p-8">
                 <Text className="text-center text-muted-foreground mt-2">
-                  Waiting for packs to sync.
+                  {t('ai.waitingForSync')}
                 </Text>
               </View>
             )}
