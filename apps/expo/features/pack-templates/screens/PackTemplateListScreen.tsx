@@ -4,6 +4,7 @@ import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import type { PackCategory } from 'expo-app/features/packs/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -27,17 +28,6 @@ type FilterOption = {
   value: PackCategory | 'all';
 };
 
-const filterOptions: FilterOption[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Hiking', value: 'hiking' },
-  { label: 'Backpacking', value: 'backpacking' },
-  { label: 'Camping', value: 'camping' },
-  { label: 'Climbing', value: 'climbing' },
-  { label: 'Winter', value: 'winter' },
-  { label: 'Desert', value: 'desert' },
-  { label: 'Custom', value: 'custom' },
-];
-
 function CreateTemplateIconButton() {
   const { colors } = useColorScheme();
   return (
@@ -56,8 +46,21 @@ export function PackTemplateListScreen() {
   const [activeFilter, setActiveFilter] = useAtom(activeTemplateFilterAtom);
   const { isAuthenticated } = useAuth();
   const [selectedTemplateTypeIndex, setSelectedTemplateTypeIndex] = useState(0);
+  const { t } = useTranslation();
 
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+
+  // Filter options with translations
+  const filterOptions: FilterOption[] = [
+    { label: t('packTemplates.all'), value: 'all' },
+    { label: t('packTemplates.hiking'), value: 'hiking' },
+    { label: t('packTemplates.backpacking'), value: 'backpacking' },
+    { label: t('packTemplates.camping'), value: 'camping' },
+    { label: t('packTemplates.climbing'), value: 'climbing' },
+    { label: t('packTemplates.winter'), value: 'winter' },
+    { label: t('packTemplates.desert'), value: 'desert' },
+    { label: t('packTemplates.custom'), value: 'custom' },
+  ];
 
   const handleTemplatePress = useCallback(
     (template: PackTemplate) => {
@@ -111,7 +114,7 @@ export function PackTemplateListScreen() {
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
-        title="Pack Templates"
+        title={t('packTemplates.packTemplates')}
         searchBar={{
           iosHideWhenScrolling: true,
           ref: asNonNullableRef(searchBarRef),
@@ -129,7 +132,7 @@ export function PackTemplateListScreen() {
       <View className="bg-background gap-2 px-4 pb-2">
         <SegmentedControl
           enabled={isAuthenticated}
-          values={['All', 'App', 'Yours']}
+          values={[t('packTemplates.all'), t('packTemplates.app'), t('packTemplates.yours')]}
           selectedIndex={selectedTemplateTypeIndex}
           onIndexChange={(index) => {
             setSelectedTemplateTypeIndex(index);
@@ -150,7 +153,7 @@ export function PackTemplateListScreen() {
         ListHeaderComponent={
           <View className="px-4 pb-0 pt-2">
             <Text className="text-muted-foreground">
-              {filteredTemplates.length} {filteredTemplates.length === 1 ? 'template' : 'templates'}
+              {filteredTemplates.length} {filteredTemplates.length === 1 ? t('packTemplates.template') : t('packTemplates.templates')}
             </Text>
           </View>
         }
@@ -159,17 +162,17 @@ export function PackTemplateListScreen() {
             <View className="mb-4 rounded-full bg-muted p-4">
               <Icon name="cog-outline" size={32} color="text-muted-foreground" />
             </View>
-            <Text className="mb-1 text-lg font-medium text-foreground">No templates found</Text>
+            <Text className="mb-1 text-lg font-medium text-foreground">{t('packTemplates.noTemplatesFound')}</Text>
             <Text className="mb-6 text-center text-muted-foreground">
               {activeFilter === 'all'
-                ? "You haven't created any templates yet."
-                : `No ${activeFilter} templates found.`}
+                ? t('packTemplates.noTemplatesCreated')
+                : t('packTemplates.noTemplatesInCategory', { category: activeFilter })}
             </Text>
             <TouchableOpacity
               className="rounded-lg bg-primary px-4 py-2"
               onPress={handleCreatePackTemplate}
             >
-              <Text className="font-medium text-primary-foreground">Create Template</Text>
+              <Text className="font-medium text-primary-foreground">{t('packTemplates.createTemplate')}</Text>
             </TouchableOpacity>
           </View>
         }
