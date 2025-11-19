@@ -8,7 +8,7 @@ import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetai
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import type { Translate } from 'expo-app/lib/i18n';
+import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
@@ -228,7 +228,7 @@ const TABS_OPTIONS = {
 } as const;
 
 // MODALS - These functions accept translation function t
-const getModalOptions = (t: Translate) =>
+const getModalOptions = (t: TranslationFunction) =>
   ({
     presentation: 'modal',
     animation: 'fade_from_bottom', // for android
@@ -236,21 +236,21 @@ const getModalOptions = (t: Translate) =>
     headerRight: () => <ThemeToggle />,
   }) as const;
 
-const getTripNewOptions = (t: Translate) =>
+const getTripNewOptions = (t: TranslationFunction) =>
   ({
     title: t('trips.createTrip'),
     presentation: 'modal',
     animation: 'slide_from_bottom',
   }) as const;
 
-const getTripEditOptions = (t: Translate) =>
+const getTripEditOptions = (t: TranslationFunction) =>
   ({
     title: t('packs.editPack'),
     presentation: 'modal',
     animation: 'slide_from_bottom',
   }) as const;
 
-const getTripLocationSearchOptions = (t: Translate) =>
+const getTripLocationSearchOptions = (t: TranslationFunction) =>
   ({
     title: t('location.searchLocation'),
     presentation: 'modal',
@@ -262,59 +262,59 @@ const CONSENT_MODAL_OPTIONS = {
   animation: 'fade_from_bottom', // for android
 } as const;
 
-const getPackNewOptions = (t: Translate) =>
+const getPackNewOptions = (t: TranslationFunction) =>
   ({
     title: t('packs.createPack'),
     presentation: 'modal',
     animation: 'fade_from_bottom', // for android
   }) as const;
 
-const getItemNewOptions = (t: Translate) =>
+const getItemNewOptions = (t: TranslationFunction) =>
   ({
     title: t('items.itemName'),
     presentation: 'modal',
     animation: 'fade_from_bottom', // for android
   }) as const;
 
-const getAiChatOptions = (t: Translate) =>
+const getAiChatOptions = (t: TranslationFunction) =>
   ({
     title: t('ai.aiChat'),
     header: () => <AiChatHeader />,
     animation: 'fade_from_bottom', // for android
   }) as const;
 
-const getPackSelectionOptions = (t: Translate) =>
+const getPackSelectionOptions = (t: TranslationFunction) =>
   ({
     title: t('packs.packName'),
     presentation: 'modal',
     animation: 'fade_from_bottom', // for android
   }) as const;
 
-const getCatalogAddToPackItemDetailsOptions = (t: Translate) =>
+const getCatalogAddToPackItemDetailsOptions = (t: TranslationFunction) =>
   ({
     title: t('items.itemDetails'),
     animation: 'fade_from_bottom', // for android
   }) as const;
 
-const getPackEditOptions = (t: Translate) =>
+const getPackEditOptions = (t: TranslationFunction) =>
   ({
     title: t('packs.editPack'),
     presentation: 'modal',
     animation: 'slide_from_bottom',
   }) as const;
 
-const getItemEditOptions = (t: Translate) =>
+const getItemEditOptions = (t: TranslationFunction) =>
   ({
     title: t('common.edit'),
   }) as const;
 
-const getCatalogListOptions = (t: Translate) =>
+const getCatalogListOptions = (t: TranslationFunction) =>
   ({
     title: t('catalog.itemsCatalog'),
     headerLargeTitle: true,
   }) as const;
 
-const getCatalogItemDetailOptions = (t: Translate) =>
+const getCatalogItemDetailOptions = (t: TranslationFunction) =>
   ({
     title: t('items.itemDetails'),
   }) as const;

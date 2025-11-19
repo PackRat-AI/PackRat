@@ -21,7 +21,7 @@ function CategoryCard({
 }) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const itemLabel = category.items === 1 ? t('items.itemName') : t('packs.items');
+  const itemLabel = category.items === 1 ? t('packs.item') : t('packs.items');
 
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">

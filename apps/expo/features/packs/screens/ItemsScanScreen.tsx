@@ -271,7 +271,7 @@ export function ItemsScanScreen() {
           >
             <Text>
               {t('packs.add')} {selectedCatalogItems.size}{' '}
-              {selectedCatalogItems.size > 1 ? t('packs.items') : t('packs.addItem')}
+              {selectedCatalogItems.size > 1 ? t('packs.itemsTitleCase') : t('packs.itemTitleCase')}
             </Text>
           </Button>
         </View>

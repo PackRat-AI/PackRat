@@ -58,7 +58,7 @@ function CustomList({
 function CategoryItem({ category, index }: { category: CategorySummary; index: number }) {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const itemLabel = category.items === 1 ? t('items.itemName') : t('packs.items');
+  const itemLabel = category.items === 1 ? t('packs.item') : t('packs.items');
 
   return (
     <View
@@ -183,7 +183,7 @@ export default function CurrentPackScreen() {
         <View className="mx-4 mb-8 mt-4 rounded-lg bg-card">
           <View className="border-border/25 dark:border-border/80 border-b p-4">
             <Text variant="heading" className="font-semibold">
-              {t('packs.items')}
+              {t('packs.itemsTitleCase')}
             </Text>
           </View>
 

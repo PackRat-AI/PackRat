@@ -152,7 +152,7 @@ function SharedPackCard({ pack }: { pack: (typeof SHARED_PACKS)[0] }) {
               {pack.totalWeight}
             </Text>
             <Text variant="footnote" className="text-muted-foreground">
-              {t('packs.items', { count: pack.sharedItems })}
+              {t('packs.itemsCount', { count: pack.sharedItems })}
             </Text>
           </View>
         </View>

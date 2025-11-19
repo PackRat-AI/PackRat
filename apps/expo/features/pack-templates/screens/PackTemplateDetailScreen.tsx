@@ -94,15 +94,21 @@ export function PackTemplateDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">BASE WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packTemplates.baseWeight')}
+              </Text>
               <WeightBadge weight={packTemplate.baseWeight || 0} unit="g" type="base" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packTemplates.totalWeight')}
+              </Text>
               <WeightBadge weight={packTemplate.totalWeight || 0} unit="g" type="total" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">ITEMS</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packTemplates.itemsLabel')}
+              </Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {packTemplate.items?.length || 0}
               </Chip>

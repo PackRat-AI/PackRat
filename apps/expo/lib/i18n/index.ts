@@ -29,6 +29,4 @@ export const t = (key: string, options?: TranslateOptions) => {
   return i18n.t(key, options);
 };
 
-export type Translate = typeof t;
-
 export default i18n;

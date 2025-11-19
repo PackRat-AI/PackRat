@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import type { Translate } from 'expo-app/lib/i18n';
+import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -15,7 +15,7 @@ function formatDate(dateString?: string) {
 }
 
 // Calculate trip status based on dates
-function getTripStatus(trip: { startDate?: string; endDate?: string }, t: Translate) {
+function getTripStatus(trip: { startDate?: string; endDate?: string }, t: TranslationFunction) {
   if (!trip.startDate || !trip.endDate) return { status: t('trips.notStarted'), completion: 0 };
 
   const start = new Date(trip.startDate).getTime();

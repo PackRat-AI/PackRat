@@ -34,7 +34,7 @@ export function GearInventoryTile() {
         }
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-            <Text className="mr-2">{t('packs.items', { count: gearInventoryCount })}</Text>
+            <Text className="mr-2">{t('packs.itemsCount', { count: gearInventoryCount })}</Text>
             <ChevronRight />
           </View>
         }

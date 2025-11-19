@@ -3,6 +3,8 @@
  * This provides autocomplete and type safety when using translations
  */
 
+import type { TranslateOptions } from 'i18n-js';
+
 export type TranslationKeys =
   // Common
   | 'common.welcome'
@@ -94,7 +96,13 @@ export type TranslationKeys =
   | 'packs.baseWeight'
   | 'packs.categoriesLabel'
   | 'packs.categories'
+  | 'packs.itemsTitleCase'
   | 'packs.items'
+  | 'packs.itemTitleCase'
+  | 'packs.item'
+  | 'packs.baseWeightLabelUpper'
+  | 'packs.totalWeightLabelUpper'
+  | 'packs.itemsCountLabelUpper'
   | 'packs.noCategorizedItems'
   | 'packs.organizeGear'
   | 'packs.packStats'
@@ -211,4 +219,4 @@ export type TranslationKeys =
  * Type-safe translation function
  * Usage: t('common.welcome') - will autocomplete and type-check keys
  */
-export type TranslationFunction = (key: TranslationKeys, options?: Record<string, any>) => string;
+export type TranslationFunction = (key: TranslationKeys, options?: TranslateOptions) => string;

@@ -402,15 +402,21 @@ export function PackDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">BASE WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.baseWeightLabelUpper')}
+              </Text>
               <WeightBadge weight={pack.baseWeight || 0} unit="g" type="base" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.totalWeightLabelUpper')}
+              </Text>
               <WeightBadge weight={pack.totalWeight || 0} unit="g" type="total" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">ITEMS</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.itemsCountLabelUpper')}
+              </Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {pack.items?.length || 0}
               </Chip>
