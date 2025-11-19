@@ -211,4 +211,7 @@ export type TranslationKeys =
  * Type-safe translation function
  * Usage: t('common.welcome') - will autocomplete and type-check keys
  */
-export type TranslationFunction = (key: TranslationKeys, options?: Record<string, any>) => string;
+export type TranslationFunction = (
+  key: TranslationKeys,
+  options?: Record<string, unknown>,
+) => string;

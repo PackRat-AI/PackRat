@@ -12,8 +12,8 @@
  * This will scan components and identify potential strings that need translation.
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Patterns that often indicate user-facing strings
 const STRING_PATTERNS = [
@@ -48,12 +48,13 @@ function extractStringsFromFile(filePath) {
   const strings = new Set();
 
   STRING_PATTERNS.forEach((pattern) => {
-    let match;
-    while ((match = pattern.exec(content)) !== null) {
+    let match = pattern.exec(content);
+    while (match !== null) {
       const str = match[1].trim();
       if (str && !shouldIgnoreString(str)) {
         strings.add(str);
       }
+      match = pattern.exec(content);
     }
   });
 

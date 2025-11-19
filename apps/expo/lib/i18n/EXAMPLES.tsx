@@ -27,7 +27,7 @@ export function BasicExample() {
 /**
  * Example 2: Translation with interpolation (variables)
  */
-export function InterpolationExample({ userName }: { userName: string }) {
+export function InterpolationExample() {
   const { t } = useTranslation();
 
   return (
@@ -55,7 +55,7 @@ export function PropsExample() {
  * Example 4: Using translations outside components
  * (e.g., in utility functions, validation, etc.)
  */
-export function validateForm(formData: any) {
+export function validateForm(formData: { email?: string }) {
   if (!formData.email) {
     // Using t() directly without the hook
     return { error: t('errors.somethingWentWrong') };
