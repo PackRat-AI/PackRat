@@ -1,16 +1,14 @@
 import { Alert, Button, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { t } from 'expo-app/lib/i18n';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useDeleteTrip } from '../hooks';
 
 export function getTripDetailOptions(id: string) {
   return {
-    title: () => {
-      const { t } = useTranslation();
-      return t('trips.tripDetails');
-    },
+    title: t('trips.tripDetails'),
     headerRight: () => {
       const { colors } = useColorScheme();
       const { t } = useTranslation();

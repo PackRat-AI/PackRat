@@ -6,6 +6,7 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
@@ -52,6 +53,7 @@ export const CreatePackTemplateItemForm = ({
   existingItem?: PackTemplateItem;
 }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const { colorScheme, colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const createItem = useCreatePackTemplateItem();

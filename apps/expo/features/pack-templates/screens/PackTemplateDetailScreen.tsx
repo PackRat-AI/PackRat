@@ -2,6 +2,7 @@ import { Button, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -17,6 +18,7 @@ export function PackTemplateDetailScreen() {
   const { id } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('all');
   const addPackTemplateItemActionsRef = useSheetRef();
+  const { t } = useTranslation();
 
   const packTemplate = usePackTemplateDetails(id as string);
   const user = useUser();

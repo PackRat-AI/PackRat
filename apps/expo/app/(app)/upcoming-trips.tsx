@@ -3,11 +3,11 @@ import { format } from 'date-fns';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { Translate } from 'expo-app/lib/i18n';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
-import type { Translate } from 'expo-app/lib/i18n';
 
 function formatDate(dateString?: string) {
   if (!dateString) return '—';

@@ -1,7 +1,7 @@
 import * as Localization from 'expo-localization';
+import type { TranslateOptions } from 'i18n-js';
 import { useEffect, useState } from 'react';
 import i18n from '../i18n';
-import type { TranslateOptions } from 'i18n-js';
 
 /**
  * Custom hook for accessing translations
