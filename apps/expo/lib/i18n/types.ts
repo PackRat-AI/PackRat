@@ -142,6 +142,9 @@ export type TranslationKeys =
   | 'trips.tripDate'
   | 'trips.tripLocation'
   | 'trips.noTrips'
+  | 'trips.notStarted'
+  | 'trips.complete'
+  | 'trips.inProgress'
   // Catalog
   | 'catalog.itemsCatalog'
   | 'catalog.searchItems'
