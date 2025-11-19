@@ -66,7 +66,9 @@ export function PackSelectionScreen() {
                 resizeMode="cover"
               />
               <View className="ml-3 flex-1">
-                <Text className="text-xs text-muted-foreground uppercase">{t('catalog.adding')}</Text>
+                <Text className="text-xs text-muted-foreground uppercase">
+                  {t('catalog.adding')}
+                </Text>
                 <Text variant="title3" color="primary">
                   {catalogItem.name}
                 </Text>
@@ -121,7 +123,8 @@ export function PackSelectionScreen() {
                             <View className="mr-3 flex-row items-center">
                               <Icon name="basket-outline" size={14} color={colors.grey2} />
                               <Text variant="caption2" className="ml-1">
-                                {item.items?.length} {item.items?.length === 1 ? t('catalog.item') : t('catalog.items')}
+                                {item.items?.length}{' '}
+                                {item.items?.length === 1 ? t('catalog.item') : t('catalog.items')}
                               </Text>
                             </View>
                             <View className="mr-3 flex-row items-center">

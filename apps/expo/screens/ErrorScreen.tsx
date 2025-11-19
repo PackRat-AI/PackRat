@@ -63,7 +63,9 @@ export function ErrorScreen({
         <View className="mt-4 w-full max-w-sm gap-2">
           {onRetry && (
             <Button onPress={onRetry} variant="primary" className="h-12 w-full">
-              <Text className="font-medium text-primary-foreground">{t('errors.tryAgainButton')}</Text>
+              <Text className="font-medium text-primary-foreground">
+                {t('errors.tryAgainButton')}
+              </Text>
             </Button>
           )}
 

@@ -89,16 +89,20 @@ export default function LocationPreviewScreen() {
     try {
       addLocation(weatherData);
 
-      Alert.alert(t('weather.locationSaved'), t('weather.locationSavedMessage', { name: weatherData.name }), [
-        {
-          text: t('weather.viewAllLocations'),
-          onPress: () => router.replace('/weather'),
-        },
-        {
-          text: t('common.ok'),
-          onPress: () => router.back(),
-        },
-      ]);
+      Alert.alert(
+        t('weather.locationSaved'),
+        t('weather.locationSavedMessage', { name: weatherData.name }),
+        [
+          {
+            text: t('weather.viewAllLocations'),
+            onPress: () => router.replace('/weather'),
+          },
+          {
+            text: t('common.ok'),
+            onPress: () => router.back(),
+          },
+        ],
+      );
     } catch (err) {
       console.error('Error saving location:', err);
       Alert.alert(t('common.error'), t('weather.errorSavingLocation'));
@@ -194,7 +198,9 @@ export default function LocationPreviewScreen() {
                     disabled={isLoading}
                   >
                     <Icon name="restart" color="white" size={20} />
-                    <Text className="text-white">{isLoading ? t('weather.refreshing') : t('weather.refresh')}</Text>
+                    <Text className="text-white">
+                      {isLoading ? t('weather.refreshing') : t('weather.refresh')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -204,7 +210,9 @@ export default function LocationPreviewScreen() {
                     {weatherData.hourlyForecast ? (
                       weatherData.hourlyForecast.map((hour, index) => (
                         <View key={hour.time} className="mr-4 min-w-[50px] items-center">
-                          <Text className="text-white">{index === 0 ? t('weather.now') : hour.time}</Text>
+                          <Text className="text-white">
+                            {index === 0 ? t('weather.now') : hour.time}
+                          </Text>
                           <WeatherIcon
                             code={hour.weatherCode}
                             isDay={hour.isDay}
@@ -217,7 +225,9 @@ export default function LocationPreviewScreen() {
                       ))
                     ) : (
                       <View className="w-full items-center justify-center py-4">
-                        <Text className="text-white/80">{t('weather.hourlyForecastNotAvailable')}</Text>
+                        <Text className="text-white/80">
+                          {t('weather.hourlyForecastNotAvailable')}
+                        </Text>
                       </View>
                     )}
                   </ScrollView>
@@ -259,7 +269,9 @@ export default function LocationPreviewScreen() {
                     ))
                   ) : (
                     <View className="items-center justify-center py-4">
-                      <Text className="text-white/80">{t('weather.dailyForecastNotAvailable')}</Text>
+                      <Text className="text-white/80">
+                        {t('weather.dailyForecastNotAvailable')}
+                      </Text>
                     </View>
                   )}
                 </View>

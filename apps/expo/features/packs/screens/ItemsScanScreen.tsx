@@ -201,7 +201,9 @@ export function ItemsScanScreen() {
                 <View className="bg-neutral-300 dark:bg-neutral-600 rounded-full p-6 mb-4">
                   <Icon name="camera-outline" size={48} color={colors.grey} />
                 </View>
-                <Text className="text-xl font-semibold text-center mb-2">{t('packs.noItemsFound')}</Text>
+                <Text className="text-xl font-semibold text-center mb-2">
+                  {t('packs.noItemsFound')}
+                </Text>
                 <Text className="text-center text-muted-foreground text-base leading-6">
                   {t('packs.weCouldntIdentify')}
                 </Text>
@@ -268,7 +270,8 @@ export function ItemsScanScreen() {
             variant="tonal"
           >
             <Text>
-              {t('packs.add')} {selectedCatalogItems.size} {selectedCatalogItems.size > 1 ? t('packs.items') : t('packs.addItem')}
+              {t('packs.add')} {selectedCatalogItems.size}{' '}
+              {selectedCatalogItems.size > 1 ? t('packs.items') : t('packs.addItem')}
             </Text>
           </Button>
         </View>

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
 import * as Localization from 'expo-localization';
+import { useEffect, useState } from 'react';
 import i18n from '../i18n';
+import type { TranslateOptions } from 'i18n-js';
 
 /**
  * Custom hook for accessing translations
@@ -25,7 +26,7 @@ export function useTranslation() {
    * @param options - Optional interpolation values
    * @returns Translated string
    */
-  const t = (key: string, options?: Record<string, any>) => {
+  const t = (key: string, options?: TranslateOptions) => {
     return i18n.t(key, options);
   };
 

@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 
 export default function AuthLayout() {
   const { t } = useTranslation();
-  
+
   const CREATE_ACCOUNT_MODAL_OPTIONS = {
     presentation: 'modal',
     headerShown: Platform.OS === 'ios',
@@ -24,7 +24,7 @@ export default function AuthLayout() {
       );
     },
   } as const;
-  
+
   return (
     <Stack screenOptions={SCREEN_OPTIONS}>
       <Stack.Screen name="index" />

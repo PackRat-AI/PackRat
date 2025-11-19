@@ -141,7 +141,10 @@ export default function ResetPasswordScreen() {
         ]);
       } catch (error) {
         console.log('Reset password error:', error);
-        Alert.alert(t('common.error'), error instanceof Error ? error.message : t('auth.resetPasswordFailed'));
+        Alert.alert(
+          t('common.error'),
+          error instanceof Error ? error.message : t('auth.resetPasswordFailed'),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -214,7 +217,9 @@ export default function ResetPasswordScreen() {
                           {field.state.value ? (
                             <View className="mt-2 px-1">
                               <View className="mb-1 flex-row justify-between">
-                                <Text className="text-xs text-gray-500">{t('auth.passwordStrength')}</Text>
+                                <Text className="text-xs text-gray-500">
+                                  {t('auth.passwordStrength')}
+                                </Text>
                                 <Text className="text-xs font-medium">
                                   {t(passwordStrength.labelKey)}
                                 </Text>

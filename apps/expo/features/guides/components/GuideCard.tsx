@@ -11,7 +11,7 @@ interface GuideCardProps {
 
 export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
   const { t } = useTranslation();
-  
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} className="pt-4">
       <Card className="mb-3">

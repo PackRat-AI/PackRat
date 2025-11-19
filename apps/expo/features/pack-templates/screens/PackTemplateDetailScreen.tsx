@@ -57,7 +57,10 @@ export function PackTemplateDetailScreen() {
   if (!packTemplate) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center">
-        <NotFoundScreen title={t('packTemplates.templateNotFound')} message={t('packTemplates.pleaseTryAgainLater')} />
+        <NotFoundScreen
+          title={t('packTemplates.templateNotFound')}
+          message={t('packTemplates.pleaseTryAgainLater')}
+        />
       </SafeAreaView>
     );
   }

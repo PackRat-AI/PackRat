@@ -207,21 +207,7 @@ export default function SharedPacksScreen() {
           <Text variant="body" className="mb-2">
             {t('packs.sharingBenefit2')}
           </Text>
-          <Text variant="body">
-            {t('packs.sharingBenefit3')}
-          </Text>
-        </View>
-      </ScrollView>
-    </>
-  );
-}
-          <Text variant="body" className="mb-2">
-            • Coordinate meal planning and shared food items
-          </Text>
-          <Text variant="body" className="mb-2">
-            • Track who's bringing what to avoid duplicates
-          </Text>
-          <Text variant="body">• Collaborate on pack optimization in real-time</Text>
+          <Text variant="body">{t('packs.sharingBenefit3')}</Text>
         </View>
       </ScrollView>
     </>

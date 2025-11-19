@@ -21,7 +21,12 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
   const handleLongPress = () => {
     const options = location.isActive
       ? [t('weather.viewDetails'), t('weather.remove'), t('common.cancel')]
-      : [t('weather.viewDetails'), t('weather.setAsActive'), t('weather.remove'), t('common.cancel')];
+      : [
+          t('weather.viewDetails'),
+          t('weather.setAsActive'),
+          t('weather.remove'),
+          t('common.cancel'),
+        ];
 
     const cancelButtonIndex = options.length - 1;
     const destructiveButtonIndex = options.indexOf(t('weather.remove'));

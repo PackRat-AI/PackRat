@@ -132,17 +132,16 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
     >
-      {isCreatingFromTemplate && <Stack.Screen options={{ title: t('packs.enterNewPackDetails') }} />}
+      {isCreatingFromTemplate && (
+        <Stack.Screen options={{ title: t('packs.enterNewPackDetails') }} />
+      )}
       {isCreatingFromTemplate && template && (
         <View>Creating pack from `{template.name}` template</View>
       )}
 
       <ScrollView contentContainerClassName="p-8">
         <Form>
-          <FormSection
-            ios={{ title: t('packs.packDetails') }}
-            footnote={t('packs.enterBasicInfo')}
-          >
+          <FormSection ios={{ title: t('packs.packDetails') }} footnote={t('packs.enterBasicInfo')}>
             <form.Field name="name">
               {(field) => (
                 <FormItem>
@@ -231,7 +230,9 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                       ) : (
                         <Icon name="eye-off" size={18} color={colors.foreground} />
                       )}
-                      <Text className="ml-2 font-medium text-foreground">{t('packs.makePackPublic')}</Text>
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packs.makePackPublic')}
+                      </Text>
                     </View>
                     <Switch
                       value={field.state.value}

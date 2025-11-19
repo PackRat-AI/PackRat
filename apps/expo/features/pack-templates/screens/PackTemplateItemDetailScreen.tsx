@@ -81,13 +81,17 @@ export function PackTemplateItemDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">{t('packTemplates.weightEach')}</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packTemplates.weightEach')}
+              </Text>
               <WeightBadge weight={item.weight} unit={weightUnit} />
             </View>
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">{t('packTemplates.quantity')}</Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                  {t('packTemplates.quantity')}
+                </Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
                   {quantity}
                 </Chip>
@@ -96,7 +100,9 @@ export function PackTemplateItemDetailScreen() {
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">{t('packTemplates.totalWeight')}</Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                  {t('packTemplates.totalWeight')}
+                </Text>
                 <WeightBadge weight={totalWeight} unit={weightUnit} />
               </View>
             )}

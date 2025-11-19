@@ -112,7 +112,9 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
                       <View className="flex-row items-center mb-3">
                         <Icon name="link" size={16} color={colors.green} />
                         <Text variant="caption1" className="uppercase tracking-wide">
-                          {t('ai.tools.sources', { count: toolInvocation.output.data.sources.length })}
+                          {t('ai.tools.sources', {
+                            count: toolInvocation.output.data.sources.length,
+                          })}
                         </Text>
                       </View>
                       <View className="gap-3">

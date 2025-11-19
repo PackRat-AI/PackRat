@@ -49,7 +49,10 @@ export function CatalogItemDetailScreen() {
   if (!item) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center">
-        <NotFoundScreen title={t('catalog.itemNotFound')} message={t('catalog.pleaseTryAgainLater')} />
+        <NotFoundScreen
+          title={t('catalog.itemNotFound')}
+          message={t('catalog.pleaseTryAgainLater')}
+        />
       </SafeAreaView>
     );
   }
@@ -89,7 +92,9 @@ export function CatalogItemDetailScreen() {
 
           {item.categories && item.categories.length > 0 && (
             <View className="mb-4">
-              <Text className="mb-2 text-xs uppercase text-muted-foreground">{t('catalog.categoriesLabel')}</Text>
+              <Text className="mb-2 text-xs uppercase text-muted-foreground">
+                {t('catalog.categoriesLabel')}
+              </Text>
               <View className="flex-row flex-wrap gap-2">
                 {item.categories.map((category) => (
                   <Chip key={category} textClassName="text-xs" variant="outline">
@@ -106,7 +111,9 @@ export function CatalogItemDetailScreen() {
 
           <View className="mb-4 flex-row flex-wrap gap-1">
             <View className="mb-2 mr-4">
-              <Text className="text-xs uppercase text-muted-foreground">{t('catalog.weightLabel')}</Text>
+              <Text className="text-xs uppercase text-muted-foreground">
+                {t('catalog.weightLabel')}
+              </Text>
               <Chip textClassName="text-center" variant="secondary">
                 <RNText>
                   {item.weight !== undefined && item.weightUnit
@@ -118,7 +125,9 @@ export function CatalogItemDetailScreen() {
 
             {item.material && (
               <View className="mb-2 mr-4">
-                <Text className="text-xs uppercase text-muted-foreground">{t('catalog.materialLabel')}</Text>
+                <Text className="text-xs uppercase text-muted-foreground">
+                  {t('catalog.materialLabel')}
+                </Text>
                 {item.material.length < MATERIAL_LENGTH_THRESHOLD ? (
                   <Chip textClassName="text-center" variant="secondary">
                     <RNText>{item.material}</RNText>
@@ -131,10 +140,13 @@ export function CatalogItemDetailScreen() {
 
             {item.usageCount && item.usageCount > 0 ? (
               <View className="mb-2">
-                <Text className="text-xs uppercase text-muted-foreground">{t('catalog.usedInLabel')}</Text>
+                <Text className="text-xs uppercase text-muted-foreground">
+                  {t('catalog.usedInLabel')}
+                </Text>
                 <Chip textClassName="text-center" variant="secondary">
                   <RNText>
-                    {item.usageCount} {item.usageCount === 1 ? t('catalog.pack') : t('catalog.packs')}
+                    {item.usageCount}{' '}
+                    {item.usageCount === 1 ? t('catalog.pack') : t('catalog.packs')}
                   </RNText>
                 </Chip>
               </View>

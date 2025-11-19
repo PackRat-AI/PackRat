@@ -2,13 +2,13 @@
 
 /**
  * String Extraction Helper
- * 
+ *
  * This script helps identify hardcoded strings in components that should
  * be moved to the translation system.
- * 
+ *
  * Usage:
  *   node lib/i18n/extract-strings.js
- * 
+ *
  * This will scan components and identify potential strings that need translation.
  */
 
@@ -31,23 +31,23 @@ const STRING_PATTERNS = [
 
 // Strings to ignore (technical/variable content)
 const IGNORE_PATTERNS = [
-  /^[\d\s]+$/,           // Numbers and whitespace only
-  /^\{.*\}$/,            // JSX expressions
-  /^[a-z-]+$/,           // CSS class names
-  /^\$\{.*\}$/,          // Template literals
-  /^https?:\/\//,        // URLs
-  /^[A-Z_]+$/,           // Constants
+  /^[\d\s]+$/, // Numbers and whitespace only
+  /^\{.*\}$/, // JSX expressions
+  /^[a-z-]+$/, // CSS class names
+  /^\$\{.*\}$/, // Template literals
+  /^https?:\/\//, // URLs
+  /^[A-Z_]+$/, // Constants
 ];
 
 function shouldIgnoreString(str) {
-  return IGNORE_PATTERNS.some(pattern => pattern.test(str));
+  return IGNORE_PATTERNS.some((pattern) => pattern.test(str));
 }
 
 function extractStringsFromFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const strings = new Set();
 
-  STRING_PATTERNS.forEach(pattern => {
+  STRING_PATTERNS.forEach((pattern) => {
     let match;
     while ((match = pattern.exec(content)) !== null) {
       const str = match[1].trim();
@@ -63,7 +63,7 @@ function extractStringsFromFile(filePath) {
 function scanDirectory(dirPath, results = []) {
   const items = fs.readdirSync(dirPath);
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const fullPath = path.join(dirPath, item);
     const stat = fs.statSync(fullPath);
 
@@ -103,7 +103,7 @@ console.log(`Found ${results.length} files with potential strings to translate:\
 
 results.forEach(({ file, strings }) => {
   console.log(`📄 ${file}`);
-  strings.forEach(str => {
+  strings.forEach((str) => {
     console.log(`   - "${str}"`);
   });
   console.log('');

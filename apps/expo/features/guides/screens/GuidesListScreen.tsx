@@ -108,7 +108,9 @@ export const GuidesListScreen = () => {
           <ActivityIndicator color={colors.primary} />
         ) : (
           <Text className="text-center text-gray-500 dark:text-gray-400">
-            {isSearchMode ? t('guides.noGuidesFound', { query: searchQuery }) : t('guides.noGuidesAvailable')}
+            {isSearchMode
+              ? t('guides.noGuidesFound', { query: searchQuery })
+              : t('guides.noGuidesAvailable')}
           </Text>
         )}
       </View>

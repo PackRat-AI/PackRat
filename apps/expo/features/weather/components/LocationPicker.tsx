@@ -37,7 +37,7 @@ export function LocationPicker({
   const { locationsState } = useLocations();
   const { activeLocation } = useActiveLocation();
   const [selectedLocation, setSelectedLocation] = useState<WeatherLocation | null>(activeLocation);
-  
+
   // Use translations for default values
   const displayTitle = title ?? t('location.selectLocation');
   const displaySelectText = selectText ?? t('common.done');

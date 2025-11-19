@@ -163,7 +163,9 @@ export function CatalogBrowserModal({
           ) : error ? (
             <View className="flex-1 items-center justify-center p-4">
               <Icon name="exclamation" size={48} color={colors.destructive} />
-              <Text className="mt-2 text-center font-semibold">{t('catalog.errorLoadingItems')}</Text>
+              <Text className="mt-2 text-center font-semibold">
+                {t('catalog.errorLoadingItems')}
+              </Text>
               <Text className="mt-1 text-center text-muted-foreground">{error.message}</Text>
               <Button className="mt-4" onPress={handleRefresh}>
                 <Text>{t('catalog.tryAgain')}</Text>

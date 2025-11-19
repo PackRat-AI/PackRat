@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export const BackButton = ({ onPress }: { onPress: () => void }) => {
   const { t } = useTranslation();
-  
+
   return (
     <View style={styles.backButton}>
       <Feather name="chevron-left" size={16} color="#007AFF" />

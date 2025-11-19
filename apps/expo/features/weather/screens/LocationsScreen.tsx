@@ -157,10 +157,14 @@ function LocationsScreen() {
           exiting={FadeOut.duration(200)}
           className="px-4 py-2"
         >
-          <Text className="mb-2 text-xs uppercase text-muted-foreground">{t('weather.searchResults')}</Text>
+          <Text className="mb-2 text-xs uppercase text-muted-foreground">
+            {t('weather.searchResults')}
+          </Text>
           <View className="bg-muted/30 items-center rounded-lg p-4">
             <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
-            <Text className="mt-2 text-muted-foreground">{t('weather.noLocationsMatch', { query: searchQuery })}</Text>
+            <Text className="mt-2 text-muted-foreground">
+              {t('weather.noLocationsMatch', { query: searchQuery })}
+            </Text>
             <View className="mt-4 flex-row">
               <TouchableOpacity
                 className="bg-primary/10 mr-2 rounded-full px-4 py-2"
@@ -234,7 +238,9 @@ function LocationsScreen() {
           {showEmptyState && (
             <View className="flex-1 items-center mt-16">
               <Icon name="map-marker-radius-outline" size={64} color={colors.grey2} />
-              <Text className="mt-4 text-center text-lg font-medium">{t('weather.noSavedLocations')}</Text>
+              <Text className="mt-4 text-center text-lg font-medium">
+                {t('weather.noSavedLocations')}
+              </Text>
               <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
                 {t('weather.noSavedLocationsDesc')}
               </Text>

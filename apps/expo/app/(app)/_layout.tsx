@@ -8,6 +8,7 @@ import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetai
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { Translate } from 'expo-app/lib/i18n';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
@@ -227,80 +228,93 @@ const TABS_OPTIONS = {
 } as const;
 
 // MODALS - These functions accept translation function t
-const getModalOptions = (t: any) => ({
-  presentation: 'modal',
-  animation: 'fade_from_bottom', // for android
-  title: t('profile.settings'),
-  headerRight: () => <ThemeToggle />,
-} as const);
+const getModalOptions = (t: Translate) =>
+  ({
+    presentation: 'modal',
+    animation: 'fade_from_bottom', // for android
+    title: t('profile.settings'),
+    headerRight: () => <ThemeToggle />,
+  }) as const;
 
-const getTripNewOptions = (t: any) => ({
-  title: t('trips.createTrip'),
-  presentation: 'modal',
-  animation: 'slide_from_bottom',
-} as const);
+const getTripNewOptions = (t: Translate) =>
+  ({
+    title: t('trips.createTrip'),
+    presentation: 'modal',
+    animation: 'slide_from_bottom',
+  }) as const;
 
-const getTripEditOptions = (t: any) => ({
-  title: t('packs.editPack'),
-  presentation: 'modal',
-  animation: 'slide_from_bottom',
-} as const);
+const getTripEditOptions = (t: Translate) =>
+  ({
+    title: t('packs.editPack'),
+    presentation: 'modal',
+    animation: 'slide_from_bottom',
+  }) as const;
 
-const getTripLocationSearchOptions = (t: any) => ({
-  title: t('location.searchLocation'),
-  presentation: 'modal',
-  animation: 'slide_from_bottom',
-} as const);
+const getTripLocationSearchOptions = (t: Translate) =>
+  ({
+    title: t('location.searchLocation'),
+    presentation: 'modal',
+    animation: 'slide_from_bottom',
+  }) as const;
 
 const CONSENT_MODAL_OPTIONS = {
   presentation: 'modal',
   animation: 'fade_from_bottom', // for android
 } as const;
 
-const getPackNewOptions = (t: any) => ({
-  title: t('packs.createPack'),
-  presentation: 'modal',
-  animation: 'fade_from_bottom', // for android
-} as const);
+const getPackNewOptions = (t: Translate) =>
+  ({
+    title: t('packs.createPack'),
+    presentation: 'modal',
+    animation: 'fade_from_bottom', // for android
+  }) as const;
 
-const getItemNewOptions = (t: any) => ({
-  title: t('items.itemName'),
-  presentation: 'modal',
-  animation: 'fade_from_bottom', // for android
-} as const);
+const getItemNewOptions = (t: Translate) =>
+  ({
+    title: t('items.itemName'),
+    presentation: 'modal',
+    animation: 'fade_from_bottom', // for android
+  }) as const;
 
-const getAiChatOptions = (t: any) => ({
-  title: t('ai.aiChat'),
-  header: () => <AiChatHeader />,
-  animation: 'fade_from_bottom', // for android
-} as const);
+const getAiChatOptions = (t: Translate) =>
+  ({
+    title: t('ai.aiChat'),
+    header: () => <AiChatHeader />,
+    animation: 'fade_from_bottom', // for android
+  }) as const;
 
-const getPackSelectionOptions = (t: any) => ({
-  title: t('packs.packName'),
-  presentation: 'modal',
-  animation: 'fade_from_bottom', // for android
-} as const);
+const getPackSelectionOptions = (t: Translate) =>
+  ({
+    title: t('packs.packName'),
+    presentation: 'modal',
+    animation: 'fade_from_bottom', // for android
+  }) as const;
 
-const getCatalogAddToPackItemDetailsOptions = (t: any) => ({
-  title: t('items.itemDetails'),
-  animation: 'fade_from_bottom', // for android
-} as const);
+const getCatalogAddToPackItemDetailsOptions = (t: Translate) =>
+  ({
+    title: t('items.itemDetails'),
+    animation: 'fade_from_bottom', // for android
+  }) as const;
 
-const getPackEditOptions = (t: any) => ({
-  title: t('packs.editPack'),
-  presentation: 'modal',
-  animation: 'slide_from_bottom',
-} as const);
+const getPackEditOptions = (t: Translate) =>
+  ({
+    title: t('packs.editPack'),
+    presentation: 'modal',
+    animation: 'slide_from_bottom',
+  }) as const;
 
-const getItemEditOptions = (t: any) => ({
-  title: t('common.edit'),
-} as const);
+const getItemEditOptions = (t: Translate) =>
+  ({
+    title: t('common.edit'),
+  }) as const;
 
-const getCatalogListOptions = (t: any) => ({
-  title: t('catalog.itemsCatalog'),
-  headerLargeTitle: true,
-} as const);
+const getCatalogListOptions = (t: Translate) =>
+  ({
+    title: t('catalog.itemsCatalog'),
+    headerLargeTitle: true,
+  }) as const;
 
-const getCatalogItemDetailOptions = (t: any) => ({
-  title: t('items.itemDetails'),
-} as const);
+const getCatalogItemDetailOptions = (t: Translate) =>
+  ({
+    title: t('items.itemDetails'),
+  }) as const;

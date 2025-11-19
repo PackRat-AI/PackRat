@@ -11,13 +11,7 @@ interface ErrorStateProps {
   className?: string;
 }
 
-export const ErrorState = ({
-  title,
-  text,
-  retryText,
-  className,
-  onRetry,
-}: ErrorStateProps) => {
+export const ErrorState = ({ title, text, retryText, className, onRetry }: ErrorStateProps) => {
   const { colors, isDarkColorScheme } = useColorScheme();
   const { t } = useTranslation();
 

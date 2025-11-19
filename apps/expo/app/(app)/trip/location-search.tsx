@@ -1,6 +1,6 @@
 import { ActivityIndicator, Button, SearchInput } from '@packrat/ui/nativewindui';
-import Constants from 'expo-constants';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Alert, SafeAreaView, Text, View } from 'react-native';
@@ -130,7 +130,9 @@ export default function LocationSearchScreen() {
         {isLoading && <ActivityIndicator />}
         {selectedLocation && (
           <Button onPress={handleConfirm}>
-            <Text className="text-primary-foreground font-semibold">{t('location.confirmLocation')}</Text>
+            <Text className="text-primary-foreground font-semibold">
+              {t('location.confirmLocation')}
+            </Text>
           </Button>
         )}
       </View>

@@ -8,7 +8,11 @@ import { Modal, ScrollView, TextInput, TouchableOpacity, View } from 'react-nati
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReportContent } from '../hooks/useReportContent';
-import { type ReportReason, reportReasonTranslationKeys, reportReasons } from '../lib/reportReasons';
+import {
+  type ReportReason,
+  reportReasons,
+  reportReasonTranslationKeys,
+} from '../lib/reportReasons';
 
 type ReportModalProps = {
   isVisible: boolean;

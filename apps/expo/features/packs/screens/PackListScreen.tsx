@@ -138,7 +138,9 @@ export function PackListScreen() {
           <View className="bg-destructive/10 mb-4 rounded-full p-4">
             <Icon name="exclamation" size={32} color="text-destructive" />
           </View>
-          <Text className="mb-2 text-lg font-medium text-foreground">{t('packs.failedToLoadPacks')}</Text>
+          <Text className="mb-2 text-lg font-medium text-foreground">
+            {t('packs.failedToLoadPacks')}
+          </Text>
           <Text className="mb-6 text-center text-muted-foreground">
             {allPacksQuery.error?.message || t('packs.pleaseTryAgain')}
           </Text>
@@ -247,7 +249,9 @@ export function PackListScreen() {
               <View className="mb-4 rounded-full bg-muted p-4">
                 <Icon name="cog-outline" size={32} color="text-muted-foreground" />
               </View>
-              <Text className="mb-1 text-lg font-medium text-foreground">{t('packs.noPacksFound')}</Text>
+              <Text className="mb-1 text-lg font-medium text-foreground">
+                {t('packs.noPacksFound')}
+              </Text>
               <Text className="mb-6 text-center text-muted-foreground">
                 {activeFilter === 'all'
                   ? "You haven't created or found any public packs yet."
@@ -257,7 +261,9 @@ export function PackListScreen() {
                 className="rounded-lg bg-primary px-4 py-2"
                 onPress={handleCreatePack}
               >
-                <Text className="font-medium text-primary-foreground">{t('packs.createNewPack')}</Text>
+                <Text className="font-medium text-primary-foreground">
+                  {t('packs.createNewPack')}
+                </Text>
               </TouchableOpacity>
             </View>
           )

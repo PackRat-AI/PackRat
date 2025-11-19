@@ -60,7 +60,11 @@ export function ItemsScanScreen() {
   }, [data, selectedCatalogItems.size]);
 
   const handleAddImage = () => {
-    const options = [t('packTemplates.takePhoto'), t('packTemplates.chooseFromLibrary'), t('common.cancel')];
+    const options = [
+      t('packTemplates.takePhoto'),
+      t('packTemplates.chooseFromLibrary'),
+      t('common.cancel'),
+    ];
     const cancelButtonIndex = 2;
 
     showActionSheetWithOptions(
@@ -151,7 +155,8 @@ export function ItemsScanScreen() {
     router.back();
     try {
       await addItemsToPackTemplate(packTemplateId as string, selectedCatalogItemsList);
-      const itemWord = selectedCatalogItemsList.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
+      const itemWord =
+        selectedCatalogItemsList.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Toast.show({
         type: 'success',
         text1: t('packTemplates.addedItems', { count: selectedCatalogItemsList.length, itemWord }),
@@ -194,7 +199,12 @@ export function ItemsScanScreen() {
         ) : data ? (
           uniqueCatalogItems.length > 0 ? (
             <View className="gap-2 p-4">
-              <Text variant="footnote">{t('packTemplates.addedItems', { count: uniqueCatalogItems.length, itemWord: t('packTemplates.items') })}</Text>
+              <Text variant="footnote">
+                {t('packTemplates.addedItems', {
+                  count: uniqueCatalogItems.length,
+                  itemWord: t('packTemplates.items'),
+                })}
+              </Text>
               {uniqueCatalogItems.map((item) => (
                 <HorizontalCatalogItemCard
                   key={item.id}
@@ -210,7 +220,9 @@ export function ItemsScanScreen() {
                 <View className="bg-neutral-300 dark:bg-neutral-600 rounded-full p-6 mb-4">
                   <Icon name="camera-outline" size={48} color={colors.grey} />
                 </View>
-                <Text className="text-xl font-semibold text-center mb-2">{t('packTemplates.noDetections')}</Text>
+                <Text className="text-xl font-semibold text-center mb-2">
+                  {t('packTemplates.noDetections')}
+                </Text>
                 <Text className="text-center text-muted-foreground text-base leading-6">
                   {t('packTemplates.tryDifferentImage')}
                 </Text>

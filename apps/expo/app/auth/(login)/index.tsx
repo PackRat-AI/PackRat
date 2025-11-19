@@ -97,7 +97,9 @@ export default function LoginScreen() {
               {Platform.select({ ios: t('auth.welcomeBack'), default: t('auth.signIn') })}
             </Text>
             {Platform.OS !== 'ios' && (
-              <Text className="ios:text-sm text-center text-muted-foreground">{t('auth.welcomeBack')}</Text>
+              <Text className="ios:text-sm text-center text-muted-foreground">
+                {t('auth.welcomeBack')}
+              </Text>
             )}
           </View>
           <View className="ios:pt-4 pt-6">
@@ -221,7 +223,11 @@ export default function LoginScreen() {
                   }}
                 >
                   <Text className="text-sm">
-                    {loading ? t('auth.loading') : focusedTextField === 'email' ? t('auth.next') : t('auth.submit')}
+                    {loading
+                      ? t('auth.loading')
+                      : focusedTextField === 'email'
+                        ? t('auth.next')
+                        : t('auth.submit')}
                   </Text>
                 </Button>
               )}

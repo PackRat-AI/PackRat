@@ -35,7 +35,12 @@ export function PackTemplateItemCard({
     const options =
       belongsToAppTemplate && user?.role !== 'ADMIN'
         ? [t('packTemplates.viewDetails'), t('common.cancel')]
-        : [t('packTemplates.viewDetails'), t('common.edit'), t('common.delete'), t('common.cancel')];
+        : [
+            t('packTemplates.viewDetails'),
+            t('common.edit'),
+            t('common.delete'),
+            t('common.cancel'),
+          ];
 
     const cancelButtonIndex = options.length - 1;
     const destructiveButtonIndex = options.indexOf(t('common.delete'));
@@ -111,13 +116,17 @@ export function PackTemplateItemCard({
             <View className="flex-row items-center gap-4 flex-wrap">
               {item.consumable && (
                 <View className={cn('rounded-full px-2 py-0.5', 'bg-amber-100')}>
-                  <Text className={cn('text-xs', 'text-amber-600')}>{t('packTemplates.consumable')}</Text>
+                  <Text className={cn('text-xs', 'text-amber-600')}>
+                    {t('packTemplates.consumable')}
+                  </Text>
                 </View>
               )}
 
               {item.worn && (
                 <View className={cn('rounded-full px-2 py-0.5', 'bg-emerald-100')}>
-                  <Text className={cn('text-xs', 'text-emerald-600')}>{t('packTemplates.worn')}</Text>
+                  <Text className={cn('text-xs', 'text-emerald-600')}>
+                    {t('packTemplates.worn')}
+                  </Text>
                 </View>
               )}
             </View>
@@ -127,7 +136,9 @@ export function PackTemplateItemCard({
                 {item.weightUnit}
               </Text>
 
-              <Text className="text-sm text-muted-foreground">{item.quantity} {t('packTemplates.qty')}</Text>
+              <Text className="text-sm text-muted-foreground">
+                {item.quantity} {t('packTemplates.qty')}
+              </Text>
             </View>
           </View>
         </View>

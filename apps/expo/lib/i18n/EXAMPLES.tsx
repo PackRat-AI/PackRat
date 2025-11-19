@@ -1,13 +1,13 @@
 /**
  * Example: How to Use i18n in PackRat
- * 
+ *
  * This file demonstrates various ways to use the internationalization (i18n)
  * system in the PackRat app.
  */
 
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
-import { Text, View, Button } from 'react-native';
+import { Button, Text, View } from 'react-native';
 
 /**
  * Example 1: Basic usage in a component
@@ -46,10 +46,7 @@ export function PropsExample() {
 
   return (
     <View>
-      <Button 
-        title={t('common.save')} 
-        onPress={() => alert(t('common.success'))} 
-      />
+      <Button title={t('common.save')} onPress={() => alert(t('common.success'))} />
     </View>
   );
 }
@@ -76,7 +73,7 @@ export function FallbackExample() {
     <View>
       {/* If translation key doesn't exist, shows the key itself */}
       <Text>{t('someNonExistentKey')}</Text>
-      
+
       {/* Best practice: Always add keys to en.json first */}
       <Text>{t('common.welcome')}</Text>
     </View>
@@ -91,10 +88,7 @@ export function ConditionalExample({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <View>
-      <Button 
-        title={isLoggedIn ? t('auth.logOut') : t('auth.signIn')} 
-        onPress={() => {}}
-      />
+      <Button title={isLoggedIn ? t('auth.logOut') : t('auth.signIn')} onPress={() => {}} />
     </View>
   );
 }
@@ -115,7 +109,7 @@ export function ListExample() {
 
   return (
     <View>
-      {menuItems.map(item => (
+      {menuItems.map((item) => (
         <Text key={item.route}>{item.label}</Text>
       ))}
     </View>
@@ -124,12 +118,12 @@ export function ListExample() {
 
 /**
  * Quick Reference:
- * 
+ *
  * 1. Import the hook: import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
  * 2. Use in component: const { t } = useTranslation();
  * 3. Translate text: t('section.key')
  * 4. With variables: t('key', { variable: value })
  * 5. Outside components: import { t } from 'expo-app/lib/i18n';
- * 
+ *
  * Translation file location: apps/expo/lib/i18n/locales/en.json
  */

@@ -1,9 +1,9 @@
-import { Stack } from 'expo-router';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Stack } from 'expo-router';
 
 export default function LocationsLayout() {
   const { t } = useTranslation();
-  
+
   return (
     <Stack>
       <Stack.Screen

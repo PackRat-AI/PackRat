@@ -97,7 +97,9 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
   if (isLoading) {
     return (
       <View className="mt-6">
-        <Text className="mb-3 text-lg font-semibold text-foreground">{t('catalog.moreLike', { itemName })}</Text>
+        <Text className="mb-3 text-lg font-semibold text-foreground">
+          {t('catalog.moreLike', { itemName })}
+        </Text>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -116,7 +118,9 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
 
   return (
     <View className="mt-6">
-      <Text className="mb-3 text-lg font-semibold text-foreground">{t('catalog.moreLike', { itemName })}</Text>
+      <Text className="mb-3 text-lg font-semibold text-foreground">
+        {t('catalog.moreLike', { itemName })}
+      </Text>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}

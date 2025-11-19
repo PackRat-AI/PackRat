@@ -143,7 +143,7 @@ function WeatherAlertCard({ alert }: { alert: (typeof WEATHER_ALERTS)[0] }) {
 
 export default function WeatherAlertsScreen() {
   const { t } = useTranslation();
-  
+
   return (
     <>
       <LargeTitleHeader title={t('weather.weatherAlertsTitle')} />

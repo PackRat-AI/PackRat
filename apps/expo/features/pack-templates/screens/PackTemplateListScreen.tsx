@@ -153,7 +153,10 @@ export function PackTemplateListScreen() {
         ListHeaderComponent={
           <View className="px-4 pb-0 pt-2">
             <Text className="text-muted-foreground">
-              {filteredTemplates.length} {filteredTemplates.length === 1 ? t('packTemplates.template') : t('packTemplates.templates')}
+              {filteredTemplates.length}{' '}
+              {filteredTemplates.length === 1
+                ? t('packTemplates.template')
+                : t('packTemplates.templates')}
             </Text>
           </View>
         }
@@ -162,7 +165,9 @@ export function PackTemplateListScreen() {
             <View className="mb-4 rounded-full bg-muted p-4">
               <Icon name="cog-outline" size={32} color="text-muted-foreground" />
             </View>
-            <Text className="mb-1 text-lg font-medium text-foreground">{t('packTemplates.noTemplatesFound')}</Text>
+            <Text className="mb-1 text-lg font-medium text-foreground">
+              {t('packTemplates.noTemplatesFound')}
+            </Text>
             <Text className="mb-6 text-center text-muted-foreground">
               {activeFilter === 'all'
                 ? t('packTemplates.noTemplatesCreated')
@@ -172,7 +177,9 @@ export function PackTemplateListScreen() {
               className="rounded-lg bg-primary px-4 py-2"
               onPress={handleCreatePackTemplate}
             >
-              <Text className="font-medium text-primary-foreground">{t('packTemplates.createTemplate')}</Text>
+              <Text className="font-medium text-primary-foreground">
+                {t('packTemplates.createTemplate')}
+              </Text>
             </TouchableOpacity>
           </View>
         }

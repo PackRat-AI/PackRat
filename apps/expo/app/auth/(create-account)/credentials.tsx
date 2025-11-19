@@ -256,7 +256,9 @@ export default function CredentialsScreen() {
                           {field.state.value ? (
                             <View className="mt-2 px-1">
                               <View className="mb-1 flex-row justify-between">
-                                <Text className="text-xs text-gray-500">{t('auth.passwordStrength')}</Text>
+                                <Text className="text-xs text-gray-500">
+                                  {t('auth.passwordStrength')}
+                                </Text>
                                 <Text className="text-xs font-medium">
                                   {t(passwordStrength.labelKey)}
                                 </Text>

@@ -162,7 +162,9 @@ export default function ForgotPasswordScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
-                  <Text className="text-sm">{isLoading ? t('auth.sending') : t('auth.sendCode')}</Text>
+                  <Text className="text-sm">
+                    {isLoading ? t('auth.sending') : t('auth.sendCode')}
+                  </Text>
                 </Button>
               )}
             </form.Subscribe>

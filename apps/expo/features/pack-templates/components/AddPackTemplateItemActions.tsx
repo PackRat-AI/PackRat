@@ -55,7 +55,11 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
           },
         });
       }
-      const options = [t('packTemplates.takePhoto'), t('packTemplates.chooseFromLibrary'), t('common.cancel')];
+      const options = [
+        t('packTemplates.takePhoto'),
+        t('packTemplates.chooseFromLibrary'),
+        t('common.cancel'),
+      ];
       const cancelButtonIndex = 2;
 
       showActionSheetWithOptions(
@@ -110,7 +114,8 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
 
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
       await addItemsToPackTemplate(packTemplateId, catalogItems as CatalogItemWithPackItemFields[]);
-      const itemWord = catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
+      const itemWord =
+        catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
       Toast.show({
         type: 'success',
         text1: t('packTemplates.addedItems', { count: catalogItems.length, itemWord }),
@@ -149,7 +154,9 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
                 onPress={handleAddFromPhoto}
               >
                 <Icon name="camera-outline" size={20} color={colors.foreground} />
-                <Text className="text-center font-medium">{t('packTemplates.scanItemsFromPhoto')}</Text>
+                <Text className="text-center font-medium">
+                  {t('packTemplates.scanItemsFromPhoto')}
+                </Text>
                 <View className="ml-auto">
                   <Icon name="chevron-right" size={20} color={colors.grey2} />
                 </View>

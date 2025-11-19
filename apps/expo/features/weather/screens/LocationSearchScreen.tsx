@@ -178,23 +178,19 @@ export default function LocationSearchScreen() {
 
       if (status !== 'granted') {
         setLocationPermissionDenied(true);
-        Alert.alert(
-          t('weather.permissionDenied'),
-          t('weather.permissionDeniedMessage'),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: t('weather.openSettings'),
-              onPress: () => {
-                if (Platform.OS === 'ios') {
-                  Linking.openURL('app-settings:');
-                } else {
-                  Linking.openSettings();
-                }
-              },
+        Alert.alert(t('weather.permissionDenied'), t('weather.permissionDeniedMessage'), [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('weather.openSettings'),
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Linking.openURL('app-settings:');
+              } else {
+                Linking.openSettings();
+              }
             },
-          ],
-        );
+          },
+        ]);
         return;
       }
 
@@ -224,17 +220,13 @@ export default function LocationSearchScreen() {
 
       // Provide more specific error messages
       if (err instanceof Error && err.message === 'Location request timed out') {
-        Alert.alert(
-          t('weather.locationTimeout'),
-          t('weather.locationTimeoutMessage'),
-          [{ text: t('common.ok') }],
-        );
+        Alert.alert(t('weather.locationTimeout'), t('weather.locationTimeoutMessage'), [
+          { text: t('common.ok') },
+        ]);
       } else {
-        Alert.alert(
-          t('weather.locationError'),
-          t('weather.locationErrorMessage'),
-          [{ text: t('common.ok') }],
-        );
+        Alert.alert(t('weather.locationError'), t('weather.locationErrorMessage'), [
+          { text: t('common.ok') },
+        ]);
       }
     } finally {
       setIsGettingLocation(false);
@@ -340,7 +332,9 @@ export default function LocationSearchScreen() {
           ) : locationPermissionDenied ? (
             <>
               <Icon name="bell-outline" size={20} color={colors.destructive} />
-              <Text className="font-medium text-destructive">{t('weather.locationPermissionRequired')}</Text>
+              <Text className="font-medium text-destructive">
+                {t('weather.locationPermissionRequired')}
+              </Text>
             </>
           ) : (
             <>
@@ -352,7 +346,9 @@ export default function LocationSearchScreen() {
 
         {recentSearches.length > 0 && (
           <>
-            <Text className="mb-2 text-xs uppercase text-muted-foreground">{t('weather.recentSearches')}</Text>
+            <Text className="mb-2 text-xs uppercase text-muted-foreground">
+              {t('weather.recentSearches')}
+            </Text>
             <View className="mb-6">
               {recentSearches.map((search) => (
                 <TouchableOpacity
@@ -368,7 +364,9 @@ export default function LocationSearchScreen() {
           </>
         )}
 
-        <Text className="mb-2 text-xs uppercase text-muted-foreground">{t('weather.popularCities')}</Text>
+        <Text className="mb-2 text-xs uppercase text-muted-foreground">
+          {t('weather.popularCities')}
+        </Text>
         <View>
           {POPULAR_CITIES.map((city) => (
             <TouchableOpacity

@@ -19,7 +19,7 @@ export function CategoriesFilter({
   className?: string;
 }) {
   const { t } = useTranslation();
-  
+
   const renderFilterChip = (filter: string) => (
     <TouchableOpacity
       key={filter}

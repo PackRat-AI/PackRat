@@ -173,7 +173,9 @@ export default function ShoppingListScreen() {
         <View className="p-4">
           <View className="mb-4 flex-row items-center justify-between">
             <Text variant="subhead" className="text-muted-foreground">
-              {t('shopping.itemsToPurchase', { count: SHOPPING_LIST.filter((item) => !item.purchased).length })}
+              {t('shopping.itemsToPurchase', {
+                count: SHOPPING_LIST.filter((item) => !item.purchased).length,
+              })}
             </Text>
             <View className="flex-row overflow-hidden rounded-lg bg-card">
               <Pressable

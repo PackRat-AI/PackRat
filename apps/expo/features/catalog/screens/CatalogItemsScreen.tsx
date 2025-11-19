@@ -233,7 +233,9 @@ function CatalogItemsScreen() {
                 <View className="mb-4 rounded-full bg-muted p-4">
                   <Icon name="magnify" size={32} color="text-muted-foreground" />
                 </View>
-                <Text className="mb-1 text-lg font-medium text-foreground">{t('catalog.noItemsFound')}</Text>
+                <Text className="mb-1 text-lg font-medium text-foreground">
+                  {t('catalog.noItemsFound')}
+                </Text>
                 <Text className="text-center text-muted-foreground">
                   {t('catalog.tryDifferentCategory')}
                 </Text>

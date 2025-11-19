@@ -96,7 +96,10 @@ export default function OneTimePasswordScreen() {
 
       Alert.alert(t('common.success'), t('auth.verificationCodeResent'));
     } catch (error) {
-      Alert.alert(t('common.error'), error instanceof Error ? error.message : t('auth.failedToResendCode'));
+      Alert.alert(
+        t('common.error'),
+        error instanceof Error ? error.message : t('auth.failedToResendCode'),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +137,10 @@ export default function OneTimePasswordScreen() {
         await verifyEmail(email, code); // Navigation is handled in the function
       }
     } catch (error) {
-      Alert.alert(t('common.error'), error instanceof Error ? error.message : t('auth.invalidVerificationCode'));
+      Alert.alert(
+        t('common.error'),
+        error instanceof Error ? error.message : t('auth.invalidVerificationCode'),
+      );
     } finally {
       setIsLoading(false);
     }

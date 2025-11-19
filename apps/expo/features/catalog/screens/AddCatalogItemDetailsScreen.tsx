@@ -158,7 +158,8 @@ export function AddCatalogItemDetailsScreen() {
                   <View className="mt-1 flex-row items-center">
                     <Icon name="basket-outline" size={14} color={colors.grey} />
                     <Text className="ml-1 text-xs text-muted-foreground">
-                      {pack.items.length} {pack.items.length === 1 ? t('catalog.item') : t('catalog.items')}
+                      {pack.items.length}{' '}
+                      {pack.items.length === 1 ? t('catalog.item') : t('catalog.items')}
                     </Text>
                     <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
                     <Text className="text-xs capitalize text-muted-foreground">
@@ -185,7 +186,9 @@ export function AddCatalogItemDetailsScreen() {
             <View className="p-4">
               <View className="rounded-lg bg-card p-4 shadow-sm">
                 <View className="mb-4">
-                  <Text className="mb-1 text-sm font-medium text-foreground">{t('catalog.quantity')}</Text>
+                  <Text className="mb-1 text-sm font-medium text-foreground">
+                    {t('catalog.quantity')}
+                  </Text>
                   <View className="flex-row items-center">
                     <TouchableOpacity
                       className="items-center justify-center rounded-l-md border border-r-0 border-border bg-card px-3 py-2"
@@ -214,7 +217,9 @@ export function AddCatalogItemDetailsScreen() {
                 </View>
 
                 <View className="mb-4">
-                  <Text className="mb-1 text-sm font-medium text-foreground">{t('catalog.notes')}</Text>
+                  <Text className="mb-1 text-sm font-medium text-foreground">
+                    {t('catalog.notes')}
+                  </Text>
                   <TextInput
                     className="rounded-md border border-border bg-background px-3 py-2 text-foreground"
                     value={notes}
@@ -227,7 +232,9 @@ export function AddCatalogItemDetailsScreen() {
                 </View>
 
                 <View className="mb-4">
-                  <Text className="mb-1 text-sm font-medium text-foreground">{t('catalog.category')}</Text>
+                  <Text className="mb-1 text-sm font-medium text-foreground">
+                    {t('catalog.category')}
+                  </Text>
                   <TextInput
                     className="rounded-md border border-border bg-background px-3 py-2 text-foreground"
                     value={category}
@@ -238,7 +245,9 @@ export function AddCatalogItemDetailsScreen() {
 
                 <View className="mb-2 flex-row items-center justify-between">
                   <View>
-                    <Text className="text-sm font-medium text-foreground">{t('catalog.consumable')}</Text>
+                    <Text className="text-sm font-medium text-foreground">
+                      {t('catalog.consumable')}
+                    </Text>
                     <Text className="text-xs text-muted-foreground">
                       {t('catalog.consumableDescription')}
                     </Text>

@@ -276,7 +276,10 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: t('packs.weightAndQuantity') }} footnote="Specify the weight details">
+          <FormSection
+            ios={{ title: t('packs.weightAndQuantity') }}
+            footnote="Specify the weight details"
+          >
             <form.Field name="weight">
               {(field) => (
                 <FormItem>
@@ -346,7 +349,9 @@ export const CreatePackItemForm = ({
                   <View className="flex-row items-center justify-between p-4">
                     <View className="flex-row items-center">
                       <Icon name="silverware-fork-knife" size={18} color={colors.foreground} />
-                      <Text className="ml-2 font-medium text-foreground">{t('packs.consumable')}</Text>
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packs.consumable')}
+                      </Text>
                     </View>
                     <Switch
                       value={field.state.value}
@@ -368,7 +373,9 @@ export const CreatePackItemForm = ({
                   <View className="flex-row items-center justify-between p-4">
                     <View className="flex-row items-center">
                       <Icon name="account-circle" size={18} color={colors.foreground} />
-                      <Text className="ml-2 font-medium text-foreground">{t('packs.wornNotCarried')}</Text>
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packs.wornNotCarried')}
+                      </Text>
                     </View>
                     <Switch
                       value={field.state.value}
@@ -385,7 +392,10 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: t('packs.image') }} footnote="Add an image of your item (optional)">
+          <FormSection
+            ios={{ title: t('packs.image') }}
+            footnote="Add an image of your item (optional)"
+          >
             <form.Field name="image">
               {(_field) => (
                 <FormItem>

@@ -75,7 +75,9 @@ export default function InfoScreen() {
               })}
             </Text>
             {Platform.OS !== 'ios' && (
-              <Text className="ios:text-sm text-center text-muted-foreground">{t('auth.welcomeBack')}</Text>
+              <Text className="ios:text-sm text-center text-muted-foreground">
+                {t('auth.welcomeBack')}
+              </Text>
             )}
           </View>
           <View className="ios:pt-4 pt-6">
@@ -190,7 +192,9 @@ export default function InfoScreen() {
                     form.handleSubmit();
                   }}
                 >
-                  <Text className="text-sm">{isSubmitting ? t('auth.loading') : t('auth.next')}</Text>
+                  <Text className="text-sm">
+                    {isSubmitting ? t('auth.loading') : t('auth.next')}
+                  </Text>
                 </Button>
               )}
             </form.Subscribe>

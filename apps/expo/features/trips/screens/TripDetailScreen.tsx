@@ -185,9 +185,7 @@ export function TripDetailScreen() {
               </Card>
             </View>
           ) : (
-            <Text className="text-sm text-muted-foreground italic">
-              {t('trips.noPackLinked')}
-            </Text>
+            <Text className="text-sm text-muted-foreground italic">{t('trips.noPackLinked')}</Text>
           )}
         </View>
       </ScrollView>

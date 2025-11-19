@@ -3,7 +3,7 @@
  * This provides autocomplete and type safety when using translations
  */
 
-export type TranslationKeys = 
+export type TranslationKeys =
   // Common
   | 'common.welcome'
   | 'common.application'

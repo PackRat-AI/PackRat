@@ -63,12 +63,16 @@ export default function ReportedContentScreen() {
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-center text-destructive">{t('ai.reportedContent.errorLoading')}</Text>
+          <Text className="text-center text-destructive">
+            {t('ai.reportedContent.errorLoading')}
+          </Text>
         </View>
       ) : filteredData?.length === 0 ? (
         <View className="flex-1 items-center justify-center p-4">
           <Icon name="magnify" size={48} color={colors.grey2} />
-          <Text className="mt-4 text-center text-muted-foreground">{t('ai.reportedContent.noReportsFound')}</Text>
+          <Text className="mt-4 text-center text-muted-foreground">
+            {t('ai.reportedContent.noReportsFound')}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -88,14 +92,20 @@ export default function ReportedContentScreen() {
               <View className="mb-3 flex-row">
                 <View className="rounded-full bg-amber-100 px-2 py-1 dark:bg-amber-900">
                   <Text className="text-xs font-medium text-amber-800 dark:text-amber-100">
-                    {t(reportReasonTranslationKeys[item.reason as keyof typeof reportReasonTranslationKeys] || item.reason)}
+                    {t(
+                      reportReasonTranslationKeys[
+                        item.reason as keyof typeof reportReasonTranslationKeys
+                      ] || item.reason,
+                    )}
                   </Text>
                 </View>
               </View>
 
               {/* User Query Section */}
               <View className="my-2">
-                <Text className="mb-1 text-xs font-medium text-muted-foreground">{t('ai.reportedContent.userQuery')}</Text>
+                <Text className="mb-1 text-xs font-medium text-muted-foreground">
+                  {t('ai.reportedContent.userQuery')}
+                </Text>
                 <View className="rounded-md bg-blue-50 p-3 dark:bg-blue-950">
                   <Text className="text-blue-900 dark:text-blue-100">{item.userQuery}</Text>
                 </View>
@@ -103,7 +113,9 @@ export default function ReportedContentScreen() {
 
               {/* AI Response Section */}
               <View className="my-2">
-                <Text className="mb-1 text-xs font-medium text-muted-foreground">{t('ai.reportedContent.aiResponse')}</Text>
+                <Text className="mb-1 text-xs font-medium text-muted-foreground">
+                  {t('ai.reportedContent.aiResponse')}
+                </Text>
                 <View className="rounded-md bg-red-50 p-3 dark:bg-red-950">
                   <Text className="text-red-900 dark:text-red-100">{item.aiResponse}</Text>
                 </View>
@@ -150,7 +162,9 @@ export default function ReportedContentScreen() {
                       item.status === 'resolved' ? 'text-destructive' : 'text-muted-foreground',
                     )}
                   >
-                    {item.status === 'resolved' ? t('ai.reportedContent.resolved') : t('ai.reportedContent.dismissed')}
+                    {item.status === 'resolved'
+                      ? t('ai.reportedContent.resolved')
+                      : t('ai.reportedContent.dismissed')}
                   </Text>
                 </View>
               )}

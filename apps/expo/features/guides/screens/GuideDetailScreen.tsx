@@ -34,7 +34,9 @@ export const GuideDetailScreen = () => {
   if (error || !guide) {
     return (
       <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900 p-8">
-        <Text className="text-center text-gray-500 dark:text-gray-400">{t('guides.failedToLoad')}</Text>
+        <Text className="text-center text-gray-500 dark:text-gray-400">
+          {t('guides.failedToLoad')}
+        </Text>
       </View>
     );
   }
@@ -65,7 +67,9 @@ export const GuideDetailScreen = () => {
           )}
           <View className="flex-row items-center gap-3">
             {guide.author && (
-              <Text className="text-sm text-gray-600 dark:text-gray-400">{t('guides.by')} {guide.author}</Text>
+              <Text className="text-sm text-gray-600 dark:text-gray-400">
+                {t('guides.by')} {guide.author}
+              </Text>
             )}
             {guide.readingTime && (
               <Text className="text-sm text-gray-600 dark:text-gray-400">{guide.readingTime}</Text>

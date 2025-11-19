@@ -22,7 +22,7 @@ type ItemCardProps = {
 
 export function ItemCard({ item, onPress }: ItemCardProps) {
   const { t } = useTranslation();
-  
+
   // Get weight unit
   const weightUnit = (item as PackItem).weightUnit || (item as CatalogItem).weightUnit;
 
@@ -98,7 +98,9 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
 
           <View className="flex-row items-center justify-between">
             <WeightBadge weight={totalWeight} unit={weightUnit} type="total" />
-            {showQuantity && <Text className="text-xs text-foreground">{t('items.quantity', { quantity })}</Text>}
+            {showQuantity && (
+              <Text className="text-xs text-foreground">{t('items.quantity', { quantity })}</Text>
+            )}
           </View>
         </View>
       </View>

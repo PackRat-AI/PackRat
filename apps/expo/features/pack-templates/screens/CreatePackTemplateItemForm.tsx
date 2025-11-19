@@ -123,7 +123,11 @@ export const CreatePackTemplateItemForm = ({
   });
 
   const handleAddImage = async () => {
-    const options = [t('packTemplates.takePhoto'), t('packTemplates.chooseFromLibrary'), t('common.cancel')];
+    const options = [
+      t('packTemplates.takePhoto'),
+      t('packTemplates.chooseFromLibrary'),
+      t('common.cancel'),
+    ];
     const cancelButtonIndex = 2;
 
     showActionSheetWithOptions(
@@ -232,7 +236,10 @@ export const CreatePackTemplateItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: t('items.itemWeight') }} footnote={t('packTemplates.enterBasicInfo')}>
+          <FormSection
+            ios={{ title: t('items.itemWeight') }}
+            footnote={t('packTemplates.enterBasicInfo')}
+          >
             <form.Field name="weight">
               {(field) => (
                 <FormItem>
@@ -295,14 +302,19 @@ export const CreatePackTemplateItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: t('packTemplates.type') }} footnote={t('packTemplates.enterBasicInfo')}>
+          <FormSection
+            ios={{ title: t('packTemplates.type') }}
+            footnote={t('packTemplates.enterBasicInfo')}
+          >
             <form.Field name="consumable">
               {(field) => (
                 <FormItem>
                   <View className="flex-row items-center justify-between p-4">
                     <View className="flex-row items-center">
                       <Icon name="silverware-fork-knife" size={18} color={colors.foreground} />
-                      <Text className="ml-2 font-medium text-foreground">{t('packTemplates.consumable')}</Text>
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packTemplates.consumable')}
+                      </Text>
                     </View>
                     <Switch
                       value={field.state.value}
@@ -324,7 +336,9 @@ export const CreatePackTemplateItemForm = ({
                   <View className="flex-row items-center justify-between p-4">
                     <View className="flex-row items-center">
                       <Icon name="account-circle" size={18} color={colors.foreground} />
-                      <Text className="ml-2 font-medium text-foreground">{t('packTemplates.worn')}</Text>
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packTemplates.worn')}
+                      </Text>
                     </View>
                     <Switch
                       value={field.state.value}
@@ -341,7 +355,10 @@ export const CreatePackTemplateItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: t('common.name') }} footnote={t('packTemplates.enterBasicInfo')}>
+          <FormSection
+            ios={{ title: t('common.name') }}
+            footnote={t('packTemplates.enterBasicInfo')}
+          >
             <form.Field name="image">
               {(_field) => (
                 <FormItem>
@@ -365,7 +382,9 @@ export const CreatePackTemplateItemForm = ({
                       onPress={handleAddImage}
                     >
                       <Icon name="camera" size={32} color={colors.foreground} />
-                      <Text className="mt-2 text-muted-foreground">{t('packTemplates.addManually')}</Text>
+                      <Text className="mt-2 text-muted-foreground">
+                        {t('packTemplates.addManually')}
+                      </Text>
                     </TouchableOpacity>
                   )}
                 </FormItem>
@@ -373,7 +392,10 @@ export const CreatePackTemplateItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: t('packTemplates.notes') }} footnote={t('packTemplates.enterBasicInfo')}>
+          <FormSection
+            ios={{ title: t('packTemplates.notes') }}
+            footnote={t('packTemplates.enterBasicInfo')}
+          >
             <form.Field name="notes">
               {(field) => (
                 <FormItem>

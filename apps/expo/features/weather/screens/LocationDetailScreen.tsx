@@ -79,7 +79,12 @@ export default function LocationDetailScreen() {
   const showOptionsMenu = () => {
     const options = location.isActive
       ? [t('weather.refreshWeather'), t('weather.removeLocation'), t('common.cancel')]
-      : [t('weather.setAsActive'), t('weather.refreshWeather'), t('weather.removeLocation'), t('common.cancel')];
+      : [
+          t('weather.setAsActive'),
+          t('weather.refreshWeather'),
+          t('weather.removeLocation'),
+          t('common.cancel'),
+        ];
 
     const cancelButtonIndex = options.length - 1;
     const destructiveButtonIndex = options.indexOf(t('weather.removeLocation'));
@@ -128,33 +133,41 @@ export default function LocationDetailScreen() {
 
   const setAsActive = () => {
     if (location.isActive) {
-      Alert.alert(t('weather.alreadyActive'), t('weather.alreadyActiveMessage', { name: location.name }), [
-        { text: t('common.ok') },
-      ]);
+      Alert.alert(
+        t('weather.alreadyActive'),
+        t('weather.alreadyActiveMessage', { name: location.name }),
+        [{ text: t('common.ok') }],
+      );
       return;
     }
 
     setActiveLocation(location.id);
-    Alert.alert(t('weather.locationSet'), t('weather.locationSetAsActive', { name: location.name }), [
-      { text: t('common.ok') },
-    ]);
+    Alert.alert(
+      t('weather.locationSet'),
+      t('weather.locationSetAsActive', { name: location.name }),
+      [{ text: t('common.ok') }],
+    );
   };
 
   const handleRemoveLocation = () => {
-    Alert.alert(t('weather.removeLocation'), t('weather.removeLocationConfirm', { name: location.name }), [
-      {
-        text: t('common.cancel'),
-        style: 'cancel',
-      },
-      {
-        text: t('weather.remove'),
-        style: 'destructive',
-        onPress: () => {
-          removeLocation(location.id);
-          router.back();
+    Alert.alert(
+      t('weather.removeLocation'),
+      t('weather.removeLocationConfirm', { name: location.name }),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
         },
-      },
-    ]);
+        {
+          text: t('weather.remove'),
+          style: 'destructive',
+          onPress: () => {
+            removeLocation(location.id);
+            router.back();
+          },
+        },
+      ],
+    );
   };
 
   // Determine if we should use light or dark status bar based on gradient colors
@@ -245,7 +258,9 @@ export default function LocationDetailScreen() {
                     <View className="mr-2">
                       <Icon name="restart" color="white" size={20} />
                     </View>
-                    <Text className="text-white">{isRefreshing ? t('weather.refreshing') : t('weather.refresh')}</Text>
+                    <Text className="text-white">
+                      {isRefreshing ? t('weather.refreshing') : t('weather.refresh')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -255,7 +270,9 @@ export default function LocationDetailScreen() {
                     {location.hourlyForecast ? (
                       location.hourlyForecast.map((hour, index) => (
                         <View key={hour.time} className="mr-4 min-w-[50px] items-center">
-                          <Text className="text-white">{index === 0 ? t('weather.now') : hour.time}</Text>
+                          <Text className="text-white">
+                            {index === 0 ? t('weather.now') : hour.time}
+                          </Text>
                           <WeatherIcon
                             code={hour.weatherCode}
                             isDay={hour.isDay}
@@ -268,7 +285,9 @@ export default function LocationDetailScreen() {
                       ))
                     ) : (
                       <View className="w-full items-center justify-center py-4">
-                        <Text className="text-white/80">{t('weather.hourlyForecastNotAvailable')}</Text>
+                        <Text className="text-white/80">
+                          {t('weather.hourlyForecastNotAvailable')}
+                        </Text>
                       </View>
                     )}
                   </ScrollView>
@@ -277,7 +296,9 @@ export default function LocationDetailScreen() {
                 {/* 10-Day forecast */}
                 <View className="mt-4 rounded-xl bg-white/10 p-4">
                   <Text className="mb-2 font-medium text-white">
-                    {location.dailyForecast ? t('weather.dayForecast', { count: location.dailyForecast.length }) : t('weather.dailyForecast')}
+                    {location.dailyForecast
+                      ? t('weather.dayForecast', { count: location.dailyForecast.length })
+                      : t('weather.dailyForecast')}
                   </Text>
                   {location.dailyForecast ? (
                     location.dailyForecast.map((day, index) => (
@@ -308,7 +329,9 @@ export default function LocationDetailScreen() {
                     ))
                   ) : (
                     <View className="items-center justify-center py-4">
-                      <Text className="text-white/80">{t('weather.dailyForecastNotAvailable')}</Text>
+                      <Text className="text-white/80">
+                        {t('weather.dailyForecastNotAvailable')}
+                      </Text>
                     </View>
                   )}
                 </View>
@@ -339,7 +362,9 @@ export default function LocationDetailScreen() {
                       <Text className="text-white/70">{t('weather.uvIndex')}</Text>
                       <Text className="text-xl text-white">
                         {location.details?.uvIndex || '6'}{' '}
-                        {location.details?.uvIndex && location.details.uvIndex > 5 ? t('weather.high') : ''}
+                        {location.details?.uvIndex && location.details.uvIndex > 5
+                          ? t('weather.high')
+                          : ''}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">

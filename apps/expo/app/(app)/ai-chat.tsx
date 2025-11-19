@@ -273,7 +273,7 @@ export default function AIChat() {
           placeholder={
             context.contextType === 'general'
               ? t('ai.askAnythingOutdoors')
-              : context.contextType === 'item' 
+              : context.contextType === 'item'
                 ? t('ai.askAboutItem')
                 : t('ai.askAboutPack')
           }

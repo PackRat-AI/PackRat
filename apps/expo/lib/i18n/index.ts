@@ -1,5 +1,5 @@
-import { I18n } from 'i18n-js';
 import * as Localization from 'expo-localization';
+import { I18n, type TranslateOptions } from 'i18n-js';
 import en from './locales/en.json';
 
 // Create i18n instance
@@ -25,8 +25,10 @@ i18n.defaultLocale = 'en';
  * @param options - Optional interpolation values
  * @returns Translated string
  */
-export const t = (key: string, options?: Record<string, any>) => {
+export const t = (key: string, options?: TranslateOptions) => {
   return i18n.t(key, options);
 };
+
+export type Translate = typeof t;
 
 export default i18n;

@@ -88,7 +88,7 @@ function CategoryItem({ category, index }: { category: CategorySummary; index: n
 
 function ItemRow({ item, index }: { item: PackItem; index: number }) {
   const { t } = useTranslation();
-  
+
   return (
     <View
       className={cn(

@@ -28,7 +28,7 @@ interface PackItemDetailsGenerativeUIProps {
 
 export function PackItemDetailsGenerativeUI({ toolInvocation }: PackItemDetailsGenerativeUIProps) {
   const { t } = useTranslation();
-  
+
   switch (toolInvocation.state) {
     case 'input-streaming':
     case 'input-available':

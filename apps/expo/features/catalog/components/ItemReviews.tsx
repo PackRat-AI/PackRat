@@ -39,7 +39,9 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
     <View className="mb-4">
       <View className="mb-2 flex-row items-center justify-between">
         <Text variant="callout">{t('catalog.reviews')}</Text>
-        <Text className="text-sm text-muted-foreground">{t('catalog.reviewsCount', { count: reviews.length })}</Text>
+        <Text className="text-sm text-muted-foreground">
+          {t('catalog.reviewsCount', { count: reviews.length })}
+        </Text>
       </View>
 
       {reviews.map((review) => {

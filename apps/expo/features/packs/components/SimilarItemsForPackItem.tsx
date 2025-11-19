@@ -97,7 +97,9 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
   if (isLoading) {
     return (
       <View className="mt-10 px-4">
-        <Text className="mb-3 text-lg font-semibold text-foreground">{t('packs.moreLike', { itemName })}</Text>
+        <Text className="mb-3 text-lg font-semibold text-foreground">
+          {t('packs.moreLike', { itemName })}
+        </Text>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -115,7 +117,9 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
 
   return (
     <View className="mt-10 px-4">
-      <Text className="mb-3 text-lg font-semibold text-foreground">{t('packs.moreLike', { itemName })}</Text>
+      <Text className="mb-3 text-lg font-semibold text-foreground">
+        {t('packs.moreLike', { itemName })}
+      </Text>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}

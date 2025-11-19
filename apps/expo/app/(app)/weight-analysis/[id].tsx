@@ -54,7 +54,11 @@ export default function WeightAnalysisScreen() {
         removeClippedSubviews={false}
       >
         <View className="grid grid-cols-2 gap-3 p-4">
-          <WeightCard title={t('packs.baseWeight')} weight={`${data.baseWeight} g`} className="col-span-1" />
+          <WeightCard
+            title={t('packs.baseWeight')}
+            weight={`${data.baseWeight} g`}
+            className="col-span-1"
+          />
           <WeightCard
             title={t('packs.consumablesWeight')}
             weight={`${data.consumableWeight} ${preferredWeightUnit}`}
@@ -125,9 +129,7 @@ export default function WeightAnalysisScreen() {
         ))}
 
         {!data.categories.length && (
-          <Text className="px-8 text-center">
-            {t('packs.addItemsForBreakdown')}
-          </Text>
+          <Text className="px-8 text-center">{t('packs.addItemsForBreakdown')}</Text>
         )}
       </ScrollView>
     </SafeAreaView>

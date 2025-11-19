@@ -113,9 +113,7 @@ export function AIPacksScreen() {
       </View>
 
       <View className="items-center justify-center p-8">
-        <Text className="text-center text-muted-foreground mt-2">
-          {t('ai.useFormAbove')}
-        </Text>
+        <Text className="text-center text-muted-foreground mt-2">{t('ai.useFormAbove')}</Text>
       </View>
 
       <Alert title="" buttons={[]} ref={alertRef} />
