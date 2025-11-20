@@ -9,8 +9,10 @@ import {
   TextField,
 } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
+import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { router, Stack } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -31,6 +33,7 @@ export default function ForgotPasswordScreen() {
   const alertRef = React.useRef<AlertRef>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const { forgotPassword } = useAuthActions();
+  const needsReauth = useAtomValue(needsReauthAtom);
 
   const form = useForm({
     defaultValues: {
@@ -149,22 +152,26 @@ export default function ForgotPasswordScreen() {
           </View>
         ) : (
           <View className="flex-row justify-between py-4 pl-6 pr-8">
-            <Button
-              variant="plain"
-              className="px-2"
-              onPress={() => {
-                router.replace('/auth/(create-account)');
-              }}
-            >
-              <Text className="text-sm text-primary">Create Account</Text>
-            </Button>
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, _isSubmitting]) => (
-                <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
-                  <Text className="text-sm">{isLoading ? 'Sending...' : 'Send Code'}</Text>
-                </Button>
-              )}
-            </form.Subscribe>
+            {!needsReauth && (
+              <Button
+                variant="plain"
+                className="px-2"
+                onPress={() => {
+                  router.replace('/auth/(create-account)');
+                }}
+              >
+                <Text className="text-sm text-primary">Create Account</Text>
+              </Button>
+            )}
+            <View className="ml-auto">
+              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                {([canSubmit, _isSubmitting]) => (
+                  <Button onPress={() => form.handleSubmit()} disabled={!canSubmit || isLoading}>
+                    <Text className="text-sm">{isLoading ? 'Sending...' : 'Send Code'}</Text>
+                  </Button>
+                )}
+              </form.Subscribe>
+            </View>
           </View>
         )}
       </KeyboardStickyView>
