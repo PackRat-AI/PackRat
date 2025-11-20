@@ -127,7 +127,7 @@ export default function AuthIndexScreen() {
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >
-              <Text className="text-primary"> {needsReauth ? 'Sign in with email' : 'Log in'}</Text>
+              <Text className="text-primary">{needsReauth ? 'Sign in with email' : 'Log in'}</Text>
             </Button>
           </Link>
 

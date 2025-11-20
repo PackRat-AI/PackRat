@@ -124,7 +124,7 @@ axiosInstance.interceptors.response.use(
           return Promise.reject(error);
         }
       } catch (refreshError) {
-        if (error.response?.status === 401)
+        if (axios.isAxiosError(refreshError) && refreshError.response?.status === 401)
           // Refresh failed, trigger re-authentication
           store.set(needsReauthAtom, true);
         processQueue(refreshError as Error);
