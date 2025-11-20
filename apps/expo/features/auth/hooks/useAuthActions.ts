@@ -16,14 +16,20 @@ import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import { useAtomValue, useSetAtom } from 'jotai';
 
-import { isLoadingAtom, redirectToAtom, refreshTokenAtom, tokenAtom } from '../atoms/authAtoms';
+import {
+  isLoadingAtom,
+  needsReauthAtom,
+  redirectToAtom,
+  refreshTokenAtom,
+  tokenAtom,
+} from '../atoms/authAtoms';
 
 function redirect(route: string) {
   try {
     const parsedRoute: Href = JSON.parse(route);
-    return router.replace(parsedRoute);
+    return router.dismissTo(parsedRoute);
   } catch {
-    router.replace(route as Href);
+    router.dismissTo(route as Href);
   }
 }
 
@@ -33,6 +39,7 @@ export function useAuthActions() {
   const refreshToken = useAtomValue(refreshTokenAtom);
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
+  const setNeedsReauth = useSetAtom(needsReauthAtom);
 
   const clearLocalData = async () => {
     // Clear state
@@ -67,6 +74,10 @@ export function useAuthActions() {
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
+
+      // Reset re-authentication state
+      setNeedsReauth(false);
+
       redirect(redirectTo);
     } catch (error) {
       console.error('Sign in error:', error);
@@ -111,6 +122,10 @@ export function useAuthActions() {
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
+
+      // Reset re-authentication state
+      setNeedsReauth(false);
+
       redirect(redirectTo);
     } catch (error) {
       setIsLoading(false);
@@ -166,6 +181,10 @@ export function useAuthActions() {
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
+
+      // Reset re-authentication state
+      setNeedsReauth(false);
+
       redirect(redirectTo);
     } catch (error) {
       console.error('Apple sign in error:', error);
@@ -224,6 +243,7 @@ export function useAuthActions() {
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
+      setNeedsReauth(false);
       setIsLoading(false);
     }
   };

@@ -1,9 +1,11 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
+import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
 import { getPackTemplateDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateDetailOptions';
 import { getPackTemplateItemDetailOptions } from 'expo-app/features/pack-templates/utils/getPackTemplateItemDetailOptions';
+import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { getPackDetailOptions } from 'expo-app/features/packs/utils/getPackDetailOptions';
 import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackItemDetailOptions';
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
@@ -11,7 +13,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -21,6 +25,8 @@ export {
 export default function AppLayout() {
   const isLoading = useAuthInit();
   const { t } = useTranslation();
+  const needsReauth = useAtomValue(needsReauthAtom);
+  const insets = useSafeAreaInsets();
 
   if (isLoading) {
     return (
@@ -29,192 +35,202 @@ export default function AppLayout() {
       </View>
     );
   }
+
   return (
-    <Stack screenOptions={SCREEN_OPTIONS}>
-      <Stack.Screen name="(tabs)" options={TABS_OPTIONS} />
-      <Stack.Screen name="modal" options={getModalOptions(t)} />
-      <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
-      <Stack.Screen
-        name="pack/[id]/index"
-        options={({ route }) => getPackDetailOptions((route.params as { id: string })?.id)}
-      />
-      <Stack.Screen name="pack/[id]/edit" options={getPackEditOptions(t)} />
-      <Stack.Screen name="pack/new" options={getPackNewOptions(t)} />
-      <Stack.Screen name="trip/location-search" options={getTripLocationSearchOptions(t)} />
+    <>
+      {needsReauth && (
+        <View className="z-50" style={{ marginTop: insets.top, marginBottom: -(insets.top + 10) }}>
+          <SyncBanner title="Sync paused — please sign in again." isReAuthentication />
+        </View>
+      )}
+      <Stack screenOptions={SCREEN_OPTIONS}>
+        <Stack.Screen name="(tabs)" options={TABS_OPTIONS} />
+        <Stack.Screen name="modal" options={getModalOptions(t)} />
+        <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
+        <Stack.Screen
+          name="pack/[id]/index"
+          options={({ route }) => getPackDetailOptions((route.params as { id: string })?.id)}
+        />
+        <Stack.Screen name="pack/[id]/edit" options={getPackEditOptions(t)} />
+        <Stack.Screen name="pack/new" options={getPackNewOptions(t)} />
+        <Stack.Screen name="trip/location-search" options={getTripLocationSearchOptions(t)} />
 
-      <Stack.Screen
-        name="trip/[id]/index"
-        options={({ route }) => getTripDetailOptions((route.params as { id: string })?.id)}
-      />
-      <Stack.Screen name="trip/[id]/edit" options={getTripEditOptions(t)} />
-      <Stack.Screen name="trip/new" options={getTripNewOptions(t)} />
+        <Stack.Screen
+          name="trip/[id]/index"
+          options={({ route }) => getTripDetailOptions((route.params as { id: string })?.id)}
+        />
+        <Stack.Screen name="trip/[id]/edit" options={getTripEditOptions(t)} />
+        <Stack.Screen name="trip/new" options={getTripNewOptions(t)} />
 
-      <Stack.Screen
-        name="item/[id]/index"
-        options={({ route }) => getPackItemDetailOptions({ route })}
-      />
-      <Stack.Screen name="item/[id]/edit" options={getItemEditOptions(t)} />
-      <Stack.Screen name="item/new" options={getItemNewOptions(t)} />
-      <Stack.Screen name="catalog/add-to-pack/index" options={getPackSelectionOptions(t)} />
-      <Stack.Screen
-        name="catalog/add-to-pack/details"
-        options={getCatalogAddToPackItemDetailsOptions(t)}
-      />
-      <Stack.Screen name="ai-chat" options={getAiChatOptions(t)} />
-      <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
-      <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
-      <Stack.Screen name="weather" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="item/[id]/index"
+          options={({ route }) => getPackItemDetailOptions({ route })}
+        />
+        <Stack.Screen name="item/[id]/edit" options={getItemEditOptions(t)} />
+        <Stack.Screen name="item/new" options={getItemNewOptions(t)} />
+        <Stack.Screen name="catalog/add-to-pack/index" options={getPackSelectionOptions(t)} />
+        <Stack.Screen
+          name="catalog/add-to-pack/details"
+          options={getCatalogAddToPackItemDetailsOptions(t)}
+        />
+        <Stack.Screen name="ai-chat" options={getAiChatOptions(t)} />
+        <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
+        <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
+        <Stack.Screen name="weather" options={{ headerShown: false }} />
 
-      <Stack.Screen
-        name="current-pack"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="recent-packs"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="pack-stats/[id]"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="weight-analysis"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="pack-categories/[id]"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="upcoming-trips"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="weather-alerts"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="trail-conditions"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="gear-inventory"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="shopping-list"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="shared-packs"
-        options={{
-          headerShown: false,
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="guides/index"
-        options={{
-          title: 'Guides',
-          headerLargeTitle: true,
-        }}
-      />
-      <Stack.Screen
-        name="guides/[id]"
-        options={{
-          title: 'Guide',
-        }}
-      />
-      <Stack.Screen
-        name="pack-templates/index"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="pack-templates/new"
-        options={{
-          headerTitle: 'Create New Pack Template',
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="pack-templates/[id]/index"
-        options={({ route }) => getPackTemplateDetailOptions((route.params as { id: string })?.id)}
-      />
-      <Stack.Screen
-        name="pack-templates/[id]/edit"
-        options={{
-          headerTitle: 'Edit Pack Template',
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="templateItem/new"
-        options={{
-          headerTitle: 'Create Template Item',
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="templateItem/[id]/edit"
-        options={{
-          headerTitle: 'Edit Template Item',
-          presentation: 'modal',
-          animation: 'slide_from_bottom',
-        }}
-      />
-      <Stack.Screen
-        name="templateItem/[id]/index"
-        options={({ route }) =>
-          getPackTemplateItemDetailOptions((route.params as { id: string })?.id)
-        }
-      />
-    </Stack>
+        <Stack.Screen
+          name="current-pack"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="recent-packs"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="pack-stats/[id]"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="weight-analysis"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="pack-categories/[id]"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="upcoming-trips"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="weather-alerts"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="trail-conditions"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="gear-inventory"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="shopping-list"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="shared-packs"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="guides/index"
+          options={{
+            title: 'Guides',
+            headerLargeTitle: true,
+          }}
+        />
+        <Stack.Screen
+          name="guides/[id]"
+          options={{
+            title: 'Guide',
+          }}
+        />
+        <Stack.Screen
+          name="pack-templates/index"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="pack-templates/new"
+          options={{
+            headerTitle: 'Create New Pack Template',
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="pack-templates/[id]/index"
+          options={({ route }) =>
+            getPackTemplateDetailOptions((route.params as { id: string })?.id)
+          }
+        />
+        <Stack.Screen
+          name="pack-templates/[id]/edit"
+          options={{
+            headerTitle: 'Edit Pack Template',
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="templateItem/new"
+          options={{
+            headerTitle: 'Create Template Item',
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="templateItem/[id]/edit"
+          options={{
+            headerTitle: 'Edit Template Item',
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="templateItem/[id]/index"
+          options={({ route }) =>
+            getPackTemplateItemDetailOptions((route.params as { id: string })?.id)
+          }
+        />
+      </Stack>
+    </>
   );
 }
 

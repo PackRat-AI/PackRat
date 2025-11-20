@@ -2,11 +2,11 @@ import type { AlertRef } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
-import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,6 +32,8 @@ export default function AuthIndexScreen() {
     showSignInCopy,
     showSkipLoginBtn,
   } = useLocalSearchParams<RouteParams>();
+  const needsReauth = useAtomValue(needsReauthAtom);
+
   const handleSkipLogin = async () => {
     await AsyncStorage.setItem('skipped_login', 'true');
     router.replace('/');
@@ -67,6 +69,10 @@ export default function AuthIndexScreen() {
               <Text className="ios:font-extrabold text-center text-3xl font-medium">
                 {t('auth.loginRequired')}
               </Text>
+            ) : needsReauth ? (
+              <Text className="ios:font-extrabold text-center text-3xl font-medium">
+                Resume Sync
+              </Text>
             ) : (
               <>
                 <Text className="ios:font-extrabold text-center text-3xl font-medium">
@@ -83,11 +89,13 @@ export default function AuthIndexScreen() {
               </Text>
             )}
           </View>
-          <Link href="/auth/(create-account)" asChild>
-            <Button size={Platform.select({ ios: 'lg', default: 'md' })}>
-              <Text>{t('auth.signUpFree')}</Text>
-            </Button>
-          </Link>
+          {!needsReauth && (
+            <Link href="/auth/(create-account)" asChild>
+              <Button size={Platform.select({ ios: 'lg', default: 'md' })}>
+                <Text>{t('auth.signUpFree')}</Text>
+              </Button>
+            </Link>
+          )}
           {featureFlags.enableOAuth && (
             <>
               <Button
@@ -121,7 +129,9 @@ export default function AuthIndexScreen() {
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >
-              <Text className="text-primary">{t('auth.signIn')}</Text>
+              <Text className="text-primary">
+                {needsReauth ? 'Sign in with email' : t('auth.signIn')}
+              </Text>
             </Button>
           </Link>
 

@@ -1,8 +1,10 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
+import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
 import {
@@ -31,6 +33,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [focusedTextField, setFocusedTextField] = React.useState<'email' | 'password' | null>(null);
   const { redirectTo } = useLocalSearchParams<{ redirectTo: string }>();
+  const needsReauth = useAtomValue(needsReauthAtom);
 
   const form = useForm({
     defaultValues: {
@@ -200,38 +203,42 @@ export default function LoginScreen() {
           </View>
         ) : (
           <View className="flex-row justify-between py-4 pl-6 pr-8">
-            <Button
-              variant="plain"
-              className="px-2"
-              onPress={() => {
-                router.replace('/auth/(create-account)');
-              }}
-            >
-              <Text className="px-0.5 text-sm text-primary">{t('auth.createAccount')}</Text>
-            </Button>
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, _isSubmitting]) => (
-                <Button
-                  disabled={!canSubmit || loading}
-                  onPress={() => {
-                    if (focusedTextField === 'email') {
-                      KeyboardController.setFocusTo('next');
-                      return;
-                    }
-                    KeyboardController.dismiss();
-                    form.handleSubmit();
-                  }}
-                >
-                  <Text className="text-sm">
-                    {loading
-                      ? t('auth.loading')
-                      : focusedTextField === 'email'
-                        ? t('auth.next')
-                        : t('auth.submit')}
-                  </Text>
-                </Button>
-              )}
-            </form.Subscribe>
+            {!needsReauth && (
+              <Button
+                variant="plain"
+                className="px-2"
+                onPress={() => {
+                  router.replace('/auth/(create-account)');
+                }}
+              >
+                <Text className="px-0.5 text-sm text-primary">{t('auth.createAccount')}</Text>
+              </Button>
+            )}
+            <View className="ml-auto">
+              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                {([canSubmit, _isSubmitting]) => (
+                  <Button
+                    disabled={!canSubmit || loading}
+                    onPress={() => {
+                      if (focusedTextField === 'email') {
+                        KeyboardController.setFocusTo('next');
+                        return;
+                      }
+                      KeyboardController.dismiss();
+                      form.handleSubmit();
+                    }}
+                  >
+                    <Text className="text-sm">
+                      {loading
+                        ? t('auth.loading')
+                        : focusedTextField === 'email'
+                          ? t('auth.next')
+                          : t('auth.submit')}
+                    </Text>
+                  </Button>
+                )}
+              </form.Subscribe>
+            </View>
           </View>
         )}
       </KeyboardStickyView>

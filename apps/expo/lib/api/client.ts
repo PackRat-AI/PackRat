@@ -7,7 +7,11 @@ import axios, {
 } from 'axios';
 import { store } from 'expo-app/atoms/store';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
-import { refreshTokenAtom, tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import {
+  needsReauthAtom,
+  refreshTokenAtom,
+  tokenAtom,
+} from 'expo-app/features/auth/atoms/authAtoms';
 import Storage from 'expo-sqlite/kv-store';
 
 // Define base API URL based on environment
@@ -93,13 +97,6 @@ axiosInstance.interceptors.response.use(
         // const refreshToken = await store.get(refreshTokenAtom);
         const refreshToken = await Storage.getItem('refresh_token');
 
-        if (!refreshToken) {
-          // No refresh token, logout user
-          // You could dispatch a logout action here
-          processQueue(new Error('No refresh token'));
-          return Promise.reject(error);
-        }
-
         // Call refresh token endpoint
         const response = await axios.post(`${API_URL}/api/auth/refresh`, {
           refreshToken,
@@ -121,21 +118,15 @@ axiosInstance.interceptors.response.use(
           // Retry original request
           return axios(originalRequest);
         } else {
-          // Refresh failed, logout user
-          // You could dispatch a logout action here
+          // Refresh failed, trigger re-authentication
+          store.set(needsReauthAtom, true);
           processQueue(new Error('Token refresh failed'));
           return Promise.reject(error);
         }
       } catch (refreshError) {
-        // Refresh failed, logout user
-        // Clear tokens
-        await Storage.removeItem('access_token');
-        await Storage.removeItem('refresh_token');
-
-        await store.set(tokenAtom, null);
-        await store.set(refreshTokenAtom, null);
-        // Dispatch logout action
-        // await dispatch(logout());
+        if (axios.isAxiosError(refreshError) && refreshError.response?.status === 401)
+          // Refresh failed, trigger re-authentication
+          store.set(needsReauthAtom, true);
         processQueue(refreshError as Error);
         return Promise.reject(refreshError);
       } finally {

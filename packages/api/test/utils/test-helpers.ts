@@ -19,7 +19,7 @@ export const TEST_USER = {
   email: 'test@example.com',
   firstName: 'Test',
   lastName: 'User',
-  role: 'user' as const,
+  role: 'USER' as const,
 };
 
 export const TEST_ADMIN = {
@@ -27,7 +27,7 @@ export const TEST_ADMIN = {
   email: 'admin@example.com',
   firstName: 'Admin',
   lastName: 'User',
-  role: 'admin' as const,
+  role: 'ADMIN' as const,
 };
 
 // Helper to create authenticated API requests
@@ -62,7 +62,7 @@ export const apiWithAdmin = async (path: string, init?: RequestInit) => {
 export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
   const credentials = btoa('admin:admin-password');
   return app.fetch(
-    new Request(`http://localhost/api${path}`, {
+    new Request(`http://localhost/api/admin${path}`, {
       ...init,
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -131,4 +131,18 @@ export const expectJsonResponse = async (response: Response, expectedFields?: st
   }
 
   return data;
+};
+
+// Helper to create API request with API key authentication
+export const apiWithApiKey = (path: string, init?: RequestInit) => {
+  return app.fetch(
+    new Request(`http://localhost/api${path}`, {
+      ...init,
+      headers: {
+        'X-API-Key': 'test-api-key',
+        'Content-Type': 'application/json',
+        ...init?.headers,
+      },
+    }),
+  );
 };

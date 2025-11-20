@@ -66,6 +66,7 @@ function Profile() {
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <List
+        contentContainerClassName="pt-8"
         variant="insets"
         data={DATA}
         sectionHeaderAsGap={Platform.OS === 'ios'}
