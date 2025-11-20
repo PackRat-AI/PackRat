@@ -24,6 +24,7 @@ import { cn } from 'expo-app/lib/cn';
 import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Platform, SafeAreaView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SCREEN_OPTIONS = {
   title: 'Profile',
@@ -35,6 +36,7 @@ const ESTIMATED_ITEM_SIZE =
 
 function Profile() {
   const user = useUser();
+  const insets = useSafeAreaInsets();
 
   // Generate display data based on user information
   const displayName =
@@ -64,6 +66,7 @@ function Profile() {
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <List
+        contentContainerStyle={{ paddingTop: insets.top }}
         variant="insets"
         data={DATA}
         sectionHeaderAsGap={Platform.OS === 'ios'}
