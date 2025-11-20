@@ -40,7 +40,7 @@ export default function AppLayout() {
     <>
       {needsReauth && (
         <View className="z-50" style={{ marginTop: insets.top, marginBottom: -(insets.top + 10) }}>
-          <SyncBanner title="Sync paused — please sign in again." isReAuthentication />
+          <SyncBanner title={t('auth.syncPaused')} isReAuthentication />
         </View>
       )}
       <Stack screenOptions={SCREEN_OPTIONS}>

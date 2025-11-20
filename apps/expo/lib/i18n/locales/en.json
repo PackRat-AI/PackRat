@@ -41,6 +41,7 @@
   },
   "auth": {
     "signIn": "Sign In",
+    "signInWithEmail": "Sign in with email",
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "logOut": "Log Out",
@@ -133,7 +134,9 @@
     "failedToDeleteAccount": "Failed to delete account",
     "failedToSendCode": "Failed to send verification code",
     "loginFailed": "Login Failed",
-    "invalidEmailOrPassword": "Invalid email or password"
+    "invalidEmailOrPassword": "Invalid email or password",
+    "resumeSync": "Resume Sync",
+    "syncPaused": "Sync paused — please sign in again."
   },
   "profile": {
     "profile": "Profile",

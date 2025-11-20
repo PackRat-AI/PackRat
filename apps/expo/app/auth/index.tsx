@@ -71,7 +71,7 @@ export default function AuthIndexScreen() {
               </Text>
             ) : needsReauth ? (
               <Text className="ios:font-extrabold text-center text-3xl font-medium">
-                Resume Sync
+                {t('auth.resumeSync')}
               </Text>
             ) : (
               <>
@@ -130,7 +130,7 @@ export default function AuthIndexScreen() {
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >
               <Text className="text-primary">
-                {needsReauth ? 'Sign in with email' : t('auth.signIn')}
+                {needsReauth ? t('auth.signInWithEmail') : t('auth.signIn')}
               </Text>
             </Button>
           </Link>

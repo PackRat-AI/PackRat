@@ -214,7 +214,7 @@ export function PackListScreen() {
         )}
         ListHeaderComponent={
           <>
-            {!isAuthenticated && <SyncBanner title="Sync your packs across devices" />}
+            {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
             {isAuthenticated && (
               <View className="px-4">
                 <SegmentedControl
