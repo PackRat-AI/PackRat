@@ -16,17 +16,11 @@ export const GuidesListScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
 
-  const { data: categoriesData } = useGuideCategories();
-
-  const categories = [
-    t('guides.all'),
-    ...(categoriesData?.categories.map((category: string) =>
-      category
-        .split('-')
-        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' '),
-    ) || []),
-  ];
+  const {
+    data: categories,
+    error: categoriesError,
+    refetch: refetchCategories,
+  } = useGuideCategories();
 
   const {
     data: guidesData,
@@ -105,7 +99,7 @@ export const GuidesListScreen = () => {
     return (
       <View className="flex-1 items-center justify-center p-8">
         {isLoading ? (
-          <ActivityIndicator color={colors.primary} />
+          <ActivityIndicator color={colors.primary} size="large" />
         ) : (
           <Text className="text-center text-gray-500 dark:text-gray-400">
             {isSearchMode
@@ -132,6 +126,9 @@ export const GuidesListScreen = () => {
         data={categories}
         onFilter={handleCategoryChange}
         activeFilter={selectedCategory}
+        error={categoriesError}
+        retry={refetchCategories}
+        className="px-4 pb-2"
       />
 
       <FlatList
