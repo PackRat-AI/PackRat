@@ -207,13 +207,15 @@ export function PackListScreen() {
       <FlatList
         data={filteredPacks}
         keyExtractor={(pack) => pack.id}
+        stickyHeaderIndices={[0]}
+        stickyHeaderHiddenOnScroll
         renderItem={({ item: pack }) => (
           <View className="px-4 pt-4">
             <PackCard pack={pack} onPress={handlePackPress} />
           </View>
         )}
         ListHeaderComponent={
-          <>
+          <View className="bg-background">
             {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
             {isAuthenticated && (
               <View className="px-4">
@@ -233,13 +235,13 @@ export function PackListScreen() {
               </ScrollView>
             </View>
             {selectedTypeIndex === USER_PACKS_INDEX && (
-              <View className="px-6 pb-0 pt-2">
+              <View className="px-6 py-2">
                 <Text className="flex-1 text-muted-foreground">
                   {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
                 </Text>
               </View>
             )}
-          </>
+          </View>
         }
         ListEmptyComponent={
           selectedTypeIndex === ALL_PACKS_INDEX ? (
