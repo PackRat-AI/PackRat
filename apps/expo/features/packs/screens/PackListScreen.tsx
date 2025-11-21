@@ -20,6 +20,7 @@ import { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   Text,
@@ -64,6 +65,8 @@ export function PackListScreen() {
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+
+  const { colors } = useColorScheme();
 
   const filterOptions: FilterOption[] = [
     { label: t('packs.all'), value: 'all' },
@@ -208,12 +211,20 @@ export function PackListScreen() {
         data={filteredPacks}
         keyExtractor={(pack) => pack.id}
         stickyHeaderIndices={[0]}
-        stickyHeaderHiddenOnScroll
         renderItem={({ item: pack }) => (
           <View className="px-4 pt-4">
             <PackCard pack={pack} onPress={handlePackPress} />
           </View>
         )}
+        refreshControl={
+          selectedTypeIndex === ALL_PACKS_INDEX ? (
+            <RefreshControl
+              refreshing={allPacksQuery.isRefetching}
+              onRefresh={allPacksQuery.refetch}
+              tintColor={colors.primary}
+            />
+          ) : undefined
+        }
         ListHeaderComponent={
           <View className="bg-background">
             {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
