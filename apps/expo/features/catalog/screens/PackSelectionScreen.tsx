@@ -2,6 +2,7 @@ import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useDetailedPacks } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, FlatList, SafeAreaView, TouchableOpacity, View } from 'react-native';
@@ -16,6 +17,7 @@ export function PackSelectionScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const fadeAnim = useState(new Animated.Value(0))[0];
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -64,7 +66,9 @@ export function PackSelectionScreen() {
                 resizeMode="cover"
               />
               <View className="ml-3 flex-1">
-                <Text className="text-xs text-muted-foreground uppercase">Adding</Text>
+                <Text className="text-xs text-muted-foreground uppercase">
+                  {t('catalog.adding')}
+                </Text>
                 <Text variant="title3" color="primary">
                   {catalogItem.name}
                 </Text>
@@ -98,7 +102,7 @@ export function PackSelectionScreen() {
           {filteredPacks && filteredPacks.length > 0 ? (
             <>
               <Text variant="subhead" color="primary" className="mb-2">
-                Select a pack ({filteredPacks.length} available)
+                {t('catalog.selectPack', { count: filteredPacks.length })}
               </Text>
               <FlatList
                 data={filteredPacks}
@@ -119,7 +123,8 @@ export function PackSelectionScreen() {
                             <View className="mr-3 flex-row items-center">
                               <Icon name="basket-outline" size={14} color={colors.grey2} />
                               <Text variant="caption2" className="ml-1">
-                                {item.items?.length} {item.items?.length === 1 ? 'item' : 'items'}
+                                {item.items?.length}{' '}
+                                {item.items?.length === 1 ? t('catalog.item') : t('catalog.items')}
                               </Text>
                             </View>
                             <View className="mr-3 flex-row items-center">
@@ -144,7 +149,7 @@ export function PackSelectionScreen() {
                 ListEmptyComponent={
                   <View className="items-center justify-center py-8">
                     <Text variant="body" className="text-center">
-                      No packs found
+                      {t('catalog.noPacksFound')}
                     </Text>
                   </View>
                 }
@@ -154,15 +159,15 @@ export function PackSelectionScreen() {
             <View className="items-center justify-center rounded-lg bg-card p-8 shadow-sm">
               <Icon name="backpack" size={48} color="text-muted-foreground" />
               <Text variant="title3" color="primary" className="mt-4 text-center">
-                No packs available
+                {t('catalog.noPacksAvailable')}
               </Text>
               <Text variant="body" className="mb-4 text-center">
-                Create a pack to add items to it
+                {t('catalog.createPackMessage')}
               </Text>
               <Button onPress={handleCreatePack}>
                 <Icon name="plus" size={18} color="text-primary-foreground" />
                 <Text variant="body" color="primary">
-                  Create Pack
+                  {t('catalog.createPack')}
                 </Text>
               </Button>
             </View>

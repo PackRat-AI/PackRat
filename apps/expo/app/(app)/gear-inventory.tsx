@@ -3,6 +3,7 @@ import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, View } from 'react-native'; // 👈 import ActivityIndicator
@@ -27,6 +28,7 @@ function CategorySection({ category, items }: { category: string; items: PackIte
 export default function GearInventoryScreen() {
   const [viewMode, setViewMode] = useState<'all' | 'category'>('all');
   const items = useUserPackItems();
+  const { t } = useTranslation();
 
   const groupByCategory = (items: PackItem[]) => {
     return items.reduce(
@@ -48,11 +50,11 @@ export default function GearInventoryScreen() {
 
   return (
     <SafeAreaView className="flex-1">
-      <LargeTitleHeader title="Gear Inventory" />
+      <LargeTitleHeader title={t('packs.gearInventory')} />
       <ScrollView className="flex-1 px-4">
         <View className="flex-row items-center justify-between p-4">
           <Text variant="subhead" className="text-muted-foreground">
-            {items?.length} items in your inventory
+            {t('packs.itemsInInventory', { count: items?.length })}
           </Text>
           <View className="flex-row overflow-hidden rounded-lg bg-card">
             <Pressable
@@ -63,7 +65,7 @@ export default function GearInventoryScreen() {
                 variant="subhead"
                 className={viewMode === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
               >
-                All
+                {t('packs.all')}
               </Text>
             </Pressable>
             <Pressable
@@ -79,7 +81,7 @@ export default function GearInventoryScreen() {
                   viewMode === 'category' ? 'text-primary-foreground' : 'text-muted-foreground'
                 }
               >
-                By Category
+                {t('packs.byCategory')}
               </Text>
             </Pressable>
           </View>

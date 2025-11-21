@@ -1,5 +1,6 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Platform, View } from 'react-native';
@@ -8,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NameScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [form, setForm] = React.useState({
     first: 'Zach',
     middle: 'Danger',
@@ -33,7 +35,7 @@ export default function NameScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Name',
+          title: t('profile.nameScreenTitle'),
           headerTransparent: Platform.OS === 'ios',
           headerBlurEffect: 'systemMaterial',
           headerRight: Platform.select({
@@ -44,7 +46,7 @@ export default function NameScreen() {
                 variant="plain"
                 onPress={router.back}
               >
-                <Text className={cn(canSave && 'text-primary')}>Save</Text>
+                <Text className={cn(canSave && 'text-primary')}>{t('common.save')}</Text>
               </Button>
             ),
           }),
@@ -65,11 +67,11 @@ export default function NameScreen() {
                 textContentType="givenName"
                 autoFocus
                 autoComplete="name-given"
-                label={Platform.select({ ios: undefined, default: 'First' })}
+                label={Platform.select({ ios: undefined, default: t('profile.firstNameLabel') })}
                 leftView={Platform.select({
-                  ios: <LeftLabel>First</LeftLabel>,
+                  ios: <LeftLabel>{t('profile.firstNameLabel')}</LeftLabel>,
                 })}
-                placeholder="required"
+                placeholder={t('profile.requiredPlaceholder')}
                 value={form.first}
                 onChangeText={onChangeText('first')}
                 onSubmitEditing={focusNext}
@@ -81,11 +83,11 @@ export default function NameScreen() {
               <TextField
                 textContentType="middleName"
                 autoComplete="name-middle"
-                label={Platform.select({ ios: undefined, default: 'Middle' })}
+                label={Platform.select({ ios: undefined, default: t('profile.middleNameLabel') })}
                 leftView={Platform.select({
-                  ios: <LeftLabel>Middle</LeftLabel>,
+                  ios: <LeftLabel>{t('profile.middleNameLabel')}</LeftLabel>,
                 })}
-                placeholder="optional"
+                placeholder={t('profile.optionalPlaceholder')}
                 value={form.middle}
                 onChangeText={onChangeText('middle')}
                 onSubmitEditing={focusNext}
@@ -97,9 +99,11 @@ export default function NameScreen() {
               <TextField
                 textContentType="familyName"
                 autoComplete="name-family"
-                label={Platform.select({ ios: undefined, default: 'Last' })}
-                leftView={Platform.select({ ios: <LeftLabel>Last</LeftLabel> })}
-                placeholder="required"
+                label={Platform.select({ ios: undefined, default: t('profile.lastNameLabel') })}
+                leftView={Platform.select({
+                  ios: <LeftLabel>{t('profile.lastNameLabel')}</LeftLabel>,
+                })}
+                placeholder={t('profile.requiredPlaceholder')}
                 value={form.last}
                 onChangeText={onChangeText('last')}
                 onSubmitEditing={router.back}
@@ -114,7 +118,7 @@ export default function NameScreen() {
                 disabled={!canSave}
                 onPress={router.back}
               >
-                <Text>Save</Text>
+                <Text>{t('common.save')}</Text>
               </Button>
             </View>
           )}

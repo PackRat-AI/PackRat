@@ -2,12 +2,14 @@ import type { AlertRef } from '@packrat/ui/nativewindui';
 import { Alert, ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { type Href, useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Platform, View } from 'react-native';
 import { usePacks } from '../hooks';
 
 export function PackStatsTile() {
+  const { t } = useTranslation();
   const router = useRouter();
 
   const packs = usePacks();
@@ -43,7 +45,7 @@ export function PackStatsTile() {
           </View>
         }
         item={{
-          title: 'Pack Stats',
+          title: t('packs.packStats'),
         }}
         onPress={handlePress}
         target="Cell"
@@ -51,13 +53,13 @@ export function PackStatsTile() {
         removeSeparator={Platform.OS === 'ios'}
       />
       <Alert
-        title="No Packs Yet"
-        message="Create a pack to start tracking stats."
+        title={t('packs.noPacksYet')}
+        message={t('packs.createPackForStats')}
         materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
+            text: t('packs.gotIt'),
             style: 'default',
           },
         ]}

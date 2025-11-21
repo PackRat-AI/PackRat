@@ -3,12 +3,14 @@ import { Alert, ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { View } from 'react-native';
 
 export function TrailConditionsTile() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const alertRef = useRef<AlertRef>(null);
 
@@ -37,20 +39,20 @@ export function TrailConditionsTile() {
           </View>
         }
         item={{
-          title: 'Trail Conditions',
+          title: t('trips.trailConditions'),
         }}
         onPress={handlePress}
         target="Cell"
         index={0}
       />
       <Alert
-        title="No Trips Yet"
-        message="Create trips, see which ones are near the corner!"
+        title={t('trips.noTripsYetTitle')}
+        message={t('trips.trailConditionsMessage')}
         materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
+            text: t('trips.gotIt'),
             style: 'default',
           },
         ]}
