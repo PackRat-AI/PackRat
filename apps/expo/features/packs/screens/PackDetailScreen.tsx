@@ -10,6 +10,7 @@ import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
+import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -67,6 +68,9 @@ export function PackDetailScreen() {
 
   const bottomSheetRef = useSheetRef();
   const addItemActionsRef = useSheetRef();
+
+  const { run: runBottomSheetAction, handleDismiss: handleBottomSheetDismiss } =
+    useBottomSheetAction(bottomSheetRef);
 
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
@@ -229,7 +233,6 @@ export function PackDetailScreen() {
   const getTabTextStyle = (tab: string) =>
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
 
-  // New unified handler to avoid duplicate Ask AI logic
   const handleAskAI = () => {
     if (!isAuthed.peek()) {
       return router.push({
@@ -343,7 +346,6 @@ export function PackDetailScreen() {
     normalizedActions.push({ key: '__placeholder__', placeholder: true });
   }
 
-  // Consistent sizing classes for action buttons (full-width inside 1/2 column)
   const actionBtnClass = 'w-full h-14 flex-row items-center justify-start gap-2';
 
   if (!isOwnedByUser && isLoading) {
@@ -555,10 +557,11 @@ export function PackDetailScreen() {
       {/* Bottom Sheet for More Actions */}
       <Sheet
         ref={bottomSheetRef}
-        enableDynamicSizing={true}
+        enableDynamicSizing
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+        onDismiss={handleBottomSheetDismiss}
       >
         <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
           {/* Revamped consistent 2-column action layout */}
@@ -570,10 +573,7 @@ export function PackDetailScreen() {
                 ) : (
                   <Button
                     variant={action.variant}
-                    onPress={() => {
-                      bottomSheetRef.current?.close();
-                      action.onPress();
-                    }}
+                    onPress={() => runBottomSheetAction(action.onPress)}
                     disabled={action.disabled}
                     className={actionBtnClass}
                   >
