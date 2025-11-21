@@ -4,6 +4,7 @@ import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import type { PackItem } from 'expo-app/features/packs';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
   getQuantity,
@@ -20,6 +21,8 @@ type ItemCardProps = {
 };
 
 export function ItemCard({ item, onPress }: ItemCardProps) {
+  const { t } = useTranslation();
+
   // Get weight unit
   const weightUnit = (item as PackItem).weightUnit || (item as CatalogItem).weightUnit;
 
@@ -83,19 +86,21 @@ export function ItemCard({ item, onPress }: ItemCardProps) {
             />
             {isItemConsumable && (
               <View className="ml-2 rounded-full bg-amber-100 px-2 py-0.5">
-                <Text className="text-xs text-amber-800">Consumable</Text>
+                <Text className="text-xs text-amber-800">{t('items.consumable')}</Text>
               </View>
             )}
             {isItemWorn && (
               <View className="ml-2 rounded-full bg-blue-100 px-2 py-0.5">
-                <Text className="text-xs text-blue-800">Worn</Text>
+                <Text className="text-xs text-blue-800">{t('items.worn')}</Text>
               </View>
             )}
           </View>
 
           <View className="flex-row items-center justify-between">
             <WeightBadge weight={totalWeight} unit={weightUnit} type="total" />
-            {showQuantity && <Text className="text-xs text-foreground">Qty: {quantity}</Text>}
+            {showQuantity && (
+              <Text className="text-xs text-foreground">{t('items.quantity', { quantity })}</Text>
+            )}
           </View>
         </View>
       </View>

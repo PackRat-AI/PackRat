@@ -2,6 +2,7 @@ import type { AlertRef } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Platform, View } from 'react-native';
@@ -9,6 +10,7 @@ import { Platform, View } from 'react-native';
 export function WeatherAlertsTile() {
   const router = useRouter();
   const alertRef = useRef<AlertRef>(null);
+  const { t } = useTranslation();
 
   const handlePress = () => {
     // if (!currentPack) {
@@ -34,12 +36,12 @@ export function WeatherAlertsTile() {
         }
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-            <Text className="mr-2">{`${weatherAlertCount} active`}</Text>
+            <Text className="mr-2">{t('weather.activeCount', { count: weatherAlertCount })}</Text>
             <ChevronRight />
           </View>
         }
         item={{
-          title: 'Weather Alerts',
+          title: t('weather.weatherAlerts'),
         }}
         onPress={handlePress}
         target="Cell"
@@ -47,13 +49,13 @@ export function WeatherAlertsTile() {
         removeSeparator={Platform.OS === 'ios'}
       />
       <Alert
-        title="No Trips Yet"
-        message="Create a trip see weather alerts for your destination."
+        title={t('weather.noTripsYet')}
+        message={t('weather.createTripForAlerts')}
         materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
+            text: t('weather.gotIt'),
             style: 'default',
           },
         ]}

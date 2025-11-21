@@ -2,6 +2,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Text } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
 import type { WeatherLocation } from '../types';
 
@@ -15,16 +16,22 @@ interface LocationCardProps {
 export function LocationCard({ location, onPress, onSetActive, onRemove }: LocationCardProps) {
   const { colors, colorScheme } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
+  const { t } = useTranslation();
 
   const handleLongPress = () => {
     const options = location.isActive
-      ? ['View Details', 'Remove', 'Cancel']
-      : ['View Details', 'Set as Active', 'Remove', 'Cancel'];
+      ? [t('weather.viewDetails'), t('weather.remove'), t('common.cancel')]
+      : [
+          t('weather.viewDetails'),
+          t('weather.setAsActive'),
+          t('weather.remove'),
+          t('common.cancel'),
+        ];
 
     const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = options.indexOf('Remove');
+    const destructiveButtonIndex = options.indexOf(t('weather.remove'));
     const viewDetailsIndex = 0;
-    const setActiveIndex = options.indexOf('Set as Active');
+    const setActiveIndex = options.indexOf(t('weather.setAsActive'));
 
     showActionSheetWithOptions(
       {
@@ -82,7 +89,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
                 <Text className="text-lg font-semibold text-white">{location.name}</Text>
                 {location.isActive && (
                   <View className="ml-2 rounded-full bg-white/30 px-2 py-0.5">
-                    <Text className="text-xs text-white">Active</Text>
+                    <Text className="text-xs text-white">{t('weather.active')}</Text>
                   </View>
                 )}
               </View>

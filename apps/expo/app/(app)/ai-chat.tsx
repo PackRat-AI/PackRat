@@ -11,6 +11,7 @@ import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -75,6 +76,7 @@ export default function AIChat() {
   const { activeLocation } = useActiveLocation();
   const [location, setLocation] = React.useState<WeatherLocation | null>(activeLocation);
   const scrollViewRef = React.useRef<ScrollView>(null);
+  const { t } = useTranslation();
 
   const context = {
     itemId: params.itemId as string,
@@ -240,7 +242,7 @@ export default function AIChat() {
           {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
           {messages.length < 2 && (
             <View className="pl-4 pr-16">
-              <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+              <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
               <View className="flex-row flex-wrap gap-2">
                 {getContextualSuggestions(context).map((suggestion) => (
                   <TouchableOpacity
@@ -270,8 +272,10 @@ export default function AIChat() {
           isLoading={isLoading}
           placeholder={
             context.contextType === 'general'
-              ? 'Ask anything outdoors'
-              : `Ask about this ${context.contextType === 'item' ? 'item' : 'pack'}...`
+              ? t('ai.askAnythingOutdoors')
+              : context.contextType === 'item'
+                ? t('ai.askAboutItem')
+                : t('ai.askAboutPack')
           }
         />
       </KeyboardStickyView>

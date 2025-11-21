@@ -7,6 +7,7 @@ import {
 } from 'expo-app/features/packs/hooks/useSeasonSuggestions';
 import { LocationPicker } from 'expo-app/features/weather/components';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -14,6 +15,7 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 export default function SeasonSuggestionsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
   const seasonSuggestionsMutation = useSeasonSuggestions();
   const createPackWithItems = useCreatePackWithItems();
@@ -48,13 +50,13 @@ export default function SeasonSuggestionsScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <LargeTitleHeader title="Season Suggestions" />
+      <LargeTitleHeader title={t('seasons.seasonSuggestions')} />
 
       <ScrollView className="flex-1 px-4">
         <View className="py-6">
           <View className="mb-6">
             <Text variant="body" className="text-muted-foreground">
-              Get personalized pack recommendations based on your gear inventory and current season.
+              {t('seasons.personalizedRecommendations')}
             </Text>
           </View>
 
@@ -66,7 +68,7 @@ export default function SeasonSuggestionsScreen() {
             {seasonSuggestionsMutation.isPending ? (
               <View className="flex-row items-center">
                 <ActivityIndicator size="small" color="white" />
-                <Text className="ml-2 text-white">Generating suggestions...</Text>
+                <Text className="ml-2 text-white">{t('seasons.generatingSuggestions')}</Text>
               </View>
             ) : (
               <View className="flex-row items-center">
@@ -76,7 +78,7 @@ export default function SeasonSuggestionsScreen() {
                   size={18}
                   color="white"
                 />
-                <Text className="ml-2 text-white">Generate Season Suggestions</Text>
+                <Text className="ml-2 text-white">{t('seasons.generateSuggestions')}</Text>
               </View>
             )}
           </Button>
@@ -84,7 +86,7 @@ export default function SeasonSuggestionsScreen() {
           {seasonSuggestionsMutation.error && (
             <View className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
               <Text variant="callout" className="font-medium text-red-800">
-                Error
+                {t('errors.error')}
               </Text>
               <Text variant="body" className="text-red-700">
                 {seasonSuggestionsMutation.error.message}
@@ -136,7 +138,7 @@ export default function SeasonSuggestionsScreen() {
 
                   <View className="mb-4">
                     <Text variant="subhead" className="mb-2 font-medium">
-                      Recommended Items ({suggestion.items.length})
+                      {t('seasons.recommendedItems', { count: suggestion.items.length })}
                     </Text>
                     {suggestion.items.map((item) => (
                       <View key={item.name} className="flex-row items-start py-1">
@@ -156,11 +158,11 @@ export default function SeasonSuggestionsScreen() {
                     {creatingPackIndex === index ? (
                       <View className="flex-row items-center">
                         <ActivityIndicator size="small" />
-                        <Text className="ml-2">Creating Pack...</Text>
+                        <Text className="ml-2">{t('seasons.creatingPack')}</Text>
                       </View>
                     ) : (
                       <View className="flex-row items-center">
-                        <Text className="ml-2">Create This Pack</Text>
+                        <Text className="ml-2">{t('seasons.createThisPack')}</Text>
                       </View>
                     )}
                   </Button>
@@ -174,9 +176,9 @@ export default function SeasonSuggestionsScreen() {
       <LocationPicker
         open={isLocationPickerOpen}
         onClose={() => setIsLocationPickerOpen(false)}
-        title="Select Location"
+        title={t('location.selectLocation')}
         onSelect={handleGenerateSuggestions}
-        selectText="Next"
+        selectText={t('auth.next')}
       />
     </View>
   );

@@ -1,5 +1,6 @@
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import type { Pack } from 'expo-app/features/packs/types';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
 
@@ -26,20 +27,22 @@ interface PackDetailsGenerativeUIProps {
 }
 
 export function PackDetailsGenerativeUI({ toolInvocation }: PackDetailsGenerativeUIProps) {
+  const { t } = useTranslation();
+
   switch (toolInvocation.state) {
     case 'input-streaming':
     case 'input-available':
-      return <ToolCard text="Fetching pack details..." icon="loading" />;
+      return <ToolCard text={t('ai.tools.fetchingPackDetails')} icon="loading" />;
     case 'output-available':
       if (toolInvocation.output.success) {
         const pack = toolInvocation.output.data;
 
         return <PackCard isGenUI={true} pack={pack} />;
       } else {
-        return <ToolCard text="Couldn't fetch pack details" icon="error" />;
+        return <ToolCard text={t('ai.tools.couldntFetchPackDetails')} icon="error" />;
       }
     case 'output-error':
-      return <ToolCard text="Couldn't fetch pack details" icon="error" />;
+      return <ToolCard text={t('ai.tools.couldntFetchPackDetails')} icon="error" />;
     default:
       return null;
   }

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardTitle, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TouchableOpacity, View } from 'react-native';
 import type { Guide } from '../types';
 
@@ -9,6 +10,8 @@ interface GuideCardProps {
 }
 
 export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
+  const { t } = useTranslation();
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} className="pt-4">
       <Card className="mb-3">
@@ -52,7 +55,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
                 <View className="flex-row items-center gap-2">
                   {guide.author && (
                     <Text className="text-xs text-gray-600 dark:text-gray-400">
-                      By {guide.author}
+                      {t('guides.by')} {guide.author}
                     </Text>
                   )}
                   {guide.readingTime && (
