@@ -1,5 +1,6 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -23,6 +24,7 @@ import {
 import Toast from 'react-native-toast-message';
 import { useCatalogItemDetails } from '../hooks';
 import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
+import type { CatalogItem } from '../types';
 
 export function AddCatalogItemDetailsScreen() {
   const router = useRouter();
@@ -35,6 +37,7 @@ export function AddCatalogItemDetailsScreen() {
   } = useCatalogItemDetails(catalogItemId as string);
   const pack = usePackDetailsFromStore(packId as string);
   const createItem = useCreatePackItem();
+  const queryClient = useQueryClient();
   const fadeAnim = useState(new Animated.Value(0))[0];
   const [isAdding, setIsAdding] = useState(false);
   const { t } = useTranslation();
@@ -88,6 +91,14 @@ export function AddCatalogItemDetailsScreen() {
         image: cachedImageFilename,
         catalogItemId: catalogItem.id,
       },
+    });
+    // Increment catalog item usage count
+    queryClient.setQueryData(['catalogItem', catalogItemId], (oldData: CatalogItem) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        usageCount: (oldData.usageCount || 0) + 1,
+      };
     });
     setIsAdding(false);
     Toast.show({

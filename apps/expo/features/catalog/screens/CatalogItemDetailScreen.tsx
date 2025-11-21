@@ -66,7 +66,7 @@ export function CatalogItemDetailScreen() {
           className="h-64 w-full"
         />
 
-        <View className="bg-card p-4">
+        <View className="bg-background p-4">
           <View className="mb-2">
             <View className="flex-row items-baseline justify-between">
               <View className="flex-1">
@@ -182,6 +182,22 @@ export function CatalogItemDetailScreen() {
             </View>
           )}
 
+          <View className="mb-4 gap-2 flex-row justify-between">
+            <View>
+              <Button onPress={handleAddToPack}>
+                <Text>{t('catalog.addToPack')}</Text>
+              </Button>
+            </View>
+            <View>
+              <Button
+                variant="secondary"
+                onPress={() => Linking.openURL(item.productUrl as string)}
+              >
+                <Text className="text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
+              </Button>
+            </View>
+          </View>
+
           {item.techs && Object.keys(item.techs).length > 0 && (
             <View className="mt-8">
               <Text variant="callout" className="mb-2">
@@ -215,18 +231,6 @@ export function CatalogItemDetailScreen() {
             limit={5}
             threshold={0.1}
           />
-
-          <View className="mt-4">
-            <Button variant="secondary" onPress={() => Linking.openURL(item.productUrl as string)}>
-              <Text className="text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
-            </Button>
-          </View>
-
-          <View className="mt-2">
-            <Button onPress={handleAddToPack}>
-              <Text>{t('catalog.addToPack')}</Text>
-            </Button>
-          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
