@@ -150,15 +150,19 @@ export function PackTemplateListScreen() {
             <PackTemplateCard templateId={item.id} onPress={handleTemplatePress} />
           </View>
         )}
+        stickyHeaderIndices={[0]}
+        stickyHeaderHiddenOnScroll
         ListHeaderComponent={
-          <View className="px-4 pb-0 pt-2">
-            <Text className="text-muted-foreground">
-              {filteredTemplates.length}{' '}
-              {filteredTemplates.length === 1
-                ? t('packTemplates.template')
-                : t('packTemplates.templates')}
-            </Text>
-          </View>
+          selectedTemplateTypeIndex === 0 ? (
+            <View className="bg-background px-4 pb-2">
+              <Text className="text-muted-foreground">
+                {filteredTemplates.length}{' '}
+                {filteredTemplates.length === 1
+                  ? t('packTemplates.template')
+                  : t('packTemplates.templates')}
+              </Text>
+            </View>
+          ) : undefined
         }
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
