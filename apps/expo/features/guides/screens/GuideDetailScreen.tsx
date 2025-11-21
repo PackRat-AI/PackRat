@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { Chip } from 'expo-app/components/initial/Chip';
 import { Markdown } from 'expo-app/components/Markdown';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -75,9 +76,9 @@ export const GuideDetailScreen = () => {
               <Text className="text-sm text-gray-600 dark:text-gray-400">{guide.readingTime}</Text>
             )}
             {guide.difficulty && (
-              <View className="bg-secondary/10 px-2 py-0.5 rounded">
-                <Text className="text-xs font-medium text-secondary">{guide.difficulty}</Text>
-              </View>
+              <Chip textClassName="text-sm" variant="secondary">
+                {guide.difficulty}
+              </Chip>
             )}
           </View>
           <Text className="text-xs text-gray-500 dark:text-gray-500 mt-1">

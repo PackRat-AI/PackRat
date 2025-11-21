@@ -18,6 +18,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
         <CardContent className="p-4">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
+              {guide.difficulty && <Text variant="footnote">{guide.difficulty}</Text>}
               <CardTitle className="text-lg font-semibold mb-1">{guide.title}</CardTitle>
               {guide.description && (
                 <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2" numberOfLines={2}>
@@ -63,18 +64,12 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
                       • {guide.readingTime}
                     </Text>
                   )}
-                  {guide.difficulty && (
-                    <View className="bg-secondary/10 px-1.5 py-0.5 rounded">
-                      <Text className="text-xs font-medium text-secondary">{guide.difficulty}</Text>
-                    </View>
-                  )}
-                  <Text className="text-xs text-gray-500 dark:text-gray-500">
-                    • {new Date(guide.updatedAt).toLocaleDateString()}
+                  <Text className="text-xs text-gray-500 dark:text-gray-500 self-end">
+                    {new Date(guide.updatedAt).toLocaleDateString()}
                   </Text>
                 </View>
               </View>
             </View>
-            <Icon name="chevron-right" size={24} color="gray-400" />
           </View>
         </CardContent>
       </Card>
