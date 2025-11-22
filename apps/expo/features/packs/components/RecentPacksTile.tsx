@@ -2,11 +2,13 @@ import { Avatar, AvatarFallback, AvatarImage, ListItem, Text } from '@packrat/ui
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { useRecentPacks } from '../hooks/useRecentPacks';
 
 export function RecentPacksTile() {
+  const { t } = useTranslation();
   const recentPacks = useRecentPacks();
 
   const router = useRouter();
@@ -51,7 +53,7 @@ export function RecentPacksTile() {
         </View>
       }
       item={{
-        title: 'Recent Packs',
+        title: t('packs.recentPacks'),
       }}
       onPress={handlePress}
       target="Cell"

@@ -9,20 +9,27 @@ import { userStore } from 'expo-app/features/auth/store';
 import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
 import { packWeigthHistoryStore } from 'expo-app/features/packs/store/packWeightHistory';
 import axiosInstance from 'expo-app/lib/api/client';
+import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import { useAtomValue, useSetAtom } from 'jotai';
 
-import { isLoadingAtom, redirectToAtom, refreshTokenAtom, tokenAtom } from '../atoms/authAtoms';
+import {
+  isLoadingAtom,
+  needsReauthAtom,
+  redirectToAtom,
+  refreshTokenAtom,
+  tokenAtom,
+} from '../atoms/authAtoms';
 
 function redirect(route: string) {
   try {
     const parsedRoute: Href = JSON.parse(route);
-    return router.replace(parsedRoute);
+    return router.dismissTo(parsedRoute);
   } catch {
-    router.replace(route as Href);
+    router.dismissTo(route as Href);
   }
 }
 
@@ -32,6 +39,7 @@ export function useAuthActions() {
   const refreshToken = useAtomValue(refreshTokenAtom);
   const setIsLoading = useSetAtom(isLoadingAtom);
   const redirectTo = useAtomValue(redirectToAtom);
+  const setNeedsReauth = useSetAtom(needsReauthAtom);
 
   const clearLocalData = async () => {
     // Clear state
@@ -58,7 +66,7 @@ export function useAuthActions() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to sign in');
+        throw new Error(data.error || t('auth.failedToSignIn'));
       }
 
       console.log(data.accessToken, data.refreshToken);
@@ -66,6 +74,10 @@ export function useAuthActions() {
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
+
+      // Reset re-authentication state
+      setNeedsReauth(false);
+
       redirect(redirectTo);
     } catch (error) {
       console.error('Sign in error:', error);
@@ -89,7 +101,7 @@ export function useAuthActions() {
       const { idToken } = await GoogleSignin.getTokens();
 
       if (!idToken) {
-        throw new Error('No ID token received from Google');
+        throw new Error(t('auth.noIdTokenFromGoogle'));
       }
 
       // Send the token to backend
@@ -104,22 +116,26 @@ export function useAuthActions() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to sign in with Google');
+        throw new Error(data.error || t('auth.failedToSignInWithGoogle'));
       }
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
+
+      // Reset re-authentication state
+      setNeedsReauth(false);
+
       redirect(redirectTo);
     } catch (error) {
       setIsLoading(false);
 
       if (isErrorWithCode(error) && error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log('User cancelled the login flow');
+        console.log(t('auth.userCancelledLogin'));
       } else if (isErrorWithCode(error) && error.code === statusCodes.IN_PROGRESS) {
-        console.log('Sign in is in progress');
+        console.log(t('auth.signInInProgress'));
       } else if (isErrorWithCode(error) && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        console.log('Play services not available');
+        console.log(t('auth.playServicesNotAvailable'));
       } else {
         console.error('Google sign in error:', error);
       }
@@ -134,7 +150,7 @@ export function useAuthActions() {
 
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) {
-        throw new Error('Apple Sign-In is not available on this device.');
+        throw new Error(t('auth.appleSignInNotAvailable'));
       }
 
       const credential = await AppleAuthentication.signInAsync({
@@ -159,12 +175,16 @@ export function useAuthActions() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to sign in with Apple');
+        throw new Error(data.error || t('auth.failedToSignInWithApple'));
       }
 
       await setToken(data.accessToken);
       await setRefreshToken(data.refreshToken);
       userStore.set(data.user);
+
+      // Reset re-authentication state
+      setNeedsReauth(false);
+
       redirect(redirectTo);
     } catch (error) {
       console.error('Apple sign in error:', error);
@@ -188,7 +208,7 @@ export function useAuthActions() {
       const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(responseData.error || 'Registration failed');
+        throw new Error(responseData.error || t('auth.registrationFailed'));
       }
     } catch (error) {
       console.error('Registration error:', (error as AxiosError).message);
@@ -223,6 +243,7 @@ export function useAuthActions() {
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
+      setNeedsReauth(false);
       setIsLoading(false);
     }
   };
@@ -240,7 +261,7 @@ export function useAuthActions() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to process request');
+        throw new Error(data.error || t('auth.failedToProcessRequest'));
       }
 
       return data;
@@ -263,7 +284,7 @@ export function useAuthActions() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to reset password');
+        throw new Error(data.error || t('auth.resetPasswordFailed'));
       }
 
       return data;
@@ -286,7 +307,7 @@ export function useAuthActions() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to verify email');
+        throw new Error(data.error || t('auth.failedToVerifyEmail'));
       }
 
       // If verification is successful, set the user and tokens
@@ -323,7 +344,7 @@ export function useAuthActions() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to resend verification email');
+        throw new Error(data.error || t('auth.failedToResendVerificationEmail'));
       }
 
       return data;
@@ -339,7 +360,7 @@ export function useAuthActions() {
       const response = await axiosInstance.delete('/api/auth');
 
       if (response.status !== 200) {
-        throw new Error(response.data?.error || 'Failed to delete account');
+        throw new Error(response.data?.error || t('auth.failedToDeleteAccount'));
       }
 
       // Clear tokens and user data

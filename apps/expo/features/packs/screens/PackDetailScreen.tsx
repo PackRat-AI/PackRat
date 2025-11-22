@@ -10,7 +10,9 @@ import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
+import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -22,6 +24,7 @@ import { packingModeStore } from '../store/packingMode';
 import type { Pack, PackItem } from '../types';
 
 export function PackDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
@@ -65,6 +68,9 @@ export function PackDetailScreen() {
 
   const bottomSheetRef = useSheetRef();
   const addItemActionsRef = useSheetRef();
+
+  const { run: runBottomSheetAction, handleDismiss: handleBottomSheetDismiss } =
+    useBottomSheetAction(bottomSheetRef);
 
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
@@ -117,17 +123,17 @@ export function PackDetailScreen() {
       return exitPackingMode();
 
     appAlert.current?.alert({
-      title: 'Exit Packing Mode?',
-      message: "If you don't save, your packing state will be lost.",
+      title: t('packs.exitPackingMode'),
+      message: t('packs.ifYouDont'),
       buttons: [
         {
-          text: 'Exit without Saving',
+          text: t('packs.exitWithoutSaving'),
           style: 'destructive',
           onPress: exitPackingMode,
         },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Save',
+          text: t('common.save'),
           style: 'default',
           onPress() {
             handleSavePackingMode();
@@ -227,7 +233,6 @@ export function PackDetailScreen() {
   const getTabTextStyle = (tab: string) =>
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
 
-  // New unified handler to avoid duplicate Ask AI logic
   const handleAskAI = () => {
     if (!isAuthed.peek()) {
       return router.push({
@@ -341,7 +346,6 @@ export function PackDetailScreen() {
     normalizedActions.push({ key: '__placeholder__', placeholder: true });
   }
 
-  // Consistent sizing classes for action buttons (full-width inside 1/2 column)
   const actionBtnClass = 'w-full h-14 flex-row items-center justify-start gap-2';
 
   if (!isOwnedByUser && isLoading) {
@@ -400,15 +404,21 @@ export function PackDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">BASE WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.baseWeightLabelUpper')}
+              </Text>
               <WeightBadge weight={pack.baseWeight || 0} unit="g" type="base" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.totalWeightLabelUpper')}
+              </Text>
               <WeightBadge weight={pack.totalWeight || 0} unit="g" type="total" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">ITEMS</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.itemsCountLabelUpper')}
+              </Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {pack.items?.length || 0}
               </Chip>
@@ -547,10 +557,11 @@ export function PackDetailScreen() {
       {/* Bottom Sheet for More Actions */}
       <Sheet
         ref={bottomSheetRef}
-        enableDynamicSizing={true}
+        enableDynamicSizing
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+        onDismiss={handleBottomSheetDismiss}
       >
         <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
           {/* Revamped consistent 2-column action layout */}
@@ -562,10 +573,7 @@ export function PackDetailScreen() {
                 ) : (
                   <Button
                     variant={action.variant}
-                    onPress={() => {
-                      bottomSheetRef.current?.close();
-                      action.onPress();
-                    }}
+                    onPress={() => runBottomSheetAction(action.onPress)}
                     disabled={action.disabled}
                     className={actionBtnClass}
                   >

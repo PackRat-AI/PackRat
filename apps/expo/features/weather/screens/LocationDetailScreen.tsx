@@ -4,6 +4,7 @@ import { Icon } from '@roninoss/icons';
 import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -15,6 +16,7 @@ import { useActiveLocation, useLocationRefresh, useLocations } from '../hooks';
 export default function LocationDetailScreen() {
   const { id } = useLocalSearchParams();
   const { colors, colorScheme } = useColorScheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { locationsState } = useLocations();
   const { setActiveLocation } = useActiveLocation();
@@ -41,7 +43,7 @@ export default function LocationDetailScreen() {
     const success = await refreshLocation(location.id);
 
     if (!success) {
-      setError('Failed to refresh weather data');
+      setError(t('weather.failedToRefresh'));
     } else {
       // Update gradient colors based on weather condition
       if (location.details) {
@@ -63,12 +65,12 @@ export default function LocationDetailScreen() {
   if (!location) {
     return (
       <View className="flex-1 items-center justify-center">
-        <Text>Location not found</Text>
+        <Text>{t('weather.locationNotFound')}</Text>
         <TouchableOpacity
           className="mt-4 rounded-full bg-primary px-4 py-2"
           onPress={() => router.back()}
         >
-          <Text className="text-white">Go Back</Text>
+          <Text className="text-white">{t('weather.goBack')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -76,13 +78,18 @@ export default function LocationDetailScreen() {
 
   const showOptionsMenu = () => {
     const options = location.isActive
-      ? ['Refresh Weather', 'Remove Location', 'Cancel']
-      : ['Set as Active', 'Refresh Weather', 'Remove Location', 'Cancel'];
+      ? [t('weather.refreshWeather'), t('weather.removeLocation'), t('common.cancel')]
+      : [
+          t('weather.setAsActive'),
+          t('weather.refreshWeather'),
+          t('weather.removeLocation'),
+          t('common.cancel'),
+        ];
 
     const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = options.indexOf('Remove Location');
-    const refreshIndex = options.indexOf('Refresh Weather');
-    const setActiveIndex = options.indexOf('Set as Active');
+    const destructiveButtonIndex = options.indexOf(t('weather.removeLocation'));
+    const refreshIndex = options.indexOf(t('weather.refreshWeather'));
+    const setActiveIndex = options.indexOf(t('weather.setAsActive'));
 
     showActionSheetWithOptions(
       {
@@ -126,33 +133,41 @@ export default function LocationDetailScreen() {
 
   const setAsActive = () => {
     if (location.isActive) {
-      Alert.alert('Already Active', `${location.name} is already set as your active location.`, [
-        { text: 'OK' },
-      ]);
+      Alert.alert(
+        t('weather.alreadyActive'),
+        t('weather.alreadyActiveMessage', { name: location.name }),
+        [{ text: t('common.ok') }],
+      );
       return;
     }
 
     setActiveLocation(location.id);
-    Alert.alert('Location Set', `${location.name} has been set as your active location.`, [
-      { text: 'OK' },
-    ]);
+    Alert.alert(
+      t('weather.locationSet'),
+      t('weather.locationSetAsActive', { name: location.name }),
+      [{ text: t('common.ok') }],
+    );
   };
 
   const handleRemoveLocation = () => {
-    Alert.alert('Remove Location', `Are you sure you want to remove ${location.name}?`, [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => {
-          removeLocation(location.id);
-          router.back();
+    Alert.alert(
+      t('weather.removeLocation'),
+      t('weather.removeLocationConfirm', { name: location.name }),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
         },
-      },
-    ]);
+        {
+          text: t('weather.remove'),
+          style: 'destructive',
+          onPress: () => {
+            removeLocation(location.id);
+            router.back();
+          },
+        },
+      ],
+    );
   };
 
   // Determine if we should use light or dark status bar based on gradient colors
@@ -201,7 +216,7 @@ export default function LocationDetailScreen() {
                   className="mt-4 rounded-full bg-white/20 px-4 py-2"
                   onPress={handleRefresh}
                 >
-                  <Text className="text-white">Try Again</Text>
+                  <Text className="text-white">{t('weather.tryAgain')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -212,7 +227,7 @@ export default function LocationDetailScreen() {
                     <Text className="text-3xl font-semibold text-white">{location.name}</Text>
                     {location.isActive && (
                       <View className="ml-2 rounded-full bg-white/30 px-2 py-0.5">
-                        <Text className="text-xs text-white">Active</Text>
+                        <Text className="text-xs text-white">{t('weather.active')}</Text>
                       </View>
                     )}
                   </View>
@@ -230,7 +245,7 @@ export default function LocationDetailScreen() {
                       className="mt-4 rounded-full bg-white/20 px-4 py-2"
                       onPress={setAsActive}
                     >
-                      <Text className="text-white">Set as Active Location</Text>
+                      <Text className="text-white">{t('weather.setAsActiveLocation')}</Text>
                     </TouchableOpacity>
                   )}
 
@@ -243,7 +258,9 @@ export default function LocationDetailScreen() {
                     <View className="mr-2">
                       <Icon name="restart" color="white" size={20} />
                     </View>
-                    <Text className="text-white">{isRefreshing ? 'Refreshing...' : 'Refresh'}</Text>
+                    <Text className="text-white">
+                      {isRefreshing ? t('weather.refreshing') : t('weather.refresh')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -253,7 +270,9 @@ export default function LocationDetailScreen() {
                     {location.hourlyForecast ? (
                       location.hourlyForecast.map((hour, index) => (
                         <View key={hour.time} className="mr-4 min-w-[50px] items-center">
-                          <Text className="text-white">{index === 0 ? 'Now' : hour.time}</Text>
+                          <Text className="text-white">
+                            {index === 0 ? t('weather.now') : hour.time}
+                          </Text>
                           <WeatherIcon
                             code={hour.weatherCode}
                             isDay={hour.isDay}
@@ -266,7 +285,9 @@ export default function LocationDetailScreen() {
                       ))
                     ) : (
                       <View className="w-full items-center justify-center py-4">
-                        <Text className="text-white/80">Hourly forecast not available</Text>
+                        <Text className="text-white/80">
+                          {t('weather.hourlyForecastNotAvailable')}
+                        </Text>
                       </View>
                     )}
                   </ScrollView>
@@ -275,8 +296,9 @@ export default function LocationDetailScreen() {
                 {/* 10-Day forecast */}
                 <View className="mt-4 rounded-xl bg-white/10 p-4">
                   <Text className="mb-2 font-medium text-white">
-                    {location.dailyForecast ? `${location.dailyForecast.length}-DAY` : 'DAILY'}{' '}
-                    FORECAST
+                    {location.dailyForecast
+                      ? t('weather.dayForecast', { count: location.dailyForecast.length })
+                      : t('weather.dailyForecast')}
                   </Text>
                   {location.dailyForecast ? (
                     location.dailyForecast.map((day, index) => (
@@ -307,42 +329,46 @@ export default function LocationDetailScreen() {
                     ))
                   ) : (
                     <View className="items-center justify-center py-4">
-                      <Text className="text-white/80">Daily forecast not available</Text>
+                      <Text className="text-white/80">
+                        {t('weather.dailyForecastNotAvailable')}
+                      </Text>
                     </View>
                   )}
                 </View>
 
                 {/* Weather details */}
                 <View className="mb-6 mt-4 rounded-xl bg-white/10 p-4">
-                  <Text className="mb-2 font-medium text-white">DETAILS</Text>
+                  <Text className="mb-2 font-medium text-white">{t('weather.details')}</Text>
                   <View className="flex-row flex-wrap">
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">Feels Like</Text>
+                      <Text className="text-white/70">{t('weather.feelsLike')}</Text>
                       <Text className="text-xl text-white">
                         {location.details?.feelsLike || location.temperature}°
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">Humidity</Text>
+                      <Text className="text-white/70">{t('weather.humidity')}</Text>
                       <Text className="text-xl text-white">
                         {location.details?.humidity || '62'}%
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">Visibility</Text>
+                      <Text className="text-white/70">{t('weather.visibility')}</Text>
                       <Text className="text-xl text-white">
                         {location.details?.visibility || '10'} mi
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">UV Index</Text>
+                      <Text className="text-white/70">{t('weather.uvIndex')}</Text>
                       <Text className="text-xl text-white">
                         {location.details?.uvIndex || '6'}{' '}
-                        {location.details?.uvIndex && location.details.uvIndex > 5 ? '(High)' : ''}
+                        {location.details?.uvIndex && location.details.uvIndex > 5
+                          ? t('weather.high')
+                          : ''}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">Wind</Text>
+                      <Text className="text-white/70">{t('weather.wind')}</Text>
                       <Text className="text-xl text-white">
                         {location.details?.windSpeed || '5'} mph
                       </Text>

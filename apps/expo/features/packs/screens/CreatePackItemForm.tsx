@@ -3,6 +3,7 @@ import { Form, FormItem, FormSection, SegmentedControl, TextField } from '@packr
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
@@ -57,6 +58,7 @@ export const CreatePackItemForm = ({
   packId: string;
   existingItem?: PackItem;
 }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
@@ -206,14 +208,14 @@ export const CreatePackItemForm = ({
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
-            ios={{ title: 'Item Details' }}
+            ios={{ title: t('packs.itemDetails') }}
             footnote="Enter the basic information about your item"
           >
             <form.Field name="name">
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Item Name"
+                    placeholder={t('packs.itemName')}
                     autoFocus
                     value={field.state.value}
                     onBlur={field.handleBlur}
@@ -232,7 +234,7 @@ export const CreatePackItemForm = ({
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Description"
+                    placeholder={t('packs.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -259,7 +261,7 @@ export const CreatePackItemForm = ({
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Category (e.g., Shelter, Cooking)"
+                    placeholder={t('packs.categoryExample')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -274,12 +276,15 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: 'Weight & Quantity' }} footnote="Specify the weight details">
+          <FormSection
+            ios={{ title: t('packs.weightAndQuantity') }}
+            footnote="Specify the weight details"
+          >
             <form.Field name="weight">
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Weight"
+                    placeholder={t('packs.weight')}
                     value={field.state.value.toString()}
                     onBlur={field.handleBlur}
                     onChangeText={(text) => field.handleChange(Number(text) || 0)}
@@ -298,7 +303,7 @@ export const CreatePackItemForm = ({
               {(field) => (
                 <FormItem>
                   <View className="px-2 py-2">
-                    <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
+                    <Text className="text-foreground/70 mb-2 text-sm">{t('packs.unit')}</Text>
                     <SegmentedControl
                       values={WEIGHT_UNITS}
                       selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
@@ -318,7 +323,7 @@ export const CreatePackItemForm = ({
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Quantity"
+                    placeholder={t('packs.quantity')}
                     value={field.state.value === 0 ? '' : field.state.value.toString()}
                     onBlur={field.handleBlur}
                     onChangeText={(text) => {
@@ -337,14 +342,16 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: 'Properties' }} footnote="Special item properties">
+          <FormSection ios={{ title: t('packs.properties') }} footnote="Special item properties">
             <form.Field name="consumable">
               {(field) => (
                 <FormItem>
                   <View className="flex-row items-center justify-between p-4">
                     <View className="flex-row items-center">
                       <Icon name="silverware-fork-knife" size={18} color={colors.foreground} />
-                      <Text className="ml-2 font-medium text-foreground">Consumable</Text>
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packs.consumable')}
+                      </Text>
                     </View>
                     <Switch
                       value={field.state.value}
@@ -366,7 +373,9 @@ export const CreatePackItemForm = ({
                   <View className="flex-row items-center justify-between p-4">
                     <View className="flex-row items-center">
                       <Icon name="account-circle" size={18} color={colors.foreground} />
-                      <Text className="ml-2 font-medium text-foreground">Worn (not carried)</Text>
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packs.wornNotCarried')}
+                      </Text>
                     </View>
                     <Switch
                       value={field.state.value}
@@ -383,7 +392,10 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: 'Image' }} footnote="Add an image of your item (optional)">
+          <FormSection
+            ios={{ title: t('packs.image') }}
+            footnote="Add an image of your item (optional)"
+          >
             <form.Field name="image">
               {(_field) => (
                 <FormItem>
@@ -407,7 +419,7 @@ export const CreatePackItemForm = ({
                       onPress={handleAddImage}
                     >
                       <Icon name="camera" size={32} color={colors.foreground} />
-                      <Text className="mt-2 text-muted-foreground">Tap to add an image</Text>
+                      <Text className="mt-2 text-muted-foreground">{t('packs.tapToAddImage')}</Text>
                     </TouchableOpacity>
                   )}
                 </FormItem>
@@ -415,12 +427,12 @@ export const CreatePackItemForm = ({
             </form.Field>
           </FormSection>
 
-          <FormSection ios={{ title: 'Notes' }} footnote="Additional information">
+          <FormSection ios={{ title: t('packs.notes') }} footnote="Additional information">
             <form.Field name="notes">
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Additional notes about this item"
+                    placeholder={t('packs.additionalNotes')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}

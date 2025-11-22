@@ -2,6 +2,8 @@ import { LargeTitleHeader, List, ListItem, Text } from '@packrat/ui/nativewindui
 import { format } from 'date-fns';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
@@ -13,28 +15,29 @@ function formatDate(dateString?: string) {
 }
 
 // Calculate trip status based on dates
-function getTripStatus(trip: { startDate?: string; endDate?: string }) {
-  if (!trip.startDate || !trip.endDate) return { status: 'Not Started', completion: 0 };
+function getTripStatus(trip: { startDate?: string; endDate?: string }, t: TranslationFunction) {
+  if (!trip.startDate || !trip.endDate) return { status: t('trips.notStarted'), completion: 0 };
 
   const start = new Date(trip.startDate).getTime();
   const end = new Date(trip.endDate).getTime();
   const now = Date.now();
 
-  if (now < start) return { status: 'Not Started', completion: 0 };
-  if (now > end) return { status: 'Complete', completion: 100 };
+  if (now < start) return { status: t('trips.notStarted'), completion: 0 };
+  if (now > end) return { status: t('trips.complete'), completion: 100 };
   const totalDuration = end - start;
   const elapsed = now - start;
   const completion = Math.round((elapsed / totalDuration) * 100);
-  return { status: 'In Progress', completion };
+  return { status: t('trips.inProgress'), completion };
 }
 
 function PackStatus({ status, completion }: { status: string; completion: number }) {
+  const { t } = useTranslation();
   let statusColor = 'bg-amber-500';
   const statusText = status;
 
-  if (status === 'Complete') {
+  if (status === t('trips.complete')) {
     statusColor = 'bg-green-500';
-  } else if (status === 'Not Started') {
+  } else if (status === t('trips.notStarted')) {
     statusColor = 'bg-red-500';
   }
 
@@ -46,7 +49,7 @@ function PackStatus({ status, completion }: { status: string; completion: number
           {statusText}
         </Text>
       </View>
-      {status === 'In Progress' && (
+      {status === t('trips.inProgress') && (
         <View className="mt-1 h-1 w-16 rounded-full bg-muted">
           <View className="h-1 rounded-full bg-primary" style={{ width: `${completion}%` }} />
         </View>
@@ -100,6 +103,7 @@ function PackStatus({ status, completion }: { status: string; completion: number
 // }
 
 export default function UpcomingTripsScreen() {
+  const { t } = useTranslation();
   const trips = useTrips();
   const packs = useDetailedPacks();
 
@@ -118,7 +122,7 @@ export default function UpcomingTripsScreen() {
   if (!upcomingTrips.length) {
     return (
       <View className="flex-1 items-center justify-center">
-        <Text>No upcoming trips yet.</Text>
+        <Text>{t('trips.noUpcomingTrips')}</Text>
       </View>
     );
   }
@@ -127,11 +131,11 @@ export default function UpcomingTripsScreen() {
 
   return (
     <>
-      <LargeTitleHeader title="Upcoming Trips" />
+      <LargeTitleHeader title={t('trips.upcomingTrips')} />
       <ScrollView className="flex-1">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">
-            Your planned adventures
+            {t('trips.plannedAdventures')}
           </Text>
         </View>
 
@@ -139,7 +143,7 @@ export default function UpcomingTripsScreen() {
         <List
           data={upcomingTrips.map((trip) => ({
             title: trip.name,
-            subTitle: `${trip.location?.name ?? 'Unknown'} • ${formatDate(
+            subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
               trip.startDate,
             )} to ${formatDate(trip.endDate)}`,
           }))}
@@ -148,7 +152,7 @@ export default function UpcomingTripsScreen() {
             const trip = upcomingTrips[info.index];
             assertDefined(trip);
 
-            const { status, completion } = getTripStatus(trip);
+            const { status, completion } = getTripStatus(trip, t);
 
             return (
               <ListItem

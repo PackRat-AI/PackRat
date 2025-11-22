@@ -407,7 +407,7 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
     getEnv(c);
 
   if (!OPENAI_API_KEY) {
-    return c.json({ error: 'OpenAI API key not configured' }, 400);
+    return c.json({ error: 'OpenAI API key not configured' }, 500);
   }
 
   const existingItem = await db.query.packItems.findFirst({
