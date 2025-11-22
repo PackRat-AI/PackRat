@@ -1,16 +1,8 @@
-pre-push:
-  parallel: true
-  # Skip hooks in CI/GitHub environments (GitHub Actions, Copilot agents, etc.)
-  # In CI, we rely on separate GitHub Actions workflows for validation
+pre-commit:
   skip:
     - run: test "${CI:-false}" = "true"
     - run: test "${GITHUB_ACTIONS:-false}" = "true"
   commands:
-    format:
-      run: bun format
-      fail_text: "Code formatting failed. Run 'bun format' to fix."
-
-    # Ready for when you add linting
-    # lint:
-    #   run: bun lint
-    #   fail_text: "Linting failed. Run 'bun lint' to fix."
+    lint:
+      run: bunx biome check {staged_files}
+      fail_text: "Linting failed! \nRun `bun lint` to fix. \nCommit with `--no-verify` to bypass check."
