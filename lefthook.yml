@@ -4,5 +4,5 @@ pre-commit:
     - run: test "${GITHUB_ACTIONS:-false}" = "true"
   commands:
     lint:
-      run: bunx biome check {staged_files}
+      run: bun check {staged_files}
       fail_text: "Linting failed! \nRun `bun lint` to fix. \nCommit with `--no-verify` to bypass check."

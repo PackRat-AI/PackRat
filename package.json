@@ -19,7 +19,7 @@
     "format": "biome format --write",
     "lint": "biome check --write",
     "lint-unsafe": "biome check --write --unsafe",
-    "check": "biome check --write",
+    "check": "biome check",
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
