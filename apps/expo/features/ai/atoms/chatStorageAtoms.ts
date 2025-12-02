@@ -28,13 +28,38 @@ export function getChatStorageKey(context: ChatContext): string {
 }
 
 /**
+ * Validates that the data is an array of UIMessage objects
+ */
+function isValidMessageArray(data: unknown): data is UIMessage[] {
+  if (!Array.isArray(data)) return false;
+  return data.every(
+    (item) =>
+      typeof item === 'object' &&
+      item !== null &&
+      'id' in item &&
+      'role' in item &&
+      'parts' in item &&
+      Array.isArray(item.parts),
+  );
+}
+
+/**
  * Loads persisted chat messages from AsyncStorage
  */
 export async function loadChatMessages(context: ChatContext): Promise<UIMessage[] | null> {
   try {
     const key = getChatStorageKey(context);
     const stored = await AsyncStorage.getItem(key);
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+
+    const parsed = JSON.parse(stored);
+    if (!isValidMessageArray(parsed)) {
+      console.warn('Invalid chat message format in storage, clearing');
+      await AsyncStorage.removeItem(key);
+      return null;
+    }
+
+    return parsed;
   } catch (error) {
     console.error('Failed to load chat messages:', error);
     return null;

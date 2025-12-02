@@ -156,13 +156,19 @@ export default function AIChat() {
     };
   }, [context, setMessages]);
 
-  // Save messages whenever they change (throttled by experimental_throttle in useChat)
+  // Save messages whenever they change with debouncing to reduce storage I/O
   React.useEffect(() => {
     // Don't save if we're currently loading persisted messages or if there are no messages
-    if (!isLoadingPersistedRef.current && messages.length > 0) {
-      // The save operation is already throttled by the experimental_throttle in useChat
-      saveChatMessages(context, messages);
+    if (isLoadingPersistedRef.current || messages.length === 0) {
+      return;
     }
+
+    // Debounce the save operation to reduce storage writes during rapid updates
+    const timeoutId = setTimeout(() => {
+      saveChatMessages(context, messages);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
   }, [messages, context]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
