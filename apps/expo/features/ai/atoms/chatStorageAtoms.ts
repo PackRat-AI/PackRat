@@ -32,14 +32,27 @@ export function getChatStorageKey(context: ChatContext): string {
  */
 function isValidMessageArray(data: unknown): data is UIMessage[] {
   if (!Array.isArray(data)) return false;
+
+  const validRoles = ['user', 'assistant', 'system'];
+
   return data.every(
     (item) =>
       typeof item === 'object' &&
       item !== null &&
       'id' in item &&
+      typeof item.id === 'string' &&
       'role' in item &&
+      typeof item.role === 'string' &&
+      validRoles.includes(item.role) &&
       'parts' in item &&
-      Array.isArray(item.parts),
+      Array.isArray(item.parts) &&
+      item.parts.every(
+        (part: unknown) =>
+          typeof part === 'object' &&
+          part !== null &&
+          'type' in part &&
+          typeof part.type === 'string',
+      ),
   );
 }
 
