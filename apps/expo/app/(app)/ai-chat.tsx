@@ -133,22 +133,34 @@ export default function AIChat() {
 
   // Load persisted messages on mount and when context changes
   React.useEffect(() => {
+    let isMounted = true;
     isLoadingPersistedRef.current = true;
-    loadChatMessages(context).then((persisted) => {
-      if (persisted && persisted.length > 0) {
-        setMessages(persisted);
-      }
-      // Allow saves after a brief delay to ensure the load is complete
-      setTimeout(() => {
-        isLoadingPersistedRef.current = false;
-      }, 100);
-    });
+
+    loadChatMessages(context)
+      .then((persisted) => {
+        if (isMounted && persisted && persisted.length > 0) {
+          setMessages(persisted);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load persisted messages:', error);
+      })
+      .finally(() => {
+        if (isMounted) {
+          isLoadingPersistedRef.current = false;
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [context, setMessages]);
 
-  // Save messages whenever they change
+  // Save messages whenever they change (throttled by experimental_throttle in useChat)
   React.useEffect(() => {
     // Don't save if we're currently loading persisted messages or if there are no messages
     if (!isLoadingPersistedRef.current && messages.length > 0) {
+      // The save operation is already throttled by the experimental_throttle in useChat
       saveChatMessages(context, messages);
     }
   }, [messages, context]);
