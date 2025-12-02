@@ -4,6 +4,7 @@ import { Icon } from '@roninoss/icons';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { loadChatMessages, saveChatMessages } from 'expo-app/features/ai/atoms/chatStorageAtoms';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
@@ -78,14 +79,17 @@ export default function AIChat() {
   const scrollViewRef = React.useRef<ScrollView>(null);
   const { t } = useTranslation();
 
-  const context = {
-    itemId: params.itemId as string,
-    itemName: params.itemName as string,
-    packId: params.packId as string,
-    packName: params.packName as string,
-    contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
-    location: location ? location.name : undefined,
-  };
+  const context = React.useMemo(
+    () => ({
+      itemId: params.itemId as string,
+      itemName: params.itemName as string,
+      packId: params.packId as string,
+      packName: params.packName as string,
+      contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
+      location: location ? location.name : undefined,
+    }),
+    [params.itemId, params.itemName, params.packId, params.packName, params.contextType, location],
+  );
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
 
@@ -94,6 +98,23 @@ export default function AIChat() {
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
+  const [initialMessages, setInitialMessages] = React.useState<UIMessage[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      parts: [{ type: 'text', text: getContextualGreeting(context) }],
+    } as UIMessage,
+  ]);
+
+  // Load persisted messages on mount
+  React.useEffect(() => {
+    loadChatMessages(context).then((persisted) => {
+      if (persisted && persisted.length > 0) {
+        setInitialMessages(persisted);
+      }
+    });
+  }, [context]);
+
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
@@ -111,14 +132,15 @@ export default function AIChat() {
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
     experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
-    messages: [
-      {
-        id: '1',
-        role: 'assistant',
-        parts: [{ type: 'text', text: getContextualGreeting(context) }],
-      } as UIMessage,
-    ],
+    messages: initialMessages,
   });
+
+  // Save messages whenever they change
+  React.useEffect(() => {
+    if (messages.length > 0) {
+      saveChatMessages(context, messages);
+    }
+  }, [messages, context]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
