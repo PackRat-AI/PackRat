@@ -98,6 +98,7 @@ export default function AIChat() {
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
+  const isLoadingPersistedRef = React.useRef(false);
 
   const initialMessages = React.useMemo<UIMessage[]>(
     () => [
@@ -132,19 +133,25 @@ export default function AIChat() {
 
   // Load persisted messages on mount and when context changes
   React.useEffect(() => {
+    isLoadingPersistedRef.current = true;
     loadChatMessages(context).then((persisted) => {
       if (persisted && persisted.length > 0) {
         setMessages(persisted);
       }
+      // Allow saves after a brief delay to ensure the load is complete
+      setTimeout(() => {
+        isLoadingPersistedRef.current = false;
+      }, 100);
     });
   }, [context, setMessages]);
 
-  // Save messages whenever they change (debounced by throttle in useChat)
+  // Save messages whenever they change
   React.useEffect(() => {
-    if (messages.length > 0 && messages !== initialMessages) {
+    // Don't save if we're currently loading persisted messages or if there are no messages
+    if (!isLoadingPersistedRef.current && messages.length > 0) {
       saveChatMessages(context, messages);
     }
-  }, [messages, context, initialMessages]);
+  }, [messages, context]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
