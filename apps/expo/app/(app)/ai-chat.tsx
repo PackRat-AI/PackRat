@@ -98,22 +98,17 @@ export default function AIChat() {
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
-  const [initialMessages, setInitialMessages] = React.useState<UIMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      parts: [{ type: 'text', text: getContextualGreeting(context) }],
-    } as UIMessage,
-  ]);
 
-  // Load persisted messages on mount
-  React.useEffect(() => {
-    loadChatMessages(context).then((persisted) => {
-      if (persisted && persisted.length > 0) {
-        setInitialMessages(persisted);
-      }
-    });
-  }, [context]);
+  const initialMessages = React.useMemo<UIMessage[]>(
+    () => [
+      {
+        id: '1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: getContextualGreeting(context) }],
+      } as UIMessage,
+    ],
+    [context],
+  );
 
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport: new DefaultChatTransport({
@@ -135,12 +130,21 @@ export default function AIChat() {
     messages: initialMessages,
   });
 
-  // Save messages whenever they change
+  // Load persisted messages on mount and when context changes
   React.useEffect(() => {
-    if (messages.length > 0) {
+    loadChatMessages(context).then((persisted) => {
+      if (persisted && persisted.length > 0) {
+        setMessages(persisted);
+      }
+    });
+  }, [context, setMessages]);
+
+  // Save messages whenever they change (debounced by throttle in useChat)
+  React.useEffect(() => {
+    if (messages.length > 0 && messages !== initialMessages) {
       saveChatMessages(context, messages);
     }
-  }, [messages, context]);
+  }, [messages, context, initialMessages]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
