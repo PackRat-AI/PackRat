@@ -3,8 +3,13 @@ import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
+import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
-import { loadChatMessages, saveChatMessages } from 'expo-app/features/ai/atoms/chatStorageAtoms';
+import {
+  clearChatMessages,
+  loadChatMessages,
+  saveChatMessages,
+} from 'expo-app/features/ai/atoms/chatStorageAtoms';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
@@ -193,6 +198,11 @@ export default function AIChat() {
     sendMessage({ text: lastUserMessage });
   };
 
+  const handleClear = React.useCallback(async () => {
+    await clearChatMessages(context);
+    setMessages(initialMessages);
+  }, [context, initialMessages, setMessages]);
+
   const toolbarHeightStyle = useAnimatedStyle(() => ({
     height: interpolate(
       progress.value,
@@ -231,7 +241,11 @@ export default function AIChat() {
 
   return (
     <>
-      <Stack.Screen />
+      <Stack.Screen
+        options={{
+          header: () => <AiChatHeader onClear={handleClear} />,
+        }}
+      />
       <KeyboardAvoidingView
         style={[
           ROOT_STYLE,

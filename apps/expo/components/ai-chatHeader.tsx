@@ -4,7 +4,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
-import { Platform, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
@@ -17,10 +17,33 @@ const HEADER_POSITION_STYLE = {
   right: 0,
 } as const;
 
-export function AiChatHeader() {
+type AiChatHeaderProps = {
+  onClear?: () => void;
+};
+
+export function AiChatHeader({ onClear }: AiChatHeaderProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+
+  const handleClearPress = () => {
+    Alert.alert(
+      t('ai.clearChat'),
+      t('ai.clearChatConfirm'),
+      [
+        {
+          text: t('common.cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('common.clear'),
+          style: 'destructive',
+          onPress: onClear,
+        },
+      ],
+      { cancelable: true },
+    );
+  };
 
   return Platform.OS === 'ios' ? (
     <BlurView intensity={100} style={[HEADER_POSITION_STYLE, { paddingTop: insets.top }]}>
@@ -38,9 +61,15 @@ export function AiChatHeader() {
             {t('ai.hikingAssistant')}
           </Text>
         </View>
-        <Button variant="plain" size="icon" className="opacity-0">
-          <Icon size={28} color={colors.primary} name="pin-outline" />
-        </Button>
+        {onClear ? (
+          <Button variant="plain" size="icon" onPress={handleClearPress}>
+            <Icon size={28} color={colors.primary} name="trash-outline" />
+          </Button>
+        ) : (
+          <Button variant="plain" size="icon" className="opacity-0">
+            <Icon size={28} color={colors.primary} name="pin-outline" />
+          </Button>
+        )}
       </View>
     </BlurView>
   ) : (
@@ -69,7 +98,13 @@ export function AiChatHeader() {
             {t('ai.hikingAssistant')}
           </Text>
         </View>
-        <View style={{ width: 40 }} />
+        {onClear ? (
+          <Button variant="plain" size="icon" className="opacity-70" onPress={handleClearPress}>
+            <Icon size={24} color={colors.foreground} name="trash-outline" />
+          </Button>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
     </View>
   );
