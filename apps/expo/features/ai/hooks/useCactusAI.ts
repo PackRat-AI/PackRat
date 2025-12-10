@@ -59,6 +59,7 @@ export interface UseCactusAIOptions {
 const SIMULATION_DOWNLOAD_INTERVAL_MS = 100;
 const SIMULATION_DOWNLOAD_INCREMENT = 0.1; // 10%
 const SIMULATION_STREAM_DELAY_MS = 50;
+const SIMULATION_USER_QUERY_MAX_LENGTH = 100; // Max length for sanitized user query display
 
 export interface UseCactusAIReturn {
   /**
@@ -264,7 +265,7 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
       // Sanitize last message content for safe display
       const lastMessage = params.messages[params.messages.length - 1];
       const userQuery = lastMessage?.content 
-        ? lastMessage.content.slice(0, 100) // Limit length
+        ? lastMessage.content.slice(0, SIMULATION_USER_QUERY_MAX_LENGTH) // Limit length
         : 'unknown query';
       
       const simulatedResponse = `This is a simulated on-device AI response. When cactus-react-native is properly installed, this will generate real responses using on-device inference. User asked: "${userQuery}"`;

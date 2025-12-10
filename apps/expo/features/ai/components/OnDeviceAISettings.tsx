@@ -4,14 +4,11 @@
  */
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { DEFAULT_MODEL_CONFIG } from 'expo-app/features/ai/config/modelConfig';
 import { useCactusAI } from 'expo-app/features/ai/hooks/useCactusAI';
 import { useOnDeviceAI, type AIMode } from 'expo-app/features/ai/providers/OnDeviceAIProvider';
 import React, { useState } from 'react';
 import { View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-
-// Model configuration constants
-const MODEL_SIZE_MB = 600;
-const MODEL_NAME = 'Qwen3-600m';
 
 export function OnDeviceAISettings() {
   const { mode, setMode, isModelDownloaded, setModelDownloaded, isOnDeviceAvailable } = useOnDeviceAI();
@@ -115,7 +112,7 @@ export function OnDeviceAISettings() {
         {!isModelDownloaded && !isDownloading && (
           <View className="gap-2">
             <Text className="text-muted-foreground text-sm mb-2">
-              Download the {MODEL_NAME} AI model to enable on-device inference. This will use approximately {MODEL_SIZE_MB}MB of storage.
+              Download the {DEFAULT_MODEL_CONFIG.name} AI model to enable on-device inference. This will use approximately {DEFAULT_MODEL_CONFIG.sizeMB}MB of storage.
             </Text>
             <Button onPress={handleDownloadModel}>
               <Icon name="download" size={16} color="white" />

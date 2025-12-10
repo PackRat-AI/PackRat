@@ -25,3 +25,6 @@ export { OnDeviceAISettings } from './components/OnDeviceAISettings';
 
 // Integration utilities
 export { useHybridChat } from './lib/hybridChatIntegration';
+
+// Configuration
+export { DEFAULT_MODEL_CONFIG, PERFORMANCE_TIERS, MEMORY_REQUIREMENTS } from './config/modelConfig';
