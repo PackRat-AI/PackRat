@@ -3,6 +3,9 @@
  * This provides a wrapper around cactus-react-native for easy integration
  */
 import { useEffect, useState, useCallback, useRef } from 'react';
+
+// TODO: Uncomment when cactus-react-native is fully installed and tested on physical devices
+// This will activate real on-device AI inference instead of simulation
 // import { CactusLM, type Message, type CompletionParams } from 'cactus-react-native';
 
 // Type definitions (matching cactus-react-native API)
@@ -51,6 +54,11 @@ export interface UseCactusAIOptions {
    */
   onError?: (error: Error) => void;
 }
+
+// Simulation constants - only used until real implementation is activated
+const SIMULATION_DOWNLOAD_INTERVAL_MS = 100;
+const SIMULATION_DOWNLOAD_INCREMENT = 0.1; // 10%
+const SIMULATION_STREAM_DELAY_MS = 50;
 
 export interface UseCactusAIReturn {
   /**
@@ -137,8 +145,9 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
   const [error, setError] = useState<Error | null>(null);
   
   // Ref to hold the CactusLM instance
+  // TODO: Replace 'unknown' with CactusLM type when package is installed
   // const cactusRef = useRef<CactusLM | null>(null);
-  const cactusRef = useRef<any>(null);
+  const cactusRef = useRef<unknown>(null);
 
   // Initialize CactusLM instance
   useEffect(() => {
@@ -189,9 +198,10 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
       console.log('[useCactusAI] Starting model download');
       
       // Simulate download progress
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        const progress = i / 100;
+      const totalSteps = 1 / SIMULATION_DOWNLOAD_INCREMENT;
+      for (let i = 0; i <= totalSteps; i++) {
+        await new Promise(resolve => setTimeout(resolve, SIMULATION_DOWNLOAD_INTERVAL_MS));
+        const progress = i * SIMULATION_DOWNLOAD_INCREMENT;
         setDownloadProgress(progress);
         onDownloadProgress?.(progress);
       }
@@ -244,7 +254,7 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
         let accumulatedText = '';
         
         for (const word of words) {
-          await new Promise(resolve => setTimeout(resolve, 50));
+          await new Promise(resolve => setTimeout(resolve, SIMULATION_STREAM_DELAY_MS));
           accumulatedText += word + ' ';
           setCompletion(accumulatedText.trim());
           params.onStreamChunk?.(word + ' ');

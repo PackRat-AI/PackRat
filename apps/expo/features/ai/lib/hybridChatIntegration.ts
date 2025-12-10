@@ -76,17 +76,23 @@ export function useHybridChat() {
         // If in hybrid mode, fallback to cloud
         if (mode === 'hybrid') {
           console.log('[useHybridChat] Falling back to cloud API');
-          // This would call the existing cloud API
-          // In the actual implementation, this would call the useChat hook
-          throw new Error('Fallback to cloud not implemented in this PoC');
+          // TODO: Implement cloud API fallback by calling existing useChat hook from ai-chat.tsx
+          // Integration steps:
+          // 1. Import useChat from '@ai-sdk/react'
+          // 2. Call sendMessage from useChat hook
+          // 3. Handle streaming response
+          throw new Error('TODO: Fallback to cloud not yet implemented - needs integration with existing useChat hook');
         }
         
         throw error;
       }
     } else {
-      // Use cloud API - this would be handled by the existing useChat hook
-      // In the actual implementation, you would call the API here
-      throw new Error('Cloud API call should be handled by existing useChat hook');
+      // TODO: Use cloud API via existing useChat hook from ai-chat.tsx
+      // Integration steps:
+      // 1. Extract useChat hook logic to a separate composable
+      // 2. Call it here with the messages
+      // 3. Return the response
+      throw new Error('TODO: Cloud API integration needed - should delegate to existing useChat hook from ai-chat.tsx');
     }
   };
 

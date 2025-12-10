@@ -9,6 +9,10 @@ import { useOnDeviceAI, type AIMode } from 'expo-app/features/ai/providers/OnDev
 import React, { useState } from 'react';
 import { View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 
+// Model configuration constants
+const MODEL_SIZE_MB = 600;
+const MODEL_NAME = 'Qwen3-600m';
+
 export function OnDeviceAISettings() {
   const { mode, setMode, isModelDownloaded, setModelDownloaded, isOnDeviceAvailable } = useOnDeviceAI();
   const { isDownloading, downloadProgress, isReady, download, destroy, error } = useCactusAI();
@@ -111,7 +115,7 @@ export function OnDeviceAISettings() {
         {!isModelDownloaded && !isDownloading && (
           <View className="gap-2">
             <Text className="text-muted-foreground text-sm mb-2">
-              Download the AI model to enable on-device inference. This will use approximately 600MB of storage.
+              Download the {MODEL_NAME} AI model to enable on-device inference. This will use approximately {MODEL_SIZE_MB}MB of storage.
             </Text>
             <Button onPress={handleDownloadModel}>
               <Icon name="download" size={16} color="white" />
