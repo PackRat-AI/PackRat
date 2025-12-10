@@ -144,10 +144,18 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
   const [completion, setCompletion] = useState('');
   const [error, setError] = useState<Error | null>(null);
   
+  // Type for CactusLM instance - matches the actual API
+  type CactusLMInstance = {
+    download: (options: { onProgress: (progress: number) => void }) => Promise<void>;
+    complete: (params: any) => Promise<any>;
+    destroy: () => Promise<void>;
+  } | null;
+  
   // Ref to hold the CactusLM instance
-  // TODO: Replace 'unknown' with CactusLM type when package is installed
+  // TODO: Replace with actual CactusLM type when package is installed
+  // import type { CactusLM } from 'cactus-react-native';
   // const cactusRef = useRef<CactusLM | null>(null);
-  const cactusRef = useRef<unknown>(null);
+  const cactusRef = useRef<CactusLMInstance>(null);
 
   // Initialize CactusLM instance
   useEffect(() => {

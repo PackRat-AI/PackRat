@@ -73,26 +73,27 @@ export function useHybridChat() {
       } catch (error) {
         console.error('[useHybridChat] On-device inference failed:', error);
         
-        // If in hybrid mode, fallback to cloud
+        // If in hybrid mode, log fallback attempt but don't crash
         if (mode === 'hybrid') {
-          console.log('[useHybridChat] Falling back to cloud API');
+          console.log('[useHybridChat] Hybrid mode fallback needed - cloud API integration required');
           // TODO: Implement cloud API fallback by calling existing useChat hook from ai-chat.tsx
-          // Integration steps:
-          // 1. Import useChat from '@ai-sdk/react'
-          // 2. Call sendMessage from useChat hook
-          // 3. Handle streaming response
-          throw new Error('TODO: Fallback to cloud not yet implemented - needs integration with existing useChat hook');
+          // For now, return a helpful error response instead of throwing
+          return 'I apologize, but I encountered an error with on-device inference. Please ensure cloud mode is configured as a fallback, or switch to cloud mode in settings.';
         }
         
         throw error;
       }
     } else {
+      // Cloud mode - return helpful message for PoC
       // TODO: Use cloud API via existing useChat hook from ai-chat.tsx
       // Integration steps:
       // 1. Extract useChat hook logic to a separate composable
       // 2. Call it here with the messages
       // 3. Return the response
-      throw new Error('TODO: Cloud API integration needed - should delegate to existing useChat hook from ai-chat.tsx');
+      console.log('[useHybridChat] Cloud mode - existing useChat hook should handle this');
+      
+      // For PoC, provide guidance rather than error
+      return 'Cloud mode is active. Please use the existing chat interface which already handles cloud API calls. This hybrid integration is for on-device mode support.';
     }
   };
 
