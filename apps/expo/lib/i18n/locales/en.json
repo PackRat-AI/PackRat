@@ -544,8 +544,6 @@
     "hikingAssistant": "Your Hiking Assistant",
     "askQuestion": "Ask a question...",
     "sendMessage": "Send Message",
-    "clearChat": "Clear Chat",
-    "clearChatConfirm": "Are you sure you want to clear this chat? This action cannot be undone.",
     "aiPacks": "AI Packs",
     "aiPacksAdmin": "AI Packs Admin",
     "generatePacksWithAI": "Generate packs with AI",

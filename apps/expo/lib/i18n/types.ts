@@ -167,7 +167,6 @@ export type TranslationKeys =
   | 'ai.aiAssistant'
   | 'ai.askQuestion'
   | 'ai.sendMessage'
-  | 'ai.clearChat'
   | 'ai.aiPacks'
   | 'ai.generating'
   | 'ai.generationError'
