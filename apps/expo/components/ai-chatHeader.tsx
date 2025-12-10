@@ -17,7 +17,11 @@ const HEADER_POSITION_STYLE = {
   right: 0,
 } as const;
 
-export function AiChatHeader() {
+type AiChatHeaderProps = {
+  onClear?: () => void;
+};
+
+export function AiChatHeader({ onClear }: AiChatHeaderProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
@@ -38,8 +42,18 @@ export function AiChatHeader() {
             {t('ai.hikingAssistant')}
           </Text>
         </View>
-        <Button variant="plain" size="icon" className="opacity-0">
-          <Icon size={28} color={colors.primary} name="pin-outline" />
+        <Button variant="plain" size="icon" onPress={onClear}>
+          <Icon
+            size={28}
+            color={colors.grey2}
+            materialIcon={{
+              name: 'square-edit-outline',
+              type: 'MaterialCommunityIcons',
+            }}
+            ios={{
+              name: 'square.and.pencil',
+            }}
+          />
         </Button>
       </View>
     </BlurView>
@@ -69,7 +83,19 @@ export function AiChatHeader() {
             {t('ai.hikingAssistant')}
           </Text>
         </View>
-        <View style={{ width: 40 }} />
+        <Button variant="plain" size="icon" onPress={onClear}>
+          <Icon
+            size={28}
+            color={colors.grey2}
+            materialIcon={{
+              name: 'square-edit-outline',
+              type: 'MaterialCommunityIcons',
+            }}
+            ios={{
+              name: 'square.and.pencil',
+            }}
+          />
+        </Button>
       </View>
     </View>
   );

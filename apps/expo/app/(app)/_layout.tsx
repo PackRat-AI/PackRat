@@ -1,5 +1,4 @@
 import { ActivityIndicator } from '@packrat/ui/nativewindui';
-import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';
 import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuthInit } from 'expo-app/features/auth/hooks/useAuthInit';
@@ -73,7 +72,7 @@ export default function AppLayout() {
           name="catalog/add-to-pack/details"
           options={getCatalogAddToPackItemDetailsOptions(t)}
         />
-        <Stack.Screen name="ai-chat" options={getAiChatOptions(t)} />
+        <Stack.Screen name="ai-chat" />
         <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
         <Stack.Screen name="weather" options={{ headerShown: false }} />
@@ -289,13 +288,6 @@ const getItemNewOptions = (t: TranslationFunction) =>
   ({
     title: t('items.itemName'),
     presentation: 'modal',
-    animation: 'fade_from_bottom', // for android
-  }) as const;
-
-const getAiChatOptions = (t: TranslationFunction) =>
-  ({
-    title: t('ai.aiChat'),
-    header: () => <AiChatHeader />,
     animation: 'fade_from_bottom', // for android
   }) as const;
 

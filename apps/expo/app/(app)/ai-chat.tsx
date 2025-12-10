@@ -3,7 +3,13 @@ import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
+import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
+import {
+  clearChatMessages,
+  loadChatMessages,
+  saveChatMessages,
+} from 'expo-app/features/ai/atoms/chatStorageAtoms';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
@@ -78,14 +84,17 @@ export default function AIChat() {
   const scrollViewRef = React.useRef<ScrollView>(null);
   const { t } = useTranslation();
 
-  const context = {
-    itemId: params.itemId as string,
-    itemName: params.itemName as string,
-    packId: params.packId as string,
-    packName: params.packName as string,
-    contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
-    location: location ? location.name : undefined,
-  };
+  const context = React.useMemo(
+    () => ({
+      itemId: params.itemId as string,
+      itemName: params.itemName as string,
+      packId: params.packId as string,
+      packName: params.packName as string,
+      contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
+      location: location ? location.name : undefined,
+    }),
+    [params.itemId, params.itemName, params.packId, params.packName, params.contextType, location],
+  );
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
 
@@ -94,6 +103,19 @@ export default function AIChat() {
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
+  const isLoadingPersistedRef = React.useRef(false);
+
+  const initialMessages = React.useMemo<UIMessage[]>(
+    () => [
+      {
+        id: '1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: getContextualGreeting(context) }],
+      } as UIMessage,
+    ],
+    [context],
+  );
+
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
@@ -111,14 +133,48 @@ export default function AIChat() {
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
     experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
-    messages: [
-      {
-        id: '1',
-        role: 'assistant',
-        parts: [{ type: 'text', text: getContextualGreeting(context) }],
-      } as UIMessage,
-    ],
+    messages: initialMessages,
   });
+
+  // Load persisted messages on mount and when context changes
+  React.useEffect(() => {
+    let isMounted = true;
+    isLoadingPersistedRef.current = true;
+
+    loadChatMessages(context)
+      .then((persisted) => {
+        if (isMounted && persisted && persisted.length > 0) {
+          setMessages(persisted);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load persisted messages:', error);
+      })
+      .finally(() => {
+        if (isMounted) {
+          isLoadingPersistedRef.current = false;
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [context, setMessages]);
+
+  // Save messages whenever they change with debouncing to reduce storage I/O
+  React.useEffect(() => {
+    // Don't save if we're currently loading persisted messages or if there are no messages
+    if (isLoadingPersistedRef.current || messages.length === 0) {
+      return;
+    }
+
+    // Debounce the save operation to reduce storage writes during rapid updates
+    const timeoutId = setTimeout(() => {
+      saveChatMessages(context, messages);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [messages, context]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
@@ -141,6 +197,11 @@ export default function AIChat() {
     setMessages(previousMessages);
     sendMessage({ text: lastUserMessage });
   };
+
+  const handleClear = React.useCallback(async () => {
+    await clearChatMessages(context);
+    setMessages(initialMessages);
+  }, [context, initialMessages, setMessages]);
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
     height: interpolate(
@@ -180,7 +241,11 @@ export default function AIChat() {
 
   return (
     <>
-      <Stack.Screen />
+      <Stack.Screen
+        options={{
+          header: () => <AiChatHeader onClear={handleClear} />,
+        }}
+      />
       <KeyboardAvoidingView
         style={[
           ROOT_STYLE,
