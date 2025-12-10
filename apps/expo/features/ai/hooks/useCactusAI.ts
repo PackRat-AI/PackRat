@@ -192,6 +192,9 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
       mounted = false;
       // Cleanup will be handled by the destroy function
     };
+    // Note: autoDownload is intentionally not in the dependency array to avoid re-running on every render
+    // The download function is stable due to useCallback with proper dependencies
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const download = useCallback(async () => {
@@ -209,24 +212,27 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
       //   },
       // });
 
-      // For PoC purposes, simulate download
+      // For PoC purposes, simulate download with non-blocking updates
       console.log('[useCactusAI] Starting model download');
       
-      // Simulate download progress
-      const totalSteps = 1 / SIMULATION_DOWNLOAD_INCREMENT;
-      for (let i = 0; i <= totalSteps; i++) {
-        await new Promise(resolve => setTimeout(resolve, SIMULATION_DOWNLOAD_INTERVAL_MS));
+      // Use setInterval for non-blocking progress simulation
+      let currentProgress = 0;
+      const progressInterval = setInterval(() => {
+        currentProgress += SIMULATION_DOWNLOAD_INCREMENT;
         // Ensure progress doesn't exceed 1.0 due to floating-point precision
-        const progress = Math.min(i * SIMULATION_DOWNLOAD_INCREMENT, 1.0);
-        setDownloadProgress(progress);
-        onDownloadProgress?.(progress);
-      }
+        const safeProgress = Math.min(currentProgress, 1.0);
+        setDownloadProgress(safeProgress);
+        onDownloadProgress?.(safeProgress);
 
-      setIsReady(true);
-      setIsDownloading(false);
-      onReady?.();
-      
-      console.log('[useCactusAI] Model download complete');
+        if (safeProgress >= 1.0) {
+          clearInterval(progressInterval);
+          setIsReady(true);
+          setIsDownloading(false);
+          onReady?.();
+          console.log('[useCactusAI] Model download complete');
+        }
+      }, SIMULATION_DOWNLOAD_INTERVAL_MS);
+
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       setError(error);

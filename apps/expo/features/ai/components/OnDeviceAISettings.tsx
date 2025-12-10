@@ -7,6 +7,7 @@ import { Icon } from '@roninoss/icons';
 import { DEFAULT_MODEL_CONFIG } from 'expo-app/features/ai/config/modelConfig';
 import { useCactusAI } from 'expo-app/features/ai/hooks/useCactusAI';
 import { useOnDeviceAI, type AIMode } from 'expo-app/features/ai/providers/OnDeviceAIProvider';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import React, { useState } from 'react';
 import { View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 
@@ -14,6 +15,7 @@ export function OnDeviceAISettings() {
   const { mode, setMode, isModelDownloaded, setModelDownloaded, isOnDeviceAvailable } = useOnDeviceAI();
   const { isDownloading, downloadProgress, isReady, download, destroy, error } = useCactusAI();
   const [isDeleting, setIsDeleting] = useState(false);
+  const { colors } = useColorScheme();
 
   const handleModeChange = async (newMode: AIMode) => {
     try {
@@ -213,14 +215,14 @@ function ModeOption({ title, description, icon, selected, onSelect, disabled }: 
       } ${disabled ? 'opacity-50' : ''}`}
     >
       <View className="flex-row items-center gap-3">
-        <Icon name={icon} size={20} color={selected ? 'blue' : 'gray'} />
+        <Icon name={icon} size={20} color={selected ? colors.primary : colors.grey} />
         <View className="flex-1">
           <Text className={`font-medium ${selected ? 'text-primary' : 'text-foreground'}`}>
             {title}
           </Text>
           <Text className="text-xs text-muted-foreground">{description}</Text>
         </View>
-        {selected && <Icon name="check" size={20} color="blue" />}
+        {selected && <Icon name="check" size={20} color={colors.primary} />}
       </View>
     </TouchableOpacity>
   );
@@ -232,9 +234,11 @@ interface InfoItemProps {
 }
 
 function InfoItem({ icon, text }: InfoItemProps) {
+  const { colors } = useColorScheme();
+  
   return (
     <View className="flex-row items-center gap-2">
-      <Icon name={icon} size={14} color="gray" />
+      <Icon name={icon} size={14} color={colors.grey} />
       <Text className="text-sm text-muted-foreground">{text}</Text>
     </View>
   );
