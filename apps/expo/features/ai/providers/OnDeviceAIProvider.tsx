@@ -82,8 +82,15 @@ export function OnDeviceAIProvider({ children }: OnDeviceAIProviderProps) {
         }
 
         // Check if on-device AI is available
-        // In a real implementation, this would check if the native modules are available
-        setIsOnDeviceAvailable(true);
+        // Try to detect if native modules are available
+        try {
+          // In a real implementation, this would check for the native module
+          // For PoC, we set it to true
+          setIsOnDeviceAvailable(true);
+        } catch (error) {
+          console.warn('[OnDeviceAIProvider] Native modules not available:', error);
+          setIsOnDeviceAvailable(false);
+        }
       } catch (error) {
         console.error('[OnDeviceAIProvider] Failed to load settings:', error);
       }

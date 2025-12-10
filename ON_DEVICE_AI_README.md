@@ -6,6 +6,18 @@ PackRat now includes a Proof of Concept (PoC) for on-device AI inference using [
 
 ## Quick Setup
 
+> **Note on Import Paths**: The code uses `expo-app` path alias for imports. Ensure this is configured in your `tsconfig.json`:
+> ```json
+> {
+>   "compilerOptions": {
+>     "paths": {
+>       "expo-app/*": ["./apps/expo/*"]
+>     }
+>   }
+> }
+> ```
+> Alternatively, you can convert to relative imports if preferred.
+
 ### 1. Install Dependencies
 
 ```bash

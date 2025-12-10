@@ -147,7 +147,13 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
   // Type for CactusLM instance - matches the actual API
   type CactusLMInstance = {
     download: (options: { onProgress: (progress: number) => void }) => Promise<void>;
-    complete: (params: any) => Promise<any>;
+    complete: (params: {
+      messages: CactusMessage[];
+      temperature?: number;
+      maxTokens?: number;
+      stream?: boolean;
+      onStreamChunk?: (chunk: string) => void;
+    }) => Promise<CactusCompletionResult>;
     destroy: () => Promise<void>;
   } | null;
   
@@ -209,7 +215,8 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
       const totalSteps = 1 / SIMULATION_DOWNLOAD_INCREMENT;
       for (let i = 0; i <= totalSteps; i++) {
         await new Promise(resolve => setTimeout(resolve, SIMULATION_DOWNLOAD_INTERVAL_MS));
-        const progress = i * SIMULATION_DOWNLOAD_INCREMENT;
+        // Ensure progress doesn't exceed 1.0 due to floating-point precision
+        const progress = Math.min(i * SIMULATION_DOWNLOAD_INCREMENT, 1.0);
         setDownloadProgress(progress);
         onDownloadProgress?.(progress);
       }
@@ -254,7 +261,13 @@ export function useCactusAI(options: UseCactusAIOptions = {}): UseCactusAIReturn
       // For PoC purposes, simulate inference
       console.log('[useCactusAI] Generating completion for messages:', params.messages);
       
-      const simulatedResponse = `This is a simulated on-device AI response. When cactus-react-native is properly installed, this will generate real responses using on-device inference. User asked: "${params.messages[params.messages.length - 1]?.content}"`;
+      // Sanitize last message content for safe display
+      const lastMessage = params.messages[params.messages.length - 1];
+      const userQuery = lastMessage?.content 
+        ? lastMessage.content.slice(0, 100) // Limit length
+        : 'unknown query';
+      
+      const simulatedResponse = `This is a simulated on-device AI response. When cactus-react-native is properly installed, this will generate real responses using on-device inference. User asked: "${userQuery}"`;
       
       // Simulate streaming if enabled
       if (params.stream) {
