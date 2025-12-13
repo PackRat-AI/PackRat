@@ -1,4 +1,5 @@
 import type { Observable, ObservableSyncState } from '@legendapp/state';
+import { userSyncState } from 'expo-app/features/auth/store';
 import {
   packTemplateItemsSyncState,
   packTemplatesSyncState,
@@ -12,6 +13,7 @@ const hasPendingChanges = (syncState: Observable<ObservableSyncState>): boolean 
 
 export function hasUnsyncedChanges() {
   return (
+    hasPendingChanges(userSyncState) ||
     hasPendingChanges(packItemsSyncState) ||
     hasPendingChanges(packsSyncState) ||
     hasPendingChanges(packWeigthHistorySyncState) ||
