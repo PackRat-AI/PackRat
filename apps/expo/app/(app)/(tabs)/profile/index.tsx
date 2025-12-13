@@ -17,10 +17,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { useLocations } from 'expo-app/features/weather/hooks/useLocations'; // adjust path if needed
 import { cn } from 'expo-app/lib/cn';
+import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -186,17 +186,12 @@ function ListFooterComponent() {
     }
   };
 
-  const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
-
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
         disabled={isSigningOut}
         onPress={() => {
-          if (
-            !isEmpty(packItemsSyncState.getPendingChanges() || {}) ||
-            !isEmpty(packsSyncState.getPendingChanges() || {})
-          ) {
+          if (hasUnsyncedChanges()) {
             alertRef.current?.alert({
               title: t('profile.syncInProgress'),
               message: t('profile.syncMessage'),
