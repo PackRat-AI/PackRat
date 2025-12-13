@@ -161,7 +161,8 @@ function ListFooterComponent() {
           {
             text: t('auth.stayLoggedOut'),
             style: 'cancel',
-            onPress: () => {
+            onPress: async () => {
+              await AsyncStorage.setItem('skipped_login', 'true');
               router.replace('/');
             },
           },
