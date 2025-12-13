@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
   isErrorWithCode,
@@ -6,16 +7,14 @@ import {
 import type { AxiosError } from 'axios';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { userStore } from 'expo-app/features/auth/store';
-import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
-import { packWeigthHistoryStore } from 'expo-app/features/packs/store/packWeightHistory';
 import axiosInstance from 'expo-app/lib/api/client';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { type Href, router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
+import * as Updates from 'expo-updates';
 import { useAtomValue, useSetAtom } from 'jotai';
-
 import {
   isLoadingAtom,
   needsReauthAtom,
@@ -42,14 +41,12 @@ export function useAuthActions() {
   const setNeedsReauth = useSetAtom(needsReauthAtom);
 
   const clearLocalData = async () => {
-    // Clear state
-    await setToken(null);
-    await setRefreshToken(null);
-    packsStore.set({});
-    packItemsStore.set({});
-    userStore.set(null);
-    packWeigthHistoryStore.set({});
-    ImageCacheManager.clearCache();
+    const allKeys = await Storage.getAllKeys();
+    await Promise.all(allKeys.map((key) => Storage.removeItem(key)));
+
+    await AsyncStorage.clear();
+
+    await ImageCacheManager.clearCache();
   };
 
   const signIn = async (email: string, password: string) => {
@@ -238,11 +235,13 @@ export function useAuthActions() {
           body: JSON.stringify({ refreshToken }),
         });
       }
-
-      clearLocalData();
     } catch (error) {
       console.error('Sign out error:', error);
     } finally {
+      // Clear tokens and user data
+      setToken(null);
+      setRefreshToken(null);
+      await clearLocalData();
       setNeedsReauth(false);
       setIsLoading(false);
     }
@@ -364,8 +363,10 @@ export function useAuthActions() {
       }
 
       // Clear tokens and user data
+      setToken(null);
+      setRefreshToken(null);
       await clearLocalData();
-      router.replace('/');
+      await Updates.reloadAsync();
     } catch (error) {
       console.error('Delete account error:', error);
       throw error;

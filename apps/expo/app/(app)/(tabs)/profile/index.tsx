@@ -17,12 +17,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
-import { useLocations } from 'expo-app/features/weather/hooks/useLocations'; // adjust path if needed
 import { cn } from 'expo-app/lib/cn';
+import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
 import { Platform, SafeAreaView, View } from 'react-native';
 
@@ -140,8 +140,6 @@ function ListHeaderComponent() {
 
 function ListFooterComponent() {
   const { signOut } = useAuth();
-  const router = useRouter();
-  const { resetLocations } = useLocations();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
@@ -151,7 +149,6 @@ function ListFooterComponent() {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      resetLocations();
       await signOut();
       alertRef.current?.alert({
         title: t('auth.loggedOut'),
@@ -161,8 +158,9 @@ function ListFooterComponent() {
           {
             text: t('auth.stayLoggedOut'),
             style: 'cancel',
-            onPress: () => {
-              router.replace('/');
+            onPress: async () => {
+              await AsyncStorage.setItem('skipped_login', 'true');
+              await Updates.reloadAsync();
             },
           },
           {
@@ -170,10 +168,7 @@ function ListFooterComponent() {
             style: 'default',
             onPress: async () => {
               await AsyncStorage.setItem('skipped_login', 'false');
-              router.replace({
-                pathname: '/auth',
-                params: { showSkipLoginBtn: 'true', redirectTo: '/' },
-              });
+              await Updates.reloadAsync();
             },
           },
         ],
@@ -185,17 +180,12 @@ function ListFooterComponent() {
     }
   };
 
-  const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
-
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
         disabled={isSigningOut}
         onPress={() => {
-          if (
-            !isEmpty(packItemsSyncState.getPendingChanges() || {}) ||
-            !isEmpty(packsSyncState.getPendingChanges() || {})
-          ) {
+          if (hasUnsyncedChanges()) {
             alertRef.current?.alert({
               title: t('profile.syncInProgress'),
               message: t('profile.syncMessage'),
