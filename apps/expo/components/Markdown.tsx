@@ -1,4 +1,4 @@
-import { useColorScheme } from '@packrat-ai/nativewindui';
+import { useColorScheme } from '@packrat/ui/nativewindui';
 import RNMarkdown from '@ronradtke/react-native-markdown-display';
 
 export function Markdown({ children }: { children: string }) {

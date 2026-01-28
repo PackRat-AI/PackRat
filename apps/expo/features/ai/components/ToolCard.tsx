@@ -5,7 +5,7 @@ import {
   CardContent,
   Text,
   useColorScheme,
-} from '@packrat-ai/nativewindui';
+} from '@packrat/ui/nativewindui';
 import type React from 'react';
 import { Pressable, View } from 'react-native';
 

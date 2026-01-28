@@ -12,6 +12,7 @@
       "app/*": ["./packages/app/*"],
       "@packrat/api/*": ["./packages/api/src/*"],
       "@packrat/ui/*": ["./packages/ui/*"],
+      "@packrat/ui/nativewindui/*": ["./packages/ui/nativewindui/*"],
       "nativewindui/*": ["./apps/expo/components/ui/*"]
     }
   },

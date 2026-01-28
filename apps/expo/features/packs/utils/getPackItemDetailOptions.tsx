@@ -1,4 +1,4 @@
-import { Alert, Button, useColorScheme } from '@packrat-ai/nativewindui';
+import { Alert, Button, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';

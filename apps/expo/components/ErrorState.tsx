@@ -1,4 +1,4 @@
-import { Button, cn, Text, useColorScheme } from '@packrat-ai/nativewindui';
+import { Button, cn, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { View } from 'react-native';
 

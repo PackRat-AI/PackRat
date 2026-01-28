@@ -2,7 +2,14 @@
   "name": "@packrat/ui",
   "version": "2.0.13",
   "private": true,
+  "main": "./nativewindui/index.ts",
+  "types": "./nativewindui/index.ts",
   "dependencies": {
-    "@packrat-ai/nativewindui": "^1.0.10"
+    "@expo/vector-icons": "^14.0.0",
+    "clsx": "^2.1.0",
+    "lucide-react-native": "^0.378.0",
+    "nativewind": "^4.1.23",
+    "react-native-safe-area-context": "^4.11.1",
+    "tailwind-merge": "^2.3.0"
   }
 }

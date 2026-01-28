@@ -1,4 +1,4 @@
-import { cn } from '@packrat-ai/nativewindui';
+import { cn } from '@packrat/ui/nativewindui';
 import { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 

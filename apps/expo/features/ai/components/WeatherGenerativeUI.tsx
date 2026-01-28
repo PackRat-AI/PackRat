@@ -1,4 +1,4 @@
-import { Text, useColorScheme } from '@packrat-ai/nativewindui';
+import { Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { getWeatherIconByCondition } from 'expo-app/features/weather/lib/weatherIcons';
 import { View } from 'react-native';

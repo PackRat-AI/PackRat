@@ -146,7 +146,7 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
     result.data.items.forEach((item: any) => {
       expect(item).not.toHaveProperty('image');
       expect(item).not.toHaveProperty('embedding');
-      
+
       // Verify essential fields are present
       expect(item).toHaveProperty('id');
       expect(item).toHaveProperty('name');
@@ -176,7 +176,9 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
 
     // Find one item that originally had an image and one that didn't
     const tentItem = result.data.items.find((item: any) => item.name === 'Tent with Image');
-    const waterFilterItem = result.data.items.find((item: any) => item.name === 'Water Filter without Image');
+    const waterFilterItem = result.data.items.find(
+      (item: any) => item.name === 'Water Filter without Image',
+    );
 
     // Both should have the same structure (no image field)
     expect(Object.keys(tentItem || {})).toEqual(Object.keys(waterFilterItem || {}));
@@ -209,9 +211,11 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
     const getPackItemDetailsTool = tools.getPackItemDetails;
 
     // Test with an item that has an image
-    const resultIterableWithImage = await getPackItemDetailsTool.execute({ itemId: 'item-with-image-1' });
+    const resultIterableWithImage = await getPackItemDetailsTool.execute({
+      itemId: 'item-with-image-1',
+    });
     const resultWithImage = await getFirstChunk(resultIterableWithImage);
-    
+
     if (!resultWithImage.success) {
       throw new Error('Tool execution failed');
     }
@@ -222,9 +226,11 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
     expect(resultWithImage.data.name).toBe('Tent with Image');
 
     // Test with an item without an image
-    const resultIterableWithoutImage = await getPackItemDetailsTool.execute({ itemId: 'item-without-image-2' });
+    const resultIterableWithoutImage = await getPackItemDetailsTool.execute({
+      itemId: 'item-without-image-2',
+    });
     const resultWithoutImage = await getFirstChunk(resultIterableWithoutImage);
-    
+
     if (!resultWithoutImage.success) {
       throw new Error('Tool execution failed');
     }
