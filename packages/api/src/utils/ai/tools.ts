@@ -41,10 +41,28 @@ export function createTools(c: Context, userId: number) {
             new Set(pack.items.map((item) => item.category || 'Uncategorized')),
           );
 
+          // Format items without image URLs to treat all items equally
+          // This prevents the AI from focusing only on items with images
+          const itemsWithoutImages = pack.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            weight: item.weight,
+            weightUnit: item.weightUnit,
+            quantity: item.quantity,
+            category: item.category,
+            consumable: item.consumable,
+            worn: item.worn,
+            notes: item.notes,
+            catalogItemId: item.catalogItemId,
+            // Explicitly exclude: image, embedding, and other non-essential fields
+          }));
+
           return {
             success: true,
             data: {
               ...pack,
+              items: itemsWithoutImages,
               categories,
             },
           };
@@ -76,9 +94,13 @@ export function createTools(c: Context, userId: number) {
               error: 'Item not found',
             };
           }
+
+          // Format item data without image to prevent bias toward visual content
+          const { image, embedding, ...itemWithoutImage } = item;
+
           return {
             success: true,
-            data: item,
+            data: itemWithoutImage,
           };
         } catch (error) {
           console.error('getPackItemDetails tool error', error);
