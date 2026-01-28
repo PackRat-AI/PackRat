@@ -5,6 +5,14 @@ import { packs, packItems } from '@packrat/api/db/schema';
 import type { Context } from 'hono';
 import { createTools } from '@packrat/api/utils/ai/tools';
 
+// Helper to extract first chunk from AsyncIterable response
+async function getFirstChunk<T>(iterable: AsyncIterable<T>): Promise<T> {
+  for await (const chunk of iterable) {
+    return chunk;
+  }
+  throw new Error('Empty AsyncIterable');
+}
+
 describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
   let testContext: Context;
   let testUserId: number;
@@ -123,8 +131,9 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
     const tools = createTools(testContext, testUserId);
     const getPackDetailsTool = tools.getPackDetails;
 
-    // Execute the tool
-    const result = await getPackDetailsTool.execute({ packId: testPackId });
+    // Execute the tool and iterate over AsyncIterable response
+    const resultIterable = await getPackDetailsTool.execute({ packId: testPackId });
+    const result = await getFirstChunk(resultIterable);
 
     // Verify success
     expect(result.success).toBe(true);
@@ -158,7 +167,8 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
     const tools = createTools(testContext, testUserId);
     const getPackDetailsTool = tools.getPackDetails;
 
-    const result = await getPackDetailsTool.execute({ packId: testPackId });
+    const resultIterable = await getPackDetailsTool.execute({ packId: testPackId });
+    const result = await getFirstChunk(resultIterable);
 
     if (!result.success) {
       throw new Error('Tool execution failed');
@@ -176,7 +186,8 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
     const tools = createTools(testContext, testUserId);
     const getPackDetailsTool = tools.getPackDetails;
 
-    const result = await getPackDetailsTool.execute({ packId: testPackId });
+    const resultIterable = await getPackDetailsTool.execute({ packId: testPackId });
+    const result = await getFirstChunk(resultIterable);
 
     if (!result.success) {
       throw new Error('Tool execution failed');
@@ -198,7 +209,8 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
     const getPackItemDetailsTool = tools.getPackItemDetails;
 
     // Test with an item that has an image
-    const resultWithImage = await getPackItemDetailsTool.execute({ itemId: 'item-with-image-1' });
+    const resultIterableWithImage = await getPackItemDetailsTool.execute({ itemId: 'item-with-image-1' });
+    const resultWithImage = await getFirstChunk(resultIterableWithImage);
     
     if (!resultWithImage.success) {
       throw new Error('Tool execution failed');
@@ -210,7 +222,8 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
     expect(resultWithImage.data.name).toBe('Tent with Image');
 
     // Test with an item without an image
-    const resultWithoutImage = await getPackItemDetailsTool.execute({ itemId: 'item-without-image-2' });
+    const resultIterableWithoutImage = await getPackItemDetailsTool.execute({ itemId: 'item-without-image-2' });
+    const resultWithoutImage = await getFirstChunk(resultIterableWithoutImage);
     
     if (!resultWithoutImage.success) {
       throw new Error('Tool execution failed');
