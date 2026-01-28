@@ -5,6 +5,7 @@
   "main": "./nativewindui/index.ts",
   "types": "./nativewindui/index.ts",
   "dependencies": {
+    "@packrat-ai/nativewindui": "^1.0.10",
     "@expo/vector-icons": "^14.0.0",
     "clsx": "^2.1.0",
     "lucide-react-native": "^0.378.0",
