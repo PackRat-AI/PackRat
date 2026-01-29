@@ -45,19 +45,25 @@ describe('Pack Routes - Core Functionality', () => {
     });
 
     it('accepts valid pack creation request', async () => {
-      const res = await apiWithAuth('/packs', httpMethods.post('', {
-        name: 'Test Pack',
-        description: 'A test pack',
-        category: 'hiking',
-      }));
+      const res = await apiWithAuth(
+        '/packs',
+        httpMethods.post('', {
+          name: 'Test Pack',
+          description: 'A test pack',
+          category: 'hiking',
+        }),
+      );
       expect([200, 400, 500]).toContain(res.status);
     });
 
     it('validates category values', async () => {
-      const res = await apiWithAuth('/packs', httpMethods.post('', {
-        name: 'Test Pack',
-        category: 'invalid-category',
-      }));
+      const res = await apiWithAuth(
+        '/packs',
+        httpMethods.post('', {
+          name: 'Test Pack',
+          category: 'invalid-category',
+        }),
+      );
       expect([400, 500]).toContain(res.status);
     });
   });
@@ -122,19 +128,25 @@ describe('User Items Routes', () => {
     });
 
     it('accepts valid item creation request', async () => {
-      const res = await apiWithAuth('/user/items', httpMethods.post('', {
-        name: 'Test Item',
-        weight: 1000,
-        weightUnit: 'g',
-      }));
+      const res = await apiWithAuth(
+        '/user/items',
+        httpMethods.post('', {
+          name: 'Test Item',
+          weight: 1000,
+          weightUnit: 'g',
+        }),
+      );
       expect([200, 400, 500]).toContain(res.status);
     });
 
     it('validates weight values', async () => {
-      const res = await apiWithAuth('/user/items', httpMethods.post('', {
-        name: 'Test Item',
-        weight: -100, // Invalid negative weight
-      }));
+      const res = await apiWithAuth(
+        '/user/items',
+        httpMethods.post('', {
+          name: 'Test Item',
+          weight: -100, // Invalid negative weight
+        }),
+      );
       expect([400, 500]).toContain(res.status);
     });
   });
@@ -171,7 +183,10 @@ describe('Search Functionality', () => {
     });
 
     it('accepts filters', async () => {
-      const res = await apiWithAuth('/search/catalog?category=shelter&brand=Osprey', httpMethods.get(''));
+      const res = await apiWithAuth(
+        '/search/catalog?category=shelter&brand=Osprey',
+        httpMethods.get(''),
+      );
       expect([200, 400, 500]).toContain(res.status);
     });
   });
@@ -197,7 +212,10 @@ describe('Weather Integration', () => {
     });
 
     it('accepts date range', async () => {
-      const res = await apiWithAuth('/weather?startDate=2026-06-01&endDate=2026-06-07', httpMethods.get(''));
+      const res = await apiWithAuth(
+        '/weather?startDate=2026-06-01&endDate=2026-06-07',
+        httpMethods.get(''),
+      );
       expect([200, 400, 500]).toContain(res.status);
     });
   });
@@ -216,21 +234,27 @@ describe('Chat Integration', () => {
     });
 
     it('accepts valid message', async () => {
-      const res = await apiWithAuth('/chat', httpMethods.post('', {
-        message: 'What gear do I need for hiking?',
-      }));
+      const res = await apiWithAuth(
+        '/chat',
+        httpMethods.post('', {
+          message: 'What gear do I need for hiking?',
+        }),
+      );
       expect([200, 400, 500]).toContain(res.status);
     });
 
     it('accepts context parameter', async () => {
-      const res = await apiWithAuth('/chat', httpMethods.post('', {
-        message: 'What should I pack?',
-        context: {
-          activity: 'hiking',
-          duration: '3 days',
-          location: 'mountains',
-        },
-      }));
+      const res = await apiWithAuth(
+        '/chat',
+        httpMethods.post('', {
+          message: 'What should I pack?',
+          context: {
+            activity: 'hiking',
+            duration: '3 days',
+            location: 'mountains',
+          },
+        }),
+      );
       expect([200, 400, 500]).toContain(res.status);
     });
   });

@@ -11,9 +11,11 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
 
       // Verify the fix is in place - items are mapped without image/embedding
       expect(content).toContain('itemsWithoutImages');
-      expect(content).toContain("catalogItemId: item.catalogItemId,");
+      expect(content).toContain('catalogItemId: item.catalogItemId,');
       // Should NOT have 'image: item.image' in the mapped object
-      const imageInMapping = content.match(/itemsWithoutImages\s*=\s*pack\.items\.map\(\(item\)\s*=>\s*\{[^}]*image:/s);
+      const imageInMapping = content.match(
+        /itemsWithoutImages\s*=\s*pack\.items\.map\(\(item\)\s*=>\s*\{[^}]*image:/s,
+      );
       expect(imageInMapping).toBeNull();
     });
 
@@ -96,10 +98,13 @@ describe('API Response Structure Tests', () => {
     });
 
     it('register requires valid email format', async () => {
-      const res = await apiWithAuth('/auth/register', httpMethods.post('', {
-        email: 'invalid-email',
-        password: 'Password123!',
-      }));
+      const res = await apiWithAuth(
+        '/auth/register',
+        httpMethods.post('', {
+          email: 'invalid-email',
+          password: 'Password123!',
+        }),
+      );
       expect(res.status).toBe(400);
 
       const data = await res.json();

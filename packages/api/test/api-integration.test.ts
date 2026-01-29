@@ -21,32 +21,44 @@ describe('Image Detection Routes', () => {
     });
 
     it('POST /packs/analyze-image requires valid imageUrl format', async () => {
-      const res = await apiWithAuth('/packs/analyze-image', httpMethods.post('', {
-        imageUrl: 'not-a-url',
-      }));
+      const res = await apiWithAuth(
+        '/packs/analyze-image',
+        httpMethods.post('', {
+          imageUrl: 'not-a-url',
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
 
     it('POST /packs/analyze-image accepts valid request with minimal parameters', async () => {
-      const res = await apiWithAuth('/packs/analyze-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-      }));
+      const res = await apiWithAuth(
+        '/packs/analyze-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
 
     it('POST /packs/analyze-image accepts matchLimit parameter', async () => {
-      const res = await apiWithAuth('/packs/analyze-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-        matchLimit: 5,
-      }));
+      const res = await apiWithAuth(
+        '/packs/analyze-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+          matchLimit: 5,
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
 
     it('POST /packs/analyze-image validates matchLimit range', async () => {
-      const res = await apiWithAuth('/packs/analyze-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-        matchLimit: 100, // Should be less than 50
-      }));
+      const res = await apiWithAuth(
+        '/packs/analyze-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+          matchLimit: 100, // Should be less than 50
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
   });
@@ -58,53 +70,71 @@ describe('Image Detection Routes', () => {
     });
 
     it('POST /packs/create-from-image requires packName parameter', async () => {
-      const res = await apiWithAuth('/packs/create-from-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-      }));
+      const res = await apiWithAuth(
+        '/packs/create-from-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
 
     it('POST /packs/create-from-image validates packName length', async () => {
-      const res = await apiWithAuth('/packs/create-from-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-        packName: 'ab', // Too short
-      }));
+      const res = await apiWithAuth(
+        '/packs/create-from-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+          packName: 'ab', // Too short
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
 
     it('POST /packs/create-from-image accepts valid request with minimal parameters', async () => {
-      const res = await apiWithAuth('/packs/create-from-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-        packName: 'My New Pack',
-      }));
+      const res = await apiWithAuth(
+        '/packs/create-from-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+          packName: 'My New Pack',
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
 
     it('POST /packs/create-from-image accepts optional parameters', async () => {
-      const res = await apiWithAuth('/packs/create-from-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-        packName: 'My New Pack',
-        description: 'A test pack',
-        category: 'hiking',
-      }));
+      const res = await apiWithAuth(
+        '/packs/create-from-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+          packName: 'My New Pack',
+          description: 'A test pack',
+          category: 'hiking',
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
 
     it('POST /packs/create-from-image validates minConfidence range', async () => {
-      const res = await apiWithAuth('/packs/create-from-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-        packName: 'My New Pack',
-        minConfidence: -0.5, // Invalid
-      }));
+      const res = await apiWithAuth(
+        '/packs/create-from-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+          packName: 'My New Pack',
+          minConfidence: -0.5, // Invalid
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
 
     it('POST /packs/create-from-image validates boolean parameters', async () => {
-      const res = await apiWithAuth('/packs/create-from-image', httpMethods.post('', {
-        imageUrl: 'https://example.com/image.jpg',
-        packName: 'My New Pack',
-        includeWeather: 'yes', // Should be boolean
-      }));
+      const res = await apiWithAuth(
+        '/packs/create-from-image',
+        httpMethods.post('', {
+          imageUrl: 'https://example.com/image.jpg',
+          packName: 'My New Pack',
+          includeWeather: 'yes', // Should be boolean
+        }),
+      );
       expect([400, 403, 500]).toContain(res.status);
     });
   });
@@ -153,10 +183,13 @@ describe('Upload Routes', () => {
     });
 
     it('accepts valid upload request', async () => {
-      const res = await apiWithAuth('/upload/presigned-url', httpMethods.post('', {
-        filename: 'test.jpg',
-        contentType: 'image/jpeg',
-      }));
+      const res = await apiWithAuth(
+        '/upload/presigned-url',
+        httpMethods.post('', {
+          filename: 'test.jpg',
+          contentType: 'image/jpeg',
+        }),
+      );
       expect([200, 400, 403, 500]).toContain(res.status);
     });
   });

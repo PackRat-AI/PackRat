@@ -19,11 +19,6 @@ export function createTools(c: Context, userId: number) {
 
   const sentry = c.get('sentry');
 
-  // Helper to wrap tool results in AsyncIterable for streaming support
-  async function* wrapResult<T>(result: T): AsyncIterable<T> {
-    yield result;
-  }
-
   return {
     getPackDetails: tool({
       description:
@@ -103,7 +98,8 @@ export function createTools(c: Context, userId: number) {
           }
 
           // Format item data without image to prevent bias toward visual content
-          const { image, embedding, ...itemWithoutImage } = item;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { image: _image, embedding: _embedding, ...itemWithoutImage } = item;
 
           yield {
             success: true,
