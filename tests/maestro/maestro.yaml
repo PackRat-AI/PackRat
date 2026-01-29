@@ -1,0 +1,17 @@
+appId: packrat.world
+name: PackRat E2E Tests
+tasks:
+  - name: Home Screen
+    file: home-screen.yaml
+  - name: Create Pack Flow
+    file: create-pack.yaml
+  - name: Add Item to Pack
+    file: add-item.yaml
+  - name: Add Sleeping Bag
+    file: add-sleeping-bag.yaml
+  - name: Profile Navigation
+    file: profile.yaml
+
+settings:
+  timeout: 30000
+  clearStateBeforeRun: true

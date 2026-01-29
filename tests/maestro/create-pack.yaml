@@ -1,0 +1,11 @@
+appId: packrat.world
+---
+- launchApp
+- assertVisible: "My Packs"
+- tapOn: "Create Pack"
+- assertVisible: "Pack Name"
+- assertVisible: "Category"
+- tapOn: "Category"
+- assertVisible: "Hiking"
+- tapOn: "Hiking"
+- assertVisible: "Create"

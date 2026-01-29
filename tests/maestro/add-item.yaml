@@ -1,0 +1,11 @@
+appId: packrat.world
+---
+- launchApp
+- assertVisible: "My Packs"
+- tapOn: "My First Pack"
+- assertVisible: "Items"
+- assertVisible: "Add Item"
+- tapOn: "Add Item"
+- assertVisible: "Search Catalog"
+- type: "Tent"
+- assertVisible: "Tent"

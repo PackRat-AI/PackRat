@@ -89,6 +89,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
       - Suggest multi-purpose items to reduce pack weight
       - Be concise but helpful in your responses
       - Use tools proactively to provide accurate, up-to-date information
+      - When analyzing pack contents, consider ALL items equally regardless of whether they have images or visual representations
 
       Schema Info for SQL Tool:
       ${schemaInfo}

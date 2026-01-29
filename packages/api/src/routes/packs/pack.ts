@@ -569,13 +569,15 @@ Trip Context:
 
 ${weatherContext}
 
-Current Items in Pack:
+Current Items in Pack (ALL items are listed, including those without images):
 ${pack.items
   .map(
     (item) =>
-      `- ${item.name} (${item.category || 'Uncategorized'}, ${item.weight}g, qty: ${item.quantity}${item.worn ? ', worn' : ''}${item.consumable ? ', consumable' : ''})`,
+      `- ${item.name} (${item.category || 'Uncategorized'}, ${item.weight}g, qty: ${item.quantity}${item.worn ? ', worn' : ''}${item.consumable ? ', consumable' : ''}${item.image ? ', has image' : ''})`,
   )
   .join('\n')}
+
+IMPORTANT: Consider ALL items listed above, including those without images. Do not ignore or skip items that lack an image. Each item should be evaluated for completeness.
 
 Categories represented: ${Array.from(new Set(pack.items.map((item) => item.category).filter(Boolean))).join(', ')}
 

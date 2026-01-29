@@ -10,6 +10,7 @@ import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { logger } from 'hono/logger';
+import { ZodError } from 'zod';
 import { CatalogService } from './services';
 import type { CatalogETLMessage } from './services/etl/types';
 import type { Variables } from './types/variables';
@@ -19,9 +20,10 @@ const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 // Apply global middleware
 app
   .use((c, next) => {
+    const env = getEnv(c);
     return sentry({
-      environment: getEnv(c).ENVIRONMENT,
-      release: getEnv(c).CF_VERSION_METADATA.id,
+      environment: env.ENVIRONMENT || 'development',
+      release: env.CF_VERSION_METADATA?.id || 'unknown',
       // Adds request headers and IP for users, for more info visit:
       // https://docs.sentry.io/platforms/javascript/guides/cloudflare/configuration/options/#sendDefaultPii
       sendDefaultPii: true,
@@ -42,6 +44,12 @@ app
     console.error('Error occurred:', err);
     if (err instanceof HTTPException) {
       return err.getResponse();
+    }
+    // Handle Zod validation errors
+    if (err instanceof ZodError) {
+      const firstError = err.errors[0];
+      const message = firstError?.message || 'Validation error';
+      return c.json({ error: message }, 400);
     }
     return c.json({ error: 'Internal server error' }, 500);
   });

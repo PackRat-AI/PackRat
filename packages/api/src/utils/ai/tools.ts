@@ -26,25 +26,44 @@ export function createTools(c: Context, userId: number) {
       inputSchema: z.object({
         packId: z.string().describe('The ID of the pack to get details for'),
       }),
-      execute: async ({ packId }) => {
+      execute: async function* ({ packId }) {
         try {
           const pack = await packService.getPackDetails(packId);
 
           if (!pack) {
-            return {
+            yield {
               success: false,
               error: 'Pack not found',
             };
+            return;
           }
 
           const categories = Array.from(
             new Set(pack.items.map((item) => item.category || 'Uncategorized')),
           );
 
-          return {
+          // Format items without image URLs to treat all items equally
+          // This prevents the AI from focusing only on items with images
+          const itemsWithoutImages = pack.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            weight: item.weight,
+            weightUnit: item.weightUnit,
+            quantity: item.quantity,
+            category: item.category,
+            consumable: item.consumable,
+            worn: item.worn,
+            notes: item.notes,
+            catalogItemId: item.catalogItemId,
+            // Explicitly exclude: image, embedding, and other non-essential fields
+          }));
+
+          yield {
             success: true,
             data: {
               ...pack,
+              items: itemsWithoutImages,
               categories,
             },
           };
@@ -53,7 +72,7 @@ export function createTools(c: Context, userId: number) {
           sentry.setTag('location', 'ai-tool-call/getPackDetails');
           sentry.setContext('meta', { packId });
           sentry.captureException(error);
-          return {
+          yield {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get pack details',
           };
@@ -67,25 +86,31 @@ export function createTools(c: Context, userId: number) {
       inputSchema: z.object({
         itemId: z.string().describe('The ID of the item to get details for'),
       }),
-      execute: async ({ itemId }) => {
+      execute: async function* ({ itemId }) {
         try {
           const item = await packItemService.getPackItemDetails(itemId);
           if (!item) {
-            return {
+            yield {
               success: false,
               error: 'Item not found',
             };
+            return;
           }
-          return {
+
+          // Format item data without image to prevent bias toward visual content
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { image: _image, embedding: _embedding, ...itemWithoutImage } = item;
+
+          yield {
             success: true,
-            data: item,
+            data: itemWithoutImage,
           };
         } catch (error) {
           console.error('getPackItemDetails tool error', error);
           sentry.setTag('location', 'ai-tool-call/getPackItemDetails');
           sentry.setContext('meta', { itemId });
           sentry.captureException(error);
-          return {
+          yield {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get item details',
           };
@@ -100,10 +125,10 @@ export function createTools(c: Context, userId: number) {
           .string()
           .describe('Location to get weather for (city, state, coordinates, or trail name)'),
       }),
-      execute: async ({ location }) => {
+      execute: async function* ({ location }) {
         try {
           const weatherData = await weatherService.getWeatherForLocation(location);
-          return {
+          yield {
             success: true,
             data: {
               ...weatherData,
@@ -114,7 +139,7 @@ export function createTools(c: Context, userId: number) {
           sentry.setTag('location', 'ai-tool-call/getWeatherForLocation');
           sentry.setContext('meta', { location });
           sentry.captureException(error);
-          return {
+          yield {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get weather data',
           };
@@ -136,7 +161,7 @@ export function createTools(c: Context, userId: number) {
           .describe('Optional limit for number of results to return'),
         offset: z.number().min(0).optional().describe('Optional offset for pagination of results'),
       }),
-      execute: async ({ query, category, limit, offset }) => {
+      execute: async function* ({ query, category, limit, offset }) {
         try {
           const data = await catalogService.getCatalogItems({
             q: query,
@@ -144,7 +169,7 @@ export function createTools(c: Context, userId: number) {
             limit: limit || 10,
             offset: offset || 0,
           });
-          return {
+          yield {
             success: true,
             data,
           };
@@ -153,7 +178,7 @@ export function createTools(c: Context, userId: number) {
           sentry.setTag('location', 'ai-tool-call/getCatalogItems');
           sentry.setContext('meta', { query, category, limit, offset });
           sentry.captureException(error);
-          return {
+          yield {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to retrieve catalog items',
           };
@@ -173,10 +198,10 @@ export function createTools(c: Context, userId: number) {
           .describe('Optional limit for number of results to return'),
         offset: z.number().min(0).optional().describe('Optional offset for pagination of results'),
       }),
-      execute: async ({ query, limit, offset }) => {
+      execute: async function* ({ query, limit, offset }) {
         try {
           const data = await catalogService.vectorSearch(query, limit || 10, offset || 0);
-          return {
+          yield {
             success: true,
             data,
           };
@@ -185,7 +210,7 @@ export function createTools(c: Context, userId: number) {
           sentry.setTag('location', 'ai-tool-call/catalogVectorSearch');
           sentry.setContext('meta', { query });
           sentry.captureException(error);
-          return {
+          yield {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to perform vector search',
           };
@@ -205,10 +230,10 @@ export function createTools(c: Context, userId: number) {
           .optional()
           .describe('Optional limit for number of results to return'),
       }),
-      execute: async ({ query, limit }) => {
+      execute: async function* ({ query, limit }) {
         try {
           const results = await aiService.searchPackratOutdoorGuidesRAG(query, limit || 5);
-          return {
+          yield {
             success: true,
             data: results,
           };
@@ -217,7 +242,7 @@ export function createTools(c: Context, userId: number) {
           sentry.setTag('location', 'ai-tool-call/searchPackratOutdoorGuidesRAG');
           sentry.setContext('meta', { query });
           sentry.captureException(error);
-          return {
+          yield {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to search outdoor guides',
           };
@@ -237,11 +262,11 @@ export function createTools(c: Context, userId: number) {
       inputSchema: z.object({
         query: z.string().describe('The search query - be specific and include relevant keywords'),
       }),
-      execute: async ({ query }) => {
+      execute: async function* ({ query }) {
         try {
           const result = await aiService.perplexitySearch(query);
 
-          return {
+          yield {
             data: result,
             success: true,
           };
@@ -250,7 +275,7 @@ export function createTools(c: Context, userId: number) {
           sentry.setTag('location', 'ai-tool-call/webSearchTool');
           sentry.setContext('meta', { query });
           sentry.captureException(error);
-          return {
+          yield {
             success: false,
             error: error instanceof Error ? error.message : 'Search failed',
           };
@@ -273,15 +298,16 @@ export function createTools(c: Context, userId: number) {
           .default(100)
           .describe('Maximum number of rows to return (default: 100, max: 1000)'),
       }),
-      execute: async ({ query, limit = 100 }) => {
+      execute: async function* ({ query, limit = 100 }) {
         try {
-          return await executeSqlAiTool({ query, limit, c, userId });
+          const result = await executeSqlAiTool({ query, limit, c, userId });
+          yield result;
         } catch (error) {
           console.error('SQL tool error', error);
           sentry.setTag('location', 'ai-tool-call/executeSql');
           sentry.setContext('params', { query, limit });
           sentry.captureException(error);
-          return {
+          yield {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred',
           };
