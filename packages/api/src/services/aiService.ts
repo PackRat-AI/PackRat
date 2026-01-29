@@ -58,7 +58,6 @@ export class AIService {
     if (!this.guidesRAG) {
       return {
         data: [],
-        usage: { tokens: 0 },
       };
     }
 
