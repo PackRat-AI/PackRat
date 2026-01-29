@@ -43,6 +43,12 @@ app
     if (err instanceof HTTPException) {
       return err.getResponse();
     }
+    // Handle Zod validation errors
+    if (err.errors && Array.isArray(err.errors)) {
+      const firstError = err.errors[0];
+      const message = firstError?.message || 'Validation error';
+      return c.json({ error: message }, 400);
+    }
     return c.json({ error: 'Internal server error' }, 500);
   });
 app.use(logger());
