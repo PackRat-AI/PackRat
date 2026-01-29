@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { apiWithAuth, httpMethods } from './utils/test-helpers';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { apiWithAuth, httpMethods } from './utils/test-helpers';
 
 describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
   describe('Source Code Verification', () => {
@@ -11,9 +11,11 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
 
       // Verify itemsWithoutImages is used (the fix)
       expect(content).toContain('itemsWithoutImages');
-      
+
       // Verify image is NOT in the mapping (explicit exclusion)
-      const imageInMapping = content.match(/itemsWithoutImages\s*=\s*pack\.items\.map\(\(item\)\s*=>\s*\{[^}]*image:/s);
+      const imageInMapping = content.match(
+        /itemsWithoutImages\s*=\s*pack\.items\.map\(\(item\)\s*=>\s*\{[^}]*image:/s,
+      );
       expect(imageInMapping).toBeNull();
     });
 
@@ -22,7 +24,9 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
       const content = fs.readFileSync(toolsPath, 'utf-8');
 
       // Verify the destructuring pattern is used
-      expect(content).toMatch(/const\s*\{\s*image:\s*_image.*,\s*embedding:\s*_embedding.*,\s*\.\.\..*\s*}=\s*item/);
+      expect(content).toMatch(
+        /const\s*\{\s*image:\s*_image.*,\s*embedding:\s*_embedding.*,\s*\.\.\..*\s*}=\s*item/,
+      );
     });
 
     it('tools.ts should use async generators for streaming', async () => {

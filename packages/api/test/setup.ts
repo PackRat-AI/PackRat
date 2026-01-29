@@ -77,6 +77,7 @@ beforeAll(async () => {
 
   try {
     await testClient.connect();
+    // biome-ignore lint/suspicious/noExplicitAny: Test setup requires any for drizzle types
     testDb = drizzle(testClient, { schema }) as any;
     console.log('✅ Test database connected successfully');
 
