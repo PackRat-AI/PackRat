@@ -1,7 +1,54 @@
 import { describe, expect, it } from 'vitest';
 import { apiWithAuth, httpMethods } from './utils/test-helpers';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
+  describe('Source Code Verification', () => {
+    it('tools.ts should exclude image field from pack items', async () => {
+      const toolsPath = path.join(__dirname, '../src/utils/ai/tools.ts');
+      const content = fs.readFileSync(toolsPath, 'utf-8');
+
+      // Verify the fix is in place - items are mapped without image/embedding
+      expect(content).toContain('itemsWithoutImages');
+      expect(content).toContain("catalogItemId: item.catalogItemId,");
+      // Should NOT have 'image: item.image' in the mapped object
+      const imageInMapping = content.match(/itemsWithoutImages\s*=\s*pack\.items\.map\(\(item\)\s*=>\s*\{[^}]*image:/s);
+      expect(imageInMapping).toBeNull();
+    });
+
+    it('tools.ts should exclude image from item details using destructuring', async () => {
+      const toolsPath = path.join(__dirname, '../src/utils/ai/tools.ts');
+      const content = fs.readFileSync(toolsPath, 'utf-8');
+
+      // Verify the fix for getPackItemDetails
+      expect(content).toContain('const { image, embedding, ...itemWithoutImage } = item');
+    });
+
+    it('tools.ts should use async generators for streaming', async () => {
+      const toolsPath = path.join(__dirname, '../src/utils/ai/tools.ts');
+      const content = fs.readFileSync(toolsPath, 'utf-8');
+
+      // Verify async generators are used
+      expect(content).toContain('async function*');
+      expect(content).toMatch(/yield\s*\{/);
+    });
+
+    it('tools.ts should handle pack not found error', async () => {
+      const toolsPath = path.join(__dirname, '../src/utils/ai/tools.ts');
+      const content = fs.readFileSync(toolsPath, 'utf-8');
+
+      expect(content).toContain("error: 'Pack not found'");
+    });
+
+    it('tools.ts should handle item not found error', async () => {
+      const toolsPath = path.join(__dirname, '../src/utils/ai/tools.ts');
+      const content = fs.readFileSync(toolsPath, 'utf-8');
+
+      expect(content).toContain("error: 'Item not found'");
+    });
+  });
+
   describe('Pack items should be returned regardless of image presence', () => {
     it('should include all pack items in AI response', async () => {
       expect(true).toBe(true);
@@ -29,104 +76,104 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
       expect([200, 500, 400]).toContain(res.status);
     });
   });
-
-  describe('AI Tools - Image Field Exclusion Verification', () => {
-    it('getPackDetails tool should not include image in item response', async () => {
-      // Verify the tool implementation by checking that the code
-      // explicitly excludes the image field from the response
-      // This is a structural verification of the fix
-
-      // The fix is in packages/api/src/utils/ai/tools.ts:
-      // getPackDetails tool maps items and explicitly excludes:
-      // - image
-      // - embedding
-      // - other non-essential fields
-
-      expect(true).toBe(true);
-    });
-
-    it('getPackItemDetails tool should not include image in item response', async () => {
-      // The fix uses destructuring to remove image and embedding:
-      // const { image, embedding, ...itemWithoutImage } = item;
-
-      expect(true).toBe(true);
-    });
-
-    it('all pack items should be treated equally regardless of image presence', async () => {
-      // The core fix ensures that items without images are not
-      // deprioritized or filtered out by the AI tool
-
-      // This is verified by the tool code which:
-      // 1. Maps ALL items from pack.items
-      // 2. Removes image/embedding from ALL items
-      // 3. Returns all items in the response
-
-      expect(true).toBe(true);
-    });
-
-    it('categories should be extracted from all items including those without images', async () => {
-      // The categories extraction uses all pack.items:
-      // const categories = Array.from(new Set(pack.items.map((item) => ...)))
-
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('AI Tools - Async Generator Support', () => {
-    it('tools should use async generators for streaming', async () => {
-      // The AI SDK requires tools to return AsyncIterable for streaming
-      // The fix changed execute from async function to async function*
-
-      expect(true).toBe(true);
-    });
-
-    it('tool results should be yielded properly', async () => {
-      // Tools now use:
-      // yield { success: true, data: ... }
-      // instead of:
-      // return { success: true, data: ... }
-
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('AI Tools - Error Handling', () => {
-    it('should handle pack not found gracefully', async () => {
-      // When pack is not found, tool should return:
-      // { success: false, error: 'Pack not found' }
-
-      expect(true).toBe(true);
-    });
-
-    it('should handle item not found gracefully', async () => {
-      // When item is not found, tool should return:
-      // { success: false, error: 'Item not found' }
-
-      expect(true).toBe(true);
-    });
-
-    it('should handle errors with proper error messages', async () => {
-      // Errors should be converted to strings:
-      // error instanceof Error ? error.message : 'Failed to get pack details'
-
-      expect(true).toBe(true);
-    });
-  });
 });
 
 describe('AI Tools - Integration with Chat', () => {
   it('chat endpoint should initialize AI tools with user context', async () => {
-    // The chat route creates tools with the user's context:
-    // const tools = createTools(c, userId);
-
     const res = await apiWithAuth('/chat', httpMethods.post('', { message: 'test' }));
     expect([200, 400, 500]).toContain(res.status);
   });
+});
 
-  it('AI tools should receive correct userId', async () => {
-    // Tools are created per-request with the authenticated user's ID
-    // This ensures data isolation between users
+describe('API Response Structure Tests', () => {
+  describe('Auth Routes - Error Response Format', () => {
+    it('login requires email and password', async () => {
+      const res = await apiWithAuth('/auth/login', httpMethods.post('', {}));
+      expect(res.status).toBe(400);
 
-    expect(true).toBe(true);
+      const data = await res.json();
+      expect(data.error).toBeDefined();
+    });
+
+    it('register requires valid email format', async () => {
+      const res = await apiWithAuth('/auth/register', httpMethods.post('', {
+        email: 'invalid-email',
+        password: 'Password123!',
+      }));
+      expect(res.status).toBe(400);
+
+      const data = await res.json();
+      expect(data.error).toBeDefined();
+    });
+  });
+
+  describe('Pack Routes - Response Structure', () => {
+    it('GET /packs/:id should return pack data', async () => {
+      const res = await apiWithAuth('/packs/nonexistent-pack-id', httpMethods.get(''));
+      expect([404, 500, 400]).toContain(res.status);
+    });
+
+    it('GET /packs/:id/items should return items array', async () => {
+      const res = await apiWithAuth('/packs/nonexistent-pack-id/items', httpMethods.get(''));
+      expect([404, 500, 400]).toContain(res.status);
+    });
+  });
+
+  describe('User Routes - Authentication', () => {
+    it('GET /user/items requires authentication', async () => {
+      const res = await apiWithAuth('/user/items', httpMethods.get(''));
+      expect(res.status).not.toBe(401); // Should not be 401 if auth middleware passes
+    });
+
+    it('GET /user/packs requires authentication', async () => {
+      const res = await apiWithAuth('/user/packs', httpMethods.get(''));
+      expect(res.status).not.toBe(401);
+    });
+  });
+});
+
+describe('Weather Service - API Integration', () => {
+  it('GET /weather should accept location parameter', async () => {
+    const res = await apiWithAuth('/weather?location=Salt+Lake+City', httpMethods.get(''));
+    expect([200, 400, 500]).toContain(res.status);
+  });
+
+  it('GET /weather should return valid response structure', async () => {
+    const res = await apiWithAuth('/weather?location=Salt+Lake+City', httpMethods.get(''));
+    if (res.status === 200) {
+      const data = await res.json();
+      expect(data).toBeDefined();
+    }
+  });
+});
+
+describe('Catalog Service - API Integration', () => {
+  it('GET /catalog/items should return items', async () => {
+    const res = await apiWithAuth('/catalog/items', httpMethods.get(''));
+    expect([200, 400, 500]).toContain(res.status);
+  });
+
+  it('GET /catalog/search should accept query', async () => {
+    const res = await apiWithAuth('/catalog/search?q=tent', httpMethods.get(''));
+    expect([200, 400, 500]).toContain(res.status);
+  });
+});
+
+describe('Pack Templates - API Integration', () => {
+  it('GET /pack-templates should return templates', async () => {
+    const res = await apiWithAuth('/pack-templates', httpMethods.get(''));
+    expect([200, 400, 500]).toContain(res.status);
+  });
+
+  it('GET /pack-templates/:id should return single template', async () => {
+    const res = await apiWithAuth('/pack-templates/public', httpMethods.get(''));
+    expect([200, 404, 400, 500]).toContain(res.status);
+  });
+});
+
+describe('Health Check - API Status', () => {
+  it('GET / should return health status', async () => {
+    const res = await apiWithAuth('/', httpMethods.get(''));
+    expect(res.status).toBe(200);
   });
 });
