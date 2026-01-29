@@ -25,7 +25,7 @@ describe('AI Tool: getPackDetails - Image Filtering Bug Fix', () => {
 
       // Verify the destructuring pattern is used
       expect(content).toMatch(
-        /const\s*\{\s*image:\s*_image.*,\s*embedding:\s*_embedding.*,\s*\.\.\..*\s*}=\s*item/,
+        /const\s*\{\s*image:\s*_image\s*,\s*embedding:\s*_embedding\s*,\s*\.\.\.[a-zA-Z]+\s*\}\s*=\s*item/,
       );
     });
 
