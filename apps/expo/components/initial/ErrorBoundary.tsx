@@ -1,6 +1,7 @@
 import { Icon } from '@roninoss/icons';
 import * as Sentry from '@sentry/react-native';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import type { ErrorInfo, ReactElement } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -14,6 +15,7 @@ type ErrorBoundaryProps = {
 
 const DefaultFallback = () => {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <View className="flex-1 items-center justify-center bg-background px-6 pt-12">
@@ -24,11 +26,10 @@ const DefaultFallback = () => {
         {/* Content */}
         <View className="mt-6 w-full max-w-sm">
           <Text className="text-center text-xl font-bold text-foreground">
-            Something went wrong
+            {t('errors.somethingWentWrong')}
           </Text>
           <Text className="mt-2 text-center text-base text-muted-foreground">
-            The application encountered an unexpected error. You can try again or go back to the
-            home screen.
+            {t('errors.unexpectedError')}
           </Text>
         </View>
 
@@ -39,7 +40,7 @@ const DefaultFallback = () => {
             className="w-full items-center justify-center rounded-lg border border-border py-3.5"
             style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
           >
-            <Text className="font-medium text-foreground">Go Home</Text>
+            <Text className="font-medium text-foreground">{t('errors.goHome')}</Text>
           </Pressable>
         </View>
       </View>

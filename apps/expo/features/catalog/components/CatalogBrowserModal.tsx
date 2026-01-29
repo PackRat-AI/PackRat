@@ -4,6 +4,7 @@ import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
 import {
@@ -33,6 +34,7 @@ export function CatalogBrowserModal({
   onItemsSelected,
 }: CatalogBrowserModalProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
@@ -123,7 +125,7 @@ export function CatalogBrowserModal({
         {/* Header */}
         <View className="flex-row items-center justify-between border-b border-border p-4">
           <View className="flex-row items-center">
-            <Text>Browse Catalog</Text>
+            <Text>{t('catalog.browseCatalog')}</Text>
           </View>
           <TouchableOpacity onPress={handleClose}>
             <Icon name="close" size={24} color={colors.foreground} />
@@ -137,7 +139,7 @@ export function CatalogBrowserModal({
             autoComplete="off"
             value={searchValue}
             onChangeText={setSearchValue}
-            placeholder="Search..."
+            placeholder={t('catalog.searchEllipsis')}
           />
 
           {!isSearching && categories && (
@@ -156,23 +158,25 @@ export function CatalogBrowserModal({
           {isLoading && items.length === 0 ? (
             <View className="flex-1 items-center justify-center">
               <ActivityIndicator size="large" color={colors.primary} />
-              <Text className="mt-2 text-muted-foreground">Loading...</Text>
+              <Text className="mt-2 text-muted-foreground">{t('catalog.loading')}</Text>
             </View>
           ) : error ? (
             <View className="flex-1 items-center justify-center p-4">
               <Icon name="exclamation" size={48} color={colors.destructive} />
-              <Text className="mt-2 text-center font-semibold">Error loading items</Text>
+              <Text className="mt-2 text-center font-semibold">
+                {t('catalog.errorLoadingItems')}
+              </Text>
               <Text className="mt-1 text-center text-muted-foreground">{error.message}</Text>
               <Button className="mt-4" onPress={handleRefresh}>
-                <Text>Try Again</Text>
+                <Text>{t('catalog.tryAgain')}</Text>
               </Button>
             </View>
           ) : items.length === 0 ? (
             <View className="flex-1 items-center justify-center p-4">
               <Icon name="magnify" size={48} color={colors.grey2} />
-              <Text className="mt-2 text-center font-semibold">No items found</Text>
+              <Text className="mt-2 text-center font-semibold">{t('catalog.noItemsFound')}</Text>
               <Text className="mt-1 text-center text-muted-foreground">
-                {isSearching ? 'Try adjusting your search' : 'No catalog items available'}
+                {isSearching ? t('catalog.tryAdjustingSearch') : t('catalog.noCatalogItems')}
               </Text>
             </View>
           ) : (
@@ -211,11 +215,14 @@ export function CatalogBrowserModal({
                 className="mb-1"
                 onPress={() => setSelectedItems(new Set())}
               >
-                <Text>Clear Selection</Text>
+                <Text>{t('catalog.clearSelection')}</Text>
               </Button>
               <Button onPress={handleAddSelected} className="mb-1" variant="tonal">
                 <Text>
-                  Add {selectedItems.size} {selectedItems.size > 1 ? 'Items' : 'Item'}
+                  {t('catalog.addItems', {
+                    count: selectedItems.size,
+                    unit: selectedItems.size > 1 ? t('catalog.items') : t('catalog.item'),
+                  })}
                 </Text>
               </Button>
             </View>

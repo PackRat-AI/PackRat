@@ -2,12 +2,14 @@ import type { AlertRef } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Platform, View } from 'react-native';
 import { useCategoriesCount, useCurrentPack } from '../hooks';
 
 export function PackCategoriesTile() {
+  const { t } = useTranslation();
   const currentPack = useCurrentPack();
   const categoriesCount = useCategoriesCount();
 
@@ -43,7 +45,7 @@ export function PackCategoriesTile() {
           </View>
         }
         item={{
-          title: 'Pack Categories',
+          title: t('packs.packCategories'),
         }}
         onPress={handlePress}
         target="Cell"
@@ -51,13 +53,13 @@ export function PackCategoriesTile() {
         removeSeparator={Platform.OS === 'ios'}
       />
       <Alert
-        title="No Packs Yet"
-        message="Create a pack to see gear distribution by category."
+        title={t('packs.noPacksYet')}
+        message={t('packs.createPackForCategories')}
         materialIcon={{ name: 'information-outline' }}
         materialWidth={370}
         buttons={[
           {
-            text: 'Got it',
+            text: t('packs.gotIt'),
             style: 'default',
           },
         ]}

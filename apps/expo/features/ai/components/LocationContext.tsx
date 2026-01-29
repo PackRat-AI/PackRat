@@ -1,6 +1,7 @@
 import { Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { LocationPicker } from 'expo-app/features/weather/components/LocationPicker';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -13,6 +14,7 @@ interface LocationContextProps {
 
 export function LocationContext({ location, onSetLocation }: LocationContextProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   if (!location) {
@@ -23,7 +25,7 @@ export function LocationContext({ location, onSetLocation }: LocationContextProp
           className="bg-muted/30 flex-row items-center gap-2 rounded-full px-3 py-2"
         >
           <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
-          <Text className="flex-1 text-sm font-medium">Add a location</Text>
+          <Text className="flex-1 text-sm font-medium">{t('ai.location.addLocation')}</Text>
           <Icon name="chevron-right" size={16} color={colors.grey2} />
         </TouchableOpacity>
       </View>
@@ -46,7 +48,7 @@ export function LocationContext({ location, onSetLocation }: LocationContextProp
       <LocationPicker
         open={showLocationPicker}
         onClose={() => setShowLocationPicker(false)}
-        subtitle="Choose location for AI context"
+        subtitle={t('ai.location.chooseLocationContext')}
         onSelect={onSetLocation}
       />
     </>

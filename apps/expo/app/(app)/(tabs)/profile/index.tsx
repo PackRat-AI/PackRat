@@ -17,24 +17,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { packItemsSyncState, packsSyncState } from 'expo-app/features/packs/store';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
-import { useLocations } from 'expo-app/features/weather/hooks/useLocations'; // adjust path if needed
 import { cn } from 'expo-app/lib/cn';
-import { Stack, useRouter } from 'expo-router';
+import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { Stack } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
 import { Platform, SafeAreaView, View } from 'react-native';
-
-const SCREEN_OPTIONS = {
-  title: 'Profile',
-  headerShown: false,
-} as const;
 
 const ESTIMATED_ITEM_SIZE =
   ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
 
 function Profile() {
   const user = useUser();
+  const { t } = useTranslation();
+
+  const SCREEN_OPTIONS = {
+    title: t('profile.profile'),
+    headerShown: false,
+  } as const;
 
   // Generate display data based on user information
   const displayName =
@@ -46,15 +48,15 @@ function Profile() {
 
   // Create data array with user information
   const DATA: DataItem[] = [
-    ...(Platform.OS !== 'ios' ? ['Account Information'] : []),
+    ...(Platform.OS !== 'ios' ? [t('profile.accountInformation')] : []),
     {
       id: 'name',
-      title: 'Name',
+      title: t('common.name'),
       ...(Platform.OS === 'ios' ? { value: displayName } : { subTitle: displayName }),
     },
     {
       id: 'email',
-      title: 'Email',
+      title: t('common.email'),
       ...(Platform.OS === 'ios' ? { value: email } : { subTitle: email }),
     },
   ];
@@ -64,6 +66,7 @@ function Profile() {
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <List
+        contentContainerClassName="pt-8"
         variant="insets"
         data={DATA}
         sectionHeaderAsGap={Platform.OS === 'ios'}
@@ -137,9 +140,8 @@ function ListHeaderComponent() {
 
 function ListFooterComponent() {
   const { signOut } = useAuth();
-  const router = useRouter();
-  const { resetLocations } = useLocations();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   const alertRef = useRef<AlertRef>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -147,29 +149,26 @@ function ListFooterComponent() {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      resetLocations();
       await signOut();
       alertRef.current?.alert({
-        title: "You're now logged out!",
-        message: 'What would you like to do?',
+        title: t('auth.loggedOut'),
+        message: t('auth.loggedOutMessage'),
         materialIcon: { name: 'check-circle-outline', color: colors.green },
         buttons: [
           {
-            text: 'Stay logged out',
+            text: t('auth.stayLoggedOut'),
             style: 'cancel',
-            onPress: () => {
-              router.replace('/');
+            onPress: async () => {
+              await AsyncStorage.setItem('skipped_login', 'true');
+              await Updates.reloadAsync();
             },
           },
           {
-            text: 'Sign-in again',
+            text: t('auth.signInAgain'),
             style: 'default',
             onPress: async () => {
               await AsyncStorage.setItem('skipped_login', 'false');
-              router.replace({
-                pathname: '/auth',
-                params: { showSkipLoginBtn: 'true', redirectTo: '/' },
-              });
+              await Updates.reloadAsync();
             },
           },
         ],
@@ -181,28 +180,23 @@ function ListFooterComponent() {
     }
   };
 
-  const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
-
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
         disabled={isSigningOut}
         onPress={() => {
-          if (
-            !isEmpty(packItemsSyncState.getPendingChanges() || {}) ||
-            !isEmpty(packsSyncState.getPendingChanges() || {})
-          ) {
+          if (hasUnsyncedChanges()) {
             alertRef.current?.alert({
-              title: 'Sync in progress',
-              message: 'Some data is still syncing. You may lose them if you proceed to log out.',
+              title: t('profile.syncInProgress'),
+              message: t('profile.syncMessage'),
               materialIcon: { name: 'repeat' },
               buttons: [
                 {
-                  text: 'Cancel',
+                  text: t('common.cancel'),
                   style: 'cancel',
                 },
                 {
-                  text: 'Log out',
+                  text: t('auth.logOut'),
                   style: 'destructive',
                   onPress: handleSignOut,
                 },
@@ -219,7 +213,7 @@ function ListFooterComponent() {
         {isSigningOut ? (
           <ActivityIndicator className="text-destructive" />
         ) : (
-          <Text className="text-destructive">Log Out</Text>
+          <Text className="text-destructive">{t('auth.logOut')}</Text>
         )}
       </Button>
       <Alert title="" buttons={[]} ref={alertRef} />

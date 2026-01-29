@@ -1,12 +1,15 @@
 import { Feather } from '@expo/vector-icons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { StyleSheet, Text, View } from 'react-native';
 
 export const BackButton = ({ onPress }: { onPress: () => void }) => {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.backButton}>
       <Feather name="chevron-left" size={16} color="#007AFF" />
       <Text style={styles.backButtonText} onPress={onPress}>
-        Back
+        {t('common.back')}
       </Text>
     </View>
   );

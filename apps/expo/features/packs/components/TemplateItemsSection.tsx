@@ -1,6 +1,7 @@
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import type { WeightUnit } from 'expo-app/types';
 import { Image, ScrollView, Text, View } from 'react-native';
@@ -43,6 +44,7 @@ const formatWeight = (weight: number, unit: string) => {
 
 // Template Item Card Component
 const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
+  const { t } = useTranslation();
   const { colors } = useColorScheme();
   const imageUrl = buildPackTemplateItemImageUrl(item.image);
 
@@ -53,7 +55,7 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
           <Image source={{ uri: imageUrl }} className="h-full w-full" resizeMode="cover" />
         ) : (
           <View className="h-full w-full items-center justify-center">
-            <Text className="text-muted-foreground">No image</Text>
+            <Text className="text-muted-foreground">{t('packs.noImage')}</Text>
           </View>
         )}
       </View>
@@ -87,12 +89,12 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
       <View className="flex-row">
         {item.worn && (
           <View className="mr-1 rounded-full bg-blue-100 px-2 py-0.5">
-            <Text className="text-xs font-medium text-blue-700">Worn</Text>
+            <Text className="text-xs font-medium text-blue-700">{t('packs.worn')}</Text>
           </View>
         )}
         {item.consumable && (
           <View className="rounded-full bg-orange-100 px-2 py-0.5">
-            <Text className="text-xs font-medium text-orange-700">Consumable</Text>
+            <Text className="text-xs font-medium text-orange-700">{t('packs.consumable')}</Text>
           </View>
         )}
       </View>

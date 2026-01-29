@@ -4,6 +4,7 @@ import { Icon } from '@roninoss/icons';
 import { appAlert } from 'expo-app/app/_layout';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import { isArray } from 'radash';
 import { Image, Pressable, View } from 'react-native';
@@ -21,19 +22,20 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
   const template = usePackTemplateDetails(templateId);
   const deleteTemplate = useDeletePackTemplate();
   const canWrite = useWritePermissionCheck(templateId);
+  const { t } = useTranslation();
 
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
 
   const handleActionsPress = () => {
     const options = canWrite
-      ? ['View Details', 'Edit', 'Delete', 'Cancel']
-      : ['View Details', 'Cancel'];
+      ? [t('packTemplates.viewDetails'), t('common.edit'), t('common.delete'), t('common.cancel')]
+      : [t('packTemplates.viewDetails'), t('common.cancel')];
 
     const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = options.indexOf('Delete');
+    const destructiveButtonIndex = options.indexOf(t('common.delete'));
     const viewDetailsIndex = 0;
-    const editIndex = options.indexOf('Edit');
+    const editIndex = options.indexOf(t('common.edit'));
 
     showActionSheetWithOptions(
       {
@@ -66,11 +68,11 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
             break;
           case destructiveButtonIndex:
             appAlert.current?.alert({
-              title: 'Delete Pack Template?',
-              message: 'This action cannot be undone.',
+              title: t('packTemplates.deletePackTemplate'),
+              message: t('packTemplates.deletePackTemplateMessage'),
               buttons: [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'OK', onPress: () => deleteTemplate(template.id) },
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.ok'), onPress: () => deleteTemplate(template.id) },
               ],
             });
             break;
@@ -111,8 +113,8 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
           </View>
           <Text className="text-xs text-foreground">
             {template.items && isArray(template.items) && template.items.length > 0
-              ? `${template.items.length} item${template.items.length > 1 ? 's' : ''}`
-              : '0 items'}
+              ? `${template.items.length} ${template.items.length > 1 ? t('packTemplates.items') : t('packTemplates.item')}`
+              : `0 ${t('packTemplates.items')}`}
           </Text>
         </View>
 

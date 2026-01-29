@@ -1,10 +1,8 @@
-pre-push:
-  parallel: true
+pre-commit:
+  skip:
+    - run: test "${CI:-false}" = "true"
+    - run: test "${GITHUB_ACTIONS:-false}" = "true"
   commands:
-    format:
-      run: bun format
-      skip: false
-
-    # Ready for when you add linting
-    # lint:
-    #   run: bun lint
+    lint:
+      run: bun check {staged_files}
+      fail_text: "Linting failed! \nRun `bun lint` to fix. \nCommit with `--no-verify` to bypass check."

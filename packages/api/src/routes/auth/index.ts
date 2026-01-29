@@ -4,6 +4,8 @@ import {
   authProviders,
   oneTimePasswords,
   packs,
+  packTemplateItems,
+  packTemplates,
   refreshTokens,
   users,
 } from '@packrat/api/db/schema';
@@ -973,49 +975,43 @@ const meRoute = createRoute({
 });
 
 authRoutes.openapi(meRoute, async (c) => {
-  try {
-    // Extract JWT from Authorization header
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    const token = authHeader.substring(7);
-    const auth = await verifyJWT({ token, c });
-    const db = createDb(c);
-
-    if (!auth) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    // Find user
-    const userId = Number(auth.userId);
-    const user = await db
-      .select(userWithoutPassword)
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    if (user.length === 0) {
-      return c.json({ error: 'User not found' }, 404);
-    }
-
-    const userRecord = user[0];
-    if (!userRecord) {
-      return c.json({ error: 'User not found' }, 404);
-    }
-
-    return c.json(
-      {
-        success: true,
-        user: userRecord,
-      },
-      200,
-    );
-  } catch (error) {
-    console.error('Get user info error:', error);
-    return c.json({ error: 'An error occurred' }, 401);
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401);
   }
+
+  const token = authHeader.substring(7);
+  const auth = await verifyJWT({ token, c });
+  const db = createDb(c);
+
+  if (!auth) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  // Find user
+  const userId = Number(auth.userId);
+  const user = await db
+    .select(userWithoutPassword)
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (user.length === 0) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const userRecord = user[0];
+  if (!userRecord) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  return c.json(
+    {
+      success: true,
+      user: userRecord,
+    },
+    200,
+  );
 });
 
 // Delete account route
@@ -1072,6 +1068,12 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
   // Delete auth providers
   await db.delete(authProviders).where(eq(authProviders.userId, userId));
 
+  // Delete pack template items (must be deleted before pack templates)
+  await db.delete(packTemplateItems).where(eq(packTemplateItems.userId, userId));
+
+  // Delete pack templates
+  await db.delete(packTemplates).where(eq(packTemplates.userId, userId));
+
   // Delete all user's packs (cascade will delete pack items)
   await db.delete(packs).where(eq(packs.userId, userId));
 
@@ -1122,7 +1124,12 @@ authRoutes.openapi(appleRoute, async (c) => {
   const db = createDb(c);
 
   // Decode the identity token (JWT)
-  const payload = JSON.parse(Buffer.from(identityToken.split('.')[1], 'base64').toString());
+  let payload: { sub: string; email: string; email_verified: boolean };
+  try {
+    payload = JSON.parse(Buffer.from(identityToken.split('.')[1], 'base64').toString());
+  } catch {
+    return c.json({ error: 'Invalid Apple token' }, 400);
+  }
 
   const { sub, email, email_verified } = payload;
   if (!sub || !email) {

@@ -1,6 +1,7 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import { Platform, View } from 'react-native';
@@ -16,9 +17,14 @@ const HEADER_POSITION_STYLE = {
   right: 0,
 } as const;
 
-export function AiChatHeader() {
+type AiChatHeaderProps = {
+  onClear?: () => void;
+};
+
+export function AiChatHeader({ onClear }: AiChatHeaderProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   return Platform.OS === 'ios' ? (
     <BlurView intensity={100} style={[HEADER_POSITION_STYLE, { paddingTop: insets.top }]}>
@@ -30,14 +36,24 @@ export function AiChatHeader() {
         </View>
         <View className="items-center">
           <Text variant="title3" className="text-center">
-            PackRat AI
+            {t('ai.packratAI')}
           </Text>
           <Text variant="caption2" className="text-muted-foreground">
-            Your Hiking Assistant
+            {t('ai.hikingAssistant')}
           </Text>
         </View>
-        <Button variant="plain" size="icon" className="opacity-0">
-          <Icon size={28} color={colors.primary} name="pin-outline" />
+        <Button variant="plain" size="icon" onPress={onClear}>
+          <Icon
+            size={28}
+            color={colors.grey2}
+            materialIcon={{
+              name: 'square-edit-outline',
+              type: 'MaterialCommunityIcons',
+            }}
+            ios={{
+              name: 'square.and.pencil',
+            }}
+          />
         </Button>
       </View>
     </BlurView>
@@ -62,12 +78,24 @@ export function AiChatHeader() {
           </Button>
         </View>
         <View className="flex-1 items-center">
-          <Text className="text-lg font-medium">PackRat AI</Text>
+          <Text className="text-lg font-medium">{t('ai.packratAI')}</Text>
           <Text variant="caption2" className="text-muted-foreground">
-            Your Hiking Assistant
+            {t('ai.hikingAssistant')}
           </Text>
         </View>
-        <View style={{ width: 40 }} />
+        <Button variant="plain" size="icon" onPress={onClear}>
+          <Icon
+            size={28}
+            color={colors.grey2}
+            materialIcon={{
+              name: 'square-edit-outline',
+              type: 'MaterialCommunityIcons',
+            }}
+            ios={{
+              name: 'square.and.pencil',
+            }}
+          />
+        </Button>
       </View>
     </View>
   );

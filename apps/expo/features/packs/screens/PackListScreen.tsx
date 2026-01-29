@@ -12,6 +12,7 @@ import { SearchResults } from 'expo-app/features/packs/components/SearchResults'
 import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -19,6 +20,7 @@ import { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   Text,
@@ -33,17 +35,6 @@ type FilterOption = {
   label: string;
   value: PackCategory | 'all';
 };
-
-const filterOptions: FilterOption[] = [
-  { label: 'All', value: 'all' },
-  { label: 'Hiking', value: 'hiking' },
-  { label: 'Backpacking', value: 'backpacking' },
-  { label: 'Camping', value: 'camping' },
-  { label: 'Climbing', value: 'climbing' },
-  { label: 'Winter', value: 'winter' },
-  { label: 'Desert', value: 'desert' },
-  { label: 'Custom', value: 'custom' },
-];
 
 function CreatePackIconButton() {
   const { colors } = useColorScheme();
@@ -60,6 +51,7 @@ const USER_PACKS_INDEX = 0;
 const ALL_PACKS_INDEX = 1;
 
 export function PackListScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const userPacks = usePacks();
   const [searchValue, setSearchValue] = useAtom(searchValueAtom);
@@ -73,6 +65,19 @@ export function PackListScreen() {
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+
+  const { colors } = useColorScheme();
+
+  const filterOptions: FilterOption[] = [
+    { label: t('packs.all'), value: 'all' },
+    { label: t('packs.categories.hiking'), value: 'hiking' },
+    { label: t('packs.categories.backpacking'), value: 'backpacking' },
+    { label: t('packs.categories.camping'), value: 'camping' },
+    { label: t('packs.categories.climbing'), value: 'climbing' },
+    { label: t('packs.categories.winter'), value: 'winter' },
+    { label: t('packs.categories.desert'), value: 'desert' },
+    { label: t('packs.categories.custom'), value: 'custom' },
+  ];
 
   const packs = selectedTypeIndex === USER_PACKS_INDEX ? userPacks : allPacksQuery.data;
 
@@ -136,13 +141,15 @@ export function PackListScreen() {
           <View className="bg-destructive/10 mb-4 rounded-full p-4">
             <Icon name="exclamation" size={32} color="text-destructive" />
           </View>
-          <Text className="mb-2 text-lg font-medium text-foreground">Failed to load packs</Text>
+          <Text className="mb-2 text-lg font-medium text-foreground">
+            {t('packs.failedToLoadPacks')}
+          </Text>
           <Text className="mb-6 text-center text-muted-foreground">
-            {allPacksQuery.error?.message || 'Something went wrong. Please try again.'}
+            {allPacksQuery.error?.message || t('packs.pleaseTryAgain')}
           </Text>
           <View className="flex-row justify-center">
             <Button variant="secondary" onPress={handleRetryAllPacks}>
-              <Text>Try Again</Text>
+              <Text>{t('packs.tryAgain')}</Text>
             </Button>
           </View>
         </View>
@@ -164,7 +171,7 @@ export function PackListScreen() {
             : `No public ${activeFilter} packs are available.`}
         </Text>
         <TouchableOpacity className="rounded-lg bg-primary px-4 py-2" onPress={handleCreatePack}>
-          <Text className="font-medium text-primary-foreground">Create New Pack</Text>
+          <Text className="font-medium text-primary-foreground">{t('packs.createNewPack')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -173,7 +180,7 @@ export function PackListScreen() {
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
-        title="Packs"
+        title={t('navigation.packs')}
         backVisible={false}
         searchBar={{
           iosHideWhenScrolling: true,
@@ -189,7 +196,7 @@ export function PackListScreen() {
             />
           ) : (
             <View className="flex-1 items-center justify-center">
-              <Text>Search packs</Text>
+              <Text>{t('packs.searchPacks')}</Text>
             </View>
           ),
         }}
@@ -203,14 +210,24 @@ export function PackListScreen() {
       <FlatList
         data={filteredPacks}
         keyExtractor={(pack) => pack.id}
+        stickyHeaderIndices={[0]}
         renderItem={({ item: pack }) => (
           <View className="px-4 pt-4">
             <PackCard pack={pack} onPress={handlePackPress} />
           </View>
         )}
+        refreshControl={
+          selectedTypeIndex === ALL_PACKS_INDEX ? (
+            <RefreshControl
+              refreshing={allPacksQuery.isRefetching}
+              onRefresh={allPacksQuery.refetch}
+              tintColor={colors.primary}
+            />
+          ) : undefined
+        }
         ListHeaderComponent={
-          <>
-            {!isAuthenticated && <SyncBanner />}
+          <View className="bg-background">
+            {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
             {isAuthenticated && (
               <View className="px-4">
                 <SegmentedControl
@@ -229,13 +246,13 @@ export function PackListScreen() {
               </ScrollView>
             </View>
             {selectedTypeIndex === USER_PACKS_INDEX && (
-              <View className="px-6 pb-0 pt-2">
+              <View className="px-6 py-2">
                 <Text className="flex-1 text-muted-foreground">
                   {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
                 </Text>
               </View>
             )}
-          </>
+          </View>
         }
         ListEmptyComponent={
           selectedTypeIndex === ALL_PACKS_INDEX ? (
@@ -245,7 +262,9 @@ export function PackListScreen() {
               <View className="mb-4 rounded-full bg-muted p-4">
                 <Icon name="cog-outline" size={32} color="text-muted-foreground" />
               </View>
-              <Text className="mb-1 text-lg font-medium text-foreground">No packs found</Text>
+              <Text className="mb-1 text-lg font-medium text-foreground">
+                {t('packs.noPacksFound')}
+              </Text>
               <Text className="mb-6 text-center text-muted-foreground">
                 {activeFilter === 'all'
                   ? "You haven't created or found any public packs yet."
@@ -255,7 +274,9 @@ export function PackListScreen() {
                 className="rounded-lg bg-primary px-4 py-2"
                 onPress={handleCreatePack}
               >
-                <Text className="font-medium text-primary-foreground">Create New Pack</Text>
+                <Text className="font-medium text-primary-foreground">
+                  {t('packs.createNewPack')}
+                </Text>
               </TouchableOpacity>
             </View>
           )
