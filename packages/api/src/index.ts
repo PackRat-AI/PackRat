@@ -10,6 +10,7 @@ import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { logger } from 'hono/logger';
+import { ZodError } from 'zod';
 import { CatalogService } from './services';
 import type { CatalogETLMessage } from './services/etl/types';
 import type { Variables } from './types/variables';
@@ -44,7 +45,7 @@ app
       return err.getResponse();
     }
     // Handle Zod validation errors
-    if (err.errors && Array.isArray(err.errors)) {
+    if (err instanceof ZodError) {
       const firstError = err.errors[0];
       const message = firstError?.message || 'Validation error';
       return c.json({ error: message }, 400);

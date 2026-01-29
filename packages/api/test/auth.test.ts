@@ -26,7 +26,9 @@ describe('Auth Routes', () => {
       expect(data.error).toBeDefined();
       // Error can be string or ZodError object
       if (typeof data.error === 'string') {
-        expect(['Email and password are required', 'Field required'].includes(data.error)).toBe(true);
+        expect(['Email and password are required', 'Field required'].includes(data.error)).toBe(
+          true,
+        );
       }
     });
 
@@ -67,7 +69,9 @@ describe('Auth Routes', () => {
       expect(data.error).toBeDefined();
       // Error can be string or ZodError object
       if (typeof data.error === 'string') {
-        expect(['Email and password are required', 'Field required'].includes(data.error)).toBe(true);
+        expect(['Email and password are required', 'Field required'].includes(data.error)).toBe(
+          true,
+        );
       }
     });
 
