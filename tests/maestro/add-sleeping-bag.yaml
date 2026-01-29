@@ -1,0 +1,14 @@
+appId: packrat.world
+---
+- launchApp
+- assertVisible: "My Packs"
+- tapOn: "My First Pack"
+- assertVisible: "Items"
+- tapOn: "Items"
+- assertVisible: "Add Item"
+- tapOn: "Add Item"
+- assertVisible: "Search Catalog"
+- type: "Sleeping Bag"
+- assertVisible: "Sleeping Bag"
+- tapOn: "Sleeping Bag"
+- assertVisible: "Added to pack"

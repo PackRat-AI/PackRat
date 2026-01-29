@@ -1,0 +1,7 @@
+appId: packrat.world
+---
+- launchApp
+- assertVisible: "My Packs"
+- tapOn: "Profile"
+- assertVisible: "Settings"
+- assertVisible: "Sign Out"
