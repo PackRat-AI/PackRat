@@ -57,6 +57,10 @@ export class AIService {
     // Return empty results if AI binding is not available (e.g., in test environment)
     if (!this.guidesRAG) {
       return {
+        object: 'search',
+        search_query: query,
+        has_more: false,
+        next_page: null,
         data: [],
       };
     }
