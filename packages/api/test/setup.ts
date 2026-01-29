@@ -67,7 +67,9 @@ vi.mock('@packrat/api/db', () => ({
 
 // Mock AI service to prevent "this.env.AI.autorag" errors in tests
 vi.mock('@packrat/api/services/aiService', async () => {
-  const actual = await vi.importActual<typeof import('@packrat/api/services/aiService')>('@packrat/api/services/aiService');
+  const actual = await vi.importActual<typeof import('@packrat/api/services/aiService')>(
+    '@packrat/api/services/aiService',
+  );
   return {
     ...actual,
     AIService: vi.fn().mockImplementation(() => ({
