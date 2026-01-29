@@ -1,6 +1,7 @@
 // Environment & Deployment
 process.env.ENVIRONMENT = 'development';
 process.env.SENTRY_DSN = 'https://test@test.ingest.sentry.io/test';
+process.env.CF_VERSION_METADATA_ID = 'test-version-id';
 
 // Database - Using PostgreSQL Docker container for tests
 process.env.NEON_DATABASE_URL = 'postgres://test_user:test_password@localhost:5433/packrat_test';
@@ -24,6 +25,8 @@ process.env.EMAIL_FROM = 'test@example.com';
 process.env.OPENAI_API_KEY = 'sk-test-key';
 process.env.AI_PROVIDER = 'openai';
 process.env.PERPLEXITY_API_KEY = 'pplx-test-key';
+process.env.AI_GATEWAY_URL = 'https://ai.test.local';
+process.env.AI_EMBEDDINGS_URL = 'https://embeddings.test.local';
 
 // Weather Services
 process.env.OPENWEATHER_KEY = 'test-weather-key';
@@ -61,6 +64,18 @@ vi.mock('@packrat/api/db', () => ({
   createReadOnlyDb: vi.fn(() => testDb),
   createDbClient: vi.fn(() => testDb),
 }));
+
+// Mock AI service to prevent "this.env.AI.autorag" errors in tests
+vi.mock('@packrat/api/services/aiService', async () => {
+  const actual = await vi.importActual<typeof import('@packrat/api/services/aiService')>('@packrat/api/services/aiService');
+  return {
+    ...actual,
+    AIService: vi.fn().mockImplementation(() => ({
+      searchPackratOutdoorGuidesRAG: vi.fn().mockResolvedValue([]),
+      perplexitySearch: vi.fn().mockResolvedValue({ results: [] }),
+    })),
+  };
+});
 
 // Setup PostgreSQL connection for tests
 beforeAll(async () => {
