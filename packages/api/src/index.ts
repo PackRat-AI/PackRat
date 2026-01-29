@@ -20,9 +20,10 @@ const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 // Apply global middleware
 app
   .use((c, next) => {
+    const env = getEnv(c);
     return sentry({
-      environment: getEnv(c).ENVIRONMENT,
-      release: getEnv(c).CF_VERSION_METADATA.id,
+      environment: env.ENVIRONMENT || 'development',
+      release: env.CF_VERSION_METADATA?.id || 'unknown',
       // Adds request headers and IP for users, for more info visit:
       // https://docs.sentry.io/platforms/javascript/guides/cloudflare/configuration/options/#sendDefaultPii
       sendDefaultPii: true,
