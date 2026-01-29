@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apiWithAuth, api, httpMethods } from './utils/test-helpers';
+import { api, apiWithAuth, httpMethods } from './utils/test-helpers';
 
 describe('Image Detection Routes', () => {
   describe('Authentication', () => {

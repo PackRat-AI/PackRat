@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { api, apiWithAuth, apiWithAdmin, httpMethods } from './utils/test-helpers';
+import { api, apiWithAdmin, apiWithAuth, httpMethods } from './utils/test-helpers';
 
 describe('Pack Routes - Core Functionality', () => {
   describe('Authentication', () => {
