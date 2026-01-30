@@ -3,8 +3,10 @@ import {
   api,
   apiWithAuth,
   expectBadRequest,
+  expectForbiddenOrAuthFailure,
   expectJsonResponse,
   expectNotFound,
+  expectNotFoundOrAuthFailure,
   expectUnauthorized,
   httpMethods,
 } from './utils/test-helpers';
@@ -195,7 +197,7 @@ describe('Packs Routes', () => {
 
       // Could be 403 (forbidden) or 404 (not found for this user)
       if (res.status === 403) {
-        expect(res.status).toBe(403);
+        expectForbiddenOrAuthFailure(res);
       }
     });
   });
@@ -220,7 +222,7 @@ describe('Packs Routes', () => {
       const res = await apiWithAuth('/packs/1', httpMethods.delete(''));
 
       if (res.status === 403) {
-        expect(res.status).toBe(403);
+        expectForbiddenOrAuthFailure(res);
       }
     });
   });

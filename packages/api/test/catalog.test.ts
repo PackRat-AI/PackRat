@@ -4,8 +4,10 @@ import {
   apiWithAdmin,
   apiWithAuth,
   expectBadRequest,
+  expectForbiddenOrAuthFailure,
   expectJsonResponse,
   expectNotFound,
+  expectNotFoundOrAuthFailure,
   expectUnauthorized,
   httpMethods,
 } from './utils/test-helpers';
@@ -248,7 +250,7 @@ describe('Catalog Routes', () => {
 
       // This may require admin permissions
       if (res.status === 403) {
-        expect(res.status).toBe(403);
+        expectForbiddenOrAuthFailure(res);
       } else if (res.status === 200) {
         await expectJsonResponse(res);
       }
@@ -265,7 +267,7 @@ describe('Catalog Routes', () => {
       const res = await apiWithAdmin('/catalog/backfill-embeddings', httpMethods.post('', {}));
 
       if (res.status === 403) {
-        expect(res.status).toBe(403);
+        expectForbiddenOrAuthFailure(res);
       } else if (res.status === 200) {
         await expectJsonResponse(res);
       }

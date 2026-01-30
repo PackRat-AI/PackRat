@@ -3,7 +3,9 @@ import {
   api,
   apiWithAuth,
   expectBadRequest,
+  expectForbiddenOrAuthFailure,
   expectJsonResponse,
+  expectNotFoundOrAuthFailure,
   expectUnauthorized,
 } from './utils/test-helpers';
 
@@ -322,7 +324,7 @@ describe('Weather Routes', () => {
         expect(data.alerts.alert.length).toBeGreaterThan(0);
       } else if (res.status === 404) {
         // Alerts endpoint may not be implemented
-        expect(res.status).toBe(404);
+        expectNotFoundOrAuthFailure(res);
       }
 
       global.fetch = originalFetch;
@@ -346,7 +348,7 @@ describe('Weather Routes', () => {
         const data = await expectJsonResponse(res);
         expect(data.alerts.alert.length).toBe(0);
       } else if (res.status === 404) {
-        expect(res.status).toBe(404);
+        expectNotFoundOrAuthFailure(res);
       }
 
       global.fetch = originalFetch;

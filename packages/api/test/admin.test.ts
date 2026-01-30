@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   api,
   apiWithBasicAuth,
+  expectForbiddenOrAuthFailure,
   expectJsonResponse,
+  expectNotFoundOrAuthFailure,
   expectUnauthorized,
 } from './utils/test-helpers';
 

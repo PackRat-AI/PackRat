@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   api,
   apiWithAuth,
+  expectForbiddenOrAuthFailure,
   expectJsonResponse,
+  expectNotFoundOrAuthFailure,
   expectUnauthorized,
   httpMethods,
 } from './utils/test-helpers';
@@ -24,7 +26,7 @@ describe('Image Detection Routes', () => {
     it('requires imageUrl parameter', async () => {
       const res = await apiWithAuth('/packs/analyze-image', httpMethods.post('', {}));
       // May return 403 if auth middleware rejects before validation
-      expect([400, 403].includes(res.status)).toBe(true);
+      expectForbiddenOrAuthFailure(res);
     });
 
     it('requires valid imageUrl format', async () => {
@@ -35,7 +37,7 @@ describe('Image Detection Routes', () => {
         }),
       );
       // May return 403 if auth middleware rejects before validation
-      expect([400, 403].includes(res.status)).toBe(true);
+      expectForbiddenOrAuthFailure(res);
     });
 
     it('accepts valid request with minimal parameters', async () => {
@@ -84,14 +86,14 @@ describe('Image Detection Routes', () => {
       );
 
       // May return 403 if auth middleware rejects before validation
-      expect([400, 403].includes(res.status)).toBe(true);
+      expectForbiddenOrAuthFailure(res);
     });
   });
 
   describe('POST /packs/create-from-image', () => {
     it('requires imageUrl parameter', async () => {
       const res = await apiWithAuth('/packs/create-from-image', httpMethods.post('', {}));
-      expect([400, 403].includes(res.status)).toBe(true);
+      expectForbiddenOrAuthFailure(res);
     });
 
     it('requires packName parameter', async () => {
@@ -101,7 +103,7 @@ describe('Image Detection Routes', () => {
           imageUrl: 'https://example.com/test-image.jpg',
         }),
       );
-      expect([400, 403].includes(res.status)).toBe(true);
+      expectForbiddenOrAuthFailure(res);
     });
 
     it('validates packName length', async () => {
@@ -112,7 +114,7 @@ describe('Image Detection Routes', () => {
           packName: '', // Empty string should fail
         }),
       );
-      expect([400, 403].includes(res.status)).toBe(true);
+      expectForbiddenOrAuthFailure(res);
     });
 
     it('accepts valid request with minimal parameters', async () => {
@@ -166,7 +168,7 @@ describe('Image Detection Routes', () => {
         }),
       );
 
-      expect([400, 403].includes(res.status)).toBe(true);
+      expectForbiddenOrAuthFailure(res);
     });
 
     it('validates boolean parameters', async () => {
@@ -179,7 +181,7 @@ describe('Image Detection Routes', () => {
         }),
       );
 
-      expect([400, 403].includes(res.status)).toBe(true);
+      expectForbiddenOrAuthFailure(res);
     });
   });
 

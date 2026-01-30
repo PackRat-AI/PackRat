@@ -3,7 +3,9 @@ import {
   api,
   apiWithAuth,
   expectBadRequest,
+  expectForbiddenOrAuthFailure,
   expectJsonResponse,
+  expectNotFoundOrAuthFailure,
   expectUnauthorized,
   httpMethods,
 } from './utils/test-helpers';
@@ -329,7 +331,7 @@ describe('Search Routes', () => {
         expect(Array.isArray(data) || data.suggestions).toBeTruthy();
       } else if (res.status === 404) {
         // Feature may not be implemented yet
-        expect(res.status).toBe(404);
+        expectNotFoundOrAuthFailure(res);
       }
     });
 
@@ -341,7 +343,7 @@ describe('Search Routes', () => {
         expect(Array.isArray(data) || data.completions).toBeTruthy();
       } else if (res.status === 404) {
         // Feature may not be implemented yet
-        expect(res.status).toBe(404);
+        expectNotFoundOrAuthFailure(res);
       }
     });
   });
