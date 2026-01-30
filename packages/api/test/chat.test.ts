@@ -4,6 +4,7 @@ import {
   apiWithAuth,
   expectBadRequest,
   expectJsonResponse,
+  expectNotFoundOrAuthFailure,
   expectUnauthorized,
   httpMethods,
 } from './utils/test-helpers';
@@ -180,9 +181,8 @@ describe('Chat Routes', () => {
       if (res.status === 200) {
         const data = await expectJsonResponse(res);
         expect(Array.isArray(data) || data.conversations).toBeTruthy();
-      } else if (res.status === 404) {
-        // Feature may not be implemented
-        expect(res.status).toBe(404);
+      } else {
+        expectNotFoundOrAuthFailure(res);
       }
     });
 
@@ -191,8 +191,8 @@ describe('Chat Routes', () => {
 
       if (res.status === 200) {
         await expectJsonResponse(res);
-      } else if (res.status === 404) {
-        expect(res.status).toBe(404);
+      } else {
+        expectNotFoundOrAuthFailure(res);
       }
     });
   });
@@ -205,8 +205,8 @@ describe('Chat Routes', () => {
         const data = await expectJsonResponse(res, ['id', 'messages']);
         expect(data.messages).toBeDefined();
         expect(Array.isArray(data.messages)).toBe(true);
-      } else if (res.status === 404) {
-        expect(res.status).toBe(404);
+      } else {
+        expectNotFoundOrAuthFailure(res);
       }
     });
 
@@ -224,8 +224,8 @@ describe('Chat Routes', () => {
 
       if (res.status === 200 || res.status === 204) {
         expect(res.status).toBeOneOf([200, 204]);
-      } else if (res.status === 404) {
-        expect(res.status).toBe(404);
+      } else {
+        expectNotFoundOrAuthFailure(res);
       }
     });
 
