@@ -1,0 +1,45 @@
+# Local testing wrangler.toml
+# Do not commit secrets to version control
+
+name = "packrat-api"
+compatibility_date = "2025-01-01"
+
+# Database
+[d1]
+binding = "DB"
+database_id = "local-test"
+database_name = "packrat_test"
+
+# AI
+[[unsafe.bindings]]
+name = "AI"
+type = "unsafe"
+
+# Queues
+[[unsafe.bindings]]
+name = "ETL_QUEUE"
+type = "unsafe"
+
+[[unsafe.bindings]]
+name = "LOGS_QUEUE"
+type = "unsafe"
+
+[[unsafe.bindings]]
+name = "EMBEDDINGS_QUEUE"
+type = "unsafe"
+
+# R2 Buckets
+[[unsafe.bindings]]
+name = "PACKRAT_BUCKET"
+type = "unsafe"
+
+[[unsafe.bindings]]
+name = "PACKRAT_GUIDES_BUCKET"
+type = "unsafe"
+
+[[unsafe.bindings]]
+name = "PACKRAT_SCRAPY_BUCKET"
+type = "unsafe"
+
+[vars]
+ENVIRONMENT = "development"

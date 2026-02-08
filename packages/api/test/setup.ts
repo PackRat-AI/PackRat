@@ -159,24 +159,34 @@ beforeAll(async () => {
     testDb = drizzle(testClient, { schema }) as any;
     console.log('✅ Test database connected successfully');
 
-    // Run migrations using direct PostgreSQL client
-    const fs = await import('node:fs/promises');
-    const path = await import('node:path');
-    const migrationsDir = path.join(process.cwd(), 'drizzle');
+    // Check if tables already exist
+    const { rows } = await testClient.query(
+      "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public'",
+    );
+    const tableCount = parseInt(rows[0].count);
 
-    try {
-      const files = await fs.readdir(migrationsDir);
-      const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
+    if (tableCount > 0) {
+      console.log(`ℹ️  Database already has ${tableCount} tables, skipping migrations`);
+    } else {
+      // Run migrations using direct PostgreSQL client
+      const fs = await import('node:fs/promises');
+      const path = await import('node:path');
+      const migrationsDir = path.join(process.cwd(), 'drizzle');
 
-      for (const file of sqlFiles) {
-        const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
-        await testClient.query(migrationSql);
+      try {
+        const files = await fs.readdir(migrationsDir);
+        const sqlFiles = files.filter((f) => f.endsWith('.sql')).sort();
+
+        for (const file of sqlFiles) {
+          const migrationSql = await fs.readFile(path.join(migrationsDir, file), 'utf-8');
+          await testClient.query(migrationSql);
+        }
+
+        console.log('✅ Test database migrations completed');
+      } catch (error) {
+        console.error('❌ Failed to run database migrations:', error);
+        throw error;
       }
-
-      console.log('✅ Test database migrations completed');
-    } catch (error) {
-      console.error('❌ Failed to run database migrations:', error);
-      throw error;
     }
   } catch (error) {
     console.error('❌ Failed to connect to test database:', error);

@@ -53,10 +53,17 @@ const bindings = {
 
 Object.assign(process.env, bindings);
 
+// Workers-specific test configuration
 export default defineWorkersConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@packrat/api': resolve(__dirname, 'src'),
+      '@packrat/api/routes': resolve(__dirname, 'src/routes'),
+      '@packrat/api/utils': resolve(__dirname, 'src/utils'),
+      '@packrat/api/db': resolve(__dirname, 'src/db'),
+      '@packrat/api/services': resolve(__dirname, 'src/services'),
+      '@packrat/api/types': resolve(__dirname, 'src/types'),
     },
   },
   test: {
