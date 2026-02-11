@@ -5,6 +5,7 @@ import { appAlert } from 'expo-app/app/_layout';
 import { ErrorState } from 'expo-app/components/ErrorState';
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -16,6 +17,7 @@ import { useBulkAddCatalogItems } from '../hooks';
 import { useImageDetection } from '../hooks/useImageDetection';
 
 export function ItemsScanScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useColorScheme();
   const { packId, ...fileInfo } = useLocalSearchParams();
@@ -95,9 +97,9 @@ export function ItemsScanScreen() {
         } catch (err) {
           console.error('Error handling image:', err);
           appAlert.current?.alert({
-            title: 'Error',
-            message: 'Failed to process image. Please try again.',
-            buttons: [{ text: 'OK', style: 'default' }],
+            title: t('common.error'),
+            message: t('packs.failedToProcessImage'),
+            buttons: [{ text: t('common.ok'), style: 'default' }],
           });
         }
       },
@@ -158,7 +160,7 @@ export function ItemsScanScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Scan Items from Photo',
+          title: t('packs.scanItemsFromPhoto'),
           headerBackVisible: true,
         }}
       />
@@ -170,7 +172,7 @@ export function ItemsScanScreen() {
           resizeMode="cover"
         />
         <Button variant="secondary" onPress={handleAddImage}>
-          <Text>Change</Text>
+          <Text>{t('packs.change')}</Text>
         </Button>
       </View>
 
@@ -178,7 +180,7 @@ export function ItemsScanScreen() {
         {isScanning ? (
           <View className="items-center mt-32 justify-center py-4">
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text className="ml-2 text-muted-foreground">Scanning for items...</Text>
+            <Text className="ml-2 text-muted-foreground">{t('packs.scanningForItems')}</Text>
           </View>
         ) : data ? (
           uniqueCatalogItems.length > 0 ? (
@@ -199,23 +201,24 @@ export function ItemsScanScreen() {
                 <View className="bg-neutral-300 dark:bg-neutral-600 rounded-full p-6 mb-4">
                   <Icon name="camera-outline" size={48} color={colors.grey} />
                 </View>
-                <Text className="text-xl font-semibold text-center mb-2">No Items Found</Text>
+                <Text className="text-xl font-semibold text-center mb-2">
+                  {t('packs.noItemsFound')}
+                </Text>
                 <Text className="text-center text-muted-foreground text-base leading-6">
-                  We couldn't identify any outdoor gear in this photo. Try taking a clearer image
-                  with better lighting.
+                  {t('packs.weCouldntIdentify')}
                 </Text>
               </View>
 
               <View className="w-full gap-3 mb-4">
                 <Text className="text-sm font-medium text-foreground mb-2">
-                  Tips for better scanning:
+                  {t('packs.tipsForBetterScanning')}
                 </Text>
                 <View className="flex-row items-start gap-3 mb-2">
                   <View className="bg-primary/10 rounded-full p-1.5 mt-0.5">
                     <Icon name="lightbulb" size={12} color={colors.primary} />
                   </View>
                   <Text className="flex-1 text-sm text-muted-foreground">
-                    Spread items on a contrasting background
+                    {t('packs.spreadItemsContrast')}
                   </Text>
                 </View>
                 <View className="flex-row items-start gap-3 mb-2">
@@ -228,7 +231,7 @@ export function ItemsScanScreen() {
                     />
                   </View>
                   <Text className="flex-1 text-sm text-muted-foreground">
-                    Use good lighting (natural light works best)
+                    {t('packs.useGoodLighting')}
                   </Text>
                 </View>
                 <View className="flex-row items-start gap-3 mb-2">
@@ -236,22 +239,22 @@ export function ItemsScanScreen() {
                     <Icon name="eye" size={12} color={colors.primary} />
                   </View>
                   <Text className="flex-1 text-sm text-muted-foreground">
-                    Ensure items are clearly visible and not overlapping
+                    {t('packs.ensureItemsVisible')}
                   </Text>
                 </View>
               </View>
 
               <View className="w-full">
                 <Button variant="secondary" onPress={handleAddImage}>
-                  <Text>Try Another Photo</Text>
+                  <Text>{t('packs.tryAnotherPhoto')}</Text>
                 </Button>
               </View>
             </View>
           )
         ) : (
           <ErrorState
-            title="An Error Occurred"
-            text="Please try again"
+            title={t('packs.anErrorOccurred')}
+            text={t('packs.pleaseTryAgain')}
             onRetry={handleAnalyzeImage}
             className="mt-36"
           />
@@ -267,7 +270,8 @@ export function ItemsScanScreen() {
             variant="tonal"
           >
             <Text>
-              Add {selectedCatalogItems.size} {selectedCatalogItems.size > 1 ? 'Items' : 'Item'}
+              {t('packs.add')} {selectedCatalogItems.size}{' '}
+              {selectedCatalogItems.size > 1 ? t('packs.itemsTitleCase') : t('packs.itemTitleCase')}
             </Text>
           </Button>
         </View>

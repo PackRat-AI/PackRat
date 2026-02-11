@@ -1,6 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { CatalogItemCard } from 'expo-app/features/catalog/components';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Dimensions, ScrollView, View } from 'react-native';
 import type { ToolInvocation } from '../types';
@@ -39,6 +40,7 @@ interface CatalogItemsGenerativeUIProps {
 export function CatalogItemsGenerativeUI({ toolInvocation }: CatalogItemsGenerativeUIProps) {
   const router = useRouter();
   const screenWidth = Dimensions.get('window').width;
+  const { t } = useTranslation();
 
   const handleItemPress = (catalogItem: CatalogItem) => {
     router.push({
@@ -49,34 +51,34 @@ export function CatalogItemsGenerativeUI({ toolInvocation }: CatalogItemsGenerat
 
   switch (toolInvocation.state) {
     case 'input-streaming':
-      return <ToolCard text="Initiating catalog search..." icon="loading" />;
+      return <ToolCard text={t('ai.tools.initiatingCatalogSearch')} icon="loading" />;
     case 'input-available':
       return (
         <ToolCard
           text={
             'query' in toolInvocation.input
-              ? `Searching catalog for "${toolInvocation.input.query}"...`
+              ? t('ai.tools.searchingCatalogFor', { query: toolInvocation.input.query })
               : 'category' in toolInvocation.input
-                ? `Fetching items in category "${toolInvocation.input.category}"...`
-                : 'Fetching catalog items...'
+                ? t('ai.tools.fetchingCategoryItems', { category: toolInvocation.input.category })
+                : t('ai.tools.fetchingCatalogItems')
           }
           icon="loading"
         />
       );
     case 'output-available': {
       if (!toolInvocation.output.success) {
-        return <ToolCard text="Error fetching catalog items" icon="error" />;
+        return <ToolCard text={t('ai.tools.errorFetchingCatalog')} icon="error" />;
       }
       const items = toolInvocation.output.data.items;
 
       if (items.length === 0) {
-        return <ToolCard text="No items found in catalog for your search" icon="info" />;
+        return <ToolCard text={t('ai.tools.noItemsFound')} icon="info" />;
       }
       return (
         <View>
           {/* Header */}
           <Text variant="callout" className="text-sm text-foreground uppercase" color="secondary">
-            Catalog Gears
+            {t('ai.tools.catalogGears')}
           </Text>
 
           {/* Items List */}
@@ -99,7 +101,7 @@ export function CatalogItemsGenerativeUI({ toolInvocation }: CatalogItemsGenerat
       );
     }
     case 'output-error':
-      return <ToolCard text="Error fetching catalog items" icon="error" />;
+      return <ToolCard text={t('ai.tools.errorFetchingCatalog')} icon="error" />;
     default:
       return null;
   }

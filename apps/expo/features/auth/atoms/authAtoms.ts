@@ -34,3 +34,6 @@ export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', 
 export const isLoadingAtom = atom(false);
 
 export const redirectToAtom = atom<string>('/');
+
+// Re-authentication state
+export const needsReauthAtom = atom(false);

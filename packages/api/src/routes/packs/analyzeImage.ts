@@ -5,7 +5,7 @@ import {
   AnalyzeImageResponseSchema,
 } from '@packrat/api/schemas/imageDetection';
 import { ErrorResponseSchema } from '@packrat/api/schemas/upload';
-import { ImageDetectionService } from '@packrat/api/services/imageDetectionService';
+import { ImageDetectionService } from '@packrat/api/services';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';

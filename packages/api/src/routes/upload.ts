@@ -10,6 +10,17 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Variables } from '../types/variables';
 import { getPresignedUrl } from '../utils/getPresignedUrl';
 
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/svg+xml',
+];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+
 const uploadRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
 // Generate a presigned URL for uploading to R2
@@ -70,10 +81,23 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
   } = getEnv(c);
 
   try {
-    const { fileName, contentType } = c.req.query();
+    const { fileName, contentType, size } = c.req.query();
 
     if (!fileName || !contentType) {
       return c.json({ error: 'fileName and contentType are required' }, 400);
+    }
+
+    // Validate content type - only allow images
+    if (!ALLOWED_IMAGE_TYPES.includes(contentType.toLowerCase())) {
+      return c.json({ error: 'Invalid content type. Only image files are allowed.' }, 400);
+    }
+
+    // Validate file size - max 10MB
+    if (size) {
+      const fileSize = Number.parseInt(size, 10);
+      if (Number.isNaN(fileSize) || fileSize <= 0 || fileSize > MAX_FILE_SIZE) {
+        return c.json({ error: 'File size must be greater than 0 and not exceed 10MB' }, 400);
+      }
     }
 
     // Security check: Ensure the filename starts with the user's ID

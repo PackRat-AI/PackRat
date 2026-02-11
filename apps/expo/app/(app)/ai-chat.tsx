@@ -3,7 +3,13 @@ import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
+import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
+import {
+  clearChatMessages,
+  loadChatMessages,
+  saveChatMessages,
+} from 'expo-app/features/ai/atoms/chatStorageAtoms';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
@@ -11,6 +17,7 @@ import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -75,15 +82,19 @@ export default function AIChat() {
   const { activeLocation } = useActiveLocation();
   const [location, setLocation] = React.useState<WeatherLocation | null>(activeLocation);
   const scrollViewRef = React.useRef<ScrollView>(null);
+  const { t } = useTranslation();
 
-  const context = {
-    itemId: params.itemId as string,
-    itemName: params.itemName as string,
-    packId: params.packId as string,
-    packName: params.packName as string,
-    contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
-    location: location ? location.name : undefined,
-  };
+  const context = React.useMemo(
+    () => ({
+      itemId: params.itemId as string,
+      itemName: params.itemName as string,
+      packId: params.packId as string,
+      packName: params.packName as string,
+      contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
+      location: location ? location.name : undefined,
+    }),
+    [params.itemId, params.itemName, params.packId, params.packName, params.contextType, location],
+  );
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
 
@@ -92,6 +103,19 @@ export default function AIChat() {
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
+  const isLoadingPersistedRef = React.useRef(false);
+
+  const initialMessages = React.useMemo<UIMessage[]>(
+    () => [
+      {
+        id: '1',
+        role: 'assistant',
+        parts: [{ type: 'text', text: getContextualGreeting(context) }],
+      } as UIMessage,
+    ],
+    [context],
+  );
+
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
@@ -109,14 +133,48 @@ export default function AIChat() {
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
     experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
-    messages: [
-      {
-        id: '1',
-        role: 'assistant',
-        parts: [{ type: 'text', text: getContextualGreeting(context) }],
-      } as UIMessage,
-    ],
+    messages: initialMessages,
   });
+
+  // Load persisted messages on mount and when context changes
+  React.useEffect(() => {
+    let isMounted = true;
+    isLoadingPersistedRef.current = true;
+
+    loadChatMessages(context)
+      .then((persisted) => {
+        if (isMounted && persisted && persisted.length > 0) {
+          setMessages(persisted);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load persisted messages:', error);
+      })
+      .finally(() => {
+        if (isMounted) {
+          isLoadingPersistedRef.current = false;
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [context, setMessages]);
+
+  // Save messages whenever they change with debouncing to reduce storage I/O
+  React.useEffect(() => {
+    // Don't save if we're currently loading persisted messages or if there are no messages
+    if (isLoadingPersistedRef.current || messages.length === 0) {
+      return;
+    }
+
+    // Debounce the save operation to reduce storage writes during rapid updates
+    const timeoutId = setTimeout(() => {
+      saveChatMessages(context, messages);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [messages, context]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
@@ -139,6 +197,11 @@ export default function AIChat() {
     setMessages(previousMessages);
     sendMessage({ text: lastUserMessage });
   };
+
+  const handleClear = React.useCallback(async () => {
+    await clearChatMessages(context);
+    setMessages(initialMessages);
+  }, [context, initialMessages, setMessages]);
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
     height: interpolate(
@@ -178,7 +241,11 @@ export default function AIChat() {
 
   return (
     <>
-      <Stack.Screen />
+      <Stack.Screen
+        options={{
+          header: () => <AiChatHeader onClear={handleClear} />,
+        }}
+      />
       <KeyboardAvoidingView
         style={[
           ROOT_STYLE,
@@ -240,7 +307,7 @@ export default function AIChat() {
           {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
           {messages.length < 2 && (
             <View className="pl-4 pr-16">
-              <Text className="mb-2 text-xs text-muted-foreground mt-0">SUGGESTIONS</Text>
+              <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
               <View className="flex-row flex-wrap gap-2">
                 {getContextualSuggestions(context).map((suggestion) => (
                   <TouchableOpacity
@@ -270,8 +337,10 @@ export default function AIChat() {
           isLoading={isLoading}
           placeholder={
             context.contextType === 'general'
-              ? 'Ask anything outdoors'
-              : `Ask about this ${context.contextType === 'item' ? 'item' : 'pack'}...`
+              ? t('ai.askAnythingOutdoors')
+              : context.contextType === 'item'
+                ? t('ai.askAboutItem')
+                : t('ai.askAboutPack')
           }
         />
       </KeyboardStickyView>

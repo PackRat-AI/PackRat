@@ -1,4 +1,5 @@
 import { ActivityIndicator, Button, SearchInput } from '@packrat/ui/nativewindui';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
@@ -10,6 +11,7 @@ export default function LocationSearchScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
   const { setLocation } = useTripLocation();
+  const { t } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -28,7 +30,7 @@ export default function LocationSearchScreen() {
 
     try {
       if (!GOOGLE_MAPS_API_KEY) {
-        Alert.alert('Missing API Key', 'Google Maps API key is not configured.');
+        Alert.alert(t('location.missingApiKey'), t('location.apiKeyNotConfigured'));
         setIsLoading(false);
         return;
       }
@@ -65,12 +67,12 @@ export default function LocationSearchScreen() {
         );
       } else {
         console.warn('Google Maps response:', data);
-        Alert.alert('Not Found', 'No location found for that search.');
+        Alert.alert(t('location.notFound'), t('location.noLocationFound'));
         setSelectedLocation(null);
       }
     } catch (error) {
       console.error('Error searching location:', error);
-      Alert.alert('Error', 'Something went wrong while searching.');
+      Alert.alert(t('location.searchError'), t('location.somethingWentWrong'));
       setSelectedLocation(null);
     } finally {
       setIsLoading(false);
@@ -89,14 +91,14 @@ export default function LocationSearchScreen() {
       <View className="p-4 border-b border-border bg-background flex-row items-center space-x-2">
         <View className="flex-1">
           <SearchInput
-            placeholder="Search for a place"
+            placeholder={t('location.searchForPlace')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
           />
         </View>
         <Button onPress={handleSearch} variant="secondary" size="sm">
-          <Text className="text-foreground font-medium">Search</Text>
+          <Text className="text-foreground font-medium">{t('location.searchButton')}</Text>
         </Button>
       </View>
 
@@ -128,7 +130,9 @@ export default function LocationSearchScreen() {
         {isLoading && <ActivityIndicator />}
         {selectedLocation && (
           <Button onPress={handleConfirm}>
-            <Text className="text-primary-foreground font-semibold">Confirm Location</Text>
+            <Text className="text-primary-foreground font-semibold">
+              {t('location.confirmLocation')}
+            </Text>
           </Button>
         )}
       </View>

@@ -1,12 +1,14 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { etlJobs } from '@packrat/api/db/schema';
-import { authMiddleware } from '@packrat/api/middleware';
+import { apiKeyAuthMiddleware, authMiddleware } from '@packrat/api/middleware';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
-import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+
+export const queueCatalogEtlRoute = new OpenAPIHono<{ Bindings: Env }>();
 
 const catalogETLSchema = z.object({
   filename: z.string().min(1, 'Filename is required'),
@@ -14,6 +16,8 @@ const catalogETLSchema = z.object({
   source: z.string().min(1, 'Source name is required'),
   scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
 });
+
+queueCatalogEtlRoute.use('*', apiKeyAuthMiddleware);
 
 export const routeDefinition = createRoute({
   method: 'post',
@@ -57,7 +61,7 @@ export const routeDefinition = createRoute({
   description: 'Initiates serverless ETL processing of catalog data from multiple R2 chunk files',
 });
 
-export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
+queueCatalogEtlRoute.openapi(routeDefinition, async (c) => {
   const { filename, chunks, source, scraperRevision } = c.req.valid('json');
   const db = createDb(c);
 
@@ -95,4 +99,4 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     },
     200,
   );
-};
+});

@@ -13,6 +13,7 @@ import { useCreatePackFromTemplate } from 'expo-app/features/pack-templates';
 import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-templates/store';
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -50,20 +51,8 @@ const packFormSchema = z.object({
 // Type inference
 // type PackFormValues = z.infer<typeof packFormSchema>;
 
-// Categories with icons and labels
-const CATEGORIES = [
-  { value: 'hiking', label: 'Hiking' },
-  { value: 'backpacking', label: 'Backpacking' },
-  { value: 'camping', label: 'Camping' },
-  { value: 'climbing', label: 'Climbing' },
-  { value: 'winter', label: 'Winter' },
-  { value: 'desert', label: 'Desert' },
-  { value: 'custom', label: 'Custom' },
-  { value: 'water sports', label: 'Water Sports' },
-  { value: 'skiing', label: 'Skiing' },
-];
-
 export const PackForm = ({ pack }: { pack?: Pack }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useColorScheme();
   const createPack = useCreatePack();
@@ -71,6 +60,19 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
   const params = useLocalSearchParams();
   const isCreatingFromTemplate = !!params.templateId;
   const isEditingExistingPack = !!pack;
+
+  // Categories with icons and labels
+  const CATEGORIES = [
+    { value: 'hiking', label: t('packs.categories.hiking') },
+    { value: 'backpacking', label: t('packs.categories.backpacking') },
+    { value: 'camping', label: t('packs.categories.camping') },
+    { value: 'climbing', label: t('packs.categories.climbing') },
+    { value: 'winter', label: t('packs.categories.winter') },
+    { value: 'desert', label: t('packs.categories.desert') },
+    { value: 'custom', label: t('packs.categories.custom') },
+    { value: 'water sports', label: t('packs.categories.waterSports') },
+    { value: 'skiing', label: t('packs.categories.skiing') },
+  ];
 
   const createPackFromTemplate = useCreatePackFromTemplate();
   const templateId = params.templateId as string;
@@ -130,22 +132,21 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1"
     >
-      {isCreatingFromTemplate && <Stack.Screen options={{ title: 'Enter New Pack Details' }} />}
+      {isCreatingFromTemplate && (
+        <Stack.Screen options={{ title: t('packs.enterNewPackDetails') }} />
+      )}
       {isCreatingFromTemplate && template && (
         <View>Creating pack from `{template.name}` template</View>
       )}
 
       <ScrollView contentContainerClassName="p-8">
         <Form>
-          <FormSection
-            ios={{ title: 'Pack Details' }}
-            footnote="Enter the basic information about your pack"
-          >
+          <FormSection ios={{ title: t('packs.packDetails') }} footnote={t('packs.enterBasicInfo')}>
             <form.Field name="name">
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Pack Name"
+                    placeholder={t('packs.packName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -164,7 +165,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Description"
+                    placeholder={t('packs.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -204,7 +205,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                     <Button className="my-2 w-full" variant="plain">
                       <View className="w-full flex-row items-center justify-between capitalize">
                         <Text className="text-zinc-800 dark:text-zinc-200">
-                          {field.state.value || 'Select Category'}
+                          {field.state.value || t('packs.selectCategory')}
                         </Text>
                         <Icon name="chevron-down" size={16} color={colors.grey2} />
                       </View>
@@ -216,8 +217,8 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
           </FormSection>
 
           <FormSection
-            ios={{ title: 'Visibility' }}
-            footnote="Public packs can be viewed by other users"
+            ios={{ title: t('packs.visibility') }}
+            footnote={t('packs.publicPacksVisible')}
           >
             <form.Field name="isPublic">
               {(field) => (
@@ -229,7 +230,9 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
                       ) : (
                         <Icon name="eye-off" size={18} color={colors.foreground} />
                       )}
-                      <Text className="ml-2 font-medium text-foreground">Make Pack Public</Text>
+                      <Text className="ml-2 font-medium text-foreground">
+                        {t('packs.makePackPublic')}
+                      </Text>
                     </View>
                     <Switch
                       value={field.state.value}
@@ -263,11 +266,11 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting
                   ? isEditingExistingPack
-                    ? 'Updating...'
-                    : 'Creating...'
+                    ? t('packs.updating')
+                    : t('packs.creating')
                   : isEditingExistingPack
-                    ? 'Update Pack'
-                    : 'Create Pack'}
+                    ? t('packs.updatePack')
+                    : t('packs.createPack')}
                 {/* TODO use activity indicator */}
               </Text>
             </Pressable>

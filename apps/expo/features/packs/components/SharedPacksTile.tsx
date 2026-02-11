@@ -1,10 +1,12 @@
 import { ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
 
 export function SharedPacksTile() {
+  const { t } = useTranslation();
   const router = useRouter();
 
   const handlePress = () => {
@@ -32,7 +34,7 @@ export function SharedPacksTile() {
         </View>
       }
       item={{
-        title: 'Shared Packs',
+        title: t('packs.sharedPacks'),
       }}
       onPress={handlePress}
       target="Cell"

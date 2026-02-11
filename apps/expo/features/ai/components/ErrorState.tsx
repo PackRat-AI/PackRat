@@ -1,6 +1,7 @@
 import { EvilIcons, Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, Text } from '@packrat/ui/nativewindui';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
 
 interface ErrorStateProps {
@@ -10,6 +11,7 @@ interface ErrorStateProps {
 
 export function ErrorState({ error, onRetry }: ErrorStateProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   if (!error) return null;
 
@@ -20,7 +22,7 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
           <Ionicons name="alert-circle-outline" size={24} color={colors.destructive} />
 
           <Text variant="caption2" numberOfLines={2}>
-            Looks like something went wrong. Retry?
+            {t('errors.looksLikeError')}
           </Text>
         </View>
         <Pressable onPress={onRetry}>

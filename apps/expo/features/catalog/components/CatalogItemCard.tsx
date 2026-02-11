@@ -9,6 +9,7 @@ import {
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TouchableWithoutFeedback, View } from 'react-native';
 import type { CatalogItem } from '../types';
 import { CatalogItemImage } from './CatalogItemImage';
@@ -20,6 +21,7 @@ type CatalogItemCardProps = {
 
 export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   return (
     <TouchableWithoutFeedback onPress={onPress} className="mb-3">
@@ -67,7 +69,10 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
             <View className="flex-row items-center">
               <Icon name="backpack" size={14} color={colors.grey} />
               <Text className="ml-1 text-xs text-muted-foreground">
-                used in {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
+                {t('catalog.usedInPacks', {
+                  count: item.usageCount,
+                  unit: item.usageCount === 1 ? t('catalog.pack') : t('catalog.packs'),
+                })}
               </Text>
             </View>
           )}

@@ -1,5 +1,6 @@
 import { Alert, Button, useColorScheme, useSheetRef } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { t } from 'expo-app/lib/i18n';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import AddPackItemActions from '../components/AddPackItemActions';
@@ -7,7 +8,7 @@ import { useDeletePack, usePackOwnershipCheck } from '../hooks';
 
 export function getPackDetailOptions(id: string) {
   return {
-    title: 'Pack Details',
+    title: t('packs.packDetails'),
     headerRight: () => {
       const router = useRouter();
       const addItemActionsRef = useSheetRef();
@@ -22,15 +23,15 @@ export function getPackDetailOptions(id: string) {
       return (
         <View className="flex-row items-center gap-2">
           <Alert
-            title="Delete pack?"
-            message="Are you sure you want to delete this pack? This action cannot be undone."
+            title={t('packs.deletePack')}
+            message={t('packs.deletePackConfirm')}
             buttons={[
               {
-                text: 'Cancel',
+                text: t('common.cancel'),
                 style: 'cancel',
               },
               {
-                text: 'OK',
+                text: t('common.ok'),
                 onPress: () => {
                   deletePack(id);
                   if (router.canGoBack()) {

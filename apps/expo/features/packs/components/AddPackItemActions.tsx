@@ -6,6 +6,7 @@ import { Icon } from '@roninoss/icons';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -17,6 +18,7 @@ interface AddPackItemActionsProps {
 
 export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
   function AddPackItemActions({ packId }, ref) {
+    const { t } = useTranslation();
     const [isCatalogModalVisible, setIsCatalogModalVisible] = React.useState(false);
     const { pickImage, takePhoto } = useImagePicker();
     const { showActionSheetWithOptions } = useActionSheet();
@@ -124,7 +126,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 }}
               >
                 <Icon name="plus" size={20} color={colors.foreground} />
-                <Text className="text-center font-medium">Add Manually</Text>
+                <Text className="text-center font-medium">{t('packs.addManually')}</Text>
                 <View className="ml-auto">
                   <Icon name="chevron-right" size={20} color={colors.grey2} />
                 </View>
@@ -134,7 +136,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 onPress={handleAddFromPhoto}
               >
                 <Icon name="camera-outline" size={20} color={colors.foreground} />
-                <Text className="text-center font-medium">Scan Items from Photo</Text>
+                <Text className="text-center font-medium">{t('packs.scanItemsFromPhoto')}</Text>
                 <View className="ml-auto">
                   <Icon name="chevron-right" size={20} color={colors.grey2} />
                 </View>
@@ -144,7 +146,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 onPress={handleAddFromCatalog}
               >
                 <Icon name="cart-outline" size={20} color={colors.foreground} />
-                <Text className="text-center font-medium">Add from Catalog</Text>
+                <Text className="text-center font-medium">{t('packs.addFromCatalog')}</Text>
                 <View className="ml-auto">
                   <Icon name="chevron-right" size={20} color={colors.grey2} />
                 </View>

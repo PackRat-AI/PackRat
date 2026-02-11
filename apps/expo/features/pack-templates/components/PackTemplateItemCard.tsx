@@ -5,6 +5,7 @@ import { appAlert } from 'expo-app/app/_layout';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
 import { useDeletePackTemplateItem } from '../hooks';
@@ -25,6 +26,7 @@ export function PackTemplateItemCard({
   const router = useRouter();
   const deleteItem = useDeletePackTemplateItem();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const user = useUser();
 
   const { showActionSheetWithOptions } = useActionSheet();
@@ -32,13 +34,18 @@ export function PackTemplateItemCard({
   const handleActionsPress = () => {
     const options =
       belongsToAppTemplate && user?.role !== 'ADMIN'
-        ? ['View Details', 'Cancel']
-        : ['View Details', 'Edit', 'Delete', 'Cancel'];
+        ? [t('packTemplates.viewDetails'), t('common.cancel')]
+        : [
+            t('packTemplates.viewDetails'),
+            t('common.edit'),
+            t('common.delete'),
+            t('common.cancel'),
+          ];
 
     const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = options.indexOf('Delete');
+    const destructiveButtonIndex = options.indexOf(t('common.delete'));
     const viewDetailsIndex = 0;
-    const editIndex = options.indexOf('Edit');
+    const editIndex = options.indexOf(t('common.edit'));
 
     showActionSheetWithOptions(
       {
@@ -74,11 +81,11 @@ export function PackTemplateItemCard({
             break;
           case destructiveButtonIndex:
             appAlert.current?.alert({
-              title: 'Delete item?',
-              message: 'This action cannot be undone.',
+              title: t('packTemplates.deleteItem'),
+              message: t('packTemplates.deleteItemMessage'),
               buttons: [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'OK', onPress: () => deleteItem(item.id) },
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.ok'), onPress: () => deleteItem(item.id) },
               ],
             });
             break;
@@ -109,13 +116,17 @@ export function PackTemplateItemCard({
             <View className="flex-row items-center gap-4 flex-wrap">
               {item.consumable && (
                 <View className={cn('rounded-full px-2 py-0.5', 'bg-amber-100')}>
-                  <Text className={cn('text-xs', 'text-amber-600')}>Consumable</Text>
+                  <Text className={cn('text-xs', 'text-amber-600')}>
+                    {t('packTemplates.consumable')}
+                  </Text>
                 </View>
               )}
 
               {item.worn && (
                 <View className={cn('rounded-full px-2 py-0.5', 'bg-emerald-100')}>
-                  <Text className={cn('text-xs', 'text-emerald-600')}>Worn</Text>
+                  <Text className={cn('text-xs', 'text-emerald-600')}>
+                    {t('packTemplates.worn')}
+                  </Text>
                 </View>
               )}
             </View>
@@ -125,7 +136,9 @@ export function PackTemplateItemCard({
                 {item.weightUnit}
               </Text>
 
-              <Text className="text-sm text-muted-foreground">{item.quantity} qty</Text>
+              <Text className="text-sm text-muted-foreground">
+                {item.quantity} {t('packTemplates.qty')}
+              </Text>
             </View>
           </View>
         </View>

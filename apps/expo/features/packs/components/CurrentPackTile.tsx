@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { useCurrentPack } from '../hooks';
@@ -8,6 +9,7 @@ import { useCurrentPack } from '../hooks';
 const _LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 export function CurrentPackTile() {
+  const { t } = useTranslation();
   const currentPack = useCurrentPack();
 
   const router = useRouter();
@@ -44,8 +46,8 @@ export function CurrentPackTile() {
         </View>
       }
       item={{
-        title: 'Current Pack',
-        subTitle: currentPack ? currentPack.name : 'Create your first pack to start tracking',
+        title: t('packs.currentPack'),
+        subTitle: currentPack ? currentPack.name : t('packs.createFirstPack'),
       }}
       onPress={handlePress}
       target="Cell"

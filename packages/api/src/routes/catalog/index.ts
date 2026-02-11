@@ -8,7 +8,7 @@ import * as getCatalogItemRoute from './getCatalogItemRoute';
 import { getCatalogItemsCategoriesRoute } from './getCatalogItemsCategoriesRoute';
 import * as getCatalogItemsRoute from './getCatalogItemsRoute';
 import * as getSimilarCatalogItemsRoute from './getSimilarCatalogItemsRoute';
-import * as queueCatalogEtlRoute from './queueCatalogEtlRoute';
+import { queueCatalogEtlRoute } from './queueCatalogEtlRoute';
 import * as updateCatalogItemRoute from './updateCatalogItemRoute';
 import * as vectorSearchRoute from './vectorSearchRoute';
 
@@ -25,7 +25,7 @@ catalogRoutes.openapi(
 );
 catalogRoutes.openapi(deleteCatalogItemRoute.routeDefinition, deleteCatalogItemRoute.handler);
 catalogRoutes.openapi(updateCatalogItemRoute.routeDefinition, updateCatalogItemRoute.handler);
-catalogRoutes.openapi(queueCatalogEtlRoute.routeDefinition, queueCatalogEtlRoute.handler);
+catalogRoutes.route('/', queueCatalogEtlRoute);
 catalogRoutes.route('/', backfillEmbeddingsRoute);
 
 export { catalogRoutes };

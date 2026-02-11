@@ -4,11 +4,13 @@ import type { Pack } from 'expo-app/features/packs';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { getPackItems } from 'expo-app/features/packs/store';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { currentUser } from '../data/mockData';
 
 export function ProfileScreen() {
   const packs = usePacks();
+  const { t } = useTranslation();
 
   const handlePackPress = (pack: Pack) => {
     // In a real app, you would navigate to the pack details screen
@@ -30,7 +32,7 @@ export function ProfileScreen() {
         <TouchableOpacity onPress={() => console.log('Go back')} className="mr-3">
           <Icon name="chevron-left" size={24} color="#374151" />
         </TouchableOpacity>
-        <Text className="flex-1 text-xl font-semibold text-gray-900">Profile</Text>
+        <Text className="flex-1 text-xl font-semibold text-gray-900">{t('profile.profile')}</Text>
         <TouchableOpacity>
           <Icon name="cog-outline" size={20} color="#374151" />
         </TouchableOpacity>
@@ -51,17 +53,17 @@ export function ProfileScreen() {
           )}
 
           <Text className="mt-3 text-xs text-gray-500">
-            Member since {formatDate(currentUser.joinedAt)}
+            {t('profile.memberSince', { date: formatDate(currentUser.joinedAt) })}
           </Text>
 
           <TouchableOpacity className="mt-4 rounded-lg bg-blue-500 px-4 py-2">
-            <Text className="font-medium text-white">Edit Profile</Text>
+            <Text className="font-medium text-white">{t('profile.editProfile')}</Text>
           </TouchableOpacity>
         </View>
 
         <View className="mb-4 bg-white">
           <View className="border-b border-gray-200 px-4 py-3">
-            <Text className="text-lg font-semibold text-gray-900">My Packs</Text>
+            <Text className="text-lg font-semibold text-gray-900">{t('profile.myPacks')}</Text>
           </View>
 
           {packs && packs.length > 0 ? (
@@ -72,38 +74,38 @@ export function ProfileScreen() {
             ))
           ) : (
             <View className="items-center p-4">
-              <Text className="text-gray-500">No packs created yet</Text>
+              <Text className="text-gray-500">{t('profile.noPacksYet')}</Text>
             </View>
           )}
 
           <TouchableOpacity className="m-4 items-center rounded-lg bg-blue-500 py-3">
-            <Text className="font-semibold text-white">Create New Pack</Text>
+            <Text className="font-semibold text-white">{t('profile.createNewPack')}</Text>
           </TouchableOpacity>
         </View>
 
         <View className="mb-4 bg-white">
           <View className="border-b border-gray-200 px-4 py-3">
-            <Text className="text-lg font-semibold text-gray-900">Stats</Text>
+            <Text className="text-lg font-semibold text-gray-900">{t('profile.stats')}</Text>
           </View>
 
           <View className="flex-row justify-between p-4">
             <View className="items-center">
               <Text className="text-2xl font-bold text-gray-900">{packs?.length}</Text>
-              <Text className="text-gray-500">Packs</Text>
+              <Text className="text-gray-500">{t('navigation.packs')}</Text>
             </View>
 
             <View className="items-center">
               <Text className="text-2xl font-bold text-gray-900">
                 {packs?.reduce((total, pack) => total + (getPackItems(pack.id)?.length ?? 0), 0)}
               </Text>
-              <Text className="text-gray-500">Items</Text>
+              <Text className="text-gray-500">{t('profile.items')}</Text>
             </View>
 
             <View className="items-center">
               <Text className="text-2xl font-bold text-gray-900">
                 {packs?.filter((pack) => pack.isPublic).length}
               </Text>
-              <Text className="text-gray-500">Public</Text>
+              <Text className="text-gray-500">{t('profile.public')}</Text>
             </View>
           </View>
         </View>

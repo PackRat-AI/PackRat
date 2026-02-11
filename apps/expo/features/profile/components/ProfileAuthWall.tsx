@@ -1,16 +1,18 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { SafeAreaView, View } from 'react-native';
-
-const SCREEN_OPTIONS = {
-  title: 'Profile',
-  headerShown: false,
-} as const;
 
 export function ProfileAuthWall() {
   const router = useRouter();
   const currentRoute = usePathname();
+  const { t } = useTranslation();
+
+  const SCREEN_OPTIONS = {
+    title: t('profile.profile'),
+    headerShown: false,
+  } as const;
 
   return (
     <SafeAreaView className="flex-1">
@@ -22,33 +24,31 @@ export function ProfileAuthWall() {
             <Icon name="account-circle-outline" size={48} color="primary" />
           </View>
           <Text variant="title1" className="mb-2 text-center">
-            Create Your Account
+            {t('profile.createYourAccount')}
           </Text>
-          <Text className="mb-6 text-center text-muted-foreground">
-            Join PackRat to unlock all features
-          </Text>
+          <Text className="mb-6 text-center text-muted-foreground">{t('profile.joinPackRat')}</Text>
         </View>
 
         <View className="mb-10 flex-col gap-6">
           <FeatureItem
             icon="cloud-outline"
-            title="Sync Across Devices"
-            description="Keep your packs in sync everywhere"
+            title={t('profile.syncDevicesTitle')}
+            description={t('profile.syncDevicesDesc')}
           />
           <FeatureItem
             icon="weather-sunny"
-            title="Weather Integration"
-            description="Get weather-based recommendations"
+            title={t('profile.weatherIntegrationTitle')}
+            description={t('profile.weatherIntegrationDesc')}
           />
           <FeatureItem
             icon="message-outline"
-            title="AI Chat & Suggestions"
-            description="Smart packing assistance"
+            title={t('profile.aiChatTitle')}
+            description={t('profile.aiChatDesc')}
           />
           <FeatureItem
             icon="archive-outline"
-            title="Share Your Packs"
-            description="Share and browse public packs"
+            title={t('profile.sharePacksTitle')}
+            description={t('profile.sharePacksDesc')}
           />
         </View>
 
@@ -63,7 +63,7 @@ export function ProfileAuthWall() {
           variant="primary"
           className="mb-4 w-full"
         >
-          <Text className="font-medium">Sign In</Text>
+          <Text className="font-medium">{t('auth.signIn')}</Text>
         </Button>
       </View>
     </SafeAreaView>

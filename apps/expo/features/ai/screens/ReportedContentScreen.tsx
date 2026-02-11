@@ -4,14 +4,16 @@ import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, TouchableOpacity, View } from 'react-native';
 import { useReportedContent } from '../hooks/useReportedContent';
 import { useUpdateReportStatus } from '../hooks/useUpdateReportStatus';
-import { reportReasonLabels } from '../lib/reportReasons';
+import { reportReasonTranslationKeys } from '../lib/reportReasons';
 
 export default function ReportedContentScreen() {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const [selectedFilter, setSelectedFilter] = useState<
     'all' | 'pending' | 'reviewed' | 'dismissed'
   >('pending');
@@ -30,26 +32,26 @@ export default function ReportedContentScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      <LargeTitleHeader title="Reported Content" />
+      <LargeTitleHeader title={t('ai.reportedContent.title')} />
 
       <View className="flex-row justify-around px-4 py-2">
         <FilterButton
-          label="Pending"
+          label={t('ai.reportedContent.pending')}
           isActive={selectedFilter === 'pending'}
           onPress={() => setSelectedFilter('pending')}
         />
         <FilterButton
-          label="Reviewed"
+          label={t('ai.reportedContent.reviewed')}
           isActive={selectedFilter === 'reviewed'}
           onPress={() => setSelectedFilter('reviewed')}
         />
         <FilterButton
-          label="Dismissed"
+          label={t('ai.reportedContent.dismissed')}
           isActive={selectedFilter === 'dismissed'}
           onPress={() => setSelectedFilter('dismissed')}
         />
         <FilterButton
-          label="All"
+          label={t('ai.reportedContent.all')}
           isActive={selectedFilter === 'all'}
           onPress={() => setSelectedFilter('all')}
         />
@@ -61,12 +63,16 @@ export default function ReportedContentScreen() {
         </View>
       ) : error ? (
         <View className="flex-1 items-center justify-center p-4">
-          <Text className="text-center text-destructive">Error loading reported content</Text>
+          <Text className="text-center text-destructive">
+            {t('ai.reportedContent.errorLoading')}
+          </Text>
         </View>
       ) : filteredData?.length === 0 ? (
         <View className="flex-1 items-center justify-center p-4">
           <Icon name="magnify" size={48} color={colors.grey2} />
-          <Text className="mt-4 text-center text-muted-foreground">No reported content found</Text>
+          <Text className="mt-4 text-center text-muted-foreground">
+            {t('ai.reportedContent.noReportsFound')}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -86,15 +92,20 @@ export default function ReportedContentScreen() {
               <View className="mb-3 flex-row">
                 <View className="rounded-full bg-amber-100 px-2 py-1 dark:bg-amber-900">
                   <Text className="text-xs font-medium text-amber-800 dark:text-amber-100">
-                    {reportReasonLabels[item.reason as keyof typeof reportReasonLabels] ||
-                      item.reason}
+                    {t(
+                      reportReasonTranslationKeys[
+                        item.reason as keyof typeof reportReasonTranslationKeys
+                      ] || item.reason,
+                    )}
                   </Text>
                 </View>
               </View>
 
               {/* User Query Section */}
               <View className="my-2">
-                <Text className="mb-1 text-xs font-medium text-muted-foreground">USER QUERY:</Text>
+                <Text className="mb-1 text-xs font-medium text-muted-foreground">
+                  {t('ai.reportedContent.userQuery')}
+                </Text>
                 <View className="rounded-md bg-blue-50 p-3 dark:bg-blue-950">
                   <Text className="text-blue-900 dark:text-blue-100">{item.userQuery}</Text>
                 </View>
@@ -102,7 +113,9 @@ export default function ReportedContentScreen() {
 
               {/* AI Response Section */}
               <View className="my-2">
-                <Text className="mb-1 text-xs font-medium text-muted-foreground">AI RESPONSE:</Text>
+                <Text className="mb-1 text-xs font-medium text-muted-foreground">
+                  {t('ai.reportedContent.aiResponse')}
+                </Text>
                 <View className="rounded-md bg-red-50 p-3 dark:bg-red-950">
                   <Text className="text-red-900 dark:text-red-100">{item.aiResponse}</Text>
                 </View>
@@ -112,7 +125,7 @@ export default function ReportedContentScreen() {
               {item.userComment && (
                 <View className="my-2">
                   <Text className="mb-1 text-xs font-medium text-muted-foreground">
-                    USER COMMENT:
+                    {t('ai.reportedContent.userComment')}
                   </Text>
                   <View className="rounded-md bg-gray-50 p-3 dark:bg-gray-800">
                     <Text className="italic text-gray-700 dark:text-gray-300">
@@ -130,7 +143,7 @@ export default function ReportedContentScreen() {
                     onPress={() => handleReview(item.id, 'dismissed')}
                     disabled={updateMutation.isPending}
                   >
-                    <Text>Dismiss</Text>
+                    <Text>{t('ai.reportedContent.dismiss')}</Text>
                   </Button>
                   <Button
                     variant="primary"
@@ -138,7 +151,7 @@ export default function ReportedContentScreen() {
                     onPress={() => handleReview(item.id, 'reviewed')}
                     disabled={updateMutation.isPending}
                   >
-                    <Text>Resolve</Text>
+                    <Text>{t('ai.reportedContent.resolve')}</Text>
                   </Button>
                 </View>
               ) : (
@@ -149,7 +162,9 @@ export default function ReportedContentScreen() {
                       item.status === 'resolved' ? 'text-destructive' : 'text-muted-foreground',
                     )}
                   >
-                    {item.status === 'resolved' ? 'Resolved' : 'Dismissed'}
+                    {item.status === 'resolved'
+                      ? t('ai.reportedContent.resolved')
+                      : t('ai.reportedContent.dismissed')}
                   </Text>
                 </View>
               )}

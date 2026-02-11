@@ -3,6 +3,7 @@ import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
   getNotes,
@@ -24,6 +25,7 @@ import {
 import type { PackItem } from '../types';
 
 export function ItemDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const isOwnedByUser = usePackItemOwnershipCheck(id as string);
 
@@ -63,17 +65,17 @@ export function ItemDetailScreen() {
             <Icon name="exclamation" size={32} color="text-destructive" />
           </View>
           <Text className="mb-2 text-lg font-medium text-foreground">
-            Failed to load item details
+            {t('packs.failedToLoadItemDetails')}
           </Text>
           <Text className="mb-6 text-center text-muted-foreground">
-            {error?.message || 'Something went wrong. Please try again.'}
+            {error?.message || t('packs.pleaseTryAgain')}
           </Text>
           <View className="flex-row justify-center gap-2">
             <Button variant="primary" onPress={() => refetch()}>
-              <Text>Try Again</Text>
+              <Text>{t('packs.tryAgain')}</Text>
             </Button>
             <Button variant="secondary" onPress={router.back}>
-              <Text>Go Back</Text>
+              <Text>{t('packs.goBack')}</Text>
             </Button>
           </View>
         </View>
@@ -135,13 +137,17 @@ export function ItemDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">WEIGHT (EACH)</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.weightEach')}
+              </Text>
               <WeightBadge weight={item.weight} unit={item.weightUnit} />
             </View>
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">QUANTITY</Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                  {t('packs.quantityLabel')}
+                </Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
                   {quantity}
                 </Chip>
@@ -150,7 +156,9 @@ export function ItemDetailScreen() {
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                  {t('packs.totalWeight')}
+                </Text>
                 <WeightBadge weight={totalWeight} unit={weightUnit} />
               </View>
             )}
@@ -160,7 +168,7 @@ export function ItemDetailScreen() {
             {isItemConsumable && (
               <View className="flex-row items-center">
                 <Chip textClassName="text-center text-xs" variant="consumable">
-                  Consumable
+                  {t('packs.consumable')}
                 </Chip>
               </View>
             )}
@@ -168,7 +176,7 @@ export function ItemDetailScreen() {
             {isItemWorn && (
               <View className="flex-row items-center">
                 <Chip textClassName="text-center text-xs" variant="worn">
-                  Worn
+                  {t('packs.worn')}
                 </Chip>
               </View>
             )}
@@ -176,7 +184,7 @@ export function ItemDetailScreen() {
 
           {itemHasNotes && itemNotes && (
             <View className="mt-2">
-              <Text className="mb-1 text-xs text-muted-foreground">NOTES</Text>
+              <Text className="mb-1 text-xs text-muted-foreground">{t('packs.notes')}</Text>
               <Text style={{ color: colors.foreground }}>{itemNotes}</Text>
             </View>
           )}
@@ -190,7 +198,7 @@ export function ItemDetailScreen() {
               className="flex-row items-center justify-center rounded-full  px-4 py-3"
             >
               <Icon name="message-outline" size={20} color={colors.foreground} />
-              <Text style={{ color: colors.foreground }}>Ask AI About This Item</Text>
+              <Text style={{ color: colors.foreground }}>{t('packs.askAIAboutItem')}</Text>
             </Button>
           </View>
         )}

@@ -3,12 +3,14 @@ import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 
 export function DeleteAccountButton() {
   const { colors } = useColorScheme();
   const { deleteAccount } = useAuth();
+  const { t } = useTranslation();
   const alertRef = useRef<AlertRef>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -19,8 +21,8 @@ export function DeleteAccountButton() {
         disabled={isDeleting}
         onPress={() =>
           alertRef.current?.prompt({
-            title: 'Delete Account?',
-            message: 'Type "DELETE" to confirm.',
+            title: t('auth.deleteAccountQuestion'),
+            message: t('auth.deleteAccountConfirmation'),
             materialIcon: { name: 'trash-can' },
             materialWidth: 370,
             prompt: {
@@ -29,11 +31,11 @@ export function DeleteAccountButton() {
             },
             buttons: [
               {
-                text: 'Cancel',
+                text: t('common.cancel'),
                 style: 'cancel',
               },
               {
-                text: 'Delete',
+                text: t('common.delete'),
                 style: 'destructive',
                 onPress: async (text) => {
                   if (text === 'DELETE') {
@@ -43,9 +45,9 @@ export function DeleteAccountButton() {
                     } catch (_error) {
                       setTimeout(() => {
                         alertRef.current?.alert({
-                          title: 'Error',
-                          message: 'Failed to delete account.',
-                          buttons: [{ text: 'OK', style: 'default' }],
+                          title: t('common.error'),
+                          message: t('auth.deleteAccountFailed'),
+                          buttons: [{ text: t('common.ok'), style: 'default' }],
                         });
                       }, 0);
                     } finally {
@@ -54,9 +56,9 @@ export function DeleteAccountButton() {
                   } else {
                     setTimeout(() => {
                       alertRef.current?.alert({
-                        title: 'Error',
-                        message: 'Invalid confirmation text.',
-                        buttons: [{ text: 'OK', style: 'default' }],
+                        title: t('common.error'),
+                        message: t('auth.invalidConfirmationText'),
+                        buttons: [{ text: t('common.ok'), style: 'default' }],
                       });
                     }, 0);
                   }
@@ -73,7 +75,7 @@ export function DeleteAccountButton() {
           ) : (
             <Icon name="trash-can-outline" color={colors.destructive} />
           )}
-          <Text style={{ color: colors.destructive }}>Delete Account</Text>
+          <Text style={{ color: colors.destructive }}>{t('auth.deleteAccount')}</Text>
         </View>
         <Icon name="chevron-right" color={colors.destructive} />
       </Button>

@@ -164,9 +164,12 @@ function DemoIcon() {
   );
 }
 
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const { t } = useTranslation();
 
   const dashboardLayout = useRef([
     'current-pack',
@@ -212,7 +215,7 @@ export default function DashboardScreen() {
   return (
     <View className="flex-1">
       <LargeTitleHeader
-        title="Dashboard"
+        title={t('dashboard.title')}
         searchBar={{
           ref: asNonNullableRef(searchBarRef),
           iosHideWhenScrolling: true,
@@ -254,17 +257,17 @@ export default function DashboardScreen() {
                   <Icon name="file-search-outline" size={48} color="#9ca3af" />
                   <View className="h-4" />
                   <Text className="text-lg font-medium text-muted-foreground">
-                    No matching tiles found
+                    {t('dashboard.noResults')}
                   </Text>
                   <Text className="mt-1 text-center text-sm text-muted-foreground">
-                    Try different keywords or clear your search
+                    {t('dashboard.tryDifferent')}
                   </Text>
                 </View>
               )}
             />
           ) : (
             <View className="flex-1 items-center justify-center p-4">
-              <Text className="text-muted-foreground">Search dashboard</Text>
+              <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
             </View>
           ),
         }}

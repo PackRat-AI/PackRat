@@ -5,6 +5,7 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -43,6 +44,7 @@ type TripFormValues = z.infer<typeof tripFormSchema>;
 export const TripForm = ({ trip }: { trip?: Trip }) => {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const createTrip = useCreateTrip();
   const updateTrip = useUpdateTrip();
   const isEditingExistingTrip = !!trip;
@@ -71,14 +73,14 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       try {
         if (isEditingExistingTrip) {
           await updateTrip({ ...trip, ...submitData });
-          Alert.alert('Success', 'Trip updated successfully');
+          Alert.alert(t('common.success'), t('trips.tripUpdatedSuccess'));
         } else {
           await createTrip(submitData);
-          Alert.alert('Success', 'Trip created successfully');
+          Alert.alert(t('common.success'), t('trips.tripCreatedSuccess'));
         }
         router.back();
       } catch (_e) {
-        Alert.alert('Error', 'Something went wrong. Please try again.');
+        Alert.alert(t('common.error'), t('errors.tryAgain'));
       }
     },
   });
@@ -90,19 +92,19 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     >
       <Stack.Screen
         options={{
-          title: isEditingExistingTrip ? 'Edit Trip' : 'New Trip',
+          title: isEditingExistingTrip ? t('trips.editTrip') : t('trips.newTrip'),
         }}
       />
 
       <ScrollView contentContainerClassName="p-8">
         <Form>
-          <FormSection ios={{ title: 'Trip Details' }}>
+          <FormSection ios={{ title: t('trips.tripDetails') }}>
             {/* Trip Name */}
             <form.Field name="name">
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Trip Name"
+                    placeholder={t('trips.tripName')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
@@ -121,7 +123,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Description"
+                    placeholder={t('trips.description')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
@@ -151,12 +153,12 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         : `${location.latitude.toFixed(3)}, ${location.longitude.toFixed(3)}`
                       : trip?.location
                         ? trip.location.name?.split(',')[0]
-                        : 'Add Location'}
+                        : t('trips.addLocation')}
                   </Text>
                 </Pressable>
                 {location && (
                   <Pressable onPress={() => setLocation(null)}>
-                    <Text className="text-red-500 font-semibold px-2">Clear</Text>
+                    <Text className="text-red-500 font-semibold px-2">{t('common.clear')}</Text>
                   </Pressable>
                 )}
               </View>
@@ -175,7 +177,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                       <Text className="ml-2 text-foreground">
                         {field.state.value
                           ? packs.find((p) => p.id === field.state.value)?.name
-                          : 'Select Pack'}
+                          : t('trips.selectPack')}
                       </Text>
                     </View>
                     <Icon name="chevron-right" size={16} color={colors.grey3} />
@@ -185,9 +187,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     <View className="flex-1 justify-end bg-black/40">
                       <View className="bg-background rounded-t-2xl p-4">
                         <View className="flex-row justify-between items-center mb-2">
-                          <Text className="text-lg font-semibold">Select Pack</Text>
+                          <Text className="text-lg font-semibold">{t('trips.selectPack')}</Text>
                           <Pressable onPress={() => setShowPackModal(false)}>
-                            <Text className="text-primary font-semibold">Close</Text>
+                            <Text className="text-primary font-semibold">{t('common.close')}</Text>
                           </Pressable>
                         </View>
 
@@ -195,7 +197,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           selectedValue={field.state.value || ''}
                           onValueChange={(value) => field.handleChange(value)}
                         >
-                          <Picker.Item label="No pack selected" value="" />
+                          <Picker.Item label={t('trips.noPackSelected')} value="" />
                           {packs.map((pack) => (
                             <Picker.Item key={pack.id} label={pack.name} value={pack.id} />
                           ))}
@@ -216,9 +218,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                       onPress={() => setShowStartPicker(true)}
                       className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card"
                     >
-                      <Text className="text-foreground font-medium">Start Date</Text>
+                      <Text className="text-foreground font-medium">{t('trips.startDate')}</Text>
                       <Text className="text-muted-foreground">
-                        {field.state.value || 'Select date'}
+                        {field.state.value || t('trips.selectDate')}
                       </Text>
                     </Pressable>
 
@@ -251,9 +253,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                       onPress={() => setShowEndPicker(true)}
                       className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card"
                     >
-                      <Text className="text-foreground font-medium">End Date</Text>
+                      <Text className="text-foreground font-medium">{t('trips.endDate')}</Text>
                       <Text className="text-muted-foreground">
-                        {field.state.value || 'Select date'}
+                        {field.state.value || t('trips.selectDate')}
                       </Text>
                     </Pressable>
 
@@ -292,11 +294,11 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting
                   ? isEditingExistingTrip
-                    ? 'Updating...'
-                    : 'Creating...'
+                    ? t('trips.updating')
+                    : t('trips.creating')
                   : isEditingExistingTrip
-                    ? 'Update Trip'
-                    : 'Create Trip'}
+                    ? t('trips.updateTrip')
+                    : t('trips.createTrip')}
               </Text>
             </Pressable>
           )}

@@ -2,12 +2,14 @@ import { ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 export const AIPacksTile = () => {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const user = useUser();
 
   if (user?.role?.toLowerCase() !== 'admin') {
@@ -35,8 +37,8 @@ export const AIPacksTile = () => {
         </View>
       }
       item={{
-        title: 'AI Packs',
-        subTitle: 'Generate packs with AI',
+        title: t('ai.aiPacks'),
+        subTitle: t('ai.generatePacksWithAI'),
       }}
       onPress={handlePress}
       target="Cell"

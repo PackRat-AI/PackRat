@@ -1,26 +1,29 @@
 import { Alert, Button, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { t } from 'expo-app/lib/i18n';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useDeleteTrip } from '../hooks';
 
 export function getTripDetailOptions(id: string) {
   return {
-    title: 'Trip Details',
+    title: t('trips.tripDetails'),
     headerRight: () => {
       const { colors } = useColorScheme();
+      const { t } = useTranslation();
       const router = useRouter();
       const deleteTrip = useDeleteTrip();
 
       return (
         <View className="flex-row items-center gap-2">
           <Alert
-            title="Delete trip?"
-            message="Are you sure you want to delete this trip? This action cannot be undone."
+            title={t('trips.deleteTrip')}
+            message={t('trips.deleteTripConfirmation')}
             buttons={[
-              { text: 'Cancel', style: 'cancel' },
+              { text: t('common.cancel'), style: 'cancel' },
               {
-                text: 'OK',
+                text: t('common.ok'),
                 onPress: () => {
                   deleteTrip(id);
                   if (router.canGoBack()) router.back();

@@ -1,7 +1,10 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { useForm } from '@tanstack/react-form';
+import { needsReauthAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Link, router, Stack, useLocalSearchParams } from 'expo-router';
+import { useAtomValue } from 'jotai';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
 import {
@@ -26,9 +29,11 @@ const loginFormSchema = z.object({
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const { signIn, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = React.useState(false);
   const [focusedTextField, setFocusedTextField] = React.useState<'email' | 'password' | null>(null);
   const { redirectTo } = useLocalSearchParams<{ redirectTo: string }>();
+  const needsReauth = useAtomValue(needsReauthAtom);
 
   const form = useForm({
     defaultValues: {
@@ -46,8 +51,8 @@ export default function LoginScreen() {
       } catch (error) {
         setIsLoading(false);
         Alert.alert(
-          'Login Failed',
-          error instanceof Error ? error.message : 'Invalid email or password',
+          t('auth.loginFailed'),
+          error instanceof Error ? error.message : t('auth.invalidEmailOrPassword'),
         );
       }
     },
@@ -60,7 +65,7 @@ export default function LoginScreen() {
     <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
       <Stack.Screen
         options={{
-          title: 'Log in',
+          title: t('auth.signIn'),
           headerShadowVisible: false,
           headerLeft() {
             return (
@@ -71,7 +76,7 @@ export default function LoginScreen() {
                   router.back();
                 }}
               >
-                <Text className="text-primary">Cancel</Text>
+                <Text className="text-primary">{t('common.cancel')}</Text>
               </Button>
             );
           },
@@ -92,10 +97,12 @@ export default function LoginScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: 'Welcome back!', default: 'Log in' })}
+              {Platform.select({ ios: t('auth.welcomeBack'), default: t('auth.signIn') })}
             </Text>
             {Platform.OS !== 'ios' && (
-              <Text className="ios:text-sm text-center text-muted-foreground">Welcome back!</Text>
+              <Text className="ios:text-sm text-center text-muted-foreground">
+                {t('auth.welcomeBack')}
+              </Text>
             )}
           </View>
           <View className="ios:pt-4 pt-6">
@@ -163,7 +170,7 @@ export default function LoginScreen() {
               <View className="flex-row">
                 <Link asChild href="/auth/(login)/forgot-password">
                   <Button size="sm" variant="plain" className="px-0.5">
-                    <Text className="text-sm text-primary">Forgot password?</Text>
+                    <Text className="text-sm text-primary">{t('auth.forgotPassword')}</Text>
                   </Button>
                 </Link>
               </View>
@@ -189,41 +196,49 @@ export default function LoginScreen() {
                   disabled={!canSubmit || loading}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{loading ? 'Logging in...' : 'Continue'}</Text>
+                  <Text>{loading ? t('auth.loading') : t('common.continue')}</Text>
                 </Button>
               )}
             </form.Subscribe>
           </View>
         ) : (
           <View className="flex-row justify-between py-4 pl-6 pr-8">
-            <Button
-              variant="plain"
-              className="px-2"
-              onPress={() => {
-                router.replace('/auth/(create-account)');
-              }}
-            >
-              <Text className="px-0.5 text-sm text-primary">Create Account</Text>
-            </Button>
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, _isSubmitting]) => (
-                <Button
-                  disabled={!canSubmit || loading}
-                  onPress={() => {
-                    if (focusedTextField === 'email') {
-                      KeyboardController.setFocusTo('next');
-                      return;
-                    }
-                    KeyboardController.dismiss();
-                    form.handleSubmit();
-                  }}
-                >
-                  <Text className="text-sm">
-                    {loading ? 'Logging in...' : focusedTextField === 'email' ? 'Next' : 'Submit'}
-                  </Text>
-                </Button>
-              )}
-            </form.Subscribe>
+            {!needsReauth && (
+              <Button
+                variant="plain"
+                className="px-2"
+                onPress={() => {
+                  router.replace('/auth/(create-account)');
+                }}
+              >
+                <Text className="px-0.5 text-sm text-primary">{t('auth.createAccount')}</Text>
+              </Button>
+            )}
+            <View className="ml-auto">
+              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                {([canSubmit, _isSubmitting]) => (
+                  <Button
+                    disabled={!canSubmit || loading}
+                    onPress={() => {
+                      if (focusedTextField === 'email') {
+                        KeyboardController.setFocusTo('next');
+                        return;
+                      }
+                      KeyboardController.dismiss();
+                      form.handleSubmit();
+                    }}
+                  >
+                    <Text className="text-sm">
+                      {loading
+                        ? t('auth.loading')
+                        : focusedTextField === 'email'
+                          ? t('auth.next')
+                          : t('auth.submit')}
+                    </Text>
+                  </Button>
+                )}
+              </form.Subscribe>
+            </View>
           </View>
         )}
       </KeyboardStickyView>
@@ -237,7 +252,7 @@ export default function LoginScreen() {
             });
           }}
         >
-          <Text className="text-sm text-primary">Create Account</Text>
+          <Text className="text-sm text-primary">{t('auth.createAccount')}</Text>
         </Button>
       )}
     </View>

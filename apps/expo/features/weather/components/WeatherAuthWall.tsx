@@ -1,5 +1,6 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { Image, SafeAreaView, View } from 'react-native';
 
@@ -8,6 +9,7 @@ const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 export function WeatherAuthWall() {
   const router = useRouter();
   const currentRoute = usePathname();
+  const { t } = useTranslation();
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -18,25 +20,25 @@ export function WeatherAuthWall() {
             <Image source={LOGO_SOURCE} className="h-12 w-12 rounded-md" resizeMode="contain" />
           </View>
           <Text variant="title1" className="text-center">
-            Weather Features Require Sign In
+            {t('weather.featuresRequireSignIn')}
           </Text>
         </View>
 
         <View className="mb-10 flex-col gap-6">
           <FeatureItem
             icon="weather-sunny"
-            title="Weather Forecasts"
-            description="Get detailed weather information"
+            title={t('weather.weatherForecasts')}
+            description={t('weather.weatherForecastsDesc')}
           />
           <FeatureItem
             icon="umbrella-outline"
-            title="Weather Alerts"
-            description="Stay informed about weather changes"
+            title={t('weather.weatherAlerts')}
+            description={t('weather.weatherAlertsDesc')}
           />
           <FeatureItem
             icon="archive-outline"
-            title="Packing Suggestions"
-            description="Weather-based packing recommendations"
+            title={t('weather.packingSuggestions')}
+            description={t('weather.packingSuggestionsDesc')}
           />
         </View>
 
@@ -51,7 +53,7 @@ export function WeatherAuthWall() {
           variant="primary"
           className="mb-4 w-full"
         >
-          <Text className="font-medium">Sign In</Text>
+          <Text className="font-medium">{t('weather.signIn')}</Text>
         </Button>
       </View>
     </SafeAreaView>

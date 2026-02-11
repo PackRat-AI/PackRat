@@ -2,6 +2,7 @@ import { Button, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -17,6 +18,7 @@ export function PackTemplateDetailScreen() {
   const { id } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('all');
   const addPackTemplateItemActionsRef = useSheetRef();
+  const { t } = useTranslation();
 
   const packTemplate = usePackTemplateDetails(id as string);
   const user = useUser();
@@ -57,7 +59,10 @@ export function PackTemplateDetailScreen() {
   if (!packTemplate) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center">
-        <NotFoundScreen title="Template not found" message="Please try again later." />
+        <NotFoundScreen
+          title={t('packTemplates.templateNotFound')}
+          message={t('packTemplates.pleaseTryAgainLater')}
+        />
       </SafeAreaView>
     );
   }
@@ -89,15 +94,21 @@ export function PackTemplateDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">BASE WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packTemplates.baseWeight')}
+              </Text>
               <WeightBadge weight={packTemplate.baseWeight || 0} unit="g" type="base" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packTemplates.totalWeight')}
+              </Text>
               <WeightBadge weight={packTemplate.totalWeight || 0} unit="g" type="total" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">ITEMS</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packTemplates.itemsLabel')}
+              </Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {packTemplate.items?.length || 0}
               </Chip>

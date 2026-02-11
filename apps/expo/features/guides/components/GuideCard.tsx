@@ -1,5 +1,6 @@
 import { Card, CardContent, CardTitle, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TouchableOpacity, View } from 'react-native';
 import type { Guide } from '../types';
 
@@ -9,12 +10,15 @@ interface GuideCardProps {
 }
 
 export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
+  const { t } = useTranslation();
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} className="pt-4">
       <Card className="mb-3">
         <CardContent className="p-4">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
+              {guide.difficulty && <Text variant="footnote">{guide.difficulty}</Text>}
               <CardTitle className="text-lg font-semibold mb-1">{guide.title}</CardTitle>
               {guide.description && (
                 <Text className="text-sm text-gray-600 dark:text-gray-400 mb-2" numberOfLines={2}>
@@ -52,7 +56,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
                 <View className="flex-row items-center gap-2">
                   {guide.author && (
                     <Text className="text-xs text-gray-600 dark:text-gray-400">
-                      By {guide.author}
+                      {t('guides.by')} {guide.author}
                     </Text>
                   )}
                   {guide.readingTime && (
@@ -60,18 +64,12 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
                       • {guide.readingTime}
                     </Text>
                   )}
-                  {guide.difficulty && (
-                    <View className="bg-secondary/10 px-1.5 py-0.5 rounded">
-                      <Text className="text-xs font-medium text-secondary">{guide.difficulty}</Text>
-                    </View>
-                  )}
-                  <Text className="text-xs text-gray-500 dark:text-gray-500">
-                    • {new Date(guide.updatedAt).toLocaleDateString()}
+                  <Text className="text-xs text-gray-500 dark:text-gray-500 self-end">
+                    {new Date(guide.updatedAt).toLocaleDateString()}
                   </Text>
                 </View>
               </View>
             </View>
-            <Icon name="chevron-right" size={24} color="gray-400" />
           </View>
         </CardContent>
       </Card>

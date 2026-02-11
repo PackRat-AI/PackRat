@@ -1,6 +1,7 @@
 import { Text, useColorScheme } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { getWeatherIconByCondition } from 'expo-app/features/weather/lib/weatherIcons';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { View } from 'react-native';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
@@ -35,14 +36,15 @@ interface WeatherGenerativeUIProps {
 
 export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   switch (toolInvocation.state) {
     case 'input-streaming':
-      return <ToolCard text="Initiating weather fetch..." icon="loading" />;
+      return <ToolCard text={t('ai.tools.initiatingWeatherFetch')} icon="loading" />;
     case 'input-available':
       return (
         <ToolCard
-          text={`Fetching weather for "${toolInvocation.input.location}"...`}
+          text={t('ai.tools.fetchingWeatherFor', { location: toolInvocation.input.location })}
           icon="loading"
         />
       );
@@ -54,7 +56,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
             <View className="flex-row items-center gap-2">
               <Icon name="map-marker-radius-outline" size={16} color={colors.primary} />
               <Text className="text-base font-semibold text-blue-800 dark:text-blue-200">
-                Weather in {toolInvocation.output.data.location}
+                {t('ai.tools.weatherIn', { location: toolInvocation.output.data.location })}
               </Text>
             </View>
           </View>
@@ -88,7 +90,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                   <View className="mb-1 flex-row items-center">
                     <Icon name="water" size={16} color="#3b82f6" />
                     <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Humidity
+                      {t('weather.humidity')}
                     </Text>
                   </View>
                   <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -102,7 +104,7 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
                   <View className="mb-1 flex-row items-center gap-1">
                     <Icon name="cloud" size={16} color="#3b82f6" />
                     <Text className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Wind
+                      {t('ai.tools.wind')}
                     </Text>
                   </View>
                   <Text className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -115,14 +117,14 @@ export function WeatherGenerativeUI({ toolInvocation }: WeatherGenerativeUIProps
         </View>
       ) : (
         <ToolCard
-          text={`Couldn't fetch weather for "${toolInvocation.input.location}"`}
+          text={t('ai.tools.couldntFetchWeather', { location: toolInvocation.input.location })}
           icon="error"
         />
       );
     case 'output-error':
       return (
         <ToolCard
-          text={`Error fetching weather for "${toolInvocation.input.location}"`}
+          text={t('ai.tools.errorFetchingWeather', { location: toolInvocation.input.location })}
           icon="error"
         />
       );

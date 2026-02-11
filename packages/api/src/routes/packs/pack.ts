@@ -209,6 +209,14 @@ const deletePackRoute = createRoute({
         },
       },
     },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
     500: {
       description: 'Internal server error',
       content: {
@@ -222,16 +230,19 @@ const deletePackRoute = createRoute({
 
 packRoutes.openapi(deletePackRoute, async (c) => {
   const db = createDb(c);
-  const _auth = c.get('user');
+  const auth = c.get('user');
   const packId = c.req.param('packId');
 
-  try {
-    await db.delete(packs).where(eq(packs.id, packId));
-    return c.json({ success: true }, 200);
-  } catch (error) {
-    console.error('Error deleting pack:', error);
-    return c.json({ error: 'Failed to delete pack' }, 500);
+  const pack = await db.query.packs.findFirst({
+    where: and(eq(packs.id, packId), eq(packs.userId, auth.userId)),
+  });
+
+  if (!pack) {
+    return c.json({ error: 'Pack not found' }, 404);
   }
+
+  await db.delete(packs).where(and(eq(packs.id, packId), eq(packs.userId, auth.userId)));
+  return c.json({ success: true }, 200);
 });
 
 const itemSuggestionsRoute = createRoute({

@@ -2,6 +2,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Alert, type AlertRef, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -15,16 +16,22 @@ interface TripCardProps {
 
 export function TripCard({ trip, onPress }: TripCardProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const deleteTrip = useDeleteTrip();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const alertRef = useRef<AlertRef>(null);
 
   const handleActionsPress = () => {
-    const options = ['View Details', 'Edit', 'Delete', 'Cancel'];
+    const options = [
+      t('trips.viewDetails'),
+      t('common.edit'),
+      t('common.delete'),
+      t('common.cancel'),
+    ];
     const cancelButtonIndex = options.length - 1;
-    const destructiveButtonIndex = options.indexOf('Delete');
-    const editIndex = options.indexOf('Edit');
+    const destructiveButtonIndex = 2; // Delete option index
+    const editIndex = 1; // Edit option index
 
     showActionSheetWithOptions(
       {
@@ -48,11 +55,11 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             break;
           case destructiveButtonIndex: // Delete
             alertRef.current?.alert({
-              title: 'Delete trip?',
-              message: 'Are you sure you want to delete this trip? This action cannot be undone.',
+              title: t('trips.deleteTrip'),
+              message: t('trips.deleteTripConfirmation'),
               buttons: [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'OK', onPress: () => deleteTrip(trip.id) },
+                { text: t('common.cancel'), style: 'cancel' },
+                { text: t('common.ok'), onPress: () => deleteTrip(trip.id) },
               ],
             });
             break;

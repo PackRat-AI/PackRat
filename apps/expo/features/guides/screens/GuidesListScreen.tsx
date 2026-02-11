@@ -1,6 +1,7 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, View } from 'react-native';
@@ -11,20 +12,15 @@ import type { Guide } from '../types';
 export const GuidesListScreen = () => {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState(() => t('guides.all'));
 
-  const { data: categoriesData } = useGuideCategories();
-
-  const categories = [
-    'All',
-    ...(categoriesData?.categories.map((category: string) =>
-      category
-        .split('-')
-        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' '),
-    ) || []),
-  ];
+  const {
+    data: categories,
+    error: categoriesError,
+    refetch: refetchCategories,
+  } = useGuideCategories();
 
   const {
     data: guidesData,
@@ -36,7 +32,7 @@ export const GuidesListScreen = () => {
     isFetchingNextPage: isFetchingNextPageGuides,
   } = useGuides({
     category:
-      selectedCategory === 'All'
+      selectedCategory === t('guides.all')
         ? undefined
         : selectedCategory.toLocaleLowerCase().replaceAll(' ', '-'),
   });
@@ -52,7 +48,7 @@ export const GuidesListScreen = () => {
   } = useSearchGuides({
     query: searchQuery,
     category:
-      selectedCategory === 'All'
+      selectedCategory === t('guides.all')
         ? undefined
         : selectedCategory.toLocaleLowerCase().replaceAll(' ', '-'),
   });
@@ -103,10 +99,12 @@ export const GuidesListScreen = () => {
     return (
       <View className="flex-1 items-center justify-center p-8">
         {isLoading ? (
-          <ActivityIndicator color={colors.primary} />
+          <ActivityIndicator color={colors.primary} size="large" />
         ) : (
           <Text className="text-center text-gray-500 dark:text-gray-400">
-            {isSearchMode ? `No guides found for "${searchQuery}"` : 'No guides available'}
+            {isSearchMode
+              ? t('guides.noGuidesFound', { query: searchQuery })
+              : t('guides.noGuidesAvailable')}
           </Text>
         )}
       </View>
@@ -116,11 +114,11 @@ export const GuidesListScreen = () => {
   return (
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
-        title="Guides"
+        title={t('guides.guides')}
         searchBar={{
           iosHideWhenScrolling: true,
           onChangeText: handleSearch,
-          placeholder: 'Search guides...',
+          placeholder: t('guides.searchPlaceholder'),
         }}
       />
 
@@ -128,6 +126,9 @@ export const GuidesListScreen = () => {
         data={categories}
         onFilter={handleCategoryChange}
         activeFilter={selectedCategory}
+        error={categoriesError}
+        retry={refetchCategories}
+        className="px-4 pb-2"
       />
 
       <FlatList
