@@ -1,10 +1,5 @@
-import type { Board, Story } from "@swarmboard/shared";
-import {
-	CreateStoryBody,
-	enforceInvariants,
-	STORY_ID_PREFIX,
-	UpdateStoryBody,
-} from "@swarmboard/shared";
+import type { Story } from "@swarmboard/shared";
+import { CreateStoryBody, enforceInvariants, UpdateStoryBody } from "@swarmboard/shared";
 import { Elysia, t } from "elysia";
 import {
 	conflictResponse,
@@ -13,28 +8,7 @@ import {
 	requireEtag,
 } from "../middleware/etag";
 import { readBoard, writeBoard } from "../storage/board";
-
-function nextStoryId(stories: Story[]): string {
-	const maxNum = stories.reduce((max, s) => {
-		const num = Number.parseInt(s.id.replace(STORY_ID_PREFIX, ""), 10);
-		return Number.isNaN(num) ? max : Math.max(max, num);
-	}, 0);
-	return `${STORY_ID_PREFIX}${String(maxNum + 1).padStart(3, "0")}`;
-}
-
-function updateAgentLastSeen(board: Board, agent: string): void {
-	if (agent === "unknown") return;
-	if (!board.agents[agent]) {
-		board.agents[agent] = {
-			description: "",
-			status: "active",
-			last_seen: new Date().toISOString(),
-		};
-	} else {
-		board.agents[agent].last_seen = new Date().toISOString();
-		board.agents[agent].status = "active";
-	}
-}
+import { updateAgentLastSeen } from "../utils/agents";
 
 export const storyRoutes = new Elysia({ prefix: "/stories" })
 	.get(
@@ -118,7 +92,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 			}
 
 			const now = new Date().toISOString();
-			const newId = nextStoryId(result.board.userStories);
+			const newId = crypto.randomUUID();
 
 			const story: Story = {
 				id: newId,

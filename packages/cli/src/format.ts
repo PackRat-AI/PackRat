@@ -92,7 +92,9 @@ export function formatBoardSummary(board: Board): string {
 	const activeAgents = agents.filter((a) => board.agents[a].status === "active").length;
 
 	lines.push("");
-	lines.push(`  ${stories.length} stories \u00B7 ${activeAgents} agents active`);
+	lines.push(
+		`  ${stories.length} stories \u00B7 ${activeAgents} agent${activeAgents !== 1 ? "s" : ""} active`,
+	);
 
 	return lines.join("\n");
 }

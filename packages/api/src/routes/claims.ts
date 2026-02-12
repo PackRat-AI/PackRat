@@ -1,4 +1,3 @@
-import type { Board } from "@swarmboard/shared";
 import { Elysia } from "elysia";
 import {
 	conflictResponse,
@@ -8,20 +7,7 @@ import {
 	requireEtag,
 } from "../middleware/etag";
 import { readBoard, writeBoard } from "../storage/board";
-
-function updateAgentLastSeen(board: Board, agent: string): void {
-	if (agent === "unknown") return;
-	if (!board.agents[agent]) {
-		board.agents[agent] = {
-			description: "",
-			status: "active",
-			last_seen: new Date().toISOString(),
-		};
-	} else {
-		board.agents[agent].last_seen = new Date().toISOString();
-		board.agents[agent].status = "active";
-	}
-}
+import { updateAgentLastSeen } from "../utils/agents";
 
 export const claimRoutes = new Elysia({ prefix: "/stories" })
 	.post("/:id/claim", async ({ params, headers, store, agent }) => {

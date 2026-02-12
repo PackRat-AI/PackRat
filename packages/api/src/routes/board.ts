@@ -52,9 +52,23 @@ export const boardRoutes = new Elysia()
 					userStories: [],
 				};
 
-				// If userStories were provided in Swarm Board format, use them
-				if (body.userStories && Array.isArray(body.userStories)) {
-					board.userStories = body.userStories;
+				// If userStories were provided in Swarm Board format, normalize them
+				if (body.userStories?.length) {
+					board.userStories = body.userStories.map((s) => ({
+						id: s.id ?? crypto.randomUUID(),
+						title: s.title,
+						description: s.description ?? "",
+						category: s.category,
+						priority: s.priority ?? 3,
+						acceptanceCriteria: s.acceptanceCriteria ?? [],
+						dependsOn: s.dependsOn ?? [],
+						passes: s.passes ?? false,
+						notes: s.notes,
+						status: s.status ?? ("backlog" as const),
+						assignee: s.assignee ?? null,
+						created_at: s.created_at ?? now,
+						updated_at: s.updated_at ?? now,
+					}));
 				}
 			}
 

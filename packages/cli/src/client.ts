@@ -26,13 +26,20 @@ export function createClient(configOverride?: Config) {
 
 	async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
 		const url = `${config.url}${path}`;
-		const res = await fetch(url, {
-			...options,
-			headers: {
-				...baseHeaders,
-				...(options.headers as Record<string, string>),
-			},
-		});
+
+		let res: Response;
+		try {
+			res = await fetch(url, {
+				...options,
+				headers: {
+					...baseHeaders,
+					...(options.headers as Record<string, string>),
+				},
+			});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Network request failed";
+			return { data: null, error: message, status: 0, headers: new Headers() };
+		}
 
 		const text = await res.text();
 		let data: T | null = null;

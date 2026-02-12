@@ -13,5 +13,7 @@ export async function withRetry<T>(
 		await new Promise((r) => setTimeout(r, 100 * 2 ** attempt + jitter));
 	}
 
-	return { data: null, error: "Max retries exceeded", status: 409 };
+	// Unreachable: the loop always returns via the condition above.
+	// TypeScript requires a return for type-safety.
+	throw new Error("withRetry: unreachable");
 }
