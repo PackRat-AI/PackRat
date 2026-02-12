@@ -1,5 +1,5 @@
-import { describe, test, expect } from "bun:test";
-import { timeAgo, formatStoryRow, formatBoardSummary, formatAgentList } from "../format";
+import { describe, expect, test } from "bun:test";
+import { formatAgentList, formatBoardSummary, formatStoryRow, timeAgo } from "../format";
 
 describe("timeAgo", () => {
 	test("just now for recent timestamps", () => {

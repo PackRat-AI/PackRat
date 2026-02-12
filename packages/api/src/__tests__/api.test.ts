@@ -1,5 +1,4 @@
-import { describe, test, expect, beforeEach } from "bun:test";
-import { treaty } from "@elysiajs/eden";
+import { describe, expect, test } from "bun:test";
 import { createApp } from "../app";
 import { createMockR2 } from "./mock-r2";
 
@@ -8,8 +7,7 @@ const API_KEY = "test-key-123";
 function setup() {
 	const bucket = createMockR2();
 	const app = createApp(bucket, API_KEY);
-	const api = treaty(app);
-	return { api, bucket, app };
+	return { app, bucket };
 }
 
 const authHeaders = {
@@ -17,25 +15,10 @@ const authHeaders = {
 	"x-agent": "test-agent",
 };
 
-async function initBoard(api: any) {
-	const res = await api.board.init.post(
-		{
-			name: "Test Project",
-			description: "A test project",
-		},
-		{ headers: authHeaders },
-	);
-	return res;
-}
-
-async function getEtag(api: any): Promise<string> {
-	const res = await api.board.get({ headers: authHeaders });
-	// Extract etag from response
-	const data = res.data as any;
-	// The etag is in the response headers
-	const boardRes = await api.stories.get({ headers: authHeaders });
-	const body = boardRes.data as any;
-	return body?.etag ?? "";
+function getEtag(res: Response): string {
+	const value = res.headers.get("etag");
+	if (!value) throw new Error("Expected etag header");
+	return value;
 }
 
 describe("Health Check", () => {
@@ -146,9 +129,7 @@ describe("Board Init", () => {
 describe("Board Read", () => {
 	test("GET /board returns 404 before init", async () => {
 		const { app } = setup();
-		const res = await app.handle(
-			new Request("http://localhost/board", { headers: authHeaders }),
-		);
+		const res = await app.handle(new Request("http://localhost/board", { headers: authHeaders }));
 		expect(res.status).toBe(404);
 	});
 
@@ -161,9 +142,7 @@ describe("Board Read", () => {
 				body: JSON.stringify({ name: "Test", description: "Test" }),
 			}),
 		);
-		const res = await app.handle(
-			new Request("http://localhost/board", { headers: authHeaders }),
-		);
+		const res = await app.handle(new Request("http://localhost/board", { headers: authHeaders }));
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.name).toBe("Test");
@@ -180,15 +159,13 @@ describe("Stories CRUD", () => {
 				body: JSON.stringify({ name: "Test", description: "Test" }),
 			}),
 		);
-		const etag = initRes.headers.get("etag")!;
+		const etag = getEtag(initRes);
 		return { app, etag };
 	}
 
 	test("GET /stories returns empty on new board", async () => {
 		const { app } = await setupWithBoard();
-		const res = await app.handle(
-			new Request("http://localhost/stories", { headers: authHeaders }),
-		);
+		const res = await app.handle(new Request("http://localhost/stories", { headers: authHeaders }));
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.userStories).toEqual([]);
@@ -215,7 +192,7 @@ describe("Stories CRUD", () => {
 		expect(body.passes).toBe(false);
 
 		// Create second story
-		const etag2 = res.headers.get("etag")!;
+		const etag2 = getEtag(res);
 		const res2 = await app.handle(
 			new Request("http://localhost/stories", {
 				method: "POST",
@@ -297,7 +274,7 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
-		const etag2 = createRes.headers.get("etag")!;
+		const etag2 = getEtag(createRes);
 
 		const patchRes = await app.handle(
 			new Request("http://localhost/stories/US-001", {
@@ -329,7 +306,7 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
-		const etag2 = createRes.headers.get("etag")!;
+		const etag2 = getEtag(createRes);
 
 		const patchRes = await app.handle(
 			new Request("http://localhost/stories/US-001", {
@@ -361,7 +338,7 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
-		const etag2 = createRes.headers.get("etag")!;
+		const etag2 = getEtag(createRes);
 
 		const patchRes = await app.handle(
 			new Request("http://localhost/stories/US-001", {
@@ -393,7 +370,7 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
-		const etag2 = createRes.headers.get("etag")!;
+		const etag2 = getEtag(createRes);
 
 		const patchRes = await app.handle(
 			new Request("http://localhost/stories/US-001", {
@@ -424,7 +401,7 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
-		const etag2 = createRes.headers.get("etag")!;
+		const etag2 = getEtag(createRes);
 
 		// Move to todo first
 		const todoRes = await app.handle(
@@ -438,7 +415,7 @@ describe("Stories CRUD", () => {
 				body: JSON.stringify({ status: "todo" }),
 			}),
 		);
-		const etag3 = todoRes.headers.get("etag")!;
+		const etag3 = getEtag(todoRes);
 
 		// Assign
 		const assignRes = await app.handle(
@@ -471,7 +448,7 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
-		const etag2 = res1.headers.get("etag")!;
+		const etag2 = getEtag(res1);
 
 		await app.handle(
 			new Request("http://localhost/stories", {
@@ -507,7 +484,7 @@ describe("Claim / Unclaim", () => {
 				body: JSON.stringify({ name: "Test", description: "Test" }),
 			}),
 		);
-		const etag1 = initRes.headers.get("etag")!;
+		const etag1 = getEtag(initRes);
 
 		// Create story and move to todo
 		const createRes = await app.handle(
@@ -525,7 +502,7 @@ describe("Claim / Unclaim", () => {
 				}),
 			}),
 		);
-		const etag2 = createRes.headers.get("etag")!;
+		const etag2 = getEtag(createRes);
 
 		// Move to todo
 		const todoRes = await app.handle(
@@ -539,7 +516,7 @@ describe("Claim / Unclaim", () => {
 				body: JSON.stringify({ status: "todo" }),
 			}),
 		);
-		const etag3 = todoRes.headers.get("etag")!;
+		const etag3 = getEtag(todoRes);
 
 		return { app, etag: etag3 };
 	}
@@ -567,7 +544,7 @@ describe("Claim / Unclaim", () => {
 				headers: { ...authHeaders, "if-match": etag },
 			}),
 		);
-		const etag2 = claimRes.headers.get("etag")!;
+		const etag2 = getEtag(claimRes);
 
 		const res2 = await app.handle(
 			new Request("http://localhost/stories/US-001/claim", {
@@ -591,7 +568,7 @@ describe("Claim / Unclaim", () => {
 				headers: { ...authHeaders, "if-match": etag },
 			}),
 		);
-		const etag2 = claimRes.headers.get("etag")!;
+		const etag2 = getEtag(claimRes);
 
 		const unclaimRes = await app.handle(
 			new Request("http://localhost/stories/US-001/unclaim", {
@@ -614,7 +591,7 @@ describe("Claim / Unclaim", () => {
 				headers: { ...authHeaders, "if-match": etag },
 			}),
 		);
-		const etag2 = claimRes.headers.get("etag")!;
+		const etag2 = getEtag(claimRes);
 
 		const res = await app.handle(
 			new Request("http://localhost/stories/US-001/unclaim", {
@@ -640,7 +617,7 @@ describe("Comments", () => {
 				body: JSON.stringify({ name: "Test", description: "Test" }),
 			}),
 		);
-		const etag = initRes.headers.get("etag")!;
+		const etag = getEtag(initRes);
 
 		await app.handle(
 			new Request("http://localhost/stories", {
@@ -707,7 +684,7 @@ describe("Comments", () => {
 				body: JSON.stringify({ body: "First" }),
 			}),
 		);
-		const etag = first.headers.get("etag")!;
+		const etag = getEtag(first);
 
 		const second = await app.handle(
 			new Request("http://localhost/stories/US-001/comments", {
@@ -739,7 +716,7 @@ describe("Comments", () => {
 				body: JSON.stringify({ body: "First" }),
 			}),
 		);
-		const etag = first.headers.get("etag")!;
+		const etag = getEtag(first);
 
 		await app.handle(
 			new Request("http://localhost/stories/US-001/comments", {
@@ -806,7 +783,7 @@ describe("Export", () => {
 				body: JSON.stringify({ name: "Test", description: "Test" }),
 			}),
 		);
-		const etag = initRes.headers.get("etag")!;
+		const etag = getEtag(initRes);
 
 		await app.handle(
 			new Request("http://localhost/stories", {
@@ -847,9 +824,7 @@ describe("Agents", () => {
 			}),
 		);
 
-		const res = await app.handle(
-			new Request("http://localhost/agents", { headers: authHeaders }),
-		);
+		const res = await app.handle(new Request("http://localhost/agents", { headers: authHeaders }));
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.agents["test-agent"]).toBeDefined();

@@ -17,11 +17,11 @@ export default defineCommand({
 			process.exit(1);
 		}
 
-		if (!Object.keys(data!.agents).length) {
+		if (!data || !Object.keys(data.agents).length) {
 			consola.info("No agents registered");
 			return;
 		}
 
-		console.log(formatAgentList(data!.agents));
+		console.log(formatAgentList(data.agents));
 	},
 });

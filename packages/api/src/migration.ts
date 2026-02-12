@@ -17,17 +17,17 @@ interface RalphStory {
 	updated_at?: string;
 }
 
-interface RalphPrd {
+export interface RalphPrd {
 	name: string;
 	branchName?: string;
 	description?: string;
 	userStories?: RalphStory[];
 }
 
-export function isRalphFormat(input: any): boolean {
+export function isRalphFormat(input: Record<string, unknown>): boolean {
 	if (!input?.userStories || !Array.isArray(input.userStories)) return false;
 	// If any story lacks a "status" field, treat as Ralph format
-	return input.userStories.some((s: any) => !s.status);
+	return input.userStories.some((s: Record<string, unknown>) => !s.status);
 }
 
 export function migrateFromRalph(input: RalphPrd): Board {

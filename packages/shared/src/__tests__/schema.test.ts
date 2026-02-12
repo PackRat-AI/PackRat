@@ -1,6 +1,6 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { Value } from "@sinclair/typebox/value";
-import { StorySchema, CreateStoryBody, BoardSchema } from "../schema";
+import { BoardSchema, CreateStoryBody, StorySchema } from "../schema";
 
 describe("StorySchema", () => {
 	const validStory = {

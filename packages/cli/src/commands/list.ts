@@ -46,19 +46,24 @@ export default defineCommand({
 			process.exit(1);
 		}
 
+		if (!data) {
+			consola.error("No data returned");
+			process.exit(1);
+		}
+
 		if (args.json) {
-			console.log(JSON.stringify(data!.userStories, null, 2));
+			console.log(JSON.stringify(data.userStories, null, 2));
 			return;
 		}
 
-		if (!data!.userStories.length) {
+		if (!data.userStories.length) {
 			consola.info("No stories found");
 			return;
 		}
 
 		console.log("\n  ID       PRI  TITLE                          ASSIGNEE");
 		console.log(`  ${"─".repeat(60)}`);
-		for (const s of data!.userStories) {
+		for (const s of data.userStories) {
 			console.log(formatStoryRow(s));
 		}
 		console.log("");

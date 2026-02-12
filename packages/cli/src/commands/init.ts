@@ -1,6 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
 import { defineCommand } from "citty";
 import consola from "consola";
-import { readFileSync, existsSync } from "node:fs";
 import { createClient } from "../client";
 
 export default defineCommand({
@@ -26,7 +26,7 @@ export default defineCommand({
 	async run({ args }) {
 		const client = createClient();
 
-		let body: any;
+		let body: Record<string, unknown>;
 
 		if (args.from) {
 			if (!existsSync(args.from)) {

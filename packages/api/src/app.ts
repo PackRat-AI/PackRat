@@ -1,9 +1,9 @@
 import { Elysia } from "elysia";
-import { boardRoutes } from "./routes/board";
-import { storyRoutes } from "./routes/stories";
-import { commentRoutes } from "./routes/comments";
-import { claimRoutes } from "./routes/claims";
 import { agentRoutes } from "./routes/agents";
+import { boardRoutes } from "./routes/board";
+import { claimRoutes } from "./routes/claims";
+import { commentRoutes } from "./routes/comments";
+import { storyRoutes } from "./routes/stories";
 
 /**
  * Create the Elysia app with an R2 bucket injected into store.
@@ -26,7 +26,7 @@ export function createApp(bucket: R2Bucket, apiKey: string) {
 			if (path === "/health") return;
 
 			const token = headers.authorization?.replace("Bearer ", "");
-			const expected = (store as any).apiKey;
+			const expected = (store as { apiKey: string }).apiKey;
 
 			if (!token || token !== expected) {
 				return new Response(

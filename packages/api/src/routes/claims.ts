@@ -1,13 +1,13 @@
-import { Elysia } from "elysia";
 import type { Board } from "@swarmboard/shared";
-import { readBoard, writeBoard } from "../storage/board";
+import { Elysia } from "elysia";
 import {
-	requireEtag,
 	conflictResponse,
-	notFoundResponse,
 	etagRequiredResponse,
 	forbiddenResponse,
+	notFoundResponse,
+	requireEtag,
 } from "../middleware/etag";
+import { readBoard, writeBoard } from "../storage/board";
 
 function updateAgentLastSeen(board: Board, agent: string): void {
 	if (agent === "unknown") return;
@@ -25,7 +25,7 @@ function updateAgentLastSeen(board: Board, agent: string): void {
 
 export const claimRoutes = new Elysia({ prefix: "/stories" })
 	.post("/:id/claim", async ({ params, headers, store, agent }) => {
-		const bucket = (store as any).bucket as R2Bucket;
+		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const clientEtag = requireEtag(headers);
 		if (!clientEtag) return etagRequiredResponse();
 
@@ -46,9 +46,7 @@ export const claimRoutes = new Elysia({ prefix: "/stories" })
 		const story = result.board.userStories[storyIdx];
 
 		if (story.assignee) {
-			return conflictResponse(
-				`Story ${params.id} is already assigned to ${story.assignee}`,
-			);
+			return conflictResponse(`Story ${params.id} is already assigned to ${story.assignee}`);
 		}
 
 		const now = new Date().toISOString();
@@ -71,7 +69,7 @@ export const claimRoutes = new Elysia({ prefix: "/stories" })
 		});
 	})
 	.post("/:id/unclaim", async ({ params, headers, store, agent }) => {
-		const bucket = (store as any).bucket as R2Bucket;
+		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const clientEtag = requireEtag(headers);
 		if (!clientEtag) return etagRequiredResponse();
 

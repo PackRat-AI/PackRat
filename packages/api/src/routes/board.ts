@@ -1,9 +1,10 @@
-import { Elysia } from "elysia";
-import { InitBoardBody } from "@swarmboard/shared";
 import type { Board } from "@swarmboard/shared";
-import { readBoard, writeBoardUnconditional, boardExists } from "../storage/board";
-import { notFoundResponse, conflictResponse } from "../middleware/etag";
+import { InitBoardBody } from "@swarmboard/shared";
+import { Elysia } from "elysia";
+import { conflictResponse, notFoundResponse } from "../middleware/etag";
+import type { RalphPrd } from "../migration";
 import { isRalphFormat, migrateFromRalph } from "../migration";
+import { boardExists, readBoard, writeBoardUnconditional } from "../storage/board";
 
 export const boardRoutes = new Elysia()
 	.get("/health", () => {
@@ -12,7 +13,7 @@ export const boardRoutes = new Elysia()
 		});
 	})
 	.get("/board", async ({ store }) => {
-		const bucket = (store as any).bucket as R2Bucket;
+		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const result = await readBoard(bucket);
 		if (!result) {
 			return notFoundResponse("Board not initialized. Call POST /board/init first");
@@ -28,20 +29,18 @@ export const boardRoutes = new Elysia()
 	.post(
 		"/board/init",
 		async ({ body, store, agent }) => {
-			const bucket = (store as any).bucket as R2Bucket;
+			const bucket = (store as { bucket: R2Bucket }).bucket;
 
 			const exists = await boardExists(bucket);
 			if (exists) {
-				return conflictResponse(
-					"Board already initialized. Cannot re-initialize without reset.",
-				);
+				return conflictResponse("Board already initialized. Cannot re-initialize without reset.");
 			}
 
 			let board: Board;
 			const now = new Date().toISOString();
 
-			if (isRalphFormat(body)) {
-				board = migrateFromRalph(body as any);
+			if (isRalphFormat(body as unknown as Record<string, unknown>)) {
+				board = migrateFromRalph(body as unknown as RalphPrd);
 			} else {
 				board = {
 					name: body.name,
@@ -81,7 +80,7 @@ export const boardRoutes = new Elysia()
 		{ body: InitBoardBody },
 	)
 	.get("/board/export", async ({ store }) => {
-		const bucket = (store as any).bucket as R2Bucket;
+		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const result = await readBoard(bucket);
 		if (!result) {
 			return notFoundResponse("Board not initialized");
@@ -96,7 +95,7 @@ export const boardRoutes = new Elysia()
 		});
 	})
 	.get("/board/export/ralph", async ({ store }) => {
-		const bucket = (store as any).bucket as R2Bucket;
+		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const result = await readBoard(bucket);
 		if (!result) {
 			return notFoundResponse("Board not initialized");

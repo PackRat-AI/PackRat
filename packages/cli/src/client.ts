@@ -1,5 +1,6 @@
-import { loadConfig } from "./config";
+import type { Agent, Board, Comment, Story } from "@swarmboard/shared";
 import type { Config } from "./config";
+import { loadConfig } from "./config";
 
 export interface ApiResponse<T> {
 	data: T | null;
@@ -23,10 +24,7 @@ export function createClient(configOverride?: Config) {
 		"content-type": "application/json",
 	};
 
-	async function request<T>(
-		path: string,
-		options: RequestInit = {},
-	): Promise<ApiResponse<T>> {
+	async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
 		const url = `${config.url}${path}`;
 		const res = await fetch(url, {
 			...options,
@@ -61,63 +59,61 @@ export function createClient(configOverride?: Config) {
 	return {
 		config,
 
-		getBoard: () => request<any>("/board"),
+		getBoard: () => request<Board & { etag: string }>("/board"),
 
 		getStories: (query?: Record<string, string>) => {
 			const params = new URLSearchParams(query);
 			const qs = params.toString() ? `?${params}` : "";
-			return request<{ userStories: any[]; etag: string }>(`/stories${qs}`);
+			return request<{ userStories: Story[]; etag: string }>(`/stories${qs}`);
 		},
 
-		getStory: (id: string) => request<any>(`/stories/${id}`),
+		getStory: (id: string) => request<Story & { etag: string }>(`/stories/${id}`),
 
-		createStory: (body: any, etag: string) =>
-			request<any>("/stories", {
+		createStory: (body: Record<string, unknown>, etag: string) =>
+			request<Story>("/stories", {
 				method: "POST",
 				body: JSON.stringify(body),
 				headers: { "if-match": etag },
 			}),
 
-		updateStory: (id: string, body: any, etag: string) =>
-			request<any>(`/stories/${id}`, {
+		updateStory: (id: string, body: Record<string, unknown>, etag: string) =>
+			request<Story & { etag: string }>(`/stories/${id}`, {
 				method: "PATCH",
 				body: JSON.stringify(body),
 				headers: { "if-match": etag },
 			}),
 
 		getComments: (storyId: string) =>
-			request<{ comments: any[]; etag: string | null }>(
-				`/stories/${storyId}/comments`,
-			),
+			request<{ comments: Comment[]; etag: string | null }>(`/stories/${storyId}/comments`),
 
 		createComment: (storyId: string, body: string, etag: string) =>
-			request<any>(`/stories/${storyId}/comments`, {
+			request<Comment & { etag: string }>(`/stories/${storyId}/comments`, {
 				method: "POST",
 				body: JSON.stringify({ body }),
 				headers: { "if-match": etag },
 			}),
 
 		claimStory: (id: string, etag: string) =>
-			request<any>(`/stories/${id}/claim`, {
+			request<Story & { etag: string }>(`/stories/${id}/claim`, {
 				method: "POST",
 				headers: { "if-match": etag },
 			}),
 
 		unclaimStory: (id: string, etag: string) =>
-			request<any>(`/stories/${id}/unclaim`, {
+			request<Story & { etag: string }>(`/stories/${id}/unclaim`, {
 				method: "POST",
 				headers: { "if-match": etag },
 			}),
 
-		initBoard: (body: any) =>
-			request<any>("/board/init", {
+		initBoard: (body: Record<string, unknown>) =>
+			request<Board & { etag: string }>("/board/init", {
 				method: "POST",
 				body: JSON.stringify(body),
 			}),
 
-		exportBoard: () => request<any>("/board/export"),
-		exportRalph: () => request<any>("/board/export/ralph"),
-		getAgents: () => request<{ agents: Record<string, any> }>("/agents"),
+		exportBoard: () => request<Board>("/board/export"),
+		exportRalph: () => request<Record<string, unknown>>("/board/export/ralph"),
+		getAgents: () => request<{ agents: Record<string, Agent> }>("/agents"),
 	};
 }
 

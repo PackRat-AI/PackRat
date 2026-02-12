@@ -23,7 +23,11 @@ export function createMockR2(): R2Bucket {
 			} as unknown as R2ObjectBody;
 		},
 
-		put: async (key: string, value: any, options?: R2PutOptions) => {
+		put: async (
+			key: string,
+			value: string | ReadableStream | ArrayBuffer | Blob,
+			options?: R2PutOptions,
+		) => {
 			const body = typeof value === "string" ? value : await new Response(value).text();
 
 			// Check conditional write (onlyIf.etagMatches)
@@ -60,7 +64,7 @@ export function createMockR2(): R2Bucket {
 			return {
 				objects: [...store.keys()].map((k) => ({
 					key: k,
-					httpEtag: store.get(k)!.etag,
+					httpEtag: store.get(k)?.etag ?? "",
 				})),
 				truncated: false,
 			} as unknown as R2Objects;

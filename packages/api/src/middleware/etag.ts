@@ -4,7 +4,9 @@ export function requireEtag(headers: Record<string, string | undefined>): string
 	return ifMatch;
 }
 
-export function conflictResponse(message = "Board was modified by another agent. Re-read and retry.") {
+export function conflictResponse(
+	message = "Board was modified by another agent. Re-read and retry.",
+) {
 	return new Response(
 		JSON.stringify({
 			error: "conflict",

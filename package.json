@@ -1,7 +1,9 @@
 {
 	"name": "swarmboard",
 	"private": true,
-	"workspaces": ["packages/*"],
+	"workspaces": [
+		"packages/*"
+	],
 	"scripts": {
 		"dev": "bun --filter @swarmboard/api dev",
 		"deploy": "bun --filter @swarmboard/api deploy",

@@ -1,4 +1,4 @@
-import type { StoryStatusType } from "@swarmboard/shared";
+import type { Agent, Board, Comment, Story } from "@swarmboard/shared";
 import { STORY_STATUSES } from "@swarmboard/shared";
 
 export function timeAgo(iso: string): string {
@@ -12,7 +12,7 @@ export function timeAgo(iso: string): string {
 	return `${days}d ago`;
 }
 
-export function formatStoryRow(story: any): string {
+export function formatStoryRow(story: Story): string {
 	const id = story.id.padEnd(8);
 	const pri = String(story.priority).padEnd(4);
 	const title = story.title.length > 30 ? `${story.title.slice(0, 27)}...` : story.title.padEnd(30);
@@ -20,7 +20,7 @@ export function formatStoryRow(story: any): string {
 	return `  ${id} ${pri} ${title} ${assignee}`;
 }
 
-export function formatStoryDetail(story: any, comments: any[] = []): string {
+export function formatStoryDetail(story: Story, comments: Comment[] = []): string {
 	const lines: string[] = [];
 
 	lines.push(`\n  ${story.id} \u00B7 ${story.title}`);
@@ -62,7 +62,7 @@ export function formatStoryDetail(story: any, comments: any[] = []): string {
 	return lines.join("\n");
 }
 
-export function formatBoardSummary(board: any): string {
+export function formatBoardSummary(board: Board): string {
 	const lines: string[] = [];
 	const stories = board.userStories ?? [];
 
@@ -89,9 +89,7 @@ export function formatBoardSummary(board: any): string {
 	}
 
 	const agents = board.agents ? Object.keys(board.agents) : [];
-	const activeAgents = agents.filter(
-		(a) => board.agents[a].status === "active",
-	).length;
+	const activeAgents = agents.filter((a) => board.agents[a].status === "active").length;
 
 	lines.push("");
 	lines.push(`  ${stories.length} stories \u00B7 ${activeAgents} agents active`);
@@ -99,7 +97,7 @@ export function formatBoardSummary(board: any): string {
 	return lines.join("\n");
 }
 
-export function formatAgentList(agents: Record<string, any>): string {
+export function formatAgentList(agents: Record<string, Agent>): string {
 	const lines: string[] = [];
 	const header = "  SLUG                STATUS   LAST SEEN";
 	const divider = `  ${"─".repeat(50)}`;

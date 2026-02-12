@@ -22,10 +22,7 @@ function commentKey(storyId: string): string {
 	return `${COMMENTS_DIR}/${storyId}.json`;
 }
 
-export async function readComments(
-	bucket: R2Bucket,
-	storyId: string,
-): Promise<CommentsReadResult> {
+export async function readComments(bucket: R2Bucket, storyId: string): Promise<CommentsReadResult> {
 	const obj = await bucket.get(commentKey(storyId));
 	if (!obj) {
 		return { comments: [], etag: null };
@@ -49,7 +46,8 @@ export async function writeComments(
 		const obj = await bucket.put(key, body, {
 			httpMetadata: { contentType: "application/json" },
 		});
-		return { ok: true, etag: obj!.httpEtag };
+		const etag = obj?.httpEtag ?? "";
+		return { ok: true, etag };
 	}
 
 	const obj = await bucket.put(key, body, {

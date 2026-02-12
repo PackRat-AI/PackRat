@@ -1,18 +1,18 @@
-import { Elysia, t } from "elysia";
+import type { Board, Story } from "@swarmboard/shared";
 import {
 	CreateStoryBody,
-	UpdateStoryBody,
-	STORY_ID_PREFIX,
 	enforceInvariants,
+	STORY_ID_PREFIX,
+	UpdateStoryBody,
 } from "@swarmboard/shared";
-import type { Story, Board } from "@swarmboard/shared";
-import { readBoard, writeBoard } from "../storage/board";
+import { Elysia, t } from "elysia";
 import {
-	requireEtag,
 	conflictResponse,
-	notFoundResponse,
 	etagRequiredResponse,
+	notFoundResponse,
+	requireEtag,
 } from "../middleware/etag";
+import { readBoard, writeBoard } from "../storage/board";
 
 function nextStoryId(stories: Story[]): string {
 	const maxNum = stories.reduce((max, s) => {
@@ -40,7 +40,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 	.get(
 		"/",
 		async ({ query, store }) => {
-			const bucket = (store as any).bucket as R2Bucket;
+			const bucket = (store as { bucket: R2Bucket }).bucket;
 			const result = await readBoard(bucket);
 			if (!result) {
 				return notFoundResponse("Board not initialized. Call POST /board/init first");
@@ -83,7 +83,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 		},
 	)
 	.get("/:id", async ({ params, store }) => {
-		const bucket = (store as any).bucket as R2Bucket;
+		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const result = await readBoard(bucket);
 		if (!result) {
 			return notFoundResponse("Board not initialized. Call POST /board/init first");
@@ -104,7 +104,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 	.post(
 		"/",
 		async ({ body, headers, store, agent }) => {
-			const bucket = (store as any).bucket as R2Bucket;
+			const bucket = (store as { bucket: R2Bucket }).bucket;
 			const clientEtag = requireEtag(headers);
 			if (!clientEtag) return etagRequiredResponse();
 
@@ -157,7 +157,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 	.patch(
 		"/:id",
 		async ({ params, body, headers, store, agent }) => {
-			const bucket = (store as any).bucket as R2Bucket;
+			const bucket = (store as { bucket: R2Bucket }).bucket;
 			const clientEtag = requireEtag(headers);
 			if (!clientEtag) return etagRequiredResponse();
 

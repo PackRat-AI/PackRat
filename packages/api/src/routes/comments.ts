@@ -1,9 +1,9 @@
-import { Elysia } from "elysia";
-import { CreateCommentBody, COMMENT_ID_PREFIX } from "@swarmboard/shared";
 import type { Comment } from "@swarmboard/shared";
+import { COMMENT_ID_PREFIX, CreateCommentBody } from "@swarmboard/shared";
+import { Elysia } from "elysia";
+import { conflictResponse, etagRequiredResponse, notFoundResponse } from "../middleware/etag";
 import { readBoard } from "../storage/board";
 import { readComments, writeComments } from "../storage/comments";
-import { requireEtag, conflictResponse, notFoundResponse, etagRequiredResponse } from "../middleware/etag";
 
 function nextCommentId(comments: Comment[]): string {
 	const maxNum = comments.reduce((max, c) => {
@@ -15,7 +15,7 @@ function nextCommentId(comments: Comment[]): string {
 
 export const commentRoutes = new Elysia({ prefix: "/stories" })
 	.get("/:id/comments", async ({ params, store }) => {
-		const bucket = (store as any).bucket as R2Bucket;
+		const bucket = (store as { bucket: R2Bucket }).bucket;
 
 		// Verify story exists
 		const boardResult = await readBoard(bucket);
@@ -30,20 +30,17 @@ export const commentRoutes = new Elysia({ prefix: "/stories" })
 
 		const result = await readComments(bucket, params.id);
 
-		return new Response(
-			JSON.stringify({ comments: result.comments, etag: result.etag }),
-			{
-				headers: {
-					"content-type": "application/json",
-					...(result.etag ? { etag: result.etag } : {}),
-				},
+		return new Response(JSON.stringify({ comments: result.comments, etag: result.etag }), {
+			headers: {
+				"content-type": "application/json",
+				...(result.etag ? { etag: result.etag } : {}),
 			},
-		);
+		});
 	})
 	.post(
 		"/:id/comments",
 		async ({ params, body, headers, store, agent }) => {
-			const bucket = (store as any).bucket as R2Bucket;
+			const bucket = (store as { bucket: R2Bucket }).bucket;
 
 			// Verify story exists
 			const boardResult = await readBoard(bucket);

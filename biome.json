@@ -1,6 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
-	"organizeImports": { "enabled": true },
+	"$schema": "https://biomejs.dev/schemas/2.3.15/schema.json",
 	"formatter": {
 		"indentStyle": "tab",
 		"lineWidth": 100
@@ -9,6 +8,15 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true
+		}
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": {
+					"level": "on"
+				}
+			}
 		}
 	}
 }

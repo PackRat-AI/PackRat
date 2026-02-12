@@ -46,7 +46,7 @@ export default defineCommand({
 	async run({ args }) {
 		const client = createClient();
 
-		const body: Record<string, any> = {};
+		const body: Record<string, unknown> = {};
 		if (args.status) body.status = args.status;
 		if (args.priority) body.priority = Number(args.priority);
 		if (args.assignee) body.assignee = args.assignee === "none" ? null : args.assignee;

@@ -38,8 +38,8 @@ export default defineCommand({
 
 		const result = await withRetry(async () => {
 			const boardRes = await client.getStories();
-			if (boardRes.error) return boardRes;
-			const etag = boardRes.data!.etag;
+			if (boardRes.error || !boardRes.data) return boardRes;
+			const etag = boardRes.data.etag;
 
 			return client.createStory(
 				{

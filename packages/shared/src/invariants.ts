@@ -1,18 +1,13 @@
 import type { Story } from "./schema";
 
-export type InvariantResult =
-	| { ok: true; patched: Partial<Story> }
-	| { ok: false; error: string };
+export type InvariantResult = { ok: true; patched: Partial<Story> } | { ok: false; error: string };
 
 /**
  * Enforce business rules on story mutations.
  * Returns additional fields to patch (e.g., auto-setting status when passes changes).
  * Called by the API before writing to R2.
  */
-export function enforceInvariants(
-	current: Story,
-	updates: Partial<Story>,
-): InvariantResult {
+export function enforceInvariants(current: Story, updates: Partial<Story>): InvariantResult {
 	const merged = { ...current, ...updates };
 	const patched: Partial<Story> = {};
 

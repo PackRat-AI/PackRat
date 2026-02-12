@@ -55,7 +55,9 @@ export async function writeBoardUnconditional(
 		httpMetadata: { contentType: "application/json" },
 	});
 
-	return { ok: true, etag: obj!.httpEtag };
+	// Unconditional write always returns an object
+	const etag = obj?.httpEtag ?? "";
+	return { ok: true, etag };
 }
 
 export async function boardExists(bucket: R2Bucket): Promise<boolean> {

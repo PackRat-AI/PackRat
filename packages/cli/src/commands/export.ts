@@ -1,6 +1,6 @@
+import { writeFileSync } from "node:fs";
 import { defineCommand } from "citty";
 import consola from "consola";
-import { writeFileSync } from "node:fs";
 import { createClient } from "../client";
 
 export default defineCommand({
@@ -20,9 +20,7 @@ export default defineCommand({
 	},
 	async run({ args }) {
 		const client = createClient();
-		const { data, error } = args.ralph
-			? await client.exportRalph()
-			: await client.exportBoard();
+		const { data, error } = args.ralph ? await client.exportRalph() : await client.exportBoard();
 
 		if (error) {
 			consola.error("Failed to export:", error);

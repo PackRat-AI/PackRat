@@ -26,16 +26,11 @@ export default defineCommand({
 		}
 
 		const stories = boardRes.data.userStories
-			.sort(
-				(a: any, b: any) =>
-					new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-			)
+			.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 			.slice(0, limit);
 
 		// Fetch comments for recent stories in parallel
-		const commentResults = await Promise.all(
-			stories.map((s: any) => client.getComments(s.id)),
-		);
+		const commentResults = await Promise.all(stories.map((s) => client.getComments(s.id)));
 
 		// Build timeline entries
 		type TimelineEntry = {
