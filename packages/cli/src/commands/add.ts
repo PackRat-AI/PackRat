@@ -38,7 +38,9 @@ export default defineCommand({
 
 		const result = await withRetry(async () => {
 			const boardRes = await client.getStories();
-			if (boardRes.error || !boardRes.data) return boardRes;
+			if (boardRes.error || !boardRes.data) {
+				return { status: boardRes.status, data: null, error: boardRes.error };
+			}
 			const etag = boardRes.data.etag;
 
 			return client.createStory(
@@ -53,7 +55,7 @@ export default defineCommand({
 			);
 		});
 
-		if (result.error) {
+		if (result.error || !result.data) {
 			consola.error("Failed to create story:", result.error);
 			process.exit(1);
 		}

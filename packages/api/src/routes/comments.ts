@@ -31,8 +31,9 @@ export const commentRoutes = new Elysia({ prefix: "/stories" })
 	})
 	.post(
 		"/:id/comments",
-		async ({ params, body, headers, store, agent }) => {
+		async ({ params, body, headers, store }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
+			const agent = headers["x-agent"] ?? "unknown";
 
 			// Verify story exists
 			const boardResult = await readBoard(bucket);

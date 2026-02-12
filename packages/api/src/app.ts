@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
 import { Elysia } from "elysia";
 import { agentRoutes } from "./routes/agents";
 import { boardRoutes } from "./routes/board";
@@ -11,28 +10,37 @@ import { storyRoutes } from "./routes/stories";
  * This factory is used both by the CF Worker entry point (real R2)
  * and by tests (mock R2).
  *
- * Auth + agent extraction is inlined here (not in a separate plugin)
- * to ensure `agent` and `store` are available to all route handlers.
+ * Auth is inlined here (not in a separate plugin) to ensure
+ * `store` is available to all route handlers.
  */
 export function createApp(bucket: R2Bucket, apiKey: string) {
 	return new Elysia()
 		.state("bucket", bucket)
 		.state("apiKey", apiKey)
-		.derive(({ headers }) => {
-			const agent = headers["x-agent"] ?? "unknown";
-			return { agent };
-		})
-		.onBeforeHandle(({ headers, path, store, request }) => {
+		.onBeforeHandle(async ({ headers, path, store, request }) => {
 			// Skip auth for health check
 			if (path === "/health") return;
 
 			const token = headers.authorization?.replace("Bearer ", "");
 			const expected = (store as { apiKey: string }).apiKey;
 
-			const tokenBuf = Buffer.from(token ?? "");
-			const expectedBuf = Buffer.from(expected);
-			const isValid =
-				tokenBuf.byteLength === expectedBuf.byteLength && timingSafeEqual(tokenBuf, expectedBuf);
+			const encoder = new TextEncoder();
+			const tokenBytes = encoder.encode(token ?? "");
+			const expectedBytes = encoder.encode(expected);
+
+			let isValid = false;
+			if (tokenBytes.byteLength === expectedBytes.byteLength) {
+				// Import key as HMAC to use Web Crypto for constant-time comparison
+				const key = await crypto.subtle.importKey(
+					"raw",
+					expectedBytes,
+					{ name: "HMAC", hash: "SHA-256" },
+					false,
+					["sign", "verify"],
+				);
+				const sig = await crypto.subtle.sign("HMAC", key, expectedBytes);
+				isValid = await crypto.subtle.verify("HMAC", key, sig, tokenBytes);
+			}
 
 			if (!token || !isValid) {
 				return new Response(

@@ -28,8 +28,9 @@ export const boardRoutes = new Elysia()
 	})
 	.post(
 		"/board/init",
-		async ({ body, store, agent }) => {
+		async ({ body, store, headers }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
+			const agent = headers["x-agent"] ?? "unknown";
 
 			const exists = await boardExists(bucket);
 			if (exists) {

@@ -20,7 +20,7 @@ export default defineCommand({
 		const limit = Number(args.limit);
 
 		const boardRes = await client.getBoard();
-		if (boardRes.error) {
+		if (boardRes.error || !boardRes.data) {
 			consola.error("Failed to fetch board:", boardRes.error);
 			process.exit(1);
 		}
@@ -50,7 +50,7 @@ export default defineCommand({
 				storyId: s.id,
 				type: "update",
 				summary: `[${s.status}] ${s.title}`,
-				agent: s.assignee,
+				agent: s.assignee ?? undefined,
 			});
 
 			const comments = commentResults[i].data?.comments ?? [];

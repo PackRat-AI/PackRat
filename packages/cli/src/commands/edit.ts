@@ -62,7 +62,7 @@ export default defineCommand({
 
 		const result = await withRetry(async () => {
 			const storyRes = await client.getStory(args.id);
-			if (storyRes.error) return storyRes;
+			if (storyRes.error || !storyRes.data) return storyRes;
 			const etag = storyRes.data.etag;
 			return client.updateStory({ id: args.id, body, etag });
 		});

@@ -77,8 +77,9 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 	})
 	.post(
 		"/",
-		async ({ body, headers, store, agent }) => {
+		async ({ body, headers, store }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
+			const agent = headers["x-agent"] ?? "unknown";
 			const clientEtag = requireEtag(headers);
 			if (!clientEtag) return etagRequiredResponse();
 
@@ -134,8 +135,9 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 	)
 	.patch(
 		"/:id",
-		async ({ params, body, headers, store, agent }) => {
+		async ({ params, body, headers, store }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
+			const agent = headers["x-agent"] ?? "unknown";
 			const clientEtag = requireEtag(headers);
 			if (!clientEtag) return etagRequiredResponse();
 
