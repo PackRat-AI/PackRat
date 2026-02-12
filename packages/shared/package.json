@@ -10,13 +10,16 @@
 		"directory": "packages/shared"
 	},
 	"exports": {
-		".": "./src/index.ts"
+		".": {
+			"bun": "./src/index.ts",
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
 	},
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"files": [
-		"dist",
-		"src"
+		"dist"
 	],
 	"publishConfig": {
 		"access": "public"

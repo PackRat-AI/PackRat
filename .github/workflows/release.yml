@@ -37,7 +37,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: packages
-          path: packages/
+          path: .
       - run: bun publish --access public
         working-directory: packages/shared
         env:
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: packages
-          path: packages/
+          path: .
       - run: bun publish --access public --registry https://npm.pkg.github.com/
         working-directory: packages/shared
         env:
@@ -68,7 +68,9 @@ jobs:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   github-release:
-    needs: build
+    needs:
+      - publish-npm
+      - publish-ghpr
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

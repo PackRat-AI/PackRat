@@ -14,7 +14,7 @@ import { storyRoutes } from "./routes/stories";
  * `store` is available to all route handlers.
  */
 export async function createApp(bucket: R2Bucket, apiKey: string) {
-	// Pre-derive HMAC key + expected signature once at startup
+	// Pre-derive HMAC key + expected signature for timing-safe auth comparison
 	const encoder = new TextEncoder();
 	const expectedBytes = encoder.encode(apiKey);
 	const hmacKey = await crypto.subtle.importKey(

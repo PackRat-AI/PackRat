@@ -55,4 +55,6 @@ for (const path of PACKAGE_PATHS) {
 	console.log(`  updated ${path}`);
 }
 
-console.log(`\nRun:\n  git add -A && git commit -m "🔖 v${nextVersion}" && git tag v${nextVersion}`);
+console.log(
+	`\nRun:\n  git add -A && git commit -m "🔖 v${nextVersion}" && git tag v${nextVersion}`,
+);
