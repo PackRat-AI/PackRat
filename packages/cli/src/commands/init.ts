@@ -46,7 +46,7 @@ export default defineCommand({
 
 		const { data, error } = await client.initBoard(body);
 
-		if (error) {
+		if (error || !data) {
 			consola.error("Failed to initialize board:", error);
 			process.exit(1);
 		}

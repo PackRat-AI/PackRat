@@ -12,7 +12,7 @@ export default defineCommand({
 		const client = createClient();
 		const { data, error } = await client.getBoard();
 
-		if (error) {
+		if (error || !data) {
 			consola.error("Failed to fetch board:", error);
 			process.exit(1);
 		}

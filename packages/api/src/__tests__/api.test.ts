@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import type { Agent, Board } from "@swarmboard/shared";
 import { createApp } from "../app";
 import { createMockR2 } from "./mock-r2";
+
+async function json<T = Record<string, unknown>>(res: Response): Promise<T> {
+	return (await res.json()) as T;
+}
 
 const API_KEY = "test-key-123";
 
@@ -25,7 +30,7 @@ describe("Health Check", () => {
 	test("GET /health returns ok without auth", async () => {
 		const { app } = setup();
 		const res = await app.handle(new Request("http://localhost/health"));
-		const body = await res.json();
+		const body = await json(res);
 		expect(body).toEqual({ status: "ok" });
 		expect(res.status).toBe(200);
 	});
@@ -66,7 +71,7 @@ describe("Board Init", () => {
 			}),
 		);
 		expect(res.status).toBe(201);
-		const body = await res.json();
+		const body = await json<Board>(res);
 		expect(body.name).toBe("Test Project");
 		expect(body.userStories).toEqual([]);
 		expect(body.agents["test-agent"]).toBeDefined();
@@ -118,7 +123,7 @@ describe("Board Init", () => {
 			}),
 		);
 		expect(res.status).toBe(201);
-		const body = await res.json();
+		const body = await json<Board>(res);
 		expect(body.userStories).toHaveLength(1);
 		expect(body.userStories[0].status).toBe("backlog");
 		expect(body.userStories[0].assignee).toBeNull();
@@ -144,7 +149,7 @@ describe("Board Read", () => {
 		);
 		const res = await app.handle(new Request("http://localhost/board", { headers: authHeaders }));
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.name).toBe("Test");
 	});
 });
@@ -167,7 +172,7 @@ describe("Stories CRUD", () => {
 		const { app } = await setupWithBoard();
 		const res = await app.handle(new Request("http://localhost/stories", { headers: authHeaders }));
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.userStories).toEqual([]);
 	});
 
@@ -186,7 +191,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		expect(res.status).toBe(201);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
 		expect(body.status).toBe("backlog");
 		expect(body.passes).toBe(false);
@@ -209,7 +214,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		expect(res2.status).toBe(201);
-		const body2 = await res2.json();
+		const body2 = await json(res2);
 		expect(body2.id).toMatch(/^[0-9a-f-]{36}$/);
 		expect(body2.id).not.toBe(body.id);
 	});
@@ -244,13 +249,13 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
-		const created = await createRes.json();
+		const created = await json(createRes);
 
 		const res = await app.handle(
 			new Request(`http://localhost/stories/${created.id}`, { headers: authHeaders }),
 		);
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.title).toBe("Test Story");
 	});
 
@@ -277,7 +282,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
-		const created = await createRes.json();
+		const created = await json(createRes);
 
 		const patchRes = await app.handle(
 			new Request(`http://localhost/stories/${created.id}`, {
@@ -291,7 +296,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		expect(patchRes.status).toBe(200);
-		const body = await patchRes.json();
+		const body = await json(patchRes);
 		expect(body.priority).toBe(3);
 	});
 
@@ -310,7 +315,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
-		const created = await createRes.json();
+		const created = await json(createRes);
 
 		const patchRes = await app.handle(
 			new Request(`http://localhost/stories/${created.id}`, {
@@ -323,7 +328,7 @@ describe("Stories CRUD", () => {
 				body: JSON.stringify({ passes: true }),
 			}),
 		);
-		const body = await patchRes.json();
+		const body = await json(patchRes);
 		expect(body.status).toBe("done");
 		expect(body.passes).toBe(true);
 	});
@@ -343,7 +348,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
-		const created = await createRes.json();
+		const created = await json(createRes);
 
 		const patchRes = await app.handle(
 			new Request(`http://localhost/stories/${created.id}`, {
@@ -356,7 +361,7 @@ describe("Stories CRUD", () => {
 				body: JSON.stringify({ status: "done" }),
 			}),
 		);
-		const body = await patchRes.json();
+		const body = await json(patchRes);
 		expect(body.status).toBe("done");
 		expect(body.passes).toBe(true);
 	});
@@ -376,7 +381,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
-		const created = await createRes.json();
+		const created = await json(createRes);
 
 		const patchRes = await app.handle(
 			new Request(`http://localhost/stories/${created.id}`, {
@@ -408,7 +413,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
-		const created = await createRes.json();
+		const created = await json(createRes);
 
 		// Move to todo first
 		const todoRes = await app.handle(
@@ -436,7 +441,7 @@ describe("Stories CRUD", () => {
 				body: JSON.stringify({ assignee: "code-bot" }),
 			}),
 		);
-		const body = await assignRes.json();
+		const body = await json(assignRes);
 		expect(body.status).toBe("in_progress");
 		expect(body.assignee).toBe("code-bot");
 	});
@@ -476,7 +481,7 @@ describe("Stories CRUD", () => {
 		const listRes = await app.handle(
 			new Request("http://localhost/stories?status=backlog", { headers: authHeaders }),
 		);
-		const body = await listRes.json();
+		const body = await json(listRes);
 		expect(body.userStories).toHaveLength(2);
 	});
 });
@@ -510,7 +515,7 @@ describe("Claim / Unclaim", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
-		const created = await createRes.json();
+		const created = await json(createRes);
 
 		// Move to todo
 		const todoRes = await app.handle(
@@ -538,7 +543,7 @@ describe("Claim / Unclaim", () => {
 			}),
 		);
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.assignee).toBe("test-agent");
 		expect(body.status).toBe("in_progress");
 	});
@@ -585,7 +590,7 @@ describe("Claim / Unclaim", () => {
 			}),
 		);
 		expect(unclaimRes.status).toBe(200);
-		const body = await unclaimRes.json();
+		const body = await json(unclaimRes);
 		expect(body.assignee).toBeNull();
 		expect(body.status).toBe("todo");
 	});
@@ -642,7 +647,7 @@ describe("Comments", () => {
 				}),
 			}),
 		);
-		const created = await createRes.json();
+		const created = await json(createRes);
 
 		return { app, storyId: created.id as string };
 	}
@@ -655,7 +660,7 @@ describe("Comments", () => {
 			}),
 		);
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.comments).toEqual([]);
 	});
 
@@ -673,7 +678,7 @@ describe("Comments", () => {
 			}),
 		);
 		expect(res.status).toBe(201);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
 		expect(body.agent).toBe("test-agent");
 		expect(body.body).toBe("First comment");
@@ -694,7 +699,7 @@ describe("Comments", () => {
 			}),
 		);
 		const etag = getEtag(first);
-		const firstBody = await first.json();
+		const firstBody = await json(first);
 
 		const second = await app.handle(
 			new Request(`http://localhost/stories/${storyId}/comments`, {
@@ -708,7 +713,7 @@ describe("Comments", () => {
 			}),
 		);
 		expect(second.status).toBe(201);
-		const body = await second.json();
+		const body = await json(second);
 		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
 		expect(body.id).not.toBe(firstBody.id);
 	});
@@ -746,7 +751,7 @@ describe("Comments", () => {
 				headers: authHeaders,
 			}),
 		);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.comments).toHaveLength(2);
 	});
 
@@ -815,7 +820,15 @@ describe("Export", () => {
 		const res = await app.handle(
 			new Request("http://localhost/board/export/ralph", { headers: authHeaders }),
 		);
-		const body = await res.json();
+		const body = await json<{
+			agents?: unknown;
+			userStories: Array<{
+				status?: unknown;
+				assignee?: unknown;
+				created_at?: unknown;
+				title?: string;
+			}>;
+		}>(res);
 		expect(body.agents).toBeUndefined();
 		expect(body.userStories[0].status).toBeUndefined();
 		expect(body.userStories[0].assignee).toBeUndefined();
@@ -837,7 +850,7 @@ describe("Agents", () => {
 
 		const res = await app.handle(new Request("http://localhost/agents", { headers: authHeaders }));
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json<{ agents: Record<string, Agent> }>(res);
 		expect(body.agents["test-agent"]).toBeDefined();
 		expect(body.agents["test-agent"].status).toBe("active");
 	});

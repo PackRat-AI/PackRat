@@ -10,8 +10,9 @@ import { readBoard, writeBoard } from "../storage/board";
 import { updateAgentLastSeen } from "../utils/agents";
 
 export const claimRoutes = new Elysia({ prefix: "/stories" })
-	.post("/:id/claim", async ({ params, headers, store, agent }) => {
+	.post("/:id/claim", async ({ params, headers, store }) => {
 		const bucket = (store as { bucket: R2Bucket }).bucket;
+		const agent = headers["x-agent"] ?? "unknown";
 		const clientEtag = requireEtag(headers);
 		if (!clientEtag) return etagRequiredResponse();
 
@@ -58,8 +59,9 @@ export const claimRoutes = new Elysia({ prefix: "/stories" })
 			},
 		});
 	})
-	.post("/:id/unclaim", async ({ params, headers, store, agent }) => {
+	.post("/:id/unclaim", async ({ params, headers, store }) => {
 		const bucket = (store as { bucket: R2Bucket }).bucket;
+		const agent = headers["x-agent"] ?? "unknown";
 		const clientEtag = requireEtag(headers);
 		if (!clientEtag) return etagRequiredResponse();
 

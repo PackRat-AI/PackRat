@@ -23,7 +23,7 @@ export default defineCommand({
 			client.getComments(args.id),
 		]);
 
-		if (storyRes.error) {
+		if (storyRes.error || !storyRes.data) {
 			consola.error(`Story ${args.id} not found`);
 			process.exit(1);
 		}

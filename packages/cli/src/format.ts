@@ -1,4 +1,4 @@
-import type { Agent, Board, Comment, Story } from "@swarmboard/shared";
+import type { Agent, Comment, Story } from "@swarmboard/shared";
 import { STORY_STATUSES } from "@swarmboard/shared";
 
 export function timeAgo(iso: string): string {
@@ -12,7 +12,9 @@ export function timeAgo(iso: string): string {
 	return `${days}d ago`;
 }
 
-export function formatStoryRow(story: Story): string {
+export function formatStoryRow(
+	story: Pick<Story, "id" | "priority" | "title" | "assignee">,
+): string {
 	const id = story.id.padEnd(8);
 	const pri = String(story.priority).padEnd(4);
 	const title = story.title.length > 30 ? `${story.title.slice(0, 27)}...` : story.title.padEnd(30);
@@ -62,7 +64,11 @@ export function formatStoryDetail(story: Story, comments: Comment[] = []): strin
 	return lines.join("\n");
 }
 
-export function formatBoardSummary(board: Board): string {
+export function formatBoardSummary(board: {
+	name: string;
+	userStories: { status: string }[];
+	agents: Record<string, { status: string }>;
+}): string {
 	const lines: string[] = [];
 	const stories = board.userStories ?? [];
 
@@ -99,7 +105,9 @@ export function formatBoardSummary(board: Board): string {
 	return lines.join("\n");
 }
 
-export function formatAgentList(agents: Record<string, Agent>): string {
+export function formatAgentList(
+	agents: Record<string, Pick<Agent, "status" | "last_seen">>,
+): string {
 	const lines: string[] = [];
 	const header = "  SLUG                STATUS   LAST SEEN";
 	const divider = `  ${"─".repeat(50)}`;
