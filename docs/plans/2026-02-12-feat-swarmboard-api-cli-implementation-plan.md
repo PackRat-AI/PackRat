@@ -85,10 +85,10 @@ These decisions resolve ambiguities identified during spec analysis:
 
 **Tasks:**
 
-- [ ] Set up Bun workspace root: `package.json` (workspaces), `tsconfig.json` (base composite), `biome.json`, `bunfig.toml`
+- [x] Set up Bun workspace root: `package.json` (workspaces), `tsconfig.json` (base composite), `biome.json`, `bunfig.toml`
   - `package.json` — workspace scripts: `dev`, `deploy`, `test`, `lint`, `lint:fix`, `typecheck`
   - `biome.json` — tabs, 100 line width, recommended rules, organize imports
-- [ ] Create `packages/shared/` structure
+- [x] Create `packages/shared/` structure
   - `packages/shared/package.json` — depends on `@sinclair/typebox`
   - `packages/shared/tsconfig.json` — extends base
   - `packages/shared/src/constants.ts` — `STORY_STATUSES` array, `AGENT_STATUSES` array, ID prefixes (`US-`, `c-`)
@@ -96,7 +96,7 @@ These decisions resolve ambiguities identified during spec analysis:
   - `packages/shared/src/types.ts` — `Static<>` type exports: `Story`, `Comment`, `Agent`, `Board`, `StoryStatusType`
   - `packages/shared/src/invariants.ts` — `enforceInvariants(current, updates)` function
   - `packages/shared/src/index.ts` — barrel export
-- [ ] Write unit tests for shared package
+- [x] Write unit tests for shared package
   - `packages/shared/src/__tests__/invariants.test.ts`:
     - `passes: true` auto-sets `status: done`
     - `status: done` auto-sets `passes: true`
@@ -109,8 +109,8 @@ These decisions resolve ambiguities identified during spec analysis:
     - Missing required fields fail
     - Invalid status value fails
     - Priority out of range (1-5) fails
-- [ ] Run `bun install` at root — verify workspace linking works
-- [ ] Run `bun test` in shared — all tests pass
+- [x] Run `bun install` at root — verify workspace linking works
+- [x] Run `bun test` in shared — all tests pass
 
 **Files created:**
 
@@ -136,20 +136,20 @@ packages/shared/src/__tests__/schema.test.ts
 
 **Tasks:**
 
-- [ ] Create `packages/api/` structure
+- [x] Create `packages/api/` structure
   - `packages/api/package.json` — depends on `elysia`, `@swarmboard/shared`; devDeps: `wrangler`, `@cloudflare/workers-types`
   - `packages/api/tsconfig.json` — extends base, adds `@cloudflare/workers-types` to types
   - `packages/api/wrangler.jsonc` — worker name `swarmboard-api`, R2 binding `BOARD_BUCKET` → bucket `swarmboard-data`, compatibility_date (check Elysia CF docs for minimum)
-- [ ] Implement `packages/api/src/storage/board.ts`
+- [x] Implement `packages/api/src/storage/board.ts`
   - `readBoard()` — reads `board.json` from R2, returns `{ board, etag }` or `null`
   - `writeBoard(board, expectedEtag)` — writes with `onlyIf: { etagMatches }`, returns `{ ok: true, etag }` or `{ ok: false, reason: 'conflict' }`
   - Access R2 via `import { env } from 'cloudflare:workers'` pattern
-- [ ] Implement `packages/api/src/storage/comments.ts`
+- [x] Implement `packages/api/src/storage/comments.ts`
   - `readComments(storyId)` — reads `comments/{storyId}.json`, returns `{ comments, etag }` or `{ comments: [], etag: null }` if file doesn't exist
   - `writeComments(storyId, comments, expectedEtag)` — writes with conditional ETag. For first comment (no existing file), uses unconditional write
   - `appendComment(storyId, comment, expectedEtag)` — reads, appends, writes atomically
-- [ ] Implement `packages/api/src/types.ts` — `Env` interface for R2 bucket binding, `ApiError` type
-- [ ] Write storage integration tests
+- [x] Implement `packages/api/src/types.ts` — `Env` interface for R2 bucket binding, `ApiError` type
+- [x] Write storage integration tests
   - `packages/api/src/__tests__/storage.test.ts`:
     - Read non-existent board returns null
     - Write then read returns same data with ETag
@@ -176,22 +176,22 @@ packages/api/src/__tests__/storage.test.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/api/src/middleware/auth.ts`
+- [x] Implement `packages/api/src/middleware/auth.ts`
   - Skip auth for `GET /health`
   - Validate Bearer token against `env.API_KEY` secret
   - Extract `X-Agent` header — required on POST/PATCH, optional on GET (defaults to `"unknown"`)
   - Return `401` with error body if token missing/invalid
   - Return `400` if X-Agent missing on mutation
   - Derive `{ agent: string }` into Elysia context
-- [ ] Implement `packages/api/src/middleware/etag.ts`
+- [x] Implement `packages/api/src/middleware/etag.ts`
   - Helper: `requireEtag(headers)` — extracts `If-Match`, returns 428 if missing on mutations
   - Helper: `conflictResponse()` — standardized 409 body with `retry: true`
-- [ ] Implement agent auto-registration in board storage
+- [x] Implement agent auto-registration in board storage
   - On every authenticated request, update `agents[slug].last_seen` and `agents[slug].status = "active"`
   - If agent not in registry, create entry with empty description
   - This runs as part of the middleware/afterHandle, writing back to board.json
   - Note: agent registry updates should piggyback on board writes (not separate writes) to avoid doubling R2 operations. For GET requests, skip registry update (read-only).
-- [ ] Write auth middleware tests
+- [x] Write auth middleware tests
   - Missing token → 401
   - Invalid token → 401
   - Valid token → passes through
@@ -213,13 +213,13 @@ packages/api/src/__tests__/auth.test.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/api/src/routes/stories.ts`
+- [x] Implement `packages/api/src/routes/stories.ts`
   - `GET /stories` — query filters: `status` (comma-separated), `assignee` (`unassigned` for null), `category`, `priority_lte`. Returns `{ userStories, etag }`
   - `GET /stories/:id` — returns story object + ETag. 404 if not found
   - `POST /stories` — requires `If-Match` board ETag. Auto-generates sequential `US-XXX` ID, sets `status: backlog`, `passes: false`, `created_at/updated_at`. Returns 201
   - `PATCH /stories/:id` — requires `If-Match` board ETag. Applies `enforceInvariants()`. Updates `updated_at` on story and board root. Returns updated story. 404 if story not found. 409 if ETag mismatch
   - All mutating routes update agent `last_seen` in registry (piggybacked on board write)
-- [ ] Write story route tests via Eden Treaty instance-passing
+- [x] Write story route tests via Eden Treaty instance-passing
   - `packages/api/src/__tests__/stories.test.ts`:
     - List empty board → empty array
     - Create story → 201 with auto-generated ID
@@ -249,11 +249,11 @@ packages/api/src/__tests__/stories.test.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/api/src/routes/comments.ts`
+- [x] Implement `packages/api/src/routes/comments.ts`
   - `GET /stories/:id/comments` — reads `comments/{id}.json`. Returns `{ comments: [...], etag }`. Empty array + null etag if no file
   - `POST /stories/:id/comments` — requires `If-Match` comments ETag (or `*` for first comment). Auto-generates `c-XXX` ID, sets `at` timestamp, `agent` from X-Agent header. Creates file if first comment. Returns 201 + new comment + new ETag
   - Verify story exists in board.json before allowing comment creation (404 if story doesn't exist)
-- [ ] Write comment route tests
+- [x] Write comment route tests
   - `packages/api/src/__tests__/comments.test.ts`:
     - Get comments on story with no comments → empty array
     - Post first comment (If-Match: *) → 201, creates file
@@ -275,10 +275,10 @@ packages/api/src/__tests__/comments.test.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/api/src/routes/claims.ts`
+- [x] Implement `packages/api/src/routes/claims.ts`
   - `POST /stories/:id/claim` — requires board ETag. Checks story.assignee is null → sets assignee to X-Agent, auto-promotes todo→in_progress. Returns 409 if already assigned. Returns updated story + new ETag
   - `POST /stories/:id/unclaim` — requires board ETag. Checks story.assignee === X-Agent header → clears assignee, reverts in_progress→todo. Returns 403 if X-Agent doesn't match current assignee. Returns updated story + new ETag
-- [ ] Write claim/unclaim tests
+- [x] Write claim/unclaim tests
   - `packages/api/src/__tests__/claims.test.ts`:
     - Claim unassigned todo story → assignee set, status in_progress
     - Claim unassigned backlog story → assignee set, status in_progress
@@ -301,18 +301,18 @@ packages/api/src/__tests__/claims.test.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/api/src/migration.ts`
+- [x] Implement `packages/api/src/migration.ts`
   - `migrateFromRalph(prdJson)` — detects Ralph format (has `userStories` without `status`/`assignee`), adds extension fields: `status: backlog`, `assignee: null`, `created_at/updated_at: now()`. Preserves all Ralph-native fields
   - Detection heuristic: if any story lacks a `status` field, treat as Ralph format
-- [ ] Implement `packages/api/src/routes/board.ts`
+- [x] Implement `packages/api/src/routes/board.ts`
   - `GET /health` — returns `{ status: "ok" }` (no auth)
   - `GET /board` — returns full board.json + ETag. 404 if not initialized
   - `POST /board/init` — accepts board body or Ralph prd.json. Runs migration if Ralph format detected. 409 if board already exists. Returns 201 + initialized board
   - `GET /board/export` — returns raw board.json with `Content-Disposition: attachment; filename="board.json"`
   - `GET /board/export/ralph` — strips extension fields (`status`, `assignee`, `created_at`, `updated_at` from stories; `agents` from root). Returns Ralph-compatible prd.json
-- [ ] Implement `packages/api/src/routes/agents.ts`
+- [x] Implement `packages/api/src/routes/agents.ts`
   - `GET /agents` — returns `{ agents: { ... } }` from board's agent registry
-- [ ] Write board route tests
+- [x] Write board route tests
   - `packages/api/src/__tests__/board.test.ts`:
     - GET /health → 200 ok
     - GET /board before init → 404
@@ -338,15 +338,15 @@ packages/api/src/__tests__/board.test.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/api/src/index.ts`
+- [x] Implement `packages/api/src/index.ts`
   - Create Elysia app with `CloudflareAdapter`
   - Use auth middleware
   - Mount all route groups: board, stories, comments, claims, agents
   - Call `.compile()` for CF Worker AOT
   - Export `type App = typeof app` for Eden Treaty
   - Export default app
-- [ ] Verify with `wrangler dev` — all routes respond correctly
-- [ ] Run full API test suite: `bun test` in packages/api
+- [x] Verify with `wrangler dev` — all routes respond correctly
+- [x] Run full API test suite: `bun test` in packages/api
 
 **Files created:**
 
@@ -360,28 +360,28 @@ packages/api/src/index.ts
 
 **Tasks:**
 
-- [ ] Create `packages/cli/` structure
+- [x] Create `packages/cli/` structure
   - `packages/cli/package.json` — depends on `@elysiajs/eden`, `@swarmboard/shared`, `citty`, `consola`; devDeps: `elysia` (type-only)
   - `packages/cli/tsconfig.json` — extends base
-- [ ] Implement `packages/cli/src/config.ts`
+- [x] Implement `packages/cli/src/config.ts`
   - Load from env vars: `SWARMBOARD_URL`, `SWARMBOARD_KEY`, `SWARMBOARD_AGENT`
   - Fallback: `~/.config/swarmboard/config.json`
   - Error message if neither configured
-- [ ] Implement `packages/cli/src/client.ts`
+- [x] Implement `packages/cli/src/client.ts`
   - Eden Treaty client factory: `createClient()` → `treaty<App>(config.url, { headers })`
   - Headers: `Authorization: Bearer <key>`, `X-Agent: <agent>`
-- [ ] Implement `packages/cli/src/format.ts`
+- [x] Implement `packages/cli/src/format.ts`
   - `formatStoryRow(story)` — table row: ID, priority, title (truncated), assignee
   - `formatStoryDetail(story, comments)` — full detail view (as shown in spec's example output)
   - `formatBoardSummary(board)` — bar chart of status counts (as shown in spec)
   - `formatAgentList(agents)` — table of agents with status and last_seen
   - `timeAgo(isoString)` — relative time formatting
-- [ ] Implement `packages/cli/src/retry.ts`
+- [x] Implement `packages/cli/src/retry.ts`
   - `withRetry(fn, maxRetries=3)` — exponential backoff with jitter for 409s
-- [ ] Implement `packages/cli/src/index.ts`
+- [x] Implement `packages/cli/src/index.ts`
   - citty main command with meta (name: `sb`, version, description)
   - Register all subcommands via lazy imports
-- [ ] Write config + format tests
+- [x] Write config + format tests
   - `packages/cli/src/__tests__/config.test.ts`:
     - Loads from env vars
     - Defaults agent to "human"
@@ -411,20 +411,20 @@ packages/cli/src/__tests__/format.test.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/cli/src/commands/board.ts`
+- [x] Implement `packages/cli/src/commands/board.ts`
   - Calls `GET /board`, renders bar chart summary (status counts, story total, active agent count)
-- [ ] Implement `packages/cli/src/commands/list.ts`
+- [x] Implement `packages/cli/src/commands/list.ts`
   - Args: `--status`, `--assignee`, `--mine`, `--category`, `--json`
   - Calls `GET /stories` with query params
   - Renders table or JSON
-- [ ] Implement `packages/cli/src/commands/show.ts`
+- [x] Implement `packages/cli/src/commands/show.ts`
   - Positional arg: story ID
   - Parallel fetch: `GET /stories/:id` + `GET /stories/:id/comments`
   - Renders full detail view with comments
-- [ ] Implement `packages/cli/src/commands/agents.ts`
+- [x] Implement `packages/cli/src/commands/agents.ts`
   - Calls `GET /agents`
   - Renders table: slug, status, description (truncated), last_seen (relative)
-- [ ] Implement `packages/cli/src/commands/log.ts`
+- [x] Implement `packages/cli/src/commands/log.ts`
   - Calls `GET /board` to get all stories
   - Sorts stories by `updated_at` descending
   - For the N most recent stories, fetches comments in parallel
@@ -447,27 +447,27 @@ packages/cli/src/commands/log.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/cli/src/commands/add.ts`
+- [x] Implement `packages/cli/src/commands/add.ts`
   - Positional arg: title
   - Flags: `--description`, `--category`, `--priority` (default 3), `--assignee`
   - Fetches board ETag, then `POST /stories` with `If-Match`
   - Retry on 409
-- [ ] Implement `packages/cli/src/commands/edit.ts`
+- [x] Implement `packages/cli/src/commands/edit.ts`
   - Positional arg: story ID
   - Flags: `--status`, `--priority`, `--assignee`, `--title`, `--description`, `--category`, `--notes`
   - Fetches board ETag, then `PATCH /stories/:id` with `If-Match`
   - Retry on 409
-- [ ] Implement `packages/cli/src/commands/claim.ts`
+- [x] Implement `packages/cli/src/commands/claim.ts`
   - Positional arg: story ID
   - Fetches board ETag, then `POST /stories/:id/claim` with `If-Match`
   - Retry on 409 (ETag conflict), display clear message on 409 (already assigned)
-- [ ] Implement `packages/cli/src/commands/unclaim.ts`
+- [x] Implement `packages/cli/src/commands/unclaim.ts`
   - Positional arg: story ID
   - Fetches board ETag, then `POST /stories/:id/unclaim` with `If-Match`
-- [ ] Implement `packages/cli/src/commands/done.ts`
+- [x] Implement `packages/cli/src/commands/done.ts`
   - Positional arg: story ID
   - Fetches board ETag, then `PATCH /stories/:id` with `{ passes: true }` + `If-Match`
-- [ ] Implement `packages/cli/src/commands/comment.ts`
+- [x] Implement `packages/cli/src/commands/comment.ts`
   - Positional args: story ID, message
   - Fetches comments ETag (GET /stories/:id/comments), then `POST /stories/:id/comments` with `If-Match` (or `*` if no comments yet)
 
@@ -488,12 +488,12 @@ packages/cli/src/commands/comment.ts
 
 **Tasks:**
 
-- [ ] Implement `packages/cli/src/commands/init.ts`
+- [x] Implement `packages/cli/src/commands/init.ts`
   - Flag: `--from <file.json>` — reads local JSON file
   - Without flag: prompts for project name and description, creates minimal board
   - Calls `POST /board/init`
   - Detects Ralph format automatically (same heuristic as API)
-- [ ] Implement `packages/cli/src/commands/export.ts`
+- [x] Implement `packages/cli/src/commands/export.ts`
   - Flag: `--ralph` — export Ralph-compatible format
   - Without flag: native board.json export
   - Writes to stdout (pipeable) or `--out <file>` flag
@@ -511,12 +511,12 @@ packages/cli/src/commands/export.ts
 
 **Tasks:**
 
-- [ ] Create `packages/cli/scripts/build.ts`
+- [x] Create `packages/cli/scripts/build.ts`
   - `Bun.build()` with `entrypoints: ['src/index.ts']`, `target: 'node'`, `minify: true`, `packages: 'bundle'`
   - Prepend `#!/usr/bin/env node` shebang to output
   - Output to `packages/cli/dist/index.mjs`
-- [ ] Update `packages/cli/package.json` bin field: `"sb": "./dist/index.mjs"`
-- [ ] Test: `bun run packages/cli/scripts/build.ts && ./packages/cli/dist/index.mjs --help`
+- [x] Update `packages/cli/package.json` bin field: `"sb": "./dist/index.mjs"`
+- [x] Test: `bun run packages/cli/scripts/build.ts && ./packages/cli/dist/index.mjs --help`
 
 **Files created:**
 
@@ -530,10 +530,10 @@ packages/cli/scripts/build.ts
 
 **Tasks:**
 
-- [ ] Create `.github/workflows/ci.yml`
+- [x] Create `.github/workflows/ci.yml`
   - Trigger: push, pull_request
   - Steps: checkout, setup-bun, install, lint, typecheck, test
-- [ ] Create `.github/workflows/deploy.yml`
+- [x] Create `.github/workflows/deploy.yml`
   - Trigger: push to main
   - Steps: checkout, setup-bun, install, test, wrangler deploy (packages/api)
   - Secret: `CF_API_TOKEN`
@@ -549,33 +549,33 @@ packages/cli/scripts/build.ts
 
 ### Functional Requirements
 
-- [ ] `POST /board/init` creates a board from scratch or from Ralph prd.json
-- [ ] `GET /stories` returns filtered stories with ETag
-- [ ] `POST /stories` creates stories with auto-generated sequential IDs (US-001, US-002, ...)
-- [ ] `PATCH /stories/:id` enforces all 4 business invariants
-- [ ] `POST /stories/:id/claim` atomically claims unassigned stories (409 if taken)
-- [ ] `POST /stories/:id/unclaim` releases stories (403 if not current assignee, reverts in_progress→todo)
-- [ ] `POST /stories/:id/comments` writes to separate R2 file with independent ETag
-- [ ] Board ETag and comment ETags are fully independent — no cross-contention
-- [ ] `GET /board/export/ralph` produces valid Ralph prd.json (no extension fields)
-- [ ] Agent registry auto-registers new agents on first request
-- [ ] All CLI commands wrap corresponding API endpoints
-- [ ] CLI handles 409 retries transparently with exponential backoff
+- [x] `POST /board/init` creates a board from scratch or from Ralph prd.json
+- [x] `GET /stories` returns filtered stories with ETag
+- [x] `POST /stories` creates stories with auto-generated sequential IDs (US-001, US-002, ...)
+- [x] `PATCH /stories/:id` enforces all 4 business invariants
+- [x] `POST /stories/:id/claim` atomically claims unassigned stories (409 if taken)
+- [x] `POST /stories/:id/unclaim` releases stories (403 if not current assignee, reverts in_progress→todo)
+- [x] `POST /stories/:id/comments` writes to separate R2 file with independent ETag
+- [x] Board ETag and comment ETags are fully independent — no cross-contention
+- [x] `GET /board/export/ralph` produces valid Ralph prd.json (no extension fields)
+- [x] Agent registry auto-registers new agents on first request
+- [x] All CLI commands wrap corresponding API endpoints
+- [x] CLI handles 409 retries transparently with exponential backoff
 
 ### Non-Functional Requirements
 
-- [ ] API response time < 100ms at edge (CF Worker cold start + R2 read)
-- [ ] All TypeBox schemas shared between API validation and CLI type inference
-- [ ] Eden Treaty provides compile-time type safety for all CLI→API calls
-- [ ] `bun test` passes for all three packages
-- [ ] `biome check .` passes with zero warnings
+- [x] API response time < 100ms at edge (CF Worker cold start + R2 read)
+- [x] All TypeBox schemas shared between API validation and CLI type inference
+- [x] Eden Treaty provides compile-time type safety for all CLI→API calls
+- [x] `bun test` passes for all three packages
+- [x] `biome check .` passes with zero warnings
 
 ### Quality Gates
 
-- [ ] All business invariants have unit tests in `@swarmboard/shared`
-- [ ] All API routes have integration tests via Eden Treaty instance-passing
-- [ ] CLI config and formatting have unit tests
-- [ ] CI pipeline passes: lint + typecheck + test
+- [x] All business invariants have unit tests in `@swarmboard/shared`
+- [x] All API routes have integration tests via Eden Treaty instance-passing
+- [x] CLI config and formatting have unit tests
+- [x] CI pipeline passes: lint + typecheck + test
 
 ## Dependencies & Prerequisites
 
