@@ -122,7 +122,7 @@ describe("Board Init", () => {
 		expect(body.userStories).toHaveLength(1);
 		expect(body.userStories[0].status).toBe("backlog");
 		expect(body.userStories[0].assignee).toBeNull();
-		expect(body.userStories[0].id).toBe("US-001");
+		expect(body.userStories[0].id).toMatch(/^[0-9a-f-]{36}$/);
 	});
 });
 
@@ -171,7 +171,7 @@ describe("Stories CRUD", () => {
 		expect(body.userStories).toEqual([]);
 	});
 
-	test("POST /stories creates story with sequential ID", async () => {
+	test("POST /stories creates story with UUID", async () => {
 		const { app, etag } = await setupWithBoard();
 
 		const res = await app.handle(
@@ -187,11 +187,11 @@ describe("Stories CRUD", () => {
 		);
 		expect(res.status).toBe(201);
 		const body = await res.json();
-		expect(body.id).toBe("US-001");
+		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
 		expect(body.status).toBe("backlog");
 		expect(body.passes).toBe(false);
 
-		// Create second story
+		// Create second story — gets a different UUID
 		const etag2 = getEtag(res);
 		const res2 = await app.handle(
 			new Request("http://localhost/stories", {
@@ -210,7 +210,8 @@ describe("Stories CRUD", () => {
 		);
 		expect(res2.status).toBe(201);
 		const body2 = await res2.json();
-		expect(body2.id).toBe("US-002");
+		expect(body2.id).toMatch(/^[0-9a-f-]{36}$/);
+		expect(body2.id).not.toBe(body.id);
 	});
 
 	test("POST /stories requires If-Match", async () => {
@@ -232,7 +233,7 @@ describe("Stories CRUD", () => {
 	test("GET /stories/:id returns story", async () => {
 		const { app, etag } = await setupWithBoard();
 
-		await app.handle(
+		const createRes = await app.handle(
 			new Request("http://localhost/stories", {
 				method: "POST",
 				headers: { ...authHeaders, "content-type": "application/json", "if-match": etag },
@@ -243,9 +244,10 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
+		const created = await createRes.json();
 
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001", { headers: authHeaders }),
+			new Request(`http://localhost/stories/${created.id}`, { headers: authHeaders }),
 		);
 		expect(res.status).toBe(200);
 		const body = await res.json();
@@ -255,7 +257,7 @@ describe("Stories CRUD", () => {
 	test("GET /stories/:id returns 404 for missing", async () => {
 		const { app } = await setupWithBoard();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-999", { headers: authHeaders }),
+			new Request("http://localhost/stories/nonexistent", { headers: authHeaders }),
 		);
 		expect(res.status).toBe(404);
 	});
@@ -275,9 +277,10 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await createRes.json();
 
 		const patchRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -307,9 +310,10 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await createRes.json();
 
 		const patchRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -339,9 +343,10 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await createRes.json();
 
 		const patchRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -371,9 +376,10 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await createRes.json();
 
 		const patchRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -402,10 +408,11 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await createRes.json();
 
 		// Move to todo first
 		const todoRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -419,7 +426,7 @@ describe("Stories CRUD", () => {
 
 		// Assign
 		const assignRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -486,7 +493,7 @@ describe("Claim / Unclaim", () => {
 		);
 		const etag1 = getEtag(initRes);
 
-		// Create story and move to todo
+		// Create story
 		const createRes = await app.handle(
 			new Request("http://localhost/stories", {
 				method: "POST",
@@ -503,10 +510,11 @@ describe("Claim / Unclaim", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await createRes.json();
 
 		// Move to todo
 		const todoRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -518,13 +526,13 @@ describe("Claim / Unclaim", () => {
 		);
 		const etag3 = getEtag(todoRes);
 
-		return { app, etag: etag3 };
+		return { app, etag: etag3, storyId: created.id as string };
 	}
 
 	test("claim sets assignee and status to in_progress", async () => {
-		const { app, etag } = await setupWithStory();
+		const { app, etag, storyId } = await setupWithStory();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag },
 			}),
@@ -536,10 +544,10 @@ describe("Claim / Unclaim", () => {
 	});
 
 	test("claim on already-assigned story returns 409", async () => {
-		const { app, etag } = await setupWithStory();
+		const { app, etag, storyId } = await setupWithStory();
 
 		const claimRes = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag },
 			}),
@@ -547,7 +555,7 @@ describe("Claim / Unclaim", () => {
 		const etag2 = getEtag(claimRes);
 
 		const res2 = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: {
 					authorization: `Bearer ${API_KEY}`,
@@ -560,10 +568,10 @@ describe("Claim / Unclaim", () => {
 	});
 
 	test("unclaim clears assignee and reverts to todo", async () => {
-		const { app, etag } = await setupWithStory();
+		const { app, etag, storyId } = await setupWithStory();
 
 		const claimRes = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag },
 			}),
@@ -571,7 +579,7 @@ describe("Claim / Unclaim", () => {
 		const etag2 = getEtag(claimRes);
 
 		const unclaimRes = await app.handle(
-			new Request("http://localhost/stories/US-001/unclaim", {
+			new Request(`http://localhost/stories/${storyId}/unclaim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag2 },
 			}),
@@ -583,10 +591,10 @@ describe("Claim / Unclaim", () => {
 	});
 
 	test("unclaim by different agent returns 403", async () => {
-		const { app, etag } = await setupWithStory();
+		const { app, etag, storyId } = await setupWithStory();
 
 		const claimRes = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag },
 			}),
@@ -594,7 +602,7 @@ describe("Claim / Unclaim", () => {
 		const etag2 = getEtag(claimRes);
 
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/unclaim", {
+			new Request(`http://localhost/stories/${storyId}/unclaim`, {
 				method: "POST",
 				headers: {
 					authorization: `Bearer ${API_KEY}`,
@@ -619,7 +627,7 @@ describe("Comments", () => {
 		);
 		const etag = getEtag(initRes);
 
-		await app.handle(
+		const createRes = await app.handle(
 			new Request("http://localhost/stories", {
 				method: "POST",
 				headers: {
@@ -634,14 +642,15 @@ describe("Comments", () => {
 				}),
 			}),
 		);
+		const created = await createRes.json();
 
-		return { app };
+		return { app, storyId: created.id as string };
 	}
 
 	test("GET comments on story with no comments returns empty array", async () => {
-		const { app } = await setupWithStory();
+		const { app, storyId } = await setupWithStory();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				headers: authHeaders,
 			}),
 		);
@@ -651,9 +660,9 @@ describe("Comments", () => {
 	});
 
 	test("POST first comment creates file", async () => {
-		const { app } = await setupWithStory();
+		const { app, storyId } = await setupWithStory();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -665,16 +674,16 @@ describe("Comments", () => {
 		);
 		expect(res.status).toBe(201);
 		const body = await res.json();
-		expect(body.id).toBe("c-001");
+		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
 		expect(body.agent).toBe("test-agent");
 		expect(body.body).toBe("First comment");
 	});
 
 	test("POST second comment with correct etag succeeds", async () => {
-		const { app } = await setupWithStory();
+		const { app, storyId } = await setupWithStory();
 
 		const first = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -685,9 +694,10 @@ describe("Comments", () => {
 			}),
 		);
 		const etag = getEtag(first);
+		const firstBody = await first.json();
 
 		const second = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -699,14 +709,15 @@ describe("Comments", () => {
 		);
 		expect(second.status).toBe(201);
 		const body = await second.json();
-		expect(body.id).toBe("c-002");
+		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
+		expect(body.id).not.toBe(firstBody.id);
 	});
 
 	test("GET comments returns all comments", async () => {
-		const { app } = await setupWithStory();
+		const { app, storyId } = await setupWithStory();
 
 		const first = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -719,7 +730,7 @@ describe("Comments", () => {
 		const etag = getEtag(first);
 
 		await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -731,7 +742,7 @@ describe("Comments", () => {
 		);
 
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				headers: authHeaders,
 			}),
 		);
@@ -742,7 +753,7 @@ describe("Comments", () => {
 	test("POST comment on non-existent story returns 404", async () => {
 		const { app } = await setupWithStory();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-999/comments", {
+			new Request("http://localhost/stories/nonexistent/comments", {
 				method: "POST",
 				headers: {
 					...authHeaders,

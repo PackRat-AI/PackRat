@@ -26,16 +26,16 @@ export async function readBoard(bucket: R2Bucket): Promise<BoardReadResult | nul
 	return { board, etag: obj.httpEtag };
 }
 
-export async function writeBoard(
-	bucket: R2Bucket,
-	board: Board,
-	expectedEtag: string,
-): Promise<WriteResult> {
-	const body = JSON.stringify(board, null, 2);
+export async function writeBoard(opts: {
+	bucket: R2Bucket;
+	board: Board;
+	expectedEtag: string;
+}): Promise<WriteResult> {
+	const body = JSON.stringify(opts.board, null, 2);
 
-	const obj = await bucket.put(BOARD_FILE, body, {
+	const obj = await opts.bucket.put(BOARD_FILE, body, {
 		httpMetadata: { contentType: "application/json" },
-		onlyIf: { etagMatches: expectedEtag },
+		onlyIf: { etagMatches: opts.expectedEtag },
 	});
 
 	if (!obj) {

@@ -5,7 +5,7 @@
 	"compatibility_date": "2025-06-01",
 	"r2_buckets": [
 		{
-			"binding": "BOARD_BUCKET",
+			"binding": "SWARMBOARD_BUCKET",
 			"bucket_name": "swarmboard-data"
 		}
 	]

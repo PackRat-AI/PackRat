@@ -1,17 +1,9 @@
 import type { Comment } from "@swarmboard/shared";
-import { COMMENT_ID_PREFIX, CreateCommentBody } from "@swarmboard/shared";
+import { CreateCommentBody } from "@swarmboard/shared";
 import { Elysia } from "elysia";
 import { conflictResponse, etagRequiredResponse, notFoundResponse } from "../middleware/etag";
 import { readBoard } from "../storage/board";
 import { readComments, writeComments } from "../storage/comments";
-
-function nextCommentId(comments: Comment[]): string {
-	const maxNum = comments.reduce((max, c) => {
-		const num = Number.parseInt(c.id.replace(COMMENT_ID_PREFIX, ""), 10);
-		return Number.isNaN(num) ? max : Math.max(max, num);
-	}, 0);
-	return `${COMMENT_ID_PREFIX}${String(maxNum + 1).padStart(3, "0")}`;
-}
 
 export const commentRoutes = new Elysia({ prefix: "/stories" })
 	.get("/:id/comments", async ({ params, store }) => {
@@ -66,19 +58,19 @@ export const commentRoutes = new Elysia({ prefix: "/stories" })
 
 			const now = new Date().toISOString();
 			const comment: Comment = {
-				id: nextCommentId(commentsResult.comments),
+				id: crypto.randomUUID(),
 				agent,
 				body: body.body,
 				at: now,
 			};
 
 			const updatedComments = [...commentsResult.comments, comment];
-			const writeResult = await writeComments(
+			const writeResult = await writeComments({
 				bucket,
-				params.id,
-				updatedComments,
-				commentsResult.etag,
-			);
+				storyId: params.id,
+				comments: updatedComments,
+				expectedEtag: commentsResult.etag,
+			});
 
 			if (!writeResult.ok) {
 				return conflictResponse("Comments were modified. Re-read and retry.");

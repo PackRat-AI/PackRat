@@ -32,27 +32,27 @@ export async function readComments(bucket: R2Bucket, storyId: string): Promise<C
 	return { comments, etag: obj.httpEtag };
 }
 
-export async function writeComments(
-	bucket: R2Bucket,
-	storyId: string,
-	comments: Comment[],
-	expectedEtag: string | null,
-): Promise<WriteResult> {
-	const body = JSON.stringify(comments, null, 2);
-	const key = commentKey(storyId);
+export async function writeComments(opts: {
+	bucket: R2Bucket;
+	storyId: string;
+	comments: Comment[];
+	expectedEtag: string | null;
+}): Promise<WriteResult> {
+	const body = JSON.stringify(opts.comments, null, 2);
+	const key = commentKey(opts.storyId);
 
-	if (expectedEtag === null || expectedEtag === "*") {
+	if (opts.expectedEtag === null || opts.expectedEtag === "*") {
 		// First comment — unconditional write (file doesn't exist yet)
-		const obj = await bucket.put(key, body, {
+		const obj = await opts.bucket.put(key, body, {
 			httpMetadata: { contentType: "application/json" },
 		});
 		const etag = obj?.httpEtag ?? "";
 		return { ok: true, etag };
 	}
 
-	const obj = await bucket.put(key, body, {
+	const obj = await opts.bucket.put(key, body, {
 		httpMetadata: { contentType: "application/json" },
-		onlyIf: { etagMatches: expectedEtag },
+		onlyIf: { etagMatches: opts.expectedEtag },
 	});
 
 	if (!obj) {

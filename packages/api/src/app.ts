@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { Elysia } from "elysia";
 import { agentRoutes } from "./routes/agents";
 import { boardRoutes } from "./routes/board";
@@ -28,7 +29,12 @@ export function createApp(bucket: R2Bucket, apiKey: string) {
 			const token = headers.authorization?.replace("Bearer ", "");
 			const expected = (store as { apiKey: string }).apiKey;
 
-			if (!token || token !== expected) {
+			const tokenBuf = Buffer.from(token ?? "");
+			const expectedBuf = Buffer.from(expected);
+			const isValid =
+				tokenBuf.byteLength === expectedBuf.byteLength && timingSafeEqual(tokenBuf, expectedBuf);
+
+			if (!token || !isValid) {
 				return new Response(
 					JSON.stringify({
 						error: "unauthorized",

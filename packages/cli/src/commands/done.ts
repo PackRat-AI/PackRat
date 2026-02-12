@@ -22,7 +22,7 @@ export default defineCommand({
 			const storyRes = await client.getStory(args.id);
 			if (storyRes.error) return storyRes;
 			const etag = storyRes.data.etag;
-			return client.updateStory(args.id, { passes: true }, etag);
+			return client.updateStory({ id: args.id, body: { passes: true }, etag });
 		});
 
 		if (result.error) {

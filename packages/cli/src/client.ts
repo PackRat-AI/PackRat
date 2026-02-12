@@ -26,13 +26,20 @@ export function createClient(configOverride?: Config) {
 
 	async function request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
 		const url = `${config.url}${path}`;
-		const res = await fetch(url, {
-			...options,
-			headers: {
-				...baseHeaders,
-				...(options.headers as Record<string, string>),
-			},
-		});
+
+		let res: Response;
+		try {
+			res = await fetch(url, {
+				...options,
+				headers: {
+					...baseHeaders,
+					...(options.headers as Record<string, string>),
+				},
+			});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Network request failed";
+			return { data: null, error: message, status: 0, headers: new Headers() };
+		}
 
 		const text = await res.text();
 		let data: T | null = null;
@@ -76,21 +83,21 @@ export function createClient(configOverride?: Config) {
 				headers: { "if-match": etag },
 			}),
 
-		updateStory: (id: string, body: Record<string, unknown>, etag: string) =>
-			request<Story & { etag: string }>(`/stories/${id}`, {
+		updateStory: (opts: { id: string; body: Record<string, unknown>; etag: string }) =>
+			request<Story & { etag: string }>(`/stories/${opts.id}`, {
 				method: "PATCH",
-				body: JSON.stringify(body),
-				headers: { "if-match": etag },
+				body: JSON.stringify(opts.body),
+				headers: { "if-match": opts.etag },
 			}),
 
 		getComments: (storyId: string) =>
 			request<{ comments: Comment[]; etag: string | null }>(`/stories/${storyId}/comments`),
 
-		createComment: (storyId: string, body: string, etag: string) =>
-			request<Comment & { etag: string }>(`/stories/${storyId}/comments`, {
+		createComment: (opts: { storyId: string; body: string; etag: string }) =>
+			request<Comment & { etag: string }>(`/stories/${opts.storyId}/comments`, {
 				method: "POST",
-				body: JSON.stringify({ body }),
-				headers: { "if-match": etag },
+				body: JSON.stringify({ body: opts.body }),
+				headers: { "if-match": opts.etag },
 			}),
 
 		claimStory: (id: string, etag: string) =>
