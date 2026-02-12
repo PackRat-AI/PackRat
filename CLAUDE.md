@@ -109,3 +109,32 @@ bun --hot ./index.ts
 ```
 
 For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.
+
+## Git Commits
+
+Use gitmoji prefixes in all commit messages. Format: `<emoji> <message>`
+
+Common gitmoji:
+
+- 🎨 `:art:` — Improve structure/format of code
+- ⚡️ `:zap:` — Improve performance
+- 🔥 `:fire:` — Remove code or files
+- 🐛 `:bug:` — Fix a bug
+- 🚑️ `:ambulance:` — Critical hotfix
+- ✨ `:sparkles:` — Introduce new features
+- 📝 `:memo:` — Add or update documentation
+- 🚀 `:rocket:` — Deploy stuff
+- 💄 `:lipstick:` — Add or update the UI and style files
+- 🎉 `:tada:` — Begin a project
+- ✅ `:white_check_mark:` — Add or update tests
+- 🔒️ `:lock:` — Fix security or privacy issues
+- 🔧 `:wrench:` — Add or update configuration files
+- 🍱 `:bento:` — Add or update assets
+- ♻️ `:recycle:` — Refactor code
+- ➕ `:heavy_plus_sign:` — Add a dependency
+- ➖ `:heavy_minus_sign:` — Remove a dependency
+- 🏗️ `:building_construction:` — Make architectural changes
+- 💡 `:bulb:` — Add or update comments in source code
+- 🗃️ `:card_file_box:` — Perform database related changes
+- 🚚 `:truck:` — Move or rename resources
+- 🔀 `:twisted_rightwards_arrows:` — Merge branches
