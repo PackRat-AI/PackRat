@@ -1,4 +1,4 @@
 export interface Env {
 	SWARMBOARD_BUCKET: R2Bucket;
-	API_KEY: string;
+	SWARMBOARD_API_KEY: string;
 }
