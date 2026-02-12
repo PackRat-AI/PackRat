@@ -1,0 +1,12 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "swarmboard-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-06-01",
+	"r2_buckets": [
+		{
+			"binding": "BOARD_BUCKET",
+			"bucket_name": "swarmboard-data"
+		}
+	]
+}
