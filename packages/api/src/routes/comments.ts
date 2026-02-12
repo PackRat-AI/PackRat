@@ -20,7 +20,7 @@ export const commentRoutes = new Elysia({ prefix: "/stories" })
 			return notFoundResponse(`Story ${params.id} not found`);
 		}
 
-		const result = await readComments(bucket, params.id);
+		const result = await readComments({ bucket, storyId: params.id });
 
 		return new Response(JSON.stringify({ comments: result.comments, etag: result.etag }), {
 			headers: {
@@ -47,7 +47,7 @@ export const commentRoutes = new Elysia({ prefix: "/stories" })
 			}
 
 			const clientEtag = headers["if-match"];
-			const commentsResult = await readComments(bucket, params.id);
+			const commentsResult = await readComments({ bucket, storyId: params.id });
 
 			// For first comment, accept * or null etag
 			if (commentsResult.etag !== null && clientEtag !== "*") {

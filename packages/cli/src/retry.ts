@@ -1,7 +1,8 @@
-export async function withRetry<T>(
-	fn: () => Promise<{ status: number; data: T | null; error: string | null }>,
-	maxRetries = 3,
-): Promise<{ data: T | null; error: string | null; status: number }> {
+export async function withRetry<T>(opts: {
+	fn: () => Promise<{ status: number; data: T | null; error: string | null }>;
+	maxRetries?: number;
+}): Promise<{ data: T | null; error: string | null; status: number }> {
+	const { fn, maxRetries = 3 } = opts;
 	for (let attempt = 0; attempt < maxRetries; attempt++) {
 		const result = await fn();
 

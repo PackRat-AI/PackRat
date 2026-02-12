@@ -82,7 +82,7 @@ export const boardRoutes = new Elysia()
 				};
 			}
 
-			const result = await writeBoardUnconditional(bucket, board);
+			const result = await writeBoardUnconditional({ bucket, board });
 
 			return new Response(JSON.stringify(board), {
 				status: 201,

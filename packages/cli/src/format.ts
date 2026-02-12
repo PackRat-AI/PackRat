@@ -22,7 +22,8 @@ export function formatStoryRow(
 	return `  ${id} ${pri} ${title} ${assignee}`;
 }
 
-export function formatStoryDetail(story: Story, comments: Comment[] = []): string {
+export function formatStoryDetail(opts: { story: Story; comments?: Comment[] }): string {
+	const { story, comments = [] } = opts;
 	const lines: string[] = [];
 
 	lines.push(`\n  ${story.id} \u00B7 ${story.title}`);

@@ -7,7 +7,11 @@ export type InvariantResult = { ok: true; patched: Partial<Story> } | { ok: fals
  * Returns additional fields to patch (e.g., auto-setting status when passes changes).
  * Called by the API before writing to R2.
  */
-export function enforceInvariants(current: Story, updates: Partial<Story>): InvariantResult {
+export function enforceInvariants(opts: {
+	current: Story;
+	updates: Partial<Story>;
+}): InvariantResult {
+	const { current, updates } = opts;
 	const merged = { ...current, ...updates };
 	const patched: Partial<Story> = {};
 

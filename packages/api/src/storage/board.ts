@@ -45,13 +45,13 @@ export async function writeBoard(opts: {
 	return { ok: true, etag: obj.httpEtag };
 }
 
-export async function writeBoardUnconditional(
-	bucket: R2Bucket,
-	board: Board,
-): Promise<WriteSuccess> {
-	const body = JSON.stringify(board, null, 2);
+export async function writeBoardUnconditional(opts: {
+	bucket: R2Bucket;
+	board: Board;
+}): Promise<WriteSuccess> {
+	const body = JSON.stringify(opts.board, null, 2);
 
-	const obj = await bucket.put(BOARD_FILE, body, {
+	const obj = await opts.bucket.put(BOARD_FILE, body, {
 		httpMetadata: { contentType: "application/json" },
 	});
 
