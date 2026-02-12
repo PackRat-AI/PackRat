@@ -25,6 +25,22 @@
         "wrangler": "^4.0.0",
       },
     },
+    "packages/cli": {
+      "name": "@swarmboard/cli",
+      "version": "0.1.0",
+      "bin": {
+        "sb": "./dist/index.mjs",
+      },
+      "dependencies": {
+        "@swarmboard/shared": "workspace:*",
+        "citty": "^0.1.6",
+        "consola": "^3.4.0",
+      },
+      "devDependencies": {
+        "@elysiajs/eden": "^1.4.0",
+        "elysia": "^1.4.0",
+      },
+    },
     "packages/shared": {
       "name": "@swarmboard/shared",
       "version": "0.1.0",
@@ -198,6 +214,8 @@
 
     "@swarmboard/api": ["@swarmboard/api@workspace:packages/api"],
 
+    "@swarmboard/cli": ["@swarmboard/cli@workspace:packages/cli"],
+
     "@swarmboard/shared": ["@swarmboard/shared@workspace:packages/shared"],
 
     "@tokenizer/inflate": ["@tokenizer/inflate@0.4.1", "", { "dependencies": { "debug": "^4.4.3", "token-types": "^6.1.1" } }, "sha512-2mAv+8pkG6GIZiF1kNg1jAjh27IDxEPKwdGul3snfztFerfPGI1LjDezZp3i7BElXompqEtPmoPx6c2wgtWsOA=="],
@@ -211,6 +229,10 @@
     "blake3-wasm": ["blake3-wasm@2.1.5", "", {}, "sha512-F1+K8EbfOZE49dtoPtmxUQrpXaBIl3ICvasLh+nJta0xkz+9kF/7uet9fLnwKqhDrmj6g+6K3Tw9yQPUg2ka5g=="],
 
     "bun-types": ["bun-types@1.3.9", "", { "dependencies": { "@types/node": "*" } }, "sha512-+UBWWOakIP4Tswh0Bt0QD0alpTY8cb5hvgiYeWCMet9YukHbzuruIEeXC2D7nMJPB12kbh8C7XJykSexEqGKJg=="],
+
+    "citty": ["citty@0.1.6", "", { "dependencies": { "consola": "^3.2.3" } }, "sha512-tskPPKEs8D2KPafUypv2gxwJP8h/OaJmC82QQGGDQcHvXX43xF2VDACcJVmZ0EuSxkpO9Kc4MlrA3q0+FG58AQ=="],
+
+    "consola": ["consola@3.4.2", "", {}, "sha512-5IKcdX0nnYavi6G7TtOhwkYzyjfJlatbjMjuLSfE2kYT5pMDOilZ4OvMhi637CcDICTmz3wARPoyhqyX1Y+XvA=="],
 
     "cookie": ["cookie@1.1.1", "", {}, "sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ=="],
 
