@@ -76,21 +76,21 @@ export function createClient(configOverride?: Config) {
 				headers: { "if-match": etag },
 			}),
 
-		updateStory: (id: string, body: Record<string, unknown>, etag: string) =>
-			request<Story & { etag: string }>(`/stories/${id}`, {
+		updateStory: (opts: { id: string; body: Record<string, unknown>; etag: string }) =>
+			request<Story & { etag: string }>(`/stories/${opts.id}`, {
 				method: "PATCH",
-				body: JSON.stringify(body),
-				headers: { "if-match": etag },
+				body: JSON.stringify(opts.body),
+				headers: { "if-match": opts.etag },
 			}),
 
 		getComments: (storyId: string) =>
 			request<{ comments: Comment[]; etag: string | null }>(`/stories/${storyId}/comments`),
 
-		createComment: (storyId: string, body: string, etag: string) =>
-			request<Comment & { etag: string }>(`/stories/${storyId}/comments`, {
+		createComment: (opts: { storyId: string; body: string; etag: string }) =>
+			request<Comment & { etag: string }>(`/stories/${opts.storyId}/comments`, {
 				method: "POST",
-				body: JSON.stringify({ body }),
-				headers: { "if-match": etag },
+				body: JSON.stringify({ body: opts.body }),
+				headers: { "if-match": opts.etag },
 			}),
 
 		claimStory: (id: string, etag: string) =>

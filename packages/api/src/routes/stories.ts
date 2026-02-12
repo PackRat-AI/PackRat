@@ -139,7 +139,11 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 			result.board.updated_at = now;
 			updateAgentLastSeen(result.board, agent);
 
-			const writeResult = await writeBoard(bucket, result.board, result.etag);
+			const writeResult = await writeBoard({
+				bucket,
+				board: result.board,
+				expectedEtag: result.etag,
+			});
 			if (!writeResult.ok) {
 				return conflictResponse();
 			}
@@ -200,7 +204,11 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 			result.board.updated_at = now;
 			updateAgentLastSeen(result.board, agent);
 
-			const writeResult = await writeBoard(bucket, result.board, result.etag);
+			const writeResult = await writeBoard({
+				bucket,
+				board: result.board,
+				expectedEtag: result.etag,
+			});
 			if (!writeResult.ok) {
 				return conflictResponse();
 			}

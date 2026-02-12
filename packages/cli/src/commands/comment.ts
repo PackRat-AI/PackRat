@@ -26,7 +26,7 @@ export default defineCommand({
 		const result = await withRetry(async () => {
 			const commentsRes = await client.getComments(args.id);
 			const etag = commentsRes.data?.etag ?? "*";
-			return client.createComment(args.id, args.message, etag);
+			return client.createComment({ storyId: args.id, body: args.message, etag });
 		});
 
 		if (result.error) {

@@ -73,12 +73,12 @@ export const commentRoutes = new Elysia({ prefix: "/stories" })
 			};
 
 			const updatedComments = [...commentsResult.comments, comment];
-			const writeResult = await writeComments(
+			const writeResult = await writeComments({
 				bucket,
-				params.id,
-				updatedComments,
-				commentsResult.etag,
-			);
+				storyId: params.id,
+				comments: updatedComments,
+				expectedEtag: commentsResult.etag,
+			});
 
 			if (!writeResult.ok) {
 				return conflictResponse("Comments were modified. Re-read and retry.");

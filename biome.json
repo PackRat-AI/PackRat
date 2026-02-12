@@ -7,7 +7,13 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"nursery": {
+				"useMaxParams": {
+					"level": "error",
+					"options": { "max": 2 }
+				}
+			}
 		}
 	},
 	"assist": {
