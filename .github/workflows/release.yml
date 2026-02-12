@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: |
+            packages/shared/dist/
+            packages/cli/dist/
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: packages/
+      - run: bun publish --access public
+        working-directory: packages/shared
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: bun publish --access public
+        working-directory: packages/cli
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-ghpr:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+          path: packages/
+      - run: bun publish --access public --registry https://npm.pkg.github.com/
+        working-directory: packages/shared
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: bun publish --access public --registry https://npm.pkg.github.com/
+        working-directory: packages/cli
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

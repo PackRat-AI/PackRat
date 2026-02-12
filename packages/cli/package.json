@@ -2,8 +2,21 @@
 	"name": "@swarmboard/cli",
 	"version": "0.1.0",
 	"type": "module",
+	"description": "CLI for managing Swarmboard kanban boards",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/andrew-bierman/swarmboard.git",
+		"directory": "packages/cli"
+	},
 	"bin": {
 		"sb": "./dist/index.mjs"
+	},
+	"files": [
+		"dist"
+	],
+	"publishConfig": {
+		"access": "public"
 	},
 	"scripts": {
 		"dev": "bun run src/index.ts",
@@ -13,11 +26,11 @@
 	},
 	"dependencies": {
 		"@swarmboard/shared": "workspace:*",
-		"citty": "^0.1.6",
-		"consola": "^3.4.0"
+		"citty": "catalog:",
+		"consola": "catalog:"
 	},
 	"devDependencies": {
-		"@elysiajs/eden": "^1.4.0",
-		"elysia": "^1.4.0"
+		"@elysiajs/eden": "catalog:",
+		"elysia": "catalog:"
 	}
 }

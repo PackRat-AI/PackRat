@@ -2,13 +2,30 @@
 	"name": "@swarmboard/shared",
 	"version": "0.1.0",
 	"type": "module",
+	"description": "Shared schemas, types, and invariants for Swarmboard",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/andrew-bierman/swarmboard.git",
+		"directory": "packages/shared"
+	},
 	"exports": {
 		".": "./src/index.ts"
 	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist",
+		"src"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
 	"dependencies": {
-		"@sinclair/typebox": "^0.34.0"
+		"@sinclair/typebox": "catalog:"
 	},
 	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	}

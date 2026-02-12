@@ -2,19 +2,21 @@
 	"name": "@swarmboard/api",
 	"version": "0.1.0",
 	"type": "module",
+	"private": true,
 	"scripts": {
 		"dev": "wrangler dev",
+		"build": "echo 'skipped'",
 		"deploy": "wrangler deploy",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"elysia": "^1.4.0",
+		"elysia": "catalog:",
 		"@swarmboard/shared": "workspace:*"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20250214.0",
-		"@elysiajs/eden": "^1.4.0",
-		"wrangler": "^4.0.0"
+		"@cloudflare/workers-types": "catalog:",
+		"@elysiajs/eden": "catalog:",
+		"wrangler": "catalog:"
 	}
 }

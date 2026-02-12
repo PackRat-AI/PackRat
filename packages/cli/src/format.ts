@@ -70,7 +70,7 @@ export function formatBoardSummary(board: {
 	agents: Record<string, { status: string }>;
 }): string {
 	const lines: string[] = [];
-	const stories = board.userStories ?? [];
+	const stories = board.userStories;
 
 	lines.push(`\n  Swarm Board: ${board.name}`);
 	lines.push(`  ${"─".repeat(26)}`);
