@@ -1,12 +1,22 @@
 {
-  "name": "swarmboard",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+	"name": "swarmboard",
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "bun --filter @swarmboard/api dev",
+		"deploy": "bun --filter @swarmboard/api deploy",
+		"test": "bun --filter '*' test",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"typecheck": "bun --filter '*' typecheck"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "latest",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	}
 }

@@ -1,0 +1,20 @@
+{
+	"name": "@swarmboard/api",
+	"version": "0.1.0",
+	"type": "module",
+	"scripts": {
+		"dev": "wrangler dev",
+		"deploy": "wrangler deploy",
+		"test": "bun test",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"elysia": "^1.4.0",
+		"@swarmboard/shared": "workspace:*"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20250214.0",
+		"@elysiajs/eden": "^1.4.0",
+		"wrangler": "^4.0.0"
+	}
+}

@@ -1,0 +1,15 @@
+{
+	"name": "@swarmboard/shared",
+	"version": "0.1.0",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@sinclair/typebox": "^0.34.0"
+	},
+	"scripts": {
+		"test": "bun test",
+		"typecheck": "tsc --noEmit"
+	}
+}

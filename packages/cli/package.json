@@ -1,0 +1,23 @@
+{
+	"name": "@swarmboard/cli",
+	"version": "0.1.0",
+	"type": "module",
+	"bin": {
+		"sb": "./dist/index.mjs"
+	},
+	"scripts": {
+		"dev": "bun run src/index.ts",
+		"build": "bun run scripts/build.ts",
+		"test": "bun test",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@swarmboard/shared": "workspace:*",
+		"citty": "^0.1.6",
+		"consola": "^3.4.0"
+	},
+	"devDependencies": {
+		"@elysiajs/eden": "^1.4.0",
+		"elysia": "^1.4.0"
+	}
+}
