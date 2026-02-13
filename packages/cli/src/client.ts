@@ -19,7 +19,7 @@ export function createClient(configOverride?: Config) {
 	const config = configOverride ?? loadConfig();
 
 	const baseHeaders: Record<string, string> = {
-		authorization: `Bearer ${config.key}`,
+		"x-api-key": config.key,
 		"x-agent": config.agent,
 		"content-type": "application/json",
 	};
