@@ -9,14 +9,7 @@
 		"rules": {
 			"recommended": true,
 			"nursery": {
-<<<<<<< HEAD
 				"useMaxParams": "off"
-=======
-				"useMaxParams": {
-					"level": "error",
-					"options": { "max": 1 }
-				}
->>>>>>> origin/main
 			}
 		}
 	},
