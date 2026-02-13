@@ -60,6 +60,7 @@ export class AIService {
         object: 'vector_store.search_results.page' as const,
         search_query: query,
         has_more: false,
+        next_page: null,
         data: [],
       };
     }
