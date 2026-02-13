@@ -10,25 +10,48 @@ import { storyRoutes } from "./routes/stories";
  * This factory is used both by the CF Worker entry point (real R2)
  * and by tests (mock R2).
  *
- * Auth + agent extraction is inlined here (not in a separate plugin)
- * to ensure `agent` and `store` are available to all route handlers.
+ * Auth is inlined here (not in a separate plugin) to ensure
+ * `store` is available to all route handlers.
  */
-export function createApp(bucket: R2Bucket, apiKey: string) {
+export async function createApp(opts: { bucket: R2Bucket; apiKey: string }) {
+	// Pre-derive HMAC key + expected signature for timing-safe auth comparison
+	const encoder = new TextEncoder();
+	const expectedBytes = encoder.encode(opts.apiKey);
+	const hmacKey = await crypto.subtle.importKey(
+		"raw",
+		expectedBytes,
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign", "verify"],
+	);
+	const expectedSig = await crypto.subtle.sign("HMAC", hmacKey, expectedBytes);
+
 	return new Elysia()
-		.state("bucket", bucket)
-		.state("apiKey", apiKey)
-		.derive(({ headers }) => {
-			const agent = headers["x-agent"] ?? "unknown";
-			return { agent };
-		})
-		.onBeforeHandle(({ headers, path, store, request }) => {
+		.state("bucket", opts.bucket)
+		.onBeforeHandle(async ({ headers, path, request }) => {
 			// Skip auth for health check
 			if (path === "/health") return;
 
-			const token = headers.authorization?.replace("Bearer ", "");
-			const expected = (store as { apiKey: string }).apiKey;
+			const authHeader = headers.authorization;
+			const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
 
-			if (!token || token !== expected) {
+			if (!token) {
+				return new Response(
+					JSON.stringify({
+						error: "unauthorized",
+						message: "Invalid or missing API key",
+					}),
+					{ status: 401, headers: { "content-type": "application/json" } },
+				);
+			}
+
+			const tokenBytes = encoder.encode(token);
+			let isValid = false;
+			if (tokenBytes.byteLength === expectedBytes.byteLength) {
+				isValid = await crypto.subtle.verify("HMAC", hmacKey, expectedSig, tokenBytes);
+			}
+
+			if (!isValid) {
 				return new Response(
 					JSON.stringify({
 						error: "unauthorized",
@@ -60,4 +83,4 @@ export function createApp(bucket: R2Bucket, apiKey: string) {
 		.use(agentRoutes);
 }
 
-export type App = ReturnType<typeof createApp>;
+export type App = Awaited<ReturnType<typeof createApp>>;

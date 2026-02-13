@@ -23,10 +23,12 @@ export default defineCommand({
 	async run({ args }) {
 		const client = createClient();
 
-		const result = await withRetry(async () => {
-			const commentsRes = await client.getComments(args.id);
-			const etag = commentsRes.data?.etag ?? "*";
-			return client.createComment(args.id, args.message, etag);
+		const result = await withRetry({
+			fn: async () => {
+				const commentsRes = await client.getComments(args.id);
+				const etag = commentsRes.data?.etag ?? "*";
+				return client.createComment({ storyId: args.id, body: args.message, etag });
+			},
 		});
 
 		if (result.error) {

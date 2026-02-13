@@ -1,4 +1,4 @@
-import type { Agent, Board, Comment, Story } from "@swarmboard/shared";
+import type { Agent, Comment, Story } from "@swarmboard/shared";
 import { STORY_STATUSES } from "@swarmboard/shared";
 
 export function timeAgo(iso: string): string {
@@ -12,7 +12,9 @@ export function timeAgo(iso: string): string {
 	return `${days}d ago`;
 }
 
-export function formatStoryRow(story: Story): string {
+export function formatStoryRow(
+	story: Pick<Story, "id" | "priority" | "title" | "assignee">,
+): string {
 	const id = story.id.padEnd(8);
 	const pri = String(story.priority).padEnd(4);
 	const title = story.title.length > 30 ? `${story.title.slice(0, 27)}...` : story.title.padEnd(30);
@@ -20,7 +22,8 @@ export function formatStoryRow(story: Story): string {
 	return `  ${id} ${pri} ${title} ${assignee}`;
 }
 
-export function formatStoryDetail(story: Story, comments: Comment[] = []): string {
+export function formatStoryDetail(opts: { story: Story; comments?: Comment[] }): string {
+	const { story, comments = [] } = opts;
 	const lines: string[] = [];
 
 	lines.push(`\n  ${story.id} \u00B7 ${story.title}`);
@@ -62,9 +65,13 @@ export function formatStoryDetail(story: Story, comments: Comment[] = []): strin
 	return lines.join("\n");
 }
 
-export function formatBoardSummary(board: Board): string {
+export function formatBoardSummary(board: {
+	name: string;
+	userStories: { status: string }[];
+	agents: Record<string, { status: string }>;
+}): string {
 	const lines: string[] = [];
-	const stories = board.userStories ?? [];
+	const stories = board.userStories;
 
 	lines.push(`\n  Swarm Board: ${board.name}`);
 	lines.push(`  ${"─".repeat(26)}`);
@@ -92,12 +99,16 @@ export function formatBoardSummary(board: Board): string {
 	const activeAgents = agents.filter((a) => board.agents[a].status === "active").length;
 
 	lines.push("");
-	lines.push(`  ${stories.length} stories \u00B7 ${activeAgents} agents active`);
+	lines.push(
+		`  ${stories.length} stories \u00B7 ${activeAgents} agent${activeAgents !== 1 ? "s" : ""} active`,
+	);
 
 	return lines.join("\n");
 }
 
-export function formatAgentList(agents: Record<string, Agent>): string {
+export function formatAgentList(
+	agents: Record<string, Pick<Agent, "status" | "last_seen">>,
+): string {
 	const lines: string[] = [];
 	const header = "  SLUG                STATUS   LAST SEEN";
 	const divider = `  ${"─".repeat(50)}`;

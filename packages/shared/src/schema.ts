@@ -109,11 +109,28 @@ export const CreateCommentBody = Type.Object({
 
 export type CreateCommentInput = Static<typeof CreateCommentBody>;
 
+/** Accepts both Ralph-format stories (partial) and full Swarm Board stories. */
+const InitStoryInput = Type.Object({
+	id: Type.Optional(Type.String()),
+	title: Type.String(),
+	description: Type.Optional(Type.String()),
+	category: Type.Optional(Type.String()),
+	priority: Type.Optional(Type.Number({ minimum: 1, maximum: 5 })),
+	acceptanceCriteria: Type.Optional(Type.Array(Type.String())),
+	dependsOn: Type.Optional(Type.Array(Type.String())),
+	passes: Type.Optional(Type.Boolean()),
+	notes: Type.Optional(Type.String()),
+	status: Type.Optional(StoryStatus),
+	assignee: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+	created_at: Type.Optional(Type.String()),
+	updated_at: Type.Optional(Type.String()),
+});
+
 export const InitBoardBody = Type.Object({
 	name: Type.String({ minLength: 1 }),
 	branchName: Type.Optional(Type.String()),
 	description: Type.String(),
-	userStories: Type.Optional(Type.Array(Type.Any())),
+	userStories: Type.Optional(Type.Array(InitStoryInput)),
 });
 
 export type InitBoardInput = Static<typeof InitBoardBody>;

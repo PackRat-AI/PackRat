@@ -1,12 +1,17 @@
 import { describe, expect, test } from "bun:test";
+import type { Agent, Board } from "@swarmboard/shared";
 import { createApp } from "../app";
 import { createMockR2 } from "./mock-r2";
 
+async function json<T = Record<string, unknown>>(res: Response): Promise<T> {
+	return (await res.json()) as T;
+}
+
 const API_KEY = "test-key-123";
 
-function setup() {
+async function setup() {
 	const bucket = createMockR2();
-	const app = createApp(bucket, API_KEY);
+	const app = await createApp({ bucket, apiKey: API_KEY });
 	return { app, bucket };
 }
 
@@ -23,9 +28,9 @@ function getEtag(res: Response): string {
 
 describe("Health Check", () => {
 	test("GET /health returns ok without auth", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(new Request("http://localhost/health"));
-		const body = await res.json();
+		const body = await json(res);
 		expect(body).toEqual({ status: "ok" });
 		expect(res.status).toBe(200);
 	});
@@ -33,13 +38,13 @@ describe("Health Check", () => {
 
 describe("Auth", () => {
 	test("returns 401 without auth header", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(new Request("http://localhost/board"));
 		expect(res.status).toBe(401);
 	});
 
 	test("returns 401 with wrong key", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(
 			new Request("http://localhost/board", {
 				headers: { authorization: "Bearer wrong-key" },
@@ -51,7 +56,7 @@ describe("Auth", () => {
 
 describe("Board Init", () => {
 	test("POST /board/init creates board", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -66,14 +71,14 @@ describe("Board Init", () => {
 			}),
 		);
 		expect(res.status).toBe(201);
-		const body = await res.json();
+		const body = await json<Board>(res);
 		expect(body.name).toBe("Test Project");
 		expect(body.userStories).toEqual([]);
 		expect(body.agents["test-agent"]).toBeDefined();
 	});
 
 	test("POST /board/init returns 409 if already initialized", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 
 		// First init
 		await app.handle(
@@ -96,7 +101,7 @@ describe("Board Init", () => {
 	});
 
 	test("POST /board/init migrates Ralph format", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -118,23 +123,23 @@ describe("Board Init", () => {
 			}),
 		);
 		expect(res.status).toBe(201);
-		const body = await res.json();
+		const body = await json<Board>(res);
 		expect(body.userStories).toHaveLength(1);
 		expect(body.userStories[0].status).toBe("backlog");
 		expect(body.userStories[0].assignee).toBeNull();
-		expect(body.userStories[0].id).toBe("US-001");
+		expect(body.userStories[0].id).toMatch(/^[0-9a-f-]{36}$/);
 	});
 });
 
 describe("Board Read", () => {
 	test("GET /board returns 404 before init", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(new Request("http://localhost/board", { headers: authHeaders }));
 		expect(res.status).toBe(404);
 	});
 
 	test("GET /board returns board after init", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -144,14 +149,14 @@ describe("Board Read", () => {
 		);
 		const res = await app.handle(new Request("http://localhost/board", { headers: authHeaders }));
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.name).toBe("Test");
 	});
 });
 
 describe("Stories CRUD", () => {
 	async function setupWithBoard() {
-		const { app } = setup();
+		const { app } = await setup();
 		const initRes = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -167,11 +172,11 @@ describe("Stories CRUD", () => {
 		const { app } = await setupWithBoard();
 		const res = await app.handle(new Request("http://localhost/stories", { headers: authHeaders }));
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.userStories).toEqual([]);
 	});
 
-	test("POST /stories creates story with sequential ID", async () => {
+	test("POST /stories creates story with UUID", async () => {
 		const { app, etag } = await setupWithBoard();
 
 		const res = await app.handle(
@@ -186,12 +191,12 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		expect(res.status).toBe(201);
-		const body = await res.json();
-		expect(body.id).toBe("US-001");
+		const body = await json(res);
+		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
 		expect(body.status).toBe("backlog");
 		expect(body.passes).toBe(false);
 
-		// Create second story
+		// Create second story — gets a different UUID
 		const etag2 = getEtag(res);
 		const res2 = await app.handle(
 			new Request("http://localhost/stories", {
@@ -209,8 +214,9 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		expect(res2.status).toBe(201);
-		const body2 = await res2.json();
-		expect(body2.id).toBe("US-002");
+		const body2 = await json(res2);
+		expect(body2.id).toMatch(/^[0-9a-f-]{36}$/);
+		expect(body2.id).not.toBe(body.id);
 	});
 
 	test("POST /stories requires If-Match", async () => {
@@ -232,7 +238,7 @@ describe("Stories CRUD", () => {
 	test("GET /stories/:id returns story", async () => {
 		const { app, etag } = await setupWithBoard();
 
-		await app.handle(
+		const createRes = await app.handle(
 			new Request("http://localhost/stories", {
 				method: "POST",
 				headers: { ...authHeaders, "content-type": "application/json", "if-match": etag },
@@ -243,19 +249,20 @@ describe("Stories CRUD", () => {
 				}),
 			}),
 		);
+		const created = await json(createRes);
 
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001", { headers: authHeaders }),
+			new Request(`http://localhost/stories/${created.id}`, { headers: authHeaders }),
 		);
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.title).toBe("Test Story");
 	});
 
 	test("GET /stories/:id returns 404 for missing", async () => {
 		const { app } = await setupWithBoard();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-999", { headers: authHeaders }),
+			new Request("http://localhost/stories/nonexistent", { headers: authHeaders }),
 		);
 		expect(res.status).toBe(404);
 	});
@@ -275,9 +282,10 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await json(createRes);
 
 		const patchRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -288,7 +296,7 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		expect(patchRes.status).toBe(200);
-		const body = await patchRes.json();
+		const body = await json(patchRes);
 		expect(body.priority).toBe(3);
 	});
 
@@ -307,9 +315,10 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await json(createRes);
 
 		const patchRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -319,7 +328,7 @@ describe("Stories CRUD", () => {
 				body: JSON.stringify({ passes: true }),
 			}),
 		);
-		const body = await patchRes.json();
+		const body = await json(patchRes);
 		expect(body.status).toBe("done");
 		expect(body.passes).toBe(true);
 	});
@@ -339,9 +348,10 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await json(createRes);
 
 		const patchRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -351,7 +361,7 @@ describe("Stories CRUD", () => {
 				body: JSON.stringify({ status: "done" }),
 			}),
 		);
-		const body = await patchRes.json();
+		const body = await json(patchRes);
 		expect(body.status).toBe("done");
 		expect(body.passes).toBe(true);
 	});
@@ -371,9 +381,10 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await json(createRes);
 
 		const patchRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -402,10 +413,11 @@ describe("Stories CRUD", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await json(createRes);
 
 		// Move to todo first
 		const todoRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -419,7 +431,7 @@ describe("Stories CRUD", () => {
 
 		// Assign
 		const assignRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -429,7 +441,7 @@ describe("Stories CRUD", () => {
 				body: JSON.stringify({ assignee: "code-bot" }),
 			}),
 		);
-		const body = await assignRes.json();
+		const body = await json(assignRes);
 		expect(body.status).toBe("in_progress");
 		expect(body.assignee).toBe("code-bot");
 	});
@@ -469,14 +481,14 @@ describe("Stories CRUD", () => {
 		const listRes = await app.handle(
 			new Request("http://localhost/stories?status=backlog", { headers: authHeaders }),
 		);
-		const body = await listRes.json();
+		const body = await json(listRes);
 		expect(body.userStories).toHaveLength(2);
 	});
 });
 
 describe("Claim / Unclaim", () => {
 	async function setupWithStory() {
-		const { app } = setup();
+		const { app } = await setup();
 		const initRes = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -486,7 +498,7 @@ describe("Claim / Unclaim", () => {
 		);
 		const etag1 = getEtag(initRes);
 
-		// Create story and move to todo
+		// Create story
 		const createRes = await app.handle(
 			new Request("http://localhost/stories", {
 				method: "POST",
@@ -503,10 +515,11 @@ describe("Claim / Unclaim", () => {
 			}),
 		);
 		const etag2 = getEtag(createRes);
+		const created = await json(createRes);
 
 		// Move to todo
 		const todoRes = await app.handle(
-			new Request("http://localhost/stories/US-001", {
+			new Request(`http://localhost/stories/${created.id}`, {
 				method: "PATCH",
 				headers: {
 					...authHeaders,
@@ -518,28 +531,28 @@ describe("Claim / Unclaim", () => {
 		);
 		const etag3 = getEtag(todoRes);
 
-		return { app, etag: etag3 };
+		return { app, etag: etag3, storyId: created.id as string };
 	}
 
 	test("claim sets assignee and status to in_progress", async () => {
-		const { app, etag } = await setupWithStory();
+		const { app, etag, storyId } = await setupWithStory();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag },
 			}),
 		);
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.assignee).toBe("test-agent");
 		expect(body.status).toBe("in_progress");
 	});
 
 	test("claim on already-assigned story returns 409", async () => {
-		const { app, etag } = await setupWithStory();
+		const { app, etag, storyId } = await setupWithStory();
 
 		const claimRes = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag },
 			}),
@@ -547,7 +560,7 @@ describe("Claim / Unclaim", () => {
 		const etag2 = getEtag(claimRes);
 
 		const res2 = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: {
 					authorization: `Bearer ${API_KEY}`,
@@ -560,10 +573,10 @@ describe("Claim / Unclaim", () => {
 	});
 
 	test("unclaim clears assignee and reverts to todo", async () => {
-		const { app, etag } = await setupWithStory();
+		const { app, etag, storyId } = await setupWithStory();
 
 		const claimRes = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag },
 			}),
@@ -571,22 +584,22 @@ describe("Claim / Unclaim", () => {
 		const etag2 = getEtag(claimRes);
 
 		const unclaimRes = await app.handle(
-			new Request("http://localhost/stories/US-001/unclaim", {
+			new Request(`http://localhost/stories/${storyId}/unclaim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag2 },
 			}),
 		);
 		expect(unclaimRes.status).toBe(200);
-		const body = await unclaimRes.json();
+		const body = await json(unclaimRes);
 		expect(body.assignee).toBeNull();
 		expect(body.status).toBe("todo");
 	});
 
 	test("unclaim by different agent returns 403", async () => {
-		const { app, etag } = await setupWithStory();
+		const { app, etag, storyId } = await setupWithStory();
 
 		const claimRes = await app.handle(
-			new Request("http://localhost/stories/US-001/claim", {
+			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: { ...authHeaders, "if-match": etag },
 			}),
@@ -594,7 +607,7 @@ describe("Claim / Unclaim", () => {
 		const etag2 = getEtag(claimRes);
 
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/unclaim", {
+			new Request(`http://localhost/stories/${storyId}/unclaim`, {
 				method: "POST",
 				headers: {
 					authorization: `Bearer ${API_KEY}`,
@@ -609,7 +622,7 @@ describe("Claim / Unclaim", () => {
 
 describe("Comments", () => {
 	async function setupWithStory() {
-		const { app } = setup();
+		const { app } = await setup();
 		const initRes = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -619,7 +632,7 @@ describe("Comments", () => {
 		);
 		const etag = getEtag(initRes);
 
-		await app.handle(
+		const createRes = await app.handle(
 			new Request("http://localhost/stories", {
 				method: "POST",
 				headers: {
@@ -634,26 +647,27 @@ describe("Comments", () => {
 				}),
 			}),
 		);
+		const created = await json(createRes);
 
-		return { app };
+		return { app, storyId: created.id as string };
 	}
 
 	test("GET comments on story with no comments returns empty array", async () => {
-		const { app } = await setupWithStory();
+		const { app, storyId } = await setupWithStory();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				headers: authHeaders,
 			}),
 		);
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.comments).toEqual([]);
 	});
 
 	test("POST first comment creates file", async () => {
-		const { app } = await setupWithStory();
+		const { app, storyId } = await setupWithStory();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -664,17 +678,17 @@ describe("Comments", () => {
 			}),
 		);
 		expect(res.status).toBe(201);
-		const body = await res.json();
-		expect(body.id).toBe("c-001");
+		const body = await json(res);
+		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
 		expect(body.agent).toBe("test-agent");
 		expect(body.body).toBe("First comment");
 	});
 
 	test("POST second comment with correct etag succeeds", async () => {
-		const { app } = await setupWithStory();
+		const { app, storyId } = await setupWithStory();
 
 		const first = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -685,9 +699,10 @@ describe("Comments", () => {
 			}),
 		);
 		const etag = getEtag(first);
+		const firstBody = await json(first);
 
 		const second = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -698,15 +713,16 @@ describe("Comments", () => {
 			}),
 		);
 		expect(second.status).toBe(201);
-		const body = await second.json();
-		expect(body.id).toBe("c-002");
+		const body = await json(second);
+		expect(body.id).toMatch(/^[0-9a-f-]{36}$/);
+		expect(body.id).not.toBe(firstBody.id);
 	});
 
 	test("GET comments returns all comments", async () => {
-		const { app } = await setupWithStory();
+		const { app, storyId } = await setupWithStory();
 
 		const first = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -719,7 +735,7 @@ describe("Comments", () => {
 		const etag = getEtag(first);
 
 		await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -731,18 +747,18 @@ describe("Comments", () => {
 		);
 
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-001/comments", {
+			new Request(`http://localhost/stories/${storyId}/comments`, {
 				headers: authHeaders,
 			}),
 		);
-		const body = await res.json();
+		const body = await json(res);
 		expect(body.comments).toHaveLength(2);
 	});
 
 	test("POST comment on non-existent story returns 404", async () => {
 		const { app } = await setupWithStory();
 		const res = await app.handle(
-			new Request("http://localhost/stories/US-999/comments", {
+			new Request("http://localhost/stories/nonexistent/comments", {
 				method: "POST",
 				headers: {
 					...authHeaders,
@@ -758,7 +774,7 @@ describe("Comments", () => {
 
 describe("Export", () => {
 	test("GET /board/export returns board.json", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -775,7 +791,7 @@ describe("Export", () => {
 	});
 
 	test("GET /board/export/ralph strips extension fields", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const initRes = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -804,7 +820,15 @@ describe("Export", () => {
 		const res = await app.handle(
 			new Request("http://localhost/board/export/ralph", { headers: authHeaders }),
 		);
-		const body = await res.json();
+		const body = await json<{
+			agents?: unknown;
+			userStories: Array<{
+				status?: unknown;
+				assignee?: unknown;
+				created_at?: unknown;
+				title?: string;
+			}>;
+		}>(res);
 		expect(body.agents).toBeUndefined();
 		expect(body.userStories[0].status).toBeUndefined();
 		expect(body.userStories[0].assignee).toBeUndefined();
@@ -815,7 +839,7 @@ describe("Export", () => {
 
 describe("Agents", () => {
 	test("GET /agents returns registry", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -826,7 +850,7 @@ describe("Agents", () => {
 
 		const res = await app.handle(new Request("http://localhost/agents", { headers: authHeaders }));
 		expect(res.status).toBe(200);
-		const body = await res.json();
+		const body = await json<{ agents: Record<string, Agent> }>(res);
 		expect(body.agents["test-agent"]).toBeDefined();
 		expect(body.agents["test-agent"].status).toBe("active");
 	});

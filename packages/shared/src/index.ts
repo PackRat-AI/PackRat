@@ -1,12 +1,5 @@
 export type { AgentStatusType, StoryStatusType } from "./constants";
-export {
-	AGENT_STATUSES,
-	BOARD_FILE,
-	COMMENT_ID_PREFIX,
-	COMMENTS_DIR,
-	STORY_ID_PREFIX,
-	STORY_STATUSES,
-} from "./constants";
+export { AGENT_STATUSES, BOARD_FILE, COMMENTS_DIR, STORY_STATUSES } from "./constants";
 export type { InvariantResult } from "./invariants";
 export { enforceInvariants } from "./invariants";
 export type {

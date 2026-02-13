@@ -33,8 +33,8 @@ export function isRalphFormat(input: Record<string, unknown>): boolean {
 export function migrateFromRalph(input: RalphPrd): Board {
 	const now = new Date().toISOString();
 
-	const stories: Story[] = (input.userStories ?? []).map((s, idx) => ({
-		id: s.id ?? `US-${String(idx + 1).padStart(3, "0")}`,
+	const stories: Story[] = (input.userStories ?? []).map((s) => ({
+		id: s.id ?? crypto.randomUUID(),
 		title: s.title,
 		description: s.description ?? "",
 		category: s.category,

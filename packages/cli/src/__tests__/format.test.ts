@@ -76,7 +76,7 @@ describe("formatBoardSummary", () => {
 		});
 		expect(summary).toContain("Test Project");
 		expect(summary).toContain("4 stories");
-		expect(summary).toContain("1 agents active");
+		expect(summary).toContain("1 agent active");
 	});
 });
 
