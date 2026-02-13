@@ -24,7 +24,6 @@ jobs:
         with:
           name: packages
           path: |
-            packages/shared/dist/
             packages/cli/dist/
 
   publish-npm:
