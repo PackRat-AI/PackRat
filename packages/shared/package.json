@@ -10,16 +10,10 @@
 		"directory": "packages/shared"
 	},
 	"exports": {
-		".": {
-			"bun": "./src/index.ts",
-			"import": "./dist/index.js",
-			"types": "./dist/index.d.ts"
-		}
+		".": "./src/index.ts"
 	},
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
 	"files": [
-		"dist"
+		"src"
 	],
 	"publishConfig": {
 		"access": "public"
@@ -28,7 +22,7 @@
 		"@sinclair/typebox": "catalog:"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
+		"build": "echo 'skipped'",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	}
