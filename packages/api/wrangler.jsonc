@@ -8,5 +8,9 @@
 			"binding": "SWARMBOARD_BUCKET",
 			"bucket_name": "swarmboard-data"
 		}
-	]
+	],
+	"vars": {
+		"SWARMBOARD_ADMIN_USER": "${SWARMBOARD_ADMIN_USER}",
+		"SWARMBOARD_ADMIN_PASS": "${SWARMBOARD_ADMIN_PASS}"
+	}
 }

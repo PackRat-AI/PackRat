@@ -30,29 +30,23 @@ function parseBasicAuth(authHeader: string | undefined): [string, string] | null
 	}
 }
 
-export async function createApp(opts: { bucket: R2Bucket; apiKey: string }) {
-	// Pre-derive HMAC key + expected signature for timing-safe auth comparison
-	const encoder = new TextEncoder();
-	const expectedBytes = encoder.encode(opts.apiKey);
-	const hmacKey = await crypto.subtle.importKey(
-		"raw",
-		expectedBytes,
-		{ name: "HMAC", hash: "SHA-256" },
-		false,
-		["sign", "verify"],
-	);
-	const expectedSig = await crypto.subtle.sign("HMAC", hmacKey, expectedBytes);
-
+export function createApp(bucket: R2Bucket, apiKey: string) {
 	return new Elysia()
-		.state("bucket", opts.bucket)
-		.onBeforeHandle(async ({ headers, path, request }) => {
+		.state("bucket", bucket)
+		.state("apiKey", apiKey)
+		.derive(({ headers }) => {
+			const agent = headers["x-agent"] ?? "unknown";
+			return { agent };
+		})
+		.onBeforeHandle(({ headers, path, store, request }) => {
 			// Skip auth for health check
 			if (path === "/health") return;
 
-			const authHeader = headers.authorization;
-			const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+			// Check X-API-Key header
+			const apiKey = headers["x-api-key"];
+			const expected = (store as { apiKey: string }).apiKey;
 
-			if (!token) {
+			if (!apiKey || apiKey !== expected) {
 				return new Response(
 					JSON.stringify({
 						error: "unauthorized",
@@ -62,36 +56,7 @@ export async function createApp(opts: { bucket: R2Bucket; apiKey: string }) {
 				);
 			}
 
-			const tokenBytes = encoder.encode(token);
-			let isValid = false;
-			if (tokenBytes.byteLength === expectedBytes.byteLength) {
-				isValid = await crypto.subtle.verify("HMAC", hmacKey, expectedSig, tokenBytes);
-			}
-
-			if (!isValid) {
-				return new Response(
-					JSON.stringify({
-						error: "unauthorized",
-						message: "Invalid or missing API key",
-					}),
-					{ status: 401, headers: { "content-type": "application/json" } },
-				);
-			}
-
-			// Require X-Agent on mutating requests
-			const method = request.method;
-			if (
-				(method === "POST" || method === "PATCH" || method === "PUT" || method === "DELETE") &&
-				!headers["x-agent"]
-			) {
-				return new Response(
-					JSON.stringify({
-						error: "bad_request",
-						message: "X-Agent header required on mutating requests",
-					}),
-					{ status: 400, headers: { "content-type": "application/json" } },
-				);
-			}
+			request.headers.set("x-agent", "api");
 		})
 		.use(boardRoutes)
 		.use(storyRoutes)
@@ -100,4 +65,4 @@ export async function createApp(opts: { bucket: R2Bucket; apiKey: string }) {
 		.use(agentRoutes);
 }
 
-export type App = Awaited<ReturnType<typeof createApp>>;
+export type App = ReturnType<typeof createApp>;

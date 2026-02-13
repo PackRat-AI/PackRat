@@ -11,12 +11,12 @@ const API_KEY = "test-key-123";
 
 async function setup() {
 	const bucket = createMockR2();
-	const app = await createApp({ bucket, apiKey: API_KEY });
+	const app = createApp(bucket, API_KEY);
 	return { app, bucket };
 }
 
 const authHeaders = {
-	authorization: `Bearer ${API_KEY}`,
+	"x-api-key": API_KEY,
 	"x-agent": "test-agent",
 };
 
@@ -47,7 +47,7 @@ describe("Auth", () => {
 		const { app } = await setup();
 		const res = await app.handle(
 			new Request("http://localhost/board", {
-				headers: { authorization: "Bearer wrong-key" },
+				headers: { "x-api-key": "wrong-key" },
 			}),
 		);
 		expect(res.status).toBe(401);
@@ -563,7 +563,7 @@ describe("Claim / Unclaim", () => {
 			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: {
-					authorization: `Bearer ${API_KEY}`,
+					"x-api-key": API_KEY,
 					"x-agent": "other-agent",
 					"if-match": etag2,
 				},
@@ -610,7 +610,7 @@ describe("Claim / Unclaim", () => {
 			new Request(`http://localhost/stories/${storyId}/unclaim`, {
 				method: "POST",
 				headers: {
-					authorization: `Bearer ${API_KEY}`,
+					"x-api-key": API_KEY,
 					"x-agent": "other-agent",
 					"if-match": etag2,
 				},
