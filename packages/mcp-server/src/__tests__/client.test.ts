@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach, afterEach } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { SwarmboardClient } from "../client.js";
 
 // Mock fetch for testing
