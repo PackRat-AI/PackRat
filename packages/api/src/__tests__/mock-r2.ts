@@ -23,7 +23,6 @@ export function createMockR2(): R2Bucket {
 			} as unknown as R2ObjectBody;
 		},
 
-		// biome-ignore lint/nursery/useMaxParams: matches R2Bucket interface
 		put: async (
 			key: string,
 			value: string | ReadableStream | ArrayBuffer | Blob,

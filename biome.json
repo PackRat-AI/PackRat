@@ -21,5 +21,8 @@
 				}
 			}
 		}
+	},
+	"files": {
+		"includes": ["src/**/*.ts", "*.ts", "*.json", "*.jsonc"]
 	}
 }

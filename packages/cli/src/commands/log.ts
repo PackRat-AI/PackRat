@@ -26,7 +26,6 @@ export default defineCommand({
 		}
 
 		const stories = boardRes.data.userStories
-			// biome-ignore lint/nursery/useMaxParams: Array.sort callback signature
 			.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 			.slice(0, limit);
 
@@ -66,7 +65,6 @@ export default defineCommand({
 			}
 		}
 
-		// biome-ignore lint/nursery/useMaxParams: Array.sort callback signature
 		entries.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
 		console.log("\n  Recent Activity");

@@ -13,23 +13,6 @@ import { storyRoutes } from "./routes/stories";
  * Auth is inlined here (not in a separate plugin) to ensure
  * `store` is available to all route handlers.
  */
-/**
- * Parse Basic Auth header
- * Returns [username, password] or null if invalid
- */
-function parseBasicAuth(authHeader: string | undefined): [string, string] | null {
-	if (!authHeader?.startsWith("Basic ")) return null;
-	const base64 = authHeader.slice(6);
-	try {
-		const decoded = atob(base64);
-		const parts = decoded.split(":");
-		if (parts.length < 2) return null;
-		return [parts[0], parts.slice(1).join(":")];
-	} catch {
-		return null;
-	}
-}
-
 export function createApp(bucket: R2Bucket, apiKey: string) {
 	return new Elysia()
 		.state("bucket", bucket)
