@@ -11,7 +11,7 @@ const API_KEY = "test-key-123";
 
 async function setup() {
 	const bucket = createMockR2();
-	const app = await createApp(bucket, API_KEY);
+	const app = await createApp({ bucket, apiKey: API_KEY });
 	return { app, bucket };
 }
 

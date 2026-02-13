@@ -36,23 +36,25 @@ export default defineCommand({
 	async run({ args }) {
 		const client = createClient();
 
-		const result = await withRetry(async () => {
-			const boardRes = await client.getStories();
-			if (boardRes.error || !boardRes.data) {
-				return { status: boardRes.status, data: null, error: boardRes.error };
-			}
-			const etag = boardRes.data.etag;
+		const result = await withRetry({
+			fn: async () => {
+				const boardRes = await client.getStories();
+				if (boardRes.error || !boardRes.data) {
+					return { status: boardRes.status, data: null, error: boardRes.error };
+				}
+				const etag = boardRes.data.etag;
 
-			return client.createStory(
-				{
-					title: args.title,
-					description: args.description,
-					priority: Number(args.priority),
-					category: args.category,
-					assignee: args.assignee ?? null,
-				},
-				etag,
-			);
+				return client.createStory({
+					body: {
+						title: args.title,
+						description: args.description,
+						priority: Number(args.priority),
+						category: args.category,
+						assignee: args.assignee ?? null,
+					},
+					etag,
+				});
+			},
 		});
 
 		if (result.error || !result.data) {

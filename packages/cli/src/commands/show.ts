@@ -29,6 +29,6 @@ export default defineCommand({
 		}
 
 		const comments = commentsRes.data?.comments ?? [];
-		console.log(formatStoryDetail(storyRes.data, comments));
+		console.log(formatStoryDetail({ story: storyRes.data, comments }));
 	},
 });

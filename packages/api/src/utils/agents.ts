@@ -1,6 +1,7 @@
 import type { Board } from "@swarmboard/shared";
 
-export function updateAgentLastSeen(board: Board, agent: string): void {
+export function updateAgentLastSeen(opts: { board: Board; agent: string }): void {
+	const { board, agent } = opts;
 	if (agent === "unknown") return;
 	if (!board.agents[agent]) {
 		board.agents[agent] = {

@@ -18,11 +18,13 @@ export default defineCommand({
 	async run({ args }) {
 		const client = createClient();
 
-		const result = await withRetry(async () => {
-			const storyRes = await client.getStory(args.id);
-			if (storyRes.error || !storyRes.data) return storyRes;
-			const etag = storyRes.data.etag;
-			return client.unclaimStory(args.id, etag);
+		const result = await withRetry({
+			fn: async () => {
+				const storyRes = await client.getStory(args.id);
+				if (storyRes.error || !storyRes.data) return storyRes;
+				const etag = storyRes.data.etag;
+				return client.unclaimStory({ id: args.id, etag });
+			},
 		});
 
 		if (result.error) {

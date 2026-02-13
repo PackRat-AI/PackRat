@@ -41,7 +41,7 @@ export const claimRoutes = new Elysia({ prefix: "/stories" })
 		story.status = "in_progress";
 		story.updated_at = now;
 		result.board.updated_at = now;
-		updateAgentLastSeen(result.board, agent);
+		updateAgentLastSeen({ board: result.board, agent });
 
 		const writeResult = await writeBoard({
 			bucket,
@@ -95,7 +95,7 @@ export const claimRoutes = new Elysia({ prefix: "/stories" })
 		}
 		story.updated_at = now;
 		result.board.updated_at = now;
-		updateAgentLastSeen(result.board, agent);
+		updateAgentLastSeen({ board: result.board, agent });
 
 		const writeResult = await writeBoard({
 			bucket,

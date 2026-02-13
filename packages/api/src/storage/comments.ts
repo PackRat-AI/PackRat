@@ -22,8 +22,11 @@ function commentKey(storyId: string): string {
 	return `${COMMENTS_DIR}/${storyId}.json`;
 }
 
-export async function readComments(bucket: R2Bucket, storyId: string): Promise<CommentsReadResult> {
-	const obj = await bucket.get(commentKey(storyId));
+export async function readComments(opts: {
+	bucket: R2Bucket;
+	storyId: string;
+}): Promise<CommentsReadResult> {
+	const obj = await opts.bucket.get(commentKey(opts.storyId));
 	if (!obj) {
 		return { comments: [], etag: null };
 	}

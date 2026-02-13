@@ -11,7 +11,7 @@
 			"nursery": {
 				"useMaxParams": {
 					"level": "error",
-					"options": { "max": 2 }
+					"options": { "max": 1 }
 				}
 			}
 		}

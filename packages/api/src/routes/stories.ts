@@ -112,7 +112,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 
 			result.board.userStories.push(story);
 			result.board.updated_at = now;
-			updateAgentLastSeen(result.board, agent);
+			updateAgentLastSeen({ board: result.board, agent });
 
 			const writeResult = await writeBoard({
 				bucket,
@@ -156,7 +156,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 			}
 
 			const current = result.board.userStories[storyIdx];
-			const invariantResult = enforceInvariants(current, body);
+			const invariantResult = enforceInvariants({ current, updates: body });
 
 			if (!invariantResult.ok) {
 				return new Response(
@@ -178,7 +178,7 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 
 			result.board.userStories[storyIdx] = updated;
 			result.board.updated_at = now;
-			updateAgentLastSeen(result.board, agent);
+			updateAgentLastSeen({ board: result.board, agent });
 
 			const writeResult = await writeBoard({
 				bucket,

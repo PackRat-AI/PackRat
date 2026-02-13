@@ -13,10 +13,10 @@ import { storyRoutes } from "./routes/stories";
  * Auth is inlined here (not in a separate plugin) to ensure
  * `store` is available to all route handlers.
  */
-export async function createApp(bucket: R2Bucket, apiKey: string) {
+export async function createApp(opts: { bucket: R2Bucket; apiKey: string }) {
 	// Pre-derive HMAC key + expected signature for timing-safe auth comparison
 	const encoder = new TextEncoder();
-	const expectedBytes = encoder.encode(apiKey);
+	const expectedBytes = encoder.encode(opts.apiKey);
 	const hmacKey = await crypto.subtle.importKey(
 		"raw",
 		expectedBytes,
@@ -27,7 +27,7 @@ export async function createApp(bucket: R2Bucket, apiKey: string) {
 	const expectedSig = await crypto.subtle.sign("HMAC", hmacKey, expectedBytes);
 
 	return new Elysia()
-		.state("bucket", bucket)
+		.state("bucket", opts.bucket)
 		.onBeforeHandle(async ({ headers, path, request }) => {
 			// Skip auth for health check
 			if (path === "/health") return;
