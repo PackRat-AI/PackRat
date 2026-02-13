@@ -8,10 +8,16 @@ async function json<T = Record<string, unknown>>(res: Response): Promise<T> {
 }
 
 const API_KEY = "test-key-123";
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "admin123";
 
 async function setup() {
 	const bucket = createMockR2();
-	const app = createApp(bucket, API_KEY);
+	const app = createApp(bucket, {
+		apiKey: API_KEY,
+		adminUser: ADMIN_USER,
+		adminPass: ADMIN_PASS,
+	});
 	return { app, bucket };
 }
 

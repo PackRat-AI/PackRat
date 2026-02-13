@@ -5,41 +5,66 @@ import { claimRoutes } from "./routes/claims";
 import { commentRoutes } from "./routes/comments";
 import { storyRoutes } from "./routes/stories";
 
-/**
- * Create the Elysia app with an R2 bucket injected into store.
- * This factory is used both by the CF Worker entry point (real R2)
- * and by tests (mock R2).
- *
- * Auth is inlined here (not in a separate plugin) to ensure
- * `store` is available to all route handlers.
- */
-export function createApp(bucket: R2Bucket, apiKey: string) {
+interface AuthConfig {
+	apiKey: string;
+	adminUser?: string;
+	adminPass?: string;
+}
+
+function parseBasicAuth(authHeader: string | undefined): [string, string] | null {
+	if (!authHeader?.startsWith("Basic ")) return null;
+	const base64 = authHeader.slice(6);
+	try {
+		const decoded = atob(base64);
+		const parts = decoded.split(":");
+		if (parts.length < 2) return null;
+		return [parts[0], parts.slice(1).join(":")];
+	} catch {
+		return null;
+	}
+}
+
+export function createApp(bucket: R2Bucket, config: AuthConfig) {
 	return new Elysia()
 		.state("bucket", bucket)
-		.state("apiKey", apiKey)
+		.state("config", config)
 		.derive(({ headers }) => {
-			const agent = headers["x-agent"] ?? "unknown";
-			return { agent };
+			const xAgent = headers["x-agent"];
+			const authHeader = headers["authorization"];
+			const apiKey = headers["x-api-key"];
+
+			let agent = xAgent ?? "unknown";
+			let authenticated = false;
+
+			// Check X-API-Key (for bots/MCP clients)
+			if (apiKey && apiKey === config.apiKey) {
+				authenticated = true;
+			}
+
+			// Check Basic Auth (for humans)
+			if (!authenticated && authHeader) {
+				const [user, pass] = parseBasicAuth(authHeader) ?? [];
+				if (user && pass && user === config.adminUser && pass === config.adminPass) {
+					authenticated = true;
+					agent = user;
+				}
+			}
+
+			return { agent, authenticated };
 		})
-		.onBeforeHandle(({ headers, path, store, request }) => {
+		.onBeforeHandle(({ path, authenticated }) => {
 			// Skip auth for health check
 			if (path === "/health") return;
 
-			// Check X-API-Key header
-			const apiKey = headers["x-api-key"];
-			const expected = (store as { apiKey: string }).apiKey;
-
-			if (!apiKey || apiKey !== expected) {
+			if (!authenticated) {
 				return new Response(
 					JSON.stringify({
 						error: "unauthorized",
-						message: "Invalid or missing API key",
+						message: "Invalid or missing authentication",
 					}),
 					{ status: 401, headers: { "content-type": "application/json" } },
 				);
 			}
-
-			request.headers.set("x-agent", "api");
 		})
 		.use(boardRoutes)
 		.use(storyRoutes)
@@ -49,3 +74,4 @@ export function createApp(bucket: R2Bucket, apiKey: string) {
 }
 
 export type App = ReturnType<typeof createApp>;
+export type { AuthConfig };
