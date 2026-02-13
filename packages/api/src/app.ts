@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { bearer } from "@elysiajs/bearer";
 import { agentRoutes } from "./routes/agents";
 import { boardRoutes } from "./routes/board";
 import { claimRoutes } from "./routes/claims";
@@ -26,27 +27,34 @@ function parseBasicAuth(authHeader: string | undefined): [string, string] | null
 
 export function createApp(bucket: R2Bucket, config: AuthConfig) {
 	return new Elysia()
+		.use(bearer())
 		.state("bucket", bucket)
 		.state("config", config)
-		.derive(({ headers }) => {
+		.derive(({ headers, bearer }) => {
 			const xAgent = headers["x-agent"];
 			const authHeader = headers["authorization"];
-			const apiKey = headers["x-api-key"];
 
 			let agent = xAgent ?? "unknown";
 			let authenticated = false;
 
 			// Check X-API-Key (for bots/MCP clients)
+			const apiKey = headers["x-api-key"];
 			if (apiKey && apiKey === config.apiKey) {
 				authenticated = true;
 			}
 
-			// Check Basic Auth (for humans)
-			if (!authenticated && authHeader) {
-				const [user, pass] = parseBasicAuth(authHeader) ?? [];
-				if (user && pass && user === config.adminUser && pass === config.adminPass) {
+			// Check Bearer token (can be API key or Basic Auth)
+			if (!authenticated && bearer) {
+				// Try as API key first
+				if (bearer === config.apiKey) {
 					authenticated = true;
-					agent = user;
+				} else {
+					// Try as Basic Auth
+					const [user, pass] = parseBasicAuth(`Basic ${bearer}`) ?? [];
+					if (user && pass && user === config.adminUser && pass === config.adminPass) {
+						authenticated = true;
+						agent = user;
+					}
 				}
 			}
 

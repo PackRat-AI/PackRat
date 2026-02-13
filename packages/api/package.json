@@ -11,12 +11,13 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"elysia": "catalog:",
-		"@swarmboard/shared": "workspace:*"
+		"@elysiajs/bearer": "^1.4.3",
+		"@swarmboard/shared": "workspace:*",
+		"elysia": "^1.4.25"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "catalog:",
-		"@elysiajs/eden": "catalog:",
-		"wrangler": "catalog:"
+		"@cloudflare/workers-types": "^4.20260213.0",
+		"@elysiajs/eden": "^1.4.8",
+		"wrangler": "^4.65.0"
 	}
 }
