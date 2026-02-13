@@ -8,7 +8,7 @@ interface Env {
 // CF Worker entry point
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
-		const app = createApp(env.SWARMBOARD_BUCKET, env.SWARMBOARD_API_KEY);
+		const app = await createApp(env.SWARMBOARD_BUCKET, env.SWARMBOARD_API_KEY);
 		return app.handle(request);
 	},
 };

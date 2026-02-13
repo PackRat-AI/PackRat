@@ -9,9 +9,9 @@ async function json<T = Record<string, unknown>>(res: Response): Promise<T> {
 
 const API_KEY = "test-key-123";
 
-function setup() {
+async function setup() {
 	const bucket = createMockR2();
-	const app = createApp(bucket, API_KEY);
+	const app = await createApp(bucket, API_KEY);
 	return { app, bucket };
 }
 
@@ -28,7 +28,7 @@ function getEtag(res: Response): string {
 
 describe("Health Check", () => {
 	test("GET /health returns ok without auth", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(new Request("http://localhost/health"));
 		const body = await json(res);
 		expect(body).toEqual({ status: "ok" });
@@ -38,13 +38,13 @@ describe("Health Check", () => {
 
 describe("Auth", () => {
 	test("returns 401 without auth header", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(new Request("http://localhost/board"));
 		expect(res.status).toBe(401);
 	});
 
 	test("returns 401 with wrong key", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(
 			new Request("http://localhost/board", {
 				headers: { authorization: "Bearer wrong-key" },
@@ -56,7 +56,7 @@ describe("Auth", () => {
 
 describe("Board Init", () => {
 	test("POST /board/init creates board", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -78,7 +78,7 @@ describe("Board Init", () => {
 	});
 
 	test("POST /board/init returns 409 if already initialized", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 
 		// First init
 		await app.handle(
@@ -101,7 +101,7 @@ describe("Board Init", () => {
 	});
 
 	test("POST /board/init migrates Ralph format", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -133,13 +133,13 @@ describe("Board Init", () => {
 
 describe("Board Read", () => {
 	test("GET /board returns 404 before init", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const res = await app.handle(new Request("http://localhost/board", { headers: authHeaders }));
 		expect(res.status).toBe(404);
 	});
 
 	test("GET /board returns board after init", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -156,7 +156,7 @@ describe("Board Read", () => {
 
 describe("Stories CRUD", () => {
 	async function setupWithBoard() {
-		const { app } = setup();
+		const { app } = await setup();
 		const initRes = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -488,7 +488,7 @@ describe("Stories CRUD", () => {
 
 describe("Claim / Unclaim", () => {
 	async function setupWithStory() {
-		const { app } = setup();
+		const { app } = await setup();
 		const initRes = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -622,7 +622,7 @@ describe("Claim / Unclaim", () => {
 
 describe("Comments", () => {
 	async function setupWithStory() {
-		const { app } = setup();
+		const { app } = await setup();
 		const initRes = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -774,7 +774,7 @@ describe("Comments", () => {
 
 describe("Export", () => {
 	test("GET /board/export returns board.json", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -791,7 +791,7 @@ describe("Export", () => {
 	});
 
 	test("GET /board/export/ralph strips extension fields", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		const initRes = await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",
@@ -839,7 +839,7 @@ describe("Export", () => {
 
 describe("Agents", () => {
 	test("GET /agents returns registry", async () => {
-		const { app } = setup();
+		const { app } = await setup();
 		await app.handle(
 			new Request("http://localhost/board/init", {
 				method: "POST",

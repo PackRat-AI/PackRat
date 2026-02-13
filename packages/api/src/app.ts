@@ -13,36 +13,45 @@ import { storyRoutes } from "./routes/stories";
  * Auth is inlined here (not in a separate plugin) to ensure
  * `store` is available to all route handlers.
  */
-export function createApp(bucket: R2Bucket, apiKey: string) {
+export async function createApp(bucket: R2Bucket, apiKey: string) {
+	// Pre-derive HMAC key + expected signature for timing-safe auth comparison
+	const encoder = new TextEncoder();
+	const expectedBytes = encoder.encode(apiKey);
+	const hmacKey = await crypto.subtle.importKey(
+		"raw",
+		expectedBytes,
+		{ name: "HMAC", hash: "SHA-256" },
+		false,
+		["sign", "verify"],
+	);
+	const expectedSig = await crypto.subtle.sign("HMAC", hmacKey, expectedBytes);
+
 	return new Elysia()
 		.state("bucket", bucket)
-		.state("apiKey", apiKey)
-		.onBeforeHandle(async ({ headers, path, store, request }) => {
+		.onBeforeHandle(async ({ headers, path, request }) => {
 			// Skip auth for health check
 			if (path === "/health") return;
 
-			const token = headers.authorization?.replace("Bearer ", "");
-			const expected = (store as { apiKey: string }).apiKey;
+			const authHeader = headers.authorization;
+			const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
 
-			const encoder = new TextEncoder();
-			const tokenBytes = encoder.encode(token ?? "");
-			const expectedBytes = encoder.encode(expected);
-
-			let isValid = false;
-			if (tokenBytes.byteLength === expectedBytes.byteLength) {
-				// Import key as HMAC to use Web Crypto for constant-time comparison
-				const key = await crypto.subtle.importKey(
-					"raw",
-					expectedBytes,
-					{ name: "HMAC", hash: "SHA-256" },
-					false,
-					["sign", "verify"],
+			if (!token) {
+				return new Response(
+					JSON.stringify({
+						error: "unauthorized",
+						message: "Invalid or missing API key",
+					}),
+					{ status: 401, headers: { "content-type": "application/json" } },
 				);
-				const sig = await crypto.subtle.sign("HMAC", key, expectedBytes);
-				isValid = await crypto.subtle.verify("HMAC", key, sig, tokenBytes);
 			}
 
-			if (!token || !isValid) {
+			const tokenBytes = encoder.encode(token);
+			let isValid = false;
+			if (tokenBytes.byteLength === expectedBytes.byteLength) {
+				isValid = await crypto.subtle.verify("HMAC", hmacKey, expectedSig, tokenBytes);
+			}
+
+			if (!isValid) {
 				return new Response(
 					JSON.stringify({
 						error: "unauthorized",
@@ -74,4 +83,4 @@ export function createApp(bucket: R2Bucket, apiKey: string) {
 		.use(agentRoutes);
 }
 
-export type App = ReturnType<typeof createApp>;
+export type App = Awaited<ReturnType<typeof createApp>>;

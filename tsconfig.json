@@ -12,6 +12,7 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"noEmit": true,
-		"types": ["bun-types"]
+		"types": ["bun"],
+		"customConditions": ["bun"]
 	}
 }
