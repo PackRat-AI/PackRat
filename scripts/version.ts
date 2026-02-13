@@ -15,13 +15,13 @@ const PACKAGE_PATHS = [
 	"packages/api/package.json",
 ];
 
-function bumpVersion(current: string, bump: string): string {
+function bumpVersion(opts: { current: string; bump: string }): string {
 	const semverRegex = /^\d+\.\d+\.\d+$/;
-	if (semverRegex.test(bump)) return bump;
+	if (semverRegex.test(opts.bump)) return opts.bump;
 
-	const [major, minor, patch] = current.split(".").map(Number);
+	const [major, minor, patch] = opts.current.split(".").map(Number);
 
-	switch (bump) {
+	switch (opts.bump) {
 		case "patch":
 			return `${major}.${minor}.${patch + 1}`;
 		case "minor":
@@ -29,7 +29,7 @@ function bumpVersion(current: string, bump: string): string {
 		case "major":
 			return `${major + 1}.0.0`;
 		default:
-			console.error(`Invalid bump type: ${bump}`);
+			console.error(`Invalid bump type: ${opts.bump}`);
 			console.error("Usage: bun run version <patch|minor|major|x.y.z>");
 			process.exit(1);
 	}
@@ -43,7 +43,7 @@ if (!bump) {
 
 const rootPkg = await Bun.file(PACKAGE_PATHS[0]).json();
 const currentVersion: string = rootPkg.version;
-const nextVersion = bumpVersion(currentVersion, bump);
+const nextVersion = bumpVersion({ current: currentVersion, bump });
 
 console.log(`${currentVersion} → ${nextVersion}\n`);
 

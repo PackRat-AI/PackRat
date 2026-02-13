@@ -3,7 +3,8 @@ export async function withRetry<T>(opts: {
 	maxRetries?: number;
 }): Promise<{ data: T | null; error: string | null; status: number }> {
 	const { fn, maxRetries = 3 } = opts;
-	for (let attempt = 0; attempt < maxRetries; attempt++) {
+	const retries = Math.max(1, maxRetries);
+	for (let attempt = 0; attempt < retries; attempt++) {
 		const result = await fn();
 
 		if (result.status !== 409 || attempt >= maxRetries - 1) {
