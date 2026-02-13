@@ -92,7 +92,7 @@ const app = new Elysia()
 				'Content-Type': 'application/json',
 				...options.headers
 			};
-			if (token) headers['Authorization'] = 'Bearer ' + token;
+			if (token) headers['X-API-Key'] = token;
 			if (agent) headers['X-Agent'] = agent;
 
 			const res = await fetch(API_URL + path, { ...options, headers });
