@@ -1,11 +1,10 @@
 import { createApp, type App } from "./app";
+import { loadAuthConfig, isValidApiKey, validateBasicAuth } from "./config";
 
 interface Env {
 	SWARMBOARD_BUCKET: R2Bucket;
-	SWARMBOARD_API_KEY: string;
-	SWARMBOARD_ADMIN_USER?: string;
-	SWARMBOARD_ADMIN_PASS?: string;
 	ASSETS: Fetcher;
+	[key: string]: unknown;
 }
 
 function parseBasicAuth(header: string): [string, string] | null {
@@ -42,12 +41,13 @@ export default {
 		}
 
 		// Authenticate
+		const config = loadAuthConfig(env);
 		let agent = "unknown";
 
 		// 1. X-API-Key (bots / MCP clients)
 		const apiKey = request.headers.get("x-api-key");
 		if (apiKey) {
-			if (apiKey !== env.SWARMBOARD_API_KEY) {
+			if (!isValidApiKey(config, apiKey)) {
 				return new Response(
 					JSON.stringify({ error: "unauthorized", message: "Invalid API key" }),
 					{ status: 401, headers: { "content-type": "application/json" } },
@@ -61,11 +61,7 @@ export default {
 			if (!authHeader) return challenge();
 
 			const creds = parseBasicAuth(authHeader);
-			if (
-				!creds ||
-				creds[0] !== env.SWARMBOARD_ADMIN_USER ||
-				creds[1] !== env.SWARMBOARD_ADMIN_PASS
-			) {
+			if (!creds || !validateBasicAuth(config, creds[0], creds[1])) {
 				return challenge();
 			}
 			agent = creds[0];
