@@ -15,3 +15,4 @@ export type AgentStatusType = (typeof AGENT_STATUSES)[number];
 
 export const BOARD_FILE = "board.json";
 export const COMMENTS_DIR = "comments";
+export const USERS_FILE = "users.json";

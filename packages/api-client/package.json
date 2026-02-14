@@ -1,0 +1,16 @@
+{
+	"name": "@swarmboard/api-client",
+	"version": "0.1.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"dependencies": {
+		"@elysiajs/eden": "^1.4.8",
+		"@swarmboard/api": "workspace:*"
+	},
+	"devDependencies": {
+		"elysia": "^1.4.25"
+	}
+}

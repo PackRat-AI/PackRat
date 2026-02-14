@@ -1,59 +1,55 @@
 import type { Comment } from "@swarmboard/shared";
 import { CreateCommentBody } from "@swarmboard/shared";
 import { Elysia } from "elysia";
-import { conflictResponse, etagRequiredResponse, notFoundResponse } from "../middleware/etag";
 import { readBoard } from "../storage/board";
 import { readComments, writeComments } from "../storage/comments";
 
 export const commentRoutes = new Elysia({ prefix: "/stories" })
-	.get("/:id/comments", async ({ params, store }) => {
+	.get("/:id/comments", async ({ params, store, set, status }) => {
 		const bucket = (store as { bucket: R2Bucket }).bucket;
 
-		// Verify story exists
 		const boardResult = await readBoard(bucket);
 		if (!boardResult) {
-			return notFoundResponse("Board not initialized. Call POST /board/init first");
+			return status(404, { error: "not_found", message: "Board not initialized. Call POST /board/init first" });
 		}
 
 		const story = boardResult.board.userStories.find((s) => s.id === params.id);
 		if (!story) {
-			return notFoundResponse(`Story ${params.id} not found`);
+			return status(404, { error: "not_found", message: `Story ${params.id} not found` });
 		}
 
 		const result = await readComments({ bucket, storyId: params.id });
 
-		return new Response(JSON.stringify({ comments: result.comments, etag: result.etag }), {
-			headers: {
-				"content-type": "application/json",
-				...(result.etag ? { etag: result.etag } : {}),
-			},
-		});
+		if (result.etag) {
+			set.headers.etag = result.etag;
+		}
+		return { comments: result.comments, etag: result.etag };
 	})
 	.post(
 		"/:id/comments",
-		async ({ params, body, headers, store }) => {
+		async ({ params, body, headers, store, set, status }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
 			const agent = headers["x-agent"] ?? "unknown";
 
-			// Verify story exists
 			const boardResult = await readBoard(bucket);
 			if (!boardResult) {
-				return notFoundResponse("Board not initialized. Call POST /board/init first");
+				return status(404, { error: "not_found", message: "Board not initialized. Call POST /board/init first" });
 			}
 
 			const story = boardResult.board.userStories.find((s) => s.id === params.id);
 			if (!story) {
-				return notFoundResponse(`Story ${params.id} not found`);
+				return status(404, { error: "not_found", message: `Story ${params.id} not found` });
 			}
 
 			const clientEtag = headers["if-match"];
 			const commentsResult = await readComments({ bucket, storyId: params.id });
 
-			// For first comment, accept * or null etag
 			if (commentsResult.etag !== null && clientEtag !== "*") {
-				if (!clientEtag) return etagRequiredResponse();
+				if (!clientEtag) {
+					return status(428, { error: "precondition_required", message: "If-Match header required for this operation" });
+				}
 				if (clientEtag !== commentsResult.etag) {
-					return conflictResponse("Comments were modified. Re-read and retry.");
+					return status(409, { error: "conflict", message: "Comments were modified. Re-read and retry." });
 				}
 			}
 
@@ -74,16 +70,12 @@ export const commentRoutes = new Elysia({ prefix: "/stories" })
 			});
 
 			if (!writeResult.ok) {
-				return conflictResponse("Comments were modified. Re-read and retry.");
+				return status(409, { error: "conflict", message: "Comments were modified. Re-read and retry." });
 			}
 
-			return new Response(JSON.stringify({ ...comment, etag: writeResult.etag }), {
-				status: 201,
-				headers: {
-					"content-type": "application/json",
-					etag: writeResult.etag,
-				},
-			});
+			set.status = 201;
+			set.headers.etag = writeResult.etag;
+			return { ...comment, etag: writeResult.etag };
 		},
 		{ body: CreateCommentBody },
 	);

@@ -19,7 +19,7 @@
 		"access": "public"
 	},
 	"dependencies": {
-		"@sinclair/typebox": "catalog:"
+		"@sinclair/typebox": "^0.34.48"
 	},
 	"scripts": {
 		"build": "echo 'skipped'",

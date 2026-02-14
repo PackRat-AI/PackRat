@@ -1,40 +1,31 @@
 import type { Board } from "@swarmboard/shared";
 import { InitBoardBody } from "@swarmboard/shared";
 import { Elysia } from "elysia";
-import { conflictResponse, notFoundResponse } from "../middleware/etag";
 import type { RalphPrd } from "../migration";
 import { isRalphFormat, migrateFromRalph } from "../migration";
 import { boardExists, readBoard, writeBoardUnconditional } from "../storage/board";
 
 export const boardRoutes = new Elysia()
-	.get("/health", () => {
-		return new Response(JSON.stringify({ status: "ok" }), {
-			headers: { "content-type": "application/json" },
-		});
-	})
-	.get("/board", async ({ store }) => {
+	.get("/health", () => ({ status: "ok" as const }))
+	.get("/board", async ({ store, set, status }) => {
 		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const result = await readBoard(bucket);
 		if (!result) {
-			return notFoundResponse("Board not initialized. Call POST /board/init first");
+			return status(404, { error: "not_found", message: "Board not initialized. Call POST /board/init first" });
 		}
 
-		return new Response(JSON.stringify(result.board), {
-			headers: {
-				"content-type": "application/json",
-				etag: result.etag,
-			},
-		});
+		set.headers.etag = result.etag;
+		return result.board;
 	})
 	.post(
 		"/board/init",
-		async ({ body, store, headers }) => {
+		async ({ body, store, headers, set, status }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
 			const agent = headers["x-agent"] ?? "unknown";
 
 			const exists = await boardExists(bucket);
 			if (exists) {
-				return conflictResponse("Board already initialized. Cannot re-initialize without reset.");
+				return status(409, { error: "conflict", message: "Board already initialized. Cannot re-initialize without reset." });
 			}
 
 			let board: Board;
@@ -53,7 +44,6 @@ export const boardRoutes = new Elysia()
 					userStories: [],
 				};
 
-				// If userStories were provided in Swarm Board format, normalize them
 				if (body.userStories?.length) {
 					board.userStories = body.userStories.map((s) => ({
 						id: s.id ?? crypto.randomUUID(),
@@ -73,7 +63,6 @@ export const boardRoutes = new Elysia()
 				}
 			}
 
-			// Register the initializing agent
 			if (agent && agent !== "unknown") {
 				board.agents[agent] = {
 					description: "",
@@ -84,56 +73,39 @@ export const boardRoutes = new Elysia()
 
 			const result = await writeBoardUnconditional({ bucket, board });
 
-			return new Response(JSON.stringify(board), {
-				status: 201,
-				headers: {
-					"content-type": "application/json",
-					etag: result.etag,
-				},
-			});
+			set.status = 201;
+			set.headers.etag = result.etag;
+			return board;
 		},
 		{ body: InitBoardBody },
 	)
-	.get("/board/export", async ({ store }) => {
+	.get("/board/export", async ({ store, set, status }) => {
 		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const result = await readBoard(bucket);
 		if (!result) {
-			return notFoundResponse("Board not initialized");
+			return status(404, { error: "not_found", message: "Board not initialized" });
 		}
 
-		return new Response(JSON.stringify(result.board, null, 2), {
-			headers: {
-				"content-type": "application/json",
-				"content-disposition": 'attachment; filename="board.json"',
-				etag: result.etag,
-			},
-		});
+		set.headers.etag = result.etag;
+		set.headers["content-disposition"] = 'attachment; filename="board.json"';
+		return result.board;
 	})
-	.get("/board/export/ralph", async ({ store }) => {
+	.get("/board/export/ralph", async ({ store, status }) => {
 		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const result = await readBoard(bucket);
 		if (!result) {
-			return notFoundResponse("Board not initialized");
+			return status(404, { error: "not_found", message: "Board not initialized" });
 		}
 
-		// Strip Swarm Board extension fields
-		const { agents, ...boardWithoutAgents } = result.board;
 		const ralphStories = result.board.userStories.map((s) => {
 			const { status, assignee, created_at, updated_at, ...ralphFields } = s;
 			return ralphFields;
 		});
 
-		const ralphExport = {
-			name: boardWithoutAgents.name,
-			branchName: boardWithoutAgents.branchName,
-			description: boardWithoutAgents.description,
+		return {
+			name: result.board.name,
+			branchName: result.board.branchName,
+			description: result.board.description,
 			userStories: ralphStories,
 		};
-
-		return new Response(JSON.stringify(ralphExport, null, 2), {
-			headers: {
-				"content-type": "application/json",
-				"content-disposition": 'attachment; filename="prd.json"',
-			},
-		});
 	});

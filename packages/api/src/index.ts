@@ -1,100 +1,63 @@
 import { createApp, type App } from "./app";
-import { loadAuthConfig, isValidApiKey, validateBasicAuth } from "./config";
-import type { Env } from "./env";
+import type { User } from "@swarmboard/shared";
+import { writeUsers } from "./storage/users";
 
-function parseBasicAuth(header: string): [string, string] | null {
-	if (!header.startsWith("Basic ")) return null;
-	try {
-		const decoded = atob(header.slice(6));
-		const idx = decoded.indexOf(":");
-		if (idx < 1) return null;
-		return [decoded.slice(0, idx), decoded.slice(idx + 1)];
-	} catch {
-		return null;
-	}
+export type { App };
+
+interface Env {
+	BUCKET: R2Bucket;
+	SWARMBOARD_API_KEY: string;
 }
 
-function challenge() {
-	return new Response("Unauthorized", {
-		status: 401,
-		headers: { "WWW-Authenticate": 'Basic realm="SwarmBoard"' },
-	});
-}
-
-function isPublic(path: string): boolean {
-	return path === "/api/health";
-}
+const BOT_USERS: Omit<User, "id" | "apiKey" | "created_at">[] = [
+	{ username: "abba", email: "abba@swarmboard.local", role: "bot" },
+	{ username: "bisque", email: "bisque@swarmboard.local", role: "bot" },
+	{ username: "pinchy", email: "pinchy@swarmboard.local", role: "bot" },
+];
 
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
+		// Check if this is a seed request
 		const url = new URL(request.url);
-		const path = url.pathname;
-
-		// Public API routes — no auth needed
-		if (isPublic(path)) {
-			return routeToElysia(request, url, env);
+		if (url.pathname === "/seed" && request.method === "POST") {
+			return handleSeed(env.BUCKET);
 		}
-
-		// Authenticate
-		const config = loadAuthConfig(env);
-		let agent = "unknown";
-
-		// 1. X-API-Key (bots / MCP clients)
-		const apiKey = request.headers.get("x-api-key");
-		if (apiKey) {
-			if (!isValidApiKey(config, apiKey)) {
-				return new Response(
-					JSON.stringify({ error: "unauthorized", message: "Invalid API key" }),
-					{ status: 401, headers: { "content-type": "application/json" } },
-				);
-			}
-			agent = request.headers.get("x-agent") ?? "unknown";
+		
+		const apiKey = env.SWARMBOARD_API_KEY;
+		if (!apiKey) {
+			return new Response(
+				JSON.stringify({
+					error: "configuration_error",
+					message: "SWARMBOARD_API_KEY environment variable is required",
+				}),
+				{ status: 500, headers: { "content-type": "application/json" } },
+			);
 		}
-		// 2. Authorization: Basic (browser)
-		else {
-			const authHeader = request.headers.get("authorization");
-			if (!authHeader) return challenge();
-
-			const creds = parseBasicAuth(authHeader);
-			if (!creds || !validateBasicAuth(config, creds[0], creds[1])) {
-				return challenge();
-			}
-			agent = creds[0];
-		}
-
-		// Route: /api/* → Elysia, everything else → static assets
-		if (path.startsWith("/api")) {
-			return routeToElysia(request, url, env, agent);
-		}
-
-		return env.ASSETS.fetch(request);
+		const app = createApp(env.BUCKET, apiKey);
+		return app.fetch(request);
 	},
 };
 
-function routeToElysia(
-	request: Request,
-	url: URL,
-	env: Env,
-	agent?: string,
-): Promise<Response> {
-	// Strip /api prefix for Elysia
-	const elysiaUrl = new URL(url);
-	elysiaUrl.pathname = url.pathname.replace(/^\/api/, "") || "/";
+async function handleSeed(bucket: R2Bucket): Promise<Response> {
+	const users: User[] = BOT_USERS.map(user => ({
+		...user,
+		id: crypto.randomUUID(),
+		apiKey: crypto.randomUUID(),
+		created_at: new Date().toISOString(),
+	}));
 
-	const headers = new Headers(request.headers);
-	if (agent) headers.set("x-agent", agent);
+	const result = await writeUsers({ bucket, users });
+	
+	if (!result.ok) {
+		return new Response(JSON.stringify({ error: "conflict", message: "Failed to seed users" }), {
+			status: 409,
+			headers: { "Content-Type": "application/json" },
+		});
+	}
 
-	const elysiaRequest = new Request(elysiaUrl.toString(), {
-		method: request.method,
-		headers,
-		body: request.body,
-		// @ts-expect-error — CF Worker supports duplex
-		duplex: request.body ? "half" : undefined,
+	const safeUsers = users.map(({ apiKey, ...user }) => user);
+	return new Response(JSON.stringify({ success: true, users: safeUsers }), {
+		status: 201,
+		headers: { "Content-Type": "application/json" },
 	});
-
-	const app = createApp(env.SWARMBOARD_BUCKET);
-	return app.handle(elysiaRequest);
 }
-
-export type { App };
-export { createApp };

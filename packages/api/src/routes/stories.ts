@@ -1,23 +1,18 @@
 import type { Story } from "@swarmboard/shared";
 import { CreateStoryBody, enforceInvariants, UpdateStoryBody } from "@swarmboard/shared";
 import { Elysia, t } from "elysia";
-import {
-	conflictResponse,
-	etagRequiredResponse,
-	notFoundResponse,
-	requireEtag,
-} from "../middleware/etag";
+import { requireEtag } from "../middleware/etag";
 import { readBoard, writeBoard } from "../storage/board";
 import { updateAgentLastSeen } from "../utils/agents";
 
 export const storyRoutes = new Elysia({ prefix: "/stories" })
 	.get(
 		"/",
-		async ({ query, store }) => {
+		async ({ query, store, set, status }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
 			const result = await readBoard(bucket);
 			if (!result) {
-				return notFoundResponse("Board not initialized. Call POST /board/init first");
+				return status(404, { error: "not_found", message: "Board not initialized. Call POST /board/init first" });
 			}
 
 			let stories = result.board.userStories;
@@ -40,12 +35,8 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 				stories = stories.filter((s) => s.priority <= maxPri);
 			}
 
-			return new Response(JSON.stringify({ userStories: stories, etag: result.etag }), {
-				headers: {
-					"content-type": "application/json",
-					etag: result.etag,
-				},
-			});
+			set.headers.etag = result.etag;
+			return { userStories: stories, etag: result.etag };
 		},
 		{
 			query: t.Object({
@@ -56,40 +47,38 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 			}),
 		},
 	)
-	.get("/:id", async ({ params, store }) => {
+	.get("/:id", async ({ params, store, set, status }) => {
 		const bucket = (store as { bucket: R2Bucket }).bucket;
 		const result = await readBoard(bucket);
 		if (!result) {
-			return notFoundResponse("Board not initialized. Call POST /board/init first");
+			return status(404, { error: "not_found", message: "Board not initialized. Call POST /board/init first" });
 		}
 
 		const story = result.board.userStories.find((s) => s.id === params.id);
 		if (!story) {
-			return notFoundResponse(`Story ${params.id} not found`);
+			return status(404, { error: "not_found", message: `Story ${params.id} not found` });
 		}
 
-		return new Response(JSON.stringify({ ...story, etag: result.etag }), {
-			headers: {
-				"content-type": "application/json",
-				etag: result.etag,
-			},
-		});
+		set.headers.etag = result.etag;
+		return { ...story, etag: result.etag };
 	})
 	.post(
 		"/",
-		async ({ body, headers, store }) => {
+		async ({ body, headers, store, set, status }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
 			const agent = headers["x-agent"] ?? "unknown";
 			const clientEtag = requireEtag(headers);
-			if (!clientEtag) return etagRequiredResponse();
+			if (!clientEtag) {
+				return status(428, { error: "precondition_required", message: "If-Match header required for this operation" });
+			}
 
 			const result = await readBoard(bucket);
 			if (!result) {
-				return notFoundResponse("Board not initialized. Call POST /board/init first");
+				return status(404, { error: "not_found", message: "Board not initialized. Call POST /board/init first" });
 			}
 
 			if (clientEtag !== result.etag) {
-				return conflictResponse();
+				return status(409, { error: "conflict", message: "Board was modified by another agent. Re-read and retry.", retry: true });
 			}
 
 			const now = new Date().toISOString();
@@ -120,52 +109,44 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 				expectedEtag: result.etag,
 			});
 			if (!writeResult.ok) {
-				return conflictResponse();
+				return status(409, { error: "conflict", message: "Board was modified by another agent. Re-read and retry.", retry: true });
 			}
 
-			return new Response(JSON.stringify(story), {
-				status: 201,
-				headers: {
-					"content-type": "application/json",
-					etag: writeResult.etag,
-				},
-			});
+			set.status = 201;
+			set.headers.etag = writeResult.etag;
+			return story;
 		},
 		{ body: CreateStoryBody },
 	)
 	.patch(
 		"/:id",
-		async ({ params, body, headers, store }) => {
+		async ({ params, body, headers, store, set, status }) => {
 			const bucket = (store as { bucket: R2Bucket }).bucket;
 			const agent = headers["x-agent"] ?? "unknown";
 			const clientEtag = requireEtag(headers);
-			if (!clientEtag) return etagRequiredResponse();
+			if (!clientEtag) {
+				return status(428, { error: "precondition_required", message: "If-Match header required for this operation" });
+			}
 
 			const result = await readBoard(bucket);
 			if (!result) {
-				return notFoundResponse("Board not initialized. Call POST /board/init first");
+				return status(404, { error: "not_found", message: "Board not initialized. Call POST /board/init first" });
 			}
 
 			if (clientEtag !== result.etag) {
-				return conflictResponse();
+				return status(409, { error: "conflict", message: "Board was modified by another agent. Re-read and retry.", retry: true });
 			}
 
 			const storyIdx = result.board.userStories.findIndex((s) => s.id === params.id);
 			if (storyIdx === -1) {
-				return notFoundResponse(`Story ${params.id} not found`);
+				return status(404, { error: "not_found", message: `Story ${params.id} not found` });
 			}
 
-			const current = result.board.userStories[storyIdx];
+			const current = result.board.userStories[storyIdx]!;
 			const invariantResult = enforceInvariants({ current, updates: body });
 
 			if (!invariantResult.ok) {
-				return new Response(
-					JSON.stringify({
-						error: "invariant_violation",
-						message: invariantResult.error,
-					}),
-					{ status: 422, headers: { "content-type": "application/json" } },
-				);
+				return status(422, { error: "invariant_violation", message: invariantResult.error });
 			}
 
 			const now = new Date().toISOString();
@@ -186,15 +167,11 @@ export const storyRoutes = new Elysia({ prefix: "/stories" })
 				expectedEtag: result.etag,
 			});
 			if (!writeResult.ok) {
-				return conflictResponse();
+				return status(409, { error: "conflict", message: "Board was modified by another agent. Re-read and retry.", retry: true });
 			}
 
-			return new Response(JSON.stringify({ ...updated, etag: writeResult.etag }), {
-				headers: {
-					"content-type": "application/json",
-					etag: writeResult.etag,
-				},
-			});
+			set.headers.etag = writeResult.etag;
+			return { ...updated, etag: writeResult.etag };
 		},
 		{ body: UpdateStoryBody },
 	);

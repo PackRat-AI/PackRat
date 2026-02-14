@@ -134,3 +134,32 @@ export const InitBoardBody = Type.Object({
 });
 
 export type InitBoardInput = Static<typeof InitBoardBody>;
+
+// -- User --
+
+export const UserRole = Type.Union([
+	Type.Literal("admin"),
+	Type.Literal("user"),
+	Type.Literal("bot"),
+]);
+
+export type UserRoleType = Static<typeof UserRole>;
+
+export const UserSchema = Type.Object({
+	id: Type.String(),
+	username: Type.String({ minLength: 1 }),
+	email: Type.Optional(Type.String()),
+	apiKey: Type.String(),
+	role: UserRole,
+	created_at: Type.String(),
+});
+
+export type User = Static<typeof UserSchema>;
+
+export const CreateUserBody = Type.Object({
+	username: Type.String({ minLength: 1 }),
+	email: Type.Optional(Type.String()),
+	role: UserRole,
+});
+
+export type CreateUserInput = Static<typeof CreateUserBody>;

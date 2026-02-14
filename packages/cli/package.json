@@ -26,11 +26,11 @@
 	},
 	"dependencies": {
 		"@swarmboard/shared": "workspace:*",
-		"citty": "catalog:",
-		"consola": "catalog:"
+		"citty": "^0.1.6",
+		"consola": "^3.4.2"
 	},
 	"devDependencies": {
-		"@elysiajs/eden": "catalog:",
-		"elysia": "catalog:"
+		"@elysiajs/eden": "^1.4.8",
+		"elysia": "^1.4.25"
 	}
 }

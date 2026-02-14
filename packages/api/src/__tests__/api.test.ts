@@ -9,12 +9,13 @@ async function json<T = Record<string, unknown>>(res: Response): Promise<T> {
 
 async function setup() {
 	const bucket = createMockR2();
-	const app = createApp(bucket);
+	const app = createApp(bucket, "test-key");
 	return { app, bucket };
 }
 
 const authHeaders = {
 	"x-agent": "test-agent",
+	"x-api-key": "test-key",
 };
 
 function getEtag(res: Response): string {
@@ -22,6 +23,48 @@ function getEtag(res: Response): string {
 	if (!value) throw new Error("Expected etag header");
 	return value;
 }
+
+describe("Auth", () => {
+	test("returns 401 without X-API-Key on protected routes", async () => {
+		const { app } = await setup();
+		const res = await app.handle(new Request("http://localhost/stories", { headers: { "x-agent": "test" } }));
+		expect(res.status).toBe(401);
+		const body = await json(res);
+		expect(body.error).toBe("unauthorized");
+	});
+
+	test("returns 401 with wrong X-API-Key", async () => {
+		const { app } = await setup();
+		const res = await app.handle(
+			new Request("http://localhost/stories", { headers: { "x-agent": "test", "x-api-key": "wrong-key" } }),
+		);
+		expect(res.status).toBe(401);
+	});
+
+	test("returns 401 without X-API-Key on POST", async () => {
+		const { app } = await setup();
+		const res = await app.handle(
+			new Request("http://localhost/stories", {
+				method: "POST",
+				headers: { "x-agent": "test", "x-api-key": "", "if-match": "*", "content-type": "application/json" },
+				body: JSON.stringify({ 
+					title: "Test", 
+					description: "Test desc", 
+					priority: 1,
+					acceptanceCriteria: [],
+					dependsOn: []
+				}),
+			}),
+		);
+		expect(res.status).toBe(401);
+	});
+
+	test("health endpoint works without auth", async () => {
+		const { app } = await setup();
+		const res = await app.handle(new Request("http://localhost/health"));
+		expect(res.status).toBe(200);
+	});
+});
 
 describe("Health Check", () => {
 	test("GET /health returns ok without auth", async () => {
@@ -542,6 +585,7 @@ describe("Claim / Unclaim", () => {
 			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: {
+					...authHeaders,
 					"x-agent": "other-agent",
 					"if-match": etag2,
 				},
@@ -588,6 +632,7 @@ describe("Claim / Unclaim", () => {
 			new Request(`http://localhost/stories/${storyId}/unclaim`, {
 				method: "POST",
 				headers: {
+					...authHeaders,
 					"x-agent": "other-agent",
 					"if-match": etag2,
 				},
