@@ -9,7 +9,7 @@
         "@types/bun": "latest",
       },
       "peerDependencies": {
-        "typescript": "^5.9.3",
+        "typescript": "^5",
       },
     },
     "packages/api": {
@@ -34,20 +34,20 @@
       },
       "dependencies": {
         "@swarmboard/shared": "workspace:*",
-        "citty": "^0.1.6",
-        "consola": "^3.4.2",
+        "citty": "catalog:",
+        "consola": "catalog:",
       },
       "devDependencies": {
-        "@elysiajs/eden": "^1.4.8",
-        "elysia": "^1.4.25",
+        "@elysiajs/eden": "catalog:",
+        "elysia": "catalog:",
       },
     },
     "packages/mcp-server": {
       "name": "@swarmboard/mcp-server",
       "version": "0.1.0",
       "dependencies": {
-        "@modelcontextprotocol/sdk": "^1.26.0",
-        "zod": "^3.25.76",
+        "@modelcontextprotocol/sdk": "^1.0.0",
+        "zod": "^3.22.0",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -58,15 +58,15 @@
       "name": "@swarmboard/shared",
       "version": "0.1.0",
       "dependencies": {
-        "@sinclair/typebox": "^0.34.48",
+        "@sinclair/typebox": "catalog:",
       },
     },
     "packages/ui": {
       "name": "@swarmboard/ui",
       "version": "0.1.0",
       "dependencies": {
-        "@elysiajs/html": "^1.4.0",
-        "elysia": "^1.4.25",
+        "@elysiajs/html": "^1.0.0",
+        "elysia": "^1.4.0",
       },
       "devDependencies": {
         "@types/bun": "latest",
