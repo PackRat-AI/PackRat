@@ -7,22 +7,13 @@ async function json<T = Record<string, unknown>>(res: Response): Promise<T> {
 	return (await res.json()) as T;
 }
 
-const API_KEY = "test-key-123";
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "admin123";
-
 async function setup() {
 	const bucket = createMockR2();
-	const app = createApp(bucket, {
-		apiKey: API_KEY,
-		adminUser: ADMIN_USER,
-		adminPass: ADMIN_PASS,
-	});
+	const app = createApp(bucket);
 	return { app, bucket };
 }
 
 const authHeaders = {
-	"x-api-key": API_KEY,
 	"x-agent": "test-agent",
 };
 
@@ -39,24 +30,6 @@ describe("Health Check", () => {
 		const body = await json(res);
 		expect(body).toEqual({ status: "ok" });
 		expect(res.status).toBe(200);
-	});
-});
-
-describe("Auth", () => {
-	test("returns 401 without auth header", async () => {
-		const { app } = await setup();
-		const res = await app.handle(new Request("http://localhost/board"));
-		expect(res.status).toBe(401);
-	});
-
-	test("returns 401 with wrong key", async () => {
-		const { app } = await setup();
-		const res = await app.handle(
-			new Request("http://localhost/board", {
-				headers: { "x-api-key": "wrong-key" },
-			}),
-		);
-		expect(res.status).toBe(401);
 	});
 });
 
@@ -569,7 +542,6 @@ describe("Claim / Unclaim", () => {
 			new Request(`http://localhost/stories/${storyId}/claim`, {
 				method: "POST",
 				headers: {
-					"x-api-key": API_KEY,
 					"x-agent": "other-agent",
 					"if-match": etag2,
 				},
@@ -616,7 +588,6 @@ describe("Claim / Unclaim", () => {
 			new Request(`http://localhost/stories/${storyId}/unclaim`, {
 				method: "POST",
 				headers: {
-					"x-api-key": API_KEY,
 					"x-agent": "other-agent",
 					"if-match": etag2,
 				},

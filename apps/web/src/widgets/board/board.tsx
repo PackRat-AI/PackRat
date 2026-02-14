@@ -1,6 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAtom } from "jotai";
-import { apiKeyAtom, agentAtom } from "../../shared/lib/auth-store";
 import { fetchBoard, claimStory, updateStory } from "../../shared/api/swarm-api";
 
 const statusColors: Record<string, string> = {
@@ -9,22 +7,11 @@ const statusColors: Record<string, string> = {
 };
 
 export function Board() {
-  const [apiKey] = useAtom(apiKeyAtom);
-  const [agent] = useAtom(agentAtom);
-  const [, setApiKey] = useAtom(apiKeyAtom);
-  const [, setAgent] = useAtom(agentAtom);
   const queryClient = useQueryClient();
 
   const { data: board, isLoading, error } = useQuery({ queryKey: ["board"], queryFn: fetchBoard });
   const claimMutation = useMutation({ mutationFn: claimStory, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["board"] }) });
   const updateMutation = useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => updateStory(id, status), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["board"] }) });
-
-  const handleLogout = () => {
-    localStorage.removeItem("swarmboard_api_key");
-    localStorage.removeItem("swarmboard_agent");
-    setAgent(null);
-    setApiKey(null);
-  };
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error: {(error as Error).message}</p>;
@@ -35,7 +22,6 @@ export function Board() {
     <main className="container">
       <header className="flex-between" style={{ marginBottom: "2rem" }}>
         <div><h1>{board?.name ?? "SwarmBoard"}</h1><p>{board?.description}</p></div>
-        <div className="flex gap-2"><span className="badge">{agent}</span><button onClick={handleLogout} className="btn-secondary">Logout</button></div>
       </header>
       <section className="grid" style={{ gap: "1rem" }}>
         {stories.length === 0 ? <p>No stories yet.</p> : stories.map((story) => (
@@ -44,8 +30,8 @@ export function Board() {
             <h3>{story.title}</h3><p>{story.description}</p>
             <footer className="flex gap-2">
               {!story.assignee && <button onClick={() => claimMutation.mutate(story.id)} disabled={claimMutation.isPending} className="btn-primary">Claim</button>}
-              {story.assignee && story.assignee === agent && <><button onClick={() => updateMutation.mutate({ id: story.id, status: "done" })} disabled={updateMutation.isPending} className="btn-primary">Done</button><span className="text-muted">{story.assignee}</span></>}
-              {story.assignee && story.assignee !== agent && <span className="text-muted">{story.assignee}</span>}
+              {story.assignee && <span className="text-muted">{story.assignee}</span>}
+              {story.status !== "done" && story.assignee && <button onClick={() => updateMutation.mutate({ id: story.id, status: "done" })} disabled={updateMutation.isPending} className="btn-primary">Done</button>}
             </footer>
           </article>
         ))}

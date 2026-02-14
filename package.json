@@ -3,7 +3,8 @@
 	"version": "0.1.0",
 	"private": true,
 	"workspaces": [
-		"packages/*"
+		"packages/*",
+		"apps/*"
 	],
 	"engines": {
 		"bun": ">=1.3.0"
@@ -20,7 +21,7 @@
 	"scripts": {
 		"dev": "bun --filter @swarmboard/api dev",
 		"build": "bun --filter '*' build",
-		"deploy": "bun --filter @swarmboard/api deploy",
+		"deploy": "bun --filter @swarmboard/web build && bun --filter @swarmboard/api deploy",
 		"test": "bun --filter '*' test",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
