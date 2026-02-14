@@ -5,13 +5,12 @@
 	"private": true,
 	"scripts": {
 		"dev": "wrangler dev",
-		"build": "echo 'skipped'",
+		"build": "bun --filter @swarmboard/web build",
 		"deploy": "wrangler deploy",
 		"test": "bun test",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@elysiajs/bearer": "^1.4.3",
 		"@swarmboard/shared": "workspace:*",
 		"elysia": "^1.4.25"
 	},
