@@ -1,11 +1,6 @@
 import { createApp, type App } from "./app";
 import { loadAuthConfig, isValidApiKey, validateBasicAuth } from "./config";
-
-interface Env {
-	SWARMBOARD_BUCKET: R2Bucket;
-	ASSETS: Fetcher;
-	[key: string]: unknown;
-}
+import type { Env } from "./env";
 
 function parseBasicAuth(header: string): [string, string] | null {
 	if (!header.startsWith("Basic ")) return null;

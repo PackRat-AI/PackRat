@@ -1,45 +1,28 @@
-/**
- * Reads numbered env vars (e.g. SWARMBOARD_API_KEY_1, _2, …) into arrays.
- * Also supports the unnumbered form as a fallback for single-key setups.
- */
+import type { Env } from "./env";
 
 export interface AuthConfig {
 	apiKeys: string[];
 	users: Map<string, string>; // username → password
 }
 
-export function loadAuthConfig(env: Record<string, unknown>): AuthConfig {
-	const apiKeys = collectNumbered(env, "SWARMBOARD_API_KEY");
-	const usernames = collectNumbered(env, "SWARMBOARD_ADMIN_USER");
-	const passwords = collectNumbered(env, "SWARMBOARD_ADMIN_PASS");
+export function loadAuthConfig(env: Env): AuthConfig {
+	const apiKeys: string[] = [];
+	if (env.SWARMBOARD_API_KEY) apiKeys.push(env.SWARMBOARD_API_KEY);
+	if (env.SWARMBOARD_API_KEY_1) apiKeys.push(env.SWARMBOARD_API_KEY_1);
+	if (env.SWARMBOARD_API_KEY_2) apiKeys.push(env.SWARMBOARD_API_KEY_2);
+	if (env.SWARMBOARD_API_KEY_3) apiKeys.push(env.SWARMBOARD_API_KEY_3);
 
 	const users = new Map<string, string>();
-	for (let i = 0; i < usernames.length; i++) {
-		const pass = passwords[i];
-		if (pass) users.set(usernames[i], pass);
-	}
+	if (env.SWARMBOARD_ADMIN_USER && env.SWARMBOARD_ADMIN_PASS)
+		users.set(env.SWARMBOARD_ADMIN_USER, env.SWARMBOARD_ADMIN_PASS);
+	if (env.SWARMBOARD_ADMIN_USER_1 && env.SWARMBOARD_ADMIN_PASS_1)
+		users.set(env.SWARMBOARD_ADMIN_USER_1, env.SWARMBOARD_ADMIN_PASS_1);
+	if (env.SWARMBOARD_ADMIN_USER_2 && env.SWARMBOARD_ADMIN_PASS_2)
+		users.set(env.SWARMBOARD_ADMIN_USER_2, env.SWARMBOARD_ADMIN_PASS_2);
+	if (env.SWARMBOARD_ADMIN_USER_3 && env.SWARMBOARD_ADMIN_PASS_3)
+		users.set(env.SWARMBOARD_ADMIN_USER_3, env.SWARMBOARD_ADMIN_PASS_3);
 
 	return { apiKeys, users };
-}
-
-function collectNumbered(
-	env: Record<string, unknown>,
-	prefix: string,
-): string[] {
-	const values: string[] = [];
-
-	// Unnumbered fallback: SWARMBOARD_API_KEY
-	const base = env[prefix];
-	if (typeof base === "string" && base) values.push(base);
-
-	// Numbered: SWARMBOARD_API_KEY_1, _2, …
-	for (let i = 1; ; i++) {
-		const val = env[`${prefix}_${i}`];
-		if (typeof val !== "string" || !val) break;
-		values.push(val);
-	}
-
-	return values;
 }
 
 export function isValidApiKey(config: AuthConfig, key: string): boolean {
