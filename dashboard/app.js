@@ -139,6 +139,8 @@
         }
     };
 
+    let lastRefreshTime = 0;
+
     function init() {
         bindEvents();
         loadData();
@@ -178,6 +180,12 @@
     }
 
     async function refreshData() {
+        const now = Date.now();
+        if (now - lastRefreshTime < 2000) {
+            showToast('Please wait 2 seconds between refreshes', 'error');
+            return;
+        }
+        lastRefreshTime = now;
         localStorage.removeItem(STORAGE_KEYS.LAST_UPDATE);
         await loadData();
         showToast('Data refreshed successfully', 'success');
@@ -379,6 +387,15 @@
     }
 
     function escapeHtml(text) {
+        if (typeof document === 'undefined') {
+            return String(text).replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;

@@ -10,6 +10,8 @@ Open `tests.html` in a browser, or run with Node.js:
 node tests.js
 ```
 
+Run tests with Bun for faster execution: `bun tests.js`
+
 ## Test Coverage
 
 ### Data Functions
