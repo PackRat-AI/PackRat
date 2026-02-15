@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard - Browser Tests</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .test-result.pass { background: #d4edda; color: #155724; }
+        .test-result.fail { background: #f8d7da; color: #721c24; }
+        .test-result.skip { background: #fff3cd; color: #856404; }
+        .summary { margin-top: 20px; padding: 20px; background: #fff; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Dashboard Browser Tests</h1>
+        <div id="results"></div>
+        <div class="summary" id="summary"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        const results = [];
+        const container = document.getElementById('results');
+
+        function test(name, fn) {
+            try {
+                fn();
+                results.push({ name, pass: true, skip: false });
+                container.innerHTML += `<div class="test-result pass">✓ ${name}</div>`;
+            } catch (error) {
+                results.push({ name, pass: false, error: error.message });
+                container.innerHTML += `<div class="test-result fail">✗ ${name}: ${error.message}</div>`;
+            }
+        }
+
+        function skip(name) {
+            results.push({ name, pass: true, skip: true });
+            container.innerHTML += `<div class="test-result skip">⊘ ${name}: skipped</div>`;
+        }
+
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(`${message}: expected "${expected}", got "${actual}"`);
+            }
+        }
+
+        function assertTrue(condition, message) {
+            if (!condition) throw new Error(message);
+        }
+
+        // DOM Tests
+        test('DOM loads successfully', () => {
+            assertTrue(document.getElementById('agentsGrid'), 'agentsGrid exists');
+            assertTrue(document.getElementById('storiesBoard'), 'storiesBoard exists');
+            assertTrue(document.getElementById('createStoryModal'), 'modal exists');
+        });
+
+        test('escapeHtml works correctly', () => {
+            assertEqual(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;', 'script escape');
+            assertEqual(escapeHtml('Normal text'), 'Normal text', 'normal text');
+        });
+
+        test('capitalize works correctly', () => {
+            assertEqual(capitalize('hello'), 'Hello', 'hello');
+            assertEqual(capitalize('WORLD'), 'WORLD', 'WORLD unchanged');
+            assertEqual(capitalize(''), '', 'empty string');
+        });
+
+        test('getInitials works correctly', () => {
+            assertEqual(getInitials('John Doe'), 'JD', 'John Doe');
+            assertEqual(getInitials('Alice'), 'A', 'Alice');
+            assertEqual(getInitials('A B C'), 'AB', 'A B C');
+        });
+
+        test('formatStatus works correctly', () => {
+            assertEqual(formatStatus('todo'), 'To Do', 'todo');
+            assertEqual(formatStatus('in-progress'), 'In Progress', 'in-progress');
+            assertEqual(formatStatus('review'), 'Review', 'review');
+            assertEqual(formatStatus('done'), 'Done', 'done');
+        });
+
+        test('generateStoryId generates unique IDs', () => {
+            const ids = new Set();
+            for (let i = 0; i < 50; i++) {
+                ids.add(generateStoryId());
+            }
+            assertEqual(ids.size, 50, '50 unique IDs');
+        });
+
+        test('Modal opens and closes', () => {
+            const modal = document.getElementById('createStoryModal');
+            openModal();
+            assertTrue(modal.classList.contains('active'), 'modal opens');
+            closeModal();
+            assertTrue(!modal.classList.contains('active'), 'modal closes');
+        });
+
+        test('Filter dropdowns exist', () => {
+            assertTrue(document.getElementById('filterAssignee'), 'assignee filter');
+            assertTrue(document.getElementById('filterPriority'), 'priority filter');
+            assertTrue(document.getElementById('filterStatus'), 'status filter');
+        });
+
+        test('Form elements exist', () => {
+            assertTrue(document.getElementById('storyTitle'), 'title input');
+            assertTrue(document.getElementById('storyAssignee'), 'assignee select');
+            assertTrue(document.getElementById('storyPriority'), 'priority select');
+        });
+
+        test('Mock data has agents with valid statuses', () => {
+            state.agents.forEach(agent => {
+                assertTrue(['online', 'offline', 'busy'].includes(agent.status), `Agent ${agent.name} status`);
+            });
+        });
+
+        test('Mock data has stories with valid priorities', () => {
+            state.stories.forEach(story => {
+                assertTrue(['low', 'medium', 'high'].includes(story.priority), `Story ${story.id} priority`);
+            });
+        });
+
+        test('Filter by assignee works', () => {
+            if (state.agents.length === 0) {
+                skip('Filter by assignee');
+                return;
+            }
+            const assignee = state.agents[0].name;
+            state.filters.assignee = assignee;
+            applyFilters();
+            assertTrue(state.filteredStories.every(s => s.assignee === assignee), 'all filtered by assignee');
+        });
+
+        test('Filter by priority works', () => {
+            state.filters.priority = 'high';
+            applyFilters();
+            assertTrue(state.filteredStories.every(s => s.priority === 'high'), 'all filtered by priority');
+        });
+
+        test('Clear filters resets state', () => {
+            state.filters = { assignee: 'Test', priority: 'high', status: 'done' };
+            clearFilters();
+            assertEqual(state.filters.assignee, '', 'assignee cleared');
+            assertEqual(state.filters.priority, '', 'priority cleared');
+            assertEqual(state.filters.status, '', 'status cleared');
+        });
+
+        test('Toast shows and hides', () => {
+            showToast('Test message', 'success');
+            const toast = document.getElementById('toast');
+            assertTrue(toast.classList.contains('show'), 'toast shows');
+            setTimeout(() => {
+                assertTrue(!toast.classList.contains('show'), 'toast hides');
+            }, 3100);
+        });
+
+        test('Create story generates valid story', () => {
+            const form = document.getElementById('createStoryForm');
+            const initialCount = state.stories.length;
+            document.getElementById('storyTitle').value = 'Test Story';
+            document.getElementById('storyAssignee').value = state.agents[0]?.name || 'Builder';
+            document.getElementById('storyPriority').value = 'medium';
+            handleCreateStory({ preventDefault: () => {} });
+            assertEqual(state.stories.length, initialCount + 1, 'story added');
+            assertTrue(state.stories[0].id.startsWith('STY-'), 'valid ID');
+        });
+
+        // Summary
+        setTimeout(() => {
+            const passed = results.filter(r => r.pass && !r.skip).length;
+            const failed = results.filter(r => !r.pass).length;
+            const skipped = results.filter(r => r.skip).length;
+            document.getElementById('summary').innerHTML = `
+                <h2>Summary</h2>
+                <p>Passed: ${passed} | Failed: ${failed} | Skipped: ${skipped}</p>
+                <p style="color: ${failed === 0 ? 'green' : 'red'}; font-weight: bold;">
+                    ${failed === 0 ? 'All tests passed!' : `${failed} test(s) failed`}
+                </p>
+            `;
+        }, 3500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Dashboard - Story Board</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard">
+        <header class="header">
+            <div class="header-left">
+                <h1>Agent Dashboard</h1>
+                <span class="subtitle">Story Board</span>
+            </div>
+            <div class="header-actions">
+                <button id="refreshBtn" class="btn btn-secondary">
+                    <span class="icon">↻</span> Refresh
+                </button>
+                <button id="clearFiltersBtn" class="btn btn-outline">
+                    Clear Filters
+                </button>
+                <button id="createStoryBtn" class="btn btn-primary">
+                    + Create Story
+                </button>
+            </div>
+        </header>
+
+        <section class="agents-section">
+            <h2>Agents Status</h2>
+            <div id="agentsGrid" class="agents-grid">
+                <div class="loading">Loading agents...</div>
+            </div>
+        </section>
+
+        <section class="stories-section">
+            <div class="stories-header">
+                <h2>Story Board</h2>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="filterAssignee">Assignee:</label>
+                        <select id="filterAssignee">
+                            <option value="">All</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterPriority">Priority:</label>
+                        <select id="filterPriority">
+                            <option value="">All</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterStatus">Status:</label>
+                        <select id="filterStatus">
+                            <option value="">All</option>
+                            <option value="todo">To Do</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="review">Review</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="storiesBoard" class="stories-board">
+                <div class="loading">Loading stories...</div>
+            </div>
+        </section>
+    </div>
+
+    <div id="createStoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Story</h3>
+                <button id="closeModalBtn" class="close-btn">&times;</button>
+            </div>
+            <form id="createStoryForm">
+                <div class="form-group">
+                    <label for="storyTitle">Title:</label>
+                    <input type="text" id="storyTitle" required placeholder="Enter story title">
+                </div>
+                <div class="form-group">
+                    <label for="storyAssignee">Assignee:</label>
+                    <select id="storyAssignee" required>
+                        <option value="">Select assignee</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="storyPriority">Priority:</label>
+                    <select id="storyPriority" required>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="storyDescription">Description:</label>
+                    <textarea id="storyDescription" rows="3" placeholder="Enter description"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancelStoryBtn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Story</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
