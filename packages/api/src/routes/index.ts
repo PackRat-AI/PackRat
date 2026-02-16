@@ -6,6 +6,7 @@ import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { gearRouter } from './gear';
 import { guidesRoutes } from './guides';
+import { offlineAIRouter } from './offline';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { recommendationsRoutes } from './recommendations';
@@ -32,6 +33,7 @@ protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/trips', tripsRoutes);
 protectedRoutes.route('/trips/recommendations', recommendationsRoutes);
 
+protectedRoutes.route('/ai/offline', offlineAIRouter);
 protectedRoutes.route('/chat', chatRoutes);
 protectedRoutes.route('/gear', gearRouter);
 protectedRoutes.route('/weather', weatherRoutes);
