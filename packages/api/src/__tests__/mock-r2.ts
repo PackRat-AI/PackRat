@@ -34,15 +34,25 @@ export function createMockR2(): R2Bucket {
 			if (options?.onlyIf) {
 				const condition = options.onlyIf as { etagMatches?: string };
 				if (condition.etagMatches) {
-					const existing = store.get(key);
-					if (!existing || existing.etag !== condition.etagMatches) {
-						return null as unknown as R2Object;
+					// "*" means allow write to new resources (RFC 7232)
+					if (condition.etagMatches === "*") {
+						const existing = store.get(key);
+						if (existing) {
+							return null as unknown as R2Object;
+						}
+						// New resource, proceed with write
+					} else if (condition.etagMatches) {
+						const existing = store.get(key);
+						if (!existing || existing.etag !== condition.etagMatches) {
+							return null as unknown as R2Object;
+						}
 					}
 				}
 			}
 
 			const etag = nextEtag();
 			store.set(key, { body, etag });
+			console.log("Mock R2 put:", { key, etag });
 			return { httpEtag: etag, key } as unknown as R2Object;
 		},
 

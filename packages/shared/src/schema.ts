@@ -17,6 +17,30 @@ export const AgentStatus = Type.Union([
 	Type.Literal("offline"),
 ]);
 
+// -- Agent Session --
+
+export const AgentSessionStatus = Type.Union([
+	Type.Literal("running"),
+	Type.Literal("completed"),
+	Type.Literal("blocked"),
+	Type.Literal("paused"),
+]);
+
+export const AgentSessionSchema = Type.Object({
+	id: Type.String(),
+	agent_id: Type.String(),
+	task_id: Type.Optional(Type.String()),
+	status: AgentSessionStatus,
+	progress: Type.Number({ minimum: 0, maximum: 100 }),
+	message: Type.String(),
+	started_at: Type.String(),
+	updated_at: Type.String(),
+	completed_at: Type.Optional(Type.String()),
+	metadata: Type.Optional(Type.Record(Type.String(), Type.Unknown())),
+});
+
+export type AgentSession = Static<typeof AgentSessionSchema>;
+
 // -- Story --
 
 export const StorySchema = Type.Object({
@@ -54,6 +78,7 @@ export const AgentSchema = Type.Object({
 	description: Type.String(),
 	status: AgentStatus,
 	last_seen: Type.String(),
+	session_id: Type.Optional(Type.String()),
 });
 
 export type Agent = Static<typeof AgentSchema>;
