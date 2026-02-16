@@ -4,6 +4,7 @@ import { adminRoutes } from './admin';
 import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
+import { gearRouter } from './gear';
 import { guidesRoutes } from './guides';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
@@ -32,6 +33,7 @@ protectedRoutes.route('/trips', tripsRoutes);
 protectedRoutes.route('/trips/recommendations', recommendationsRoutes);
 
 protectedRoutes.route('/chat', chatRoutes);
+protectedRoutes.route('/gear', gearRouter);
 protectedRoutes.route('/weather', weatherRoutes);
 protectedRoutes.route('/pack-templates', packTemplatesRoutes);
 protectedRoutes.route('/season-suggestions', seasonSuggestionsRoutes);
