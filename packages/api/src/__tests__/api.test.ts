@@ -508,6 +508,314 @@ describe("Stories CRUD", () => {
 	});
 });
 
+describe("Story Search", () => {
+	async function setupWithBoard() {
+		const { app } = await setup();
+		const initRes = await app.handle(
+			new Request("http://localhost/board/init", {
+				method: "POST",
+				headers: { ...authHeaders, "content-type": "application/json" },
+				body: JSON.stringify({ name: "Test", description: "Test" }),
+			}),
+		);
+		const etag = getEtag(initRes);
+		return { app, etag };
+	}
+
+	async function createTestStories(app: any, etag: string) {
+		// Create multiple stories with different attributes
+		const story1 = await app.handle(
+			new Request("http://localhost/stories", {
+				method: "POST",
+				headers: { ...authHeaders, "content-type": "application/json", "if-match": etag },
+				body: JSON.stringify({
+					title: "Fix login bug",
+					description: "Users cannot login with email",
+					priority: 1,
+				}),
+			}),
+		);
+		const etag1 = getEtag(story1);
+
+		const story2 = await app.handle(
+			new Request("http://localhost/stories", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag1,
+				},
+				body: JSON.stringify({
+					title: "Add dashboard feature",
+					description: "Create a new dashboard for analytics",
+					priority: 2,
+				}),
+			}),
+		);
+		const etag2 = getEtag(story2);
+
+		const story3 = await app.handle(
+			new Request("http://localhost/stories", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag2,
+				},
+				body: JSON.stringify({
+					title: "Update login page",
+					description: "Make the login page look better",
+					priority: 3,
+				}),
+			}),
+		);
+		const etag3 = getEtag(story3);
+
+		// Update one story to done
+		const story2Data = await json(story2);
+		await app.handle(
+			new Request(`http://localhost/stories/${story2Data.id}`, {
+				method: "PATCH",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag3,
+				},
+				body: JSON.stringify({ status: "done" }),
+			}),
+		);
+
+		return { app, story1Data: await json(story1), story2Data, story3Data: await json(story3) };
+	}
+
+	test("GET /stories/search returns all stories without filters", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.userStories).toHaveLength(3);
+		expect(body.pagination.total).toBe(3);
+	});
+
+	test("search by title with q parameter", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?q=login", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.userStories).toHaveLength(2);
+		expect(body.userStories.every((s: any) => s.title.toLowerCase().includes("login") || s.description.toLowerCase().includes("login"))).toBe(true);
+	});
+
+	test("search is case-insensitive", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?q=DASHBOARD", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.userStories).toHaveLength(1);
+		expect(body.userStories[0].title).toBe("Add dashboard feature");
+	});
+
+	test("filter by status", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?status=done", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.userStories).toHaveLength(1);
+		expect(body.userStories[0].status).toBe("done");
+	});
+
+	test("filter by multiple statuses", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?status=backlog,done", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		// Should return all 3 stories: 2 backlog + 1 done
+		expect(body.userStories).toHaveLength(3);
+	});
+
+	test("sort by created_at ascending", async () => {
+		const { app, etag } = await setupWithBoard();
+		const { story1Data, story2Data, story3Data } = await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?sort_by=created_at&sort_order=asc", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.userStories[0].id).toBe(story1Data.id);
+		expect(body.userStories[1].id).toBe(story2Data.id);
+		expect(body.userStories[2].id).toBe(story3Data.id);
+	});
+
+	test("sort by created_at descending", async () => {
+		const { app, etag } = await setupWithBoard();
+		const { story1Data, story2Data, story3Data } = await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?sort_by=created_at&sort_order=desc", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		// Verify stories are sorted in descending order by created_at
+		const timestamps = body.userStories.map((s: any) => new Date(s.created_at).getTime());
+		for (let i = 1; i < timestamps.length; i++) {
+			expect(timestamps[i - 1]).toBeGreaterThanOrEqual(timestamps[i]);
+		}
+	});
+
+	test("sort by updated_at", async () => {
+		const { app } = await setup();
+		const initRes = await app.handle(
+			new Request("http://localhost/board/init", {
+				method: "POST",
+				headers: { ...authHeaders, "content-type": "application/json" },
+				body: JSON.stringify({ name: "Test", description: "Test" }),
+			}),
+		);
+		const currentEtag = getEtag(initRes);
+
+		// Create stories
+		const story1 = await app.handle(
+			new Request("http://localhost/stories", {
+				method: "POST",
+				headers: { ...authHeaders, "content-type": "application/json", "if-match": currentEtag },
+				body: JSON.stringify({
+					title: "Story 1",
+					description: "Desc",
+					priority: 1,
+				}),
+			}),
+		);
+		const etag1 = getEtag(story1);
+		const story1Data = await json(story1);
+
+		const story2 = await app.handle(
+			new Request("http://localhost/stories", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag1,
+				},
+				body: JSON.stringify({
+					title: "Story 2",
+					description: "Desc",
+					priority: 2,
+				}),
+			}),
+		);
+		const etag2 = getEtag(story2);
+		const story2Data = await json(story2);
+
+		// Update story1 to change its updated_at
+		const updateRes = await app.handle(
+			new Request(`http://localhost/stories/${story1Data.id}`, {
+				method: "PATCH",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag2,
+				},
+				body: JSON.stringify({ priority: 5 }),
+			}),
+		);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?sort_by=updated_at&sort_order=desc", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		// Story1 should be first because it was updated most recently
+		expect(body.userStories[0].id).toBe(story1Data.id);
+	});
+
+	test("pagination with limit", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?limit=2", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.userStories).toHaveLength(2);
+		expect(body.pagination.limit).toBe(2);
+		expect(body.pagination.offset).toBe(0);
+		expect(body.pagination.has_more).toBe(true);
+	});
+
+	test("pagination with offset", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?limit=2&offset=1", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.userStories).toHaveLength(2);
+		expect(body.pagination.offset).toBe(1);
+		expect(body.pagination.has_more).toBe(false);
+	});
+
+	test("combines search with status filter", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?q=login&status=backlog", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		// "login" matches stories 1 and 3, both are backlog
+		expect(body.userStories).toHaveLength(2);
+		expect(body.userStories.every((s: any) => s.status === "backlog")).toBe(true);
+	});
+
+	test("returns 404 when board not initialized", async () => {
+		const { app } = await setup();
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(404);
+	});
+
+	test("search with no results", async () => {
+		const { app, etag } = await setupWithBoard();
+		await createTestStories(app, etag);
+
+		const res = await app.handle(
+			new Request("http://localhost/stories/search?q=nonexistent", { headers: authHeaders }),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.userStories).toHaveLength(0);
+		expect(body.pagination.total).toBe(0);
+		expect(body.pagination.has_more).toBe(false);
+	});
+});
+
 describe("Claim / Unclaim", () => {
 	async function setupWithStory() {
 		const { app } = await setup();
@@ -872,8 +1180,262 @@ describe("Agents", () => {
 
 		const res = await app.handle(new Request("http://localhost/agents", { headers: authHeaders }));
 		expect(res.status).toBe(200);
-		const body = await json<{ agents: Record<string, Agent> }>(res);
-		expect(body.agents["test-agent"]).toBeDefined();
-		expect(body.agents["test-agent"].status).toBe("active");
+		const body = await json<{ agents: Array<{ id: string; status: string }> }>(res);
+		// Find test-agent in the array
+		const testAgent = body.agents.find((a) => a.id === "test-agent");
+		expect(testAgent).toBeDefined();
+		expect(testAgent?.status).toBe("active");
+	});
+});
+
+describe("Agent Sessions", () => {
+	async function setupWithAgent() {
+		const { app } = await setup();
+		const initRes = await app.handle(
+			new Request("http://localhost/board/init", {
+				method: "POST",
+				headers: { ...authHeaders, "content-type": "application/json" },
+				body: JSON.stringify({ name: "Test", description: "Test" }),
+			}),
+		);
+		const etag = getEtag(initRes);
+		return { app, etag };
+	}
+
+	test("POST /agents/:id/heartbeat updates agent last_seen", async () => {
+		const { app, etag } = await setupWithAgent();
+
+		const res = await app.handle(
+			new Request("http://localhost/agents/test-agent/heartbeat", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag,
+				},
+				body: JSON.stringify({ status: "active" }),
+			}),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.ok).toBe(true);
+		expect(body.agent.id).toBe("test-agent");
+		expect(body.agent.status).toBe("active");
+	});
+
+	test("POST /agents/:id/sessions creates session", async () => {
+		const { app, etag } = await setupWithAgent();
+
+		const res = await app.handle(
+			new Request("http://localhost/agents/test-agent/sessions", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag,
+				},
+				body: JSON.stringify({
+					status: "running",
+					progress: 50,
+					message: "Processing documents",
+				}),
+			}),
+		);
+		expect(res.status).toBe(201);
+		const body = await json(res);
+		expect(body.id).toBeDefined();
+		expect(body.status).toBe("running");
+		expect(body.progress).toBe(50);
+		expect(body.message).toBe("Processing documents");
+	});
+
+	test("PATCH /agents/:agentId/sessions/:sessionId updates progress", async () => {
+		const { app, etag: boardEtag } = await setupWithAgent();
+
+		// Create session using actual etag (not "*" which fails on existing resources)
+		const createRes = await app.handle(
+			new Request("http://localhost/agents/test-agent/sessions", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": boardEtag,
+				},
+				body: JSON.stringify({
+					status: "running",
+					progress: 50,
+					message: "Initial task",
+				}),
+			}),
+		);
+		expect(createRes.status).toBe(201);
+		const createBody = await json(createRes);
+		const sessionId = createBody.id;
+		const etag = getEtag(createRes);
+
+		// Update progress
+		const updateRes = await app.handle(
+			new Request(`http://localhost/agents/test-agent/sessions/${sessionId}`, {
+				method: "PATCH",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag,
+				},
+				body: JSON.stringify({
+					progress: 75,
+					message: "Processing more documents",
+				}),
+			}),
+		);
+		expect(updateRes.status).toBe(200);
+		const updateBody = await json(updateRes);
+		expect(updateBody.progress).toBe(75);
+		expect(updateBody.message).toBe("Processing more documents");
+	});
+
+	test("GET /agents/:id/sessions returns agent sessions", async () => {
+		const { app, etag } = await setupWithAgent();
+
+		// Create session
+		await app.handle(
+			new Request("http://localhost/agents/test-agent/sessions", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag,
+				},
+				body: JSON.stringify({
+					status: "running",
+					progress: 50,
+					message: "Task 1",
+				}),
+			}),
+		);
+
+		const res = await app.handle(
+			new Request("http://localhost/agents/test-agent/sessions", {
+				headers: authHeaders,
+			}),
+		);
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.sessions).toHaveLength(1);
+		expect(body.sessions[0].message).toBe("Task 1");
+	});
+
+	test("POST /agents/:id/sessions with completed status", async () => {
+		const { app, etag } = await setupWithAgent();
+
+		const res = await app.handle(
+			new Request("http://localhost/agents/test-agent/sessions", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag,
+				},
+				body: JSON.stringify({
+					status: "completed",
+					progress: 100,
+					message: "Task finished",
+				}),
+			}),
+		);
+		expect(res.status).toBe(201);
+		const body = await json(res);
+		expect(body.status).toBe("completed");
+		expect(body.progress).toBe(100);
+	});
+
+	test("POST /agents/:id/sessions with blocked status", async () => {
+		const { app, etag } = await setupWithAgent();
+
+		const res = await app.handle(
+			new Request("http://localhost/agents/test-agent/sessions", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag,
+				},
+				body: JSON.stringify({
+					status: "blocked",
+					progress: 30,
+					message: "Waiting for dependencies",
+				}),
+			}),
+		);
+		expect(res.status).toBe(201);
+		const body = await json(res);
+		expect(body.status).toBe("blocked");
+	});
+
+	test("PATCH session without if-match returns 428", async () => {
+		const { app } = await setupWithAgent();
+
+		// Create session without etag requirement check
+		const createRes = await app.handle(
+			new Request("http://localhost/agents/test-agent/sessions", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": "*",
+				},
+				body: JSON.stringify({
+					status: "running",
+					progress: 50,
+					message: "Task",
+				}),
+			}),
+		);
+		const createBody = await json(createRes);
+
+		const res = await app.handle(
+			new Request(`http://localhost/agents/test-agent/sessions/${createBody.id}`, {
+				method: "PATCH",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+				},
+				body: JSON.stringify({ progress: 75 }),
+			}),
+		);
+		expect(res.status).toBe(428);
+	});
+
+	test("GET /agents/:id returns specific agent", async () => {
+		const { app, etag } = await setupWithAgent();
+
+		await app.handle(
+			new Request("http://localhost/agents/test-agent/heartbeat", {
+				method: "POST",
+				headers: {
+					...authHeaders,
+					"content-type": "application/json",
+					"if-match": etag,
+				},
+				body: JSON.stringify({ description: "My agent", status: "active" }),
+			}),
+		);
+
+		const res = await app.handle(new Request("http://localhost/agents/test-agent", {
+			headers: authHeaders,
+		}));
+		expect(res.status).toBe(200);
+		const body = await json(res);
+		expect(body.agent.id).toBe("test-agent");
+		expect(body.agent.description).toBe("My agent");
+	});
+
+	test("GET /agents/:id for non-existent agent returns 404", async () => {
+		const { app } = await setupWithAgent();
+
+		const res = await app.handle(new Request("http://localhost/agents/nonexistent", {
+			headers: authHeaders,
+		}));
+		expect(res.status).toBe(404);
 	});
 });
