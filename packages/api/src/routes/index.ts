@@ -7,6 +7,7 @@ import { chatRoutes } from './chat';
 import { guidesRoutes } from './guides';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
+import { recommendationsRoutes } from './recommendations';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { tripsRoutes } from './trips';
 import { uploadRoutes } from './upload';
@@ -28,6 +29,7 @@ protectedRoutes.route('/catalog', catalogRoutes);
 protectedRoutes.route('/guides', guidesRoutes);
 protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/trips', tripsRoutes);
+protectedRoutes.route('/trips/recommendations', recommendationsRoutes);
 
 protectedRoutes.route('/chat', chatRoutes);
 protectedRoutes.route('/weather', weatherRoutes);
