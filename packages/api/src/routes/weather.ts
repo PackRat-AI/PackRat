@@ -13,6 +13,8 @@ import {
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { z } from 'zod';
+import { WeatherService } from '@packrat/api/services/weatherService';
 
 const weatherRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -299,6 +301,113 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
       weatherApiKey: !!WEATHER_API_KEY,
     });
     return c.json({ error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' }, 500);
+  }
+});
+
+// Trip weather outlook endpoint
+const tripWeatherSchema = z.object({
+  location: z.string().min(1, 'Location is required'),
+  duration: z.number().min(1).max(14).default(3),
+});
+
+type TripWeatherResponse = {
+  location: string;
+  duration: number;
+  forecast: Array<{
+    date: string;
+    tempHigh: number;
+    tempLow: number;
+    conditions: string;
+    precipitation: number;
+    windSpeed: number;
+  }>;
+  summary: {
+    avgTempHigh: number;
+    avgTempLow: number;
+    rainDays: number;
+    condition: string;
+    recommendation: string;
+  };
+};
+
+const tripWeatherRoute = createRoute({
+  method: 'post',
+  path: '/trip-outlook',
+  tags: ['Weather'],
+  summary: 'Get trip weather outlook',
+  description:
+    'Get weather outlook for a trip including forecast and recommendations based on trip duration',
+  security: [{ bearerAuth: [] }],
+  request: {
+    content: {
+      'application/json': {
+        schema: tripWeatherSchema,
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Trip weather outlook',
+      content: {
+        'application/json': {
+          schema: z.object({
+            location: z.string(),
+            duration: z.number(),
+            forecast: z.array(
+              z.object({
+                date: z.string(),
+                tempHigh: z.number(),
+                tempLow: z.number(),
+                conditions: z.string(),
+                precipitation: z.number(),
+                windSpeed: z.number(),
+              }),
+            ),
+            summary: z.object({
+              avgTempHigh: z.number(),
+              avgTempLow: z.number(),
+              rainDays: z.number(),
+              condition: z.string(),
+              recommendation: z.string(),
+            }),
+          }),
+        },
+      },
+    },
+    400: {
+      description: 'Bad request',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+weatherRoutes.openapi(tripWeatherRoute, async (c) => {
+  try {
+    const body = await c.req.json();
+    const { location, duration } = tripWeatherSchema.parse(body);
+
+    const service = new WeatherService(c);
+    const outlook = await service.getTripWeatherOutlook(location, duration);
+
+    return c.json(outlook);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return c.json({ error: 'Validation error', details: error.errors }, 400);
+    }
+    console.error('Error fetching trip weather outlook:', error);
+    return c.json({ error: 'Failed to fetch trip weather outlook' }, 500);
   }
 });
 
