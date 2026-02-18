@@ -4,6 +4,7 @@ import type { Variables } from '@packrat/api/types/variables';
 import { backfillEmbeddingsRoute } from './backfillEmbeddingsRoute';
 import * as createCatalogItemRoute from './createCatalogItemRoute';
 import * as deleteCatalogItemRoute from './deleteCatalogItemRoute';
+import * as detectImageMismatchesRoute from './detectImageMismatchesRoute';
 import * as getCatalogItemRoute from './getCatalogItemRoute';
 import { getCatalogItemsCategoriesRoute } from './getCatalogItemsCategoriesRoute';
 import * as getCatalogItemsRoute from './getCatalogItemsRoute';
@@ -23,6 +24,7 @@ catalogRoutes.openapi(
   getSimilarCatalogItemsRoute.routeDefinition,
   getSimilarCatalogItemsRoute.handler,
 );
+catalogRoutes.openapi(detectImageMismatchesRoute.routeDefinition, detectImageMismatchesRoute.handler);
 catalogRoutes.openapi(deleteCatalogItemRoute.routeDefinition, deleteCatalogItemRoute.handler);
 catalogRoutes.openapi(updateCatalogItemRoute.routeDefinition, updateCatalogItemRoute.handler);
 catalogRoutes.route('/', queueCatalogEtlRoute);
