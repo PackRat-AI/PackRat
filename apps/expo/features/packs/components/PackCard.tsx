@@ -7,7 +7,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { Alert, Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useDeletePack, usePackDetailsFromStore } from '../hooks';
+import { useDeletePack, useDuplicatePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackInStore } from '../types';
 
@@ -19,6 +19,7 @@ type PackCardProps = {
 
 export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardProps) {
   const deletePack = useDeletePack();
+  const duplicatePack = useDuplicatePack();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const insets = useSafeAreaInsets();
@@ -27,15 +28,15 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
   const pack = (isOwnedByUser ? packFromStore : packArg) as Pack; // Use passed pack for non user owned pack.
 
   const handleActionsPress = () => {
-    const options =
-      isOwnedByUser && !isGenUI
-        ? ['View Details', 'Edit', 'Delete', 'Cancel']
-        : ['View Details', 'Cancel'];
+    const options = isOwnedByUser
+      ? ['View Details', 'Edit', 'Delete', 'Cancel']
+      : ['View Details', 'Duplicate', 'Cancel'];
 
     const cancelButtonIndex = options.length - 1;
     const destructiveButtonIndex = options.indexOf('Delete');
     const viewDetailsIndex = 0;
     const editIndex = options.indexOf('Edit');
+    const duplicateIndex = options.indexOf('Duplicate');
 
     showActionSheetWithOptions(
       {
@@ -66,6 +67,9 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
             break;
           case editIndex:
             router.push({ pathname: '/pack/[id]/edit', params: { id: pack.id } });
+            break;
+          case duplicateIndex:
+            duplicatePack.mutate({ packId: pack.id });
             break;
           case destructiveButtonIndex:
             Alert.alert(
