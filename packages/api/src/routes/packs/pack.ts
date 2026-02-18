@@ -245,6 +245,154 @@ packRoutes.openapi(deletePackRoute, async (c) => {
   return c.json({ success: true }, 200);
 });
 
+// Duplicate a pack
+const duplicatePackRoute = createRoute({
+  method: 'post',
+  path: '/{packId}/duplicate',
+  tags: ['Packs'],
+  summary: 'Duplicate pack',
+  description: 'Create a copy of a pack with all its items. The new pack will belong to the current user.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            name: z.string().optional().openapi({
+              example: 'My Copied Pack',
+              description: 'Optional name for the new pack. Defaults to "{original_name} (Copy)"',
+            }),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Pack duplicated successfully',
+      content: {
+        'application/json': {
+          schema: PackWithWeightsSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+packRoutes.openapi(duplicatePackRoute, async (c) => {
+  const db = createDb(c);
+  const auth = c.get('user');
+  const packId = c.req.param('packId');
+  const { name: customName } = await c.req.json().catch(() => ({}));
+
+  try {
+    // Get the source pack with items
+    const sourcePack = await db.query.packs.findFirst({
+      where: eq(packs.id, packId),
+      with: {
+        items: {
+          where: eq(packItems.deleted, false),
+        },
+      },
+    });
+
+    if (!sourcePack) {
+      return c.json({ error: 'Pack not found' }, 404);
+    }
+
+    // Generate new pack ID
+    const newPackId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const now = new Date();
+
+    // Create the new pack
+    const [newPack] = await db
+      .insert(packs)
+      .values({
+        id: newPackId,
+        name: customName || `${sourcePack.name} (Copy)`,
+        description: sourcePack.description,
+        category: sourcePack.category,
+        userId: auth.userId,
+        isPublic: false, // Duplicated packs are private by default
+        image: sourcePack.image,
+        tags: sourcePack.tags,
+        deleted: false,
+        isAIGenerated: false,
+        localCreatedAt: now,
+        localUpdatedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+
+    // Copy all items from source pack to new pack
+    if (sourcePack.items && sourcePack.items.length > 0) {
+      const newItems = sourcePack.items.map((item) => ({
+        id: `pi_${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${Math.random().toString(36).substring(2, 5)}`,
+        name: item.name,
+        description: item.description,
+        weight: item.weight,
+        weightUnit: item.weightUnit,
+        quantity: item.quantity,
+        category: item.category,
+        consumable: item.consumable,
+        worn: item.worn,
+        image: item.image,
+        notes: item.notes,
+        packId: newPackId,
+        catalogItemId: item.catalogItemId,
+        userId: auth.userId,
+        deleted: false,
+        isAIGenerated: item.isAIGenerated,
+        templateItemId: item.templateItemId,
+        embedding: item.embedding,
+        createdAt: now,
+        updatedAt: now,
+      }));
+
+      await db.insert(packItems).values(newItems);
+    }
+
+    // Fetch the complete new pack with items
+    const packWithItems = await db.query.packs.findFirst({
+      where: eq(packs.id, newPackId),
+      with: {
+        items: {
+          where: eq(packItems.deleted, false),
+        },
+      },
+    });
+
+    if (!packWithItems) {
+      return c.json({ error: 'Failed to retrieve duplicated pack' }, 500);
+    }
+
+    return c.json(computePackWeights(packWithItems), 200);
+  } catch (error) {
+    console.error('Error duplicating pack:', error);
+    return c.json({ error: 'Failed to duplicate pack' }, 500);
+  }
+});
+
 const itemSuggestionsRoute = createRoute({
   method: 'post',
   path: '/{packId}/item-suggestions',
