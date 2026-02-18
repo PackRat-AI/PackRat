@@ -133,7 +133,7 @@ export default function AIChat() {
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
     experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
-    messages: initialMessages,
+    initialMessages,
   });
 
   // Load persisted messages on mount and when context changes
@@ -264,6 +264,8 @@ export default function AIChat() {
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
           }}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1 }}
         >
           <View>
             <View style={{ height: HEADER_HEIGHT + insets.top }} />
