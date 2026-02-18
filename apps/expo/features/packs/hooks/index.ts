@@ -7,6 +7,7 @@ export * from './useCreatePackWithItems';
 export * from './useCurrentPack';
 export * from './useDeletePack';
 export * from './useDeletePackItem';
+export * from './useDuplicatePack';
 export * from './useDetailedPacks';
 export * from './useHasMinimumInventory';
 export * from './useImagePicker';
