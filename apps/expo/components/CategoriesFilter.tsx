@@ -3,6 +3,18 @@ import { Text } from '@packrat/ui/nativewindui';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 
+/**
+ * Decodes HTML entities in a string (e.g., &amp; -> &, &lt; -> <, &gt; -> >)
+ */
+function decodeHTMLEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
 export function CategoriesFilter({
   activeFilter,
   onFilter,
@@ -20,21 +32,26 @@ export function CategoriesFilter({
 }) {
   const { t } = useTranslation();
 
-  const renderFilterChip = (filter: string) => (
-    <TouchableOpacity
-      key={filter}
-      onPress={() => onFilter(filter)}
-      className={`mr-2 rounded-full px-4 py-2 ${activeFilter === filter ? 'bg-primary' : 'bg-card'}`}
-    >
-      <Text
-        className={`text-sm font-medium ${
-          activeFilter === filter ? 'text-primary-foreground' : 'text-foreground'
-        }`}
+  const renderFilterChip = (filter: string) => {
+    const displayName = decodeHTMLEntities(filter);
+    const isActive = activeFilter === filter;
+
+    return (
+      <TouchableOpacity
+        key={filter}
+        onPress={() => onFilter(filter)}
+        className={`mr-2 rounded-full px-4 py-2 ${isActive ? 'bg-primary' : 'bg-card'}`}
       >
-        {filter}
-      </Text>
-    </TouchableOpacity>
-  );
+        <Text
+          className={`text-sm font-medium ${
+            isActive ? 'text-primary-foreground' : 'text-foreground'
+          }`}
+        >
+          {displayName}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View className={className}>
