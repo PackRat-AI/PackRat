@@ -3,6 +3,7 @@ import { Chip } from 'expo-app/components/initial/Chip';
 import { Markdown } from 'expo-app/components/Markdown';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
@@ -57,10 +58,12 @@ export const GuideDetailScreen = () => {
               {guide.categories.map((category: string) => (
                 <View key={category} className="bg-primary/10 px-3 py-1.5 rounded-full">
                   <Text className="text-sm font-medium text-primary">
-                    {category
-                      .split('-')
-                      .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(' ')}
+                    {decodeHtmlEntities(
+                      category
+                        .split('-')
+                        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' '),
+                    )}
                   </Text>
                 </View>
               ))}

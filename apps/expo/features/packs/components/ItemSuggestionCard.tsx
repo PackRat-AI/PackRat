@@ -73,7 +73,7 @@ export function ItemSuggestionCard({ pack, item }: ItemSuggestionCardProps) {
                   ·
                 </Text>
                 <Text variant="callout" className="text-muted-foreground">
-                  {item.categories[item.categories.length - 1]}
+                  {decodeHtmlEntities(item.categories[item.categories.length - 1])}
                 </Text>
               </>
             )}
