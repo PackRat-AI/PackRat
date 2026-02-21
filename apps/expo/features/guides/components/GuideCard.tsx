@@ -1,6 +1,6 @@
 import { Card, CardContent, CardTitle, Text } from '@packrat/ui/nativewindui';
+import { Icon } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { TouchableOpacity, View } from 'react-native';
 import type { Guide } from '../types';
 
@@ -31,12 +31,10 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide, onPress }) => {
                     {guide.categories.slice(0, 2).map((category) => (
                       <View key={category} className="bg-primary/10 px-2 py-1 rounded-full">
                         <Text className="text-xs font-medium text-primary">
-                          {decodeHtmlEntities(
-                            category
-                              .split('-')
-                              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                              .join(' '),
-                          )}
+                          {category
+                            .split('-')
+                            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ')}
                         </Text>
                       </View>
                     ))}
