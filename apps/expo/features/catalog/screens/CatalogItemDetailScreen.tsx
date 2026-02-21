@@ -8,6 +8,7 @@ import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { SimilarItems } from 'expo-app/features/catalog/components/SimilarItems';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
@@ -98,7 +99,7 @@ export function CatalogItemDetailScreen() {
               <View className="flex-row flex-wrap gap-2">
                 {item.categories.map((category) => (
                   <Chip key={category} textClassName="text-xs" variant="outline">
-                    <Text> {category}</Text>
+                    <Text> {decodeHtmlEntities(category)}</Text>
                   </Chip>
                 ))}
               </View>
