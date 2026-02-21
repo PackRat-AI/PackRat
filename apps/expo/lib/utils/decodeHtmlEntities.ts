@@ -16,7 +16,23 @@ export function decodeHtmlEntities(text: string): string {
     '&nbsp;': ' ',
   };
 
-  return text.replace(/&[a-z]+;|&#\d+;/gi, (match) => {
-    return htmlEntities[match.toLowerCase()] || match;
+  return text.replace(/&[a-z]+;|&#\d+;|&#x[0-9a-f]+;/g, (match) => {
+    // Handle named entities
+    const namedEntity = htmlEntities[match.toLowerCase()];
+    if (namedEntity) return namedEntity;
+
+    // Handle decimal numeric entities (e.g., &#39;)
+    if (match.startsWith('&#') && !match.startsWith('&#x')) {
+      const code = Number.parseInt(match.slice(2, -1), 10);
+      return String.fromCharCode(code);
+    }
+
+    // Handle hexadecimal numeric entities (e.g., &#x27;)
+    if (match.startsWith('&#x')) {
+      const code = Number.parseInt(match.slice(3, -1), 16);
+      return String.fromCharCode(code);
+    }
+
+    return match;
   });
 }
