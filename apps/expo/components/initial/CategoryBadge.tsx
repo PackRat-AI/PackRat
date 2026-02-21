@@ -1,3 +1,4 @@
+import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import type { PackCategory } from 'expo-app/types';
 import { Text, View } from 'react-native';
 
@@ -28,7 +29,7 @@ export function CategoryBadge({ category }: CategoryBadgeProps) {
   return (
     <View className={`rounded-full px-2 py-1 ${getColorClass().split(' ')[0]}`}>
       <Text className={`text-xs font-medium ${getColorClass().split(' ')[1]} capitalize`}>
-        {category}
+        {decodeHtmlEntities(category)}
       </Text>
     </View>
   );
