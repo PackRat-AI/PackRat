@@ -12,6 +12,7 @@ import { tripsRoutes } from './trips';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
+import natureLensRoutes from './natureLens';
 
 const publicRoutes = new OpenAPIHono();
 
@@ -28,6 +29,7 @@ protectedRoutes.route('/catalog', catalogRoutes);
 protectedRoutes.route('/guides', guidesRoutes);
 protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/trips', tripsRoutes);
+protectedRoutes.route('/nature-lens', natureLensRoutes);
 
 protectedRoutes.route('/chat', chatRoutes);
 protectedRoutes.route('/weather', weatherRoutes);
