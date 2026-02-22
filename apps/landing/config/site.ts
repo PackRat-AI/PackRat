@@ -118,6 +118,12 @@ export const siteConfig = {
         label: 'Trails Mapped',
       },
     ],
+    users: [
+      { name: 'Alex M.', initials: 'AM' },
+      { name: 'Jordan K.', initials: 'JK' },
+      { name: 'Casey L.', initials: 'CL' },
+      { name: 'Taylor S.', initials: 'TS' },
+    ],
   },
 
   // Features section
@@ -225,6 +231,7 @@ export const siteConfig = {
         description: 'Real-time weather data from multiple providers',
         icon: 'Cloud',
         color: '#3B82F6',
+        features: ['7-day forecast', 'Trail-specific alerts', 'Offline caching'],
       },
       {
         id: 'maps',
@@ -232,6 +239,7 @@ export const siteConfig = {
         description: 'Access thousands of trails and routes',
         icon: 'Map',
         color: '#F97316',
+        features: ['50K+ trails', 'Offline maps', 'GPS tracking'],
       },
       {
         id: 'health',
@@ -239,6 +247,7 @@ export const siteConfig = {
         description: 'Sync with Apple Health and Google Fit',
         icon: 'Heart',
         color: '#EC4899',
+        features: ['Activity sync', 'Calories tracking', 'Heart rate'],
       },
       {
         id: 'calendar',
@@ -246,6 +255,7 @@ export const siteConfig = {
         description: 'Sync trips with your calendar',
         icon: 'Calendar',
         color: '#8B5CF6',
+        features: ['Trip scheduling', 'Reminders', 'Recurring trips'],
       },
       {
         id: 'sharing',
@@ -253,6 +263,7 @@ export const siteConfig = {
         description: 'Share trips and routes with friends',
         icon: 'Share2',
         color: '#10B981',
+        features: ['Route sharing', 'Leaderboards', 'Friend challenges'],
       },
       {
         id: 'emergency',
@@ -260,6 +271,7 @@ export const siteConfig = {
         description: 'Quick access to emergency contacts',
         icon: 'AlertTriangle',
         color: '#EF4444',
+        features: ['SOS alerts', 'Location sharing', 'Offline contacts'],
       },
     ] as Integration[],
   },
