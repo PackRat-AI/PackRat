@@ -61,17 +61,16 @@ export default function IntegrationSection() {
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {Array.from({ length: 3 }).map((_, i) => (
+                  {integration.features?.map((feature) => (
                     <div
-                      // biome-ignore lint/suspicious/noArrayIndexKey: ignore
-                      key={i}
+                      key={feature}
                       className="h-6 md:h-8 rounded-full px-2 md:px-3 flex items-center text-xs font-medium"
                       style={{
                         background: `${integration.color}10`,
                         color: integration.color,
                       }}
                     >
-                      Feature {i + 1}
+                      {feature}
                     </div>
                   ))}
                 </div>

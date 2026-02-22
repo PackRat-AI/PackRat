@@ -121,14 +121,13 @@ export default function LandingHero() {
               variants={itemVariants}
             >
               <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
+                {siteConfig.hero.users.map((user) => (
                   <div
-                    key={i}
+                    key={user.initials}
                     className="w-10 h-10 rounded-full border-2 border-background flex items-center justify-center overflow-hidden bg-primary/20"
+                    title={user.name}
                   >
-                    <span className="text-xs font-bold text-primary">
-                      {String.fromCharCode(64 + i)}
-                    </span>
+                    <span className="text-xs font-bold text-primary">{user.initials}</span>
                   </div>
                 ))}
               </div>

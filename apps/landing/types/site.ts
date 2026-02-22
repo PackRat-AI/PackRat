@@ -26,6 +26,12 @@ export interface Integration {
   description: string;
   icon: string;
   color: string;
+  features?: string[];
+}
+
+export interface HeroUser {
+  name: string;
+  initials: string;
 }
 
 export interface Testimonial {
