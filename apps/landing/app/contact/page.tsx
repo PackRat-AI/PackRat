@@ -32,7 +32,13 @@ export default function ContactPage() {
                 <CardTitle>Send us a Message</CardTitle>
               </CardHeader>
               <CardContent>
-                <form className="space-y-4">
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    alert("Thanks for your message! We'll get back to you soon. (Demo form)");
+                  }}
+                >
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor={firstNameId}>First Name</Label>
@@ -63,7 +69,7 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button type="button" className="w-full">
+                  <Button type="submit" className="w-full">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Send Message
                   </Button>
@@ -133,15 +139,30 @@ export default function ContactPage() {
                     PackRat features.
                   </p>
                   <div className="flex flex-col gap-2">
-                    <Link href="#" className="text-primary hover:underline">
+                    <a
+                      href="https://twitter.com/packratai"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
                       Twitter / X
-                    </Link>
-                    <Link href="#" className="text-primary hover:underline">
+                    </a>
+                    <a
+                      href="https://instagram.com/packratai"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
                       Instagram
-                    </Link>
-                    <Link href="#" className="text-primary hover:underline">
+                    </a>
+                    <a
+                      href="https://discord.gg/packrat"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
                       Discord Community
-                    </Link>
+                    </a>
                   </div>
                 </CardContent>
               </Card>

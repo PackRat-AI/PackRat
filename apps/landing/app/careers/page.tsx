@@ -135,12 +135,12 @@ export default function CareersPage() {
                         </Badge>
                       </div>
                     </div>
-                    <Link href="/contact">
-                      <Button className="w-full md:w-auto">
+                    <Button asChild className="w-full md:w-auto">
+                      <Link href="/contact">
                         <Briefcase className="h-4 w-4 mr-2" />
                         Apply Now
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -159,11 +159,9 @@ export default function CareersPage() {
                 We&apos;re always looking for talented people. Send us your resume and tell us how
                 you can contribute to PackRat.
               </p>
-              <Link href="/contact">
-                <Button size="lg" className="mt-4">
-                  Get in Touch
-                </Button>
-              </Link>
+              <Button asChild size="lg" className="mt-4">
+                <Link href="/contact">Get in Touch</Link>
+              </Button>
             </CardContent>
           </Card>
         </section>

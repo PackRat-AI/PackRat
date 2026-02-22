@@ -128,7 +128,7 @@ export default function BlogPage() {
                     <Badge variant="secondary">{post.category}</Badge>
                   </div>
                   <h3 className="text-xl font-bold leading-tight hover:text-primary transition-colors">
-                    <Link href="#">{post.title}</Link>
+                    <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                   </h3>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -165,7 +165,7 @@ export default function BlogPage() {
                         <Badge variant="outline">{post.category}</Badge>
                       </div>
                       <h3 className="text-lg font-semibold hover:text-primary transition-colors">
-                        <Link href="#">{post.title}</Link>
+                        <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                       </h3>
                       <p className="text-muted-foreground text-sm">{post.excerpt}</p>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
