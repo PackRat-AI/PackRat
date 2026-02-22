@@ -2,7 +2,6 @@
 
 import type { LargeTitleSearchBarRef, ListDataItem } from '@packrat/ui/nativewindui';
 import {
-  ESTIMATED_ITEM_HEIGHT,
   LargeTitleHeader,
   List,
   type ListRenderItemInfo,
@@ -285,7 +284,6 @@ export default function DashboardScreen() {
         contentInsetAdjustmentBehavior="automatic"
         variant="insets"
         data={dashboardLayout}
-        estimatedItemSize={ESTIMATED_ITEM_HEIGHT.titleOnly}
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap

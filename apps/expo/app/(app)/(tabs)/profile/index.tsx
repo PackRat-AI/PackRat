@@ -5,7 +5,6 @@ import {
   Avatar,
   AvatarFallback,
   Button,
-  ESTIMATED_ITEM_HEIGHT,
   List,
   ListItem,
   type ListRenderItemInfo,
@@ -25,9 +24,6 @@ import { Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
 import { Platform, SafeAreaView, View } from 'react-native';
-
-const ESTIMATED_ITEM_SIZE =
-  ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
 
 function Profile() {
   const user = useUser();
@@ -70,7 +66,6 @@ function Profile() {
         variant="insets"
         data={DATA}
         sectionHeaderAsGap={Platform.OS === 'ios'}
-        estimatedItemSize={ESTIMATED_ITEM_SIZE}
         renderItem={renderItem}
         ListHeaderComponent={<ListHeaderComponent />}
         ListFooterComponent={<ListFooterComponent />}
