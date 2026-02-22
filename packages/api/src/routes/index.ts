@@ -7,6 +7,7 @@ import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
+import natureLensRoutes from './natureLens';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
@@ -15,7 +16,6 @@ import { tripsRoutes } from './trips';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
-import natureLensRoutes from './natureLens';
 import { wildlifeRoutes } from './wildlife';
 
 const publicRoutes = new OpenAPIHono();
@@ -35,6 +35,7 @@ protectedRoutes.route('/feed', feedRoutes);
 protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/trips', tripsRoutes);
 protectedRoutes.route('/nature-lens', natureLensRoutes);
+protectedRoutes.route('/trail-conditions', trailConditionsRoutes);
 
 protectedRoutes.route('/ai', aiRoutes);
 protectedRoutes.route('/chat', chatRoutes);
@@ -43,7 +44,6 @@ protectedRoutes.route('/pack-templates', packTemplatesRoutes);
 protectedRoutes.route('/season-suggestions', seasonSuggestionsRoutes);
 protectedRoutes.route('/user', userRoutes);
 protectedRoutes.route('/upload', uploadRoutes);
-protectedRoutes.route('/trail-conditions', trailConditionsRoutes);
 protectedRoutes.route('/wildlife', wildlifeRoutes);
 
 const routes = new OpenAPIHono();
