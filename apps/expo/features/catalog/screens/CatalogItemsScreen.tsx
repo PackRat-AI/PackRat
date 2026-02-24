@@ -2,6 +2,7 @@ import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import Screen from 'expo-app/components/Screen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -12,7 +13,6 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   View,
@@ -91,7 +91,7 @@ function CatalogItemsScreen() {
   const ItemSeparatorComponent = useMemo(() => () => <View className="h-2" />, []);
 
   return (
-    <SafeAreaView className="flex-1">
+    <Screen>
       <LargeTitleHeader
         title={t('catalog.title')}
         backVisible={false}
@@ -245,7 +245,7 @@ function CatalogItemsScreen() {
         }
         contentContainerStyle={{ flexGrow: 1, padding: 16 }}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
 

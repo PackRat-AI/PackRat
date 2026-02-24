@@ -163,6 +163,7 @@ function DemoIcon() {
   );
 }
 
+import Screen from 'expo-app/components/Screen';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 
 export default function DashboardScreen() {
@@ -212,7 +213,7 @@ export default function DashboardScreen() {
   }, [searchValue, dashboardLayout]);
 
   return (
-    <View className="flex-1">
+    <Screen>
       <LargeTitleHeader
         title={t('dashboard.title')}
         searchBar={{
@@ -287,9 +288,8 @@ export default function DashboardScreen() {
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
-        ListFooterComponent={<View className="h-12" />} // 👈 Add margin below last item
       />
-    </View>
+    </Screen>
   );
 }
 
