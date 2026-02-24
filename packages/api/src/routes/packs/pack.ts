@@ -19,7 +19,7 @@ import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
-import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
+import { and, cosineDistance, desc, eq, gt, isNotNull, notInArray, sql } from 'drizzle-orm';
 
 const packRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -340,7 +340,8 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
 
   const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
 
-  const whereConditions = [gt(similarity, 0.1)];
+  // Filter for items that have embeddings and meet similarity threshold
+  const whereConditions = [isNotNull(catalogItems.embedding), gt(similarity, 0.1)];
   if (existingCatalogItemIds.length > 0) {
     whereConditions.push(notInArray(catalogItems.id, existingCatalogItemIds));
   }
