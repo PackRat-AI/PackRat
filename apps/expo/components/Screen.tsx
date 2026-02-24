@@ -1,4 +1,4 @@
-import { useColorScheme } from '@packrat-ai/nativewindui';
+import { useColorScheme } from '@packrat/ui/nativewindui';
 import { StatusBar } from 'expo-status-bar';
 import type React from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
