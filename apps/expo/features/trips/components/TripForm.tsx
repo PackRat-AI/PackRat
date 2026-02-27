@@ -188,7 +188,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <Modal visible={showPackModal} animationType="slide" transparent>
                     <View className="flex-1 justify-end bg-black/40">
                       <View
-                        className="bg-background rounded-t-2xl p-4"
+                        className="bg-background rounded-t-2xl px-4 pt-4"
                         style={{ paddingBottom: insets.bottom + 16 }}
                       >
                         <View className="flex-row justify-between items-center mb-2">
