@@ -57,17 +57,18 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const { location, setLocation } = useTripLocation();
   const packs = usePacks();
 
-  // Initialize location store with trip's location when editing
+  // Initialize location store with trip's location when entering edit mode
   // Only sync when the trip ID changes to avoid infinite re-renders
   useEffect(() => {
     // Set location from trip, or null if trip has no location
     setLocation(trip?.location ?? null);
     
-    // Cleanup: clear location when component unmounts or trip changes
+    // Cleanup: clear location only when component unmounts
     return () => {
       setLocation(null);
     };
-  }, [trip?.id, setLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trip?.id]);
 
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
