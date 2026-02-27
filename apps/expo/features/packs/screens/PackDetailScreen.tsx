@@ -530,7 +530,7 @@ export function PackDetailScreen() {
 
       {/* Packing Mode Toolbar */}
       {isPackingMode && (
-        <View 
+        <View
           className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border"
           style={{ paddingBottom: insets.bottom + 12 }}
         >

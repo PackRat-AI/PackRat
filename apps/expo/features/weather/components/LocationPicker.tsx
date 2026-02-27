@@ -130,7 +130,7 @@ export function LocationPicker({
               </View>
             )}
           </ScrollView>
-          <View 
+          <View
             className="px-4 pb-2 flex-row self-end items-center gap-2 justify-between"
             style={{ paddingBottom: insets.bottom + 8 }}
           >

@@ -115,7 +115,10 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           backgroundStyle={{ backgroundColor: colors.card }}
           handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
         >
-          <BottomSheetView className="flex-1 px-4" style={{ flex: 1, paddingBottom: insets.bottom }}>
+          <BottomSheetView
+            className="flex-1 px-4"
+            style={{ flex: 1, paddingBottom: insets.bottom }}
+          >
             <View className="gap-2 mb-4">
               <TouchableOpacity
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
