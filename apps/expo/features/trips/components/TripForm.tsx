@@ -57,18 +57,18 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const { location, setLocation } = useTripLocation();
   const packs = usePacks();
 
-  // Initialize location store with trip's location when entering edit mode
-  // Only sync when the trip ID changes to avoid infinite re-renders
+  // Initialize location store with trip's location when component mounts or trip ID changes
+  // Note: We intentionally don't include trip?.location in dependencies to avoid
+  // overriding the user's selection when the trip object is re-created by the store
   useEffect(() => {
     // Set location from trip, or null if trip has no location
     setLocation(trip?.location ?? null);
     
-    // Cleanup: clear location only when component unmounts
+    // Cleanup: clear location when component unmounts
     return () => {
       setLocation(null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trip?.id]);
+  }, [trip?.id, setLocation]);
 
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
