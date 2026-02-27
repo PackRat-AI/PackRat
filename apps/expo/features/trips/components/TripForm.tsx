@@ -54,10 +54,10 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
   // Initialize location store with trip's location when editing
   useEffect(() => {
-    if (trip?.location && !location) {
+    if (trip?.location) {
       setLocation(trip.location);
     }
-  }, [trip?.location, location, setLocation]);
+  }, [trip?.id, trip?.location, setLocation]);
 
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
