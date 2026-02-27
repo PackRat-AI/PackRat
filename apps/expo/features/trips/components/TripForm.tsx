@@ -8,7 +8,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -51,6 +51,19 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
   const { location, setLocation } = useTripLocation();
   const packs = usePacks();
+
+  // Initialize location store with trip's location when component mounts or trip ID changes
+  // Note: We intentionally don't include trip?.location in dependencies to avoid
+  // overriding the user's selection when the trip object is re-created by the store
+  useEffect(() => {
+    // Set location from trip, or null if trip has no location
+    setLocation(trip?.location ?? null);
+    
+    // Cleanup: clear location when component unmounts
+    return () => {
+      setLocation(null);
+    };
+  }, [trip?.id, setLocation]);
 
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);

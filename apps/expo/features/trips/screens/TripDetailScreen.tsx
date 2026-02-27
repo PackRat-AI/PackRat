@@ -11,7 +11,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { SafeAreaView, ScrollView, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
@@ -27,6 +27,16 @@ export function TripDetailScreen() {
 
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
+
+  // Create a stable key for MapView based on location coordinates
+  // This forces remount when location changes, fixing iOS initialRegion issue
+  const mapKey = useMemo(
+    () =>
+      trip?.location
+        ? `map-${trip.location.latitude}-${trip.location.longitude}`
+        : 'map-no-location',
+    [trip?.location?.latitude, trip?.location?.longitude],
+  );
 
   if (!trip) {
     return (
@@ -105,6 +115,7 @@ export function TripDetailScreen() {
 
                 <View className="w-full h-36 overflow-hidden rounded-b-xl">
                   <MapView
+                    key={mapKey}
                     provider={PROVIDER_GOOGLE}
                     style={{ flex: 1 }}
                     initialRegion={{

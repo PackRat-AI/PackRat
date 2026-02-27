@@ -1,5 +1,6 @@
 import { observable } from '@legendapp/state';
 import { use$ } from '@legendapp/state/react';
+import { useCallback } from 'react';
 
 /**
  * Type for the trip location.
@@ -22,9 +23,9 @@ export const tripLocationStore = observable<TripLocation | null>(null);
 export function useTripLocation() {
   const location = use$(() => tripLocationStore.get());
 
-  const setLocation = (loc: TripLocation | null) => {
+  const setLocation = useCallback((loc: TripLocation | null) => {
     tripLocationStore.set(loc);
-  };
+  }, []);
 
   return { location, setLocation };
 }
