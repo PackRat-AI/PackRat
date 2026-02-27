@@ -16,6 +16,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
@@ -27,6 +28,7 @@ export function PackDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
 
   const isOwnedByUser = usePackOwnershipCheck(id as string);
 
@@ -528,7 +530,10 @@ export function PackDetailScreen() {
 
       {/* Packing Mode Toolbar */}
       {isPackingMode && (
-        <View className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border">
+        <View 
+          className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border"
+          style={{ paddingBottom: insets.bottom + 12 }}
+        >
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-2">
               {/* Close Button */}
@@ -563,7 +568,7 @@ export function PackDetailScreen() {
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
         onDismiss={handleBottomSheetDismiss}
       >
-        <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
+        <BottomSheetView className="flex-1 px-4" style={{ flex: 1, paddingBottom: insets.bottom }}>
           {/* Revamped consistent 2-column action layout */}
           <View className="flex-row flex-wrap -mx-1">
             {normalizedActions.map((action) => (

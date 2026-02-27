@@ -19,6 +19,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
 import { useTripLocation } from '../store/tripLocationStore';
@@ -48,6 +49,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const createTrip = useCreateTrip();
   const updateTrip = useUpdateTrip();
   const isEditingExistingTrip = !!trip;
+  const insets = useSafeAreaInsets();
 
   const { location, setLocation } = useTripLocation();
   const packs = usePacks();
@@ -185,7 +187,10 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
 
                   <Modal visible={showPackModal} animationType="slide" transparent>
                     <View className="flex-1 justify-end bg-black/40">
-                      <View className="bg-background rounded-t-2xl p-4">
+                      <View 
+                        className="bg-background rounded-t-2xl p-4"
+                        style={{ paddingBottom: insets.bottom + 16 }}
+                      >
                         <View className="flex-row justify-between items-center mb-2">
                           <Text className="text-lg font-semibold">{t('trips.selectPack')}</Text>
                           <Pressable onPress={() => setShowPackModal(false)}>

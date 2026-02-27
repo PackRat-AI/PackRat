@@ -7,6 +7,7 @@ import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useActiveLocation, useLocations } from '../hooks';
 import type { WeatherLocation } from '../types';
 
@@ -37,6 +38,7 @@ export function LocationPicker({
   const { locationsState } = useLocations();
   const { activeLocation } = useActiveLocation();
   const [selectedLocation, setSelectedLocation] = useState<WeatherLocation | null>(activeLocation);
+  const insets = useSafeAreaInsets();
 
   // Use translations for default values
   const displayTitle = title ?? t('location.selectLocation');
@@ -128,7 +130,10 @@ export function LocationPicker({
               </View>
             )}
           </ScrollView>
-          <View className="px-4 pb-2 flex-row self-end items-center gap-2 justify-between">
+          <View 
+            className="px-4 pb-2 flex-row self-end items-center gap-2 justify-between"
+            style={{ paddingBottom: insets.bottom + 8 }}
+          >
             {onSkip && (
               <Button
                 onPress={() => {
