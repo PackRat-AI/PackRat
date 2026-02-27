@@ -11,13 +11,13 @@ export function AIChatTile() {
   const { t } = useTranslation();
 
   const route: Href = {
-    pathname: '/ai-chat',
+    pathname: '/ai-chat-local',
     params: {
       contextType: 'general',
     },
   };
   const handlePress = () => {
-    if (!isAuthed.peek()) {
+    if (isAuthed.peek()) {
       // AI featuer is protected. Redirect user to the auth page if not authenticated.
       return router.push({
         pathname: '/auth',
