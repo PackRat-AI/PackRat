@@ -57,6 +57,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const { location, setLocation } = useTripLocation();
   const packs = usePacks();
 
+  // Initialize location store with trip's location when editing
+  useEffect(() => {
+    if (trip?.location && !location) {
+      setLocation(trip.location);
+    }
+  }, [trip?.location, location, setLocation]);
+
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -112,6 +119,8 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             preset: 'done',
           });
         }
+        // Clear location store after successful submission
+        setLocation(null);
         router.back();
       } catch (_e) {
         Burnt.toast({

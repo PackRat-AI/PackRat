@@ -159,6 +159,7 @@ export function TripDetailScreen() {
 
                 <View className="h-36">
                   <MapView
+                    key={`${trip.location.latitude}-${trip.location.longitude}`}
                     provider={PROVIDER_GOOGLE}
                     style={{ flex: 1 }}
                     initialRegion={{
