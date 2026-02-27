@@ -53,11 +53,16 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const packs = usePacks();
 
   // Initialize location store with trip's location when editing
+  // Only sync when the trip ID changes to avoid infinite re-renders
   useEffect(() => {
     if (trip?.location) {
       setLocation(trip.location);
     }
-  }, [trip?.id, trip?.location, setLocation]);
+    // Cleanup: clear location when component unmounts or trip changes
+    return () => {
+      setLocation(null);
+    };
+  }, [trip?.id, setLocation]);
 
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -85,8 +90,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
           await createTrip(submitData);
           Alert.alert(t('common.success'), t('trips.tripCreatedSuccess'));
         }
-        // Clear location store after successful submission
-        setLocation(null);
         router.back();
       } catch (_e) {
         Alert.alert(t('common.error'), t('errors.tryAgain'));
