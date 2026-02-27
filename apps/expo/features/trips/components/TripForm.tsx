@@ -55,9 +55,9 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   // Initialize location store with trip's location when editing
   // Only sync when the trip ID changes to avoid infinite re-renders
   useEffect(() => {
-    if (trip?.location) {
-      setLocation(trip.location);
-    }
+    // Set location from trip, or null if trip has no location
+    setLocation(trip?.location ?? null);
+    
     // Cleanup: clear location when component unmounts or trip changes
     return () => {
       setLocation(null);
