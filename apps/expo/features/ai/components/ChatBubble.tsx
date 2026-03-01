@@ -10,6 +10,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { useCallback, useState } from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { ReportModal } from './ReportModal';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
@@ -30,6 +31,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const { bottom } = useSafeAreaInsets();
 
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 
@@ -179,7 +181,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
         </>
       )}
 
-      <Sheet ref={bottomSheetRef} snapPoints={['100%']} index={0}>
+      <Sheet ref={bottomSheetRef} snapPoints={['100%']} index={0} bottomInset={bottom}>
         <BottomSheetScrollView className="flex-1 px-4" style={{ flex: 1 }}>
           <View>
             <Text variant="heading" className="text-center mb-6">

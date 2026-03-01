@@ -15,7 +15,8 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
@@ -65,6 +66,7 @@ export function PackDetailScreen() {
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
   const { colors } = useColorScheme();
+  const { bottom } = useSafeAreaInsets();
 
   const bottomSheetRef = useSheetRef();
   const addItemActionsRef = useSheetRef();
@@ -562,6 +564,7 @@ export function PackDetailScreen() {
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
         onDismiss={handleBottomSheetDismiss}
+        bottomInset={bottom}
       >
         <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
           {/* Revamped consistent 2-column action layout */}

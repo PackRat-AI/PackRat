@@ -7,6 +7,7 @@ import { router } from 'expo-router';
 import { isArray } from 'radash';
 import { useRef } from 'react';
 import { Image, Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackInStore } from '../types';
@@ -25,6 +26,7 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
   const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
   const pack = (isOwnedByUser ? packFromStore : packArg) as Pack; // Use passed pack for non user owned pack.
+  const { bottom } = useSafeAreaInsets();
 
   const handleActionsPress = () => {
     const options =
@@ -46,6 +48,7 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
         message: pack.description,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: bottom,
         },
         textStyle: {
           color: colors.foreground,

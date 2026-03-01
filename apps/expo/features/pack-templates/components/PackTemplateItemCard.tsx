@@ -8,6 +8,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePackTemplateItem } from '../hooks';
 import type { PackTemplateItem } from '../types';
 import { PackTemplateItemImage } from './PackTemplateItemImage';
@@ -30,6 +31,7 @@ export function PackTemplateItemCard({
   const user = useUser();
 
   const { showActionSheetWithOptions } = useActionSheet();
+  const { bottom } = useSafeAreaInsets();
 
   const handleActionsPress = () => {
     const options =
@@ -56,6 +58,7 @@ export function PackTemplateItemCard({
         message: item.description,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: bottom,
         },
         textStyle: {
           color: colors.foreground,

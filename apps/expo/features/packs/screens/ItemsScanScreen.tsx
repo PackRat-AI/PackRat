@@ -10,6 +10,7 @@ import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import type { CatalogItem, CatalogItemWithPackItemFields } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
@@ -25,6 +26,7 @@ export function ItemsScanScreen() {
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
   const { showActionSheetWithOptions } = useActionSheet();
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
+  const { bottom } = useSafeAreaInsets();
 
   const { mutate: scanImage, isPending: isScanning, data } = useImageDetection();
   const { addItemsToPack } = useBulkAddCatalogItems();
@@ -69,6 +71,7 @@ export function ItemsScanScreen() {
         cancelButtonIndex,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: bottom,
         },
         textStyle: {
           color: colors.foreground,
