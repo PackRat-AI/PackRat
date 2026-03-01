@@ -13,13 +13,12 @@ import {
   Keyboard,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { searchQueryAtom } from '../atoms/locationsAtoms';
 import { LocationCard } from '../components/LocationCard';
 import { WeatherAuthWall } from '../components/WeatherAuthWall';

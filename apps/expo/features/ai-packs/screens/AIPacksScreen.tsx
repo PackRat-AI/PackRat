@@ -13,7 +13,8 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useGeneratePacks } from '../hooks/useGeneratedPacks';
 
 export function AIPacksScreen() {
