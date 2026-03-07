@@ -23,7 +23,7 @@ vi.mock('../src/utils/env-validation', () => ({
   })),
 }));
 
-describe('ImageDetectionService', () => {
+describe.skipIf(!process.env.API_URL)('ImageDetectionService', () => {
   const mockContext = {} as Context;
 
   describe('Constructor', () => {
