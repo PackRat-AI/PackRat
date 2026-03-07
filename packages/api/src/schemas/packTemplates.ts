@@ -299,3 +299,37 @@ export const SuccessResponseSchema = z
     }),
   })
   .openapi('SuccessResponse');
+
+export const GenerateFromTikTokRequestSchema = z
+  .object({
+    tiktokUrl: z.string().url().openapi({
+      example: 'https://www.tiktok.com/@user/video/1234567890',
+      description: 'The TikTok slideshow URL',
+    }),
+    imageUrls: z
+      .array(z.string().url())
+      .min(1)
+      .openapi({
+        example: ['https://example.com/slide1.jpg', 'https://example.com/slide2.jpg'],
+        description: 'Array of image URLs extracted from the TikTok slideshow',
+      }),
+    caption: z.string().optional().openapi({
+      example: 'My ultralight backpacking kit for the PCT',
+      description: 'The TikTok caption or description to provide additional context',
+    }),
+    name: z.string().optional().openapi({
+      example: 'PCT Ultralight Kit',
+      description: 'Optional template name. If omitted, AI will generate one.',
+    }),
+    category: z.string().optional().openapi({
+      example: 'backpacking',
+      description: 'Optional template category. If omitted, AI will determine one.',
+    }),
+    isAppTemplate: z.boolean().optional().default(true).openapi({
+      example: true,
+      description: 'Whether this should be a featured template (admin only)',
+    }),
+  })
+  .openapi('GenerateFromTikTokRequest');
+
+export const GenerateFromTikTokResponseSchema = PackTemplateWithItemsSchema;

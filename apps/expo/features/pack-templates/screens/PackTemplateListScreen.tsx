@@ -2,6 +2,7 @@ import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
 import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { PackCategory } from 'expo-app/features/packs/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -39,12 +40,24 @@ function CreateTemplateIconButton() {
   );
 }
 
+function TikTokImportIconButton() {
+  const router = useRouter();
+  const { colors } = useColorScheme();
+  return (
+    <Pressable onPress={() => router.push('/pack-templates/import-from-tiktok')} className="mr-3">
+      <Icon name="import" color={colors.foreground} />
+    </Pressable>
+  );
+}
+
 export function PackTemplateListScreen() {
   const router = useRouter();
   const templates = usePackTemplates();
   const [searchValue, setSearchValue] = useAtom(templateSearchValueAtom);
   const [activeFilter, setActiveFilter] = useAtom(activeTemplateFilterAtom);
   const { isAuthenticated } = useAuth();
+  const user = useUser();
+  const isAdmin = user?.role === 'ADMIN';
   const [selectedTemplateTypeIndex, setSelectedTemplateTypeIndex] = useState(0);
   const { t } = useTranslation();
 
@@ -124,6 +137,7 @@ export function PackTemplateListScreen() {
         }}
         rightView={() => (
           <View className="flex-row items-center">
+            {isAdmin && <TikTokImportIconButton />}
             <CreateTemplateIconButton />
           </View>
         )}
