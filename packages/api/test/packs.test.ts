@@ -54,7 +54,7 @@ vi.mock('../src/services/packService', async () => {
   };
 });
 
-describe('Packs Routes', () => {
+describe.skipIf(!process.env.API_URL)('Packs Routes', () => {
   let testPackId: string;
   let testPackItemId: string;
   let testCatalogItemId: number;

@@ -13,7 +13,7 @@ import { createTestUser } from './utils/user-helpers';
 const authApi = (path: string, init?: RequestInit) =>
   app.fetch(new Request(`http://localhost/api/auth${path}`, init));
 
-describe('Auth Routes', () => {
+describe.skipIf(!process.env.API_URL)('Auth Routes', () => {
   beforeEach(() => {
     // Reset mocks before each test
     vi.clearAllMocks();

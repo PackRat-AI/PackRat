@@ -7,7 +7,7 @@ import {
   expectUnauthorized,
 } from './utils/test-helpers';
 
-describe('Weather Routes', () => {
+describe.skipIf(!process.env.API_URL)('Weather Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

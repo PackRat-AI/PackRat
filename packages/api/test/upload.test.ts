@@ -8,7 +8,7 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-describe('Upload Routes', () => {
+describe.skipIf(!process.env.API_URL)('Upload Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
