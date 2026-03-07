@@ -14,7 +14,7 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-describe('Pack Templates Routes', () => {
+describe.skipIf(!process.env.API_URL)('Pack Templates Routes', () => {
   // Seed a test user before all tests
   beforeAll(async () => {
     await seedTestUser();

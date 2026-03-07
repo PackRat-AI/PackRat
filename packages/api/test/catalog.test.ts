@@ -11,7 +11,7 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-describe('Catalog Routes', () => {
+describe.skipIf(!process.env.API_URL)('Catalog Routes', () => {
   describe('Authentication', () => {
     it('GET /catalog/ requires auth', async () => {
       const res = await api('/catalog', httpMethods.get());
