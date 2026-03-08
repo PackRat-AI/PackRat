@@ -369,10 +369,10 @@ export const siteConfig = {
       { title: 'Updates', href: '#' },
     ],
     company: [
-      { title: 'About', href: '#' },
-      { title: 'Blog', href: '#' },
-      { title: 'Careers', href: '#' },
-      { title: 'Contact', href: '#' },
+      { title: 'About', href: '/about' },
+      { title: 'Blog', href: '/blog' },
+      { title: 'Careers', href: '/careers' },
+      { title: 'Contact', href: '/contact' },
     ],
     legal: [
       { title: 'Terms', href: '#' },
