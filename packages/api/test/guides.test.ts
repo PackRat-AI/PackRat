@@ -165,7 +165,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
   };
 });
 
-describe.skipIf(!process.env.API_URL)('Guides Routes', () => {
+describe('Guides Routes', () => {
   describe('Authentication', () => {
     it('GET /guides requires auth', async () => {
       const res = await api('/guides', httpMethods.get());

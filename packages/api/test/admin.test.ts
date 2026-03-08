@@ -6,7 +6,7 @@ import {
   expectUnauthorized,
 } from './utils/test-helpers';
 
-describe.skipIf(!process.env.API_URL)('Admin Routes', () => {
+describe('Admin Routes', () => {
   describe('Authentication', () => {
     it('requires basic auth for all admin routes', async () => {
       const routes = ['/', '/stats', '/users-list', '/packs', '/catalog'];
