@@ -7,7 +7,7 @@
  * - Message handling
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createLLMProvider, defaultLLMProvider, MockLLMProvider } from '../lib/mock-llm-provider';
 import type { LLMConfig, TrailInfo, TrailQAContext } from '../types';
 

@@ -4,7 +4,6 @@
  * Full screen view for the offline AI assistant feature.
  */
 
-import React from 'react';
 import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
 import { OfflineAIChat } from '../components/OfflineAIChat';
 import type { TrailInfo } from '../types';
