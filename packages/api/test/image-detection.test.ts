@@ -8,7 +8,7 @@ import {
   TEST_USER,
 } from './utils/test-helpers';
 
-describe.skipIf(!process.env.API_URL)('Image Detection Routes', () => {
+describe('Image Detection Routes', () => {
   describe('Authentication', () => {
     it('POST /packs/analyze-image requires auth', async () => {
       const res = await api('/packs/analyze-image', httpMethods.post({}));
