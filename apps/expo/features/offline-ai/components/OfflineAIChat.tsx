@@ -45,7 +45,6 @@ export function OfflineAIChat({
     modelInfo,
     sendMessage,
     clearMessages,
-    setTrailContext,
     initialize,
   } = useOfflineAI({
     trailContext: trail ? { trail } : undefined,
