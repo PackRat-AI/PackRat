@@ -27,6 +27,7 @@ export function BasicExample() {
 /**
  * Example 2: Translation with interpolation (variables)
  */
+// biome-ignore lint/correctness/noUnusedFunctionParameters: Intentionally unused - example code
 export function InterpolationExample({ userName }: { userName: string }) {
   const { t } = useTranslation();
 
@@ -55,6 +56,7 @@ export function PropsExample() {
  * Example 4: Using translations outside components
  * (e.g., in utility functions, validation, etc.)
  */
+// biome-ignore lint/suspicious/noExplicitAny: Example code uses any for flexibility
 export function validateForm(formData: any) {
   if (!formData.email) {
     // Using t() directly without the hook
