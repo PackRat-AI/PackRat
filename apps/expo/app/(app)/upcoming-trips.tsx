@@ -141,22 +141,20 @@ export default function UpcomingTripsScreen() {
 
         {/* Trip List */}
         <List
-          data={upcomingTrips.map((trip) => ({
-            title: trip.name,
-            subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
-              trip.startDate,
-            )} to ${formatDate(trip.endDate)}`,
-          }))}
-          keyExtractor={(_, index) => index.toString()}
+          data={upcomingTrips}
+          keyExtractor={(trip) => trip.id}
           renderItem={(info) => {
-            const trip = upcomingTrips[info.index];
+            const trip = info.item;
             assertDefined(trip);
 
             const { status, completion } = getTripStatus(trip, t);
 
             return (
               <ListItem
-                {...info}
+                title={trip.name}
+                subTitle={`${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
+                  trip.startDate,
+                )} to ${formatDate(trip.endDate)}`}
                 // leftView={<TripImage uri={trip.imageUrl} />}
                 rightView={
                   <View className="flex-row items-center">
