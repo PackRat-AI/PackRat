@@ -934,13 +934,13 @@
     "sizeCategoryState": "200–500 MB",
     "cancelDownload": "Cancel",
     "viewMapOnlineNote": "Map preview requires an internet connection. The highlighted boundary shows the region that will be available offline after download.",
-    "duplicateDownloadTitle": "Already Downloading",
     "duplicateDownloadMessage": "This region is already being downloaded.",
-    "insufficientStorageTitle": "Not Enough Storage",
     "insufficientStorageMessage": "There is not enough free space on your device to download this region.",
     "downloadError": "Download failed. Please check your connection and try again.",
     "addRegionButtonLabel": "Add a new offline map region",
     "closeButtonLabel": "Close",
-    "cancelDownloadButtonLabel": "Cancel download"
+    "cancelDownloadButtonLabel": "Cancel download",
+    "completedRegions_one": "{{count}} downloaded region",
+    "completedRegions_other": "{{count}} downloaded regions"
   }
 }

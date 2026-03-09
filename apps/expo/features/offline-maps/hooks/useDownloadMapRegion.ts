@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useRef } from 'react';
-import { OFFLINE_MAPS_DIR } from '../constants';
+import { ERR_DUPLICATE_DOWNLOAD, ERR_INSUFFICIENT_STORAGE, OFFLINE_MAPS_DIR } from '../constants';
 import { offlineMapsStore } from '../store/offlineMaps';
 import type { OfflineMapRegion, PredefinedRegion } from '../types';
 import { estimateDownloadSize } from '../utils/regions';
@@ -20,8 +20,11 @@ async function runDownloadInBackground(
     for (let tick = 1; tick <= TOTAL_TICKS; tick++) {
       if (signal.cancelled) return;
       await new Promise<void>((resolve) => setTimeout(resolve, TICK_MS));
+      // Check again after the sleep to prevent post-cancel store writes
+      if (signal.cancelled) return;
       const progress = Math.round((tick / TOTAL_TICKS) * 100);
       const downloadedSize = Math.round((tick / TOTAL_TICKS) * estimatedSize);
+      // @ts-ignore: Safe because Legend-State uses Proxy
       offlineMapsStore[id].set((prev) => ({
         ...prev,
         progress,
@@ -32,6 +35,7 @@ async function runDownloadInBackground(
     }
 
     if (!signal.cancelled) {
+      // @ts-ignore: Safe because Legend-State uses Proxy
       offlineMapsStore[id].set((prev) => ({
         ...prev,
         progress: 100,
@@ -42,6 +46,7 @@ async function runDownloadInBackground(
     }
   } catch (error) {
     console.error(`[OfflineMaps] Download simulation failed for entry "${id}":`, error);
+    // @ts-ignore: Safe because Legend-State uses Proxy
     offlineMapsStore[id].set((prev) => ({
       ...prev,
       status: 'failed',
@@ -75,14 +80,16 @@ export function useDownloadMapRegion() {
       const alreadyActive = existingEntries.some(
         (entry) => entry.id.startsWith(`${region.id}-`) && entry.status === 'downloading',
       );
-      if (alreadyActive) return;
+      if (alreadyActive) {
+        throw new Error(ERR_DUPLICATE_DOWNLOAD);
+      }
 
       const estimatedSize = estimateDownloadSize(region.bounds, minZoom, maxZoom);
 
       // Check available disk space before starting — throw so caller can show inline error
       const freeSpace = await FileSystem.getFreeDiskStorageAsync();
       if (freeSpace < estimatedSize) {
-        throw new Error('insufficient_storage');
+        throw new Error(ERR_INSUFFICIENT_STORAGE);
       }
 
       const id = `${region.id}-${Date.now()}`;
@@ -103,6 +110,7 @@ export function useDownloadMapRegion() {
         updatedAt: now,
       };
 
+      // @ts-ignore: Safe because Legend-State uses Proxy
       offlineMapsStore[id].set(entry);
 
       // Ensure directory exists
@@ -127,6 +135,7 @@ export function useDownloadMapRegion() {
       cancelRefs.current[id].cancelled = true;
     }
     // Remove the entry entirely rather than leaving an orphaned 'idle' record
+    // @ts-ignore: Safe because Legend-State uses Proxy
     offlineMapsStore[id].delete();
   }, []);
 

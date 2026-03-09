@@ -5,7 +5,12 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 import MapView, { Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
-import { REGION_FILL_COLOR, REGION_TEAL_COLOR } from '../constants';
+import {
+  ERR_DUPLICATE_DOWNLOAD,
+  ERR_INSUFFICIENT_STORAGE,
+  REGION_FILL_COLOR,
+  REGION_TEAL_COLOR,
+} from '../constants';
 import { useDeleteMapRegion } from '../hooks/useDeleteMapRegion';
 import { useDownloadMapRegion } from '../hooks/useDownloadMapRegion';
 import { useOfflineMapRegions } from '../hooks/useOfflineMapRegions';
@@ -31,9 +36,9 @@ function StorageBanner() {
         {formatBytes(totalSize)}
       </Text>
       <Text variant="footnote" className="text-muted-foreground mt-1">
-        {completedCount} {t('offlineMaps.completedRegions')}
+        {t('offlineMaps.completedRegions', { count: completedCount })}
         {downloadingCount > 0
-          ? ` · ${downloadingCount} ${t('offlineMaps.downloading', { count: downloadingCount })}`
+          ? ` · ${t('offlineMaps.downloading', { count: downloadingCount })}`
           : ''}
       </Text>
     </View>
@@ -244,11 +249,14 @@ function AddRegionModal({
       await onStartDownload(selected, minZoom, maxZoom);
       onClose();
     } catch (error) {
-      const isStorageError = error instanceof Error && error.message === 'insufficient_storage';
+      const isDuplicate = error instanceof Error && error.message === ERR_DUPLICATE_DOWNLOAD;
+      const isStorageError = error instanceof Error && error.message === ERR_INSUFFICIENT_STORAGE;
       setDownloadError(
-        isStorageError
-          ? t('offlineMaps.insufficientStorageMessage')
-          : t('offlineMaps.downloadError'),
+        isDuplicate
+          ? t('offlineMaps.duplicateDownloadMessage')
+          : isStorageError
+            ? t('offlineMaps.insufficientStorageMessage')
+            : t('offlineMaps.downloadError'),
       );
       console.error('[OfflineMaps] Failed to start download:', error);
     } finally {
@@ -345,12 +353,9 @@ function AddRegionModal({
                   </View>
                 </View>
                 {selected?.id === region.id && (
-                  <Icon
-                    name="check-circle"
-                    size={18}
-                    color={REGION_TEAL_COLOR}
-                    style={{ position: 'absolute', top: 8, right: 8 }}
-                  />
+                  <View style={{ position: 'absolute', top: 8, right: 8 }}>
+                    <Icon name="check-circle" size={18} color={REGION_TEAL_COLOR} />
+                  </View>
                 )}
               </Pressable>
             ))}
