@@ -8,6 +8,7 @@ import { guidesRoutes } from './guides';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
+import { trailConditionsRoutes } from './trailConditions';
 import { tripsRoutes } from './trips';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
@@ -35,6 +36,7 @@ protectedRoutes.route('/pack-templates', packTemplatesRoutes);
 protectedRoutes.route('/season-suggestions', seasonSuggestionsRoutes);
 protectedRoutes.route('/user', userRoutes);
 protectedRoutes.route('/upload', uploadRoutes);
+protectedRoutes.route('/trail-conditions', trailConditionsRoutes);
 
 const routes = new OpenAPIHono();
 
