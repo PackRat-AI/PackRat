@@ -1,6 +1,7 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, View } from 'react-native';
 import { useVoiceCommands } from '../hooks/useVoiceCommands';
 import { VoiceCommandPanel } from '../components/VoiceCommandPanel';
 

@@ -1,5 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
 import type { VoiceCommand, VoiceListeningState } from '../types';
@@ -23,7 +23,7 @@ const STATE_COLORS: Record<VoiceListeningState, string> = {
   error: 'bg-destructive',
 };
 
-const STATE_ICONS: Record<VoiceListeningState, string> = {
+const STATE_ICONS: Record<VoiceListeningState, MaterialIconName> = {
   idle: 'microphone-outline',
   listening: 'microphone',
   processing: 'dots-horizontal',
@@ -80,7 +80,7 @@ export function VoiceCommandPanel({
           accessibilityLabel={isListening ? t('voice.stopListening') : t('voice.startListening')}
           accessibilityState={{ pressed: isListening }}
         >
-          <Icon name={micIcon as 'microphone'} size={40} color="white" />
+          <Icon name={micIcon} size={40} color="white" />
         </Pressable>
         <Text className="text-base font-semibold text-foreground">
           {listeningState === 'idle' && t('voice.holdToSpeak')}
