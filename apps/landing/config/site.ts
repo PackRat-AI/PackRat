@@ -225,6 +225,7 @@ export const siteConfig = {
         description: 'Real-time weather data from multiple providers',
         icon: 'Cloud',
         color: '#3B82F6',
+        features: ['7-day Forecast', 'Severe Weather Alerts', 'Hourly Updates'],
       },
       {
         id: 'maps',
@@ -232,6 +233,7 @@ export const siteConfig = {
         description: 'Access thousands of trails and routes',
         icon: 'Map',
         color: '#F97316',
+        features: ['GPX Import/Export', 'Offline Maps', 'Trail Reviews'],
       },
       {
         id: 'health',
@@ -239,6 +241,7 @@ export const siteConfig = {
         description: 'Sync with Apple Health and Google Fit',
         icon: 'Heart',
         color: '#EC4899',
+        features: ['Activity Tracking', 'Calorie Burn', 'Heart Rate'],
       },
       {
         id: 'calendar',
@@ -246,6 +249,7 @@ export const siteConfig = {
         description: 'Sync trips with your calendar',
         icon: 'Calendar',
         color: '#8B5CF6',
+        features: ['Trip Reminders', 'Weather Alerts', 'Share Events'],
       },
       {
         id: 'sharing',
@@ -253,6 +257,7 @@ export const siteConfig = {
         description: 'Share trips and routes with friends',
         icon: 'Share2',
         color: '#10B981',
+        features: ['Trip Links', 'Pack Lists', 'Photo Sharing'],
       },
       {
         id: 'emergency',
@@ -260,6 +265,7 @@ export const siteConfig = {
         description: 'Quick access to emergency contacts',
         icon: 'AlertTriangle',
         color: '#EF4444',
+        features: ['SOS Beacon', 'Location Share', 'Check-ins'],
       },
     ] as Integration[],
   },
@@ -366,19 +372,11 @@ export const siteConfig = {
       { title: 'Features', href: '#features' },
       { title: 'Guides', href: 'https://guides.packratai.com/' },
       { title: 'Integrations', href: '#integrations' },
-      { title: 'Updates', href: '#' },
     ],
-    company: [
-      { title: 'About', href: '#' },
-      { title: 'Blog', href: '#' },
-      { title: 'Careers', href: '#' },
-      { title: 'Contact', href: '#' },
-    ],
+    company: [{ title: 'Support', href: 'mailto:support@packratai.com' }],
     legal: [
-      { title: 'Terms', href: '#' },
       { title: 'Privacy', href: '/privacy-policy' },
-      { title: 'Cookies', href: '#' },
-      { title: 'Licenses', href: '#' },
+      { title: 'Account Deletion', href: '/account-deletion' },
     ],
   },
 

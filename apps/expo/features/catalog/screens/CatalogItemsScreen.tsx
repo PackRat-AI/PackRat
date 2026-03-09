@@ -98,6 +98,7 @@ function CatalogItemsScreen() {
         searchBar={{
           iosHideWhenScrolling: false,
           onChangeText: setSearchValue,
+          onCancel: () => setSearchValue(''),
           placeholder: t('catalog.searchPlaceholder'),
           content: (
             <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -197,14 +198,17 @@ function CatalogItemsScreen() {
           </View>
         }
         ListHeaderComponent={
-          <View className="mb-4">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-muted-foreground">{totalItemsText}</Text>
+          // Hide header content when searching to prevent "Showing X of Y" from peeking through
+          !isSearching ? (
+            <View className="mb-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-muted-foreground">{totalItemsText}</Text>
+              </View>
+              {paginatedItems.length > 0 && (
+                <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
+              )}
             </View>
-            {paginatedItems.length > 0 && (
-              <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
-            )}
-          </View>
+          ) : null
         }
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">

@@ -21,15 +21,11 @@ export function CatalogItemImage({ imageUrl, ...imageProps }: PackItemImageProps
     <Image
       source={{
         uri: imageUrl,
-        ...(Platform.OS === 'android'
-          ? {
-              headers: {
-                'User-Agent':
-                  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-                Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
-              },
-            }
-          : {}),
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
+          Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
+        },
       }}
       {...imageProps}
       className={`bg-muted ${imageProps.className}`}
