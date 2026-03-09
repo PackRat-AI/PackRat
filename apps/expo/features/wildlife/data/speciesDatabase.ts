@@ -498,6 +498,8 @@ export function searchSpecies(query: string): SpeciesEntry[] {
       s.commonName.toLowerCase().includes(lower) ||
       s.scientificName.toLowerCase().includes(lower) ||
       s.description.toLowerCase().includes(lower) ||
-      s.characteristics.some((c) => c.toLowerCase().includes(lower)),
+      s.characteristics.some((c) => c.toLowerCase().includes(lower)) ||
+      s.habitat.some((h) => h.toLowerCase().includes(lower)) ||
+      (s.imageDescription?.toLowerCase().includes(lower) ?? false),
   );
 }

@@ -3,13 +3,13 @@ import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import { useAtom } from 'jotai';
 import { ActivityIndicator, FlatList, Pressable, SafeAreaView, View } from 'react-native';
-import { wildlifeHistoryAtom } from '../atoms/wildlifeAtoms';
+import { useWildlifeHistory } from '../hooks/useWildlifeHistory';
 import type { WildlifeIdentification } from '../types';
 
 function HistoryItem({ item, onPress }: { item: WildlifeIdentification; onPress: () => void }) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const topResult = item.results[0];
   const date = new Date(item.timestamp).toLocaleDateString();
 
@@ -31,7 +31,7 @@ function HistoryItem({ item, onPress }: { item: WildlifeIdentification; onPress:
               </Text>
             </>
           ) : (
-            <Text className="text-base text-muted-foreground">Unknown species</Text>
+            <Text className="text-base text-muted-foreground">{t('wildlife.unknownSpecies')}</Text>
           )}
           <Text className="text-xs text-muted-foreground mt-1">{date}</Text>
         </View>
@@ -45,10 +45,10 @@ export function WildlifeScreen() {
   const router = useRouter();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const [historyLoadable] = useAtom(wildlifeHistoryAtom);
+  const { historyState } = useWildlifeHistory();
 
-  const history = historyLoadable.state === 'hasData' ? historyLoadable.data : [];
-  const isLoading = historyLoadable.state === 'loading';
+  const history = historyState.state === 'hasData' ? historyState.data : [];
+  const isLoading = historyState.state === 'loading';
 
   const handleIdentify = () => {
     router.push('/wildlife/identify');

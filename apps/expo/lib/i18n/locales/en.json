@@ -1080,6 +1080,7 @@
     "failedToSelectImage": "Failed to select image. Please try again.",
     "speciesDetail": "Species Detail",
     "speciesNotFound": "Species not found.",
+    "unknownSpecies": "Unknown species",
     "description": "Description",
     "characteristics": "Characteristics",
     "habitat": "Habitat",
