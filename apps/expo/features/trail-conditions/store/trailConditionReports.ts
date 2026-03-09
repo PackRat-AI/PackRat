@@ -8,10 +8,7 @@ import Storage from 'expo-sqlite/kv-store';
 import type { TrailConditionReportInStore } from '../types';
 
 // API calls for trail condition reports
-const listMyReports = async (
-  _params: unknown,
-  { lastSync }: { lastSync?: number } = {},
-) => {
+const listMyReports = async (_params: unknown, { lastSync }: { lastSync?: number } = {}) => {
   try {
     const params: Record<string, string> = {};
     if (lastSync != null) {

@@ -61,9 +61,10 @@ export function TrailConditionReportCard({ report }: TrailConditionReportCardPro
       : report.waterCrossingDifficulty
     : null;
 
-  const hazardLabels = (report.hazards ?? []).map((h) =>
-    HAZARD_KEYS[h.toLowerCase()] ? t(HAZARD_KEYS[h.toLowerCase()]) : h,
-  );
+  const hazardLabels = (report.hazards ?? []).map((h) => {
+    const key = HAZARD_KEYS[h.toLowerCase()];
+    return key ? t(key) : h;
+  });
 
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
