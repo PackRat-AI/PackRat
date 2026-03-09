@@ -1,5 +1,7 @@
 import { Button, Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { TripNotificationsList } from 'expo-app/features/trips/components/TripNotificationsList';
+import { useTripNotifications } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
@@ -15,6 +17,8 @@ export default function NotificationsScreen() {
     email: false,
     weatherAlerts: true,
   });
+
+  const { notifications: tripNotifications, isLoading, error } = useTripNotifications();
 
   function onValueChange(type: 'push' | 'email' | 'weatherAlerts') {
     return (value: boolean) => {
@@ -103,6 +107,21 @@ export default function NotificationsScreen() {
                 <Icon name="chevron-right" size={17} color="#8E8E93" />
               </Pressable>
             </FormItem>
+          </FormSection>
+
+          {/* Trip Reminders Section */}
+          <FormSection
+            materialIconProps={{ name: 'map-clock-outline' }}
+            ios={{ title: t('notifications.tripReminders') }}
+            footnote={t('notifications.tripRemindersSubtitle')}
+          >
+            <View className="px-2 py-3">
+              <TripNotificationsList
+                notifications={tripNotifications}
+                isLoading={isLoading}
+                error={error}
+              />
+            </View>
           </FormSection>
 
           {Platform.OS !== 'ios' && (
