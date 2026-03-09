@@ -305,7 +305,7 @@ export const trailConditionReports = pgTable(
     userIdIdx: index('trail_condition_reports_user_id_idx').on(table.userId),
     activeCreatedIdx: index('trail_condition_reports_active_created_idx').on(
       table.deleted,
-      table.createdAt,
+      table.createdAt.desc(),
     ),
     trailNameIdx: index('trail_condition_reports_trail_name_idx').on(table.trailName),
   }),
