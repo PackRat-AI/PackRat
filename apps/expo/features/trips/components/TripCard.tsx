@@ -11,7 +11,14 @@ import type { Trip } from '../types';
 
 function formatTripDate(dateString?: string): string {
   if (!dateString) return '—';
-  const date = new Date(dateString);
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  const date = dateOnlyMatch
+    ? new Date(
+        Number(dateOnlyMatch[1]),
+        Number(dateOnlyMatch[2]) - 1,
+        Number(dateOnlyMatch[3]),
+      )
+    : new Date(dateString);
   if (Number.isNaN(date.getTime())) return '—';
   return date.toLocaleDateString();
 }

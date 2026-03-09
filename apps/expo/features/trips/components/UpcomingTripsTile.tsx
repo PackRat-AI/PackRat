@@ -8,6 +8,13 @@ import { useRouter } from 'expo-router';
 import { useMemo, useRef } from 'react';
 import { View } from 'react-native';
 
+function parseLocalDate(dateString: string): Date {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  return m
+    ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    : new Date(dateString);
+}
+
 export function UpcomingTripsTile() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -18,7 +25,7 @@ export function UpcomingTripsTile() {
 
   // ✅ derive upcoming trips (in future)
   const upcomingTrips = useMemo(
-    () => trips.filter((t) => t.startDate && new Date(t.startDate) > new Date()),
+    () => trips.filter((t) => t.startDate && parseLocalDate(t.startDate) > new Date()),
     [trips],
   );
 
