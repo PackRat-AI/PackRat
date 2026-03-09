@@ -2,11 +2,14 @@ import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { appAlert } from 'expo-app/app/_layout';
+import { featureFlags } from 'expo-app/config';
+import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { useLocations } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, Share, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, ScrollView, Share, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
@@ -22,6 +25,7 @@ export function TripDetailScreen() {
   const { locationsState } = useLocations();
 
   const locations = locationsState.state === 'hasData' ? locationsState.data : [];
+  const [showConditionReport, setShowConditionReport] = useState(false);
 
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
@@ -214,8 +218,59 @@ export function TripDetailScreen() {
               </Card>
             </View>
           )}
+
+          {/* Trail Condition Report Prompt */}
+          {featureFlags.enableTrailConditions && (
+            <View className="mb-6">
+              <Card className="rounded-xl bg-card border border-border overflow-hidden">
+                <View className="p-4">
+                  <View className="flex-row items-center mb-2 gap-2">
+                    <Icon name="map-marker-path" size={20} color={colors.primary} />
+                    <Text className="text-base font-semibold text-foreground">
+                      {t('trailConditions.reportConditionsTitle')}
+                    </Text>
+                  </View>
+                  <Text className="text-sm text-muted-foreground mb-3">
+                    {t('trailConditions.reportConditionsPrompt')}
+                  </Text>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => setShowConditionReport(true)}
+                    className="flex-row items-center gap-2"
+                  >
+                    <Text className="text-sm">{t('trailConditions.submitReport')}</Text>
+                  </Button>
+                </View>
+              </Card>
+            </View>
+          )}
         </View>
       </ScrollView>
+
+      {/* Trail Condition Report Modal */}
+      <Modal
+        visible={showConditionReport}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowConditionReport(false)}
+      >
+        <View className="flex-1 bg-background">
+          <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+            <Text className="text-base font-semibold text-foreground">
+              {t('trailConditions.reportConditionsTitle')}
+            </Text>
+            <Button variant="plain" size="sm" onPress={() => setShowConditionReport(false)}>
+              <Text className="font-semibold text-primary">{t('common.cancel')}</Text>
+            </Button>
+          </View>
+          <SubmitConditionReportForm
+            tripId={trip.id}
+            initialTrailName={trip.location?.name ?? trip.name}
+            onSuccess={() => setShowConditionReport(false)}
+          />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

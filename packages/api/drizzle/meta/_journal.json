@@ -253,6 +253,13 @@
       "when": 1774086319275,
       "tag": "0034_thin_spirit",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1774200000000,
+      "tag": "0035_trail_conditions",
+      "breakpoints": true
     }
   ]
 }

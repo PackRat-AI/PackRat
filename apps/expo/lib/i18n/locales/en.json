@@ -983,5 +983,27 @@
     "photoLibraryTitle": "Photo Library Access Required",
     "photoLibraryMessage": "PackRat needs access to your photo library to update your profile photo. Please enable it in Settings.",
     "openSettings": "Open Settings"
+  },
+  "trailConditions": {
+    "title": "Trail Conditions",
+    "trailName": "Trail Name",
+    "trailNamePlaceholder": "e.g. Appalachian Trail - Springer Mountain",
+    "trailNameRequired": "Trail name is required",
+    "trailRegion": "Region / State",
+    "trailRegionPlaceholder": "e.g. GA, CA, WA",
+    "overallCondition": "Overall Condition",
+    "surface": "Trail Surface",
+    "hazards": "Hazards",
+    "waterCrossings": "Water Crossings",
+    "difficulty": "Difficulty",
+    "notes": "Notes",
+    "notesPlaceholder": "Share details about the trail conditions...",
+    "submitReport": "Submit Report",
+    "submitting": "Submitting...",
+    "reportSubmitted": "Your trail condition report has been submitted. Thank you!",
+    "reportConditionsTitle": "Report Trail Conditions",
+    "reportConditionsPrompt": "Just finished this hike? Help others by reporting the current trail conditions.",
+    "noReports": "No trail condition reports yet. Be the first to report!",
+    "recentReports": "Recent Reports"
   }
 }
