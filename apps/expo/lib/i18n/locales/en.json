@@ -897,5 +897,10 @@
     "by": "By",
     "updated": "Updated",
     "all": "All"
+  },
+  "permissions": {
+    "photoLibraryTitle": "Photo Library Access Required",
+    "photoLibraryMessage": "PackRat needs access to your photo library to update your profile photo. Please enable it in Settings.",
+    "openSettings": "Open Settings"
   }
 }

@@ -30,7 +30,7 @@ import * as FileSystem from 'expo-file-system';
 import { router, Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
-import { Alert, Platform, SafeAreaView, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, SafeAreaView, TouchableOpacity, View } from 'react-native';
 
 const ESTIMATED_ITEM_SIZE =
   ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
@@ -155,7 +155,12 @@ function ListHeaderComponent() {
         }
       }
     } catch (err) {
-      if (err instanceof Error && err.message !== 'Permission to access media library was denied') {
+      if (err instanceof Error && err.message === 'Permission to access media library was denied') {
+        Alert.alert(t('permissions.photoLibraryTitle'), t('permissions.photoLibraryMessage'), [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('permissions.openSettings'), onPress: () => Linking.openSettings() },
+        ]);
+      } else {
         Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
       }
     } finally {

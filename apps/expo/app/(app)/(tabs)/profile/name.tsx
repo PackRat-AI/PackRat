@@ -29,15 +29,19 @@ export default function NameScreen() {
     };
   }
 
+  const trimmedFirst = React.useMemo(() => form.first.trim(), [form.first]);
+  const trimmedLast = React.useMemo(() => form.last.trim(), [form.last]);
+
   const canSave =
-    (form.first !== initialFirst.current || form.last !== initialLast.current) &&
-    !!form.first &&
-    !!form.last;
+    (trimmedFirst !== initialFirst.current.trim() || trimmedLast !== initialLast.current.trim()) &&
+    !!trimmedFirst &&
+    !!trimmedLast;
 
   async function handleSave() {
+    if (!canSave || isLoading) return;
     const success = await updateProfile({
-      firstName: form.first,
-      lastName: form.last,
+      firstName: trimmedFirst,
+      lastName: trimmedLast,
     });
     if (success) {
       router.back();
