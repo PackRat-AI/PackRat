@@ -218,6 +218,7 @@ export const siteConfig = {
     title: 'Seamless Integrations',
     subtitle:
       'PackRat connects with your favorite outdoor and weather services for a complete experience.',
+    comingSoon: 'More integrations on the way — Strava, Garmin, AllTrails and more coming soon!',
     items: [
       {
         id: 'weather',
@@ -225,6 +226,7 @@ export const siteConfig = {
         description: 'Real-time weather data from multiple providers',
         icon: 'Cloud',
         color: '#3B82F6',
+        features: ['Hourly Forecasts', 'Severe Alerts', 'UV and Wind Index'],
       },
       {
         id: 'maps',
@@ -232,6 +234,7 @@ export const siteConfig = {
         description: 'Access thousands of trails and routes',
         icon: 'Map',
         color: '#F97316',
+        features: ['50K+ Trails', 'Offline Maps', 'GPX Import/Export'],
       },
       {
         id: 'health',
@@ -239,6 +242,7 @@ export const siteConfig = {
         description: 'Sync with Apple Health and Google Fit',
         icon: 'Heart',
         color: '#EC4899',
+        features: ['Apple Health', 'Google Fit', 'Activity Tracking'],
       },
       {
         id: 'calendar',
@@ -246,6 +250,7 @@ export const siteConfig = {
         description: 'Sync trips with your calendar',
         icon: 'Calendar',
         color: '#8B5CF6',
+        features: ['Google Calendar', 'iCloud Sync', 'Smart Reminders'],
       },
       {
         id: 'sharing',
@@ -253,6 +258,7 @@ export const siteConfig = {
         description: 'Share trips and routes with friends',
         icon: 'Share2',
         color: '#10B981',
+        features: ['Route Sharing', 'Group Trips', 'Photo Albums'],
       },
       {
         id: 'emergency',
@@ -260,6 +266,7 @@ export const siteConfig = {
         description: 'Quick access to emergency contacts',
         icon: 'AlertTriangle',
         color: '#EF4444',
+        features: ['SOS Alerts', 'GPS Location', 'Emergency Contacts'],
       },
     ] as Integration[],
   },
