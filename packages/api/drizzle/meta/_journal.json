@@ -239,6 +239,13 @@
       "when": 1760175950793,
       "tag": "0032_curvy_bromley",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1741514518951,
+      "tag": "0033_trail_conditions",
+      "breakpoints": true
     }
   ]
 }

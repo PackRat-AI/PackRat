@@ -137,7 +137,7 @@
     "loginFailed": "Login Failed",
     "invalidEmailOrPassword": "Invalid email or password",
     "resumeSync": "Resume Sync",
-    "syncPaused": "Sync paused — please sign in again."
+    "syncPaused": "Sync paused \u2014 please sign in again."
   },
   "profile": {
     "profile": "Profile",
@@ -218,10 +218,10 @@
     "lastUpdatedShort": "Last updated",
     "itemsCount": "{{count}} items",
     "sharingBenefits": "Sharing Benefits",
-    "distributeGroupGear": "• Distribute group gear among members to reduce individual pack weight",
-    "sharingBenefit1": "• Coordinate who brings shared items like tent, stove, and water filter",
-    "sharingBenefit2": "• See real-time updates when members modify the pack",
-    "sharingBenefit3": "• Plan together and ensure nothing essential is forgotten",
+    "distributeGroupGear": "\u2022 Distribute group gear among members to reduce individual pack weight",
+    "sharingBenefit1": "\u2022 Coordinate who brings shared items like tent, stove, and water filter",
+    "sharingBenefit2": "\u2022 See real-time updates when members modify the pack",
+    "sharingBenefit3": "\u2022 Plan together and ensure nothing essential is forgotten",
     "itemsInInventory": "{{count}} items in your inventory",
     "all": "All",
     "byCategory": "By Category",
@@ -896,5 +896,27 @@
     "by": "By",
     "updated": "Updated",
     "all": "All"
+  },
+  "trailConditions": {
+    "title": "Trail Conditions",
+    "trailName": "Trail Name",
+    "trailNamePlaceholder": "e.g. Appalachian Trail - Springer Mountain",
+    "trailNameRequired": "Trail name is required",
+    "trailRegion": "Region / State",
+    "trailRegionPlaceholder": "e.g. GA, CA, WA",
+    "overallCondition": "Overall Condition",
+    "surface": "Trail Surface",
+    "hazards": "Hazards",
+    "waterCrossings": "Water Crossings",
+    "difficulty": "Difficulty",
+    "notes": "Notes",
+    "notesPlaceholder": "Share details about the trail conditions...",
+    "submitReport": "Submit Report",
+    "submitting": "Submitting...",
+    "reportSubmitted": "Your trail condition report has been submitted. Thank you!",
+    "reportConditionsTitle": "Report Trail Conditions",
+    "reportConditionsPrompt": "Just finished this hike? Help others by reporting the current trail conditions.",
+    "noReports": "No trail condition reports yet. Be the first to report!",
+    "recentReports": "Recent Reports"
   }
 }

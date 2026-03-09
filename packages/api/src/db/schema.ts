@@ -277,6 +277,29 @@ export const packTemplateItems = pgTable('pack_template_items', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Trail condition reports table
+export const trailConditionReports = pgTable('trail_condition_reports', {
+  id: text('id').primaryKey(),
+  trailName: text('trail_name').notNull(),
+  trailRegion: text('trail_region'),
+  surface: text('surface').notNull(), // paved | gravel | dirt | rocky | snow | mud
+  overallCondition: text('overall_condition').notNull(), // excellent | good | fair | poor
+  hazards: jsonb('hazards').$type<string[]>().default([]),
+  waterCrossings: integer('water_crossings').default(0),
+  waterCrossingDifficulty: text('water_crossing_difficulty'), // easy | moderate | difficult
+  notes: text('notes'),
+  photos: jsonb('photos').$type<string[]>().default([]),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  tripId: text('trip_id').references(() => trips.id, { onDelete: 'set null' }),
+  deleted: boolean('deleted').notNull().default(false),
+  localCreatedAt: timestamp('local_created_at').notNull(),
+  localUpdatedAt: timestamp('local_updated_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const trips = pgTable('trips', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -500,6 +523,20 @@ export type NewPackTemplate = InferInsertModel<typeof packTemplates>;
 
 export type PackTemplateItem = InferSelectModel<typeof packTemplateItems>;
 export type NewPackTemplateItem = InferInsertModel<typeof packTemplateItems>;
+
+export const trailConditionReportsRelations = relations(trailConditionReports, ({ one }) => ({
+  user: one(users, {
+    fields: [trailConditionReports.userId],
+    references: [users.id],
+  }),
+  trip: one(trips, {
+    fields: [trailConditionReports.tripId],
+    references: [trips.id],
+  }),
+}));
+
+export type TrailConditionReport = InferSelectModel<typeof trailConditionReports>;
+export type NewTrailConditionReport = InferInsertModel<typeof trailConditionReports>;
 
 export type Trip = InferSelectModel<typeof trips>;
 export type NewTrip = InferInsertModel<typeof trips>;

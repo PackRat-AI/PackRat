@@ -1,0 +1,281 @@
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createDb } from '@packrat/api/db';
+import { trailConditionReports } from '@packrat/api/db/schema';
+import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
+import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
+import { and, desc, eq } from 'drizzle-orm';
+
+const trailConditionRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>();
+
+// ------------------------------
+// Zod schemas
+// ------------------------------
+const TrailConditionReportSchema = z.object({
+  id: z.string(),
+  trailName: z.string(),
+  trailRegion: z.string().nullable().optional(),
+  surface: z.enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud']),
+  overallCondition: z.enum(['excellent', 'good', 'fair', 'poor']),
+  hazards: z.array(z.string()).default([]),
+  waterCrossings: z.number().int().default(0),
+  waterCrossingDifficulty: z.enum(['easy', 'moderate', 'difficult']).nullable().optional(),
+  notes: z.string().nullable().optional(),
+  photos: z.array(z.string()).default([]),
+  userId: z.number(),
+  tripId: z.string().nullable().optional(),
+  deleted: z.boolean(),
+  localCreatedAt: z.string().datetime(),
+  localUpdatedAt: z.string().datetime(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+const CreateReportRequestSchema = z.object({
+  id: z.string().openapi({ example: 'tcr_123456', description: 'Client-generated report ID' }),
+  trailName: z.string().min(1).openapi({ example: 'Appalachian Trail - Springer Mountain' }),
+  trailRegion: z.string().optional().nullable(),
+  surface: z.enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud']),
+  overallCondition: z.enum(['excellent', 'good', 'fair', 'poor']),
+  hazards: z.array(z.string()).optional().default([]),
+  waterCrossings: z.number().int().min(0).optional().default(0),
+  waterCrossingDifficulty: z.enum(['easy', 'moderate', 'difficult']).optional().nullable(),
+  notes: z.string().optional().nullable(),
+  photos: z.array(z.string()).optional().default([]),
+  tripId: z.string().optional().nullable(),
+  localCreatedAt: z.string().datetime(),
+  localUpdatedAt: z.string().datetime(),
+});
+
+// ------------------------------
+// List Reports Route
+// ------------------------------
+const listReportsRoute = createRoute({
+  method: 'get',
+  path: '/',
+  tags: ['Trail Conditions'],
+  summary: 'List trail condition reports',
+  description: 'List recent trail condition reports, optionally filtered by trail name',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: z.object({
+      trailName: z.string().optional().openapi({ description: 'Filter by trail name' }),
+      limit: z.coerce.number().int().min(1).max(100).optional().default(50),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Reports retrieved successfully',
+      content: { 'application/json': { schema: z.array(TrailConditionReportSchema) } },
+    },
+    500: {
+      description: 'Internal server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+trailConditionRoutes.openapi(listReportsRoute, async (c) => {
+  const db = createDb(c);
+  const { trailName, limit } = c.req.valid('query');
+
+  try {
+    const conditions = [eq(trailConditionReports.deleted, false)];
+    if (trailName) {
+      conditions.push(eq(trailConditionReports.trailName, trailName));
+    }
+
+    const reports = await db
+      .select()
+      .from(trailConditionReports)
+      .where(and(...conditions))
+      .orderBy(desc(trailConditionReports.createdAt))
+      .limit(limit ?? 50);
+
+    return c.json(reports, 200);
+  } catch (error) {
+    console.error('Error listing trail condition reports:', error);
+    return c.json({ error: 'Failed to list trail condition reports' }, 500);
+  }
+});
+
+// ------------------------------
+// Create Report Route
+// ------------------------------
+const createReportRoute = createRoute({
+  method: 'post',
+  path: '/',
+  tags: ['Trail Conditions'],
+  summary: 'Submit a trail condition report',
+  description: 'Submit a new trail condition report',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: { 'application/json': { schema: CreateReportRequestSchema } },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Report submitted successfully',
+      content: { 'application/json': { schema: TrailConditionReportSchema } },
+    },
+    400: {
+      description: 'Bad request',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Internal server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+trailConditionRoutes.openapi(createReportRoute, async (c) => {
+  const auth = c.get('user');
+  const db = createDb(c);
+  const data = await c.req.json();
+
+  if (!data.id) return c.json({ error: 'Report ID is required' }, 400);
+
+  try {
+    const [newReport] = await db
+      .insert(trailConditionReports)
+      .values({
+        id: data.id,
+        trailName: data.trailName,
+        trailRegion: data.trailRegion ?? null,
+        surface: data.surface,
+        overallCondition: data.overallCondition,
+        hazards: data.hazards ?? [],
+        waterCrossings: data.waterCrossings ?? 0,
+        waterCrossingDifficulty: data.waterCrossingDifficulty ?? null,
+        notes: data.notes ?? null,
+        photos: data.photos ?? [],
+        userId: auth.userId,
+        tripId: data.tripId ?? null,
+        deleted: false,
+        localCreatedAt: new Date(data.localCreatedAt),
+        localUpdatedAt: new Date(data.localUpdatedAt),
+      })
+      .returning();
+
+    if (!newReport) return c.json({ error: 'Failed to submit report' }, 400);
+
+    return c.json(newReport, 200);
+  } catch (error) {
+    console.error('Error creating trail condition report:', error);
+    return c.json({ error: 'Failed to submit trail condition report' }, 500);
+  }
+});
+
+// ------------------------------
+// List My Reports Route
+// ------------------------------
+const listMyReportsRoute = createRoute({
+  method: 'get',
+  path: '/mine',
+  tags: ['Trail Conditions'],
+  summary: 'List my trail condition reports',
+  description: 'List trail condition reports submitted by the authenticated user',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: z.object({
+      updatedAt: z
+        .string()
+        .datetime()
+        .optional()
+        .openapi({ description: 'Only return reports updated after this timestamp' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Reports retrieved successfully',
+      content: { 'application/json': { schema: z.array(TrailConditionReportSchema) } },
+    },
+    500: {
+      description: 'Internal server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+trailConditionRoutes.openapi(listMyReportsRoute, async (c) => {
+  const auth = c.get('user');
+  const db = createDb(c);
+
+  try {
+    const reports = await db
+      .select()
+      .from(trailConditionReports)
+      .where(eq(trailConditionReports.userId, auth.userId))
+      .orderBy(desc(trailConditionReports.createdAt));
+
+    return c.json(reports, 200);
+  } catch (error) {
+    console.error('Error listing user trail condition reports:', error);
+    return c.json({ error: 'Failed to list trail condition reports' }, 500);
+  }
+});
+
+// ------------------------------
+// Delete Report Route
+// ------------------------------
+const deleteReportRoute = createRoute({
+  method: 'delete',
+  path: '/{reportId}',
+  tags: ['Trail Conditions'],
+  summary: 'Delete a trail condition report',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ reportId: z.string().openapi({ example: 'tcr_123456' }) }),
+  },
+  responses: {
+    200: {
+      description: 'Report deleted successfully',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    403: {
+      description: 'Forbidden',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Internal server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+trailConditionRoutes.openapi(deleteReportRoute, async (c) => {
+  const auth = c.get('user');
+  const db = createDb(c);
+  const reportId = c.req.param('reportId');
+
+  try {
+    const report = await db.query.trailConditionReports.findFirst({
+      where: and(
+        eq(trailConditionReports.id, reportId),
+        eq(trailConditionReports.userId, auth.userId),
+      ),
+    });
+
+    if (!report) return c.json({ error: 'Report not found or unauthorized' }, 403);
+
+    await db
+      .update(trailConditionReports)
+      .set({ deleted: true, updatedAt: new Date() })
+      .where(
+        and(eq(trailConditionReports.id, reportId), eq(trailConditionReports.userId, auth.userId)),
+      );
+
+    return c.json({ success: true }, 200);
+  } catch (error) {
+    console.error('Error deleting trail condition report:', error);
+    return c.json({ error: 'Failed to delete trail condition report' }, 500);
+  }
+});
+
+export { trailConditionRoutes };
