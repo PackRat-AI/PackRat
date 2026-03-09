@@ -112,10 +112,13 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
 
     await PACKRAT_BUCKET.delete(image);
 
-    // Map AI results to the response format with stable IDs
+    // Map AI results to the response format with stable IDs derived from scientific name
     const results = identification.results.map((r) => ({
       species: {
-        id: r.commonName.toLowerCase().replaceAll(/\s+/g, '-'),
+        id: r.scientificName
+          .toLowerCase()
+          .replaceAll(/[\s.]+/g, '-')
+          .replaceAll(/[^a-z0-9-]/g, ''),
         commonName: r.commonName,
         scientificName: r.scientificName,
         category: r.category,
