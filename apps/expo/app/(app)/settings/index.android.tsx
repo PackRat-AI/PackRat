@@ -65,7 +65,6 @@ export default function SettingsAndroidStyleScreen() {
         contentInsetAdjustmentBehavior="automatic"
         variant="full-width"
         data={DATA}
-        estimatedItemSize={92}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap

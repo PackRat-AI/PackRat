@@ -8,6 +8,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import { isArray } from 'radash';
 import { Image, Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';
 import { useWritePermissionCheck } from '../hooks/useWritePermissionCheck';
 import type { PackTemplate } from '../types';
@@ -26,6 +27,7 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
 
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
+  const insets = useSafeAreaInsets();
 
   const handleActionsPress = () => {
     const options = canWrite
@@ -46,6 +48,7 @@ export function PackTemplateCard({ templateId, onPress }: PackTemplateCard) {
         message: template.description,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: insets.bottom,
         },
         textStyle: {
           color: colors.foreground,

@@ -3,8 +3,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert, SafeAreaView, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
 
 export default function LocationSearchScreen() {

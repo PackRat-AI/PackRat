@@ -10,6 +10,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBulkAddCatalogItems, useImagePicker } from '../hooks';
 
 interface AddPackItemActionsProps {
@@ -23,6 +24,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
     const { pickImage, takePhoto } = useImagePicker();
     const { showActionSheetWithOptions } = useActionSheet();
     const { colors } = useColorScheme();
+    const insets = useSafeAreaInsets();
 
     const { addItemsToPack } = useBulkAddCatalogItems();
 
@@ -47,6 +49,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           cancelButtonIndex,
           containerStyle: {
             backgroundColor: colors.card,
+            paddingBottom: insets.bottom,
           },
           textStyle: {
             color: colors.foreground,
@@ -112,6 +115,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           enablePanDownToClose
           backgroundStyle={{ backgroundColor: colors.card }}
           handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+          bottomInset={insets.bottom}
         >
           <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
             <View className="gap-2 mb-4">

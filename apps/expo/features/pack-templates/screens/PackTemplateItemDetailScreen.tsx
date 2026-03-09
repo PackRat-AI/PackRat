@@ -15,7 +15,8 @@ import {
 } from 'expo-app/lib/utils/itemCalculations';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PackTemplateItemImage } from '../components/PackTemplateItemImage';
 import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
 

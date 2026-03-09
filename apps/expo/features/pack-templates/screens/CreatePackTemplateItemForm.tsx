@@ -23,6 +23,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreatePackTemplateItem } from '../hooks/useCreatePackTemplateItem';
 import { useUpdatePackTemplateItem } from '../hooks/useUpdatePackTemplateItem';
@@ -58,6 +59,7 @@ export const CreatePackTemplateItemForm = ({
   const { showActionSheetWithOptions } = useActionSheet();
   const createItem = useCreatePackTemplateItem();
   const updateItem = useUpdatePackTemplateItem();
+  const insets = useSafeAreaInsets();
   const {
     selectedImage,
     pickImage,
@@ -138,6 +140,7 @@ export const CreatePackTemplateItemForm = ({
         cancelButtonIndex,
         containerStyle: {
           backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
+          paddingBottom: insets.bottom,
         },
         textStyle: { color: colors.foreground },
       },
