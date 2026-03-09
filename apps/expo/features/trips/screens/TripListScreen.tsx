@@ -34,8 +34,8 @@ export function TripsListScreen() {
     return trips.filter(
       (trip) =>
         trip.name.toLowerCase().includes(lower) ||
-        trip.description?.toLowerCase().includes(lower) ||
-        trip.location?.name?.toLowerCase().includes(lower),
+        (trip.description ?? '').toLowerCase().includes(lower) ||
+        (trip.location?.name ?? '').toLowerCase().includes(lower),
     );
   }, [trips, searchValue]);
 
