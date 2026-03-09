@@ -3,26 +3,13 @@ import { Alert, type AlertMethods, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { formatLocalDate } from 'expo-app/lib/utils/dateUtils';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import type { Trip } from '../types';
-
-function formatTripDate(dateString?: string): string {
-  if (!dateString) return '—';
-  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
-  const date = dateOnlyMatch
-    ? new Date(
-        Number(dateOnlyMatch[1]),
-        Number(dateOnlyMatch[2]) - 1,
-        Number(dateOnlyMatch[3]),
-      )
-    : new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString();
-}
 
 interface TripCardProps {
   trip: Trip;
@@ -136,9 +123,9 @@ export function TripCard({ trip, onPress }: TripCardProps) {
           <View className="flex-row items-center mt-1">
             <Icon name="calendar" size={14} color={colors.primary} />
             <Text className="ml-1 text-sm text-muted-foreground">
-              {formatTripDate(trip.startDate)}
+              {formatLocalDate(trip.startDate)}
               {' → '}
-              {formatTripDate(trip.endDate)}
+              {formatLocalDate(trip.endDate)}
             </Text>
           </View>
         )}
