@@ -26,6 +26,7 @@ import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksT
 import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
 import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
 import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
+import { TripAnalyticsTile } from 'expo-app/features/trips/components/TripAnalyticsTile';
 import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
 import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
@@ -87,6 +88,11 @@ const tileInfo = {
     title: 'Upcoming Trips',
     keywords: ['trips', 'upcoming', 'planned', 'schedule'],
     component: UpcomingTripsTile,
+  },
+  'trip-analytics': {
+    title: 'Trip Analytics',
+    keywords: ['analytics', 'statistics', 'stats', 'trips', 'metrics', 'history', 'insights'],
+    component: TripAnalyticsTile,
   },
   'trail-conditions': {
     title: 'Trail Conditions',
@@ -183,7 +189,9 @@ export default function DashboardScreen() {
     'pack-stats',
     'weight-analysis',
     'pack-categories',
-    ...(featureFlags.enableTrips ? ['gap 2', 'upcoming-trips', 'trail-conditions'] : []),
+    ...(featureFlags.enableTrips
+      ? ['gap 2', 'upcoming-trips', 'trip-analytics', 'trail-conditions']
+      : []),
     'gap 2.5',
     'weather',
     ...(featureFlags.enableTrips ? ['weather-alerts'] : []),

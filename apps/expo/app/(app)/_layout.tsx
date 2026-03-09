@@ -126,6 +126,14 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen
+          name="trip-analytics"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
           name="weather-alerts"
           options={{
             headerShown: false,

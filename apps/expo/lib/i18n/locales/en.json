@@ -896,5 +896,32 @@
     "by": "By",
     "updated": "Updated",
     "all": "All"
+  },
+  "analytics": {
+    "title": "Trip Analytics",
+    "trips": "trips",
+    "coreStats": "Core Statistics",
+    "totalTrips": "Total Trips",
+    "completedTrips": "Completed",
+    "upcomingTrips": "Upcoming",
+    "totalNights": "Nights Outdoors",
+    "durationStats": "Duration",
+    "avgDuration": "Avg Duration",
+    "longestTrip": "Longest Trip",
+    "yearOverYear": "Year-over-Year",
+    "thisYear": "This Year",
+    "lastYear": "Last Year",
+    "vsLastYear": "vs last year",
+    "sameAsLastYear": "Same as last year",
+    "monthlyActivity": "Monthly Activity",
+    "mostActiveMonthLabel": "Most active: {{month}} ({{count}} trips)",
+    "noActivityData": "No trip activity yet.",
+    "geographic": "Geographic",
+    "locationsVisited": "Locations",
+    "uniqueRegions": "Regions",
+    "regionsVisited": "Regions Visited",
+    "noTripsTitle": "No Trips Yet",
+    "noTripsSubtitle": "Start creating trips to see your analytics.",
+    "errorLoading": "Could not load analytics. Please try again."
   }
 }
