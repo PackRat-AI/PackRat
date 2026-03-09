@@ -25,7 +25,7 @@ appId: com.andrewbierman.packrat
 - runFlow:
     when:
       visible:
-        text: "Log Out"
+        text: "Sync in progress"
     commands:
       - tapOn:
           text: "Log Out"

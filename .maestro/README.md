@@ -63,7 +63,7 @@ maestro --device <UDID> test .maestro/config.yaml
 
 Tests run automatically via GitHub Actions (`.github/workflows/e2e-tests.yml`) on:
 - Every push to `main` or `development` that touches `apps/expo/**` or `.maestro/**`
-- Every pull request to `main` or `development`
+- Every pull request to `main` or `development` that touches `apps/expo/**`, `.maestro/**`, or `.github/workflows/e2e-tests.yml`
 
 ### Required Secrets
 
