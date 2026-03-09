@@ -24,6 +24,8 @@
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
     "api": "bun run --cwd packages/api dev",
+    "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
+    "test:expo": "vitest run --config apps/expo/vitest.config.ts",
     "bump": "bun .github/scripts/bump.ts"
   },
   "devDependencies": {
