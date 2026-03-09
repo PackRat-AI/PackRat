@@ -27,6 +27,7 @@ import {
   Dimensions,
   type NativeSyntheticEvent,
   Platform,
+  Pressable,
   ScrollView,
   TextInput,
   type TextInputContentSizeChangeEventData,
@@ -402,6 +403,7 @@ function Composer({
 }) {
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
+  const textInputRef = React.useRef<TextInput>(null);
 
   function onContentSizeChange(event: NativeSyntheticEvent<TextInputContentSizeChangeEventData>) {
     textInputHeight.value = Math.max(
@@ -409,6 +411,14 @@ function Composer({
       Platform.select({ ios: 20, default: 38 }),
     );
   }
+
+  // On Android, manually focus the TextInput when the area is pressed.
+  // This fixes an issue where the keyboard doesn't reappear after being dismissed.
+  const handlePressIn = React.useCallback(() => {
+    if (Platform.OS === 'android') {
+      textInputRef.current?.focus();
+    }
+  }, []);
 
   return (
     <BlurView
@@ -425,16 +435,20 @@ function Composer({
       ]}
     >
       <View className="flex-row items-end gap-2 px-4 py-2">
-        <TextInput
-          placeholder={placeholder}
-          style={TEXT_INPUT_STYLE}
-          className="ios:pt-[7px] ios:pb-1 min-h-9 flex-1 rounded-[18px] border border-border bg-background py-1 pl-3 pr-8 text-base leading-5 text-foreground"
-          placeholderTextColor={colors.grey2}
-          multiline
-          onContentSizeChange={onContentSizeChange}
-          onChangeText={handleInputChange}
-          value={input}
-        />
+        <Pressable onPressIn={handlePressIn} className="min-h-9 flex-1">
+          <TextInput
+            ref={textInputRef}
+            placeholder={placeholder}
+            style={TEXT_INPUT_STYLE}
+            className="ios:pt-[7px] ios:pb-1 min-h-9 flex-1 rounded-[18px] border border-border bg-background py-1 pl-3 pr-8 text-base leading-5 text-foreground"
+            placeholderTextColor={colors.grey2}
+            multiline
+            onContentSizeChange={onContentSizeChange}
+            onChangeText={handleInputChange}
+            value={input}
+            showSoftInputOnFocus
+          />
+        </Pressable>
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
             <Button onPress={stop} size="icon" variant="primary" className="h-7 w-7 rounded-full">

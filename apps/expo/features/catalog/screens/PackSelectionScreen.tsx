@@ -1,11 +1,11 @@
-import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
+import { Button, SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useDetailedPacks } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Animated, FlatList, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, FlatList, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
@@ -19,6 +19,15 @@ export function PackSelectionScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const searchInputRef = useRef<SearchInputRef>(null);
+
+  // On Android, manually focus the SearchInput when the area is pressed.
+  // This fixes an issue where the keyboard doesn't reappear after being dismissed.
+  const handleSearchInputPressIn = useCallback(() => {
+    if (Platform.OS === 'android') {
+      searchInputRef.current?.focus();
+    }
+  }, []);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -91,14 +100,15 @@ export function PackSelectionScreen() {
         )}
 
         <View className="p-4">
-          <View className="mb-4">
+          <Pressable className="mb-4" onPressIn={handleSearchInputPressIn}>
             <SearchInput
+              ref={searchInputRef}
               textContentType="none"
               autoComplete="off"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
-          </View>
+          </Pressable>
 
           {filteredPacks && filteredPacks.length > 0 ? (
             <>
