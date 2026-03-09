@@ -98,6 +98,7 @@ function CatalogItemsScreen() {
         searchBar={{
           iosHideWhenScrolling: false,
           onChangeText: setSearchValue,
+          onCancel: () => setSearchValue(''),
           placeholder: t('catalog.searchPlaceholder'),
           content: (
             <View style={{ flex: 1, backgroundColor: colors.background }}>
