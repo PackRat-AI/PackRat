@@ -68,12 +68,23 @@ jobs:
           cd apps/expo
           eas build \
             --platform ios \
-            --profile preview \
+            --profile e2e \
             --non-interactive \
             --local \
-            --output ./build/PackRat.app
+            --output ./build/PackRat-sim.tar.gz
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Extract iOS simulator build
+        run: |
+          mkdir -p apps/expo/build/extracted
+          tar -xzf apps/expo/build/PackRat-sim.tar.gz -C apps/expo/build/extracted
+          APP_PATH=$(find apps/expo/build/extracted -name "*.app" -maxdepth 3 | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::No .app bundle found in simulator build archive"
+            exit 1
+          fi
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
 
       - name: Boot iOS Simulator
         run: |
@@ -105,7 +116,7 @@ jobs:
 
       - name: Install app on simulator
         run: |
-          xcrun simctl install "$SIMULATOR_UDID" apps/expo/build/PackRat.app
+          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
       - name: Run Maestro E2E tests
         run: |
