@@ -208,7 +208,9 @@ export function useVoiceCommands() {
 
           case 'navigate_to': {
             const target = extractNavigationTarget(transcript);
-            const found = waypoints.find((w) => w.name.toLowerCase().includes(target.toLowerCase()));
+            const found = waypoints.find((w) =>
+              w.name.toLowerCase().includes(target.toLowerCase()),
+            );
             if (found) {
               const dist = getDistanceTo(found);
               if (dist !== null) {
