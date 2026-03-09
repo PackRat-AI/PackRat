@@ -46,7 +46,10 @@ export class MockLLMProvider {
       if (trail.length !== undefined) {
         parts.push(` which is ${trail.length} miles long`);
       }
-      parts.push(', ');
+      // Only add separator if more context (activity or weather) follows
+      if (context.activity || context.weather) {
+        parts.push(', ');
+      }
     }
 
     // Add activity context
@@ -59,10 +62,8 @@ export class MockLLMProvider {
         parts.push(' ');
 
         // Check for rainy/wet conditions
-        if (
-          weather.conditions.toLowerCase().includes('rain') ||
-          weather.conditions.toLowerCase().includes('wet')
-        ) {
+        const conditions = weather.conditions.toLowerCase();
+        if (conditions.includes('rain') || conditions.includes('wet')) {
           parts.push('Make sure to bring rain gear and waterproof layers!');
         } else if (weather.temperature < 40) {
           parts.push('Dress warmly with insulated layers.');
