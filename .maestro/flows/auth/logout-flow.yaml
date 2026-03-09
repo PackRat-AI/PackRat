@@ -9,26 +9,26 @@ appId: com.andrewbierman.packrat
 
 - waitForAnimationToEnd
 
-# Scroll down to find the sign out button if needed
+# Scroll down to find the log out button if needed
 - scrollUntilVisible:
     element:
-      text: "Sign Out"
+      text: "Log Out"
     direction: DOWN
 
-# Tap Sign Out
+# Tap Log Out
 - tapOn:
-    text: "Sign Out"
+    text: "Log Out"
 
 - waitForAnimationToEnd
 
-# Confirm logout in dialog if present
+# Confirm logout in dialog if present (tap "Stay logged out" / "Log Out" confirmation)
 - runFlow:
     when:
       visible:
-        text: "Sign Out"
+        text: "Log Out"
     commands:
       - tapOn:
-          text: "Sign Out"
+          text: "Log Out"
 
 - waitForAnimationToEnd
 

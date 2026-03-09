@@ -40,7 +40,7 @@ function CreatePackIconButton() {
   const { colors } = useColorScheme();
   return (
     <Link href="/pack/new" asChild>
-      <Pressable>
+      <Pressable testID="create-pack-button" accessibilityLabel="Create new pack">
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>

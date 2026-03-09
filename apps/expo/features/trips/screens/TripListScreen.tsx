@@ -14,7 +14,7 @@ function CreateTripIconButton() {
   const { colors } = useColorScheme();
   return (
     <Link href="/trip/new" asChild>
-      <Pressable>
+      <Pressable testID="create-trip-button" accessibilityLabel="Create new trip">
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>

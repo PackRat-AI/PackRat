@@ -257,6 +257,7 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
         <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
+              testID="submit-pack-button"
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${

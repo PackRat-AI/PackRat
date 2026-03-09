@@ -9,21 +9,9 @@ appId: com.andrewbierman.packrat
 
 - waitForAnimationToEnd
 
-# Tap the "Create New Pack" empty-state button if visible, otherwise use header "+" button
-- runFlow:
-    when:
-      visible:
-        text: "Create New Pack"
-    commands:
-      - tapOn:
-          text: "Create New Pack"
-- runFlow:
-    when:
-      notVisible:
-        text: "Create Pack"
-    commands:
-      - tapOn:
-          id: "create-pack-button"
+# Tap the header "+" button (testID: create-pack-button) to open the pack creation form
+- tapOn:
+    id: "create-pack-button"
 
 - waitForAnimationToEnd
 
@@ -37,9 +25,9 @@ appId: com.andrewbierman.packrat
     text: "Description"
 - typeText: "Created by Maestro E2E test"
 
-# Submit the form
+# Submit the form via the submit button (testID: submit-pack-button)
 - tapOn:
-    text: "Create Pack"
+    id: "submit-pack-button"
 
 - waitForAnimationToEnd
 

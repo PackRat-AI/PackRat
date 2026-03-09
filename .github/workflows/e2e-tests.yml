@@ -88,16 +88,21 @@ jobs:
 
       - name: Boot iOS Simulator
         run: |
-          # Find the latest available iOS 17+ runtime
+          # Find the latest available iOS runtime (prefer 18, fall back to 17, then any available)
           IOS_RUNTIME=$(xcrun simctl list runtimes --json \
             | python3 -c "
           import sys, json
           runtimes = json.load(sys.stdin)['runtimes']
-          ios17 = [r for r in runtimes if r.get('isAvailable') and 'iOS 17' in r.get('name','')]
-          ios18 = [r for r in runtimes if r.get('isAvailable') and 'iOS 18' in r.get('name','')]
-          chosen = (ios18 or ios17)
+          available = [r for r in runtimes if r.get('isAvailable')]
+          ios18 = [r for r in available if 'iOS 18' in r.get('name','')]
+          ios17 = [r for r in available if 'iOS 17' in r.get('name','')]
+          chosen = ios18 or ios17 or available
           print(chosen[-1]['identifier'] if chosen else '')
           ")
+          if [ -z "$IOS_RUNTIME" ]; then
+            echo "::error::No available iOS runtime found on this runner"
+            exit 1
+          fi
           # Find iPhone 15 device type (base or Pro)
           DEVICE_TYPE=$(xcrun simctl list devicetypes --json \
             | python3 -c "
@@ -112,6 +117,8 @@ jobs:
           echo "Using device type: $DEVICE_TYPE"
           DEVICE_ID=$(xcrun simctl create "PackRat-E2E" "$DEVICE_TYPE" "$IOS_RUNTIME")
           xcrun simctl boot "$DEVICE_ID"
+          # Wait for the simulator to be fully booted before continuing
+          xcrun simctl bootstatus "$DEVICE_ID" -b
           echo "SIMULATOR_UDID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Install app on simulator

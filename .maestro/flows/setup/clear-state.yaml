@@ -1,7 +1,6 @@
 appId: com.andrewbierman.packrat
 ---
 # Clear app state before running tests to ensure a clean environment
-- clearState
 - launchApp:
     clearState: true
     stopApp: true

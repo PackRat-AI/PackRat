@@ -285,6 +285,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
+              testID="submit-trip-button"
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${

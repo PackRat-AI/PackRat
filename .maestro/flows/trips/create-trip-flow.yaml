@@ -9,22 +9,9 @@ appId: com.andrewbierman.packrat
 
 - waitForAnimationToEnd
 
-# Tap the "+" button in the header to open trip creation form
-# The header has a plus icon button; use the "Create New Trip" empty-state button if visible
-- runFlow:
-    when:
-      visible:
-        text: "Create New Trip"
-    commands:
-      - tapOn:
-          text: "Create New Trip"
-- runFlow:
-    when:
-      notVisible:
-        text: "New Trip"
-    commands:
-      - tapOn:
-          id: "create-trip-button"
+# Tap the header "+" button (testID: create-trip-button) to open the trip creation form
+- tapOn:
+    id: "create-trip-button"
 
 - waitForAnimationToEnd
 
@@ -38,13 +25,12 @@ appId: com.andrewbierman.packrat
     text: "Description"
 - typeText: "Created by Maestro E2E test"
 
-# Submit the form
+# Submit the form via the submit button (testID: submit-trip-button)
 - tapOn:
-    text: "Create Trip"
+    id: "submit-trip-button"
 
 - waitForAnimationToEnd
 
 # Assert the trip was created successfully
-# Either we navigated to the trip details or we see a success message
 - assertVisible:
     text: "E2E Test Trip"
