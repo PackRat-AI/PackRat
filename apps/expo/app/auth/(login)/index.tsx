@@ -112,6 +112,7 @@ export default function LoginScreen() {
                   <form.Field name="email">
                     {(field) => (
                       <TextField
+                        testID="email-input"
                         placeholder={Platform.select({
                           ios: 'Email',
                           default: '',
@@ -142,6 +143,7 @@ export default function LoginScreen() {
                   <form.Field name="password">
                     {(field) => (
                       <TextField
+                        testID="password-input"
                         placeholder={Platform.select({
                           ios: 'Password',
                           default: '',
@@ -192,6 +194,7 @@ export default function LoginScreen() {
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button
+                  testID="continue-button"
                   size="lg"
                   disabled={!canSubmit || loading}
                   onPress={() => form.handleSubmit()}

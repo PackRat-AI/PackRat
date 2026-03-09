@@ -126,6 +126,7 @@ export default function AuthIndexScreen() {
           )}
           <Link href={'/auth/(login)'} asChild>
             <Button
+              testID="sign-in-email-button"
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >
