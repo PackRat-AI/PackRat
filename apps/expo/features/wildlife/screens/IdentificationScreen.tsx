@@ -17,7 +17,7 @@ export function IdentificationScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useColorScheme();
-  const { selectedImage, pickImage, takePhoto } = useImagePicker();
+  const { selectedImage, pickImage, takePhoto, permanentlyPersistImageLocally } = useImagePicker();
   const { showActionSheetWithOptions } = useActionSheet();
   const [descriptionText, setDescriptionText] = useState('');
   const [savedResults, setSavedResults] = useState<IdentificationResult[] | null>(null);
@@ -67,7 +67,8 @@ export function IdentificationScreen() {
       {
         onSuccess: async (identificationResults) => {
           setSavedResults(identificationResults);
-          await addIdentification(selectedImage.uri, identificationResults);
+          const persistedUri = (await permanentlyPersistImageLocally()) ?? selectedImage.uri;
+          await addIdentification(persistedUri, identificationResults);
         },
       },
     );

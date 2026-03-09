@@ -1081,9 +1081,32 @@
     "speciesDetail": "Species Detail",
     "speciesNotFound": "Species not found.",
     "unknownSpecies": "Unknown species",
+    "historyLoadError": "Failed to load identification history.",
     "description": "Description",
     "characteristics": "Characteristics",
     "habitat": "Habitat",
-    "interestingFacts": "Interesting Facts"
+    "interestingFacts": "Interesting Facts",
+    "source": {
+      "online": "online",
+      "offline": "offline"
+    },
+    "dangerLevel": {
+      "safe": "safe",
+      "caution": "caution",
+      "dangerous": "dangerous"
+    },
+    "category": {
+      "mammal": "mammal",
+      "bird": "bird",
+      "reptile": "reptile",
+      "amphibian": "amphibian",
+      "insect": "insect",
+      "plant": "plant",
+      "flower": "flower",
+      "tree": "tree",
+      "mushroom": "mushroom",
+      "fish": "fish",
+      "other": "other"
+    }
   }
 }

@@ -2,7 +2,7 @@ import { Text } from '@packrat/ui/nativewindui';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtom } from 'jotai';
-import { ScrollView, View } from 'react-native';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { wildlifeHistoryAtom } from '../atoms/wildlifeAtoms';
 import { getSpeciesById } from '../data/speciesDatabase';
 
@@ -26,13 +26,30 @@ export function SpeciesDetailScreen() {
   // The id can be either a species id (from database browse) or a history entry id
   const species = getSpeciesById(id);
 
-  // If not found in species db, try to find it in history as a history entry id
+  // If not found in species db, search history:
+  //   1. by history-entry id (navigating from WildlifeScreen history list)
+  //   2. by species id within any entry's results (navigating from IdentificationScreen result)
   const historyEntry =
     !species && historyLoadable.state === 'hasData'
-      ? historyLoadable.data.find((h) => h.id === id)
+      ? historyLoadable.data.find((h) => h.id === id || h.results.some((r) => r.species.id === id))
       : null;
 
-  const displaySpecies = species ?? historyEntry?.results[0]?.species;
+  const displaySpecies =
+    species ??
+    historyEntry?.results.find((r) => r.species.id === id)?.species ??
+    historyEntry?.results[0]?.species;
+
+  // Show a spinner while history is still loading (prevents premature "not found" state)
+  if (!species && historyLoadable.state === 'loading') {
+    return (
+      <>
+        <Stack.Screen options={{ title: t('wildlife.speciesDetail') }} />
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" />
+        </View>
+      </>
+    );
+  }
 
   if (!displaySpecies) {
     return (

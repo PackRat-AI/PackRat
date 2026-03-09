@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
 import type { IdentificationResult } from '../types';
 
@@ -20,6 +21,7 @@ const DANGER_TEXT_COLORS = {
 } as const;
 
 export function SpeciesCard({ result, onPress }: SpeciesCardProps) {
+  const { t } = useTranslation();
   const { species, confidence, source } = result;
 
   const confidencePercent = Math.round(confidence * 100);
@@ -38,7 +40,7 @@ export function SpeciesCard({ result, onPress }: SpeciesCardProps) {
         {confidence > 0 && (
           <View className="items-end">
             <Text className="text-sm font-medium text-primary">{confidencePercent}%</Text>
-            <Text className="text-xs text-muted-foreground">{source}</Text>
+            <Text className="text-xs text-muted-foreground">{t(`wildlife.source.${source}`)}</Text>
           </View>
         )}
       </View>
@@ -52,11 +54,13 @@ export function SpeciesCard({ result, onPress }: SpeciesCardProps) {
           <Text
             className={`text-xs font-medium capitalize ${DANGER_TEXT_COLORS[species.dangerLevel]}`}
           >
-            {species.dangerLevel}
+            {t(`wildlife.dangerLevel.${species.dangerLevel}`)}
           </Text>
         </View>
         <View className="px-2 py-0.5 rounded-full bg-primary/10">
-          <Text className="text-xs font-medium capitalize text-primary">{species.category}</Text>
+          <Text className="text-xs font-medium capitalize text-primary">
+            {t(`wildlife.category.${species.category}`)}
+          </Text>
         </View>
         {species.conservationStatus && (
           <View className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30">
