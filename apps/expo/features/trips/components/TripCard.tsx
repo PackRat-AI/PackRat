@@ -102,7 +102,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
         {/* Dates */}
         {(trip.startDate || trip.endDate) && (
           <View className="flex-row items-center mt-1">
-            <Icon name="calendar" size={14} color={colors.primary} />
+            <Icon name="calendar-month" size={14} color={colors.primary} />
             <Text className="ml-1 text-sm text-muted-foreground">
               {formatLocalDate(trip.startDate)}
               {' → '}
