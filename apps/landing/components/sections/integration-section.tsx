@@ -61,7 +61,7 @@ export default function IntegrationSection() {
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {integration.features.map((feature) => (
+                  {(integration.features ?? []).map((feature) => (
                     <div
                       key={feature}
                       className="h-6 md:h-8 rounded-full px-2 md:px-3 flex items-center text-xs font-medium"
@@ -84,7 +84,7 @@ export default function IntegrationSection() {
             className="text-base md:text-lg font-medium"
             gradient="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient"
           >
-            {siteConfig.integrations.comingSoon}
+            More integrations on the way — stay tuned!
           </GradientText>
         </div>
       </div>

@@ -26,7 +26,7 @@ export interface Integration {
   description: string;
   icon: string;
   color: string;
-  features: string[];
+  features?: string[];
 }
 
 export interface Testimonial {
