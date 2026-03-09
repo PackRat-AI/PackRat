@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
-import { trailConditionReports } from '@packrat/api/db/schema';
 import type { NewTrailConditionReport } from '@packrat/api/db/schema';
+import { trailConditionReports } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
@@ -39,19 +39,11 @@ const TrailConditionReportSchema = z.object({
 type TrailConditionReportResponse = z.infer<typeof TrailConditionReportSchema>;
 
 /** Cast a DB row (with Date fields and broad string types) to the API response shape. */
-function toReportResponse(
-  row: Record<string, unknown>,
-): TrailConditionReportResponse {
+function toReportResponse(row: Record<string, unknown>): TrailConditionReportResponse {
   return {
     ...row,
-    createdAt:
-      row.createdAt instanceof Date
-        ? row.createdAt.toISOString()
-        : String(row.createdAt),
-    updatedAt:
-      row.updatedAt instanceof Date
-        ? row.updatedAt.toISOString()
-        : String(row.updatedAt),
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt),
+    updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : String(row.updatedAt),
     localCreatedAt:
       row.localCreatedAt instanceof Date
         ? row.localCreatedAt.toISOString()

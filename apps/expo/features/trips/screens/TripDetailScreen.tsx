@@ -192,31 +192,33 @@ export function TripDetailScreen() {
           )}
 
           {/* Trail Condition Report Prompt */}
-          {featureFlags.enableTrailConditions && trip.endDate && new Date(trip.endDate) < new Date() && (
-            <View className="mb-6">
-              <Card className="rounded-xl bg-card border border-border overflow-hidden">
-                <View className="p-4">
-                  <View className="flex-row items-center mb-2 gap-2">
-                    <Icon name="map-marker-outline" size={20} color={colors.primary} />
-                    <Text className="text-base font-semibold text-foreground">
-                      {t('trailConditions.reportConditionsTitle')}
+          {featureFlags.enableTrailConditions &&
+            trip.endDate &&
+            new Date(trip.endDate) < new Date() && (
+              <View className="mb-6">
+                <Card className="rounded-xl bg-card border border-border overflow-hidden">
+                  <View className="p-4">
+                    <View className="flex-row items-center mb-2 gap-2">
+                      <Icon name="map-marker-outline" size={20} color={colors.primary} />
+                      <Text className="text-base font-semibold text-foreground">
+                        {t('trailConditions.reportConditionsTitle')}
+                      </Text>
+                    </View>
+                    <Text className="text-sm text-muted-foreground mb-3">
+                      {t('trailConditions.reportConditionsPrompt')}
                     </Text>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => setShowConditionReport(true)}
+                      className="flex-row items-center gap-2"
+                    >
+                      <Text className="text-sm">{t('trailConditions.submitReport')}</Text>
+                    </Button>
                   </View>
-                  <Text className="text-sm text-muted-foreground mb-3">
-                    {t('trailConditions.reportConditionsPrompt')}
-                  </Text>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={() => setShowConditionReport(true)}
-                    className="flex-row items-center gap-2"
-                  >
-                    <Text className="text-sm">{t('trailConditions.submitReport')}</Text>
-                  </Button>
-                </View>
-              </Card>
-            </View>
-          )}
+                </Card>
+              </View>
+            )}
         </View>
       </ScrollView>
 
