@@ -9,6 +9,12 @@ import { Pressable, Text, View } from 'react-native';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import type { Trip } from '../types';
 
+function formatTripDate(dateString?: string): string {
+  if (!dateString) return '—';
+  const datePart = dateString.split('T')[0];
+  return datePart ?? '—';
+}
+
 interface TripCardProps {
   trip: Trip;
   onPress?: (trip: Trip) => void;
@@ -97,6 +103,18 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             <Icon name="dots-horizontal" size={20} color={colors.grey2} />
           </Button>
         </View>
+
+        {/* Dates */}
+        {(trip.startDate || trip.endDate) && (
+          <View className="flex-row items-center mt-1">
+            <Icon name="calendar" size={14} color={colors.primary} />
+            <Text className="ml-1 text-sm text-muted-foreground">
+              {formatTripDate(trip.startDate)}
+              {' → '}
+              {formatTripDate(trip.endDate)}
+            </Text>
+          </View>
+        )}
 
         {/* Description */}
         {trip.description && (
