@@ -260,7 +260,7 @@ const getTripNewOptions = (t: TranslationFunction) =>
 
 const getTripEditOptions = (t: TranslationFunction) =>
   ({
-    title: t('packs.editPack'),
+    title: t('trips.editTrip'),
     presentation: 'modal',
     animation: 'slide_from_bottom',
   }) as const;

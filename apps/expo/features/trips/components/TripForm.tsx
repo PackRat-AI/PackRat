@@ -27,6 +27,7 @@ import type { Trip } from '../types';
 const tripFormSchema = z.object({
   name: z.string().min(1, 'Trip name is required'),
   description: z.string().optional(),
+  notes: z.string().optional(),
   location: z
     .object({
       latitude: z.number(),
@@ -62,6 +63,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     defaultValues: {
       name: trip?.name || '',
       description: trip?.description || '',
+      notes: trip?.notes || '',
       location: location ?? undefined,
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
@@ -124,6 +126,21 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                 <FormItem>
                   <TextField
                     placeholder={t('trips.description')}
+                    value={field.state.value}
+                    onChangeText={field.handleChange}
+                    onBlur={field.handleBlur}
+                    multiline
+                  />
+                </FormItem>
+              )}
+            </form.Field>
+
+            {/* Notes */}
+            <form.Field name="notes">
+              {(field) => (
+                <FormItem>
+                  <TextField
+                    placeholder={t('trips.notes')}
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
