@@ -119,6 +119,9 @@ export function SubmitConditionReportForm({
               <Pressable
                 key={cond}
                 onPress={() => setOverallCondition(cond)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: overallCondition === cond }}
+                accessibilityLabel={`${t('trailConditions.overallCondition')}: ${cond.charAt(0).toUpperCase() + cond.slice(1)}`}
                 className={`rounded-full border px-4 py-2 ${
                   overallCondition === cond ? 'border-primary bg-primary' : 'border-border bg-card'
                 }`}
@@ -146,6 +149,9 @@ export function SubmitConditionReportForm({
               <Pressable
                 key={s}
                 onPress={() => setSurface(s)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: surface === s }}
+                accessibilityLabel={`${t('trailConditions.surface')}: ${s.charAt(0).toUpperCase() + s.slice(1)}`}
                 className={`rounded-full border px-4 py-2 ${
                   surface === s ? 'border-primary bg-primary' : 'border-border bg-card'
                 }`}
@@ -171,6 +177,9 @@ export function SubmitConditionReportForm({
               <Pressable
                 key={hazard}
                 onPress={() => toggleHazard(hazard)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedHazards.includes(hazard) }}
+                accessibilityLabel={`${t('trailConditions.hazards')}: ${hazard}`}
                 className={`rounded-full border px-3 py-1.5 ${
                   selectedHazards.includes(hazard)
                     ? 'border-amber-500 bg-amber-500'
@@ -196,6 +205,9 @@ export function SubmitConditionReportForm({
           <View className="flex-row items-center gap-3">
             <Pressable
               onPress={() => setWaterCrossings(Math.max(0, waterCrossings - 1))}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('trailConditions.waterCrossings')}: decrease, current ${waterCrossings}`}
+              accessibilityState={{ disabled: waterCrossings === 0 }}
               className="h-9 w-9 items-center justify-center rounded-full border border-border bg-card"
             >
               <Text className="text-lg font-bold">−</Text>
@@ -205,6 +217,9 @@ export function SubmitConditionReportForm({
             </Text>
             <Pressable
               onPress={() => setWaterCrossings(Math.min(20, waterCrossings + 1))}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('trailConditions.waterCrossings')}: increase, current ${waterCrossings}`}
+              accessibilityState={{ disabled: waterCrossings === 20 }}
               className="h-9 w-9 items-center justify-center rounded-full border border-border bg-card"
             >
               <Text className="text-lg font-bold">+</Text>
@@ -220,6 +235,9 @@ export function SubmitConditionReportForm({
                 <Pressable
                   key={d}
                   onPress={() => setWaterCrossingDifficulty(d)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: waterCrossingDifficulty === d }}
+                  accessibilityLabel={`${t('trailConditions.difficulty')}: ${d.charAt(0).toUpperCase() + d.slice(1)}`}
                   className={`rounded-full border px-3 py-1.5 ${
                     waterCrossingDifficulty === d
                       ? 'border-primary bg-primary'

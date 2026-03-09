@@ -42,7 +42,7 @@ const CreateReportRequestSchema = z.object({
   surface: z.enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud']),
   overallCondition: z.enum(['excellent', 'good', 'fair', 'poor']),
   hazards: z.array(z.string()).optional().default([]),
-  waterCrossings: z.number().int().min(0).optional().default(0),
+  waterCrossings: z.number().int().min(0).max(20).optional().default(0),
   waterCrossingDifficulty: z.enum(['easy', 'moderate', 'difficult']).optional().nullable(),
   notes: z.string().optional().nullable(),
   photos: z.array(z.string()).optional().default([]),
@@ -128,6 +128,10 @@ const createReportRoute = createRoute({
       description: 'Bad request',
       content: { 'application/json': { schema: ErrorResponseSchema } },
     },
+    409: {
+      description: 'Report ID already in use by another user',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
     500: {
       description: 'Internal server error',
       content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -166,6 +170,20 @@ trailConditionRoutes.openapi(createReportRoute, async (c) => {
 
     return c.json(newReport, 200);
   } catch (error) {
+    // Postgres unique violation (23505): the offline client is retrying a report
+    // it already committed. Return the existing row so the client can settle.
+    const pgCode = (error as { code?: string })?.code;
+    if (pgCode === '23505') {
+      const existing = await db.query.trailConditionReports.findFirst({
+        where: and(
+          eq(trailConditionReports.id, data.id),
+          eq(trailConditionReports.userId, auth.userId),
+        ),
+      });
+      if (existing) return c.json(existing, 200);
+      // Same id but different user — treat as a real conflict
+      return c.json({ error: 'Report ID already in use' }, 409);
+    }
     console.error('Error creating trail condition report:', error);
     return c.json({ error: 'Failed to submit trail condition report' }, 500);
   }
