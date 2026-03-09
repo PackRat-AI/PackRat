@@ -197,14 +197,16 @@ function CatalogItemsScreen() {
           </View>
         }
         ListHeaderComponent={
-          <View className="mb-4">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-muted-foreground">{totalItemsText}</Text>
+          searchValue.length === 0 ? (
+            <View className="mb-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-muted-foreground">{totalItemsText}</Text>
+              </View>
+              {paginatedItems.length > 0 && (
+                <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
+              )}
             </View>
-            {paginatedItems.length > 0 && (
-              <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
-            )}
-          </View>
+          ) : null
         }
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
