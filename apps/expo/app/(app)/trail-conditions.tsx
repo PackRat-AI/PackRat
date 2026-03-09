@@ -110,7 +110,9 @@ function getConditionColor(condition: TrailConditionValue): string {
 }
 
 function formatRelativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 'Unknown';
+  const diff = Date.now() - date.getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   if (days === 0) return 'Today';
   if (days === 1) return '1 day ago';
@@ -247,11 +249,12 @@ function ReportModal({ visible, onClose }: { visible: boolean; onClose: () => vo
 
     const parsedLat = parseFloat(lat);
     const parsedLng = parseFloat(lng);
-    const hasValidCoords =
-      lat.trim() && lng.trim() && !Number.isNaN(parsedLat) && !Number.isNaN(parsedLng);
+    const isValidLatitude = !Number.isNaN(parsedLat) && parsedLat >= -90 && parsedLat <= 90;
+    const isValidLongitude = !Number.isNaN(parsedLng) && parsedLng >= -180 && parsedLng <= 180;
+    const hasValidCoords = lat.trim() && lng.trim() && isValidLatitude && isValidLongitude;
 
     if ((lat.trim() || lng.trim()) && !hasValidCoords) {
-      Alert.alert('Invalid GPS', 'Please enter valid numeric latitude and longitude values.');
+      Alert.alert('Invalid GPS', 'Please enter valid coordinates (lat: -90 to 90, lng: -180 to 180).');
       return;
     }
 

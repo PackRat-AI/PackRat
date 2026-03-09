@@ -135,27 +135,17 @@ trailConditionRoutes.openapi(verifyTrailConditionRoute, async (c) => {
   const reportId = c.req.param('reportId');
 
   try {
-    const report = await db.query.trailConditions.findFirst({
-      where: eq(trailConditions.id, reportId),
-    });
-
-    if (!report) return c.json({ error: 'Trail condition report not found' }, 404);
-
-    const newVerifiedCount = report.verifiedCount + 1;
-    // Trust score increases with verifications, capped at 0.99
-    const newTrustScore = Math.min(report.trustScore + 0.05, 0.99);
-
     const [updatedReport] = await db
       .update(trailConditions)
       .set({
-        verifiedCount: newVerifiedCount,
-        trustScore: newTrustScore,
+        verifiedCount: sql`${trailConditions.verifiedCount} + 1`,
+        trustScore: sql`LEAST(${trailConditions.trustScore} + 0.05, 0.99)`,
         updatedAt: new Date(),
       })
       .where(eq(trailConditions.id, reportId))
       .returning();
 
-    if (!updatedReport) return c.json({ error: 'Failed to update verification status' }, 500);
+    if (!updatedReport) return c.json({ error: 'Trail condition report not found' }, 404);
     return c.json(updatedReport, 200);
   } catch (error) {
     console.error('Error verifying trail condition:', error);

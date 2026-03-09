@@ -9,7 +9,7 @@ import {
 } from '@packrat/api/schemas/trailConditions';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 
 const trailConditionListRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
@@ -82,19 +82,17 @@ const createTrailConditionRoute = createRoute({
 trailConditionListRoutes.openapi(createTrailConditionRoute, async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
-  const data = await c.req.json();
-
-  if (!data.id) return c.json({ error: 'Trail condition ID is required' }, 400);
+  const data = c.req.valid('json');
 
   try {
     // Compute initial trust score based on reporter history
-    const existingReports = await db
-      .select()
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
       .from(trailConditions)
       .where(eq(trailConditions.userId, auth.userId));
 
     // Trust score starts at 0.5 for new reporters, increasing with more reports
-    const baseScore = Math.min(0.5 + existingReports.length * 0.05, 0.9);
+    const baseScore = Math.min(0.5 + count * 0.05, 0.9);
 
     const [newReport] = await db
       .insert(trailConditions)
