@@ -404,8 +404,10 @@ export default function TrailConditionsScreen() {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const { colors } = useColorScheme();
 
-  // Use API data if available, fall back to mock data
-  const trails: TrailCondition[] = data && data.length > 0 ? data : TRAIL_CONDITIONS_MOCK;
+  // Use API data when available; fall back to mock data only when API data hasn't loaded
+  // (null/undefined). An empty array from the API is treated as a genuine empty state.
+  const isUsingMockData = data == null && !isLoading;
+  const trails: TrailCondition[] = data ?? TRAIL_CONDITIONS_MOCK;
 
   return (
     <>
@@ -443,11 +445,32 @@ export default function TrailConditionsScreen() {
           </View>
         )}
 
-        <View className="pb-4">
-          {trails.map((trail) => (
-            <TrailConditionCard key={trail.id} trail={trail} />
-          ))}
-        </View>
+        {isUsingMockData && !isError && (
+          <View className="mx-4 mb-3 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+            <Text variant="footnote" className="text-blue-700 dark:text-blue-400">
+              Showing sample data — sign in or check your connection to see live reports.
+            </Text>
+          </View>
+        )}
+
+        {!isLoading && !isError && data !== undefined && data.length === 0 && (
+          <View className="items-center px-4 py-12">
+            <Text variant="body" className="text-center text-muted-foreground">
+              No trail reports yet.
+            </Text>
+            <Text variant="footnote" className="mt-1 text-center text-muted-foreground">
+              Be the first to report current conditions!
+            </Text>
+          </View>
+        )}
+
+        {trails.length > 0 && (
+          <View className="pb-4">
+            {trails.map((trail) => (
+              <TrailConditionCard key={trail.id} trail={trail} />
+            ))}
+          </View>
+        )}
 
         <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
           <View className="rounded-md bg-muted p-3 dark:bg-gray-50/10">
