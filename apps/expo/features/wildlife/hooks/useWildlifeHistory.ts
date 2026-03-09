@@ -22,10 +22,7 @@ export function useWildlifeHistory() {
         results,
         location,
       };
-      setHistory((prev) => {
-        const list = prev as WildlifeIdentification[];
-        return [entry, ...list];
-      });
+      setHistory(async (prev) => [entry, ...(await prev)]);
       return entry;
     },
     [setHistory],
@@ -33,27 +30,25 @@ export function useWildlifeHistory() {
 
   const deleteIdentification = useCallback(
     (id: string) => {
-      setHistory((prev) => {
-        const list = prev as WildlifeIdentification[];
-        const entry = list.find((e) => e.id === id);
+      setHistory(async (prev) => {
+        const history = await prev;
+        const entry = history.find((e) => e.id === id);
         if (entry?.imageUri) {
-          // Best-effort: delete the persisted image file
-          ImageCacheManager.clearImage(entry.imageUri).catch((err: unknown) => {
+          await ImageCacheManager.clearImage(entry.imageUri).catch((err: unknown) => {
             console.warn('Failed to delete wildlife image file:', err);
           });
         }
-        return list.filter((e) => e.id !== id);
+        return history.filter((e) => e.id !== id);
       });
     },
     [setHistory],
   );
 
   const clearHistory = useCallback(() => {
-    setHistory((prev) => {
-      const list = prev as WildlifeIdentification[];
-      // Best-effort: delete all persisted image files before clearing
-      Promise.all(
-        list.map((entry) =>
+    setHistory(async (prev) => {
+      const history = await prev;
+      await Promise.all(
+        history.map((entry) =>
           ImageCacheManager.clearImage(entry.imageUri).catch((err: unknown) => {
             console.warn('Failed to delete wildlife image file:', err);
           }),

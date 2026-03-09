@@ -114,6 +114,11 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
     console.error('Error identifying wildlife:', error);
     c.get('sentry').captureException(error);
 
+    // Clean up temp upload before responding on error
+    await PACKRAT_BUCKET.delete(image).catch((err: unknown) => {
+      console.error('Failed to delete temp upload from R2:', err);
+    });
+
     if (error instanceof Error) {
       if (
         error.message.includes('Invalid image') ||
@@ -124,11 +129,6 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
     }
 
     return c.json({ error: 'Failed to identify species' }, 500);
-  } finally {
-    // Best-effort cleanup: delete temp upload regardless of identification outcome.
-    PACKRAT_BUCKET.delete(image).catch((err: unknown) => {
-      console.error('Failed to delete temp upload from R2:', err);
-    });
   }
 
   // Map AI results to the response format with stable IDs derived from scientific name
@@ -161,6 +161,11 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
       confidence: r.confidence,
       source: 'online' as const,
     };
+  });
+
+  // Clean up temp upload before responding on success
+  await PACKRAT_BUCKET.delete(image).catch((err: unknown) => {
+    console.error('Failed to delete temp upload from R2:', err);
   });
 
   return c.json({ results }, 200);

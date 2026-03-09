@@ -34,7 +34,7 @@ import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { t } from 'expo-app/lib/i18n';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
@@ -138,15 +138,16 @@ const tileInfo = {
     component: FeedTile,
   },
   wildlife: {
-    title: t('wildlife.wildlife'),
+    // Placeholder: title/keywords are overridden with locale-reactive values inside DashboardScreen
+    title: 'Wildlife',
     keywords: [
-      t('wildlife.wildlife').toLowerCase(),
-      t('wildlife.identify').toLowerCase(),
-      t('wildlife.category.plant'),
-      t('wildlife.category.flower'),
-      t('wildlife.category.tree'),
-      t('wildlife.category.bird'),
-      t('wildlife.category.mammal'),
+      'wildlife',
+      'identify',
+      'plant',
+      'flower',
+      'tree',
+      'bird',
+      'mammal',
       'species',
       'nature',
       'animal',
@@ -195,6 +196,30 @@ export default function DashboardScreen() {
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const { t } = useTranslation();
 
+  const localizedTileInfo = useMemo(
+    () => ({
+      ...tileInfo,
+      wildlife: {
+        ...tileInfo.wildlife,
+        title: t('wildlife.wildlife'),
+        keywords: [
+          t('wildlife.wildlife').toLowerCase(),
+          t('wildlife.identify').toLowerCase(),
+          t('wildlife.category.plant'),
+          t('wildlife.category.flower'),
+          t('wildlife.category.tree'),
+          t('wildlife.category.bird'),
+          t('wildlife.category.mammal'),
+          'species',
+          'nature',
+          'animal',
+          'offline',
+        ],
+      },
+    }),
+    [t],
+  );
+
   const dashboardLayout = useRef([
     'current-pack',
     'recent-packs',
@@ -230,7 +255,7 @@ export default function DashboardScreen() {
     const searchLower = searchValue.toLowerCase();
     return dashboardLayout.filter((item) => {
       if (!item.startsWith('gap')) {
-        const info = tileInfo[item as TileName];
+        const info = localizedTileInfo[item as TileName];
         return (
           info.title.toLowerCase().includes(searchLower) ||
           info.keywords.some((k) => k.toLowerCase().includes(searchLower))
@@ -238,7 +263,7 @@ export default function DashboardScreen() {
       }
       return false;
     });
-  }, [searchValue, dashboardLayout]);
+  }, [searchValue, dashboardLayout, localizedTileInfo]);
 
   return (
     <TabScreen>
