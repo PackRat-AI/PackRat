@@ -66,13 +66,22 @@ async function runMigrations() {
 }
 
 export async function setup() {
-  console.log('🐳 Starting Docker Compose for tests...');
-  execSync(`docker compose -f ${COMPOSE_FILE} up -d`, { stdio: 'inherit' });
-  await waitForPostgres(5433);
-  console.log('🚀 Test database ready!');
+  try {
+    console.log('🐳 Starting Docker Compose for tests...');
+    execSync(`docker compose -f ${COMPOSE_FILE} up -d`, { stdio: 'inherit' });
+    await waitForPostgres(5433);
+    console.log('🚀 Test database ready!');
 
-  // Run migrations after database is ready
-  await runMigrations();
+    // Run migrations after database is ready
+    await runMigrations();
+    process.env.INTEGRATION_DB_AVAILABLE = 'true';
+  } catch (error) {
+    console.warn(
+      '⚠️  Database setup failed – integration tests will be skipped:',
+      (error as Error).message,
+    );
+    process.env.INTEGRATION_DB_AVAILABLE = 'false';
+  }
 }
 
 export async function teardown() {

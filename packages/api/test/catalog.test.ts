@@ -9,9 +9,10 @@ import {
   expectNotFound,
   expectUnauthorized,
   httpMethods,
+  shouldSkipIntegrationTests,
 } from './utils/test-helpers';
 
-describe('Catalog Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Catalog Routes', () => {
   describe('Authentication', () => {
     it('GET /catalog/ requires auth', async () => {
       const res = await api('/catalog', httpMethods.get(''));

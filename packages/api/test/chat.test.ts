@@ -6,12 +6,13 @@ import {
   expectJsonResponse,
   expectUnauthorized,
   httpMethods,
+  shouldSkipIntegrationTests,
 } from './utils/test-helpers';
 
 // Chat routes tests
 // Note: Most chat functionality requires Cloudflare AI binding (env.AI.autorag) which is
 // complex to mock properly in test environment. Focus on authentication and validation.
-describe('Chat Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Chat Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

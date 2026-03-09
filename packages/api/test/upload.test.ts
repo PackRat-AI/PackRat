@@ -6,9 +6,10 @@ import {
   expectJsonResponse,
   expectUnauthorized,
   httpMethods,
+  shouldSkipIntegrationTests,
 } from './utils/test-helpers';
 
-describe('Upload Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Upload Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

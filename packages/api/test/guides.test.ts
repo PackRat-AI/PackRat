@@ -8,6 +8,7 @@ import {
   expectNotFound,
   expectUnauthorized,
   httpMethods,
+  shouldSkipIntegrationTests,
 } from './utils/test-helpers';
 
 // Mock guides data
@@ -165,7 +166,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
   };
 });
 
-describe('Guides Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Guides Routes', () => {
   describe('Authentication', () => {
     it('GET /guides requires auth', async () => {
       const res = await api('/guides', httpMethods.get(''));

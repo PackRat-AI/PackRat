@@ -5,10 +5,11 @@ import {
   expectJsonResponse,
   expectUnauthorized,
   httpMethods,
+  shouldSkipIntegrationTests,
   TEST_USER,
 } from './utils/test-helpers';
 
-describe('Image Detection Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Image Detection Routes', () => {
   describe('Authentication', () => {
     it('POST /packs/analyze-image requires auth', async () => {
       const res = await api('/packs/analyze-image', httpMethods.post('', {}));
