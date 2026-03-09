@@ -29,6 +29,7 @@ import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailCon
 import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
 import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
+import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
@@ -128,6 +129,11 @@ const tileInfo = {
     keywords: ['guides', 'help', 'tutorial', 'documentation', 'learn'],
     component: GuidesTile,
   },
+  'wildlife-identification': {
+    title: 'Wildlife Identification',
+    keywords: ['wildlife', 'plant', 'animal', 'identify', 'species', 'offline', 'camera', 'nature'],
+    component: WildlifeTile,
+  },
 };
 
 type TileName = keyof typeof tileInfo;
@@ -194,6 +200,7 @@ export default function DashboardScreen() {
     ...(featureFlags.enablePackTemplates ? ['pack-templates'] : []),
     'gap 4',
     'guides',
+    ...(featureFlags.enableWildlifeIdentification ? ['wildlife-identification'] : []),
   ]).current;
 
   const filteredTiles = useMemo(() => {
