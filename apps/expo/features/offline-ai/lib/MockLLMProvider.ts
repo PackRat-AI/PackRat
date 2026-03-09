@@ -43,7 +43,7 @@ export class MockLLMProvider {
       if (trail.difficulty) {
         parts.push(` (${trail.difficulty} difficulty)`);
       }
-      if (trail.length) {
+      if (trail.length !== undefined) {
         parts.push(` which is ${trail.length} miles long`);
       }
       parts.push(', ');
