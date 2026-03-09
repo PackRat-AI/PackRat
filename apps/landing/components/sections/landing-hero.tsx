@@ -121,14 +121,13 @@ export default function LandingHero() {
               variants={itemVariants}
             >
               <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
+                {['Hiker', 'Camper', 'Climber', 'Explorer'].map((role, i) => (
                   <div
-                    key={i}
+                    key={role}
                     className="w-10 h-10 rounded-full border-2 border-background flex items-center justify-center overflow-hidden bg-primary/20"
+                    title={`${role}`}
                   >
-                    <span className="text-xs font-bold text-primary">
-                      {String.fromCharCode(64 + i)}
-                    </span>
+                    <span className="text-xs font-bold text-primary">{role[0]}</span>
                   </div>
                 ))}
               </div>
