@@ -37,8 +37,9 @@ appId: com.andrewbierman.packrat
       text: "Packs"
     timeout: 15000
 
-# Assert we are now logged in by checking for a main app screen element
-- assertVisible:
+# Assert we are now logged in by navigating to Packs and verifying a stable testID
+- tapOn:
     text: "Packs"
+- waitForAnimationToEnd
 - assertVisible:
-    text: "Trips"
+    id: "create-pack-button"

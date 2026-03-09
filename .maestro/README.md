@@ -87,7 +87,7 @@ Flows are standard YAML files following the [Maestro flow syntax](https://maestr
 
 Key conventions:
 - All flows start with `appId: com.andrewbierman.packrat`
-- Prefer `testID` selectors first (e.g., `tapOn: { id: "submitButton" }`), then `accessibilityLabel` (e.g., `tapOn: { accessibilityLabel: "Submit" }`); use `text` only as a last resort when no stable `testID` or accessibility selector exists
+- Prefer `testID` / `accessibilityIdentifier` selectors first (e.g., `tapOn: { id: "submitButton" }`); use `text` to match an element's iOS `accessibilityLabel` or visible text (e.g., `tapOn: { text: "Submit" }`); `accessibilityLabel` is **not** a valid Maestro selector key
 - Use `waitForAnimationToEnd` after navigation actions
 - Use `runFlow: { when: { visible: ... } }` for conditional steps
 - Use environment variables (e.g., `${TRIP_NAME}`) for entity names to keep each test run unique
