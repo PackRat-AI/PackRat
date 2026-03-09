@@ -296,7 +296,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           setShowStartPicker(false);
                           if (date) {
                             const dateStr = date.toISOString().split('T')[0];
-                            assertDefined(dateStr);
                             field.handleChange(dateStr);
                           }
                         }}
@@ -338,7 +337,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           setShowEndPicker(false);
                           if (date) {
                             const dateStr = date.toISOString().split('T')[0];
-                            assertDefined(dateStr);
                             field.handleChange(dateStr);
                           }
                         }}
