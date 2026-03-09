@@ -12,12 +12,13 @@ function HistoryItem({ item, onPress }: { item: WildlifeIdentification; onPress:
   const { t } = useTranslation();
   const topResult = item.results[0];
   const date = new Date(item.timestamp).toLocaleDateString();
+  const hasResults = item.results.length > 0;
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={hasResults ? onPress : undefined}
       className="mx-4 mb-3 bg-card border border-border rounded-xl p-4"
-      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+      style={({ pressed }) => ({ opacity: pressed && hasResults ? 0.7 : 1 })}
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-1 mr-2">
@@ -35,7 +36,7 @@ function HistoryItem({ item, onPress }: { item: WildlifeIdentification; onPress:
           )}
           <Text className="text-xs text-muted-foreground mt-1">{date}</Text>
         </View>
-        <Icon name="chevron-right" size={17} color={colors.grey} />
+        {hasResults && <Icon name="chevron-right" size={17} color={colors.grey} />}
       </View>
     </Pressable>
   );
