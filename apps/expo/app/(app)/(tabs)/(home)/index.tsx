@@ -136,7 +136,7 @@ function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
     <Link href="/modal" asChild>
-      <Pressable className="opacity-80">
+      <Pressable className="h-10 w-10 opacity-80">
         {({ pressed }) => (
           <View
             className={cn(
@@ -158,7 +158,7 @@ function DemoIcon() {
 
   return (
     <Link href="/demo" asChild>
-      <Pressable className="opacity-80">
+      <Pressable className="h-10 w-10 opacity-80">
         {({ pressed }) => (
           <View
             className={cn(
