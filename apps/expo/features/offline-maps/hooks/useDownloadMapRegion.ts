@@ -1,16 +1,14 @@
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useRef } from 'react';
+import { OFFLINE_MAPS_DIR } from '../constants';
 import { offlineMapsStore } from '../store/offlineMaps';
 import type { OfflineMapRegion, PredefinedRegion } from '../types';
 import { estimateDownloadSize } from '../utils/regions';
 
-const OFFLINE_MAPS_DIR = `${FileSystem.documentDirectory}offline-maps/`;
-
-/** Simulates tile downloads with realistic progress updates */
-async function simulateDownload(
-  _regionId: string,
+/** Runs tile download simulation in the background without blocking the caller */
+async function runDownloadInBackground(
+  id: string,
   estimatedSize: number,
-  onProgress: (progress: number, downloadedSize: number) => void,
   signal: { cancelled: boolean },
 ): Promise<void> {
   const TICK_MS = 300;
@@ -18,26 +16,76 @@ async function simulateDownload(
   const MB = estimatedSize / (1024 * 1024);
   const TOTAL_TICKS = Math.min(60, Math.max(10, Math.round((MB / 10) * 20)));
 
-  for (let tick = 1; tick <= TOTAL_TICKS; tick++) {
-    if (signal.cancelled) return;
-    await new Promise<void>((resolve) => setTimeout(resolve, TICK_MS));
-    const progress = Math.round((tick / TOTAL_TICKS) * 100);
-    const downloadedSize = Math.round((tick / TOTAL_TICKS) * estimatedSize);
-    onProgress(progress, downloadedSize);
+  try {
+    for (let tick = 1; tick <= TOTAL_TICKS; tick++) {
+      if (signal.cancelled) return;
+      await new Promise<void>((resolve) => setTimeout(resolve, TICK_MS));
+      const progress = Math.round((tick / TOTAL_TICKS) * 100);
+      const downloadedSize = Math.round((tick / TOTAL_TICKS) * estimatedSize);
+      offlineMapsStore[id].set((prev) => ({
+        ...prev,
+        progress,
+        downloadedSize,
+        status: 'downloading',
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+
+    if (!signal.cancelled) {
+      offlineMapsStore[id].set((prev) => ({
+        ...prev,
+        progress: 100,
+        downloadedSize: estimatedSize,
+        status: 'completed',
+        updatedAt: new Date().toISOString(),
+      }));
+    }
+  } catch (error) {
+    console.error(`[OfflineMaps] Download simulation failed for entry "${id}":`, error);
+    offlineMapsStore[id].set((prev) => ({
+      ...prev,
+      status: 'failed',
+      updatedAt: new Date().toISOString(),
+    }));
   }
 }
 
 /**
- * Hook that returns a function to start downloading a map region.
+ * Hook that returns functions to start and cancel map region downloads.
  * Persists region metadata in the local store and simulates tile fetching.
+ *
+ * IMPORTANT: This hook must be called at the top level of a screen component
+ * (not inside a modal sub-component) so that `cancelRefs` persists for the
+ * lifetime of the screen, even after the download modal closes.
  */
 export function useDownloadMapRegion() {
   const cancelRefs = useRef<Record<string, { cancelled: boolean }>>({});
 
+  /**
+   * Validates preconditions (no active duplicate, sufficient storage), creates
+   * the store entry, then launches the download simulation in the background.
+   *
+   * Throws if validation fails so the caller can surface the error to the user
+   * before closing any modal.
+   */
   const downloadRegion = useCallback(
     async (region: PredefinedRegion, minZoom: number, maxZoom: number) => {
-      const id = `${region.id}-${Date.now()}`;
+      // Guard: prevent duplicate downloads for the same region
+      const existingEntries = Object.values(offlineMapsStore.get());
+      const alreadyActive = existingEntries.some(
+        (entry) => entry.id.startsWith(`${region.id}-`) && entry.status === 'downloading',
+      );
+      if (alreadyActive) return;
+
       const estimatedSize = estimateDownloadSize(region.bounds, minZoom, maxZoom);
+
+      // Check available disk space before starting — throw so caller can show inline error
+      const freeSpace = await FileSystem.getFreeDiskStorageAsync();
+      if (freeSpace < estimatedSize) {
+        throw new Error('insufficient_storage');
+      }
+
+      const id = `${region.id}-${Date.now()}`;
       const now = new Date().toISOString();
 
       const entry: OfflineMapRegion = {
@@ -66,40 +114,10 @@ export function useDownloadMapRegion() {
       const signal = { cancelled: false };
       cancelRefs.current[id] = signal;
 
-      try {
-        await simulateDownload(
-          id,
-          estimatedSize,
-          (progress, downloadedSize) => {
-            offlineMapsStore[id].set((prev) => ({
-              ...prev,
-              progress,
-              downloadedSize,
-              status: 'downloading',
-              updatedAt: new Date().toISOString(),
-            }));
-          },
-          signal,
-        );
-
-        if (!signal.cancelled) {
-          offlineMapsStore[id].set((prev) => ({
-            ...prev,
-            progress: 100,
-            downloadedSize: estimatedSize,
-            status: 'completed',
-            updatedAt: new Date().toISOString(),
-          }));
-        }
-      } catch {
-        offlineMapsStore[id].set((prev) => ({
-          ...prev,
-          status: 'failed',
-          updatedAt: new Date().toISOString(),
-        }));
-      } finally {
+      // Fire-and-forget: download runs in background so the modal can close immediately
+      runDownloadInBackground(id, estimatedSize, signal).finally(() => {
         delete cancelRefs.current[id];
-      }
+      });
     },
     [],
   );
@@ -108,11 +126,8 @@ export function useDownloadMapRegion() {
     if (cancelRefs.current[id]) {
       cancelRefs.current[id].cancelled = true;
     }
-    offlineMapsStore[id].set((prev) => ({
-      ...prev,
-      status: 'idle',
-      updatedAt: new Date().toISOString(),
-    }));
+    // Remove the entry entirely rather than leaving an orphaned 'idle' record
+    offlineMapsStore[id].delete();
   }, []);
 
   return { downloadRegion, cancelDownload };
