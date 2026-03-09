@@ -17,7 +17,7 @@ export const WildlifeTile = () => {
       leftView={
         <View className="px-3">
           <View className="h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <Icon ios={{ useMaterialIcon: true }} name="leaf" size={24} color={colors.primary} />
+            <Icon ios={{ useMaterialIcon: true }} name="eye" size={24} color={colors.primary} />
           </View>
         </View>
       }

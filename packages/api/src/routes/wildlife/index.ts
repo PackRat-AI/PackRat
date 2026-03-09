@@ -139,12 +139,11 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
       .replaceAll(/[^a-z0-9-]/g, '');
 
   const results = identification.results.map((r, index) => {
-    const id =
-      r.scientificName?.trim()
-        ? slugify(r.scientificName)
-        : r.commonName?.trim()
-          ? slugify(r.commonName)
-          : `unknown-${index}`;
+    const id = r.scientificName?.trim()
+      ? slugify(r.scientificName)
+      : r.commonName?.trim()
+        ? slugify(r.commonName)
+        : `unknown-${index}`;
     return {
       species: {
         id,
