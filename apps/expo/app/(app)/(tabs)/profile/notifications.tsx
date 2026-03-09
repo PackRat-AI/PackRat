@@ -6,7 +6,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
-import { Platform, Pressable, ScrollView, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NotificationsScreen() {
@@ -18,7 +18,7 @@ export default function NotificationsScreen() {
     weatherAlerts: true,
   });
 
-  const { notifications: tripNotifications, isLoading, error } = useTripNotifications();
+  const { notifications: tripNotifications, isLoading, error, refresh } = useTripNotifications();
 
   function onValueChange(type: 'push' | 'email' | 'weatherAlerts') {
     return (value: boolean) => {
@@ -55,6 +55,7 @@ export default function NotificationsScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: insets.bottom }}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refresh} />}
       >
         <Form className="gap-5 px-4 pt-8">
           <FormSection
@@ -120,6 +121,7 @@ export default function NotificationsScreen() {
                 notifications={tripNotifications}
                 isLoading={isLoading}
                 error={error}
+                onRetry={refresh}
               />
             </View>
           </FormSection>
