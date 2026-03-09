@@ -5,7 +5,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
 
@@ -119,6 +119,32 @@ export default function UpcomingTripsScreen() {
     }
   }, [upcomingTrips, selectedTrip]);
 
+  const renderItem = useCallback(
+    (info: { item: { id: string; title: string; subTitle: string }; index: number }) => {
+      const trip = upcomingTrips[info.index];
+      assertDefined(trip);
+
+      const { status, completion } = getTripStatus(trip, t);
+
+      return (
+        <ListItem
+          {...info}
+          // leftView={<TripImage uri={trip.imageUrl} />}
+          rightView={
+            <View className="flex-row items-center">
+              <PackStatus status={status} completion={completion} />
+            </View>
+          }
+          onPress={() => setSelectedTrip(trip)}
+          className={
+            selectedTrip?.id === trip.id ? 'bg-muted/50 dark:bg-slate-950' : 'dark:bg-transparent'
+          }
+        />
+      );
+    },
+    [upcomingTrips, selectedTrip, t],
+  );
+
   if (!upcomingTrips.length) {
     return (
       <View className="flex-1 items-center justify-center">
@@ -142,36 +168,15 @@ export default function UpcomingTripsScreen() {
         {/* Trip List */}
         <List
           data={upcomingTrips.map((trip) => ({
+            id: trip.id,
             title: trip.name,
             subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
               trip.startDate,
             )} to ${formatDate(trip.endDate)}`,
           }))}
-          keyExtractor={(_, index) => index.toString()}
-          renderItem={(info) => {
-            const trip = upcomingTrips[info.index];
-            assertDefined(trip);
-
-            const { status, completion } = getTripStatus(trip, t);
-
-            return (
-              <ListItem
-                {...info}
-                // leftView={<TripImage uri={trip.imageUrl} />}
-                rightView={
-                  <View className="flex-row items-center">
-                    <PackStatus status={status} completion={completion} />
-                  </View>
-                }
-                onPress={() => setSelectedTrip(trip)}
-                className={
-                  selectedTrip?.id === trip.id
-                    ? 'bg-muted/50 dark:bg-slate-950'
-                    : 'dark:bg-transparent'
-                }
-              />
-            );
-          }}
+          keyExtractor={(item) => item.id}
+          extraData={selectedTrip?.id}
+          renderItem={renderItem}
         />
 
         {/* Trip Summary */}
