@@ -38,9 +38,10 @@ type FilterOption = {
 
 function CreatePackIconButton() {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   return (
     <Link href="/pack/new" asChild>
-      <Pressable testID="create-pack-button" accessibilityLabel="Create new pack">
+      <Pressable testID="create-pack-button" accessibilityLabel={t('packs.createNewPack')}>
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>

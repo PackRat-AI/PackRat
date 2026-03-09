@@ -12,9 +12,10 @@ import type { Trip } from '../types';
 
 function CreateTripIconButton() {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   return (
     <Link href="/trip/new" asChild>
-      <Pressable testID="create-trip-button" accessibilityLabel="Create new trip">
+      <Pressable testID="create-trip-button" accessibilityLabel={t('trips.createNewTrip')}>
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>

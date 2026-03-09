@@ -21,7 +21,7 @@ appId: com.andrewbierman.packrat
 
 - waitForAnimationToEnd
 
-# Confirm logout in dialog if present (tap "Stay logged out" / "Log Out" confirmation)
+# Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes)
 - runFlow:
     when:
       visible:
@@ -29,6 +29,17 @@ appId: com.andrewbierman.packrat
     commands:
       - tapOn:
           text: "Log Out"
+
+- waitForAnimationToEnd
+
+# Handle post-logout dialog - choose to stay logged out
+- runFlow:
+    when:
+      visible:
+        text: "Stay logged out"
+    commands:
+      - tapOn:
+          text: "Stay logged out"
 
 - waitForAnimationToEnd
 

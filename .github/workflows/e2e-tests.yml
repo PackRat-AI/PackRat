@@ -26,6 +26,8 @@ jobs:
     name: iOS E2E Tests
     runs-on: macos-14
     timeout-minutes: 60
+    # Skip on forked PRs — secrets are not available in forks
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     env:
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
@@ -89,12 +91,12 @@ jobs:
 
       - name: Boot iOS Simulator
         run: |
-          # Find the latest available iOS runtime (prefer 18, fall back to 17, then any available)
+          # Find the latest available iOS runtime (prefer 18, fall back to 17, then any available iOS runtime)
           IOS_RUNTIME=$(xcrun simctl list runtimes --json \
             | python3 -c "
           import sys, json
           runtimes = json.load(sys.stdin)['runtimes']
-          available = [r for r in runtimes if r.get('isAvailable')]
+          available = [r for r in runtimes if r.get('isAvailable') and 'iOS' in r.get('name','')]
           ios18 = [r for r in available if 'iOS 18' in r.get('name','')]
           ios17 = [r for r in available if 'iOS 17' in r.get('name','')]
           chosen = ios18 or ios17 or available
@@ -128,6 +130,7 @@ jobs:
 
       - name: Run Maestro E2E tests
         run: |
+          mkdir -p test-results
           maestro --device "$SIMULATOR_UDID" test \
             --format junit \
             --output test-results/maestro-results.xml \
@@ -135,6 +138,8 @@ jobs:
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          TRIP_NAME: E2E-Trip-${{ github.run_id }}
+          PACK_NAME: E2E-Pack-${{ github.run_id }}
 
       - name: Upload test results
         if: always()

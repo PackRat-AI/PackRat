@@ -18,7 +18,7 @@ appId: com.andrewbierman.packrat
 # Fill in the Trip Name field
 - tapOn:
     text: "Trip Name"
-- typeText: "E2E Test Trip"
+- typeText: ${TRIP_NAME}
 
 # Fill in the Description field
 - tapOn:
@@ -31,6 +31,10 @@ appId: com.andrewbierman.packrat
 
 - waitForAnimationToEnd
 
+# Verify we've returned to the trips list (form submit button should no longer be visible)
+- assertNotVisible:
+    id: "submit-trip-button"
+
 # Assert the trip was created successfully
 - assertVisible:
-    text: "E2E Test Trip"
+    text: ${TRIP_NAME}

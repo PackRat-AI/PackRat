@@ -33,8 +33,9 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
    ```
 
 3. **Build and install the app** on a simulator/device:
-   - For iOS: `eas build --platform ios --profile preview --local`
-   - Install on simulator: `xcrun simctl install booted <path-to.app>`
+   - For iOS simulator: `eas build --platform ios --profile e2e --local --output ./build/PackRat-sim.tar.gz`
+   - Extract the archive: `tar -xzf ./build/PackRat-sim.tar.gz -C ./build/extracted`
+   - Install on simulator: `xcrun simctl install booted <path-to-extracted.app>`
 
 ## Running Tests
 
@@ -81,9 +82,10 @@ Flows are standard YAML files following the [Maestro flow syntax](https://maestr
 
 Key conventions:
 - All flows start with `appId: com.andrewbierman.packrat`
-- Use text-based element matching (e.g., `tapOn: { text: "Sign In" }`)
+- Prefer stable id/accessibility selectors (e.g., `tapOn: { id: "submitButton" }` or `tapOn: { accessibilityLabel: "Submit" }`); use `text` only when no stable id/accessibility selector exists
 - Use `waitForAnimationToEnd` after navigation actions
 - Use `runFlow: { when: { visible: ... } }` for conditional steps
+- Use environment variables (e.g., `${TRIP_NAME}`) for entity names to keep each test run unique
 
 ## Troubleshooting
 

@@ -18,7 +18,7 @@ appId: com.andrewbierman.packrat
 # Fill in Pack Name
 - tapOn:
     text: "Pack Name"
-- typeText: "E2E Test Pack"
+- typeText: ${PACK_NAME}
 
 # Fill in Description
 - tapOn:
@@ -31,6 +31,10 @@ appId: com.andrewbierman.packrat
 
 - waitForAnimationToEnd
 
+# Verify we've returned to the packs list (form submit button should no longer be visible)
+- assertNotVisible:
+    id: "submit-pack-button"
+
 # Assert the pack was created - we should see the pack name in the details or list
 - assertVisible:
-    text: "E2E Test Pack"
+    text: ${PACK_NAME}
