@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { atom } from 'jotai';
 import { atomWithStorage, createJSONStorage, loadable } from 'jotai/utils';
 import type { WildlifeIdentification } from '../types';
 
@@ -23,11 +22,3 @@ export const baseWildlifeHistoryAtom = atomWithStorage<WildlifeIdentification[]>
 );
 
 export const wildlifeHistoryAtom = loadable(baseWildlifeHistoryAtom);
-
-export const wildlifeHistoryCountAtom = atom((get) => {
-  const result = get(wildlifeHistoryAtom);
-  if (result.state === 'hasData') {
-    return result.data.length;
-  }
-  return 0;
-});
