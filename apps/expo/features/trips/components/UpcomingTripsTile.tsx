@@ -4,16 +4,10 @@ import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { parseLocalDate } from 'expo-app/lib/utils/dateUtils';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef } from 'react';
 import { View } from 'react-native';
-
-function parseLocalDate(dateString: string): Date {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
-  return m
-    ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
-    : new Date(dateString);
-}
 
 export function UpcomingTripsTile() {
   const router = useRouter();
@@ -25,7 +19,11 @@ export function UpcomingTripsTile() {
 
   // ✅ derive upcoming trips (in future)
   const upcomingTrips = useMemo(
-    () => trips.filter((t) => t.startDate && parseLocalDate(t.startDate) > new Date()),
+    () => trips.filter((t) => {
+      if (!t.startDate) return false;
+      const parsed = parseLocalDate(t.startDate);
+      return parsed != null && parsed > new Date();
+    }),
     [trips],
   );
 
