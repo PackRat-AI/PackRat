@@ -17,6 +17,7 @@ import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedCon
 import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
 import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
+import { OfflineMapsTile } from 'expo-app/features/offline-maps/components/OfflineMapsTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
 import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
@@ -154,6 +155,11 @@ const tileInfo = {
     ],
     component: WildlifeTile,
   },
+  'offline-maps': {
+    title: 'Offline Maps',
+    keywords: ['offline', 'maps', 'download', 'tiles', 'navigation', 'region'],
+    component: OfflineMapsTile,
+  },
 };
 
 type TileName = keyof typeof tileInfo;
@@ -246,6 +252,7 @@ export default function DashboardScreen() {
     'gap 4',
     'guides',
     ...(featureFlags.enableWildlifeIdentification ? ['wildlife'] : []),
+    ...(featureFlags.enableOfflineMaps ? ['gap 5', 'offline-maps'] : []),
   ]).current;
 
   const filteredTiles = useMemo(() => {
