@@ -74,6 +74,7 @@ jobs:
             --output ./build/PackRat-sim.tar.gz
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
       - name: Extract iOS simulator build
         run: |
