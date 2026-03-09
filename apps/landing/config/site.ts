@@ -218,6 +218,7 @@ export const siteConfig = {
     title: 'Seamless Integrations',
     subtitle:
       'PackRat connects with your favorite outdoor and weather services for a complete experience.',
+    comingSoon: 'More integrations on the way — Strava, Garmin, AllTrails and more coming soon!',
     items: [
       {
         id: 'weather',
@@ -267,7 +268,7 @@ export const siteConfig = {
         color: '#EF4444',
         features: ['SOS Alerts', 'Contact Sharing', 'GPS Location'],
       },
-    ] as Integration[],
+    ] satisfies Integration[],
   },
 
   // Testimonials section
