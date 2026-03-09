@@ -6,7 +6,6 @@ import { useForm } from '@tanstack/react-form';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -24,20 +23,28 @@ import { useCreateTrip, useUpdateTrip } from '../hooks';
 import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
 import type { Trip } from '../types';
 
-const tripFormSchema = z.object({
-  name: z.string().min(1, 'Trip name is required'),
-  description: z.string().optional(),
-  location: z
-    .object({
-      latitude: z.number(),
-      longitude: z.number(),
-      name: z.string().optional(),
-    })
-    .optional(),
-  startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().min(1, 'End date is required'),
-  packId: z.string().optional(),
-});
+const tripFormSchema = z
+  .object({
+    name: z.string().min(1, 'Trip name is required'),
+    description: z.string().optional(),
+    location: z
+      .object({
+        latitude: z.number(),
+        longitude: z.number(),
+        name: z.string().optional(),
+      })
+      .optional(),
+    startDate: z.string().min(1, 'Start date is required'),
+    endDate: z.string().min(1, 'End date is required'),
+    packId: z.string().optional(),
+  })
+  .refine(
+    ({ startDate, endDate }) => !startDate || !endDate || new Date(endDate) >= new Date(startDate),
+    {
+      message: 'End date must be after start date',
+      path: ['endDate'],
+    },
+  );
 
 type TripFormValues = z.infer<typeof tripFormSchema>;
 
@@ -169,8 +176,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         : t('trips.addLocation')}
                   </Text>
                 </Pressable>
-                {location && (
-                  <Pressable onPress={() => setLocation(null)}>
+                {(location || trip?.location) && (
+                  <Pressable
+                    onPress={() => {
+                      setLocation(null);
+                      form.setFieldValue('location', undefined);
+                    }}
+                  >
                     <Text className="text-red-500 font-semibold px-2">{t('common.clear')}</Text>
                   </Pressable>
                 )}
@@ -246,7 +258,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           setShowStartPicker(false);
                           if (date) {
                             const dateStr = date.toISOString().split('T')[0];
-                            assertDefined(dateStr);
                             field.handleChange(dateStr);
                           }
                         }}
@@ -281,7 +292,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           setShowEndPicker(false);
                           if (date) {
                             const dateStr = date.toISOString().split('T')[0];
-                            assertDefined(dateStr);
                             field.handleChange(dateStr);
                           }
                         }}
