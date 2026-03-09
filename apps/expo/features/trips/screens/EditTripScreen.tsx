@@ -1,10 +1,11 @@
 import { use$ } from '@legendapp/state/react';
+import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, Pressable, SafeAreaView, Text, View } from 'react-native';
+import { Pressable, SafeAreaView, View } from 'react-native';
 import { TripForm } from '../components/TripForm';
 import { tripLocationStore } from '../store/tripLocationStore';
 import { tripsSyncState } from '../store/trips';
