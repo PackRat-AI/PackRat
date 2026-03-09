@@ -46,6 +46,14 @@ export default function TabLayout() {
     href: featureFlags.enableTrips ? 'trips' : null,
   } as const;
 
+  const FEED_OPTIONS = {
+    title: t('navigation.feed'),
+    tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+      <Icon name="image-multiple" size={size} color={color} />
+    ),
+    href: featureFlags.enableFeed ? 'feed' : null,
+  } as const;
+
   const ITEMS_CATALOG_OPTIONS = {
     title: t('navigation.catalog'),
     tabBarIcon: ({ color, size }: { color: string; size: number }) => (
@@ -71,6 +79,7 @@ export default function TabLayout() {
       >
         <Tabs.Screen name="(home)" options={INDEX_OPTIONS} />
         <Tabs.Screen name="packs" options={PACK_LIST_OPTIONS} />
+        <Tabs.Screen name="feed" options={FEED_OPTIONS} />
         <Tabs.Screen name="trips" options={TRIP_LIST_OPTIONS} />
         <Tabs.Screen name="catalog" options={ITEMS_CATALOG_OPTIONS} />
         <Tabs.Screen name="profile" options={PROFILE_OPTIONS} />
@@ -91,6 +100,7 @@ const TAB_BAR = Platform.select({
 const TAB_ICON = {
   '(home)': 'home',
   packs: 'backpack',
+  feed: 'image-multiple',
   trips: 'map',
   catalog: 'clipboard-list',
   profile: 'account-circle',
