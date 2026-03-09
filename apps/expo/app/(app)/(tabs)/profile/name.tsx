@@ -26,10 +26,17 @@ export default function NameScreen() {
     KeyboardController.setFocusTo('next');
   }
 
+  const trimmedFirst = form.first.trim();
+  const trimmedLast = form.last.trim();
   const canSave =
-    (form.first !== 'Zach' || form.middle !== 'Danger' || form.last !== 'Nugent') &&
-    !!form.first &&
-    !!form.last;
+    (trimmedFirst !== 'Zach' || form.middle !== 'Danger' || trimmedLast !== 'Nugent') &&
+    !!trimmedFirst &&
+    !!trimmedLast;
+
+  function handleSave() {
+    if (!canSave) return;
+    router.back();
+  }
 
   return (
     <>
@@ -40,12 +47,7 @@ export default function NameScreen() {
           headerBlurEffect: 'systemMaterial',
           headerRight: Platform.select({
             ios: () => (
-              <Button
-                className="ios:px-0"
-                disabled={!canSave}
-                variant="plain"
-                onPress={router.back}
-              >
+              <Button className="ios:px-0" disabled={!canSave} variant="plain" onPress={handleSave}>
                 <Text className={cn(canSave && 'text-primary')}>{t('common.save')}</Text>
               </Button>
             ),
@@ -106,7 +108,7 @@ export default function NameScreen() {
                 placeholder={t('profile.requiredPlaceholder')}
                 value={form.last}
                 onChangeText={onChangeText('last')}
-                onSubmitEditing={router.back}
+                onSubmitEditing={handleSave}
                 enterKeyHint="done"
               />
             </FormItem>
@@ -116,7 +118,7 @@ export default function NameScreen() {
               <Button
                 className={cn('px-6', !canSave && 'bg-muted')}
                 disabled={!canSave}
-                onPress={router.back}
+                onPress={handleSave}
               >
                 <Text>{t('common.save')}</Text>
               </Button>
