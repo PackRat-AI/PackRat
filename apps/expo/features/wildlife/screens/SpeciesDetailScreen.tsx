@@ -51,6 +51,20 @@ export function SpeciesDetailScreen() {
     );
   }
 
+  // Surface history load errors rather than silently showing "not found"
+  if (!species && historyLoadable.state === 'hasError') {
+    return (
+      <>
+        <Stack.Screen options={{ title: t('wildlife.speciesDetail') }} />
+        <View className="flex-1 items-center justify-center p-8">
+          <Text className="text-center text-muted-foreground">
+            {t('wildlife.historyLoadError')}
+          </Text>
+        </View>
+      </>
+    );
+  }
+
   if (!displaySpecies) {
     return (
       <>

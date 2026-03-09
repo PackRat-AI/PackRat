@@ -9,6 +9,7 @@ export const baseWildlifeHistoryAtom = atomWithStorage<WildlifeIdentification[]>
   'wildlife-history',
   [],
   wildlifeStorage,
+  { getOnInit: true },
 );
 
 export const wildlifeHistoryAtom = loadable(baseWildlifeHistoryAtom);
