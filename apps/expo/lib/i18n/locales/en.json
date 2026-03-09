@@ -923,6 +923,7 @@
     "noHistoryTitle": "No identifications yet",
     "noHistoryDescription": "Take a photo of a plant or animal to get started",
     "clearHistory": "Clear History",
-    "clearHistoryConfirm": "This will permanently delete all your identification history. This cannot be undone."
+    "clearHistoryConfirm": "This will permanently delete all your identification history. This cannot be undone.",
+    "edibilityDisclaimer": "For reference only. Never eat a plant or mushroom based solely on app identification."
   }
 }

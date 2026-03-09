@@ -32,6 +32,7 @@ import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
@@ -169,8 +170,6 @@ function DemoIcon() {
     </Link>
   );
 }
-
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');

@@ -7,7 +7,6 @@ import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useWildlifeHistory } from '../hooks/useWildlifeHistory';
 import { useWildlifeIdentification } from '../hooks/useWildlifeIdentification';
 import type { SpeciesIdentification } from '../types';
 
@@ -65,6 +64,14 @@ function SpeciesResultCard({ species }: { species: SpeciesIdentification }) {
         <EdibilityBadge edibility={species.edibility} />
       </View>
 
+      {species.edibility && species.edibility !== 'unknown' && (
+        <View className="mb-3 rounded-xl bg-yellow-500/10 px-3 py-2">
+          <Text variant="caption1" className="text-yellow-700 dark:text-yellow-400">
+            ⚠️ {t('wildlife.edibilityDisclaimer')}
+          </Text>
+        </View>
+      )}
+
       <Text variant="body" className="mb-3 leading-5 text-foreground">
         {species.description}
       </Text>
@@ -104,21 +111,17 @@ export function WildlifeIdentificationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { identify, result, isPending, isError, reset } = useWildlifeIdentification();
-  const { invalidate } = useWildlifeHistory();
 
   const handleIdentify = useCallback(
     (source: 'camera' | 'library') => {
       reset();
       identify(source, {
-        onSuccess: () => {
-          invalidate();
-        },
         onError: (err) => {
           Alert.alert(t('wildlife.identificationFailed'), err.message);
         },
       });
     },
-    [identify, invalidate, reset, t],
+    [identify, reset, t],
   );
 
   const imageUri = result?.species?.[0]?.imageUri;
@@ -270,11 +273,11 @@ export function WildlifeIdentificationScreen() {
             <Text variant="subhead" className="mb-3 font-semibold text-muted-foreground">
               {t('wildlife.tipsTitle')}
             </Text>
-            {[t('wildlife.tip1'), t('wildlife.tip2'), t('wildlife.tip3')].map((tip) => (
-              <View key={tip} className="mb-2 flex-row items-start gap-2">
+            {(['tip1', 'tip2', 'tip3'] as const).map((key) => (
+              <View key={key} className="mb-2 flex-row items-start gap-2">
                 <Icon name="check-circle-outline" size={16} color={colors.primary} />
                 <Text variant="caption1" className="flex-1 text-muted-foreground">
-                  {tip}
+                  {t(`wildlife.${key}`)}
                 </Text>
               </View>
             ))}

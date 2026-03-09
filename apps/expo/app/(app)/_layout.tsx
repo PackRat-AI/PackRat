@@ -76,6 +76,7 @@ export default function AppLayout() {
         <Stack.Screen name="catalog/index" options={getCatalogListOptions(t)} />
         <Stack.Screen name="catalog/[id]" options={getCatalogItemDetailOptions(t)} />
         <Stack.Screen name="weather" options={{ headerShown: false }} />
+        <Stack.Screen name="wildlife" options={{ headerShown: false }} />
 
         <Stack.Screen
           name="current-pack"

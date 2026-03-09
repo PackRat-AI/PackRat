@@ -1,10 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import { nanoid } from 'nanoid/non-secure';
+import { WILDLIFE_HISTORY_QUERY_KEY, WILDLIFE_HISTORY_STORAGE_KEY } from '../constants';
 import type { IdentificationResult, SpeciesCategory, SpeciesIdentification } from '../types';
-
-const HISTORY_STORAGE_KEY = 'wildlife_identification_history';
 
 const MOCK_SPECIES_DATABASE: Record<
   string,
@@ -38,7 +37,7 @@ const MOCK_SPECIES_DATABASE: Record<
     name: 'American Black Bear',
     scientificName: 'Ursus americanus',
     description:
-      'North America\'s most common bear species. Despite the name, coat color varies from black to brown and cinnamon.',
+      "North America's most common bear species. Despite the name, coat color varies from black to brown and cinnamon.",
     category: 'animal' as SpeciesCategory,
     habitat: 'Forests, mountains, swamps',
     edibility: 'unknown',
@@ -82,7 +81,7 @@ const MOCK_SPECIES_DATABASE: Record<
     region: 'North America',
     conservationStatus: 'Endangered',
     funFact:
-      'Monarchs use the sun as a compass and the Earth\'s magnetic field to navigate during migration.',
+      "Monarchs use the sun as a compass and the Earth's magnetic field to navigate during migration.",
   },
   fiddlehead_fern: {
     name: 'Ostrich Fern',
@@ -113,6 +112,8 @@ const MOCK_SPECIES_DATABASE: Record<
 
 const SPECIES_KEYS = Object.keys(MOCK_SPECIES_DATABASE);
 
+// TODO: Replace with real ExecuTorch/TFLite model call before production release.
+// Swap the body of this function; the return type contract must be preserved.
 async function runOnDeviceInference(imageUri: string): Promise<IdentificationResult> {
   const startTime = Date.now();
 
@@ -147,13 +148,23 @@ async function runOnDeviceInference(imageUri: string): Promise<IdentificationRes
 export async function persistIdentificationToHistory(
   identification: SpeciesIdentification,
 ): Promise<void> {
-  const stored = await AsyncStorage.getItem(HISTORY_STORAGE_KEY);
-  const existing: SpeciesIdentification[] = stored ? JSON.parse(stored) : [];
+  const stored = await AsyncStorage.getItem(WILDLIFE_HISTORY_STORAGE_KEY);
+  let existing: SpeciesIdentification[] = [];
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      existing = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      await AsyncStorage.removeItem(WILDLIFE_HISTORY_STORAGE_KEY);
+    }
+  }
   const updated = [identification, ...existing].slice(0, 100);
-  await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updated));
+  await AsyncStorage.setItem(WILDLIFE_HISTORY_STORAGE_KEY, JSON.stringify(updated));
 }
 
 export function useWildlifeIdentification() {
+  const queryClient = useQueryClient();
+
   const captureAndIdentifyMutation = useMutation({
     mutationFn: async (source: 'camera' | 'library') => {
       let imageUri: string | null = null;
@@ -192,6 +203,7 @@ export function useWildlifeIdentification() {
 
       if (identificationResult.species.length > 0 && identificationResult.species[0]) {
         await persistIdentificationToHistory(identificationResult.species[0]);
+        await queryClient.invalidateQueries({ queryKey: WILDLIFE_HISTORY_QUERY_KEY });
       }
 
       return identificationResult;
@@ -200,7 +212,6 @@ export function useWildlifeIdentification() {
 
   return {
     identify: captureAndIdentifyMutation.mutate,
-    identifyAsync: captureAndIdentifyMutation.mutateAsync,
     result: captureAndIdentifyMutation.data,
     isPending: captureAndIdentifyMutation.isPending,
     isError: captureAndIdentifyMutation.isError,
