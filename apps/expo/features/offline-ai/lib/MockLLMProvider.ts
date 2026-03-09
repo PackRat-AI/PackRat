@@ -24,9 +24,9 @@ export interface GenerateOptions {
 }
 
 export class MockLLMProvider {
-  async generate(prompt: string, options?: GenerateOptions): Promise<string> {
+  async generate(_prompt: string, options?: GenerateOptions): Promise<string> {
     const context = options?.context;
-    
+    const _systemPrompt = options?.systemPrompt; // accepted by interface; real providers use this
     // If no context provided, return default greeting
     if (!context) {
       return 'Hello! How can I help you with your outdoor adventure today?';
@@ -41,10 +41,10 @@ export class MockLLMProvider {
       parts.push(`For ${trail.name}`);
       
       if (trail.difficulty) {
-        parts.push(`(${trail.difficulty} difficulty)`);
+        parts.push(` (${trail.difficulty} difficulty)`);
       }
       if (trail.length) {
-        parts.push(`which is ${trail.length} miles long`);
+        parts.push(` which is ${trail.length} miles long`);
       }
       parts.push(', ');
     }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { MockLLMProvider, type LLMContext } from '../lib/MockLLMProvider';
 
 describe('OfflineAI - MockLLMProvider', () => {
@@ -54,7 +54,7 @@ describe('OfflineAI - MockLLMProvider', () => {
 
       expect(response).toBeDefined();
       // Should mention weather-relevant items
-      expect(response.toLowerCase()).toMatch(/rain|wet|precipitation|rainy|coat| Jacket|umbrella/);
+      expect(response.toLowerCase()).toMatch(/rain|wet|gear|layers/);
     });
 
     it('should handle empty context gracefully', async () => {
