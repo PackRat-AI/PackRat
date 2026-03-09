@@ -1,3 +1,5 @@
+// Tests for apps/expo/utils/format-ai-response.ts
+// See also: packages/api/src/utils/__tests__/format-ai-response.test.ts for the API variant
 import { describe, expect, it } from 'vitest';
 import { formatAIResponse } from '../format-ai-response';
 

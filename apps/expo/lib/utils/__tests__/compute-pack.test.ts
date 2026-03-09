@@ -5,6 +5,7 @@ import { computePacksWeights, computePackWeights } from '../compute-pack';
 // ---------------------------------------------------------------------------
 // Minimal factory helpers
 // ---------------------------------------------------------------------------
+// Arbitrary fixed timestamp used only as a required field value, not asserted on
 const NOW = new Date().toISOString();
 
 function makePackItem(

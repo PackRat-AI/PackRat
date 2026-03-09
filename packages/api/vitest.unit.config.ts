@@ -21,14 +21,21 @@ export default defineConfig({
     name: 'unit',
     environment: 'node',
     globals: true,
-    // Only include .test.ts files under src/ (unit tests live alongside source)
-    include: [resolve(__dirname, 'src/**/*.test.ts')],
+    // Restrict to __tests__ directories to avoid accidentally running integration
+    // tests that target the Cloudflare Workers pool runner.
+    include: [resolve(__dirname, 'src/**/__tests__/**/*.test.ts')],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: resolve(__dirname, 'coverage/unit'),
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/index.ts'],
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.spec.ts',
+        'src/**/*.d.ts',
+        'src/index.ts',
+        'src/db/migrations/**',
+      ],
     },
   },
 });
