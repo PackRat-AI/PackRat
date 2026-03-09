@@ -260,6 +260,7 @@ export default function AIChat() {
           onLayout={onLayout}
           onScroll={onScroll}
           onContentSizeChange={onContentSizeChange}
+          removeClippedSubviews={false}
           scrollIndicatorInsets={{
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
