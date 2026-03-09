@@ -48,7 +48,7 @@ export function TrailConditionReportCard({ report }: TrailConditionReportCardPro
     if (diffDays < 7) return t('trailConditions.nDaysAgo', { count: diffDays });
     if (diffDays < 14) return t('trailConditions.oneWeekAgo');
     if (diffDays < 30) return t('trailConditions.nWeeksAgo', { count: Math.floor(diffDays / 7) });
-    return date.toLocaleDateString();
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
   const surfaceLabel = SURFACE_KEYS[report.surface as TrailSurface]

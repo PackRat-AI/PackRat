@@ -276,6 +276,8 @@ export function SubmitConditionReportForm({
         {/* Submit Button */}
         <Pressable
           onPress={handleSubmit}
+          accessibilityRole="button"
+          accessibilityLabel={t('trailConditions.submitReport')}
           className="rounded-lg bg-primary px-4 py-3.5"
         >
           <Text className="text-center text-base font-semibold text-primary-foreground">
