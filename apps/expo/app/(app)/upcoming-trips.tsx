@@ -4,8 +4,7 @@ import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
 
@@ -107,9 +106,10 @@ export default function UpcomingTripsScreen() {
   const trips = useTrips();
   const packs = useDetailedPacks();
 
-  const upcomingTrips = useMemo(
-    () => trips.filter((t) => !!t.startDate && new Date(t.startDate).getTime() > Date.now()),
-    [trips],
+  // Computed fresh each render — avoids stale Date.now() snapshot when a trip's
+  // start time passes while the screen is still open.
+  const upcomingTrips = trips.filter(
+    (t) => !!t.startDate && new Date(t.startDate).getTime() > Date.now(),
   );
 
   const [selectedTripId, setSelectedTripId] = useState<string | undefined>(
@@ -117,7 +117,16 @@ export default function UpcomingTripsScreen() {
   );
 
   useEffect(() => {
-    if (!selectedTripId && upcomingTrips.length > 0) {
+    if (!upcomingTrips.length) {
+      setSelectedTripId(undefined);
+      return;
+    }
+
+    const stillSelected = selectedTripId
+      ? upcomingTrips.some((trip) => trip.id === selectedTripId)
+      : false;
+
+    if (!stillSelected) {
       setSelectedTripId(upcomingTrips[0]?.id);
     }
   }, [upcomingTrips, selectedTripId]);
@@ -147,6 +156,7 @@ export default function UpcomingTripsScreen() {
         <List
           data={upcomingTrips.map((trip) => ({
             id: trip.id,
+            trip,
             title: trip.name,
             subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
               trip.startDate,
@@ -155,9 +165,7 @@ export default function UpcomingTripsScreen() {
           extraData={selectedTripId}
           keyExtractor={(item) => item.id}
           renderItem={(info) => {
-            const trip = upcomingTrips[info.index];
-            assertDefined(trip);
-
+            const { trip } = info.item;
             const { status, completion } = getTripStatus(trip, t);
 
             return (
