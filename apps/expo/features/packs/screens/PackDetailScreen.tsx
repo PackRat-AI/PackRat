@@ -34,7 +34,7 @@ export function PackDetailScreen() {
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     packingModeStore[id as string].get() || {},
   );
 
@@ -93,7 +93,7 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     packingModeStore[id as string].set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
@@ -107,11 +107,11 @@ export function PackDetailScreen() {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       setPackedItems(packingModeStore[id as string].get() || {});
     };
 
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     const packingState = packingModeStore[id as string].get() || {};
 
     if (
@@ -148,11 +148,27 @@ export function PackDetailScreen() {
     setIsPackingMode(true);
   };
 
+  const PROGRESS_LOW_THRESHOLD = 33;
+  const PROGRESS_MID_THRESHOLD = 67;
+
   const packingProgress = useMemo(() => {
     const totalItems = pack?.items?.length || 0;
     const packedCount = Object.values(packedItems).filter(Boolean).length;
-    return { packed: packedCount, total: totalItems };
+    const percentage = totalItems > 0 ? Math.round((packedCount / totalItems) * 100) : 0;
+    return { packed: packedCount, total: totalItems, percentage };
   }, [pack?.items?.length, packedItems]);
+
+  const getProgressBarColor = (percentage: number) => {
+    if (percentage < PROGRESS_LOW_THRESHOLD) return 'bg-destructive';
+    if (percentage < PROGRESS_MID_THRESHOLD) return 'bg-amber-500';
+    return 'bg-green-500';
+  };
+
+  const getProgressTextColor = (percentage: number) => {
+    if (percentage < PROGRESS_LOW_THRESHOLD) return 'text-destructive';
+    if (percentage < PROGRESS_MID_THRESHOLD) return 'text-amber-500';
+    return 'text-green-500';
+  };
 
   const handleAnalyzeGapsPress = () => {
     if (!isAuthed.peek()) {
@@ -439,6 +455,33 @@ export function PackDetailScreen() {
               ))}
             </View>
           )}
+
+          {/* Packing Progress Summary (visible when not in packing mode and progress exists) */}
+          {!isPackingMode && packingProgress.packed > 0 && (
+            <View className="mt-4 rounded-lg border border-border bg-card p-3">
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text variant="subhead" className="font-medium">
+                  Packing Progress
+                </Text>
+                <Text
+                  variant="footnote"
+                  className={getProgressTextColor(packingProgress.percentage)}
+                >
+                  {packingProgress.packed}/{packingProgress.total} items ·{' '}
+                  {packingProgress.percentage}%
+                </Text>
+              </View>
+              <View className="h-2 overflow-hidden rounded-full bg-muted">
+                <View
+                  className={cn(
+                    'h-full rounded-full',
+                    getProgressBarColor(packingProgress.percentage),
+                  )}
+                  style={{ width: `${packingProgress.percentage}%` }}
+                />
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Actions */}
@@ -460,6 +503,23 @@ export function PackDetailScreen() {
               </Button>
             )}
           </View>
+
+          {/* Start Packing inline button */}
+          {isOwnedByUser && !isPackingMode && (
+            <Button
+              variant="secondary"
+              onPress={handleTogglePackingMode}
+              className="mt-3 w-full flex-row items-center gap-2"
+            >
+              <Icon
+                size={18}
+                materialIcon={{ type: 'MaterialCommunityIcons', name: 'bag-personal-outline' }}
+                ios={{ name: 'backpack' }}
+                color={colors.foreground}
+              />
+              <Text>Start Packing</Text>
+            </Button>
+          )}
         </View>
 
         {/* Tabs */}
@@ -529,6 +589,13 @@ export function PackDetailScreen() {
       {/* Packing Mode Toolbar */}
       {isPackingMode && (
         <View className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border">
+          {/* Progress Bar */}
+          <View className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted">
+            <View
+              className={cn('h-full rounded-full', getProgressBarColor(packingProgress.percentage))}
+              style={{ width: `${packingProgress.percentage}%` }}
+            />
+          </View>
           <View className="flex-row items-center justify-between">
             <View className="flex-row items-center gap-2">
               {/* Close Button */}
@@ -537,7 +604,13 @@ export function PackDetailScreen() {
               </Button>
               {/* Progress Text */}
               <Text variant="subhead" className="text-muted-foreground">
-                {packingProgress.packed} of {packingProgress.total} items packed
+                {packingProgress.packed}/{packingProgress.total} packed ·{' '}
+                <Text
+                  variant="subhead"
+                  className={getProgressTextColor(packingProgress.percentage)}
+                >
+                  {packingProgress.percentage}%
+                </Text>
               </Text>
             </View>
             <View className="flex-row items-center gap-2">
