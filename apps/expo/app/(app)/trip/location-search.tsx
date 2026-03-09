@@ -28,7 +28,8 @@ export default function LocationSearchScreen() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Focus search input on mount
+  // Focus search input on mount with a delay to ensure the screen transition is complete
+  // and the input is ready to receive focus
   useEffect(() => {
     setTimeout(() => {
       searchInputRef.current?.focus();

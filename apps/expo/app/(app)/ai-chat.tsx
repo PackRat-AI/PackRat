@@ -446,6 +446,7 @@ function Composer({
             onContentSizeChange={onContentSizeChange}
             onChangeText={handleInputChange}
             value={input}
+            // Ensures the soft keyboard is shown when the input is focused (Android keyboard fix)
             showSoftInputOnFocus
           />
         </Pressable>
