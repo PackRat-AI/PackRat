@@ -63,7 +63,9 @@ describe('OfflineAI - MockLLMProvider', () => {
       expect(typeof response).toBe('string');
     });
 
-    it('should use system prompt when provided', async () => {
+    it('should accept system prompt without error (not applied in mock)', async () => {
+      // systemPrompt is part of the GenerateOptions interface for real providers;
+      // the MockLLMProvider accepts it but does not use it in response generation.
       const response = await provider.generate('Hello', {
         systemPrompt: 'You are a helpful hiking assistant.',
       });
@@ -89,7 +91,7 @@ describe('OfflineAI - MockLLMProvider', () => {
   });
 
   describe('context processing', () => {
-    it('should process multiple trails in context', async () => {
+    it('should process trail in context', async () => {
       const context: LLMContext = {
         trail: {
           name: 'Test Trail',

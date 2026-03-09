@@ -20,13 +20,13 @@ export interface LLMContext {
 
 export interface GenerateOptions {
   context?: LLMContext;
+  /** Accepted by the interface for real LLM providers; not applied in this mock. */
   systemPrompt?: string;
 }
 
 export class MockLLMProvider {
   async generate(_prompt: string, options?: GenerateOptions): Promise<string> {
     const context = options?.context;
-    const _systemPrompt = options?.systemPrompt; // accepted by interface; real providers use this
     // If no context provided, return default greeting
     if (!context) {
       return 'Hello! How can I help you with your outdoor adventure today?';
@@ -83,7 +83,7 @@ export class MockLLMProvider {
       return `Hello! How can I help you with your outdoor adventure today?`;
     }
 
-    return parts.join('').trim() || `Hello! How can I help you with your outdoor adventure today?`;
+    return parts.join('').trim();
   }
 }
 
