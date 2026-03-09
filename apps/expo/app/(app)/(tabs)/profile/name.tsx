@@ -1,19 +1,24 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
-import { Platform, View } from 'react-native';
+import { Alert, Platform, View } from 'react-native';
 import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NameScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const user = useUser();
+  const { updateProfile, isLoading } = useUpdateProfile();
+
   const [form, setForm] = React.useState({
-    first: 'Zach',
-    middle: 'Danger',
-    last: 'Nugent',
+    first: user?.firstName || '',
+    middle: '',
+    last: user?.lastName || '',
   });
 
   function onChangeText(type: 'first' | 'middle' | 'last') {
@@ -26,10 +31,25 @@ export default function NameScreen() {
     KeyboardController.setFocusTo('next');
   }
 
+  const originalFirst = user?.firstName || '';
+  const originalLast = user?.lastName || '';
+
   const canSave =
-    (form.first !== 'Zach' || form.middle !== 'Danger' || form.last !== 'Nugent') &&
+    (form.first !== originalFirst || form.last !== originalLast) &&
     !!form.first &&
     !!form.last;
+
+  async function handleSave() {
+    const success = await updateProfile({
+      firstName: form.first,
+      lastName: form.last,
+    });
+    if (success) {
+      router.back();
+    } else {
+      Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
+    }
+  }
 
   return (
     <>
@@ -42,9 +62,9 @@ export default function NameScreen() {
             ios: () => (
               <Button
                 className="ios:px-0"
-                disabled={!canSave}
+                disabled={!canSave || isLoading}
                 variant="plain"
-                onPress={router.back}
+                onPress={handleSave}
               >
                 <Text className={cn(canSave && 'text-primary')}>{t('common.save')}</Text>
               </Button>
@@ -106,7 +126,7 @@ export default function NameScreen() {
                 placeholder={t('profile.requiredPlaceholder')}
                 value={form.last}
                 onChangeText={onChangeText('last')}
-                onSubmitEditing={router.back}
+                onSubmitEditing={handleSave}
                 enterKeyHint="done"
               />
             </FormItem>
@@ -115,8 +135,8 @@ export default function NameScreen() {
             <View className="items-end">
               <Button
                 className={cn('px-6', !canSave && 'bg-muted')}
-                disabled={!canSave}
-                onPress={router.back}
+                disabled={!canSave || isLoading}
+                onPress={handleSave}
               >
                 <Text>{t('common.save')}</Text>
               </Button>
