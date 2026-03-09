@@ -21,8 +21,8 @@ export default defineConfig({
     name: 'unit',
     environment: 'node',
     globals: true,
-    // Only include files under src/ (unit tests live alongside source)
-    include: [resolve(__dirname, 'src/**/*.test.ts'), resolve(__dirname, 'src/**/*.spec.ts')],
+    // Only include .test.ts files under src/ (unit tests live alongside source)
+    include: [resolve(__dirname, 'src/**/*.test.ts')],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
