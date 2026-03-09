@@ -1,8 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import { useCallback } from 'react';
+import { OFFLINE_MAPS_DIR } from '../constants';
 import { offlineMapsStore } from '../store/offlineMaps';
-
-const OFFLINE_MAPS_DIR = `${FileSystem.documentDirectory}offline-maps/`;
 
 /** Hook that returns a function to delete a downloaded region */
 export function useDeleteMapRegion() {
