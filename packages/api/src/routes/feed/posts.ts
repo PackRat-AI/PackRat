@@ -12,6 +12,11 @@ import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
 
+function parseImages(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw as string[];
+  return [];
+}
+
 const postsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
 // GET /feed - list paginated posts
@@ -95,7 +100,7 @@ postsRoutes.openapi(listPostsRoute, async (c) => {
     id: p.id,
     userId: p.userId,
     caption: p.caption,
-    images: (p.images as string[]) ?? [],
+    images: parseImages(p.images),
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
     author: { id: p.userId, firstName: p.firstName, lastName: p.lastName },
@@ -161,7 +166,7 @@ postsRoutes.openapi(createPostRoute, async (c) => {
       id: newPost.id,
       userId: newPost.userId,
       caption: newPost.caption,
-      images: (newPost.images as string[]) ?? [],
+      images: parseImages(newPost.images),
       createdAt: newPost.createdAt.toISOString(),
       updatedAt: newPost.updatedAt.toISOString(),
       author: author
@@ -220,7 +225,7 @@ postsRoutes.openapi(getPostRoute, async (c) => {
       id: post.id,
       userId: post.userId,
       caption: post.caption,
-      images: (post.images as string[]) ?? [],
+      images: parseImages(post.images),
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
       author: post.user
