@@ -20,13 +20,13 @@ export interface LLMContext {
 
 export interface GenerateOptions {
   context?: LLMContext;
+  /** Accepted by the interface for real LLM providers; not applied in this mock. */
   systemPrompt?: string;
 }
 
 export class MockLLMProvider {
-  async generate(prompt: string, options?: GenerateOptions): Promise<string> {
+  async generate(_prompt: string, options?: GenerateOptions): Promise<string> {
     const context = options?.context;
-    
     // If no context provided, return default greeting
     if (!context) {
       return 'Hello! How can I help you with your outdoor adventure today?';
@@ -39,28 +39,31 @@ export class MockLLMProvider {
     if (context.trail) {
       const trail = context.trail;
       parts.push(`For ${trail.name}`);
-      
+
       if (trail.difficulty) {
-        parts.push(`(${trail.difficulty} difficulty)`);
+        parts.push(` (${trail.difficulty} difficulty)`);
       }
-      if (trail.length) {
-        parts.push(`which is ${trail.length} miles long`);
+      if (trail.length !== undefined) {
+        parts.push(` which is ${trail.length} miles long`);
       }
-      parts.push(', ');
+      // Only add separator if more context (activity or weather) follows
+      if (context.activity || context.weather) {
+        parts.push(', ');
+      }
     }
 
     // Add activity context
     if (context.activity) {
       parts.push(`for your ${context.activity} trip`);
-      
+
       // Add weather-specific recommendations
       if (context.weather) {
         const weather = context.weather;
         parts.push(' ');
-        
+
         // Check for rainy/wet conditions
-        if (weather.conditions.toLowerCase().includes('rain') || 
-            weather.conditions.toLowerCase().includes('wet')) {
+        const conditions = weather.conditions.toLowerCase();
+        if (conditions.includes('rain') || conditions.includes('wet')) {
           parts.push('Make sure to bring rain gear and waterproof layers!');
         } else if (weather.temperature < 40) {
           parts.push('Dress warmly with insulated layers.');
@@ -83,7 +86,7 @@ export class MockLLMProvider {
       return `Hello! How can I help you with your outdoor adventure today?`;
     }
 
-    return parts.join('').trim() || `Hello! How can I help you with your outdoor adventure today?`;
+    return parts.join('').trim();
   }
 }
 
