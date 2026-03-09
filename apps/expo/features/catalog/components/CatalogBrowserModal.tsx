@@ -235,6 +235,7 @@ export function CatalogBrowserModal({
       .map((item) => ({ ...item, quantity: itemQuantities.get(item.id) ?? 1 }));
     onItemsSelected(selectedCatalogItems);
     resetSelection();
+    setSearchValue('');
     onClose();
   };
 

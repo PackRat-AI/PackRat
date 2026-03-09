@@ -10,7 +10,7 @@ import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/featur
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { Alert, TouchableOpacity, View } from 'react-native';
 import { useBulkAddCatalogItems, useImagePicker } from '../hooks';
 
 interface AddPackItemActionsProps {
@@ -103,7 +103,15 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
       if (catalogItems.length > 0) {
         trackRecentlyUsed(catalogItems);
-        await addItemsToPack(packId as string, catalogItems as CatalogItemWithPackItemFields[]);
+        try {
+          await addItemsToPack(packId, catalogItems as CatalogItemWithPackItemFields[]);
+        } catch (error) {
+          console.error('Error adding catalog items to pack:', error);
+          Alert.alert(
+            t('common.error'),
+            t('catalog.somethingWentWrong'),
+          );
+        }
       }
     };
 

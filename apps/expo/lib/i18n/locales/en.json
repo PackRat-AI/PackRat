@@ -517,11 +517,8 @@
     "match": "match",
     "popularItems": "Popular Items",
     "recentlyUsed": "Recently Used",
-    "quickAdd": "Quick Add",
-    "adjustQuantity": "Adjust Quantity",
     "selectedItemsQuantity": "Selected Items ({{count}})",
     "noRecentlyUsedItems": "No recently used items yet",
-    "tapToAdjust": "Tap items to select, adjust quantities below",
     "quantityFor": "Qty for {{name}}"
   },
   "welcome": {
