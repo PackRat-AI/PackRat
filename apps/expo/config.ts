@@ -7,4 +7,5 @@ export const featureFlags = {
   enablePackTemplates: true,
   enableTrailConditions: false,
   enableFeed: false,
+  enableWildlifeIdentification: false,
 };
