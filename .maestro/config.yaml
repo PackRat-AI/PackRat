@@ -1,6 +1,8 @@
 # Maestro E2E Test Suite Configuration
 # https://maestro.mobile.dev
 
+appId: com.andrewbierman.packrat
+
 flows:
   - flows/setup/*.yaml
   - flows/auth/*.yaml
