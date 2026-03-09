@@ -132,26 +132,37 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
   }
 
   // Map AI results to the response format with stable IDs derived from scientific name
-  const results = identification.results.map((r) => ({
-    species: {
-      id: r.scientificName
-        .toLowerCase()
-        .replaceAll(/[\s.]+/g, '-')
-        .replaceAll(/[^a-z0-9-]/g, ''),
-      commonName: r.commonName,
-      scientificName: r.scientificName,
-      category: r.category,
-      description: r.description,
-      habitat: r.habitat,
-      regions: r.regions,
-      dangerLevel: r.dangerLevel,
-      characteristics: r.characteristics,
-      conservationStatus: r.conservationStatus,
-      interestingFacts: r.interestingFacts,
-    },
-    confidence: r.confidence,
-    source: 'online' as const,
-  }));
+  const slugify = (name: string) =>
+    name
+      .toLowerCase()
+      .replaceAll(/[\s.]+/g, '-')
+      .replaceAll(/[^a-z0-9-]/g, '');
+
+  const results = identification.results.map((r, index) => {
+    const id =
+      r.scientificName?.trim()
+        ? slugify(r.scientificName)
+        : r.commonName?.trim()
+          ? slugify(r.commonName)
+          : `unknown-${index}`;
+    return {
+      species: {
+        id,
+        commonName: r.commonName,
+        scientificName: r.scientificName,
+        category: r.category,
+        description: r.description,
+        habitat: r.habitat,
+        regions: r.regions,
+        dangerLevel: r.dangerLevel,
+        characteristics: r.characteristics,
+        conservationStatus: r.conservationStatus,
+        interestingFacts: r.interestingFacts,
+      },
+      confidence: r.confidence,
+      source: 'online' as const,
+    };
+  });
 
   return c.json({ results }, 200);
 });

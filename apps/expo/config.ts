@@ -5,5 +5,5 @@ export const featureFlags = {
   enableShoppingList: false,
   enableSharedPacks: false,
   enablePackTemplates: true,
-  enableWildlifeIdentification: true,
+  enableWildlifeIdentification: false,
 };

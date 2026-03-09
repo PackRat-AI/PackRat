@@ -84,12 +84,12 @@ export function SpeciesDetailScreen() {
                 <Text
                   className={`text-sm font-medium capitalize ${DANGER_TEXT[displaySpecies.dangerLevel]}`}
                 >
-                  {displaySpecies.dangerLevel}
+                  {t(`wildlife.dangerLevel.${displaySpecies.dangerLevel}`)}
                 </Text>
               </View>
               <View className="px-3 py-1 rounded-full bg-primary/10">
                 <Text className="text-sm font-medium capitalize text-primary">
-                  {displaySpecies.category}
+                  {t(`wildlife.category.${displaySpecies.category}`)}
                 </Text>
               </View>
               {displaySpecies.conservationStatus && (

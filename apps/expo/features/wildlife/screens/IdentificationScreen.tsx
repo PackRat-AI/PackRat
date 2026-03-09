@@ -67,7 +67,12 @@ export function IdentificationScreen() {
       {
         onSuccess: async (identificationResults) => {
           setSavedResults(identificationResults);
-          const persistedUri = (await permanentlyPersistImageLocally()) ?? selectedImage.uri;
+          let persistedUri = selectedImage.uri;
+          try {
+            persistedUri = (await permanentlyPersistImageLocally()) ?? selectedImage.uri;
+          } catch (err) {
+            console.warn('Failed to persist image locally, using original URI:', err);
+          }
           await addIdentification(persistedUri, identificationResults);
         },
       },
