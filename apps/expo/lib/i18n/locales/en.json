@@ -901,6 +901,7 @@
     "wildlifeIdentification": "Wildlife Identification",
     "identifyPlantsAndAnimals": "Identify plants and animals offline",
     "identifiedCount": "{{count}} species identified",
+    "identifiedCountSingular": "1 species identified",
     "offline": "Offline",
     "offlineCapable": "All processing happens on-device — works without internet",
     "capturePhoto": "Take or choose a photo to identify species",
@@ -923,7 +924,12 @@
     "noHistoryTitle": "No identifications yet",
     "noHistoryDescription": "Take a photo of a plant or animal to get started",
     "clearHistory": "Clear History",
+    "clearHistoryAction": "Clear identification history",
     "clearHistoryConfirm": "This will permanently delete all your identification history. This cannot be undone.",
-    "edibilityDisclaimer": "For reference only. Never eat a plant or mushroom based solely on app identification."
+    "edibilityDisclaimer": "For reference only. Never eat a plant or mushroom based solely on app identification.",
+    "edibilityEdible": "✓ Edible",
+    "edibilityMedicinal": "⚕ Medicinal",
+    "edibilityPoisonous": "✗ Poisonous",
+    "viewHistory": "View identification history"
   }
 }

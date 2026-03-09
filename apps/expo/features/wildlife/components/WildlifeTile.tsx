@@ -17,9 +17,11 @@ export function WildlifeTile() {
   };
 
   const subTitle =
-    history.length > 0
-      ? t('wildlife.identifiedCount', { count: history.length })
-      : t('wildlife.identifyPlantsAndAnimals');
+    history.length === 1
+      ? t('wildlife.identifiedCountSingular')
+      : history.length > 1
+        ? t('wildlife.identifiedCount', { count: history.length })
+        : t('wildlife.identifyPlantsAndAnimals');
 
   return (
     <ListItem

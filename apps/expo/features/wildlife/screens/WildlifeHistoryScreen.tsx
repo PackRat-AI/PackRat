@@ -81,7 +81,12 @@ export function WildlifeHistoryScreen() {
         rightView={
           history.length > 0
             ? () => (
-                <Pressable className="px-2 opacity-80" onPress={handleClear}>
+                <Pressable
+                  className="px-2 opacity-80"
+                  onPress={handleClear}
+                  accessibilityLabel={t('wildlife.clearHistoryAction')}
+                  accessibilityRole="button"
+                >
                   {({ pressed }) => (
                     <View className={pressed ? 'opacity-50' : 'opacity-90'}>
                       <Icon name="trash-can-outline" size={22} color={colors.destructive} />

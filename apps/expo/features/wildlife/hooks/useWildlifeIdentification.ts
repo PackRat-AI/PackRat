@@ -175,7 +175,7 @@ export function useWildlifeIdentification() {
           throw new Error('Camera permission is required to identify species.');
         }
         const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: 'images',
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
           quality: 0.8,
           allowsEditing: true,
           aspect: [4, 3],
@@ -188,7 +188,7 @@ export function useWildlifeIdentification() {
           throw new Error('Photo library permission is required.');
         }
         const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: 'images',
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
           quality: 0.8,
           allowsEditing: true,
           aspect: [4, 3],

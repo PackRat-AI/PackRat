@@ -23,18 +23,19 @@ function ConfidenceBadge({ confidence }: { confidence: number }) {
 }
 
 function EdibilityBadge({ edibility }: { edibility?: string }) {
+  const { t } = useTranslation();
   if (!edibility || edibility === 'unknown') return null;
-  const config: Record<string, { bg: string; label: string }> = {
-    edible: { bg: 'bg-green-500/20', label: '✓ Edible' },
-    poisonous: { bg: 'bg-red-500/20', label: '✗ Poisonous' },
-    medicinal: { bg: 'bg-blue-500/20', label: '⚕ Medicinal' },
+  const config: Record<string, { bg: string; i18nKey: string }> = {
+    edible: { bg: 'bg-green-500/20', i18nKey: 'wildlife.edibilityEdible' },
+    poisonous: { bg: 'bg-red-500/20', i18nKey: 'wildlife.edibilityPoisonous' },
+    medicinal: { bg: 'bg-blue-500/20', i18nKey: 'wildlife.edibilityMedicinal' },
   };
   const c = config[edibility];
   if (!c) return null;
   return (
     <View className={`rounded-full px-3 py-1 ${c.bg}`}>
       <Text variant="caption1" className="font-medium">
-        {c.label}
+        {t(c.i18nKey)}
       </Text>
     </View>
   );
@@ -117,7 +118,8 @@ export function WildlifeIdentificationScreen() {
       reset();
       identify(source, {
         onError: (err) => {
-          Alert.alert(t('wildlife.identificationFailed'), err.message);
+          const message = err instanceof Error ? err.message : String(err);
+          Alert.alert(t('wildlife.identificationFailed'), message);
         },
       });
     },
@@ -132,7 +134,12 @@ export function WildlifeIdentificationScreen() {
         title={t('wildlife.wildlifeIdentification')}
         backVisible={false}
         rightView={() => (
-          <Pressable className="px-2 opacity-80" onPress={() => router.push('/wildlife/history')}>
+          <Pressable
+            className="px-2 opacity-80"
+            onPress={() => router.push('/wildlife/history')}
+            accessibilityLabel={t('wildlife.viewHistory')}
+            accessibilityRole="button"
+          >
             {({ pressed }) => (
               <View className={pressed ? 'opacity-50' : 'opacity-90'}>
                 <Icon name="history" size={22} color={colors.foreground} />
