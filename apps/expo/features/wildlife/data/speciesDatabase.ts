@@ -1,4 +1,4 @@
-import type { SpeciesEntry } from '../types';
+import type { SpeciesCategory, SpeciesEntry } from '../types';
 
 export const SPECIES_DATABASE: SpeciesEntry[] = [
   // Mammals
@@ -483,7 +483,7 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
   },
 ];
 
-export function getSpeciesByCategory(category: string): SpeciesEntry[] {
+export function getSpeciesByCategory(category: SpeciesCategory): SpeciesEntry[] {
   return SPECIES_DATABASE.filter((s) => s.category === category);
 }
 

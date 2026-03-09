@@ -6,7 +6,7 @@ import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, ScrollView, TextInput, View } from 'react-native';
 import { SpeciesCard } from '../components/SpeciesCard';
 import { useWildlifeHistory } from '../hooks/useWildlifeHistory';
@@ -21,6 +21,11 @@ export function IdentificationScreen() {
   const { showActionSheetWithOptions } = useActionSheet();
   const [descriptionText, setDescriptionText] = useState('');
   const [savedResults, setSavedResults] = useState<IdentificationResult[] | null>(null);
+  const latestSelectedImageUriRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    latestSelectedImageUriRef.current = selectedImage?.uri ?? null;
+  }, [selectedImage?.uri]);
 
   const { mutate: identify, isPending, data: results, reset } = useWildlifeIdentification();
   const { addIdentification } = useWildlifeHistory();
@@ -74,7 +79,7 @@ export function IdentificationScreen() {
       {
         onSuccess: async (identificationResults) => {
           // Ignore completion if the user has already changed or cleared the image
-          if (!selectedImage || selectedImage.uri !== imageUriAtStart) return;
+          if (latestSelectedImageUriRef.current !== imageUriAtStart) return;
           setSavedResults(identificationResults);
           let persistedUri = imageUriAtStart;
           try {

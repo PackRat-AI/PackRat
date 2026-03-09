@@ -12,7 +12,9 @@ interface OnlineIdentificationResponse {
 async function identifyOnline(selectedImage: SelectedImage): Promise<IdentificationResult[]> {
   const image = await uploadImage(selectedImage.fileName, selectedImage.uri);
   if (!image) {
-    throw new Error("Couldn't upload image");
+    throw new Error(
+      `Couldn't upload image${selectedImage.fileName ? ` "${selectedImage.fileName}"` : ' (no filename provided)'}`,
+    );
   }
   const response = await axiosInstance.post<OnlineIdentificationResponse>(
     '/api/wildlife/identify',

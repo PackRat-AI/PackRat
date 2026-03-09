@@ -10,9 +10,8 @@ const CONFIDENCE_DECAY = 0.1;
  * This performs keyword matching against the local species database.
  */
 export function identifyFromDescription(description: string): IdentificationResult[] {
-  if (!description.trim()) return [];
-
-  const matches = searchSpecies(description);
+  const query = description.trim();
+  const matches = searchSpecies(query);
   return matches.slice(0, 5).map((species, index) => ({
     species,
     confidence: Math.max(MIN_CONFIDENCE, BASE_CONFIDENCE - index * CONFIDENCE_DECAY),
