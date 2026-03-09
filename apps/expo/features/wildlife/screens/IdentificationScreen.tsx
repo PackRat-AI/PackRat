@@ -193,7 +193,7 @@ export function IdentificationScreen() {
             ) : (
               <View className="items-center py-12">
                 <View className="bg-primary/10 rounded-full p-5 mb-4">
-                  <Icon name="leaf" size={40} color={colors.primary} />
+                  <Icon name="eye" size={40} color={colors.primary} />
                 </View>
                 <Text className="text-lg font-semibold text-center mb-2">
                   {t('wildlife.noResultsFound')}

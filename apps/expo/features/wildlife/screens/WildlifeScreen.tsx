@@ -110,7 +110,7 @@ export function WildlifeScreen() {
         ) : (
           <View className="flex-1 items-center justify-center px-8">
             <View className="bg-primary/10 rounded-full p-6 mb-4">
-              <Icon name="leaf" size={48} color={colors.primary} />
+              <Icon name="eye" size={48} color={colors.primary} />
             </View>
             <Text className="text-xl font-semibold text-center mb-2">
               {t('wildlife.noIdentifications')}
