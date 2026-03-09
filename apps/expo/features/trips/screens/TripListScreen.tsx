@@ -51,6 +51,15 @@ export function TripsListScreen() {
   };
 
   const renderEmptyState = () => {
+    if (searchValue.trim() && trips.length > 0) {
+      return (
+        <View className="flex-1 items-center justify-center p-8">
+          <Text className="text-center text-muted-foreground">
+            {t('trips.noSearchResults')}
+          </Text>
+        </View>
+      );
+    }
     return (
       <View className="flex-1 items-center justify-center p-8">
         <View className="mb-4 rounded-full bg-muted p-4">

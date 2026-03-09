@@ -382,6 +382,7 @@
     "tripLocation": "Trip Location",
     "noTrips": "No trips available",
     "noTripsFound": "No trips found",
+    "noSearchResults": "No trips match your search.",
     "noTripsYet": "You haven't created any trips yet.",
     "createNewTrip": "Create New Trip",
     "upcomingTrips": "Upcoming Trips",
