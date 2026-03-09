@@ -15,6 +15,7 @@ const trailConditionRoutes = new OpenAPIHono<{
 // ------------------------------
 // Zod schemas
 // ------------------------------
+
 const TrailConditionReportSchema = z.object({
   id: z.string(),
   trailName: z.string(),
@@ -34,6 +35,33 @@ const TrailConditionReportSchema = z.object({
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
+
+type TrailConditionReportResponse = z.infer<typeof TrailConditionReportSchema>;
+
+/** Cast a DB row (with Date fields and broad string types) to the API response shape. */
+function toReportResponse(
+  row: Record<string, unknown>,
+): TrailConditionReportResponse {
+  return {
+    ...row,
+    createdAt:
+      row.createdAt instanceof Date
+        ? row.createdAt.toISOString()
+        : String(row.createdAt),
+    updatedAt:
+      row.updatedAt instanceof Date
+        ? row.updatedAt.toISOString()
+        : String(row.updatedAt),
+    localCreatedAt:
+      row.localCreatedAt instanceof Date
+        ? row.localCreatedAt.toISOString()
+        : String(row.localCreatedAt),
+    localUpdatedAt:
+      row.localUpdatedAt instanceof Date
+        ? row.localUpdatedAt.toISOString()
+        : String(row.localUpdatedAt),
+  } as TrailConditionReportResponse;
+}
 
 const CreateReportRequestSchema = z.object({
   id: z.string().openapi({ example: 'tcr_123456', description: 'Client-generated report ID' }),
@@ -96,7 +124,7 @@ trailConditionRoutes.openapi(listReportsRoute, async (c) => {
       .orderBy(desc(trailConditionReports.createdAt))
       .limit(limit ?? 50);
 
-    return c.json(reports, 200);
+    return c.json(reports.map(toReportResponse), 200);
   } catch (error) {
     console.error('Error listing trail condition reports:', error);
     return c.json({ error: 'Failed to list trail condition reports' }, 500);
@@ -168,7 +196,7 @@ trailConditionRoutes.openapi(createReportRoute, async (c) => {
 
     if (!newReport) return c.json({ error: 'Failed to submit report' }, 400);
 
-    return c.json(newReport, 200);
+    return c.json(toReportResponse(newReport), 200);
   } catch (error) {
     // Postgres unique violation (23505): the offline client is retrying a report
     // it already committed. Return the existing row so the client can settle.
@@ -180,7 +208,7 @@ trailConditionRoutes.openapi(createReportRoute, async (c) => {
           eq(trailConditionReports.userId, auth.userId),
         ),
       });
-      if (existing) return c.json(existing, 200);
+      if (existing) return c.json(toReportResponse(existing), 200);
       // Same id but different user — treat as a real conflict
       return c.json({ error: 'Report ID already in use by another user' }, 409);
     }
@@ -240,7 +268,7 @@ trailConditionRoutes.openapi(listMyReportsRoute, async (c) => {
       .where(and(...conditions))
       .orderBy(desc(trailConditionReports.createdAt));
 
-    return c.json(reports, 200);
+    return c.json(reports.map(toReportResponse), 200);
   } catch (error) {
     console.error('Error listing user trail condition reports:', error);
     return c.json({ error: 'Failed to list trail condition reports' }, 500);
@@ -316,7 +344,7 @@ trailConditionRoutes.openapi(updateReportRoute, async (c) => {
 
     if (!updated) return c.json({ error: 'Report not found or unauthorized' }, 403);
 
-    return c.json(updated, 200);
+    return c.json(toReportResponse(updated), 200);
   } catch (error) {
     console.error('Error updating trail condition report:', error);
     return c.json({ error: 'Failed to update trail condition report' }, 500);
@@ -363,7 +391,7 @@ trailConditionRoutes.openapi(deleteReportRoute, async (c) => {
       .where(
         and(eq(trailConditionReports.id, reportId), eq(trailConditionReports.userId, auth.userId)),
       )
-      .returning({ id: trailConditionReports.id });
+      .returning();
 
     if (!deleted) return c.json({ error: 'Report not found or unauthorized' }, 403);
 

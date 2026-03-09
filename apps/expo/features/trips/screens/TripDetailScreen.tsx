@@ -197,7 +197,7 @@ export function TripDetailScreen() {
               <Card className="rounded-xl bg-card border border-border overflow-hidden">
                 <View className="p-4">
                   <View className="flex-row items-center mb-2 gap-2">
-                    <Icon name="map-marker-path" size={20} color={colors.primary} />
+                    <Icon name="map-marker-outline" size={20} color={colors.primary} />
                     <Text className="text-base font-semibold text-foreground">
                       {t('trailConditions.reportConditionsTitle')}
                     </Text>
