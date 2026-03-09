@@ -5,6 +5,7 @@ import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
+import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/useRecentlyUsedCatalogItems';
 import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
@@ -25,6 +26,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
     const { colors } = useColorScheme();
 
     const { addItemsToPack } = useBulkAddCatalogItems();
+    const { trackRecentlyUsed } = useRecentlyUsedCatalogItems();
 
     const handleAddFromPhoto = () => {
       ref && typeof ref !== 'function' && ref.current?.close();
@@ -100,6 +102,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
 
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
       if (catalogItems.length > 0) {
+        trackRecentlyUsed(catalogItems);
         await addItemsToPack(packId as string, catalogItems as CatalogItemWithPackItemFields[]);
       }
     };
