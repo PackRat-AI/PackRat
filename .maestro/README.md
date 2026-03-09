@@ -4,7 +4,7 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
 
 ## Structure
 
-```
+```text
 .maestro/
 ├── config.yaml                    # Maestro suite configuration & flow order
 └── flows/
@@ -32,10 +32,13 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
    export TEST_PASSWORD="your-test-password"
    ```
 
-3. **Build and install the app** on a simulator/device:
-   - For iOS simulator: `eas build --platform ios --profile e2e --local --output ./build/PackRat-sim.tar.gz`
-   - Extract the archive: `tar -xzf ./build/PackRat-sim.tar.gz -C ./build/extracted`
-   - Install on simulator: `xcrun simctl install booted <path-to-extracted.app>`
+3. **Build and install the app** on a simulator/device (run from `apps/expo/`):
+   ```bash
+   eas build --platform ios --profile e2e --local --output ./build/PackRat-sim.tar.gz
+   mkdir -p ./build/extracted
+   tar -xzf ./build/PackRat-sim.tar.gz -C ./build/extracted
+   xcrun simctl install booted ./build/extracted/*.app
+   ```
 
 ## Running Tests
 
@@ -62,8 +65,10 @@ maestro --device <UDID> test .maestro/config.yaml
 ## CI/CD
 
 Tests run automatically via GitHub Actions (`.github/workflows/e2e-tests.yml`) on:
-- Every push to `main` or `development` that touches `apps/expo/**` or `.maestro/**`
-- Every pull request to `main` or `development` that touches `apps/expo/**`, `.maestro/**`, or `.github/workflows/e2e-tests.yml`
+- Every push to `main` or `development` that touches `apps/expo/**`, `.maestro/**`, or `.github/workflows/e2e-tests.yml`
+- Every pull request targeting `main` or `development` that touches the same paths
+
+> **Note:** Forked pull requests are skipped because repository secrets are not available.
 
 ### Required Secrets
 
@@ -82,7 +87,7 @@ Flows are standard YAML files following the [Maestro flow syntax](https://maestr
 
 Key conventions:
 - All flows start with `appId: com.andrewbierman.packrat`
-- Prefer stable id/accessibility selectors (e.g., `tapOn: { id: "submitButton" }` or `tapOn: { accessibilityLabel: "Submit" }`); use `text` only when no stable id/accessibility selector exists
+- Prefer `testID` selectors first (e.g., `tapOn: { id: "submitButton" }`), then `accessibilityLabel` (e.g., `tapOn: { accessibilityLabel: "Submit" }`); use `text` only as a last resort when no stable `testID` or accessibility selector exists
 - Use `waitForAnimationToEnd` after navigation actions
 - Use `runFlow: { when: { visible: ... } }` for conditional steps
 - Use environment variables (e.g., `${TRIP_NAME}`) for entity names to keep each test run unique

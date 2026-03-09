@@ -22,6 +22,8 @@ appId: com.andrewbierman.packrat
 - waitForAnimationToEnd
 
 # Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes)
+# The dialog button also reads "Log Out", so use index 1 to select the dialog button
+# (index 0 is the original row behind the dialog).
 - runFlow:
     when:
       visible:
@@ -29,6 +31,7 @@ appId: com.andrewbierman.packrat
     commands:
       - tapOn:
           text: "Log Out"
+          index: 1
 
 - waitForAnimationToEnd
 

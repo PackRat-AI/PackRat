@@ -23,12 +23,19 @@ appId: com.andrewbierman.packrat
     id: "password-input"
 - typeText: ${TEST_PASSWORD}
 
+# Dismiss the keyboard before submitting
+- hideKeyboard
+
 # Submit login form via the continue button
 - tapOn:
     id: "continue-button"
 
-# Wait for navigation to complete
+# Wait for navigation to complete — login can take a few seconds
 - waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Packs"
+    timeout: 15000
 
 # Assert we are now logged in by checking for a main app screen element
 - assertVisible:

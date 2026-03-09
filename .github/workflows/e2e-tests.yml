@@ -7,6 +7,9 @@ on:
       - "apps/expo/**"
       - ".maestro/**"
       - ".github/workflows/e2e-tests.yml"
+  # Note: Using `pull_request` (not `pull_request_target`) so forked PRs get
+  # CI feedback on their own code.  Secrets are unavailable for forks, so
+  # the job is skipped via the `if` condition on the job below.
   pull_request:
     branches: [main, development]
     paths:
@@ -25,7 +28,7 @@ jobs:
   ios-e2e:
     name: iOS E2E Tests
     runs-on: macos-15
-    timeout-minutes: 90
+    timeout-minutes: 120
     # Skip on forked PRs — secrets are not available in forks
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
@@ -68,6 +71,7 @@ jobs:
       - name: Build iOS app for simulator
         run: |
           cd apps/expo
+          mkdir -p build
           eas build \
             --platform ios \
             --profile e2e \
@@ -95,12 +99,19 @@ jobs:
           IOS_RUNTIME=$(xcrun simctl list runtimes --json \
             | python3 -c "
           import sys, json
-          runtimes = json.load(sys.stdin)['runtimes']
-          available = [r for r in runtimes if r.get('isAvailable') and 'iOS' in r.get('name','')]
+          data = json.load(sys.stdin)
+          runtimes = data.get('runtimes', [])
+          available = [r for r in runtimes if r.get('isAvailable', False) and r.get('platform', r.get('name','')).startswith('iOS')]
+          # Fallback: also match by name containing 'iOS' in case 'platform' key is absent
+          if not available:
+              available = [r for r in runtimes if r.get('isAvailable', False) and 'iOS' in r.get('name','')]
           ios18 = [r for r in available if 'iOS 18' in r.get('name','')]
           ios17 = [r for r in available if 'iOS 17' in r.get('name','')]
           chosen = ios18 or ios17 or available
-          print(chosen[-1]['identifier'] if chosen else '')
+          if not chosen:
+              print('', file=sys.stderr)
+              sys.exit(1)
+          print(chosen[-1]['identifier'])
           ")
           if [ -z "$IOS_RUNTIME" ]; then
             echo "::error::No available iOS runtime found on this runner"

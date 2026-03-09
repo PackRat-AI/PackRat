@@ -25,16 +25,24 @@ appId: com.andrewbierman.packrat
     text: "Description"
 - typeText: "Created by Maestro E2E test"
 
+# Dismiss the keyboard before submitting
+- hideKeyboard
+
 # Submit the form via the submit button (testID: submit-trip-button)
 - tapOn:
     id: "submit-trip-button"
 
 - waitForAnimationToEnd
 
-# Verify we've returned to the trips list (form submit button should no longer be visible)
-- assertNotVisible:
-    id: "submit-trip-button"
+# Wait until the submit button disappears, confirming navigation away from the form
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-trip-button"
+    timeout: 15000
 
-# Assert the trip was created successfully
+# Assert we are back on the trips list (not still on the form) by checking
+# for the header create button, then verify the new trip appears
+- assertVisible:
+    id: "create-trip-button"
 - assertVisible:
     text: ${TRIP_NAME}

@@ -25,16 +25,24 @@ appId: com.andrewbierman.packrat
     text: "Description"
 - typeText: "Created by Maestro E2E test"
 
+# Dismiss the keyboard before submitting
+- hideKeyboard
+
 # Submit the form via the submit button (testID: submit-pack-button)
 - tapOn:
     id: "submit-pack-button"
 
 - waitForAnimationToEnd
 
-# Verify we've returned to the packs list (form submit button should no longer be visible)
-- assertNotVisible:
-    id: "submit-pack-button"
+# Wait until the submit button disappears, confirming navigation away from the form
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-pack-button"
+    timeout: 15000
 
-# Assert the pack was created - we should see the pack name in the details or list
+# Assert the pack was created - we should see the pack name in the list/details
+# Also confirm we are on the packs list by checking for the create button
+- assertVisible:
+    id: "create-pack-button"
 - assertVisible:
     text: ${PACK_NAME}
