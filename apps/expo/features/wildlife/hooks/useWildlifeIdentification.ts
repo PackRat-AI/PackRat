@@ -23,6 +23,17 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
 }
 
 function isNetworkError(error: unknown): boolean {
+  // Primitives and null are not classifiable as network errors
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  // If there's a server response the request reached the server – not a network error
+  if ('response' in error && (error as { response?: unknown }).response != null) {
+    return false;
+  }
+
+  // Error instances (including AxiosError): check message for network patterns
   if (error instanceof Error) {
     const msg = error.message.toLowerCase();
     return (
@@ -33,11 +44,9 @@ function isNetworkError(error: unknown): boolean {
       msg.includes('no internet')
     );
   }
-  // Axios network errors typically have no response
-  if (typeof error === 'object' && error !== null && 'response' in error) {
-    return false; // Has a server response – not a network error
-  }
-  return true;
+
+  // Unknown non-Error object shapes without a response: don't assume network error
+  return false;
 }
 
 export function useWildlifeIdentification() {

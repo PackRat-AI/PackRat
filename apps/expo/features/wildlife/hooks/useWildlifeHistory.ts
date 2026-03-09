@@ -1,3 +1,4 @@
+import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import { useAtom } from 'jotai';
 import { nanoid } from 'nanoid/non-secure';
 import { useCallback } from 'react';
@@ -29,13 +30,32 @@ export function useWildlifeHistory() {
 
   const deleteIdentification = useCallback(
     (id: string) => {
-      setHistory((prev) => prev.filter((entry) => entry.id !== id));
+      setHistory((prev) => {
+        const entry = prev.find((e) => e.id === id);
+        if (entry?.imageUri) {
+          // Best-effort: delete the persisted image file
+          ImageCacheManager.clearImage(entry.imageUri).catch((err: unknown) => {
+            console.warn('Failed to delete wildlife image file:', err);
+          });
+        }
+        return prev.filter((e) => e.id !== id);
+      });
     },
     [setHistory],
   );
 
   const clearHistory = useCallback(() => {
-    setHistory([]);
+    setHistory((prev) => {
+      // Best-effort: delete all persisted image files before clearing
+      Promise.all(
+        prev.map((entry) =>
+          ImageCacheManager.clearImage(entry.imageUri).catch((err: unknown) => {
+            console.warn('Failed to delete wildlife image file:', err);
+          }),
+        ),
+      );
+      return [];
+    });
   }, [setHistory]);
 
   return {
