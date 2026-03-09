@@ -33,23 +33,25 @@ const NPMRC_PATH = join(process.cwd(), '.npmrc');
 const GITHUB_REGISTRY_LINE_PREFIX = '//npm.pkg.github.com/:_authToken=';
 
 function writeNpmrc(token: string): void {
-  if (!token) {
+  const trimmed = token.trim();
+  if (!trimmed) {
     console.error('❌ Token is empty, cannot write .npmrc');
     process.exit(1);
   }
 
-  const newAuthLine = `${GITHUB_REGISTRY_LINE_PREFIX}${token}`;
+  const newAuthLine = `${GITHUB_REGISTRY_LINE_PREFIX}${trimmed}`;
 
   if (existsSync(NPMRC_PATH)) {
-    // Merge: update existing auth line or append if absent
+    // Merge: update existing auth line or insert before trailing newline if absent
     const existing = readFileSync(NPMRC_PATH, 'utf8');
     const lines = existing.split('\n');
     const idx = lines.findIndex((l) => l.startsWith(GITHUB_REGISTRY_LINE_PREFIX));
     if (idx !== -1) {
       lines[idx] = newAuthLine;
     } else {
-      // Append before any trailing newline
-      lines.push(newAuthLine);
+      // Insert before the trailing empty string produced by a newline-terminated file
+      const insertAt = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
+      lines.splice(insertAt, 0, newAuthLine);
     }
     writeFileSync(NPMRC_PATH, lines.join('\n'), { mode: 0o600 });
   } else {
@@ -92,7 +94,7 @@ async function configureDeps() {
 
       // Get the GitHub token from gh CLI and write it to .npmrc
       const token = await $`gh auth token`.text();
-      writeNpmrc(token.trim());
+      writeNpmrc(token);
       console.log('✓ Using GitHub CLI token for authentication');
     } else {
       console.error('❌ GitHub CLI not found or not authenticated');
