@@ -286,11 +286,11 @@ export const trailConditionReports = pgTable(
     trailRegion: text('trail_region'),
     surface: text('surface').notNull(), // paved | gravel | dirt | rocky | snow | mud
     overallCondition: text('overall_condition').notNull(), // excellent | good | fair | poor
-    hazards: jsonb('hazards').$type<string[]>().default([]),
-    waterCrossings: integer('water_crossings').default(0),
+    hazards: jsonb('hazards').$type<string[]>().notNull().default([]),
+    waterCrossings: integer('water_crossings').notNull().default(0),
     waterCrossingDifficulty: text('water_crossing_difficulty'), // easy | moderate | difficult
     notes: text('notes'),
-    photos: jsonb('photos').$type<string[]>().default([]),
+    photos: jsonb('photos').$type<string[]>().notNull().default([]),
     userId: integer('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),

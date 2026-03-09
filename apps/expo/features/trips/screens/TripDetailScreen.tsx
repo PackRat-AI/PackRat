@@ -192,7 +192,7 @@ export function TripDetailScreen() {
           )}
 
           {/* Trail Condition Report Prompt */}
-          {featureFlags.enableTrailConditions && (
+          {featureFlags.enableTrailConditions && trip.endDate && new Date(trip.endDate) < new Date() && (
             <View className="mb-6">
               <Card className="rounded-xl bg-card border border-border overflow-hidden">
                 <View className="p-4">

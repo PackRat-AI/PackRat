@@ -921,6 +921,27 @@
     "reportButton": "+ Report",
     "subtitle": "Current trail conditions from recent hiker reports",
     "loadError": "Unable to load trail conditions. Pull to refresh.",
-    "disclaimer": "Trail conditions are crowdsourced from hikers and may not reflect current situations. Always check with local authorities for official trail status."
+    "disclaimer": "Trail conditions are crowdsourced from hikers and may not reflect current situations. Always check with local authorities for official trail status.",
+    "today": "Today",
+    "oneDayAgo": "1 day ago",
+    "nDaysAgo": "{{count}} days ago",
+    "oneWeekAgo": "1 week ago",
+    "nWeeksAgo": "{{count}} weeks ago",
+    "surfacePaved": "Paved",
+    "surfaceGravel": "Gravel",
+    "surfaceDirt": "Dirt",
+    "surfaceRocky": "Rocky",
+    "surfaceSnow": "Snow",
+    "surfaceMud": "Mud",
+    "difficultyEasy": "Easy",
+    "difficultyModerate": "Moderate",
+    "difficultyDifficult": "Difficult",
+    "hazardFallenTrees": "Fallen Trees",
+    "hazardWildlife": "Wildlife",
+    "hazardErosion": "Erosion",
+    "hazardClosure": "Closure",
+    "hazardIce": "Ice",
+    "hazardFlooding": "Flooding",
+    "hazardLooseRock": "Loose Rock"
   }
 }

@@ -8,9 +8,17 @@ import Storage from 'expo-sqlite/kv-store';
 import type { TrailConditionReportInStore } from '../types';
 
 // API calls for trail condition reports
-const listMyReports = async () => {
+const listMyReports = async (
+  _params: unknown,
+  { lastSync }: { lastSync?: number } = {},
+) => {
   try {
-    const res = await axiosInstance.get('/api/trail-conditions/mine');
+    const params: Record<string, string> = {};
+    if (lastSync != null) {
+      // Forward the cursor as an ISO datetime so the server can apply gte filter
+      params.updatedAt = new Date(lastSync + 1).toISOString();
+    }
+    const res = await axiosInstance.get('/api/trail-conditions/mine', { params });
     return res.data;
   } catch (error) {
     const { message } = handleApiError(error);
@@ -28,7 +36,10 @@ const createReport = async (reportData: TrailConditionReportInStore) => {
   }
 };
 
-const updateReport = async ({ id, ...data }: Partial<TrailConditionReportInStore>) => {
+const updateReport = async ({
+  id,
+  ...data
+}: { id: string } & Partial<Omit<TrailConditionReportInStore, 'id'>>) => {
   try {
     const res = await axiosInstance.put(`/api/trail-conditions/${id}`, data);
     return res.data;
