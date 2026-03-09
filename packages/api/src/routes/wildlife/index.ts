@@ -92,49 +92,24 @@ const identifyRoute = createRoute({
 });
 
 wildlifeRoutes.openapi(identifyRoute, async (c) => {
+  const auth = c.get('user');
+  const { image } = c.req.valid('json');
+
+  if (!image.startsWith(`${auth.userId}-`)) {
+    return c.json({ error: 'Unauthorized' }, 403);
+  }
+
+  const { PACKRAT_BUCKET_R2_BUCKET_NAME, PACKRAT_BUCKET } = getEnv(c);
+  const command = new GetObjectCommand({
+    Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
+    Key: image,
+  });
+  const imageUrl = await getPresignedUrl(c, command, { expiresIn: 3600 });
+
+  const service = new WildlifeIdentificationService(c);
+  let identification: Awaited<ReturnType<typeof service.identifySpecies>>;
   try {
-    const auth = c.get('user');
-    const { image } = c.req.valid('json');
-
-    if (!image.startsWith(`${auth.userId}-`)) {
-      return c.json({ error: 'Unauthorized' }, 403);
-    }
-
-    const { PACKRAT_BUCKET_R2_BUCKET_NAME, PACKRAT_BUCKET } = getEnv(c);
-    const command = new GetObjectCommand({
-      Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
-      Key: image,
-    });
-    const imageUrl = await getPresignedUrl(c, command, { expiresIn: 3600 });
-
-    const service = new WildlifeIdentificationService(c);
-    const identification = await service.identifySpecies(imageUrl);
-
-    await PACKRAT_BUCKET.delete(image);
-
-    // Map AI results to the response format with stable IDs derived from scientific name
-    const results = identification.results.map((r) => ({
-      species: {
-        id: r.scientificName
-          .toLowerCase()
-          .replaceAll(/[\s.]+/g, '-')
-          .replaceAll(/[^a-z0-9-]/g, ''),
-        commonName: r.commonName,
-        scientificName: r.scientificName,
-        category: r.category,
-        description: r.description,
-        habitat: r.habitat,
-        regions: r.regions,
-        dangerLevel: r.dangerLevel,
-        characteristics: r.characteristics,
-        conservationStatus: r.conservationStatus,
-        interestingFacts: r.interestingFacts,
-      },
-      confidence: r.confidence,
-      source: 'online' as const,
-    }));
-
-    return c.json({ results }, 200);
+    identification = await service.identifySpecies(imageUrl);
   } catch (error) {
     console.error('Error identifying wildlife:', error);
     c.get('sentry').captureException(error);
@@ -146,11 +121,39 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
       ) {
         return c.json({ error: error.message }, 400);
       }
-      return c.json({ error: `Failed to identify species: ${error.message}` }, 500);
     }
 
     return c.json({ error: 'Failed to identify species' }, 500);
+  } finally {
+    // Best-effort cleanup: delete temp upload regardless of identification outcome.
+    PACKRAT_BUCKET.delete(image).catch((err: unknown) => {
+      console.error('Failed to delete temp upload from R2:', err);
+    });
   }
+
+  // Map AI results to the response format with stable IDs derived from scientific name
+  const results = identification.results.map((r) => ({
+    species: {
+      id: r.scientificName
+        .toLowerCase()
+        .replaceAll(/[\s.]+/g, '-')
+        .replaceAll(/[^a-z0-9-]/g, ''),
+      commonName: r.commonName,
+      scientificName: r.scientificName,
+      category: r.category,
+      description: r.description,
+      habitat: r.habitat,
+      regions: r.regions,
+      dangerLevel: r.dangerLevel,
+      characteristics: r.characteristics,
+      conservationStatus: r.conservationStatus,
+      interestingFacts: r.interestingFacts,
+    },
+    confidence: r.confidence,
+    source: 'online' as const,
+  }));
+
+  return c.json({ results }, 200);
 });
 
 export { wildlifeRoutes };

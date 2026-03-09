@@ -492,7 +492,8 @@ export function getSpeciesById(id: string): SpeciesEntry | undefined {
 }
 
 export function searchSpecies(query: string): SpeciesEntry[] {
-  const lower = query.toLowerCase();
+  const lower = query.trim().toLowerCase();
+  if (!lower) return [];
   return SPECIES_DATABASE.filter(
     (s) =>
       s.commonName.toLowerCase().includes(lower) ||

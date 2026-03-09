@@ -2,18 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { atomWithStorage, createJSONStorage, loadable } from 'jotai/utils';
 import type { WildlifeIdentification } from '../types';
 
-const wildlifeStorage = createJSONStorage<WildlifeIdentification[]>(() => ({
-  getItem: async (key: string) => {
-    const value = await AsyncStorage.getItem(key);
-    return value ? JSON.parse(value) : null;
-  },
-  setItem: async (key: string, value: unknown) => {
-    await AsyncStorage.setItem(key, JSON.stringify(value));
-  },
-  removeItem: async (key: string) => {
-    await AsyncStorage.removeItem(key);
-  },
-}));
+// createJSONStorage handles JSON.parse/stringify internally; pass AsyncStorage directly.
+const wildlifeStorage = createJSONStorage<WildlifeIdentification[]>(() => AsyncStorage);
 
 export const baseWildlifeHistoryAtom = atomWithStorage<WildlifeIdentification[]>(
   'wildlife-history',

@@ -49,6 +49,7 @@ export function WildlifeScreen() {
 
   const history = historyState.state === 'hasData' ? historyState.data : [];
   const isLoading = historyState.state === 'loading';
+  const hasError = historyState.state === 'hasError';
 
   const handleIdentify = () => {
     router.push('/wildlife/identify');
@@ -84,6 +85,12 @@ export function WildlifeScreen() {
         {isLoading ? (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : hasError ? (
+          <View className="flex-1 items-center justify-center px-8">
+            <Text className="text-center text-destructive text-base">
+              {t('wildlife.historyLoadError')}
+            </Text>
           </View>
         ) : history.length > 0 ? (
           <>

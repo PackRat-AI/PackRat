@@ -28,6 +28,7 @@ export interface SpeciesEntry {
 
 export interface IdentificationResult {
   species: SpeciesEntry;
+  /** Normalized confidence score in the range [0, 1]. */
   confidence: number;
   source: 'online' | 'offline';
 }

@@ -53,8 +53,12 @@ export function useWildlifeIdentification() {
         // Only fall back to offline identification for network/connectivity errors.
         // Authorization errors, validation failures, etc. are re-thrown.
         if (isNetworkError(error)) {
-          console.warn('Online identification unavailable, using offline database:', error);
-          return identifyFromDescription(offlineQuery ?? selectedImage.fileName);
+          console.warn('Online identification unavailable, using offline database:', {
+            code: (error as { code?: string })?.code,
+            message: error instanceof Error ? error.message : undefined,
+          });
+          const queryText = offlineQuery?.trim() || selectedImage.fileName;
+          return identifyFromDescription(queryText);
         }
         throw error;
       }
