@@ -5,4 +5,5 @@ export const featureFlags = {
   enableShoppingList: false,
   enableSharedPacks: false,
   enablePackTemplates: true,
+  enableOfflineMaps: true,
 };
