@@ -113,9 +113,7 @@ export default function UpcomingTripsScreen() {
     [trips],
   );
 
-  const [selectedTripId, setSelectedTripId] = useState<string | undefined>(
-    upcomingTrips[0]?.id,
-  );
+  const [selectedTripId, setSelectedTripId] = useState<string | undefined>(upcomingTrips[0]?.id);
 
   useEffect(() => {
     if (!upcomingTrips.length) {
