@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { generatePromptWithContext, getContextualSuggestions } from '../chatContextHelpers';
+import {
+  generatePromptWithContext,
+  getContextualGreeting,
+  getContextualSuggestions,
+} from '../chatContextHelpers';
 
 describe('generatePromptWithContext', () => {
   it('returns the raw message when no context is provided', () => {
@@ -53,5 +57,35 @@ describe('getContextualSuggestions', () => {
   it('returns pack-specific suggestions for pack context', () => {
     const suggestions = getContextualSuggestions({ contextType: 'pack' });
     expect(suggestions.length).toBeGreaterThan(0);
+  });
+});
+
+describe('getContextualGreeting', () => {
+  it('returns a general greeting when no context is provided', () => {
+    const greeting = getContextualGreeting();
+    expect(typeof greeting).toBe('string');
+    expect(greeting.length).toBeGreaterThan(0);
+  });
+
+  it('returns a general greeting for general context', () => {
+    const greeting = getContextualGreeting({ contextType: 'general' });
+    expect(typeof greeting).toBe('string');
+    expect(greeting.length).toBeGreaterThan(0);
+  });
+
+  it('includes the item name in the greeting for item context', () => {
+    const greeting = getContextualGreeting({ contextType: 'item', itemName: 'Tent' });
+    expect(greeting).toContain('Tent');
+  });
+
+  it('returns a pack greeting when pack name is provided', () => {
+    const greeting = getContextualGreeting({ contextType: 'pack', packName: 'Weekend Pack' });
+    expect(greeting).toContain('Weekend Pack');
+  });
+
+  it('returns a fallback greeting for pack context without a pack name', () => {
+    const greeting = getContextualGreeting({ contextType: 'pack' });
+    expect(typeof greeting).toBe('string');
+    expect(greeting.length).toBeGreaterThan(0);
   });
 });

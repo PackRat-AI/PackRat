@@ -139,7 +139,7 @@ describe('PackService', () => {
       expect(result?.baseWeight).toBe(1000);
     });
 
-    it('calls findFirst with the correct packId and userId', async () => {
+    it('calls findFirst once when querying pack details', async () => {
       mockFindFirst.mockResolvedValue(undefined);
       await service.getPackDetails('pack-42');
       expect(mockFindFirst).toHaveBeenCalledOnce();
