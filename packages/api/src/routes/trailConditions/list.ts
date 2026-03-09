@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { trailConditions } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
@@ -9,7 +9,7 @@ import {
 } from '@packrat/api/schemas/trailConditions';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { desc, eq, sql } from 'drizzle-orm';
+import { count, desc, eq, sql } from 'drizzle-orm';
 
 const trailConditionListRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
@@ -21,8 +21,14 @@ const listTrailConditionsRoute = createRoute({
   path: '/',
   tags: ['Trail Conditions'],
   summary: 'List trail conditions',
-  description: 'Get all trail condition reports ordered by most recent',
+  description: 'Get trail condition reports ordered by most recent',
   security: [{ bearerAuth: [] }],
+  request: {
+    query: z.object({
+      limit: z.coerce.number().int().positive().max(100).default(100).optional(),
+      offset: z.coerce.number().int().min(0).default(0).optional(),
+    }),
+  },
   responses: {
     200: {
       description: 'Trail conditions retrieved successfully',
@@ -38,9 +44,18 @@ const listTrailConditionsRoute = createRoute({
 trailConditionListRoutes.openapi(listTrailConditionsRoute, async (c) => {
   try {
     const db = createDb(c);
-    const items = await db.select().from(trailConditions).orderBy(desc(trailConditions.createdAt));
+    const { limit = 100, offset = 0 } = c.req.valid('query');
+    const [items, [{ total }]] = await Promise.all([
+      db
+        .select()
+        .from(trailConditions)
+        .orderBy(desc(trailConditions.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db.select({ total: count() }).from(trailConditions),
+    ]);
 
-    return c.json({ items, total: items.length }, 200);
+    return c.json({ items, total }, 200);
   } catch (error) {
     console.error('Error fetching trail conditions:', error);
     return c.json({ error: 'Failed to fetch trail conditions' }, 500);

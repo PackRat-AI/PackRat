@@ -4,8 +4,8 @@ export const TrailConditionValueSchema = z.enum(['excellent', 'good', 'fair', 'p
 
 export const TrailConditionLocationSchema = z
   .object({
-    latitude: z.number(),
-    longitude: z.number(),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
     name: z.string().optional(),
   })
   .nullable()

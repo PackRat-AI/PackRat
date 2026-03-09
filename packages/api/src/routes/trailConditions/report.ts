@@ -5,7 +5,7 @@ import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { TrailConditionSchema } from '@packrat/api/schemas/trailConditions';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 
 const trailConditionRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
@@ -119,6 +119,10 @@ const verifyTrailConditionRoute = createRoute({
       description: 'Trail condition report verified successfully',
       content: { 'application/json': { schema: TrailConditionSchema } },
     },
+    403: {
+      description: 'Cannot verify your own report',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
     404: {
       description: 'Report not found',
       content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -131,8 +135,19 @@ const verifyTrailConditionRoute = createRoute({
 });
 
 trailConditionRoutes.openapi(verifyTrailConditionRoute, async (c) => {
+  const auth = c.get('user');
   const db = createDb(c);
   const reportId = c.req.param('reportId');
+
+  // Check report exists and is not authored by the requesting user
+  const existing = await db.query.trailConditions.findFirst({
+    where: eq(trailConditions.id, reportId),
+    columns: { userId: true },
+  });
+
+  if (!existing) return c.json({ error: 'Trail condition report not found' }, 404);
+  if (existing.userId === auth.userId)
+    return c.json({ error: 'Cannot verify your own report' }, 403);
 
   try {
     const [updatedReport] = await db
@@ -142,7 +157,7 @@ trailConditionRoutes.openapi(verifyTrailConditionRoute, async (c) => {
         trustScore: sql`LEAST(${trailConditions.trustScore} + 0.05, 0.99)`,
         updatedAt: new Date(),
       })
-      .where(eq(trailConditions.id, reportId))
+      .where(and(eq(trailConditions.id, reportId), ne(trailConditions.userId, auth.userId)))
       .returning();
 
     if (!updatedReport) return c.json({ error: 'Trail condition report not found' }, 404);
@@ -170,6 +185,10 @@ const markHelpfulRoute = createRoute({
       description: 'Report marked as helpful',
       content: { 'application/json': { schema: TrailConditionSchema } },
     },
+    403: {
+      description: 'Cannot mark your own report as helpful',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
     404: {
       description: 'Report not found',
       content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -182,26 +201,31 @@ const markHelpfulRoute = createRoute({
 });
 
 trailConditionRoutes.openapi(markHelpfulRoute, async (c) => {
+  const auth = c.get('user');
   const db = createDb(c);
   const reportId = c.req.param('reportId');
 
+  // Check report exists and is not authored by the requesting user
+  const existing = await db.query.trailConditions.findFirst({
+    where: eq(trailConditions.id, reportId),
+    columns: { userId: true },
+  });
+
+  if (!existing) return c.json({ error: 'Trail condition report not found' }, 404);
+  if (existing.userId === auth.userId)
+    return c.json({ error: 'Cannot mark your own report as helpful' }, 403);
+
   try {
-    const report = await db.query.trailConditions.findFirst({
-      where: eq(trailConditions.id, reportId),
-    });
-
-    if (!report) return c.json({ error: 'Trail condition report not found' }, 404);
-
     const [updatedReport] = await db
       .update(trailConditions)
       .set({
         helpfulCount: sql`${trailConditions.helpfulCount} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(trailConditions.id, reportId))
+      .where(and(eq(trailConditions.id, reportId), ne(trailConditions.userId, auth.userId)))
       .returning();
 
-    if (!updatedReport) return c.json({ error: 'Failed to increment helpful count' }, 500);
+    if (!updatedReport) return c.json({ error: 'Trail condition report not found' }, 404);
     return c.json(updatedReport, 200);
   } catch (error) {
     console.error('Error marking trail condition as helpful:', error);

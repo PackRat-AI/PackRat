@@ -7,6 +7,7 @@ import {
 } from 'expo-app/features/trail-conditions';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { nanoid } from 'nanoid/non-secure';
 import { useState } from 'react';
 import {
@@ -109,18 +110,6 @@ function getConditionColor(condition: TrailConditionValue): string {
   }
 }
 
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return 'Unknown';
-  const diff = Date.now() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days === 0) return 'Today';
-  if (days === 1) return '1 day ago';
-  if (days < 7) return `${days} days ago`;
-  if (days < 14) return '1 week ago';
-  return `${Math.floor(days / 7)} weeks ago`;
-}
-
 function TrustScoreBadge({ score }: { score: number }) {
   const pct = Math.round(score * 100);
   const color = score >= 0.8 ? 'text-green-600' : score >= 0.6 ? 'text-amber-600' : 'text-red-600';
@@ -171,7 +160,7 @@ function TrailConditionCard({ trail }: { trail: TrailCondition }) {
             </Text>
           )}
           <Text variant="subhead" className="text-muted-foreground">
-            • {formatRelativeTime(trail.updatedAt)}
+            • {getRelativeTime(trail.updatedAt)}
           </Text>
         </View>
       </View>
@@ -254,7 +243,10 @@ function ReportModal({ visible, onClose }: { visible: boolean; onClose: () => vo
     const hasValidCoords = lat.trim() && lng.trim() && isValidLatitude && isValidLongitude;
 
     if ((lat.trim() || lng.trim()) && !hasValidCoords) {
-      Alert.alert('Invalid GPS', 'Please enter valid coordinates (lat: -90 to 90, lng: -180 to 180).');
+      Alert.alert(
+        'Invalid GPS',
+        'Please enter valid coordinates (lat: -90 to 90, lng: -180 to 180).',
+      );
       return;
     }
 
