@@ -33,12 +33,25 @@ function isNetworkError(error: unknown): boolean {
     return false;
   }
 
-  // Error instances (including AxiosError): check message for network patterns
+  // Check Axios-specific error codes that unambiguously indicate network issues
+  if ('code' in error) {
+    const code = (error as { code?: string }).code;
+    if (
+      code === 'ERR_NETWORK' ||
+      code === 'ECONNABORTED' ||
+      code === 'ECONNREFUSED' ||
+      code === 'ETIMEDOUT'
+    ) {
+      return true;
+    }
+  }
+
+  // Error instances: check message for network patterns, but be conservative —
+  // only match messages that clearly indicate connectivity issues, not server-side timeouts.
   if (error instanceof Error) {
     const msg = error.message.toLowerCase();
     return (
-      msg.includes('network') ||
-      msg.includes('timeout') ||
+      msg.includes('network error') ||
       msg.includes('econnrefused') ||
       msg.includes('failed to fetch') ||
       msg.includes('no internet')
@@ -66,7 +79,8 @@ export function useWildlifeIdentification() {
             code: (error as { code?: string })?.code,
             message: error instanceof Error ? error.message : undefined,
           });
-          const queryText = offlineQuery?.trim() || selectedImage.fileName;
+          const trimmed = offlineQuery?.trim();
+          const queryText = trimmed ? trimmed : selectedImage.fileName;
           return identifyFromDescription(queryText);
         }
         throw error;

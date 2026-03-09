@@ -38,15 +38,19 @@ export function IdentificationScreen() {
       },
       async (selectedIndex) => {
         try {
-          reset();
-          setSavedResults(null);
+          let picked: unknown;
           switch (selectedIndex) {
             case 0:
-              await takePhoto();
+              picked = await takePhoto();
               break;
             case 1:
-              await pickImage();
+              picked = await pickImage();
               break;
+          }
+          // Only clear previous results when a new image was actually selected
+          if (picked) {
+            reset();
+            setSavedResults(null);
           }
         } catch (err) {
           console.error('Error selecting image:', err);
@@ -66,7 +70,7 @@ export function IdentificationScreen() {
     // if the user changes image before this request resolves.
     const imageUriAtStart = selectedImage.uri;
     identify(
-      { selectedImage, offlineQuery: descriptionText },
+      { selectedImage, offlineQuery: descriptionText.trim() || undefined },
       {
         onSuccess: async (identificationResults) => {
           // Ignore completion if the user has already changed or cleared the image

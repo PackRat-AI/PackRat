@@ -72,7 +72,7 @@ export class WildlifeIdentificationService {
         model: openai(DEFAULT_MODELS.OPENAI_CHAT),
         schema: identificationResponseSchema,
         system: SPECIES_IDENTIFICATION_SYSTEM_PROMPT,
-        prompt: [
+        messages: [
           {
             role: 'user',
             content: [
@@ -82,7 +82,7 @@ export class WildlifeIdentificationService {
               },
               {
                 type: 'image',
-                image: imageUrl,
+                image: new URL(imageUrl),
               },
             ],
           },
