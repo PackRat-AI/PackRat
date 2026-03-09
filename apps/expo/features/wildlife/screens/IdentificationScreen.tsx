@@ -62,14 +62,19 @@ export function IdentificationScreen() {
 
   const handleIdentify = () => {
     if (!selectedImage) return;
+    // Capture image URI at request-start time to guard against stale completions
+    // if the user changes image before this request resolves.
+    const imageUriAtStart = selectedImage.uri;
     identify(
       { selectedImage, offlineQuery: descriptionText },
       {
         onSuccess: async (identificationResults) => {
+          // Ignore completion if the user has already changed or cleared the image
+          if (!selectedImage || selectedImage.uri !== imageUriAtStart) return;
           setSavedResults(identificationResults);
-          let persistedUri = selectedImage.uri;
+          let persistedUri = imageUriAtStart;
           try {
-            persistedUri = (await permanentlyPersistImageLocally()) ?? selectedImage.uri;
+            persistedUri = (await permanentlyPersistImageLocally()) ?? imageUriAtStart;
           } catch (err) {
             console.warn('Failed to persist image locally, using original URI:', err);
           }

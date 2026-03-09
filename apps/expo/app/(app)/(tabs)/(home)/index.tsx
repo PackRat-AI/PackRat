@@ -36,6 +36,8 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
+import { assertIsString } from 'expo-app/utils/typeAssertions';
+import { t } from 'expo-app/lib/i18n';
 import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
@@ -137,17 +139,18 @@ const tileInfo = {
     component: FeedTile,
   },
   wildlife: {
-    title: 'Wildlife',
+    title: t('wildlife.wildlife'),
     keywords: [
-      'wildlife',
-      'plant',
+      t('wildlife.wildlife').toLowerCase(),
+      t('wildlife.identify').toLowerCase(),
+      t('wildlife.category.plant'),
+      t('wildlife.category.flower'),
+      t('wildlife.category.tree'),
+      t('wildlife.category.bird'),
+      t('wildlife.category.mammal'),
       'species',
-      'identify',
       'nature',
       'animal',
-      'flower',
-      'tree',
-      'bird',
       'offline',
     ],
     component: WildlifeTile,

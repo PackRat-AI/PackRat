@@ -67,28 +67,34 @@ export class WildlifeIdentificationService {
     const { OPENAI_API_KEY } = getEnv(this.c);
     const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
 
-    const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
-      schema: identificationResponseSchema,
-      system: SPECIES_IDENTIFICATION_SYSTEM_PROMPT,
-      prompt: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Please identify all the plant and animal species visible in this image.',
-            },
-            {
-              type: 'image',
-              image: imageUrl,
-            },
-          ],
-        },
-      ],
-      temperature: 0.2,
-    });
+    try {
+      const { object } = await generateObject({
+        model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+        schema: identificationResponseSchema,
+        system: SPECIES_IDENTIFICATION_SYSTEM_PROMPT,
+        prompt: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Please identify all the plant and animal species visible in this image.',
+              },
+              {
+                type: 'image',
+                image: imageUrl,
+              },
+            ],
+          },
+        ],
+        temperature: 0.2,
+      });
 
-    return object;
+      return object;
+    } catch (error) {
+      // Wrap AI SDK errors with context to help distinguish auth, model, and transient failures
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Wildlife identification failed: ${message}`, { cause: error });
+    }
   }
 }
