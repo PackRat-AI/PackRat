@@ -197,7 +197,7 @@ function CatalogItemsScreen() {
           </View>
         }
         ListHeaderComponent={
-          searchValue.length === 0 && !isSearching ? (
+          !isSearching ? (
             <View className="mb-4">
               <View className="flex-row items-center justify-between">
                 <Text className="text-muted-foreground">{totalItemsText}</Text>
