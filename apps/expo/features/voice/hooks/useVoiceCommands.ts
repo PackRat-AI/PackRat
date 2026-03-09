@@ -27,7 +27,7 @@ const VOICE_COMMANDS: VoiceCommand[] = [
   },
   {
     name: 'where_am_i',
-    patterns: ['where am i', "what's my location", 'my location', 'current location'],
+    patterns: ['where am i', "what's my location", 'current location'],
     description: 'Announce current GPS coordinates',
   },
   {
@@ -132,6 +132,11 @@ export function useVoiceCommands() {
   /** Called by a speech-to-text backend with the recognised text. */
   const processTranscript = useCallback(
     async (transcript: string) => {
+      // Cancel the auto-timeout so it doesn't fire after command processing (#3)
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current);
+        listeningTimeoutRef.current = null;
+      }
       setLastTranscript(transcript);
       setListeningState('processing');
 
@@ -250,6 +255,10 @@ export function useVoiceCommands() {
 
   /** Called when user presses the microphone button to start recording. */
   const startListening = useCallback(() => {
+    // Clear any previously scheduled timeout before starting a new one
+    if (listeningTimeoutRef.current) {
+      clearTimeout(listeningTimeoutRef.current);
+    }
     setListeningState('listening');
 
     // Auto-timeout after 10 seconds if no transcript arrives

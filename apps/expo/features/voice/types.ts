@@ -39,5 +39,4 @@ export interface VoiceCommandsState {
   isTracking: boolean;
   currentPosition: GPSPosition | null;
   waypoints: Waypoint[];
-  errorMessage: string | null;
 }
