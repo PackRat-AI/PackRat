@@ -62,7 +62,7 @@ export function TrailConditionReportCard({ report }: TrailConditionReportCardPro
     : null;
 
   const hazardLabels = (report.hazards ?? []).map((h) =>
-    HAZARD_KEYS[h] ? t(HAZARD_KEYS[h]) : h,
+    HAZARD_KEYS[h.toLowerCase()] ? t(HAZARD_KEYS[h.toLowerCase()]) : h,
   );
 
   return (

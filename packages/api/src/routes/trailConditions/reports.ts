@@ -182,7 +182,7 @@ trailConditionRoutes.openapi(createReportRoute, async (c) => {
       });
       if (existing) return c.json(existing, 200);
       // Same id but different user — treat as a real conflict
-      return c.json({ error: 'Report ID already in use' }, 409);
+      return c.json({ error: 'Report ID already in use by another user' }, 409);
     }
     console.error('Error creating trail condition report:', error);
     return c.json({ error: 'Failed to submit trail condition report' }, 500);

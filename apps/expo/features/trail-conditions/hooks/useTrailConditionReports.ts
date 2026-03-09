@@ -34,7 +34,8 @@ export function useTrailConditionReports(trailName?: string) {
     queryFn: () => fetchTrailConditionReports(trailName),
     staleTime: 1000 * 60 * 5, // 5 min
     refetchOnWindowFocus: false,
-    // Seed with locally-persisted reports so the list is readable offline
+    // Seed with locally-persisted reports (user's own) so the list is readable
+    // offline and after restart. Network success replaces this with community data.
     initialData: localReports.length > 0 ? localReports : undefined,
     initialDataUpdatedAt: 0, // treat as stale so a network fetch still runs when online
   });
