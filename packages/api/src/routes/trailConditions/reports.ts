@@ -1,10 +1,11 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { trailConditionReports } from '@packrat/api/db/schema';
+import type { NewTrailConditionReport } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, gte, type SQL } from 'drizzle-orm';
 
 const trailConditionRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -139,8 +140,6 @@ trailConditionRoutes.openapi(createReportRoute, async (c) => {
   const db = createDb(c);
   const data = c.req.valid('json');
 
-  if (!data.id) return c.json({ error: 'Report ID is required' }, 400);
-
   try {
     const [newReport] = await db
       .insert(trailConditionReports)
@@ -169,6 +168,64 @@ trailConditionRoutes.openapi(createReportRoute, async (c) => {
   } catch (error) {
     console.error('Error creating trail condition report:', error);
     return c.json({ error: 'Failed to submit trail condition report' }, 500);
+  }
+});
+
+// ------------------------------
+// List My Reports Route  (static path — registered before /{reportId})
+// ------------------------------
+const listMyReportsRoute = createRoute({
+  method: 'get',
+  path: '/mine',
+  tags: ['Trail Conditions'],
+  summary: 'List my trail condition reports',
+  description: 'List trail condition reports submitted by the authenticated user',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: z.object({
+      updatedAt: z
+        .string()
+        .datetime()
+        .optional()
+        .openapi({ description: 'Only return reports updated after this timestamp' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'Reports retrieved successfully',
+      content: { 'application/json': { schema: z.array(TrailConditionReportSchema) } },
+    },
+    500: {
+      description: 'Internal server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+trailConditionRoutes.openapi(listMyReportsRoute, async (c) => {
+  const auth = c.get('user');
+  const db = createDb(c);
+  const { updatedAt } = c.req.valid('query');
+
+  try {
+    const conditions: SQL[] = [
+      eq(trailConditionReports.userId, auth.userId),
+      eq(trailConditionReports.deleted, false),
+    ];
+    if (updatedAt) {
+      conditions.push(gte(trailConditionReports.updatedAt, new Date(updatedAt)));
+    }
+
+    const reports = await db
+      .select()
+      .from(trailConditionReports)
+      .where(and(...conditions))
+      .orderBy(desc(trailConditionReports.createdAt));
+
+    return c.json(reports, 200);
+  } catch (error) {
+    console.error('Error listing user trail condition reports:', error);
+    return c.json({ error: 'Failed to list trail condition reports' }, 500);
   }
 });
 
@@ -215,16 +272,9 @@ trailConditionRoutes.openapi(updateReportRoute, async (c) => {
   const data = c.req.valid('json');
 
   try {
-    const existing = await db.query.trailConditionReports.findFirst({
-      where: and(
-        eq(trailConditionReports.id, reportId),
-        eq(trailConditionReports.userId, auth.userId),
-      ),
-    });
-
-    if (!existing) return c.json({ error: 'Report not found or unauthorized' }, 403);
-
-    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    const updateData: Partial<NewTrailConditionReport> & { updatedAt: Date } = {
+      updatedAt: new Date(),
+    };
     if ('trailName' in data) updateData.trailName = data.trailName;
     if ('trailRegion' in data) updateData.trailRegion = data.trailRegion ?? null;
     if ('surface' in data) updateData.surface = data.surface;
@@ -238,69 +288,20 @@ trailConditionRoutes.openapi(updateReportRoute, async (c) => {
     if ('localUpdatedAt' in data)
       updateData.localUpdatedAt = data.localUpdatedAt ? new Date(data.localUpdatedAt) : new Date();
 
-    await db
+    const [updated] = await db
       .update(trailConditionReports)
       .set(updateData)
       .where(
         and(eq(trailConditionReports.id, reportId), eq(trailConditionReports.userId, auth.userId)),
-      );
+      )
+      .returning();
 
-    const updated = await db.query.trailConditionReports.findFirst({
-      where: eq(trailConditionReports.id, reportId),
-    });
+    if (!updated) return c.json({ error: 'Report not found or unauthorized' }, 403);
 
-    return c.json(updated!, 200);
+    return c.json(updated, 200);
   } catch (error) {
     console.error('Error updating trail condition report:', error);
     return c.json({ error: 'Failed to update trail condition report' }, 500);
-  }
-});
-
-// ------------------------------
-// ------------------------------
-const listMyReportsRoute = createRoute({
-  method: 'get',
-  path: '/mine',
-  tags: ['Trail Conditions'],
-  summary: 'List my trail condition reports',
-  description: 'List trail condition reports submitted by the authenticated user',
-  security: [{ bearerAuth: [] }],
-  request: {
-    query: z.object({
-      updatedAt: z
-        .string()
-        .datetime()
-        .optional()
-        .openapi({ description: 'Only return reports updated after this timestamp' }),
-    }),
-  },
-  responses: {
-    200: {
-      description: 'Reports retrieved successfully',
-      content: { 'application/json': { schema: z.array(TrailConditionReportSchema) } },
-    },
-    500: {
-      description: 'Internal server error',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
-    },
-  },
-});
-
-trailConditionRoutes.openapi(listMyReportsRoute, async (c) => {
-  const auth = c.get('user');
-  const db = createDb(c);
-
-  try {
-    const reports = await db
-      .select()
-      .from(trailConditionReports)
-      .where(eq(trailConditionReports.userId, auth.userId))
-      .orderBy(desc(trailConditionReports.createdAt));
-
-    return c.json(reports, 200);
-  } catch (error) {
-    console.error('Error listing user trail condition reports:', error);
-    return c.json({ error: 'Failed to list trail condition reports' }, 500);
   }
 });
 
@@ -338,21 +339,15 @@ trailConditionRoutes.openapi(deleteReportRoute, async (c) => {
   const reportId = c.req.param('reportId');
 
   try {
-    const report = await db.query.trailConditionReports.findFirst({
-      where: and(
-        eq(trailConditionReports.id, reportId),
-        eq(trailConditionReports.userId, auth.userId),
-      ),
-    });
-
-    if (!report) return c.json({ error: 'Report not found or unauthorized' }, 403);
-
-    await db
+    const [deleted] = await db
       .update(trailConditionReports)
       .set({ deleted: true, updatedAt: new Date() })
       .where(
         and(eq(trailConditionReports.id, reportId), eq(trailConditionReports.userId, auth.userId)),
-      );
+      )
+      .returning({ id: trailConditionReports.id });
+
+    if (!deleted) return c.json({ error: 'Report not found or unauthorized' }, 403);
 
     return c.json({ success: true }, 200);
   } catch (error) {

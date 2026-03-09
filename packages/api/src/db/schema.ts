@@ -281,27 +281,38 @@ export const packTemplateItems = pgTable('pack_template_items', {
 });
 
 // Trail condition reports table
-export const trailConditionReports = pgTable('trail_condition_reports', {
-  id: text('id').primaryKey(),
-  trailName: text('trail_name').notNull(),
-  trailRegion: text('trail_region'),
-  surface: text('surface').notNull(), // paved | gravel | dirt | rocky | snow | mud
-  overallCondition: text('overall_condition').notNull(), // excellent | good | fair | poor
-  hazards: jsonb('hazards').$type<string[]>().default([]),
-  waterCrossings: integer('water_crossings').default(0),
-  waterCrossingDifficulty: text('water_crossing_difficulty'), // easy | moderate | difficult
-  notes: text('notes'),
-  photos: jsonb('photos').$type<string[]>().default([]),
-  userId: integer('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  tripId: text('trip_id').references(() => trips.id, { onDelete: 'set null' }),
-  deleted: boolean('deleted').notNull().default(false),
-  localCreatedAt: timestamp('local_created_at').notNull(),
-  localUpdatedAt: timestamp('local_updated_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+export const trailConditionReports = pgTable(
+  'trail_condition_reports',
+  {
+    id: text('id').primaryKey(),
+    trailName: text('trail_name').notNull(),
+    trailRegion: text('trail_region'),
+    surface: text('surface').notNull(), // paved | gravel | dirt | rocky | snow | mud
+    overallCondition: text('overall_condition').notNull(), // excellent | good | fair | poor
+    hazards: jsonb('hazards').$type<string[]>().default([]),
+    waterCrossings: integer('water_crossings').default(0),
+    waterCrossingDifficulty: text('water_crossing_difficulty'), // easy | moderate | difficult
+    notes: text('notes'),
+    photos: jsonb('photos').$type<string[]>().default([]),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    tripId: text('trip_id').references(() => trips.id, { onDelete: 'set null' }),
+    deleted: boolean('deleted').notNull().default(false),
+    localCreatedAt: timestamp('local_created_at').notNull(),
+    localUpdatedAt: timestamp('local_updated_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('trail_condition_reports_user_id_idx').on(table.userId),
+    activeCreatedIdx: index('trail_condition_reports_active_created_idx').on(
+      table.deleted,
+      table.createdAt,
+    ),
+    trailNameIdx: index('trail_condition_reports_trail_name_idx').on(table.trailName),
+  }),
+);
 
 export const trips = pgTable('trips', {
   id: text('id').primaryKey(),

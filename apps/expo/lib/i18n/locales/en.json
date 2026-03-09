@@ -139,7 +139,7 @@
     "loginFailed": "Login Failed",
     "invalidEmailOrPassword": "Invalid email or password",
     "resumeSync": "Resume Sync",
-    "syncPaused": "Sync paused \u2014 please sign in again."
+    "syncPaused": "Sync paused — please sign in again."
   },
   "profile": {
     "profile": "Profile",
@@ -225,10 +225,10 @@
     "lastUpdatedShort": "Last updated",
     "itemsCount": "{{count}} items",
     "sharingBenefits": "Sharing Benefits",
-    "distributeGroupGear": "\u2022 Distribute group gear among members to reduce individual pack weight",
-    "sharingBenefit1": "\u2022 Coordinate who brings shared items like tent, stove, and water filter",
-    "sharingBenefit2": "\u2022 See real-time updates when members modify the pack",
-    "sharingBenefit3": "\u2022 Plan together and ensure nothing essential is forgotten",
+    "distributeGroupGear": "• Distribute group gear among members to reduce individual pack weight",
+    "sharingBenefit1": "• Coordinate who brings shared items like tent, stove, and water filter",
+    "sharingBenefit2": "• See real-time updates when members modify the pack",
+    "sharingBenefit3": "• Plan together and ensure nothing essential is forgotten",
     "itemsInInventory": "{{count}} items in your inventory",
     "all": "All",
     "byCategory": "By Category",
@@ -1004,6 +1004,10 @@
     "reportConditionsTitle": "Report Trail Conditions",
     "reportConditionsPrompt": "Just finished this hike? Help others by reporting the current trail conditions.",
     "noReports": "No trail condition reports yet. Be the first to report!",
-    "recentReports": "Recent Reports"
+    "recentReports": "Recent Reports",
+    "reportButton": "+ Report",
+    "subtitle": "Current trail conditions from recent hiker reports",
+    "loadError": "Unable to load trail conditions. Pull to refresh.",
+    "disclaimer": "Trail conditions are crowdsourced from hikers and may not reflect current situations. Always check with local authorities for official trail status."
   }
 }

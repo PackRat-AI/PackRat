@@ -49,7 +49,6 @@ export function SubmitConditionReportForm({
   const [waterCrossingDifficulty, setWaterCrossingDifficulty] =
     useState<WaterCrossingDifficulty | null>(null);
   const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleHazard = (hazard: string) => {
     setSelectedHazards((prev) =>
@@ -57,33 +56,25 @@ export function SubmitConditionReportForm({
     );
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!trailName.trim()) {
       Alert.alert(t('common.error'), t('trailConditions.trailNameRequired'));
       return;
     }
-    setIsSubmitting(true);
-    try {
-      submitReport({
-        trailName: trailName.trim(),
-        trailRegion: trailRegion.trim() || null,
-        surface,
-        overallCondition,
-        hazards: selectedHazards,
-        waterCrossings,
-        waterCrossingDifficulty: waterCrossings > 0 ? waterCrossingDifficulty : null,
-        notes: notes.trim() || null,
-        photos: [],
-        tripId: tripId ?? null,
-      });
-      Alert.alert(t('common.success'), t('trailConditions.reportSubmitted'));
-      onSuccess?.();
-    } catch (e) {
-      console.error('Failed to submit trail condition report:', e);
-      Alert.alert(t('common.error'), t('errors.tryAgain'));
-    } finally {
-      setIsSubmitting(false);
-    }
+    submitReport({
+      trailName: trailName.trim(),
+      trailRegion: trailRegion.trim() || null,
+      surface,
+      overallCondition,
+      hazards: selectedHazards,
+      waterCrossings,
+      waterCrossingDifficulty: waterCrossings > 0 ? waterCrossingDifficulty : null,
+      notes: notes.trim() || null,
+      photos: [],
+      tripId: tripId ?? null,
+    });
+    Alert.alert(t('common.success'), t('trailConditions.reportSubmitted'));
+    onSuccess?.();
   };
 
   return (
@@ -213,7 +204,7 @@ export function SubmitConditionReportForm({
               {waterCrossings}
             </Text>
             <Pressable
-              onPress={() => setWaterCrossings(waterCrossings + 1)}
+              onPress={() => setWaterCrossings(Math.min(20, waterCrossings + 1))}
               className="h-9 w-9 items-center justify-center rounded-full border border-border bg-card"
             >
               <Text className="text-lg font-bold">+</Text>
@@ -267,11 +258,10 @@ export function SubmitConditionReportForm({
         {/* Submit Button */}
         <Pressable
           onPress={handleSubmit}
-          disabled={isSubmitting}
-          className={`rounded-lg px-4 py-3.5 ${isSubmitting ? 'bg-primary/70' : 'bg-primary'}`}
+          className="rounded-lg bg-primary px-4 py-3.5"
         >
           <Text className="text-center text-base font-semibold text-primary-foreground">
-            {isSubmitting ? t('trailConditions.submitting') : t('trailConditions.submitReport')}
+            {t('trailConditions.submitReport')}
           </Text>
         </Pressable>
       </ScrollView>
