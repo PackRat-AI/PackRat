@@ -57,9 +57,7 @@ export function TripsListScreen() {
     if (searchValue.trim() && trips.length > 0) {
       return (
         <View className="flex-1 items-center justify-center p-8">
-          <Text className="text-center text-muted-foreground">
-            {t('trips.noSearchResults')}
-          </Text>
+          <Text className="text-center text-muted-foreground">{t('trips.noSearchResults')}</Text>
         </View>
       );
     }

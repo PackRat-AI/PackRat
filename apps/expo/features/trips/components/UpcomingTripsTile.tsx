@@ -20,11 +20,12 @@ export function UpcomingTripsTile() {
 
   // ✅ derive upcoming trips (in future)
   const upcomingTrips = useMemo(
-    () => trips.filter((t) => {
-      if (!t.startDate) return false;
-      const parsed = parseLocalDate(t.startDate);
-      return parsed != null && parsed > new Date();
-    }),
+    () =>
+      trips.filter((t) => {
+        if (!t.startDate) return false;
+        const parsed = parseLocalDate(t.startDate);
+        return parsed != null && parsed > new Date();
+      }),
     [trips],
   );
 
