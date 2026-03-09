@@ -29,7 +29,7 @@ export function OfflineMapsTile() {
       leftView={
         <View className="px-3">
           <View className="h-6 w-6 items-center justify-center rounded-md bg-teal-500">
-            <Icon name="download" size={15} color="white" />
+            <Icon name="inbox-arrow-down" size={15} color="white" />
           </View>
         </View>
       }

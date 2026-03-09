@@ -14,6 +14,7 @@ export function useDeleteMapRegion() {
     }
 
     // Remove from store
+    // @ts-ignore: Safe because Legend-State uses Proxy
     offlineMapsStore[id].delete();
   }, []);
 
