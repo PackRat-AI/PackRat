@@ -371,15 +371,15 @@ export const siteConfig = {
   footerLinks: {
     product: [
       { title: 'Features', href: '#features' },
+      { title: 'Pricing', href: '/pricing' },
       { title: 'Guides', href: 'https://guides.packratai.com/' },
       { title: 'Integrations', href: '#integrations' },
-      { title: 'Updates', href: '#' },
     ],
     company: [
-      { title: 'About', href: '#' },
-      { title: 'Blog', href: '#' },
-      { title: 'Careers', href: '#' },
-      { title: 'Contact', href: '#' },
+      { title: 'About', href: '/about' },
+      { title: 'Blog', href: '/blog' },
+      { title: 'Careers', href: '/about#careers' },
+      { title: 'Contact', href: 'mailto:hello@packratai.com' },
     ],
     legal: [
       { title: 'Terms', href: '#' },

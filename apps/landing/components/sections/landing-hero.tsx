@@ -121,7 +121,7 @@ export default function LandingHero() {
               variants={itemVariants}
             >
               <div className="flex -space-x-2">
-                {siteConfig.testimonials.items.map(({ id, initials }) => (
+                {siteConfig.testimonials.items.slice(0, 4).map(({ id, initials }) => (
                   <div
                     key={id}
                     className="w-10 h-10 rounded-full border-2 border-background flex items-center justify-center overflow-hidden bg-primary/20"
