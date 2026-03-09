@@ -6,7 +6,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
@@ -29,6 +29,18 @@ export function TripsListScreen() {
   const { t } = useTranslation();
   const trips = useTrips();
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+  const [searchValue, setSearchValue] = useState('');
+
+  const filteredTrips = useMemo(() => {
+    if (!searchValue.trim()) return trips;
+    const lower = searchValue.toLowerCase();
+    return trips.filter(
+      (trip) =>
+        trip.name.toLowerCase().includes(lower) ||
+        trip.description?.toLowerCase().includes(lower) ||
+        trip.location?.name?.toLowerCase().includes(lower),
+    );
+  }, [trips, searchValue]);
 
   const handleTripPress = useCallback(
     (trip: Trip) => {
@@ -64,7 +76,7 @@ export function TripsListScreen() {
         searchBar={{
           iosHideWhenScrolling: true,
           ref: asNonNullableRef(searchBarRef),
-          onChangeText() {}, // no search filtering
+          onChangeText: setSearchValue,
           content: (
             <View className="flex-1 items-center justify-center">
               <Text>{t('trips.searchTrips')}</Text>
@@ -79,7 +91,7 @@ export function TripsListScreen() {
       />
 
       <FlatList
-        data={trips || []}
+        data={filteredTrips}
         keyExtractor={(trip) => trip.id}
         renderItem={({ item: trip }) => (
           <View className="px-4 pt-4">
