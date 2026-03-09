@@ -161,14 +161,16 @@ function CatalogItemsScreen() {
         }}
       />
 
-      <CategoriesFilter
-        data={categories}
-        onFilter={setActiveFilter}
-        activeFilter={activeFilter}
-        error={categoriesError}
-        retry={refetchCategories}
-        className="px-4 py-2"
-      />
+      {!isSearching && (
+        <CategoriesFilter
+          data={categories}
+          onFilter={setActiveFilter}
+          activeFilter={activeFilter}
+          error={categoriesError}
+          retry={refetchCategories}
+          className="px-4 py-2"
+        />
+      )}
 
       <FlatList
         key={activeFilter}
@@ -197,14 +199,16 @@ function CatalogItemsScreen() {
           </View>
         }
         ListHeaderComponent={
-          <View className="mb-4">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-muted-foreground">{totalItemsText}</Text>
+          !isSearching ? (
+            <View className="mb-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-muted-foreground">{totalItemsText}</Text>
+              </View>
+              {paginatedItems.length > 0 && (
+                <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
+              )}
             </View>
-            {paginatedItems.length > 0 && (
-              <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
-            )}
-          </View>
+          ) : null
         }
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
