@@ -32,7 +32,7 @@ function makeEnv() {
     NEON_DATABASE_URL: 'postgres://localhost/test',
     NEON_DATABASE_URL_READONLY: 'postgres://localhost/test',
     JWT_SECRET: 'secret',
-  } as Parameters<typeof CatalogService>[0];
+  } as ConstructorParameters<typeof CatalogService>[0];
 }
 
 // ---------------------------------------------------------------------------

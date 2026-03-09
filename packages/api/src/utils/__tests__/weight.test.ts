@@ -24,17 +24,9 @@ function makeItem(
     worn: overrides.worn ?? false,
     packId: 'pack-1',
     userId: 1,
-    deleted: false,
-    isAIGenerated: false,
-    category: null,
-    description: null,
-    image: null,
-    notes: null,
-    catalogItemId: null,
-    templateItemId: null,
-    embedding: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    category: 'tools',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
 

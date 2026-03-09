@@ -56,7 +56,7 @@ function makeMockContext() {
     req: { json: vi.fn() },
     json: vi.fn(),
     env: {},
-  } as unknown as Parameters<typeof PackService>[0];
+  } as unknown as ConstructorParameters<typeof PackService>[0];
 }
 
 function makePackRow(overrides: Record<string, unknown> = {}) {
@@ -135,8 +135,8 @@ describe('PackService', () => {
 
       const result = await service.getPackDetails('pack-1');
       expect(result).not.toBeNull();
-      expect(result?.totalWeight).toBe(1000);
-      expect(result?.baseWeight).toBe(1000);
+      expect((result as unknown as { totalWeight: number })?.totalWeight).toBe(1000);
+      expect((result as unknown as { baseWeight: number })?.baseWeight).toBe(1000);
     });
 
     it('calls findFirst once when querying pack details', async () => {

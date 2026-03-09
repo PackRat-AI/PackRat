@@ -11,8 +11,6 @@ function makeItem(
   return {
     id: 'item-1',
     name: 'Test Item',
-    weight: overrides.weight,
-    weightUnit: overrides.weightUnit,
     quantity: overrides.quantity ?? 1,
     consumable: overrides.consumable ?? false,
     worn: overrides.worn ?? false,

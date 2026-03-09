@@ -14,8 +14,6 @@ function makePackItem(
   return {
     id: 'item-1',
     name: 'Test Item',
-    weight: overrides.weight,
-    weightUnit: overrides.weightUnit,
     quantity: overrides.quantity ?? 1,
     consumable: overrides.consumable ?? false,
     worn: overrides.worn ?? false,
@@ -147,7 +145,7 @@ describe('computePacksWeights', () => {
       makePack([makePackItem({ weight: 1000, weightUnit: 'g' })], { id: 'p2' }),
     ];
     const results = computePacksWeights(packs);
-    expect(results[0].totalWeight).toBe(500);
-    expect(results[1].totalWeight).toBe(1000);
+    expect(results[0]!.totalWeight).toBe(500);
+    expect(results[1]!.totalWeight).toBe(1000);
   });
 });

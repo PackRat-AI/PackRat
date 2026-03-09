@@ -33,8 +33,6 @@ function makePackItem(
   return {
     id: 'item-1',
     name: 'Test Item',
-    weight: overrides.weight,
-    weightUnit: overrides.weightUnit,
     quantity: overrides.quantity ?? 1,
     consumable: overrides.consumable ?? false,
     worn: overrides.worn ?? false,
@@ -167,7 +165,7 @@ describe('computePacksWeights', () => {
       }),
     ];
     const results = computePacksWeights(packs);
-    expect(results[0].totalWeight).toBe(500);
-    expect(results[1].totalWeight).toBe(1000);
+    expect(results[0]!.totalWeight).toBe(500);
+    expect(results[1]!.totalWeight).toBe(1000);
   });
 });
