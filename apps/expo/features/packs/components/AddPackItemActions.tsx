@@ -107,10 +107,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           await addItemsToPack(packId, catalogItems as CatalogItemWithPackItemFields[]);
         } catch (error) {
           console.error('Error adding catalog items to pack:', error);
-          Alert.alert(
-            t('common.error'),
-            t('catalog.somethingWentWrong'),
-          );
+          Alert.alert(t('common.error'), t('catalog.somethingWentWrong'));
         }
       }
     };
