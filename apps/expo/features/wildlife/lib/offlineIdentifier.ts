@@ -1,6 +1,10 @@
 import { SPECIES_DATABASE, searchSpecies } from '../data/speciesDatabase';
 import type { IdentificationResult, SpeciesEntry } from '../types';
 
+const MIN_CONFIDENCE = 0.1;
+const BASE_CONFIDENCE = 0.6;
+const CONFIDENCE_DECAY = 0.1;
+
 /**
  * Attempt to identify a species from a text description when offline.
  * This performs keyword matching against the local species database.
@@ -11,7 +15,7 @@ export function identifyFromDescription(description: string): IdentificationResu
   const matches = searchSpecies(description);
   return matches.slice(0, 5).map((species, index) => ({
     species,
-    confidence: Math.max(0.1, 0.6 - index * 0.1),
+    confidence: Math.max(MIN_CONFIDENCE, BASE_CONFIDENCE - index * CONFIDENCE_DECAY),
     source: 'offline' as const,
   }));
 }

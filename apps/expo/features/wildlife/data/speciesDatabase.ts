@@ -197,7 +197,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
       'white or yellow-white berries',
       'can grow as vine or shrub',
     ],
-    conservationStatus: undefined,
     interestingFacts: [
       '"Leaves of three, let it be" - classic identification rule',
       'Urushiol causes the allergic reaction',
@@ -216,7 +215,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
     regions: ['north-america'],
     dangerLevel: 'safe',
     characteristics: ['thorny canes', 'compound leaves', 'white flowers', 'black berries'],
-    conservationStatus: undefined,
     interestingFacts: [
       'Rich in antioxidants and vitamins',
       'Important food source for wildlife',
@@ -240,7 +238,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
       'brown papery scales',
       'tall bright green fronds',
     ],
-    conservationStatus: undefined,
     interestingFacts: [
       'Fiddleheads are edible when cooked',
       'Can grow up to 5 feet tall',
@@ -264,7 +261,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
       'single flower per stem',
       'turns pink with age',
     ],
-    conservationStatus: undefined,
     interestingFacts: [
       'Takes 7+ years to bloom from seed',
       'Protected in many states',
@@ -283,7 +279,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
     regions: ['north-america'],
     dangerLevel: 'safe',
     characteristics: ['heart-shaped leaves', 'blue-violet flowers', 'five petals', 'low growing'],
-    conservationStatus: undefined,
     interestingFacts: [
       'Edible flowers and leaves',
       'High in vitamins A and C',
@@ -308,7 +303,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
       'winged samara seeds',
       'gray-brown furrowed bark',
     ],
-    conservationStatus: undefined,
     interestingFacts: [
       'National tree of Canada',
       'Takes 40 years to produce syrup in quantity',
@@ -332,7 +326,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
       'long cylindrical cones',
       'straight tall trunk',
     ],
-    conservationStatus: undefined,
     interestingFacts: [
       'Can grow over 200 feet tall',
       'State tree of Maine and Michigan',
@@ -432,7 +425,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
       'small size',
       'soft wing covers',
     ],
-    conservationStatus: undefined,
     interestingFacts: [
       'Light produced with nearly 100% efficiency',
       'Flash pattern is species-specific',
@@ -457,7 +449,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
       'forked false gills (ridges)',
       'fruity apricot smell',
     ],
-    conservationStatus: undefined,
     interestingFacts: [
       'One of the most prized edible mushrooms',
       'Cannot be commercially cultivated',
@@ -482,7 +473,6 @@ export const SPECIES_DATABASE: SpeciesEntry[] = [
       'bulbous base (volva)',
       'white spores',
     ],
-    conservationStatus: undefined,
     interestingFacts: [
       'Contains amatoxins that destroy liver and kidneys',
       'Symptoms delayed 6-24 hours - often too late',

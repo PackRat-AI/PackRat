@@ -22,6 +22,24 @@ async function identifyOnline(selectedImage: SelectedImage): Promise<Identificat
   return response.data.results;
 }
 
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return (
+      msg.includes('network') ||
+      msg.includes('timeout') ||
+      msg.includes('econnrefused') ||
+      msg.includes('failed to fetch') ||
+      msg.includes('no internet')
+    );
+  }
+  // Axios network errors typically have no response
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    return false; // Has a server response – not a network error
+  }
+  return true;
+}
+
 export function useWildlifeIdentification() {
   return useMutation<
     IdentificationResult[],
@@ -31,9 +49,14 @@ export function useWildlifeIdentification() {
     mutationFn: async ({ selectedImage, offlineQuery }) => {
       try {
         return await identifyOnline(selectedImage);
-      } catch {
-        // Fall back to offline identification using image metadata / user query
-        return identifyFromDescription(offlineQuery ?? selectedImage.fileName);
+      } catch (error) {
+        // Only fall back to offline identification for network/connectivity errors.
+        // Authorization errors, validation failures, etc. are re-thrown.
+        if (isNetworkError(error)) {
+          console.warn('Online identification unavailable, using offline database:', error);
+          return identifyFromDescription(offlineQuery ?? selectedImage.fileName);
+        }
+        throw error;
       }
     },
   });
