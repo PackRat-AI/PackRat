@@ -151,8 +151,8 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 ### Database (packages/api)
 
 - **ORM**: Drizzle ORM — define schemas in `packages/api/src/db/schema.ts`
-- **Soft deletes**: Use a `deleted: boolean().default(false)` column, never hard-delete user data
-- **Timestamps**: Always add `createdAt` and `updatedAt` server-controlled columns
+- **Soft deletes**: Use a `deleted: boolean().default(false)` column for user-generated content (packs, items, trips); account deletion is a hard delete (`db.delete(users)`)
+- **Timestamps**: Add `createdAt` and `updatedAt` where needed for sync or auditing; short-lived records (e.g. `refreshTokens`, `oneTimePasswords`) only need `createdAt`
 - **Vector embeddings**: Use 1536-dimension vectors with HNSW cosine-similarity indexes
 - **Services pattern**: Complex DB logic goes in `packages/api/src/services/{feature}Service.ts`
 
@@ -257,7 +257,8 @@ Always validate changes manually before committing:
 ### API Validation
 ```bash
 bun api
-curl http://localhost:8787/api/health   # expect 401 Unauthorized
+curl http://localhost:8787/            # expect 200 "PackRat API is running!"
+curl http://localhost:8787/api/packs   # expect 401 Unauthorized (protected route)
 ```
 
 ### Code Quality
