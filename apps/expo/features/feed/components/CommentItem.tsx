@@ -3,33 +3,13 @@ import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { TouchableOpacity, View } from 'react-native';
 import type { Comment } from '../types';
+import { formatAuthorName, formatRelativeDate } from '../utils';
 
 interface CommentItemProps {
   comment: Comment;
   onLike: (commentId: number) => void;
   onDelete?: (commentId: number) => void;
   currentUserId?: number;
-}
-
-function formatAuthor(comment: Comment): string {
-  if (!comment.author) return 'Unknown';
-  const { firstName, lastName } = comment.author;
-  if (firstName && lastName) return `${firstName} ${lastName}`;
-  if (firstName) return firstName;
-  if (lastName) return lastName;
-  return 'User';
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${Math.floor(diffHours / 24)}d ago`;
 }
 
 export const CommentItem: React.FC<CommentItemProps> = ({
@@ -48,8 +28,10 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       </View>
       <View className="flex-1">
         <View className="flex-row items-center gap-2 flex-wrap">
-          <Text className="font-semibold text-sm">{formatAuthor(comment)}</Text>
-          <Text className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</Text>
+          <Text className="font-semibold text-sm">{formatAuthorName(comment)}</Text>
+          <Text className="text-xs text-muted-foreground">
+            {formatRelativeDate(comment.createdAt)}
+          </Text>
         </View>
         <Text className="text-sm mt-0.5">{comment.content}</Text>
         <View className="flex-row items-center gap-3 mt-1">

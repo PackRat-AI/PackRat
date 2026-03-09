@@ -100,15 +100,20 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
     }
 
     setUploading(true);
+    const uploadedKeys: string[] = [];
     try {
-      const uploadedKeys: string[] = [];
-      for (const photo of photos) {
-        const ext = photo.fileName.split('.').pop()?.toLowerCase() ?? 'jpg';
-        const uniqueName = `${nanoid()}.${ext}`;
-        const key = await uploadImage(uniqueName, photo.uri);
-        if (key) {
-          uploadedKeys.push(key);
-        }
+      const results = await Promise.all(
+        photos.map(async (photo) => {
+          const ext = photo.fileName.includes('.')
+            ? photo.fileName.split('.').pop()?.toLowerCase() ?? 'jpg'
+            : 'jpg';
+          const uniqueName = `${nanoid()}.${ext}`;
+          return uploadImage(uniqueName, photo.uri);
+        }),
+      );
+
+      for (const key of results) {
+        if (key) uploadedKeys.push(key);
       }
 
       if (uploadedKeys.length === 0) {

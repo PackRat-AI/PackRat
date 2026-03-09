@@ -1,8 +1,6 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import {
@@ -15,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import type { Post } from '../types';
+import { buildPostImageUrl, formatAuthorName, formatRelativeDate } from '../utils';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -25,36 +24,8 @@ interface PostCardProps {
   currentUserId?: number;
 }
 
-function buildPostImageUrl(imageKey: string): string {
-  return `${clientEnvs.EXPO_PUBLIC_R2_PUBLIC_URL}/${imageKey}`;
-}
-
-function formatAuthorName(post: Post): string {
-  if (!post.author) return 'Unknown';
-  const { firstName, lastName } = post.author;
-  if (firstName && lastName) return `${firstName} ${lastName}`;
-  if (firstName) return firstName;
-  if (lastName) return lastName;
-  return 'User';
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-}
-
 export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, currentUserId }) => {
   const { colors } = useColorScheme();
-  const { t } = useTranslation();
   const router = useRouter();
 
   const handlePress = useCallback(() => {
@@ -77,7 +48,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
           </View>
           <View>
             <Text className="font-semibold text-sm">{formatAuthorName(post)}</Text>
-            <Text className="text-xs text-muted-foreground">{formatDate(post.createdAt)}</Text>
+            <Text className="text-xs text-muted-foreground">
+              {formatRelativeDate(post.createdAt)}
+            </Text>
           </View>
         </View>
         {isOwner && onDelete && (

@@ -517,7 +517,7 @@ export const posts = pgTable('posts', {
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   caption: text('caption'),
-  images: jsonb('images').$type<string[]>().notNull().default([]),
+  images: jsonb('images').$type<string[]>().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

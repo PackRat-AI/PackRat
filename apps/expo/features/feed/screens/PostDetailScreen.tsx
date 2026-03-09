@@ -1,6 +1,5 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useCallback, useRef, useState } from 'react';
@@ -25,23 +24,11 @@ import {
   useTogglePostLike,
 } from '../hooks';
 import type { Comment, Post } from '../types';
+import { buildPostImageUrl } from '../utils';
 
 interface PostDetailScreenProps {
   post: Post;
   currentUserId?: number;
-}
-
-function buildPostImageUrl(imageKey: string): string {
-  return `${clientEnvs.EXPO_PUBLIC_R2_PUBLIC_URL}/${imageKey}`;
-}
-
-function formatAuthorName(post: Post): string {
-  if (!post.author) return 'Unknown';
-  const { firstName, lastName } = post.author;
-  if (firstName && lastName) return `${firstName} ${lastName}`;
-  if (firstName) return firstName;
-  if (lastName) return lastName;
-  return 'User';
 }
 
 export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps) => {
