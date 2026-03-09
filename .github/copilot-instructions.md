@@ -22,7 +22,7 @@ PackRat is a modern full-stack application for outdoor enthusiasts to plan and o
 1. **Install Bun (Primary Package Manager)**:
    ```bash
    curl -fsSL https://bun.sh/install | bash
-   source ~/.bashrc
+   source "$HOME/.bun/env"
    ```
 
 2. **Authenticate with GitHub for Private Packages**:
@@ -43,6 +43,7 @@ PackRat is a modern full-stack application for outdoor enthusiasts to plan and o
    ```bash
    bun clean && bun install
    ```
+   - `bun clean` removes `node_modules`, build artifacts (`.next`, `.expo`, `dist`, `.wrangler`, `.turbo`), and caches across all workspaces
    - NEVER CANCEL: takes up to 90 seconds, set timeout to 180+ seconds
 
 ### Build and Development Commands
@@ -257,7 +258,7 @@ Always validate changes manually before committing:
 ### API Validation
 ```bash
 bun api
-curl http://localhost:8787/            # expect 200 "PackRat API is running!"
+curl -sf http://localhost:8787/ | grep -q "PackRat API" && echo "OK"   # public liveness check
 curl http://localhost:8787/api/packs   # expect 401 Unauthorized (protected route)
 ```
 
