@@ -12,8 +12,9 @@ import type { Trip } from '../types';
 
 function formatTripDate(dateString?: string): string {
   if (!dateString) return '—';
-  const datePart = dateString.split('T')[0];
-  return datePart ?? '—';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString();
 }
 
 interface TripCardProps {
