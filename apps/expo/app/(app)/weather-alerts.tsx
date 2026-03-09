@@ -3,9 +3,10 @@ import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { ScrollView, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, View } from 'react-native';
 
-// Mock data for weather alerts
+// Mock data for weather alerts covering all alert types required for iOS parity
 const WEATHER_ALERTS: {
   id: string;
   type: string;
@@ -18,47 +19,91 @@ const WEATHER_ALERTS: {
 }[] = [
   {
     id: '1',
-    type: 'Rain',
-    location: 'Appalachian Trail, GA',
-    dates: 'May 15-17, 2024',
-    severity: 'Moderate',
-    details:
-      'Expect 1-2 inches of rain over a 48-hour period. Trails may be muddy and creek crossings could be difficult.',
-    icon: 'water',
-    color: '#36A2EB',
-  },
-  {
-    id: '2',
-    type: 'Heat Advisory',
-    location: 'Appalachian Trail, VA',
-    dates: 'June 1-3, 2024',
-    severity: 'High',
-    details:
-      'Temperatures expected to reach 90-95°F with high humidity. Increased risk of heat-related illness. Carry extra water and plan for shade breaks.',
-    icon: 'lightbulb',
-    color: '#FF6384',
-  },
-  {
-    id: '3',
-    type: 'Thunderstorms',
+    type: 'Severe Thunderstorms',
     location: 'Appalachian Trail, NC',
     dates: 'May 20, 2024',
     severity: 'High',
     details:
       'Severe thunderstorms with lightning risk. Avoid exposed ridges and summits during afternoon hours.',
-    icon: 'lightning-bolt',
+    icon: 'weather-lightning-rainy',
     color: '#FFCE56',
   },
   {
+    id: '2',
+    type: 'Tornado Watch',
+    location: 'Ozark Trail, MO',
+    dates: 'May 22, 2024',
+    severity: 'High',
+    details:
+      'Tornado watch in effect until 9 PM. Seek shelter in a sturdy building immediately if a tornado warning is issued.',
+    icon: 'weather-tornado',
+    color: '#FF6384',
+  },
+  {
+    id: '3',
+    type: 'Flash Flood Alert',
+    location: 'Appalachian Trail, GA',
+    dates: 'May 15-17, 2024',
+    severity: 'High',
+    details:
+      'Flash flood watch in effect. Expect 2-4 inches of rain. Avoid creek crossings and low-lying trail sections.',
+    icon: 'waves',
+    color: '#36A2EB',
+  },
+  {
     id: '4',
-    type: 'Wind Advisory',
+    type: 'Red Flag Fire Warning',
+    location: 'Pacific Crest Trail, CA',
+    dates: 'June 10-12, 2024',
+    severity: 'High',
+    details:
+      'Extreme fire danger due to low humidity, high temperatures, and gusty winds. No campfires permitted.',
+    icon: 'fire',
+    color: '#FF5722',
+  },
+  {
+    id: '5',
+    type: 'Winter Storm Advisory',
+    location: 'John Muir Trail, CA',
+    dates: 'July 4-5, 2024',
+    severity: 'Moderate',
+    details:
+      'Unexpected late-season snow at elevations above 10,000 ft. Expect 4-6 inches. Prepare for icy conditions.',
+    icon: 'weather-snowy-heavy',
+    color: '#90CAF9',
+  },
+  {
+    id: '6',
+    type: 'Heat Advisory',
+    location: 'Appalachian Trail, VA',
+    dates: 'June 1-3, 2024',
+    severity: 'High',
+    details:
+      'Temperatures expected to reach 90-95°F with high humidity. Carry extra water and plan for shade breaks.',
+    icon: 'thermometer-alert',
+    color: '#EF5350',
+  },
+  {
+    id: '7',
+    type: 'High Wind Warning',
     location: 'Appalachian Trail, NH',
     dates: 'June 5-6, 2024',
     severity: 'Moderate',
     details:
       'Sustained winds of 20-30 mph with gusts up to 45 mph. Secure loose items and be cautious of falling branches.',
-    icon: 'arrow-left-right-bold',
+    icon: 'weather-windy',
     color: '#4BC0C0',
+  },
+  {
+    id: '8',
+    type: 'Dense Fog Advisory',
+    location: 'Olympic Peninsula, WA',
+    dates: 'May 25, 2024',
+    severity: 'Low',
+    details:
+      'Dense fog reducing visibility to near zero along coastal trails. Use caution and carry navigation equipment.',
+    icon: 'weather-fog',
+    color: '#B0BEC5',
   },
 ];
 
@@ -143,15 +188,25 @@ function WeatherAlertCard({ alert }: { alert: (typeof WEATHER_ALERTS)[0] }) {
 
 export default function WeatherAlertsScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <>
       <LargeTitleHeader title={t('weather.weatherAlertsTitle')} />
       <ScrollView className="flex-1">
-        <View className="p-4">
-          <Text variant="subhead" className="mb-2 text-muted-foreground">
+        <View className="flex-row items-center justify-between p-4">
+          <Text variant="subhead" className="text-muted-foreground">
             {t('weather.currentWeatherAlerts')}
           </Text>
+          <Pressable
+            onPress={() => router.push('/weather-alert-preferences')}
+            className="flex-row items-center gap-1"
+          >
+            <Icon name="tune-vertical-variant" size={16} color="#3B82F6" />
+            <Text variant="footnote" className="text-primary">
+              {t('weather.manageAlerts')}
+            </Text>
+          </Pressable>
         </View>
 
         <View className="pb-4">

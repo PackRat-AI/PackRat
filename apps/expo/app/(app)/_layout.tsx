@@ -134,6 +134,14 @@ export default function AppLayout() {
           }}
         />
         <Stack.Screen
+          name="weather-alert-preferences"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
           name="trail-conditions"
           options={{
             headerShown: false,
