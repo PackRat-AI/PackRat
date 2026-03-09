@@ -33,7 +33,8 @@ function CatalogItemsScreen() {
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
 
-  const isSearching = debouncedSearchValue.length > 0;
+  const isSearching = searchValue.trim().length > 0;
+  const isQueryReady = debouncedSearchValue.trim().length > 0;
 
   const {
     data: categories,
@@ -102,7 +103,7 @@ function CatalogItemsScreen() {
           content: (
             <View style={{ flex: 1, backgroundColor: colors.background }}>
               {isSearching ? (
-                isVectorLoading ? (
+                isVectorLoading || !isQueryReady ? (
                   <View className="flex-1 items-center justify-center p-6">
                     <ActivityIndicator className="text-primary" size="large" />
                   </View>
