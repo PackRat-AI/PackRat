@@ -19,4 +19,7 @@ CREATE TABLE "trail_condition_reports" (
 );
 --> statement-breakpoint
 ALTER TABLE "trail_condition_reports" ADD CONSTRAINT "trail_condition_reports_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "trail_condition_reports" ADD CONSTRAINT "trail_condition_reports_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "trail_condition_reports" ADD CONSTRAINT "trail_condition_reports_trip_id_trips_id_fk" FOREIGN KEY ("trip_id") REFERENCES "public"."trips"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "trail_condition_reports_user_id_idx" ON "trail_condition_reports" ("user_id");--> statement-breakpoint
+CREATE INDEX "trail_condition_reports_active_created_idx" ON "trail_condition_reports" ("deleted","created_at" DESC);--> statement-breakpoint
+CREATE INDEX "trail_condition_reports_trail_name_idx" ON "trail_condition_reports" ("trail_name");

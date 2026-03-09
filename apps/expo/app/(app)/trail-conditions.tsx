@@ -3,26 +3,30 @@ import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
 import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hooks/useTrailConditionReports';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
 
 export default function TrailConditionsScreen() {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const { data: reports, isLoading, error } = useTrailConditionReports();
+  const { t } = useTranslation();
 
   if (!featureFlags.enableTrailConditions) return null;
 
   return (
     <>
       <LargeTitleHeader
-        title="Trail Conditions"
+        title={t('trailConditions.title')}
         rightView={() => (
           <Pressable
             onPress={() => setShowSubmitForm(true)}
             className="mr-2 rounded-full bg-primary px-3 py-1.5"
+            accessibilityLabel={t('trailConditions.reportConditionsTitle')}
+            accessibilityRole="button"
           >
             <Text variant="footnote" className="font-semibold text-primary-foreground">
-              + Report
+              {t('trailConditions.reportButton')}
             </Text>
           </Pressable>
         )}
@@ -31,7 +35,7 @@ export default function TrailConditionsScreen() {
       <ScrollView className="flex-1">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">
-            Current trail conditions from recent hiker reports
+            {t('trailConditions.subtitle')}
           </Text>
         </View>
 
@@ -42,7 +46,7 @@ export default function TrailConditionsScreen() {
         ) : error ? (
           <View className="mx-4 mb-3 rounded-xl bg-card p-4">
             <Text variant="body" className="text-center text-muted-foreground">
-              Unable to load trail conditions. Pull to refresh.
+              {t('trailConditions.loadError')}
             </Text>
           </View>
         ) : reports && reports.length > 0 ? (
@@ -54,14 +58,16 @@ export default function TrailConditionsScreen() {
         ) : (
           <View className="mx-4 mb-3 rounded-xl bg-card p-8">
             <Text variant="body" className="text-center text-muted-foreground">
-              No trail condition reports yet. Be the first to report!
+              {t('trailConditions.noReports')}
             </Text>
             <Pressable
               onPress={() => setShowSubmitForm(true)}
               className="mt-4 rounded-lg bg-primary px-4 py-3"
+              accessibilityLabel={t('trailConditions.submitReport')}
+              accessibilityRole="button"
             >
               <Text className="text-center font-semibold text-primary-foreground">
-                Submit a Report
+                {t('trailConditions.submitReport')}
               </Text>
             </Pressable>
           </View>
@@ -70,8 +76,7 @@ export default function TrailConditionsScreen() {
         <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
           <View className="rounded-md bg-muted p-3 dark:bg-gray-50/10">
             <Text variant="footnote" className="text-muted-foreground">
-              Trail conditions are crowdsourced from hikers and may not reflect current situations.
-              Always check with local authorities for official trail status.
+              {t('trailConditions.disclaimer')}
             </Text>
           </View>
         </View>
@@ -87,10 +92,14 @@ export default function TrailConditionsScreen() {
         <View className="flex-1 bg-background">
           <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
             <Text variant="heading" className="font-semibold">
-              Report Trail Conditions
+              {t('trailConditions.reportConditionsTitle')}
             </Text>
-            <Pressable onPress={() => setShowSubmitForm(false)}>
-              <Text className="font-semibold text-primary">Cancel</Text>
+            <Pressable
+              onPress={() => setShowSubmitForm(false)}
+              accessibilityLabel={t('common.cancel')}
+              accessibilityRole="button"
+            >
+              <Text className="font-semibold text-primary">{t('common.cancel')}</Text>
             </Pressable>
           </View>
           <SubmitConditionReportForm onSuccess={() => setShowSubmitForm(false)} />
