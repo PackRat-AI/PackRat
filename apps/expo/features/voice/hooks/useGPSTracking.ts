@@ -12,42 +12,63 @@ export function useGPSTracking() {
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const watchRef = useRef<Location.LocationSubscription | null>(null);
+  // Prevents concurrent permission requests racing each other (#12)
+  const permissionRequestInFlightRef = useRef(false);
+  // Stable counter for auto-generated waypoint names — avoids waypoints.length dep
+  const waypointCountRef = useRef(0);
 
   useEffect(() => {
-    Location.requestForegroundPermissionsAsync().then(({ status }) => {
-      setPermissionGranted(status === 'granted');
-    });
+    if (permissionRequestInFlightRef.current) return;
+    permissionRequestInFlightRef.current = true;
+    Location.requestForegroundPermissionsAsync()
+      .then(({ status }) => {
+        setPermissionGranted(status === 'granted');
+      })
+      .finally(() => {
+        permissionRequestInFlightRef.current = false;
+      });
   }, []);
 
   const startTracking = useCallback(async () => {
+    // Guard: prevent creating a second subscription while already tracking (#3).
+    // Return true because tracking is already active — the caller's intent is satisfied.
+    if (watchRef.current) return true;
+
     if (!permissionGranted) {
+      if (permissionRequestInFlightRef.current) return false;
+      permissionRequestInFlightRef.current = true;
       const { status } = await Location.requestForegroundPermissionsAsync();
+      permissionRequestInFlightRef.current = false;
       if (status !== 'granted') return false;
       setPermissionGranted(true);
     }
 
-    const subscription = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.BestForNavigation,
-        timeInterval: 5000,
-        distanceInterval: 10,
-      },
-      (location) => {
-        setCurrentPosition({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          altitude: location.coords.altitude,
-          accuracy: location.coords.accuracy,
-          speed: location.coords.speed,
-          heading: location.coords.heading,
-          timestamp: location.timestamp,
-        });
-      },
-    );
-
-    watchRef.current = subscription;
-    setIsTracking(true);
-    return true;
+    try {
+      const subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.BestForNavigation,
+          timeInterval: 5000,
+          distanceInterval: 10,
+        },
+        (location) => {
+          setCurrentPosition({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            altitude: location.coords.altitude,
+            accuracy: location.coords.accuracy,
+            speed: location.coords.speed,
+            heading: location.coords.heading,
+            timestamp: location.timestamp,
+          });
+        },
+      );
+      watchRef.current = subscription;
+      setIsTracking(true);
+      return true;
+    } catch (err) {
+      console.warn('[useGPSTracking] watchPositionAsync failed:', err);
+      return false;
+    }
   }, [permissionGranted]);
 
   const stopTracking = useCallback(() => {
@@ -85,18 +106,19 @@ export function useGPSTracking() {
       const pos = currentPosition ?? (await getCurrentPosition());
       if (!pos) return null;
 
+      // Increment counter via ref so we don't need waypoints.length in deps (#6)
+      waypointCountRef.current += 1;
       const waypoint: Waypoint = {
         id: `wp_${Date.now()}`,
-        name: name ?? `Waypoint ${waypoints.length + 1}`,
+        name: name ?? `Waypoint ${waypointCountRef.current}`,
         latitude: pos.latitude,
         longitude: pos.longitude,
         createdAt: new Date().toISOString(),
       };
-
       setWaypoints((prev) => [...prev, waypoint]);
       return waypoint;
     },
-    [currentPosition, getCurrentPosition, waypoints.length],
+    [currentPosition, getCurrentPosition],
   );
 
   const getDistanceTo = useCallback(

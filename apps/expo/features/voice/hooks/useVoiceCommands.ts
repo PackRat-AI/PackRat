@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VoiceCommand, VoiceCommandName, VoiceListeningState } from '../types';
 import { useGPSTracking } from './useGPSTracking';
 import { useSpeech } from './useSpeech';
@@ -48,6 +48,9 @@ const VOICE_COMMANDS: VoiceCommand[] = [
   },
 ];
 
+/** Ordered longest-first so longer prefixes match before shorter ones (e.g. "directions to" before "go to"). */
+const NAVIGATE_TO_PREFIXES = ['directions to', 'navigate to', 'take me to', 'go to'] as const;
+
 /**
  * Match a transcript against registered command patterns.
  */
@@ -59,6 +62,21 @@ function matchCommand(transcript: string): VoiceCommand | null {
     }
   }
   return null;
+}
+
+/**
+ * Extract the destination noun phrase from a navigate_to transcript.
+ * Strips the first matching command prefix for reliable extraction (#8).
+ */
+function extractNavigationTarget(transcript: string): string {
+  const lower = transcript.toLowerCase();
+  for (const prefix of NAVIGATE_TO_PREFIXES) {
+    const idx = lower.indexOf(prefix);
+    if (idx !== -1) {
+      return transcript.slice(idx + prefix.length).trim();
+    }
+  }
+  return transcript.trim();
 }
 
 /**
@@ -79,18 +97,37 @@ function formatDistance(metres: number): string {
  * recognised text into the command pipeline.
  *
  * The `startListening` / `stopListening` lifecycle hooks are provided so UI
- * components can trigger recording on button press – the actual microphone
+ * components can trigger recording on button press — the actual microphone
  * work is delegated to the chosen STT integration.
  */
 export function useVoiceCommands() {
   const { speak } = useSpeech();
-  const gps = useGPSTracking();
+
+  // Destructure only the values we need so that useCallback deps are stable (#2)
+  const {
+    startTracking,
+    stopTracking,
+    markWaypoint,
+    getCurrentPosition,
+    getDistanceTo,
+    currentPosition,
+    waypoints,
+    isTracking,
+  } = useGPSTracking();
 
   const [listeningState, setListeningState] = useState<VoiceListeningState>('idle');
   const [lastCommand, setLastCommand] = useState<VoiceCommandName | null>(null);
   const [lastTranscript, setLastTranscript] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear the auto-timeout when the hook unmounts (#4)
+  useEffect(() => {
+    return () => {
+      if (listeningTimeoutRef.current) {
+        clearTimeout(listeningTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /** Called by a speech-to-text backend with the recognised text. */
   const processTranscript = useCallback(
@@ -101,122 +138,145 @@ export function useVoiceCommands() {
       const command = matchCommand(transcript);
       if (!command) {
         speak("I didn't recognise that command. Please try again.");
-        setListeningState('idle');
+        setListeningState('error');
         return;
       }
 
       setLastCommand(command.name);
 
-      switch (command.name) {
-        case 'start_tracking': {
-          const started = await gps.startTracking();
-          speak(started ? 'GPS tracking started.' : 'Unable to start tracking. Check permissions.');
-          break;
-        }
-
-        case 'stop_tracking': {
-          gps.stopTracking();
-          speak('GPS tracking stopped.');
-          break;
-        }
-
-        case 'mark_waypoint': {
-          const waypoint = await gps.markWaypoint();
-          if (waypoint) {
-            speak(`Waypoint ${waypoint.name} marked at your current location.`);
-          } else {
-            speak('Unable to mark waypoint. GPS position not available.');
-          }
-          break;
-        }
-
-        case 'where_am_i': {
-          const pos = gps.currentPosition ?? (await gps.getCurrentPosition());
-          if (pos) {
-            speak(
-              `You are at latitude ${pos.latitude.toFixed(4)}, longitude ${pos.longitude.toFixed(4)}.`,
-            );
-          } else {
-            speak('Unable to determine your location. Check GPS permissions.');
-          }
-          break;
-        }
-
-        case 'how_far': {
-          const lastWaypoint = gps.waypoints[gps.waypoints.length - 1];
-          if (!lastWaypoint) {
-            speak('No waypoints saved. Mark a waypoint first.');
-          } else {
-            const dist = gps.getDistanceTo(lastWaypoint);
-            if (dist !== null) {
-              speak(`You are ${formatDistance(dist)} from ${lastWaypoint.name}.`);
-            } else {
-              speak('Unable to calculate distance. GPS position not available.');
+      try {
+        switch (command.name) {
+          case 'start_tracking': {
+            const started = await startTracking();
+            if (!started) {
+              speak('Unable to start tracking. Check permissions.');
+              setListeningState('error');
+              return;
             }
+            speak('GPS tracking started.');
+            break;
           }
-          break;
-        }
 
-        case 'navigate_to': {
-          const target = transcript.toLowerCase().replace(/navigate to|go to|take me to|directions to/g, '').trim();
-          const found = gps.waypoints.find((w) => w.name.toLowerCase().includes(target));
-          if (found) {
-            const dist = gps.getDistanceTo(found);
-            if (dist !== null) {
+          case 'stop_tracking': {
+            stopTracking();
+            speak('GPS tracking stopped.');
+            break;
+          }
+
+          case 'mark_waypoint': {
+            const waypoint = await markWaypoint();
+            if (waypoint) {
+              speak(`Waypoint ${waypoint.name} marked at your current location.`);
+            } else {
+              speak('Unable to mark waypoint. GPS position not available.');
+              setListeningState('error');
+              return;
+            }
+            break;
+          }
+
+          case 'where_am_i': {
+            const pos = currentPosition ?? (await getCurrentPosition());
+            if (pos) {
               speak(
-                `Navigating to ${found.name}. Distance is ${formatDistance(dist)}.`,
+                `You are at latitude ${pos.latitude.toFixed(4)}, longitude ${pos.longitude.toFixed(4)}.`,
               );
             } else {
-              speak(`Navigating to ${found.name}.`);
+              speak('Unable to determine your location. Check GPS permissions.');
+              setListeningState('error');
+              return;
             }
-          } else {
-            speak(
-              target
-                ? `Waypoint "${target}" not found. Try marking it first.`
-                : 'Please say the waypoint name after "navigate to".',
-            );
+            break;
           }
-          break;
+
+          case 'how_far': {
+            const lastWaypoint = waypoints[waypoints.length - 1];
+            if (!lastWaypoint) {
+              speak('No waypoints saved. Mark a waypoint first.');
+            } else {
+              const dist = getDistanceTo(lastWaypoint);
+              if (dist !== null) {
+                speak(`You are ${formatDistance(dist)} from ${lastWaypoint.name}.`);
+              } else {
+                speak('Unable to calculate distance. GPS position not available.');
+                setListeningState('error');
+                return;
+              }
+            }
+            break;
+          }
+
+          case 'navigate_to': {
+            const target = extractNavigationTarget(transcript);
+            const found = waypoints.find((w) => w.name.toLowerCase().includes(target.toLowerCase()));
+            if (found) {
+              const dist = getDistanceTo(found);
+              if (dist !== null) {
+                speak(`Navigating to ${found.name}. Distance is ${formatDistance(dist)}.`);
+              } else {
+                speak(`Navigating to ${found.name}.`);
+              }
+            } else {
+              speak(
+                target
+                  ? `Waypoint "${target}" not found. Try marking it first.`
+                  : 'Please say the waypoint name after "navigate to".',
+              );
+            }
+            break;
+          }
         }
+      } catch {
+        speak('An error occurred while processing your command.');
+        setListeningState('error');
+        return;
       }
 
       setListeningState('idle');
     },
-    [speak, gps],
+    [
+      speak,
+      startTracking,
+      stopTracking,
+      markWaypoint,
+      getCurrentPosition,
+      getDistanceTo,
+      currentPosition,
+      waypoints,
+    ],
   );
 
   /** Called when user presses the microphone button to start recording. */
   const startListening = useCallback(() => {
     setListeningState('listening');
-    setErrorMessage(null);
 
     // Auto-timeout after 10 seconds if no transcript arrives
     listeningTimeoutRef.current = setTimeout(() => {
       setListeningState('idle');
+      speak('Listening timed out. Please try again.');
     }, 10000);
-  }, []);
+  }, [speak]);
 
   /** Called when user releases the microphone button or recording ends. */
   const stopListening = useCallback(() => {
     if (listeningTimeoutRef.current) {
       clearTimeout(listeningTimeoutRef.current);
+      listeningTimeoutRef.current = null;
     }
-    if (listeningState === 'listening') {
-      setListeningState('idle');
-    }
-  }, [listeningState]);
+    // Use functional update to avoid stale closure on listeningState (#5)
+    setListeningState((prev) => (prev === 'listening' ? 'idle' : prev));
+  }, []);
 
   return {
     // State
     listeningState,
     lastCommand,
     lastTranscript,
-    errorMessage,
 
     // GPS state passthrough
-    isTracking: gps.isTracking,
-    currentPosition: gps.currentPosition,
-    waypoints: gps.waypoints,
+    isTracking,
+    currentPosition,
+    waypoints,
 
     // Actions
     startListening,
