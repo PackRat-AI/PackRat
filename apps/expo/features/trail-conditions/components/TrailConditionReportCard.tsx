@@ -12,6 +12,7 @@ function formatRelativeTime(dateStr?: string): string {
   if (!dateStr) return '';
   const now = new Date();
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return '';
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   if (diffDays === 0) return 'Today';

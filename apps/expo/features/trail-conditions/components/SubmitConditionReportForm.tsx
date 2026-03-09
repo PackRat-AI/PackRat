@@ -78,7 +78,8 @@ export function SubmitConditionReportForm({
       });
       Alert.alert(t('common.success'), t('trailConditions.reportSubmitted'));
       onSuccess?.();
-    } catch (_e) {
+    } catch (e) {
+      console.error('Failed to submit trail condition report:', e);
       Alert.alert(t('common.error'), t('errors.tryAgain'));
     } finally {
       setIsSubmitting(false);

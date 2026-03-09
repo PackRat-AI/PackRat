@@ -16,7 +16,7 @@ export function useSubmitTrailConditionReport() {
       localUpdatedAt: timestamp,
     };
 
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     trailConditionReportsStore[id].set(newReport);
 
     return id;

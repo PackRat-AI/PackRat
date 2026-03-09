@@ -137,7 +137,7 @@ const createReportRoute = createRoute({
 trailConditionRoutes.openapi(createReportRoute, async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
-  const data = await c.req.json();
+  const data = c.req.valid('json');
 
   if (!data.id) return c.json({ error: 'Report ID is required' }, 400);
 
@@ -173,7 +173,90 @@ trailConditionRoutes.openapi(createReportRoute, async (c) => {
 });
 
 // ------------------------------
-// List My Reports Route
+// Update Report Route
+// ------------------------------
+const updateReportRoute = createRoute({
+  method: 'put',
+  path: '/{reportId}',
+  tags: ['Trail Conditions'],
+  summary: 'Update a trail condition report',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({ reportId: z.string().openapi({ example: 'tcr_123456' }) }),
+    body: {
+      content: {
+        'application/json': {
+          schema: CreateReportRequestSchema.omit({ id: true, localCreatedAt: true }).partial(),
+        },
+      },
+      required: true,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Report updated successfully',
+      content: { 'application/json': { schema: TrailConditionReportSchema } },
+    },
+    403: {
+      description: 'Forbidden',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Internal server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+trailConditionRoutes.openapi(updateReportRoute, async (c) => {
+  const auth = c.get('user');
+  const db = createDb(c);
+  const reportId = c.req.param('reportId');
+  const data = c.req.valid('json');
+
+  try {
+    const existing = await db.query.trailConditionReports.findFirst({
+      where: and(
+        eq(trailConditionReports.id, reportId),
+        eq(trailConditionReports.userId, auth.userId),
+      ),
+    });
+
+    if (!existing) return c.json({ error: 'Report not found or unauthorized' }, 403);
+
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if ('trailName' in data) updateData.trailName = data.trailName;
+    if ('trailRegion' in data) updateData.trailRegion = data.trailRegion ?? null;
+    if ('surface' in data) updateData.surface = data.surface;
+    if ('overallCondition' in data) updateData.overallCondition = data.overallCondition;
+    if ('hazards' in data) updateData.hazards = data.hazards ?? [];
+    if ('waterCrossings' in data) updateData.waterCrossings = data.waterCrossings ?? 0;
+    if ('waterCrossingDifficulty' in data)
+      updateData.waterCrossingDifficulty = data.waterCrossingDifficulty ?? null;
+    if ('notes' in data) updateData.notes = data.notes ?? null;
+    if ('photos' in data) updateData.photos = data.photos ?? [];
+    if ('localUpdatedAt' in data)
+      updateData.localUpdatedAt = data.localUpdatedAt ? new Date(data.localUpdatedAt) : new Date();
+
+    await db
+      .update(trailConditionReports)
+      .set(updateData)
+      .where(
+        and(eq(trailConditionReports.id, reportId), eq(trailConditionReports.userId, auth.userId)),
+      );
+
+    const updated = await db.query.trailConditionReports.findFirst({
+      where: eq(trailConditionReports.id, reportId),
+    });
+
+    return c.json(updated!, 200);
+  } catch (error) {
+    console.error('Error updating trail condition report:', error);
+    return c.json({ error: 'Failed to update trail condition report' }, 500);
+  }
+});
+
+// ------------------------------
 // ------------------------------
 const listMyReportsRoute = createRoute({
   method: 'get',
