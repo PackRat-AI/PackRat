@@ -139,16 +139,6 @@ trailConditionRoutes.openapi(verifyTrailConditionRoute, async (c) => {
   const db = createDb(c);
   const reportId = c.req.param('reportId');
 
-  // Check report exists and is not authored by the requesting user
-  const existing = await db.query.trailConditions.findFirst({
-    where: eq(trailConditions.id, reportId),
-    columns: { userId: true },
-  });
-
-  if (!existing) return c.json({ error: 'Trail condition report not found' }, 404);
-  if (existing.userId === auth.userId)
-    return c.json({ error: 'Cannot verify your own report' }, 403);
-
   try {
     const [updatedReport] = await db
       .update(trailConditions)
@@ -160,8 +150,15 @@ trailConditionRoutes.openapi(verifyTrailConditionRoute, async (c) => {
       .where(and(eq(trailConditions.id, reportId), ne(trailConditions.userId, auth.userId)))
       .returning();
 
-    if (!updatedReport) return c.json({ error: 'Trail condition report not found' }, 404);
-    return c.json(updatedReport, 200);
+    if (updatedReport) return c.json(updatedReport, 200);
+
+    // Update returned no row — determine whether the report is missing or authored by the requester
+    const report = await db.query.trailConditions.findFirst({
+      where: eq(trailConditions.id, reportId),
+      columns: { userId: true },
+    });
+    if (!report) return c.json({ error: 'Trail condition report not found' }, 404);
+    return c.json({ error: 'Cannot verify your own report' }, 403);
   } catch (error) {
     console.error('Error verifying trail condition:', error);
     return c.json({ error: 'Failed to verify trail condition report' }, 500);
@@ -205,16 +202,6 @@ trailConditionRoutes.openapi(markHelpfulRoute, async (c) => {
   const db = createDb(c);
   const reportId = c.req.param('reportId');
 
-  // Check report exists and is not authored by the requesting user
-  const existing = await db.query.trailConditions.findFirst({
-    where: eq(trailConditions.id, reportId),
-    columns: { userId: true },
-  });
-
-  if (!existing) return c.json({ error: 'Trail condition report not found' }, 404);
-  if (existing.userId === auth.userId)
-    return c.json({ error: 'Cannot mark your own report as helpful' }, 403);
-
   try {
     const [updatedReport] = await db
       .update(trailConditions)
@@ -225,8 +212,15 @@ trailConditionRoutes.openapi(markHelpfulRoute, async (c) => {
       .where(and(eq(trailConditions.id, reportId), ne(trailConditions.userId, auth.userId)))
       .returning();
 
-    if (!updatedReport) return c.json({ error: 'Trail condition report not found' }, 404);
-    return c.json(updatedReport, 200);
+    if (updatedReport) return c.json(updatedReport, 200);
+
+    // Update returned no row — determine whether the report is missing or authored by the requester
+    const report = await db.query.trailConditions.findFirst({
+      where: eq(trailConditions.id, reportId),
+      columns: { userId: true },
+    });
+    if (!report) return c.json({ error: 'Trail condition report not found' }, 404);
+    return c.json({ error: 'Cannot mark your own report as helpful' }, 403);
   } catch (error) {
     console.error('Error marking trail condition as helpful:', error);
     return c.json({ error: 'Failed to mark trail condition as helpful' }, 500);
