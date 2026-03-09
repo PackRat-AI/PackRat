@@ -27,7 +27,8 @@
     "password": "Password",
     "username": "Username",
     "default": "Default",
-    "high": "High"
+    "high": "High",
+    "submit": "Submit"
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -896,5 +897,37 @@
     "by": "By",
     "updated": "Updated",
     "all": "All"
+  },
+  "trailConditions": {
+    "title": "Trail Conditions",
+    "subtitle": "Crowdsourced trail conditions from recent hikers",
+    "report": "Report",
+    "reportCondition": "Report Condition",
+    "updated": "Updated",
+    "conditionHistory": "Condition History",
+    "reports": "reports",
+    "noResults": "No trails match the selected filter.",
+    "parking": "Parking",
+    "facilities": "Facilities",
+    "obstacles": "Obstacles",
+    "waterCrossings": "Water Crossings",
+    "fireDanger": "Fire Danger",
+    "bugActivity": "Bug Activity",
+    "vegetation": "Vegetation",
+    "overgrown": "Overgrown",
+    "surfaceCondition": "Surface Condition",
+    "trailSection": "Trail / Section Name",
+    "trailSectionPlaceholder": "e.g. Springer Mountain to Neels Gap",
+    "additionalNotes": "Additional Notes",
+    "notesPlaceholder": "Describe any other hazards or helpful details...",
+    "photos": "Photos",
+    "addPhoto": "Add Photo",
+    "comingSoon": "Coming Soon",
+    "photoUploadComingSoon": "Photo upload will be available in a future update.",
+    "missingSection": "Trail Section Required",
+    "missingSectionMessage": "Please enter the trail section name before submitting.",
+    "reportSubmitted": "Report Submitted",
+    "reportSubmittedMessage": "Thank you! Your trail condition report has been submitted.",
+    "disclaimer": "Trail conditions are crowdsourced from hikers and may not reflect current situations. Always check with local authorities for official trail status."
   }
 }
