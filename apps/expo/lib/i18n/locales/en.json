@@ -137,7 +137,7 @@
     "loginFailed": "Login Failed",
     "invalidEmailOrPassword": "Invalid email or password",
     "resumeSync": "Resume Sync",
-    "syncPaused": "Sync paused — please sign in again."
+    "syncPaused": "Sync paused \u2014 please sign in again."
   },
   "profile": {
     "profile": "Profile",
@@ -174,7 +174,8 @@
     "optionalPlaceholder": "optional",
     "usernameFootnote": "Choose a unique identifier for your account.",
     "notificationsFootnote": "Receive communication including announcements, marketing, recommendations, and updates about products, services, and software.",
-    "dangerZone": "Danger Zone"
+    "dangerZone": "Danger Zone",
+    "imageTooLarge": "Image must be smaller than 5 MB"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -218,10 +219,10 @@
     "lastUpdatedShort": "Last updated",
     "itemsCount": "{{count}} items",
     "sharingBenefits": "Sharing Benefits",
-    "distributeGroupGear": "• Distribute group gear among members to reduce individual pack weight",
-    "sharingBenefit1": "• Coordinate who brings shared items like tent, stove, and water filter",
-    "sharingBenefit2": "• See real-time updates when members modify the pack",
-    "sharingBenefit3": "• Plan together and ensure nothing essential is forgotten",
+    "distributeGroupGear": "\u2022 Distribute group gear among members to reduce individual pack weight",
+    "sharingBenefit1": "\u2022 Coordinate who brings shared items like tent, stove, and water filter",
+    "sharingBenefit2": "\u2022 See real-time updates when members modify the pack",
+    "sharingBenefit3": "\u2022 Plan together and ensure nothing essential is forgotten",
     "itemsInInventory": "{{count}} items in your inventory",
     "all": "All",
     "byCategory": "By Category",

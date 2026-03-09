@@ -6,7 +6,7 @@ import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfi
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
 import { Alert, Platform, View } from 'react-native';
-import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NameScreen() {
@@ -15,27 +15,22 @@ export default function NameScreen() {
   const user = useUser();
   const { updateProfile, isLoading } = useUpdateProfile();
 
+  const initialFirst = React.useRef(user?.firstName || '');
+  const initialLast = React.useRef(user?.lastName || '');
+
   const [form, setForm] = React.useState({
-    first: user?.firstName || '',
-    middle: '',
-    last: user?.lastName || '',
+    first: initialFirst.current,
+    last: initialLast.current,
   });
 
-  function onChangeText(type: 'first' | 'middle' | 'last') {
+  function onChangeText(type: 'first' | 'last') {
     return (text: string) => {
       setForm((prev) => ({ ...prev, [type]: text }));
     };
   }
 
-  function focusNext() {
-    KeyboardController.setFocusTo('next');
-  }
-
-  const originalFirst = user?.firstName || '';
-  const originalLast = user?.lastName || '';
-
   const canSave =
-    (form.first !== originalFirst || form.last !== originalLast) &&
+    (form.first !== initialFirst.current || form.last !== initialLast.current) &&
     !!form.first &&
     !!form.last;
 
@@ -94,23 +89,6 @@ export default function NameScreen() {
                 placeholder={t('profile.requiredPlaceholder')}
                 value={form.first}
                 onChangeText={onChangeText('first')}
-                onSubmitEditing={focusNext}
-                submitBehavior="submit"
-                enterKeyHint="next"
-              />
-            </FormItem>
-            <FormItem>
-              <TextField
-                textContentType="middleName"
-                autoComplete="name-middle"
-                label={Platform.select({ ios: undefined, default: t('profile.middleNameLabel') })}
-                leftView={Platform.select({
-                  ios: <LeftLabel>{t('profile.middleNameLabel')}</LeftLabel>,
-                })}
-                placeholder={t('profile.optionalPlaceholder')}
-                value={form.middle}
-                onChangeText={onChangeText('middle')}
-                onSubmitEditing={focusNext}
                 submitBehavior="submit"
                 enterKeyHint="next"
               />

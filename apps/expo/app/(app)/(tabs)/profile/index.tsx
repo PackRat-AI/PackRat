@@ -26,6 +26,7 @@ import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
+import * as FileSystem from 'expo-file-system';
 import { router, Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
@@ -33,6 +34,8 @@ import { Alert, Platform, SafeAreaView, TouchableOpacity, View } from 'react-nat
 
 const ESTIMATED_ITEM_SIZE =
   ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
+
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
 function Profile() {
   const user = useUser();
@@ -135,10 +138,21 @@ function ListHeaderComponent() {
     try {
       const image = await pickImage();
       if (!image) return;
+
+      // Validate file size before uploading (5 MB limit)
+      const info = await FileSystem.getInfoAsync(image.uri, { size: true });
+      if (info.exists && info.size > AVATAR_MAX_BYTES) {
+        Alert.alert(t('errors.somethingWentWrong'), t('profile.imageTooLarge'));
+        return;
+      }
+
       setIsUploading(true);
       const remoteFileName = await uploadImage(image.fileName, image.uri);
       if (remoteFileName) {
-        await updateProfile({ avatarUrl: remoteFileName });
+        const success = await updateProfile({ avatarUrl: remoteFileName });
+        if (!success) {
+          Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
+        }
       }
     } catch (err) {
       if (err instanceof Error && err.message !== 'Permission to access media library was denied') {
@@ -157,21 +171,22 @@ function ListHeaderComponent() {
             <AvatarImage source={{ uri: avatarUri }} />
           ) : null}
           <AvatarFallback>
-            {isUploading ? (
-              <ActivityIndicator />
-            ) : (
-              <Text
-                variant="largeTitle"
-                className={cn(
-                  'font-medium text-white dark:text-background',
-                  Platform.OS === 'ios' && 'dark:text-foreground',
-                )}
-              >
-                {initials}
-              </Text>
-            )}
+            <Text
+              variant="largeTitle"
+              className={cn(
+                'font-medium text-white dark:text-background',
+                Platform.OS === 'ios' && 'dark:text-foreground',
+              )}
+            >
+              {initials}
+            </Text>
           </AvatarFallback>
         </Avatar>
+        {isUploading && (
+          <View className="absolute inset-0 items-center justify-center rounded-full bg-black/40">
+            <ActivityIndicator color="white" />
+          </View>
+        )}
       </TouchableOpacity>
       <View className="p-1" />
       <Text variant="title1">{displayName}</Text>
