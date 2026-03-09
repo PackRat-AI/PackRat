@@ -8,7 +8,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
-import { useTripLocation } from '../store/tripLocationStore';
+import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
 import type { Trip } from '../types';
 
 const tripFormSchema = z.object({
@@ -56,13 +56,26 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
 
+  // Reset the shared location store on mount (to clear stale state from any
+  // previous edit session) and on unmount (to clean up for future forms), so
+  // that a location selected in one edit session never leaks into the next.
+  useEffect(() => {
+    tripLocationStore.set(null);
+    return () => {
+      tripLocationStore.set(null);
+    };
+  }, []);
+
   const formatDate = (isoString?: string) => isoString?.split('T')[0] || '';
 
   const form = useForm({
     defaultValues: {
       name: trip?.name || '',
       description: trip?.description || '',
-      location: location ?? undefined,
+      // Use the trip's own location as the form default, not the global location
+      // store. The store is only updated when the user explicitly picks a new
+      // location via the location-search screen.
+      location: trip?.location ?? undefined,
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
       packId: trip?.packId,
