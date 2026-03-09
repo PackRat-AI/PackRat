@@ -215,7 +215,16 @@ export type TranslationKeys =
   | 'experience.beginner'
   | 'experience.intermediate'
   | 'experience.advanced'
-  | 'experience.expert';
+  | 'experience.expert'
+  // Notifications
+  | 'notifications.tripReminders'
+  | 'notifications.tripRemindersSubtitle'
+  | 'notifications.loadingReminders'
+  | 'notifications.loadError'
+  | 'notifications.noUpcomingReminders'
+  | 'notifications.today'
+  | 'notifications.tomorrow'
+  | 'notifications.daysAway';
 
 /**
  * Type-safe translation function

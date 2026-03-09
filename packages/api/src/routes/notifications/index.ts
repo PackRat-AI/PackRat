@@ -4,7 +4,7 @@ import { packItems, trips } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm';
 
 const notificationsRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -73,21 +73,36 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
 
   try {
     const now = new Date();
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // Fetch upcoming trips (not deleted, start date in the future or today)
-    const upcomingTrips = await db.query.trips.findMany({
-      where: and(eq(trips.userId, auth.userId), eq(trips.deleted, false)),
+    // Use calendar-date noon as "today" boundary to avoid timezone edge cases
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Fetch upcoming trips filtered at DB level (no full table scan)
+    const futureTrips = await db.query.trips.findMany({
+      where: and(
+        eq(trips.userId, auth.userId),
+        eq(trips.deleted, false),
+        gte(trips.startDate, todayStart),
+        lte(trips.startDate, thirtyDaysFromNow),
+      ),
       with: { pack: true },
-      orderBy: (t) => t.startDate,
+      orderBy: (t) => [asc(t.startDate)],
     });
 
-    const futureTrips = upcomingTrips.filter((trip) => {
-      if (!trip.startDate) return false;
-      const start = new Date(trip.startDate);
-      const diffMs = start.getTime() - now.getTime();
-      const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      return diffDays >= 0 && diffDays <= 30;
-    });
+    // Batch-fetch pack item counts to avoid N+1 queries
+    const packIds = futureTrips.map((t) => t.packId).filter((id): id is string => !!id);
+    const allPackItems = packIds.length
+      ? await db
+          .select({ packId: packItems.packId, id: packItems.id })
+          .from(packItems)
+          .where(and(inArray(packItems.packId, packIds), eq(packItems.deleted, false)))
+      : [];
+
+    const itemCountByPackId = allPackItems.reduce<Record<string, number>>((acc, item) => {
+      acc[item.packId] = (acc[item.packId] ?? 0) + 1;
+      return acc;
+    }, {});
 
     const notifications: z.infer<typeof TripNotificationSchema>[] = [];
 
@@ -95,20 +110,19 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
       if (!trip.startDate) continue;
 
       const startDate = new Date(trip.startDate);
-      const diffMs = startDate.getTime() - now.getTime();
-      const daysUntilTrip = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
       const startDateIso = startDate.toISOString();
 
-      // Fetch pack item count for packing progress if pack is linked
-      let packItemCount = 0;
-      if (trip.packId) {
-        const items = await db
-          .select({ id: packItems.id })
-          .from(packItems)
-          .where(and(eq(packItems.packId, trip.packId), eq(packItems.deleted, false)));
-        packItemCount = items.length;
-      }
+      // Compare calendar dates (year/month/day only) to handle time-of-day correctly
+      const tripCalendarDate = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+      );
+      const daysUntilTrip = Math.round(
+        (tripCalendarDate.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24),
+      );
 
+      const packItemCount = trip.packId ? (itemCountByPackId[trip.packId] ?? 0) : 0;
       const packSuffix = (count: number) => `item${count !== 1 ? 's' : ''}`;
 
       if (daysUntilTrip === 0) {
@@ -153,7 +167,7 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
           priority: 'medium',
         });
       } else if (daysUntilTrip <= 3) {
-        // 2–3 days before: packing reminder + optional progress card
+        // 2–3 days before: packing reminder
         notifications.push({
           tripId: trip.id,
           tripName: trip.name,
@@ -180,20 +194,20 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
             : `Your trip is ${daysUntilTrip} days away. Now is a great time to review your gear list!`,
           priority: 'low',
         });
-      }
 
-      // Add a separate pack progress notification for trips 4–7 days out that have items
-      if (trip.packId && packItemCount > 0 && daysUntilTrip >= 4 && daysUntilTrip <= 7) {
-        notifications.push({
-          tripId: trip.id,
-          tripName: trip.name,
-          startDate: startDateIso,
-          daysUntilTrip,
-          type: 'pack_progress',
-          title: 'Check your packing progress',
-          message: `You have ${packItemCount} ${packSuffix(packItemCount)} in your pack for ${trip.name}. Go through your checklist to make sure everything is ready.`,
-          priority: 'low',
-        });
+        // Add a separate pack progress card when pack has items
+        if (trip.packId && packItemCount > 0) {
+          notifications.push({
+            tripId: trip.id,
+            tripName: trip.name,
+            startDate: startDateIso,
+            daysUntilTrip,
+            type: 'pack_progress',
+            title: 'Check your packing progress',
+            message: `You have ${packItemCount} ${packSuffix(packItemCount)} in your pack for ${trip.name}. Go through your checklist to make sure everything is ready.`,
+            priority: 'low',
+          });
+        }
       }
     }
 

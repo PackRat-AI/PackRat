@@ -905,14 +905,6 @@
     "noUpcomingReminders": "No upcoming trip reminders. Create a trip to get started!",
     "today": "Today",
     "tomorrow": "Tomorrow",
-    "daysAway": "{{count}} days away",
-    "packingReminders": "Packing Reminders",
-    "deviceAlerts": "Device Charging Alerts",
-    "tripReadiness": "Trip Readiness",
-    "noRemindersTitle": "All Clear!",
-    "noRemindersMessage": "You have no upcoming trips in the next 30 days.",
-    "viewTrip": "View Trip",
-    "upcomingTripsCount": "{{count}} upcoming trip",
-    "upcomingTripsCount_plural": "{{count}} upcoming trips"
+    "daysAway": "{{count}} days away"
   }
 }

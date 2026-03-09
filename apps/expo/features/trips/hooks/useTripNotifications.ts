@@ -1,3 +1,4 @@
+import axios from 'axios';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { useEffect, useState } from 'react';
 
@@ -44,7 +45,7 @@ export function useTripNotifications(): UseTripNotificationsResult {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refreshKey is intentionally used to trigger re-fetch
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     async function fetchReminders() {
       setIsLoading(true);
@@ -52,18 +53,17 @@ export function useTripNotifications(): UseTripNotificationsResult {
       try {
         const res = await axiosInstance.get<TripRemindersResponse>(
           '/api/notifications/trip-reminders',
+          { signal: controller.signal },
         );
-        if (!cancelled) {
-          setNotifications(res.data.notifications ?? []);
-          setUpcomingTripsCount(res.data.upcomingTripsCount ?? 0);
-        }
+        setNotifications(res.data.notifications ?? []);
+        setUpcomingTripsCount(res.data.upcomingTripsCount ?? 0);
       } catch (err) {
-        if (!cancelled) {
+        if (!axios.isCancel(err)) {
           const { message } = handleApiError(err);
           setError(message);
         }
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setIsLoading(false);
         }
       }
@@ -72,7 +72,7 @@ export function useTripNotifications(): UseTripNotificationsResult {
     fetchReminders();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [refreshKey]);
 

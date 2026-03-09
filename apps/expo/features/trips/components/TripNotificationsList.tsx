@@ -1,23 +1,24 @@
 import { Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, View } from 'react-native';
 import type { NotificationPriority, NotificationType, TripNotification } from '../hooks';
 
 interface TripNotificationsListProps {
   notifications: TripNotification[];
   isLoading: boolean;
   error: string | null;
+  onRetry?: () => void;
 }
 
-const NOTIFICATION_ICON: Record<NotificationType, string> = {
+const NOTIFICATION_ICON: Record<NotificationType, MaterialIconName> = {
   week_reminder: 'calendar-clock',
-  three_day_reminder: 'package-variant',
+  three_day_reminder: 'backpack',
   day_before: 'alarm',
-  morning_of: 'flag-checkered',
-  pack_progress: 'check-all',
-  device_charging: 'battery-charging',
+  morning_of: 'flag',
+  pack_progress: 'check-circle',
+  device_charging: 'lightning-bolt',
 };
 
 const PRIORITY_COLOR: Record<NotificationPriority, string> = {
@@ -30,6 +31,7 @@ export function TripNotificationsList({
   notifications,
   isLoading,
   error,
+  onRetry,
 }: TripNotificationsListProps) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
@@ -49,8 +51,13 @@ export function TripNotificationsList({
   if (error) {
     return (
       <View className="items-center py-6">
-        <Icon name="alert-circle-outline" size={24} color={colors.destructive} />
+        <Icon name="information-outline" size={24} color={colors.destructive} />
         <Text className="mt-2 text-sm text-muted-foreground">{t('notifications.loadError')}</Text>
+        {onRetry && (
+          <Pressable onPress={onRetry} className="mt-3">
+            <Text className="text-sm font-medium text-primary">{t('common.retry')}</Text>
+          </Pressable>
+        )}
       </View>
     );
   }
@@ -58,7 +65,7 @@ export function TripNotificationsList({
   if (notifications.length === 0) {
     return (
       <View className="items-center py-6">
-        <Icon name="bell-check-outline" size={28} color={colors.grey2} />
+        <Icon name="bell-outline" size={28} color={colors.grey2} />
         <Text className="mt-2 text-sm text-muted-foreground">
           {t('notifications.noUpcomingReminders')}
         </Text>
@@ -67,7 +74,7 @@ export function TripNotificationsList({
   }
 
   return (
-    <ScrollView scrollEnabled={false}>
+    <View>
       {notifications.map((notification) => (
         <Pressable
           key={`${notification.tripId}-${notification.type}`}
@@ -79,14 +86,7 @@ export function TripNotificationsList({
             <View
               className={`mt-0.5 h-9 w-9 items-center justify-center rounded-full ${PRIORITY_COLOR[notification.priority]}`}
             >
-              <Icon
-                name={
-                  (NOTIFICATION_ICON[notification.type] as Parameters<typeof Icon>[0]['name']) ??
-                  'bell-outline'
-                }
-                size={18}
-                color="white"
-              />
+              <Icon name={NOTIFICATION_ICON[notification.type]} size={18} color="white" />
             </View>
 
             {/* Content */}
@@ -115,6 +115,6 @@ export function TripNotificationsList({
           </View>
         </Pressable>
       ))}
-    </ScrollView>
+    </View>
   );
 }
