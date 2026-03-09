@@ -29,6 +29,7 @@ import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailCon
 import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
 import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
+import { VoiceCommandsTile } from 'expo-app/features/voice/components/VoiceCommandsTile';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
@@ -128,6 +129,11 @@ const tileInfo = {
     keywords: ['guides', 'help', 'tutorial', 'documentation', 'learn'],
     component: GuidesTile,
   },
+  'voice-commands': {
+    title: 'Voice Commands',
+    keywords: ['voice', 'microphone', 'hands-free', 'navigation', 'gps', 'speak', 'commands'],
+    component: VoiceCommandsTile,
+  },
 };
 
 type TileName = keyof typeof tileInfo;
@@ -194,6 +200,7 @@ export default function DashboardScreen() {
     ...(featureFlags.enablePackTemplates ? ['pack-templates'] : []),
     'gap 4',
     'guides',
+    ...(featureFlags.enableVoiceCommands ? ['voice-commands'] : []),
   ]).current;
 
   const filteredTiles = useMemo(() => {
