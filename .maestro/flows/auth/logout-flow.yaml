@@ -1,0 +1,37 @@
+appId: com.andrewbierman.packrat
+---
+# Logout Flow: Navigate to profile and sign out
+- waitForAnimationToEnd
+
+# Navigate to the Profile tab
+- tapOn:
+    text: "Profile"
+
+- waitForAnimationToEnd
+
+# Scroll down to find the sign out button if needed
+- scrollUntilVisible:
+    element:
+      text: "Sign Out"
+    direction: DOWN
+
+# Tap Sign Out
+- tapOn:
+    text: "Sign Out"
+
+- waitForAnimationToEnd
+
+# Confirm logout in dialog if present
+- runFlow:
+    when:
+      visible:
+        text: "Sign Out"
+    commands:
+      - tapOn:
+          text: "Sign Out"
+
+- waitForAnimationToEnd
+
+# Assert we are back on the auth screen
+- assertVisible:
+    text: "Sign In"

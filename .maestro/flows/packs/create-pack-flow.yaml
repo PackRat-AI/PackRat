@@ -1,0 +1,48 @@
+appId: com.andrewbierman.packrat
+---
+# Create Pack Flow: Navigate to packs tab and create a new pack
+- waitForAnimationToEnd
+
+# Navigate to the Packs tab
+- tapOn:
+    text: "Packs"
+
+- waitForAnimationToEnd
+
+# Tap the "Create New Pack" empty-state button if visible, otherwise use header "+" button
+- runFlow:
+    when:
+      visible:
+        text: "Create New Pack"
+    commands:
+      - tapOn:
+          text: "Create New Pack"
+- runFlow:
+    when:
+      notVisible:
+        text: "Create Pack"
+    commands:
+      - tapOn:
+          id: "create-pack-button"
+
+- waitForAnimationToEnd
+
+# Fill in Pack Name
+- tapOn:
+    text: "Pack Name"
+- typeText: "E2E Test Pack"
+
+# Fill in Description
+- tapOn:
+    text: "Description"
+- typeText: "Created by Maestro E2E test"
+
+# Submit the form
+- tapOn:
+    text: "Create Pack"
+
+- waitForAnimationToEnd
+
+# Assert the pack was created - we should see the pack name in the details or list
+- assertVisible:
+    text: "E2E Test Pack"

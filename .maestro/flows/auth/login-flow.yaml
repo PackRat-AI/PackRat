@@ -1,0 +1,37 @@
+appId: com.andrewbierman.packrat
+---
+# Login Flow: Navigate to auth screen and sign in with email and password
+- launchApp
+
+# Wait for the auth entry screen to appear
+- waitForAnimationToEnd
+
+# Tap "Sign In" to go to the email login screen
+- tapOn:
+    text: "Sign In"
+
+# Wait for login form to appear
+- waitForAnimationToEnd
+
+# Fill in the email field
+- tapOn:
+    text: "Email"
+- typeText: ${TEST_EMAIL}
+
+# Fill in the password field
+- tapOn:
+    text: "Password"
+- typeText: ${TEST_PASSWORD}
+
+# Submit login form
+- tapOn:
+    text: "Continue"
+
+# Wait for navigation to complete
+- waitForAnimationToEnd
+
+# Assert we are now logged in by checking for a main app screen element
+- assertVisible:
+    text: "Packs"
+- assertVisible:
+    text: "Trips"
