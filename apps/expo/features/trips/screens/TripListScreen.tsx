@@ -4,7 +4,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
@@ -26,6 +26,19 @@ export function TripsListScreen() {
   const { t } = useTranslation();
   const trips = useTrips();
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const [searchValue, setSearchValue] = useState('');
+
+  const filteredTrips = useMemo(() => {
+    const trimmed = searchValue.trim();
+    if (!trimmed) return trips;
+    const lower = trimmed.toLowerCase();
+    return trips.filter(
+      (trip) =>
+        trip.name.toLowerCase().includes(lower) ||
+        (trip.description ?? '').toLowerCase().includes(lower) ||
+        (trip.location?.name ?? '').toLowerCase().includes(lower),
+    );
+  }, [trips, searchValue]);
 
   const handleTripPress = useCallback(
     (trip: Trip) => {
@@ -39,6 +52,13 @@ export function TripsListScreen() {
   };
 
   const renderEmptyState = () => {
+    if (searchValue.trim() && trips.length > 0) {
+      return (
+        <View className="flex-1 items-center justify-center p-8">
+          <Text className="text-center text-muted-foreground">{t('trips.noSearchResults')}</Text>
+        </View>
+      );
+    }
     return (
       <View className="flex-1 items-center justify-center p-8">
         <View className="mb-4 rounded-full bg-muted p-4">
@@ -61,7 +81,7 @@ export function TripsListScreen() {
         searchBar={{
           iosHideWhenScrolling: true,
           ref: asNonNullableRef(searchBarRef),
-          onChangeText() {}, // no search filtering
+          onChangeText: setSearchValue,
           content: (
             <View className="flex-1 items-center justify-center">
               <Text>{t('trips.searchTrips')}</Text>
@@ -76,7 +96,7 @@ export function TripsListScreen() {
       />
 
       <FlatList
-        data={trips || []}
+        data={filteredTrips}
         keyExtractor={(trip) => trip.id}
         renderItem={({ item: trip }) => (
           <View className="px-4 pt-4">
