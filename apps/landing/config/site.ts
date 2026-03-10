@@ -322,7 +322,7 @@ export const siteConfig = {
   download: {
     title: 'Ready for your next adventure?',
     subtitle: 'Download PackRat today and start planning your outdoor journeys with confidence.',
-    appStoreLink: 'https://apps.apple.com/ru/app/packrat-ai/id6499243187?l=en-GB',
+    appStoreLink: 'https://apps.apple.com/us/app/packrat-ai/id6499243187',
     googlePlayLink: 'https://play.google.com/store/apps/details?id=com.packratai.mobile&pli=1',
     image: '/download-now-ios-image.png',
     features: [
