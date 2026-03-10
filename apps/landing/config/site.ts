@@ -219,7 +219,7 @@ export const siteConfig = {
   integrations: {
     title: 'Connects With the Tools You Already Use',
     subtitle:
-      'PackRat works with your favourite outdoor and weather services so everything is in one place.',
+      'PackRat works with your favorite outdoor and weather services so everything is in one place.',
     items: [
       {
         id: 'weather',

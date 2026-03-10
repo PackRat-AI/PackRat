@@ -40,7 +40,7 @@ export default function AboutPage() {
           <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">About PackRat</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             We&apos;re a team of outdoor enthusiasts on a mission to make every adventure safer,
-            more organised, and more enjoyable — completely free.
+            more organized, and more enjoyable — completely free.
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export default function AboutPage() {
             to hear from you.
           </p>
           <p className="text-muted-foreground">
-            Send your resume and a note about your favourite trail to{' '}
+            Send your resume and a note about your favorite trail to{' '}
             <Link
               href="mailto:careers@packratai.com"
               className="text-primary font-medium hover:underline"
