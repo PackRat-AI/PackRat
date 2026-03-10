@@ -34,7 +34,8 @@ function CatalogItemsScreen() {
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
 
   const isSearching = searchValue.trim().length > 0;
-  const isQueryReady = debouncedSearchValue.trim().length > 0;
+  const trimmedQuery = debouncedSearchValue.trim();
+  const isQueryReady = trimmedQuery.length > 0;
 
   const {
     data: categories,
@@ -61,7 +62,7 @@ function CatalogItemsScreen() {
     data: vectorResult,
     isLoading: isVectorLoading,
     error: vectorError,
-  } = useVectorSearch({ query: debouncedSearchValue, limit: 10 });
+  } = useVectorSearch({ query: trimmedQuery, limit: 10 });
   const searchResults: CatalogItem[] = vectorResult?.items ?? [];
 
   const paginatedItems: CatalogItem[] = (
