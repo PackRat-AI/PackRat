@@ -119,13 +119,13 @@ export function TripCard({ trip, onPress }: TripCardProps) {
         </View>
 
         {/* Dates */}
-        {(trip.startDate || trip.endDate) && (
+        {(trip.startDate != null || trip.endDate != null) && (
           <View className="flex-row items-center mt-1">
             <Icon name="calendar-month" size={14} color={colors.primary} />
             <Text className="ml-1 text-sm text-muted-foreground">
-              {formatLocalDate(trip.startDate)}
-              {' → '}
-              {formatLocalDate(trip.endDate)}
+              {trip.startDate != null && trip.endDate != null
+                ? `${formatLocalDate(trip.startDate)} → ${formatLocalDate(trip.endDate)}`
+                : formatLocalDate(trip.startDate ?? trip.endDate)}
             </Text>
           </View>
         )}

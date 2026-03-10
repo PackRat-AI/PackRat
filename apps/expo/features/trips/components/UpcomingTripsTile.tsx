@@ -18,13 +18,17 @@ export function UpcomingTripsTile() {
   // ✅ get all trips
   const trips = useTrips();
 
-  // ✅ derive upcoming trips (in future)
+  // ✅ derive upcoming trips (today or in future)
   const upcomingTrips = useMemo(
     () =>
       trips.filter((t) => {
         if (!t.startDate) return false;
         const parsed = parseLocalDate(t.startDate);
-        return parsed != null && parsed > new Date();
+        if (parsed == null) return false;
+        // Compare against start-of-today so same-day trips are included
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        return parsed >= startOfToday;
       }),
     [trips],
   );
