@@ -1,38 +1,29 @@
-FROM oven/bun:1 as builder
+FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-# Copy root package files for workspace setup
-COPY package.json bun.lockb bunfig.toml ./
-
-# Copy the TikTok service package
-COPY packages/tiktok-service/package.json ./packages/tiktok-service/package.json
+# Copy container source code and package files
+COPY container_src/package.json ./
+COPY container_src/server.ts ./
 
 # Install dependencies
-RUN bun install --frozen-lockfile
-
-# Copy source code
-COPY packages/tiktok-service/src ./packages/tiktok-service/src
+RUN bun install
 
 # Build the service
-WORKDIR /app/packages/tiktok-service
-RUN bun run build
+RUN bun build server.ts --outdir dist --target bun
 
-# Production image with Node.js runtime
-FROM node:18-alpine
+# Production image
+FROM oven/bun:1-slim
 
 WORKDIR /app
 
 # Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S tiktok -u 1001
+RUN addgroup --gid 1001 nodejs && \
+    adduser --uid 1001 --gid 1001 --disabled-password tiktok
 
-# Copy built application and package.json
-COPY --from=builder --chown=tiktok:nodejs /app/packages/tiktok-service/dist ./
-COPY --from=builder --chown=tiktok:nodejs /app/packages/tiktok-service/package.json ./
-
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Copy built application
+COPY --from=builder --chown=tiktok:nodejs /app/dist ./
+COPY --from=builder --chown=tiktok:nodejs /app/node_modules ./node_modules
 
 # Switch to non-root user
 USER tiktok
@@ -42,6 +33,6 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "http.get('http://localhost:8080/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })" || exit 1
+  CMD bun -e "fetch('http://localhost:8080/health').then(r => process.exit(r.ok ? 0 : 1))" || exit 1
 
-CMD ["node", "index.js"]
+CMD ["bun", "run", "server.js"]
