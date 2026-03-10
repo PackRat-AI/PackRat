@@ -3,6 +3,7 @@ FROM oven/bun:1 AS builder
 WORKDIR /app
 
 # Copy container source code and package files
+# Build context is packages/api/, paths are relative to that
 COPY container_src/tiktok/package.json ./
 COPY container_src/tiktok/server.ts ./
 

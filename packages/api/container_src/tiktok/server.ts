@@ -228,7 +228,8 @@ async function fetchTikTokPostData(
 
 // Root endpoint
 app.get('/', (c) => {
-  const instanceId = process.env.CLOUDFLARE_DURABLE_OBJECT_ID || 'unknown';
+  // Container instance ID (provided by Cloudflare Container runtime)
+  const instanceId = process.env.CLOUDFLARE_CONTAINER_ID || 'unknown';
   return c.json({
     service: 'tiktok-container',
     instanceId,
