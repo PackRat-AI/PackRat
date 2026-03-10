@@ -1841,7 +1841,8 @@ async function seed() {
   }
   const argUserId = argUserIdRaw;
 
-  let db: ReturnType<typeof drizzlePg> | ReturnType<typeof drizzle>;
+  // biome-ignore lint/suspicious/noExplicitAny: drizzle union types are incompatible; cast to typed seedDb below
+  let db: any;
   let pgClient: Client | undefined;
 
   if (isStandardPostgresUrl(dbUrl)) {
@@ -1856,8 +1857,8 @@ async function seed() {
   }
 
   try {
-    // Use a typed reference to avoid repeating the type cast
-    const seedDb = db as ReturnType<typeof drizzlePg>;
+    // Use a typed reference so query.* accessors are available
+    const seedDb = db as ReturnType<typeof drizzlePg<typeof schema>>;
 
     // Resolve admin user ID
     let adminUserId: number;
