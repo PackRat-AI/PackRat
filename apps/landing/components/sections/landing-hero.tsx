@@ -116,6 +116,16 @@ export default function LandingHero() {
               </Button>
             </motion.div>
 
+            {siteConfig.hero.socialProof && (
+              <motion.p
+                className="text-xs text-muted-foreground flex items-center gap-1"
+                variants={itemVariants}
+              >
+                <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
+                {siteConfig.hero.socialProof}
+              </motion.p>
+            )}
+
             <motion.div
               className="flex flex-col sm:flex-row items-center gap-6 pt-4"
               variants={itemVariants}

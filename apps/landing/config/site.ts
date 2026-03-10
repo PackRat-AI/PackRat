@@ -84,12 +84,12 @@ export const siteConfig = {
   // CTAs
   cta: {
     primary: {
-      text: 'Download Now',
+      text: 'Download Free',
       href: '#download',
     },
     secondary: {
-      text: 'Learn More',
-      href: '#features',
+      text: 'See How It Works',
+      href: '#how-it-works',
     },
     tertiary: {
       text: 'Explore Guides',
@@ -99,23 +99,24 @@ export const siteConfig = {
 
   // Hero section
   hero: {
-    badge: 'Your outdoor adventure companion',
-    title: 'Pack smarter. Adventure further.',
+    badge: '100% Free · AI-Powered Packing Lists',
+    title: 'Stop overpacking. Start adventuring.',
     subtitle:
-      'Never forget essential gear again. PackRat helps you plan, organize, and track your outdoor adventures with ease.',
+      "PackRat's AI builds your perfect packing list based on your trip, the weather, and your gear — so you carry exactly what you need and nothing you don't.",
     image: '/hero-app-preview.png',
+    socialProof: 'Trusted by 10,000+ outdoor enthusiasts · 4.8★ rating · Works offline',
     stats: [
       {
         value: '10K+',
         label: 'Active Users',
       },
       {
-        value: '4.8',
-        label: 'App Store Rating',
+        value: '4.8★',
+        label: 'App Rating',
       },
       {
-        value: '500+',
-        label: 'Trails Mapped',
+        value: '100%',
+        label: 'Free Forever',
       },
     ],
   },
@@ -126,7 +127,7 @@ export const siteConfig = {
       id: 'packing-lists',
       title: 'Smart Packing Lists',
       description:
-        'Create and customize packing lists based on trip type, duration, and weather conditions.',
+        "Never forget essential gear — or carry stuff you don't need. PackRat's AI tailors your list to your exact trip.",
       icon: 'CheckSquare',
       color: '#0F766E',
       image: '/feature-packing-list.png',
@@ -135,7 +136,7 @@ export const siteConfig = {
       id: 'trail-maps',
       title: 'Trail Maps & Navigation',
       description:
-        'Access offline trail maps and navigation to stay on track even without cell service.',
+        'Find your trail and navigate it offline. Download maps before you go and stay on track even with no signal.',
       icon: 'Map',
       color: '#F97316',
       image: '/feature-trail-maps.png',
@@ -153,7 +154,7 @@ export const siteConfig = {
       id: 'trip-planning',
       title: 'Trip Planning',
       description:
-        'Plan routes, set waypoints, and estimate hiking times with our advanced planning tools.',
+        'Plan your perfect route from start to finish — set waypoints, estimate hiking times, and share with your group.',
       icon: 'Compass',
       color: '#8B5CF6',
       image: '/feature-trip-planning.png',
@@ -162,7 +163,7 @@ export const siteConfig = {
       id: 'recommendations',
       title: 'Trail Recommendations',
       description:
-        'Discover new trails and adventures based on your preferences and experience level.',
+        'Discover trails matched to your fitness level and experience — no more guessing if a trail is right for you.',
       icon: 'Mountain',
       color: '#EC4899',
       image: '/feature-recommendations.png',
@@ -171,7 +172,7 @@ export const siteConfig = {
       id: 'weather',
       title: 'Weather Integration',
       description:
-        'Get real-time weather forecasts for your planned routes to prepare accordingly.',
+        "Pack for the weather you'll actually get. Real-time forecasts for your exact route and dates.",
       icon: 'Cloud',
       color: '#3B82F6',
       image: '/feature-weather.png',
@@ -179,7 +180,8 @@ export const siteConfig = {
     {
       id: 'offline',
       title: 'Offline Access',
-      description: "Access all your trip information offline when you're out in the wilderness.",
+      description:
+        'Your packing lists, maps, and trip details are always available — even deep in the backcountry without signal.',
       icon: 'Download',
       color: '#10B981',
       image: '/feature-offline.png',
@@ -215,9 +217,9 @@ export const siteConfig = {
 
   // Integrations section
   integrations: {
-    title: 'Seamless Integrations',
+    title: 'Connects With the Tools You Already Use',
     subtitle:
-      'PackRat connects with your favorite outdoor and weather services for a complete experience.',
+      'PackRat works with your favorite outdoor and weather services so everything is in one place.',
     items: [
       {
         id: 'weather',
@@ -280,7 +282,7 @@ export const siteConfig = {
         name: 'Mike Thompson',
         role: 'Backpacker',
         content:
-          'PackRat has completely changed how I prepare for hikes. I used to always forget something important, but not anymore! The weather integration is particularly useful for planning multi-day trips.',
+          'PackRat has completely changed how I prepare for hikes. I used to always forget something important, but not anymore! The AI packing list is spot-on every single time.',
         initials: 'MT',
         avatar: '/avatar-mike.jpg',
         rating: 5,
@@ -288,9 +290,9 @@ export const siteConfig = {
       {
         id: 2,
         name: 'Sarah Linden',
-        role: 'Trail Runner',
+        role: 'Thru-Hiker · PCT 2024',
         content:
-          'The offline maps feature saved me when I lost cell service on a remote trail. This app is a must-have for any outdoor enthusiast. I love how I can track my routes and share them with friends.',
+          "I used PackRat for my entire PCT thru-hike. The offline maps saved me multiple times in remote sections with zero signal. Absolutely essential gear — and it's free!",
         initials: 'SL',
         avatar: '/avatar-sarah.jpg',
         rating: 5,
@@ -300,17 +302,17 @@ export const siteConfig = {
         name: 'James Rodriguez',
         role: 'Weekend Camper',
         content:
-          'As someone who camps occasionally, the smart packing lists are perfect. They suggest exactly what I need without overwhelming me. The interface is intuitive and the recommendations are spot-on.',
+          'As someone who camps with the family a few times a year, the smart packing lists are perfect. No more frantic last-minute checks — PackRat has everything covered.',
         initials: 'JR',
         avatar: '/avatar-james.jpg',
-        rating: 4,
+        rating: 5,
       },
       {
         id: 4,
         name: 'Emily Chen',
         role: 'Hiking Guide',
         content:
-          'I use PackRat to plan trips for my guided hiking groups. The ability to share packing lists and routes with clients beforehand has made my job so much easier. Highly recommended for professionals!',
+          'I use PackRat to plan trips for my guided hiking groups. Sharing packing lists with clients beforehand has made my job so much easier. Highly recommend for professionals!',
         initials: 'EC',
         avatar: '/avatar-emily.jpg',
         rating: 5,
@@ -326,10 +328,10 @@ export const siteConfig = {
     googlePlayLink: 'https://play.google.com/store/apps/details?id=com.packratai.mobile&pli=1',
     image: '/download-now-ios-image.png',
     features: [
-      'Free basic version',
-      'Premium features from $4.99/month',
-      '7-day free trial',
-      'Cancel anytime',
+      'Free — no hidden fees',
+      'Works offline',
+      'AI-powered packing lists',
+      'Regular updates',
     ],
   },
 
@@ -338,7 +340,7 @@ export const siteConfig = {
     {
       question: 'Is PackRat free to use?',
       answer:
-        'PackRat offers a free version with basic features. Premium features are available with a subscription for $4.99/month or $39.99/year.',
+        'Yes — PackRat is completely free. No subscriptions, no in-app purchases, no ads. We are focused on growing our community of outdoor enthusiasts.',
     },
     {
       question: 'Does PackRat work offline?',
