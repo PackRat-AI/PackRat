@@ -29,8 +29,9 @@ export function TripsListScreen() {
   const [searchValue, setSearchValue] = useState('');
 
   const filteredTrips = useMemo(() => {
-    if (!searchValue.trim()) return trips;
-    const lower = searchValue.toLowerCase();
+    const trimmed = searchValue.trim();
+    if (!trimmed) return trips;
+    const lower = trimmed.toLowerCase();
     return trips.filter(
       (trip) =>
         trip.name.toLowerCase().includes(lower) ||
