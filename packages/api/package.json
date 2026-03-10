@@ -1,8 +1,7 @@
 {
   "name": "@packrat/api",
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --prefix name --prefix-colors cyan,magenta --names api,tiktok-service \"wrangler dev -e=dev\" \"bun run --cwd ../tiktok-service dev\"",
-    "dev:wrangler": "wrangler dev -e=dev",
+    "dev": "wrangler dev -e=dev",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
     "validate:cloudflare-env": "bun scripts/validate-cloudflare-api-env.ts",
@@ -19,6 +18,7 @@
     "@ai-sdk/perplexity": "^2.0.1",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "@cloudflare/containers": "^0.0.30",
     "@hono/sentry": "^1.2.2",
     "@hono/zod-openapi": "^0.19.2",
     "@hono/zod-validator": "^0.4.3",

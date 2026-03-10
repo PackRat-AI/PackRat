@@ -1,6 +1,7 @@
 import type { MessageBatch } from '@cloudflare/workers-types';
 import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { TikTokContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
@@ -72,6 +73,9 @@ app.get(
 app.get('/', (c) => {
   return c.text('PackRat API is running!');
 });
+
+// Export the TikTokContainer class for Cloudflare Container binding
+export { TikTokContainer };
 
 export default {
   fetch: app.fetch,

@@ -1,4 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
+import { getContainer } from '@cloudflare/containers';
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packTemplateItems, packTemplates } from '@packrat/api/db/schema';
@@ -26,43 +27,53 @@ const SYSTEM_PROMPT = `You are an expert outdoor gear analyst. You will be shown
 Focus on items that would realistically appear in an outdoor adventure packing list. Be thorough — identify every item you can see or infer.`;
 
 /**
- * Fetch TikTok slideshow data using TikTok Container Service
+ * Fetch TikTok slideshow data using TikTok Container binding
  */
 async function fetchTikTokPostData(
   c: Context<{ Bindings: Env; Variables: Variables }>,
   url: string,
 ): Promise<{ imageUrls: string[]; caption?: string; contentId?: string }> {
   try {
-    const { TIKTOK_SERVICE_URL } = getEnv(c);
+    const { TIKTOK_CONTAINER } = getEnv(c);
 
-    const response = await fetch(`${TIKTOK_SERVICE_URL}/import`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        tiktokUrl: url,
+    // Get the container instance using the binding
+    const container = getContainer(TIKTOK_CONTAINER);
+
+    // Make request to the container's /import endpoint
+    const response = await container.fetch(
+      new Request('http://container/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tiktokUrl: url,
+        }),
       }),
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`TikTok service error (${response.status}): ${errorText}`);
+      throw new Error(`TikTok container error (${response.status}): ${errorText}`);
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as {
+      success: boolean;
+      data?: { imageUrls: string[]; caption?: string; contentId?: string };
+      error?: string;
+    };
 
     if (!result.success) {
-      throw new Error(result.error || 'TikTok service returned failure');
+      throw new Error(result.error || 'TikTok container returned failure');
     }
 
     return {
-      imageUrls: result.data.imageUrls,
-      caption: result.data.caption,
-      contentId: result.data.contentId,
+      imageUrls: result.data?.imageUrls || [],
+      caption: result.data?.caption,
+      contentId: result.data?.contentId,
     };
   } catch (error) {
-    console.error('TikTok service call failed:', error);
+    console.error('TikTok container call failed:', error);
     throw new Error(
       `Failed to fetch TikTok data: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );

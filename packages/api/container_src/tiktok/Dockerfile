@@ -3,8 +3,8 @@ FROM oven/bun:1 AS builder
 WORKDIR /app
 
 # Copy container source code and package files
-COPY container_src/package.json ./
-COPY container_src/server.ts ./
+COPY container_src/tiktok/package.json ./
+COPY container_src/tiktok/server.ts ./
 
 # Install dependencies
 RUN bun install
