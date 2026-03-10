@@ -35,8 +35,14 @@ export interface GeneratedTemplate extends PackTemplateInStore {
   }>;
 }
 
+export interface TikTokImportError extends Error {
+  status?: number;
+  code?: string;
+  existingTemplateId?: string;
+}
+
 export function useGenerateTemplateFromTikTok() {
-  return useMutation<GeneratedTemplate, Error, GenerateFromTikTokInput>({
+  return useMutation<GeneratedTemplate, TikTokImportError, GenerateFromTikTokInput>({
     mutationFn: async (input) => {
       try {
         const response = await axiosInstance.post(
@@ -46,8 +52,30 @@ export function useGenerateTemplateFromTikTok() {
         );
         return response.data;
       } catch (error) {
-        const { message } = handleApiError(error);
-        throw new Error(`Failed to generate template from TikTok: ${message}`);
+        const { message, status } = handleApiError(error);
+
+        // Extract error code and additional data from API response
+        let errorCode: string | undefined;
+        let existingTemplateId: string | undefined;
+
+        if (error && typeof error === 'object' && 'response' in error) {
+          const errorData = (
+            error as { response?: { data?: { code?: string; existingTemplateId?: string } } }
+          ).response?.data;
+          if (errorData) {
+            errorCode = errorData.code;
+            existingTemplateId = errorData.existingTemplateId;
+          }
+        }
+
+        const tikTokError = new Error(
+          `Failed to generate template from TikTok: ${message}`,
+        ) as TikTokImportError;
+        tikTokError.status = status;
+        tikTokError.code = errorCode;
+        tikTokError.existingTemplateId = existingTemplateId;
+
+        throw tikTokError;
       }
     },
     onSuccess: (data) => {

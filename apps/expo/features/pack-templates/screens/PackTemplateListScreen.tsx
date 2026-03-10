@@ -1,3 +1,4 @@
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
 import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
@@ -7,12 +8,13 @@ import type { PackCategory } from 'expo-app/features/packs/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PackTemplateCard } from '../components/PackTemplateCard';
+import TemplateCreationOptions from '../components/TemplateCreationOptions';
 import { usePackTemplates } from '../hooks';
 import { activeTemplateFilterAtom, templateSearchValueAtom } from '../packTemplateListAtoms';
 import type { PackTemplate } from '../types';
@@ -22,23 +24,12 @@ type FilterOption = {
   value: PackCategory | 'all';
 };
 
-function CreateTemplateIconButton() {
+function CreateTemplateIconButton({ onPress }: { onPress: () => void }) {
   const { colors } = useColorScheme();
-  return (
-    <Link href="/pack-templates/new" asChild>
-      <Pressable>
-        <Icon name="plus" color={colors.foreground} />
-      </Pressable>
-    </Link>
-  );
-}
 
-function TikTokImportIconButton() {
-  const router = useRouter();
-  const { colors } = useColorScheme();
   return (
-    <Pressable onPress={() => router.push('/pack-templates/import-from-tiktok')} className="mr-3">
-      <Icon name="import" color={colors.foreground} />
+    <Pressable onPress={onPress}>
+      <Icon name="plus" color={colors.foreground} />
     </Pressable>
   );
 }
@@ -50,9 +41,10 @@ export function PackTemplateListScreen() {
   const [activeFilter, setActiveFilter] = useAtom(activeTemplateFilterAtom);
   const { isAuthenticated } = useAuth();
   const user = useUser();
-  const isAdmin = user?.role === 'ADMIN';
+  const _isAdmin = user?.role === 'ADMIN';
   const [selectedTemplateTypeIndex, setSelectedTemplateTypeIndex] = useState(0);
   const { t } = useTranslation();
+  const templateOptionsRef = useRef<BottomSheetModal>(null);
 
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
 
@@ -130,8 +122,7 @@ export function PackTemplateListScreen() {
         }}
         rightView={() => (
           <View className="flex-row items-center">
-            {isAdmin && <TikTokImportIconButton />}
-            <CreateTemplateIconButton />
+            <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
           </View>
         )}
       />
@@ -196,6 +187,7 @@ export function PackTemplateListScreen() {
         }
         // contentContainerStyle={{ flexGrow: 1 }}
       />
+      <TemplateCreationOptions ref={templateOptionsRef} />
     </SafeAreaView>
   );
 }

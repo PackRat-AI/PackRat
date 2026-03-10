@@ -48,6 +48,9 @@ export const apiEnvSchema = z.object({
   PACKRAT_GUIDES_RAG_NAME: z.string(),
   PACKRAT_GUIDES_BASE_URL: z.string().url(),
 
+  // TikTok Service
+  TIKTOK_SERVICE_URL: z.string().url(),
+
   // Cloudflare bindings - validated as any, typed properly below
   CF_VERSION_METADATA: z.unknown(),
   AI: z.unknown(),
@@ -66,6 +69,7 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
   NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://user:pass@localhost/db'),
   JWT_SECRET: z.string().optional().default('secret'),
+  TIKTOK_SERVICE_URL: z.string().url().optional().default('http://localhost:8080'),
   CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
   AI: z.unknown().optional(),
   PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),

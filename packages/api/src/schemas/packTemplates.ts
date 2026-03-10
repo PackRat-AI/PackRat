@@ -60,6 +60,14 @@ export const PackTemplateSchema = z
       example: '2024-01-01T12:00:00Z',
       description: 'When the template was last updated on the server',
     }),
+    contentSource: z.string().nullable().openapi({
+      example: 'tiktok',
+      description: 'Source platform where this template was imported from',
+    }),
+    contentId: z.string().nullable().openapi({
+      example: '1234567890',
+      description: 'ID of the content from the source platform',
+    }),
   })
   .openapi('PackTemplate');
 
@@ -305,17 +313,6 @@ export const GenerateFromTikTokRequestSchema = z
     tiktokUrl: z.string().url().openapi({
       example: 'https://www.tiktok.com/@user/video/1234567890',
       description: 'The TikTok slideshow URL',
-    }),
-    imageUrls: z
-      .array(z.string().url())
-      .min(1)
-      .openapi({
-        example: ['https://example.com/slide1.jpg', 'https://example.com/slide2.jpg'],
-        description: 'Array of image URLs extracted from the TikTok slideshow',
-      }),
-    caption: z.string().optional().openapi({
-      example: 'My ultralight backpacking kit for the PCT',
-      description: 'The TikTok caption or description to provide additional context',
     }),
     name: z.string().optional().openapi({
       example: 'PCT Ultralight Kit',

@@ -1,0 +1,23 @@
+{
+  "name": "@packrat/tiktok-service",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "start": "node dist/index.js",
+    "docker:build": "docker build -t packrat-tiktok-service .",
+    "docker:run": "docker run -p 8080:8080 packrat-tiktok-service"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@tobyg74/tiktok-api-dl": "^1.0.0",
+    "@aws-sdk/client-s3": "^3.0.0",
+    "zod": "^3.22.4",
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
