@@ -9,6 +9,7 @@
     "check-types-watch": "tsc --noEmit --watch",
     "db:generate": "drizzle-kit generate --dialect=postgresql --schema=src/db/schema.ts --out=./drizzle",
     "db:migrate": "bun run ./migrate.ts",
+    "db:seed": "bun run ./src/db/seed.ts",
     "test": "vitest run",
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:unit:coverage": "vitest run --config vitest.unit.config.ts --coverage"
