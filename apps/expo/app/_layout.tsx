@@ -1,3 +1,5 @@
+import '../polyfills';
+
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';
@@ -7,7 +9,10 @@ import '../global.css';
 import { Alert, type AlertRef, COLORS } from '@packrat-ai/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { userStore } from 'expo-app/features/auth/store';
-import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
+import {
+  useColorScheme,
+  useInitialAndroidBarSync,
+} from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
 import { useRef } from 'react';
@@ -94,13 +99,16 @@ function RootLayout() {
       <Providers>
         <NavThemeProvider value={NAV_THEME[colorScheme]}>
           <Stack screenOptions={SCREEN_OPTIONS}>
-            <Stack.Screen name="(app)" />
-            <Stack.Screen name="auth" />
+            <Stack.Screen name='(app)' />
+            <Stack.Screen name='auth' />
           </Stack>
-          <Alert title="" buttons={[]} ref={appAlert} />
+          <Alert title='' buttons={[]} ref={appAlert} />
         </NavThemeProvider>
       </Providers>
-      <Toast config={toastConfig} position={Platform.OS === 'ios' ? 'top' : 'bottom'} />
+      <Toast
+        config={toastConfig}
+        position={Platform.OS === 'ios' ? 'top' : 'bottom'}
+      />
     </>
   );
 }

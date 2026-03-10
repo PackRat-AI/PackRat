@@ -1,8 +1,13 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { DefaultChatTransport, type TextUIPart } from 'ai';
-import { fetch as expoFetch } from 'expo/fetch';
+import {
+  streamText,
+  type TextUIPart,
+  type LanguageModel,
+  convertToModelMessages,
+  DefaultChatTransport,
+} from 'ai';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import {
@@ -47,6 +52,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { llama } from '@react-native-ai/llama';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 const _dimensions = Dimensions.get('window');
@@ -56,23 +62,6 @@ const ROOT_STYLE: ViewStyle = {
   minHeight: 2,
 };
 
-const _SPRING_CONFIG = {
-  damping: 15,
-  stiffness: 150,
-  mass: 0.5,
-  overshootClamping: false,
-  restDisplacementThreshold: 0.01,
-  restSpeedThreshold: 0.01,
-};
-
-const _HEADER_POSITION_STYLE: ViewStyle = {
-  position: 'absolute',
-  zIndex: 50,
-  top: 0,
-  left: 0,
-  right: 0,
-};
-
 export default function AIChat() {
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
@@ -80,7 +69,9 @@ export default function AIChat() {
   const textInputHeight = useSharedValue(17);
   const params = useLocalSearchParams();
   const { activeLocation } = useActiveLocation();
-  const [location, setLocation] = React.useState<WeatherLocation | null>(activeLocation);
+  const [location, setLocation] = React.useState<WeatherLocation | null>(
+    activeLocation,
+  );
   const scrollViewRef = React.useRef<ScrollView>(null);
   const { t } = useTranslation();
 
@@ -90,10 +81,18 @@ export default function AIChat() {
       itemName: params.itemName as string,
       packId: params.packId as string,
       packName: params.packName as string,
-      contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
+      contextType:
+        (params.contextType as 'item' | 'pack' | 'general') || 'general',
       location: location ? location.name : undefined,
     }),
-    [params.itemId, params.itemName, params.packId, params.packName, params.contextType, location],
+    [
+      params.itemId,
+      params.itemName,
+      params.packId,
+      params.packName,
+      params.contextType,
+      location,
+    ],
   );
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
@@ -101,7 +100,9 @@ export default function AIChat() {
   const token = useAtomValue(tokenAtom);
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
-  const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
+  const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>(
+    [],
+  );
   const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
   const isLoadingPersistedRef = React.useRef(false);
 
@@ -116,24 +117,66 @@ export default function AIChat() {
     [context],
   );
 
+  // Model ref and loader (moved from top-level to avoid top-level await)
+  const modelRef = React.useRef<LanguageModel | null>(null);
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        console.log('Downloading model...');
+        const model = llama.languageModel(
+          'ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf',
+          {
+            n_ctx: 2048,
+            n_gpu_layers: 99,
+          },
+        );
+
+        // Download from HuggingFace (with progress)
+        await model.download((progress) => {
+          console.log(`Downloading: ${progress.percentage}%`);
+        });
+
+        await model.prepare();
+        if (mounted) modelRef.current = model;
+        console.log('Model loaded and ready');
+      } catch (err) {
+        console.error('Failed to load model:', err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const customFetch = async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const m = JSON.parse(init?.body as string);
+    const result = streamText({
+      model: modelRef.current as unknown as LanguageModel,
+      messages: convertToModelMessages(m.messages),
+      abortSignal: init?.signal as AbortSignal | undefined,
+    });
+    return result.toUIMessageStreamResponse();
+  };
+
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport: new DefaultChatTransport({
-      fetch: expoFetch as unknown as typeof globalThis.fetch,
-      api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: () => ({
-        contextType: context.contextType,
-        itemId: context.itemId,
-        packId: context.packId,
-        location: locationRef.current,
-        date: new Date().toLocaleString(),
-      }),
+      fetch: customFetch as unknown as typeof globalThis.fetch,
+      // api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
+      // headers: {
+      //   Authorization: `Bearer ${token}`,
+      // },
+      // body: () => ({
+      //   contextType: context.contextType,
+      //   itemId: context.itemId,
+      //   packId: context.packId,
+      //   location: locationRef.current,
+      //   date: new Date().toLocaleString(),
+      // }),
     }),
     onError: (error: Error) => console.log(error, 'ERROR'),
-    experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
-    messages: initialMessages,
+    // experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
+    // messages: initialMessages,
   });
 
   // Load persisted messages on mount and when context changes
@@ -221,21 +264,33 @@ export default function AIChat() {
     listLayoutRef.current.offset = e.nativeEvent.contentOffset.y;
     setIsArrowButtonVisible(
       listLayoutRef.current.contentHeight >
-        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+        listLayoutRef.current.containerHeight +
+          listLayoutRef.current?.offset +
+          HEADER_HEIGHT +
+          5,
     );
   };
   const onLayout = (e: { nativeEvent: { layout: { height: number } } }) => {
     listLayoutRef.current.containerHeight = e.nativeEvent.layout.height;
     setIsArrowButtonVisible(
       listLayoutRef.current.contentHeight >
-        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+        listLayoutRef.current.containerHeight +
+          listLayoutRef.current?.offset +
+          HEADER_HEIGHT +
+          5,
     );
   };
-  const onContentSizeChange = (_contentWidth: number, contentHeight: number) => {
+  const onContentSizeChange = (
+    _contentWidth: number,
+    contentHeight: number,
+  ) => {
     listLayoutRef.current.contentHeight = contentHeight;
     setIsArrowButtonVisible(
       contentHeight >
-        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+        listLayoutRef.current.containerHeight +
+          listLayoutRef.current?.offset +
+          HEADER_HEIGHT +
+          5,
     );
   };
 
@@ -250,11 +305,12 @@ export default function AIChat() {
         style={[
           ROOT_STYLE,
           {
-            backgroundColor: isDarkColorScheme ? colors.background : colors.card,
+            backgroundColor: isDarkColorScheme
+              ? colors.background
+              : colors.card,
           },
         ]}
-        behavior="padding"
-      >
+        behavior='padding'>
         <ScrollView
           ref={scrollViewRef}
           onLayout={onLayout}
@@ -263,8 +319,7 @@ export default function AIChat() {
           scrollIndicatorInsets={{
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
-          }}
-        >
+          }}>
           <View>
             <View style={{ height: HEADER_HEIGHT + insets.top }} />
             <LocationContext location={location} onSetLocation={setLocation} />
@@ -283,7 +338,9 @@ export default function AIChat() {
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
               const userMessage = messages[index - 1];
-              userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
+              userQuery = userMessage?.parts.find(
+                (p) => p.type === 'text',
+              )?.text;
             }
 
             return (
@@ -299,23 +356,28 @@ export default function AIChat() {
 
           {status === 'submitted' && (
             <ActivityIndicator
-              size="small"
+              size='small'
               color={colors.primary}
-              className="self-start ml-4 mb-8"
+              className='self-start ml-4 mb-8'
             />
           )}
-          {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+          {status === 'error' && (
+            <ErrorState error={error} onRetry={() => handleRetry()} />
+          )}
           {messages.length < 2 && (
-            <View className="pl-4 pr-16">
-              <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
-              <View className="flex-row flex-wrap gap-2">
+            <View className='pl-4 pr-16'>
+              <Text className='mb-2 text-xs text-muted-foreground mt-0'>
+                {t('ai.suggestions')}
+              </Text>
+              <View className='flex-row flex-wrap gap-2'>
                 {getContextualSuggestions(context).map((suggestion) => (
                   <TouchableOpacity
                     key={suggestion}
                     onPress={() => handleSubmit(suggestion)}
-                    className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
-                  >
-                    <Text className="text-sm text-foreground">{suggestion}</Text>
+                    className='mb-2 rounded-3xl border border-border bg-card px-3 py-2'>
+                    <Text className='text-sm text-foreground'>
+                      {suggestion}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -347,9 +409,8 @@ export default function AIChat() {
       {isArrowButtonVisible && status === 'ready' && (
         <TouchableOpacity
           onPress={scrollToBottom}
-          className="absolute bottom-20 right-4 rounded-full bg-gray-200 p-3 mb-5 shadow-lg"
-        >
-          <Icon name="arrow-down" size={20} color="black" />
+          className='absolute bottom-20 right-4 rounded-full bg-gray-200 p-3 mb-5 shadow-lg'>
+          <Icon name='arrow-down' size={20} color='black' />
         </TouchableOpacity>
       )}
     </>
