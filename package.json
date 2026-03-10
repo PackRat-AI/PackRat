@@ -27,6 +27,8 @@
     "tiktok": "bun run --cwd packages/tiktok-service dev",
     "tiktok:build": "bun run --cwd packages/tiktok-service build",
     "tiktok:docker": "bun run --cwd packages/tiktok-service docker:build",
+    "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
+    "test:expo": "vitest run --config apps/expo/vitest.config.ts",
     "bump": "bun .github/scripts/bump.ts"
   },
   "devDependencies": {
