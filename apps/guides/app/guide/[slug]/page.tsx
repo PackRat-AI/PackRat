@@ -111,6 +111,26 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
             </Link>
           </Button>
 
+          {/* Download CTA */}
+          <div className="mt-12 rounded-2xl bg-blue-50 dark:bg-blue-950/20 p-8 text-center">
+            <h2 className="text-xl font-semibold mb-2">Ready to put this into practice?</h2>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              PackRat builds your personalized packing list based on your trip, the weather, and
+              your gear — completely free.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button
+                asChild
+                className="rounded-full bg-apple-blue hover:bg-apple-blue/90 text-white px-8"
+              >
+                <Link href="https://packratai.com/#download">Download Free</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full px-8">
+                <Link href="https://packratai.com">Learn More</Link>
+              </Button>
+            </div>
+          </div>
+
           {relatedPosts.length > 0 && (
             <div className="mt-16">
               <h2 className="mb-8 text-2xl font-semibold text-center">Related Guides</h2>
