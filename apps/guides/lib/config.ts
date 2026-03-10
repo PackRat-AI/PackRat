@@ -89,7 +89,7 @@ export const footerConfig = {
         { title: 'Download App', href: 'https://packratai.com/#download' },
         { title: 'Contact', href: 'mailto:hello@packratai.com' },
         { title: 'Privacy Policy', href: 'https://packratai.com/privacy-policy' },
-        { title: 'Terms of Service', href: '#' },
+        { title: 'Terms of Service', href: 'https://packratai.com/terms-of-service' },
       ],
     },
   ],

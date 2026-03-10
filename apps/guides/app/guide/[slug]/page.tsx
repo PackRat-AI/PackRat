@@ -115,7 +115,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
           <div className="mt-12 rounded-2xl bg-blue-50 dark:bg-blue-950/20 p-8 text-center">
             <h2 className="text-xl font-semibold mb-2">Ready to put this into practice?</h2>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              PackRat builds your personalised packing list based on your trip, the weather, and
+              PackRat builds your personalized packing list based on your trip, the weather, and
               your gear — completely free.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
