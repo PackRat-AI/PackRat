@@ -2,8 +2,14 @@
 // Cloudflare Workers environment bindings
 
 import type { DurableObjectNamespace } from '@cloudflare/workers-types';
-import type { TikTokContainer } from './src/index';
 
-interface Env {
-  TIKTOK_CONTAINER: DurableObjectNamespace<TikTokContainer>;
+/**
+ * Environment bindings for the TikTok Service Worker
+ */
+export interface Env {
+  /**
+   * Durable Object binding for TikTokContainer
+   * Used to manage container instances via Cloudflare Containers
+   */
+  TIKTOK_CONTAINER: DurableObjectNamespace;
 }

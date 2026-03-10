@@ -22,6 +22,7 @@
       }
     ]
   },
+  // Initial migration to enable SQLite for TikTokContainer Durable Object
   "migrations": [
     {
       "new_sqlite_classes": ["TikTokContainer"],

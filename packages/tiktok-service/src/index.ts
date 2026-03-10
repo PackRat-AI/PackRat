@@ -6,9 +6,9 @@ import { Hono } from 'hono';
  * Extends Cloudflare's Container class for proper container lifecycle management.
  */
 export class TikTokContainer extends Container<Env> {
-  // Port the container listens on (default: 8080)
+  // Port the container listens on
   defaultPort = 8080;
-  // Time before container sleeps due to inactivity (default: 30s)
+  // Time before container sleeps due to inactivity (5 minutes for TikTok API calls)
   sleepAfter = '5m';
   // Environment variables passed to the container
   envVars = {
