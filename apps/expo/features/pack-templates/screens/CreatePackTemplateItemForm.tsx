@@ -70,6 +70,9 @@ export const CreatePackTemplateItemForm = ({
   const initialImageUrl = useRef(existingItem?.image || null);
   const isEditing = !!existingItem;
   const [imageChanged, setImageChanged] = useState(false);
+  const [weightText, setWeightText] = useState(
+    existingItem?.weight != null ? String(existingItem.weight) : '0',
+  );
 
   const form = useForm({
     defaultValues: existingItem || {
@@ -247,10 +250,14 @@ export const CreatePackTemplateItemForm = ({
                 <FormItem>
                   <TextField
                     placeholder={t('items.itemWeight')}
-                    value={field.state.value.toString()}
+                    value={weightText}
                     onBlur={field.handleBlur}
-                    onChangeText={(text) => field.handleChange(Number(text) || 0)}
-                    keyboardType="numeric"
+                    onChangeText={(text) => {
+                      setWeightText(text);
+                      const parsed = parseFloat(text);
+                      field.handleChange(Number.isFinite(parsed) ? parsed : 0);
+                    }}
+                    keyboardType="decimal-pad"
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="dumbbell" size={16} color={colors.grey3} />
