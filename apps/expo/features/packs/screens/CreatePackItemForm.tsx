@@ -82,6 +82,9 @@ export const CreatePackItemForm = ({
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
   const [descriptionHeight, setDescriptionHeight] = useState(40);
+  const [weightText, setWeightText] = useState(
+    existingItem?.weight != null ? String(existingItem.weight) : '0',
+  );
 
   const hasMounted = useRef(false);
 
@@ -288,10 +291,14 @@ export const CreatePackItemForm = ({
                 <FormItem>
                   <TextField
                     placeholder={t('packs.weight')}
-                    value={field.state.value.toString()}
+                    value={weightText}
                     onBlur={field.handleBlur}
-                    onChangeText={(text) => field.handleChange(Number(text) || 0)}
-                    keyboardType="numeric"
+                    onChangeText={(text) => {
+                      setWeightText(text);
+                      const parsed = parseFloat(text);
+                      field.handleChange(Number.isFinite(parsed) ? parsed : 0);
+                    }}
+                    keyboardType="decimal-pad"
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="dumbbell" size={16} color={colors.grey3} />
