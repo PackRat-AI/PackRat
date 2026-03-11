@@ -185,17 +185,17 @@ async function fetchTikTokPostData(
     let caption: string | undefined;
     let contentId: string | undefined;
 
-    // Extract caption from description
+    // Get caption from description
     if (result.resultNotParsed.content?.desc) {
       caption = result.resultNotParsed.content.desc;
     }
 
-    // Extract content ID (aweme_id)
+    // Get content ID (aweme_id)
     if (result.resultNotParsed.content?.aweme_id) {
       contentId = result.resultNotParsed.content.aweme_id;
     }
 
-    // Extract slideshow images from image_post_info
+    // Get slideshow images from image_post_info
     if (result.resultNotParsed.content?.image_post_info?.images) {
       for (const image of result.resultNotParsed.content.image_post_info.images) {
         if (image.display_image?.url_list && image.display_image.url_list.length > 0) {
@@ -265,15 +265,15 @@ app.post('/import', async (c) => {
 
     console.log(`Processing TikTok URL: ${tiktokUrl}`);
 
-    // Extract TikTok data
-    const extractedData = await fetchTikTokPostData(tiktokUrl);
+    // Fetch TikTok data
+    const fetchedData = await fetchTikTokPostData(tiktokUrl);
 
-    console.log(`Successfully extracted ${extractedData.imageUrls.length} images from TikTok`);
+    console.log(`Successfully retrieved ${fetchedData.imageUrls.length} images from TikTok`);
 
     // Rehost images to R2 with best effort approach
     const { rehostedUrls, failedCount, expiresAt } = await downloadAndRehostImages(
-      extractedData.imageUrls,
-      extractedData.contentId || 'unknown',
+      fetchedData.imageUrls,
+      fetchedData.contentId || 'unknown',
     );
 
     const responseData: {
@@ -283,9 +283,9 @@ app.post('/import', async (c) => {
       expiresAt?: string;
       failedImages?: number;
     } = {
-      imageUrls: rehostedUrls.length > 0 ? rehostedUrls : extractedData.imageUrls,
-      caption: extractedData.caption,
-      contentId: extractedData.contentId,
+      imageUrls: rehostedUrls.length > 0 ? rehostedUrls : fetchedData.imageUrls,
+      caption: fetchedData.caption,
+      contentId: fetchedData.contentId,
     };
 
     // Add metadata if rehosting was attempted
