@@ -208,7 +208,7 @@ export const CreatePackItemForm = ({
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
-            ios={{ title: t('packs.itemDetails') }}
+            ios={{ title: t('items.itemDetails') }}
             footnote="Enter the basic information about your item"
           >
             <form.Field name="name">

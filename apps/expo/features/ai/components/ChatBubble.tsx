@@ -8,7 +8,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { ReportModal } from './ReportModal';
@@ -25,7 +25,12 @@ interface ChatBubbleProps {
   status: 'submitted' | 'streaming' | 'ready' | 'error';
 }
 
-export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps) {
+export const ChatBubble = React.memo(function ChatBubble({
+  item,
+  userQuery,
+  isLast,
+  status,
+}: ChatBubbleProps) {
   const isAI = item.role === 'assistant';
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
@@ -206,4 +211,4 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
       </Sheet>
     </View>
   );
-}
+});
