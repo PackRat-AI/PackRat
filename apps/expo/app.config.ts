@@ -58,6 +58,8 @@ export default (): ExpoConfig =>
         'expo-web-browser',
         'expo-apple-authentication',
         'expo-localization',
+        '@react-native-community/datetimepicker',
+        '@sentry/react-native',
       ],
       experiments: {
         typedRoutes: true,

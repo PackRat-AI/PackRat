@@ -6,6 +6,7 @@ import {
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import Screen from 'expo-app/components/Screen';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
@@ -21,7 +22,6 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -178,7 +178,7 @@ export function PackListScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <Screen>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
@@ -283,6 +283,6 @@ export function PackListScreen() {
         }
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
