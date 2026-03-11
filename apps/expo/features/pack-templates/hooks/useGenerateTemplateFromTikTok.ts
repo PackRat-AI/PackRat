@@ -6,8 +6,6 @@ import type { PackTemplateInStore } from '../types';
 
 export interface GenerateFromTikTokInput {
   tiktokUrl: string;
-  imageUrls: string[];
-  caption?: string;
   name?: string;
   category?: string;
   isAppTemplate?: boolean;

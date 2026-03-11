@@ -1,4 +1,4 @@
-import type { Ai, Queue, R2Bucket } from '@cloudflare/workers-types';
+import type { Ai, DurableObjectNamespace, Queue, R2Bucket } from '@cloudflare/workers-types';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 import { z } from 'zod';
@@ -43,13 +43,14 @@ export const apiEnvSchema = z.object({
   PACKRAT_BUCKET_R2_BUCKET_NAME: z.string(),
   PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: z.string(),
   PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: z.string(),
+  R2_PUBLIC_URL: z.string().url(),
+
+  // Container Configuration
+  CONTAINER_PORT: z.string().regex(/^\d+$/, 'Must be a valid port number').optional(),
 
   // Content & Guides
   PACKRAT_GUIDES_RAG_NAME: z.string(),
   PACKRAT_GUIDES_BASE_URL: z.string().url(),
-
-  // TikTok Service
-  TIKTOK_SERVICE_URL: z.string().url(),
 
   // Cloudflare bindings - validated as any, typed properly below
   CF_VERSION_METADATA: z.unknown(),
@@ -60,6 +61,8 @@ export const apiEnvSchema = z.object({
   ETL_QUEUE: z.unknown(),
   LOGS_QUEUE: z.unknown(),
   EMBEDDINGS_QUEUE: z.unknown(),
+  // TikTok Container binding (Durable Object)
+  TIKTOK_CONTAINER: z.unknown(),
 });
 
 // Relaxed schema for test environments
@@ -69,7 +72,6 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   NEON_DATABASE_URL: z.string().optional().default('postgres://user:pass@localhost/db'),
   NEON_DATABASE_URL_READONLY: z.string().optional().default('postgres://user:pass@localhost/db'),
   JWT_SECRET: z.string().optional().default('secret'),
-  TIKTOK_SERVICE_URL: z.string().url().optional().default('http://localhost:8080'),
   CF_VERSION_METADATA: z.unknown().optional().default({ id: 'test-version' }),
   AI: z.unknown().optional(),
   PACKRAT_SCRAPY_BUCKET: z.unknown().optional(),
@@ -78,6 +80,7 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   ETL_QUEUE: z.unknown().optional(),
   LOGS_QUEUE: z.unknown().optional(),
   EMBEDDINGS_QUEUE: z.unknown().optional(),
+  TIKTOK_CONTAINER: z.unknown().optional(),
 });
 
 // Infer the base type from Zod schema
@@ -94,6 +97,7 @@ export type ValidatedEnv = Omit<
   | 'ETL_QUEUE'
   | 'LOGS_QUEUE'
   | 'EMBEDDINGS_QUEUE'
+  | 'TIKTOK_CONTAINER'
 > & {
   // Properly typed Cloudflare bindings
   CF_VERSION_METADATA: WorkerVersionMetadata;
@@ -104,6 +108,8 @@ export type ValidatedEnv = Omit<
   ETL_QUEUE: Queue;
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
+  // TikTok Container Durable Object binding
+  TIKTOK_CONTAINER: DurableObjectNamespace;
 };
 
 // Cache for validated environments per request
@@ -154,6 +160,7 @@ export function getEnv(c: Context): ValidatedEnv {
     ETL_QUEUE: rawEnv.ETL_QUEUE || validated.data.ETL_QUEUE,
     LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
     EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
+    TIKTOK_CONTAINER: rawEnv.TIKTOK_CONTAINER || validated.data.TIKTOK_CONTAINER,
   } as ValidatedEnv;
 
   // Cache the result

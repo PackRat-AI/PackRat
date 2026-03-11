@@ -1,4 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
+import { getContainer } from '@cloudflare/containers';
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packTemplateItems, packTemplates } from '@packrat/api/db/schema';
@@ -26,43 +27,53 @@ const SYSTEM_PROMPT = `You are an expert outdoor gear analyst. You will be shown
 Focus on items that would realistically appear in an outdoor adventure packing list. Be thorough — identify every item you can see or infer.`;
 
 /**
- * Fetch TikTok slideshow data using TikTok Container Service
+ * Fetch TikTok slideshow data using TikTok Container binding
  */
 async function fetchTikTokPostData(
   c: Context<{ Bindings: Env; Variables: Variables }>,
   url: string,
 ): Promise<{ imageUrls: string[]; caption?: string; contentId?: string }> {
   try {
-    const { TIKTOK_SERVICE_URL } = getEnv(c);
+    const { TIKTOK_CONTAINER } = getEnv(c);
 
-    const response = await fetch(`${TIKTOK_SERVICE_URL}/import`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        tiktokUrl: url,
+    // Get the container instance using the binding
+    const container = getContainer(TIKTOK_CONTAINER);
+
+    // Make request to the container's /import endpoint
+    const response = await container.fetch(
+      new Request('http://container/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tiktokUrl: url,
+        }),
       }),
-    });
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`TikTok service error (${response.status}): ${errorText}`);
+      throw new Error(`TikTok container error (${response.status}): ${errorText}`);
     }
 
-    const result = await response.json();
+    const result = (await response.json()) as {
+      success: boolean;
+      data?: { imageUrls: string[]; caption?: string; contentId?: string };
+      error?: string;
+    };
 
     if (!result.success) {
-      throw new Error(result.error || 'TikTok service returned failure');
+      throw new Error(result.error || 'TikTok container returned failure');
     }
 
     return {
-      imageUrls: result.data.imageUrls,
-      caption: result.data.caption,
-      contentId: result.data.contentId,
+      imageUrls: result.data?.imageUrls || [],
+      caption: result.data?.caption,
+      contentId: result.data?.contentId,
     };
   } catch (error) {
-    console.error('TikTok service call failed:', error);
+    console.error('TikTok container call failed:', error);
     throw new Error(
       `Failed to fetch TikTok data: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
@@ -186,18 +197,18 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     const { OPENAI_API_KEY } = getEnv(c);
     const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
 
-    // Extract TikTok data using API library
+    // Fetch TikTok data using API library
     console.log(`Processing TikTok URL: ${tiktokUrl}`);
 
-    let extractedImageUrls: string[];
-    let extractedCaption: string | undefined;
-    let extractedContentId: string | undefined;
+    let imageUrls: string[];
+    let caption: string | undefined;
+    let contentId: string | undefined;
 
     try {
-      const extractedData = await fetchTikTokPostData(c, tiktokUrl);
-      extractedImageUrls = extractedData.imageUrls;
-      extractedCaption = extractedData.caption;
-      extractedContentId = extractedData.contentId;
+      const data = await fetchTikTokPostData(c, tiktokUrl);
+      imageUrls = data.imageUrls;
+      caption = data.caption;
+      contentId = data.contentId;
     } catch (apiError) {
       console.error('TikTok service call failed:', apiError);
       c.get('sentry').captureException(apiError, {
@@ -206,7 +217,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       });
       return c.json(
         {
-          error: `Failed to extract data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
+          error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
           code: 'TIKTOK_SERVICE_ERROR',
         },
         400,
@@ -219,7 +230,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       .select()
       .from(packTemplates)
       .where(
-        sql`${packTemplates.contentSource} = 'tiktok' AND ${packTemplates.contentId} = ${extractedContentId} AND ${packTemplates.deleted} = false`,
+        sql`${packTemplates.contentSource} = 'tiktok' AND ${packTemplates.contentId} = ${contentId} AND ${packTemplates.deleted} = false`,
       )
       .limit(1);
 
@@ -239,13 +250,13 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     type ImagePart = { type: 'image'; image: string };
     const contentParts: Array<TextPart | ImagePart> = [];
 
-    const introText = extractedCaption
-      ? `Extracted Caption: ${extractedCaption}\n\nPlease analyze the following slideshow images and extract all packing/gear items:`
-      : `Please analyze the following slideshow images and extract all packing/gear items:`;
+    const introText = caption
+      ? `Retrieved Caption: ${caption}\n\nPlease analyze the following slideshow images and identify all packing/gear items:`
+      : `Please analyze the following slideshow images and identify all packing/gear items:`;
 
     contentParts.push({ type: 'text', text: introText });
 
-    for (const imageUrl of extractedImageUrls) {
+    for (const imageUrl of imageUrls) {
       contentParts.push({ type: 'image', image: imageUrl });
     }
 
@@ -293,7 +304,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
         isAppTemplate: isAppTemplate ?? true,
         deleted: false,
         contentSource: 'tiktok',
-        contentId: extractedContentId,
+        contentId: contentId,
         localCreatedAt: now,
         localUpdatedAt: now,
       })

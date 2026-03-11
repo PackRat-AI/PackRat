@@ -56,21 +56,6 @@ const TikTokImportSchema = z.object({
   tiktokUrl: z.string().url('Must be a valid URL'),
 });
 
-// Response schema
-const _TikTokResponseSchema = z.object({
-  success: z.boolean(),
-  data: z
-    .object({
-      imageUrls: z.array(z.string()),
-      caption: z.string().optional(),
-      contentId: z.string().optional(),
-      expiresAt: z.string().optional(),
-      failedImages: z.number().optional(),
-    })
-    .optional(),
-  error: z.string().optional(),
-});
-
 /**
  * Download image and rehost to R2 with 5-minute expiration
  */
@@ -192,8 +177,6 @@ async function fetchTikTokPostData(
       showOriginalResponse: true,
     });
 
-    console.log(JSON.stringify(result, null, 2));
-
     if (result.status !== 'success') {
       throw new Error(`TikTok API failed: ${result.status}`);
     }
@@ -202,17 +185,17 @@ async function fetchTikTokPostData(
     let caption: string | undefined;
     let contentId: string | undefined;
 
-    // Extract caption from description
+    // Get caption from description
     if (result.resultNotParsed.content?.desc) {
       caption = result.resultNotParsed.content.desc;
     }
 
-    // Extract content ID (aweme_id)
+    // Get content ID (aweme_id)
     if (result.resultNotParsed.content?.aweme_id) {
       contentId = result.resultNotParsed.content.aweme_id;
     }
 
-    // Extract slideshow images from image_post_info
+    // Get slideshow images from image_post_info
     if (result.resultNotParsed.content?.image_post_info?.images) {
       for (const image of result.resultNotParsed.content.image_post_info.images) {
         if (image.display_image?.url_list && image.display_image.url_list.length > 0) {
@@ -241,11 +224,22 @@ async function fetchTikTokPostData(
   }
 }
 
+// Root endpoint
+app.get('/', (c) => {
+  // Container instance ID (provided by Cloudflare Container runtime)
+  const instanceId = process.env.CLOUDFLARE_CONTAINER_ID || 'unknown';
+  return c.json({
+    service: 'tiktok-container',
+    instanceId,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Health check endpoint
 app.get('/health', (c) => {
   return c.json({
     status: 'ok',
-    service: 'tiktok-service',
+    service: 'tiktok-container',
     timestamp: new Date().toISOString(),
   });
 });
@@ -271,15 +265,15 @@ app.post('/import', async (c) => {
 
     console.log(`Processing TikTok URL: ${tiktokUrl}`);
 
-    // Extract TikTok data
-    const extractedData = await fetchTikTokPostData(tiktokUrl);
+    // Fetch TikTok data
+    const fetchedData = await fetchTikTokPostData(tiktokUrl);
 
-    console.log(`Successfully extracted ${extractedData.imageUrls.length} images from TikTok`);
+    console.log(`Successfully retrieved ${fetchedData.imageUrls.length} images from TikTok`);
 
     // Rehost images to R2 with best effort approach
     const { rehostedUrls, failedCount, expiresAt } = await downloadAndRehostImages(
-      extractedData.imageUrls,
-      extractedData.contentId || 'unknown',
+      fetchedData.imageUrls,
+      fetchedData.contentId || 'unknown',
     );
 
     const responseData: {
@@ -289,9 +283,9 @@ app.post('/import', async (c) => {
       expiresAt?: string;
       failedImages?: number;
     } = {
-      imageUrls: rehostedUrls.length > 0 ? rehostedUrls : extractedData.imageUrls,
-      caption: extractedData.caption,
-      contentId: extractedData.contentId,
+      imageUrls: rehostedUrls.length > 0 ? rehostedUrls : fetchedData.imageUrls,
+      caption: fetchedData.caption,
+      contentId: fetchedData.contentId,
     };
 
     // Add metadata if rehosting was attempted
@@ -348,7 +342,7 @@ app.notFound((c) => {
 
 const port = process.env.PORT || 8080;
 
-console.log(`TikTok service starting on port ${port}`);
+console.log(`TikTok container service starting on port ${port}`);
 
 export default {
   port: Number(port),
