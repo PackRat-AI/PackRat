@@ -43,6 +43,10 @@ export const apiEnvSchema = z.object({
   PACKRAT_BUCKET_R2_BUCKET_NAME: z.string(),
   PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: z.string(),
   PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: z.string(),
+  R2_PUBLIC_URL: z.string().url(),
+
+  // Container Configuration
+  CONTAINER_PORT: z.string().regex(/^\d+$/, 'Must be a valid port number').optional(),
 
   // Content & Guides
   PACKRAT_GUIDES_RAG_NAME: z.string(),

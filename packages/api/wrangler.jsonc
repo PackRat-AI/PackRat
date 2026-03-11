@@ -68,7 +68,7 @@
   "containers": [
     {
       "class_name": "TikTokContainer",
-      "image": "./container_src/tiktok/Dockerfile",
+      "image": "./Dockerfile",
       "max_instances": 5
     }
   ],
@@ -145,7 +145,30 @@
       },
       "ai": {
         "binding": "AI"
-      }
+      },
+      "containers": [
+        {
+          "name": "packrat-api-TikTokContainer-dev",
+          "class_name": "TikTokContainer",
+          "image": "./Dockerfile",
+          "max_instances": 5
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "TikTokContainer",
+            "name": "TIKTOK_CONTAINER"
+          }
+        ]
+      },
+      // Migrations for Durable Objects (including TikTok Container)
+      "migrations": [
+        {
+          "new_sqlite_classes": ["TikTokContainer"],
+          "tag": "v1"
+        }
+      ]
     }
   }
 }
