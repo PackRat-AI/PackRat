@@ -38,3 +38,25 @@ export const PresignedUploadResponseSchema = z
     }),
   })
   .openapi('PresignedUploadResponse');
+
+export const RehostRequestSchema = z
+  .object({
+    url: z.string().url().openapi({
+      example: 'https://example.com/image.jpg',
+      description: 'External HTTPS image URL to fetch and rehost in R2',
+    }),
+  })
+  .openapi('RehostRequest');
+
+export const RehostResponseSchema = z
+  .object({
+    key: z.string().openapi({
+      example: '1-a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg',
+      description: 'R2 object key for the rehosted image',
+    }),
+    contentType: z.string().openapi({
+      example: 'image/jpeg',
+      description: 'MIME type derived from the upstream response (or buffer sniffing)',
+    }),
+  })
+  .openapi('RehostResponse');

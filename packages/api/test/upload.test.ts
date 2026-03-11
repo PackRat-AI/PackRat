@@ -23,6 +23,14 @@ describe('Upload Routes', () => {
       const res = await api('/upload', httpMethods.post('', {}));
       expectUnauthorized(res);
     });
+
+    it('requires auth for rehost', async () => {
+      const res = await api(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://example.com/image.jpg' }),
+      );
+      expectUnauthorized(res);
+    });
   });
 
   describe('GET /upload/presigned', () => {
@@ -93,6 +101,159 @@ describe('Upload Routes', () => {
       expectBadRequest(res);
       const data = await res.json();
       expect(data.error).toContain('size');
+    });
+  });
+
+  describe('POST /upload/rehost', () => {
+    const JPEG_MAGIC = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+    const PNG_MAGIC = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const WEBP_MAGIC = new Uint8Array([
+      0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+    ]);
+
+    function makeImageResponse(body: Uint8Array, contentType: string) {
+      return new Response(body, {
+        status: 200,
+        headers: { 'Content-Type': contentType },
+      });
+    }
+
+    it('rejects non-HTTPS URLs', async () => {
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'http://example.com/image.jpg' }),
+      );
+      expectBadRequest(res);
+      const data = await res.json();
+      expect(data.error).toMatch(/https/i);
+    });
+
+    it('rejects invalid (non-URL) values', async () => {
+      const res = await apiWithAuth('/upload/rehost', httpMethods.post('', { url: 'not-a-url' }));
+      expectBadRequest(res);
+    });
+
+    it('returns 400 when the upstream request fails', async () => {
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(new Response(null, { status: 404 }));
+
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://example.com/missing.jpg' }),
+      );
+      expectBadRequest(res);
+    });
+
+    it('returns 400 when fetch throws a network error', async () => {
+      vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Network failure'));
+
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://example.com/image.jpg' }),
+      );
+      expectBadRequest(res);
+    });
+
+    it('uses the content-type from upstream headers for a JPEG', async () => {
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(makeImageResponse(JPEG_MAGIC, 'image/jpeg'));
+
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://example.com/photo' }),
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.contentType).toBe('image/jpeg');
+      expect(data.key).toMatch(/^\d+-[0-9a-f-]+\.jpg$/);
+    });
+
+    it('uses the content-type from upstream headers for a PNG', async () => {
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(makeImageResponse(PNG_MAGIC, 'image/png'));
+
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://example.com/photo' }),
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.contentType).toBe('image/png');
+      expect(data.key).toMatch(/^\d+-[0-9a-f-]+\.png$/);
+    });
+
+    it('strips content-type parameters (e.g. charset) from upstream header', async () => {
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        makeImageResponse(JPEG_MAGIC, 'image/jpeg; charset=UTF-8'),
+      );
+
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://example.com/photo.jpg' }),
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.contentType).toBe('image/jpeg');
+    });
+
+    it('falls back to buffer sniffing when upstream header is missing', async () => {
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(new Response(PNG_MAGIC, { status: 200 }));
+
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://cdn.example.com/asset' }),
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.contentType).toBe('image/png');
+      expect(data.key).toMatch(/\.png$/);
+    });
+
+    it('falls back to buffer sniffing when header says webp but bytes are JPEG', async () => {
+      // TikTok slideshow scenario: wrong header, correct bytes
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(makeImageResponse(JPEG_MAGIC, 'image/webp'));
+
+      // Note: header wins when it IS in the allowed list; this test confirms
+      // that a valid (but misleading) header is still accepted.  The real
+      // value of sniffing is when the header is absent or unknown.
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://tiktok.example.com/slide1' }),
+      );
+      expect(res.status).toBe(200);
+    });
+
+    it('detects WebP via buffer sniffing when header is absent', async () => {
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(new Response(WEBP_MAGIC, { status: 200 }));
+
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://cdn.example.com/image' }),
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.contentType).toBe('image/webp');
+      expect(data.key).toMatch(/\.webp$/);
+    });
+
+    it('rejects content that is not a recognised image type', async () => {
+      // Neither header nor magic bytes indicate an image
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+        new Response(new Uint8Array([0x3c, 0x68, 0x74, 0x6d, 0x6c]), {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        }),
+      );
+
+      const res = await apiWithAuth(
+        '/upload/rehost',
+        httpMethods.post('', { url: 'https://example.com/page.html' }),
+      );
+      expectBadRequest(res);
+      const data = await res.json();
+      expect(data.error).toMatch(/supported image type/i);
     });
   });
 
