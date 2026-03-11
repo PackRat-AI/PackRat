@@ -211,7 +211,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     }
 
     const body = c.req.valid('json');
-    const { tiktokUrl, name, category, isAppTemplate } = body;
+    const { tiktokUrl, isAppTemplate } = body;
 
     const { OPENAI_API_KEY } = getEnv(c);
     const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
