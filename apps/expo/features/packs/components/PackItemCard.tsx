@@ -7,6 +7,7 @@ import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useDeletePackItem,
   usePackItemDetailsFromStore,
@@ -45,6 +46,7 @@ export function PackItemCard({
 
   const deleteItem = useDeletePackItem();
   const { colors } = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   const isSelectable = 'onSelect' in restProps;
 
@@ -68,6 +70,7 @@ export function PackItemCard({
         message: item.description,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: insets.bottom,
         },
         textStyle: {
           color: colors.foreground,

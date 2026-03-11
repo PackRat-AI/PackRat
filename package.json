@@ -37,5 +37,8 @@
     "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
     "lefthook": "^1.11.14"
-  }
+  },
+  "trustedDependencies": [
+    "@sentry/cli"
+  ]
 }

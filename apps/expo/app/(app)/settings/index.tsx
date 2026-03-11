@@ -2,7 +2,6 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-  ESTIMATED_ITEM_HEIGHT,
   LargeTitleHeader,
   List,
   ListItem,
@@ -24,7 +23,6 @@ export default function SettingsIosStyleScreen() {
         contentInsetAdjustmentBehavior="automatic"
         variant="insets"
         data={DATA}
-        estimatedItemSize={ESTIMATED_ITEM_HEIGHT.titleOnly}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
