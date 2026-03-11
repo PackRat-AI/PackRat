@@ -18,6 +18,25 @@ import type { Context } from 'hono';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
+/**
+ * Generate a deterministic content ID from a TikTok URL for duplicate detection
+ * when the TikTok service doesn't provide a content ID
+ */
+function generateContentIdFromUrl(url: string): string {
+  // Normalize the URL by removing query parameters and converting to lowercase
+  const normalizedUrl = url.toLowerCase().replace(/[?&].*$/, '');
+
+  // Create a simple hash for deterministic ID generation
+  let hash = 0;
+  for (let i = 0; i < normalizedUrl.length; i++) {
+    const char = normalizedUrl.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  return `url_${Math.abs(hash).toString(16)}`;
+}
+
 const SYSTEM_PROMPT = `You are an expert outdoor gear analyst. You will be shown images from a TikTok slideshow featuring packing content (e.g., a gear lay-flat, kit breakdown, or packing list). Your task is to:
 
 1. Identify every outdoor gear or equipment item visible in the images or mentioned in the caption.
@@ -224,13 +243,17 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       );
     }
 
+    // Ensure we have a contentId for reliable duplicate detection
+    // Use TikTok service contentId if available, otherwise generate from URL
+    const finalContentId = contentId || generateContentIdFromUrl(tiktokUrl);
+
     // Check for existing template with same content ID to avoid duplication
     const db = createDb(c);
     const existingTemplate = await db
       .select()
       .from(packTemplates)
       .where(
-        sql`${packTemplates.contentSource} = 'tiktok' AND ${packTemplates.contentId} = ${contentId} AND ${packTemplates.deleted} = false`,
+        sql`${packTemplates.contentSource} = 'tiktok' AND ${packTemplates.contentId} = ${finalContentId} AND ${packTemplates.deleted} = false`,
       )
       .limit(1);
 
@@ -290,62 +313,66 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     const resolvedName = name ?? analysis.templateName;
     const resolvedCategory = category ?? analysis.templateCategory;
 
-    // Insert the pack template
-    const [newTemplate] = await db
-      .insert(packTemplates)
-      .values({
-        id: templateId,
-        userId: auth.userId,
-        name: resolvedName,
-        description: analysis.templateDescription,
-        category: resolvedCategory,
-        image: null,
-        tags: [resolvedCategory],
-        isAppTemplate: isAppTemplate ?? true,
-        deleted: false,
-        contentSource: 'tiktok',
-        contentId: contentId,
-        localCreatedAt: now,
-        localUpdatedAt: now,
-      })
-      .returning();
+    // Insert the pack template and its items in a single transaction to ensure atomicity
+    const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
+      const [createdTemplate] = await tx
+        .insert(packTemplates)
+        .values({
+          id: templateId,
+          userId: auth.userId,
+          name: resolvedName,
+          description: analysis.templateDescription,
+          category: resolvedCategory,
+          image: null,
+          tags: [resolvedCategory],
+          isAppTemplate: isAppTemplate ?? true,
+          deleted: false,
+          contentSource: 'tiktok',
+          contentId: finalContentId,
+          localCreatedAt: now,
+          localUpdatedAt: now,
+        })
+        .returning();
 
-    // Insert template items — prefer catalog match, fall back to detected item data
-    const itemRecords = analysis.items.map((detected, index) => {
-      const catalogMatches = batchResult.items[index] ?? [];
-      const bestMatch = catalogMatches[0];
-      const itemId = `pti_${nanoid()}`;
+      // Insert template items — prefer catalog match, fall back to detected item data
+      const itemRecords = analysis.items.map((detected, index) => {
+        const catalogMatches = batchResult.items[index] ?? [];
+        const bestMatch = catalogMatches[0];
+        const itemId = `pti_${nanoid()}`;
 
-      return {
-        id: itemId,
-        packTemplateId: templateId,
-        userId: auth.userId,
-        name: bestMatch?.name ?? detected.name,
-        description: (bestMatch?.description ?? detected.description) || null,
-        weight: bestMatch?.weight ?? detected.weightGrams,
-        weightUnit: bestMatch?.weightUnit ?? 'g',
-        quantity: detected.quantity,
-        category: detected.category,
-        consumable: detected.consumable,
-        worn: detected.worn,
-        image: bestMatch?.images?.[0] ?? null,
-        notes: null,
-        catalogItemId: bestMatch?.id ?? null,
-        deleted: false,
-      };
+        return {
+          id: itemId,
+          packTemplateId: templateId,
+          userId: auth.userId,
+          name: bestMatch?.name ?? detected.name,
+          description: (bestMatch?.description ?? detected.description) || null,
+          weight: bestMatch?.weight ?? detected.weightGrams,
+          weightUnit: bestMatch?.weightUnit ?? 'g',
+          quantity: detected.quantity,
+          category: detected.category,
+          consumable: detected.consumable,
+          worn: detected.worn,
+          image: bestMatch?.images?.[0] ?? null,
+          notes: null,
+          catalogItemId: bestMatch?.id ?? null,
+          deleted: false,
+        };
+      });
+
+      const insertedItemsResult =
+        itemRecords.length > 0
+          ? await tx.insert(packTemplateItems).values(itemRecords).returning()
+          : [];
+
+      return { newTemplate: createdTemplate, insertedItems: insertedItemsResult };
     });
-
-    const insertedItems =
-      itemRecords.length > 0
-        ? await db.insert(packTemplateItems).values(itemRecords).returning()
-        : [];
 
     return c.json({ ...newTemplate, items: insertedItems }, 201);
   } catch (error) {
     console.error('Error generating pack template from TikTok:', error);
     c.get('sentry').captureException(error, {
       tags: { errorType: 'template_generation_error' },
-      extra: { tiktokUrl: body.tiktokUrl },
+      extra: { tiktokUrl },
     });
 
     // Determine specific error type based on error context

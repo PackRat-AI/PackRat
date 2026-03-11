@@ -57,6 +57,78 @@ const TikTokImportSchema = z.object({
 });
 
 /**
+ * Detect image content type and file extension from response headers or buffer
+ */
+function detectImageTypeAndExtension(
+  response: Response,
+  buffer?: ArrayBuffer,
+): {
+  contentType: string;
+  extension: string;
+} {
+  // Try to get content type from headers first
+  const headerContentType = response.headers.get('content-type');
+
+  if (headerContentType) {
+    // Common image content types
+    if (headerContentType.includes('image/jpeg') || headerContentType.includes('image/jpg')) {
+      return { contentType: 'image/jpeg', extension: 'jpg' };
+    }
+    if (headerContentType.includes('image/png')) {
+      return { contentType: 'image/png', extension: 'png' };
+    }
+    if (headerContentType.includes('image/webp')) {
+      return { contentType: 'image/webp', extension: 'webp' };
+    }
+    if (headerContentType.includes('image/gif')) {
+      return { contentType: 'image/gif', extension: 'gif' };
+    }
+  }
+
+  // If buffer is provided, try to detect from magic bytes
+  if (buffer) {
+    const uint8Array = new Uint8Array(buffer.slice(0, 12));
+
+    // JPEG magic bytes: FF D8 FF
+    if (uint8Array[0] === 0xff && uint8Array[1] === 0xd8 && uint8Array[2] === 0xff) {
+      return { contentType: 'image/jpeg', extension: 'jpg' };
+    }
+
+    // PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A
+    if (
+      uint8Array[0] === 0x89 &&
+      uint8Array[1] === 0x50 &&
+      uint8Array[2] === 0x4e &&
+      uint8Array[3] === 0x47
+    ) {
+      return { contentType: 'image/png', extension: 'png' };
+    }
+
+    // WebP magic bytes: RIFF ... WEBP
+    if (
+      uint8Array[0] === 0x52 &&
+      uint8Array[1] === 0x49 &&
+      uint8Array[2] === 0x46 &&
+      uint8Array[3] === 0x46 &&
+      uint8Array[8] === 0x57 &&
+      uint8Array[9] === 0x45 &&
+      uint8Array[10] === 0x42 &&
+      uint8Array[11] === 0x50
+    ) {
+      return { contentType: 'image/webp', extension: 'webp' };
+    }
+
+    // GIF magic bytes: GIF87a or GIF89a
+    if (uint8Array[0] === 0x47 && uint8Array[1] === 0x49 && uint8Array[2] === 0x46) {
+      return { contentType: 'image/gif', extension: 'gif' };
+    }
+  }
+
+  // Default fallback to webp
+  return { contentType: 'image/webp', extension: 'webp' };
+}
+
+/**
  * Download image and rehost to R2 with 5-minute expiration
  */
 async function downloadAndRehostImage(
@@ -92,22 +164,24 @@ async function downloadAndRehostImage(
     }
 
     const imageBuffer = await response.arrayBuffer();
+
+    // Detect the actual image type and extension
+    const { contentType, extension } = detectImageTypeAndExtension(response, imageBuffer);
+
     const timestamp = Date.now();
-    const imageKey = `tiktok-temp/${contentId}/${timestamp}-${index}.webp`;
+    const imageKey = `tiktok-temp/${contentId}/${timestamp}-${index}.${extension}`;
 
-    // Calculate expiration date (5 minutes from now)
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    console.log(`Uploading image ${index + 1} to R2: ${imageKey} (${contentType})`);
 
-    console.log(`Uploading image ${index + 1} to R2: ${imageKey}`);
-
-    // Upload to R2 with 5-minute expiration
+    // Upload to R2 with temporary storage
+    // Note: Objects are stored under 'tiktok-temp/' prefix and should be cleaned up
+    // via R2 bucket lifecycle rules (e.g 5-minute expiration).
     await s3Client.send(
       new PutObjectCommand({
         Bucket: env.R2_BUCKET_NAME,
         Key: imageKey,
         Body: new Uint8Array(imageBuffer),
-        ContentType: 'image/webp',
-        Expires: expiresAt,
+        ContentType: contentType,
       }),
     );
 

@@ -314,14 +314,6 @@ export const GenerateFromTikTokRequestSchema = z
       example: 'https://www.tiktok.com/@user/video/1234567890',
       description: 'The TikTok slideshow URL',
     }),
-    name: z.string().optional().openapi({
-      example: 'PCT Ultralight Kit',
-      description: 'Optional template name. If omitted, AI will generate one.',
-    }),
-    category: z.string().optional().openapi({
-      example: 'backpacking',
-      description: 'Optional template category. If omitted, AI will determine one.',
-    }),
     isAppTemplate: z.boolean().optional().default(true).openapi({
       example: true,
       description: 'Whether this should be a featured template (admin only)',

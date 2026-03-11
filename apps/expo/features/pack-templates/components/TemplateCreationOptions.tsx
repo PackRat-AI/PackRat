@@ -57,7 +57,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
                 {t('packTemplates.createTemplate')}
               </Text>
               <Text className="text-sm text-muted-foreground leading-5">
-                Choose how you'd like to create your pack template
+                {t('packTemplates.chooseCreationMethod')}
               </Text>
             </View>
 
@@ -71,10 +71,10 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
               </View>
               <View className="flex-1">
                 <Text className="text-base font-semibold text-foreground mb-1">
-                  Create from Scratch
+                  {t('packTemplates.createFromScratch')}
                 </Text>
                 <Text className="text-sm text-muted-foreground">
-                  Start with an empty template and add items manually
+                  {t('packTemplates.createFromScratchDescription')}
                 </Text>
               </View>
               <Icon name="chevron-right" size={20} color={colors.grey3} />
@@ -94,7 +94,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
                     {t('packTemplates.importFromTikTok')}
                   </Text>
                   <Text className="text-sm text-muted-foreground">
-                    Import gear from a TikTok slideshow post
+                    {t('packTemplates.importFromTikTokDescription')}
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={colors.grey3} />
