@@ -291,7 +291,10 @@ uploadRoutes.openapi(rehostRoute, async (c) => {
 
   const bytes = new Uint8Array(buffer);
 
-  // If the header content type is missing or not in our allow-list, sniff the buffer
+  // Trust the upstream Content-Type when it's already in our allow-list: it's
+  // usually accurate and buffer sniffing can't identify every format (e.g. GIF,
+  // SVG).  Sniffing is only used as a fallback when the header is absent or
+  // carries an unrecognised MIME type (e.g. `application/octet-stream`).
   let contentType = upstreamContentType;
   if (!contentType || !ALLOWED_IMAGE_TYPES.includes(contentType)) {
     contentType = sniffContentType(bytes);

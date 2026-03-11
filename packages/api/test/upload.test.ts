@@ -210,18 +210,21 @@ describe('Upload Routes', () => {
       expect(data.key).toMatch(/\.png$/);
     });
 
-    it('falls back to buffer sniffing when header says webp but bytes are JPEG', async () => {
-      // TikTok slideshow scenario: wrong header, correct bytes
+    it('trusts a valid upstream header even when buffer magic bytes differ (header wins)', async () => {
+      // When the upstream server sends a recognised content-type we accept it
+      // as-is, because buffer sniffing is not 100% reliable for every format.
+      // The real protection against missing/wrong headers is the sniffing path.
       vi.spyOn(global, 'fetch').mockResolvedValueOnce(makeImageResponse(JPEG_MAGIC, 'image/webp'));
 
-      // Note: header wins when it IS in the allowed list; this test confirms
-      // that a valid (but misleading) header is still accepted.  The real
-      // value of sniffing is when the header is absent or unknown.
       const res = await apiWithAuth(
         '/upload/rehost',
         httpMethods.post('', { url: 'https://tiktok.example.com/slide1' }),
       );
       expect(res.status).toBe(200);
+      const data = await res.json();
+      // Header is in the allow-list, so we trust it over sniffing
+      expect(data.contentType).toBe('image/webp');
+      expect(data.key).toMatch(/\.webp$/);
     });
 
     it('detects WebP via buffer sniffing when header is absent', async () => {
