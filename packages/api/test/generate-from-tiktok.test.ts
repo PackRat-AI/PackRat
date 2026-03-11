@@ -9,14 +9,16 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-// Unique counter for generating unique contentIds in tests
+// Counter for generating unique contentIds in tests (incremented per call to avoid duplicates)
 let mockContentIdCounter = 0;
 
 // Create a mock fetch function that can be configured per test
 const createMockContainerFetch = (contentId?: string) =>
   vi.fn((_request: Request) => {
     // Generate a unique content ID or use provided contentId
-    const uniqueContentId = contentId ?? `mock-content-${++mockContentIdCounter}`;
+    // Pre-increment ensures each call gets a different ID (safe since tests run sequentially per vitest.config.ts)
+    mockContentIdCounter += 1;
+    const uniqueContentId = contentId ?? `mock-content-${mockContentIdCounter}`;
 
     return Promise.resolve(
       new Response(
@@ -82,15 +84,18 @@ vi.mock('ai', async () => {
 });
 
 // Mock the catalog service batch vector search
+// Returns items with null IDs because in test environment we don't seed catalog items
+// and the database has foreign key constraints on catalog_item_id references.
+// In production, the service returns actual catalog IDs when matches are found.
 vi.mock('@packrat/api/services/catalogService', () => ({
   CatalogService: vi.fn().mockImplementation(() => ({
     batchVectorSearch: vi.fn(() =>
       Promise.resolve({
         items: [
-          // First item match (backpack) - no id to avoid foreign key constraint
+          // First item match (backpack)
           [
             {
-              id: null,
+              id: null, // No catalog ID in tests to avoid FK constraint
               name: 'Trail Backpack 20L',
               description: 'Lightweight day pack',
               weight: 480,
@@ -98,10 +103,10 @@ vi.mock('@packrat/api/services/catalogService', () => ({
               images: ['https://example.com/backpack.jpg'],
             },
           ],
-          // Second item match (water bottle) - no id to avoid foreign key constraint
+          // Second item match (water bottle)
           [
             {
-              id: null,
+              id: null, // No catalog ID in tests to avoid FK constraint
               name: 'HydroFlask 32oz',
               description: 'Insulated water bottle',
               weight: 180,
