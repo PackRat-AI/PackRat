@@ -70,7 +70,7 @@ export function PackTemplateItemDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        <PackTemplateItemImage item={item} className="h-64 w-full" resizeMode="cover" />
+        <PackTemplateItemImage item={item} className="h-64 w-full" resizeMode="contain" />
 
         <View className="mb-4 p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>
