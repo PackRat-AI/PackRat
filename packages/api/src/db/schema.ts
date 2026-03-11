@@ -243,6 +243,7 @@ export const packTemplates = pgTable('pack_templates', {
   tags: jsonb('tags').$type<string[]>(),
   isAppTemplate: boolean('is_app_template').notNull().default(false),
   deleted: boolean('deleted').notNull().default(false),
+  sourceUrl: text('source_url'),
 
   localCreatedAt: timestamp('local_created_at').notNull(),
   localUpdatedAt: timestamp('local_updated_at').notNull(),
