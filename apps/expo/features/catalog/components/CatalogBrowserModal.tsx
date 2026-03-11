@@ -12,10 +12,10 @@ import {
   FlatList,
   Modal,
   RefreshControl,
-  SafeAreaView,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDebounce } from 'use-debounce';
 import { useCatalogItemsInfinite } from '../hooks';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';

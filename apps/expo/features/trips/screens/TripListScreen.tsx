@@ -1,11 +1,12 @@
 import { LargeTitleHeader, type LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import Screen from 'expo-app/components/Screen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useRef } from 'react';
-import { FlatList, Pressable, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
 import type { Trip } from '../types';
@@ -54,7 +55,7 @@ export function TripsListScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <Screen>
       <LargeTitleHeader
         title={t('trips.trips')}
         backVisible={false}
@@ -86,6 +87,6 @@ export function TripsListScreen() {
         ListEmptyComponent={renderEmptyState()}
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
