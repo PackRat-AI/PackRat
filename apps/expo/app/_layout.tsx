@@ -15,13 +15,6 @@ import { Platform } from 'react-native';
 import type { BaseToastProps } from 'react-native-toast-message';
 import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 
-// Only activate the Expo dev-client (and its LogBox error overlays) in debug builds.
-// Importing it unconditionally enables LogBox in preview/production builds, causing
-// raw console.error messages to surface as red overlay popups to end users.
-if (__DEV__) {
-  require('expo-dev-client');
-}
-
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   // Adds more context data to events (IP address, cookies, user, etc.)
