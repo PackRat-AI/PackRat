@@ -135,7 +135,6 @@ export const CreatePackItemForm = ({
           deleteImage(oldImageUrl); // delete old image from local storage
         }
       } catch (err) {
-        console.error('Error submitting form:', err);
         Alert.alert('Error', 'Failed to save item. Please try again.');
       }
     },
@@ -172,7 +171,6 @@ export const CreatePackItemForm = ({
               return;
           }
         } catch (err) {
-          console.error('Error handling image:', err);
           Alert.alert('Error', 'Failed to process image. Please try again.');
         }
       },

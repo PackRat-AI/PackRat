@@ -76,8 +76,8 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
               case cancelButtonIndex:
                 return;
             }
-          } catch (err) {
-            console.error('Error handling image:', err);
+          } catch {
+            // Image handling failure is non-critical; user can try again
           }
         },
       );

@@ -18,7 +18,6 @@ export async function searchLocations(query: string): Promise<LocationSearchResu
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
-    console.error('Error searching locations:', message);
     throw new Error('Failed to search locations');
   }
 }
@@ -41,7 +40,6 @@ export async function searchLocationsByCoordinates(
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
-    console.error('Error searching locations by coordinates:', message);
     throw new Error('Failed to find locations near you');
   }
 }
@@ -60,7 +58,6 @@ export async function getWeatherData(id: number) {
     return response.data;
   } catch (error) {
     const { message } = handleApiError(error);
-    console.error('Error getting weather data:', message);
     throw new Error('Failed to get weather data');
   }
 }

@@ -4,7 +4,6 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import type { AxiosError } from 'axios';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { userStore } from 'expo-app/features/auth/store';
 import axiosInstance from 'expo-app/lib/api/client';
@@ -77,7 +76,6 @@ export function useAuthActions() {
 
       redirect(redirectTo);
     } catch (error) {
-      console.error('Sign in error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -133,8 +131,6 @@ export function useAuthActions() {
         console.log(t('auth.signInInProgress'));
       } else if (isErrorWithCode(error) && error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         console.log(t('auth.playServicesNotAvailable'));
-      } else {
-        console.error('Google sign in error:', error);
       }
 
       throw error;
@@ -184,7 +180,6 @@ export function useAuthActions() {
 
       redirect(redirectTo);
     } catch (error) {
-      console.error('Apple sign in error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -208,7 +203,6 @@ export function useAuthActions() {
         throw new Error(responseData.error || t('auth.registrationFailed'));
       }
     } catch (error) {
-      console.error('Registration error:', (error as AxiosError).message);
       throw error;
     } finally {
       setIsLoading(false);
@@ -235,8 +229,8 @@ export function useAuthActions() {
           body: JSON.stringify({ refreshToken }),
         });
       }
-    } catch (error) {
-      console.error('Sign out error:', error);
+    } catch {
+      // Sign-out network error is non-critical; local data is cleared in finally
     } finally {
       // Clear tokens and user data
       setToken(null);
@@ -265,7 +259,6 @@ export function useAuthActions() {
 
       return data;
     } catch (error) {
-      console.error('Forgot password error:', error);
       throw error;
     }
   };
@@ -288,7 +281,6 @@ export function useAuthActions() {
 
       return data;
     } catch (error) {
-      console.error('Reset password error:', error);
       throw error;
     }
   };
@@ -322,7 +314,6 @@ export function useAuthActions() {
 
       return data;
     } catch (error) {
-      console.error('Email verification error:', error);
       throw error;
     }
   };
@@ -348,7 +339,6 @@ export function useAuthActions() {
 
       return data;
     } catch (error) {
-      console.error('Resend verification email error:', error);
       throw error;
     }
   };
@@ -368,7 +358,6 @@ export function useAuthActions() {
       await clearLocalData();
       await Updates.reloadAsync();
     } catch (error) {
-      console.error('Delete account error:', error);
       throw error;
     } finally {
       setIsLoading(false);

@@ -47,8 +47,7 @@ export function useAuthInit() {
             params: { showSkipLoginBtn: 'true', redirectTo: '/' },
           });
         }
-      } catch (error) {
-        console.error('Failed to load user session:', error);
+      } catch {
         router.replace('/auth');
       } finally {
         setIsLoading(false);

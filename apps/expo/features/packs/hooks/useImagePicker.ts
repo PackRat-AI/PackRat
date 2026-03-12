@@ -45,7 +45,6 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
         return { uri, fileName, type };
       }
     } catch (err) {
-      console.error('Error picking image:', err);
       throw err;
     }
   };
@@ -76,7 +75,6 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
         return { uri, fileName, type };
       }
     } catch (err) {
-      console.error('Error taking photo:', err);
       throw err;
     }
   };
@@ -99,7 +97,6 @@ export function useImagePicker(selectedImageInit?: SelectedImage) {
       ImageCacheManager.cacheLocalTempImage(imageUri, fileName);
       return fileName;
     } catch (err) {
-      console.error('Error saving image locally:', err);
       return null;
     }
   };

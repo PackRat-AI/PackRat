@@ -147,8 +147,8 @@ export default function AIChat() {
           setMessages(persisted);
         }
       })
-      .catch((error) => {
-        console.error('Failed to load persisted messages:', error);
+      .catch(() => {
+        // Silently fail; persisted messages are non-critical, start fresh
       })
       .finally(() => {
         if (isMounted) {

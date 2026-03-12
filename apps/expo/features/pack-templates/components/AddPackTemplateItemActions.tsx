@@ -101,7 +101,6 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
                 return;
             }
           } catch (err) {
-            console.error('Error handling image:', err);
             appAlert.current?.alert({
               title: t('packTemplates.error'),
               message: t('packTemplates.failedToProcessImage'),

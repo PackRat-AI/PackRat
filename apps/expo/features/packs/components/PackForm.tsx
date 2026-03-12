@@ -123,10 +123,6 @@ export const PackForm = ({ pack }: { pack?: Pack }) => {
     },
   });
 
-  if (!packTemplatesStore[templateId]) {
-    console.warn(`No template found for ID: ${templateId}`);
-  }
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

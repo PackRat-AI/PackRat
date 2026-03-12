@@ -41,7 +41,6 @@ export function useBulkAddCatalogItems() {
         });
       }
     } catch (error) {
-      console.error('Error adding items to pack template:', error);
       throw error;
     } finally {
       setIsLoading(false);

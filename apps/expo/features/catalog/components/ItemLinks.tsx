@@ -19,8 +19,6 @@ export function ItemLinks({ links }: ItemLinksProps) {
     const supported = await Linking.canOpenURL(url);
     if (supported) {
       await Linking.openURL(url);
-    } else {
-      console.error(`Cannot open URL: ${url}`);
     }
   };
 

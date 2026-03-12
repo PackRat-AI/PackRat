@@ -67,14 +67,12 @@ export async function loadChatMessages(context: ChatContext): Promise<UIMessage[
 
     const parsed = JSON.parse(stored);
     if (!isValidMessageArray(parsed)) {
-      console.warn('Invalid chat message format in storage, clearing');
       await AsyncStorage.removeItem(key);
       return null;
     }
 
     return parsed;
-  } catch (error) {
-    console.error('Failed to load chat messages:', error);
+  } catch {
     return null;
   }
 }
@@ -86,8 +84,8 @@ export async function saveChatMessages(context: ChatContext, messages: UIMessage
   try {
     const key = getChatStorageKey(context);
     await AsyncStorage.setItem(key, JSON.stringify(messages));
-  } catch (error) {
-    console.error('Failed to save chat messages:', error);
+  } catch {
+    // Silently fail; chat persistence is non-critical
   }
 }
 
@@ -98,7 +96,7 @@ export async function clearChatMessages(context: ChatContext): Promise<void> {
   try {
     const key = getChatStorageKey(context);
     await AsyncStorage.removeItem(key);
-  } catch (error) {
-    console.error('Failed to clear chat messages:', error);
+  } catch {
+    // Silently fail; chat persistence is non-critical
   }
 }

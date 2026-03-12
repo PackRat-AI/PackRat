@@ -27,7 +27,6 @@ export function useLocationSearch() {
       const searchResults = await searchLocations(query);
       setResults(searchResults);
     } catch (err) {
-      console.error('Error searching locations:', err);
       setError('Failed to search locations. Please try again.');
     } finally {
       setIsLoading(false);
@@ -47,7 +46,6 @@ export function useLocationSearch() {
         setResults(searchResults);
       }
     } catch (err) {
-      console.error('Error searching locations by coordinates:', err);
       setError('Failed to find locations near you. Please try again or search manually.');
     } finally {
       setIsLoading(false);
@@ -88,7 +86,6 @@ export function useLocationSearch() {
         return false;
       }
     } catch (err) {
-      console.error('Error adding location:', err);
       setError('Failed to add location. Please try again.');
       return false;
     } finally {

@@ -35,8 +35,5 @@ const generateSeasonSuggestions = async (
 export function useSeasonSuggestions() {
   return useMutation({
     mutationFn: generateSeasonSuggestions,
-    onError: (error) => {
-      console.error('Season suggestions error:', error);
-    },
   });
 }

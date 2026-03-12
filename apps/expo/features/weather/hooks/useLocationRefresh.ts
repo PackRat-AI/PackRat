@@ -32,8 +32,7 @@ export function useLocationRefresh() {
         return true;
       }
       return false;
-    } catch (err) {
-      console.error('Error refreshing location:', err);
+    } catch {
       return false;
     } finally {
       setIsRefreshing(false);
@@ -68,8 +67,8 @@ export function useLocationRefresh() {
               dailyForecast: formattedData.dailyForecast,
             });
           }
-        } catch (error) {
-          console.error(`Error updating weather for ${location.name}:`, error);
+        } catch {
+          // Silently fail for individual location refresh; continue with others
         }
       }
     } finally {

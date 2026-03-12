@@ -62,8 +62,7 @@ axiosInstance.interceptors.request.use(
       }
 
       return config;
-    } catch (error) {
-      console.error('Error attaching auth token:', error);
+    } catch {
       return config;
     }
   },

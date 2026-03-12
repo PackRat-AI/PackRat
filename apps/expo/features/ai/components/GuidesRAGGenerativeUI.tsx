@@ -89,8 +89,8 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
   const handleGuidePress = async (url: string) => {
     try {
       await Linking.openURL(url);
-    } catch (error) {
-      console.error('Failed to open URL:', error);
+    } catch {
+      // Silently fail; URL open failure is non-critical
     }
   };
 

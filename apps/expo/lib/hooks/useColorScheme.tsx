@@ -12,8 +12,8 @@ function useColorScheme() {
     if (Platform.OS !== 'android') return;
     try {
       await setNavigationBar(colorScheme);
-    } catch (error) {
-      console.error('useColorScheme.tsx", "setColorScheme', error);
+    } catch {
+      // Non-critical: navigation bar style update failed
     }
   }
 
@@ -48,7 +48,7 @@ function setNavigationBar(colorScheme: 'light' | 'dark') {
     NavigationBar.setButtonStyleAsync(colorScheme === 'dark' ? 'light' : 'dark'),
     NavigationBar.setPositionAsync('absolute'),
     NavigationBar.setBackgroundColorAsync(colorScheme === 'dark' ? '#00000030' : '#ffffff80'),
-  ]).catch((error) => {
-    console.error('useColorScheme.tsx', 'setNavigationBar', error);
+  ]).catch(() => {
+    // Non-critical: navigation bar style update failed
   });
 }

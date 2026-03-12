@@ -54,8 +54,8 @@ export default function LocationSearchScreen() {
         if (storedSearches) {
           setRecentSearches(JSON.parse(storedSearches));
         }
-      } catch (err) {
-        console.error('Error loading recent searches:', err);
+      } catch {
+        // Silently fail; recent searches are non-critical
       }
     };
 
@@ -82,8 +82,8 @@ export default function LocationSearchScreen() {
       const updatedSearches = [searchTerm, ...recentSearches].slice(0, 5);
       setRecentSearches(updatedSearches);
       await AsyncStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
-    } catch (err) {
-      console.error('Error saving recent search:', err);
+    } catch {
+      // Silently fail; saving recent searches is non-critical
     }
   };
 
@@ -134,7 +134,6 @@ export default function LocationSearchScreen() {
         Alert.alert(t('common.error'), t('weather.errorAddingLocation'));
       }
     } catch (err) {
-      console.error('Error adding location:', err);
       Alert.alert(t('common.error'), t('weather.unexpectedError'));
     } finally {
       setIsAdding(false);
@@ -216,8 +215,6 @@ export default function LocationSearchScreen() {
       // Clear search query since we're showing results based on coordinates
       setQuery('');
     } catch (err) {
-      console.error('Error getting location:', err);
-
       // Provide more specific error messages
       if (err instanceof Error && err.message === 'Location request timed out') {
         Alert.alert(t('weather.locationTimeout'), t('weather.locationTimeoutMessage'), [

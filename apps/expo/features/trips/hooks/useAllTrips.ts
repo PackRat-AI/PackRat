@@ -10,7 +10,6 @@ export const fetchAllTrips = async (): Promise<Trip[]> => {
     return res.data;
   } catch (error) {
     const { message } = handleApiError(error);
-    console.error('Failed to fetch all trips:', error);
     throw new Error(message);
   }
 };

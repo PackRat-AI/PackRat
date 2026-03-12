@@ -55,7 +55,6 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
         text1: t('ai.copied'),
       });
     } catch (error) {
-      console.error('Failed to copy text:', error);
       Toast.show({
         type: 'error',
         text1: t('ai.failedToCopyText'),

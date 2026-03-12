@@ -13,7 +13,6 @@ export const fetchAllPacks = async (): Promise<Pack[]> => {
     return res.data;
   } catch (error) {
     const { message } = handleApiError(error);
-    console.error('Failed to fetch all packs:', error);
     throw new Error(message);
   }
 };

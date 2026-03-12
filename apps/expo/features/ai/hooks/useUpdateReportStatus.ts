@@ -29,8 +29,5 @@ export function useUpdateReportStatus() {
       // Invalidate reported content queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['reportedContent'] });
     },
-    onError: (error) => {
-      console.error('Error updating report status:', error);
-    },
   });
 }

@@ -118,7 +118,6 @@ export const CreatePackTemplateItemForm = ({
 
         router.back();
       } catch (err) {
-        console.error('Error submitting form:', err);
         Alert.alert(t('packTemplates.error'), t('packTemplates.failedToSaveItem'));
       }
     },
@@ -147,7 +146,6 @@ export const CreatePackTemplateItemForm = ({
           else if (selectedIndex === 1) await pickImage();
           if (selectedIndex === 0 || selectedIndex === 1) setImageChanged(true);
         } catch (err) {
-          console.error('Image error:', err);
           Alert.alert(t('packTemplates.error'), t('packTemplates.failedToProcessImage'));
         }
       },

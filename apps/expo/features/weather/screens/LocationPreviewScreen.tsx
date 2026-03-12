@@ -68,7 +68,6 @@ export default function LocationPreviewScreen() {
         setError(t('weather.failedToLoadWeather'));
       }
     } catch (err) {
-      console.error('Error loading weather data:', err);
       setError(t('weather.errorLoadingWeather'));
     } finally {
       setIsLoading(false);
@@ -104,7 +103,6 @@ export default function LocationPreviewScreen() {
         ],
       );
     } catch (err) {
-      console.error('Error saving location:', err);
       Alert.alert(t('common.error'), t('weather.errorSavingLocation'));
     } finally {
       setIsSaving(false);

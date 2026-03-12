@@ -113,7 +113,6 @@ export const fetchImageExtension = async (url: string): Promise<string | null> =
     // All requests failed and we couldn't determine the extension
     return null;
   } catch (error) {
-    console.error('Error fetching image extension:', error);
     return null;
   }
 };
@@ -151,7 +150,6 @@ export const getImageExtension = async (url: string, defaultExt = 'jpg'): Promis
         },
       },
     });
-    console.warn('Error in getImageUrlWithExtension:', error);
   }
 
   // Fall back to default extension

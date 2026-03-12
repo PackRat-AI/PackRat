@@ -66,12 +66,10 @@ export default function LocationSearchScreen() {
           800,
         );
       } else {
-        console.warn('Google Maps response:', data);
         Alert.alert(t('location.notFound'), t('location.noLocationFound'));
         setSelectedLocation(null);
       }
     } catch (error) {
-      console.error('Error searching location:', error);
       Alert.alert(t('location.searchError'), t('location.somethingWentWrong'));
       setSelectedLocation(null);
     } finally {

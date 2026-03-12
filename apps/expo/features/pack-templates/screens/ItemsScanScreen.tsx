@@ -99,7 +99,6 @@ export function ItemsScanScreen() {
           }
           handleAnalyzeImage();
         } catch (err) {
-          console.error('Error handling image:', err);
           appAlert.current?.alert({
             title: t('packTemplates.error'),
             message: t('packTemplates.failedToProcessImage'),

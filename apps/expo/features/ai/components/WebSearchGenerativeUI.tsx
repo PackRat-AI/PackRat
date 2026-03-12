@@ -62,8 +62,8 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
       if (supported) {
         await Linking.openURL(url);
       }
-    } catch (error) {
-      console.error('Error opening URL:', error);
+    } catch {
+      // Silently fail; URL open failure is non-critical
     }
   };
 

@@ -25,6 +25,7 @@ import { Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
 import { Platform, SafeAreaView, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 const ESTIMATED_ITEM_SIZE =
   ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
@@ -174,7 +175,10 @@ function ListFooterComponent() {
         ],
       });
     } catch (error) {
-      console.error('Logout failed:', error);
+      Toast.show({
+        type: 'error',
+        text1: t('auth.logoutFailed'),
+      });
     } finally {
       setIsSigningOut(false);
     }

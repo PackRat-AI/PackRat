@@ -52,7 +52,6 @@ export function AIPacksScreen() {
           materialIcon: { name: 'exclamation', color: colors.destructive },
           buttons: [{ text: t('common.ok'), onPress: () => {} }],
         });
-        console.error('Error generating packs:', error);
       }
     },
   });

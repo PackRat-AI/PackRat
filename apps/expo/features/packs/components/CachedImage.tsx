@@ -38,9 +38,8 @@ export const CachedImage: React.FC<CachedImageProps> = ({
           const localUri = await ImageCacheManager.cacheRemoteImage(imageObjectKey, imageRemoteUrl);
           setImageLocalUri(localUri);
         }
-      } catch (error) {
-        console.error('Error loading image:', error);
-        // TODO: Handle error state if needed
+      } catch {
+        // Silently fail; image simply won't display
       } finally {
         setLoading(false);
       }

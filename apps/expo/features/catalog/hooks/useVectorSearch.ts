@@ -9,7 +9,6 @@ const vectorSearchApi = async (query: string, limit?: number) => {
     });
     return response.data;
   } catch (error) {
-    console.error('Vector search API error:', error);
     const { message } = handleApiError(error);
     throw new Error(`Vector search API error: ${message}`);
   }

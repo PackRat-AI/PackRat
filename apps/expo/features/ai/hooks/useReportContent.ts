@@ -32,8 +32,5 @@ export const reportContent = async (
 export function useReportContent() {
   return useMutation({
     mutationFn: (payload: ReportContentPayload) => reportContent(payload),
-    onError: (error) => {
-      console.error('Error reporting content:', error);
-    },
   });
 }

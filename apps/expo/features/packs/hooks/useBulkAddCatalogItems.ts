@@ -38,7 +38,6 @@ export function useBulkAddCatalogItems() {
         });
       }
     } catch (error) {
-      console.error('Error adding items to pack:', error);
       throw error;
     } finally {
       setIsLoading(false);
