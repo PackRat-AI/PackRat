@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { MockLLMProvider, type LLMContext } from '../lib/MockLLMProvider';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { type LLMContext, MockLLMProvider } from '../lib/MockLLMProvider';
 
 describe('OfflineAI - MockLLMProvider', () => {
   let provider: MockLLMProvider;
@@ -26,10 +26,7 @@ describe('OfflineAI - MockLLMProvider', () => {
         activity: 'hiking',
       };
 
-      const response = await provider.generate(
-        'What gear do I need for this trail?',
-        { context }
-      );
+      const response = await provider.generate('What gear do I need for this trail?', { context });
 
       expect(response).toContain('Test Trail');
     });
@@ -47,10 +44,7 @@ describe('OfflineAI - MockLLMProvider', () => {
         activity: 'backpacking',
       };
 
-      const response = await provider.generate(
-        'What should I pack?',
-        { context }
-      );
+      const response = await provider.generate('What should I pack?', { context });
 
       expect(response).toBeDefined();
       // Should mention weather-relevant items
@@ -79,10 +73,7 @@ describe('OfflineAI - MockLLMProvider', () => {
         },
       };
 
-      const response = await provider.generate(
-        'What do I need?',
-        { context }
-      );
+      const response = await provider.generate('What do I need?', { context });
 
       expect(response).toContain('Lakeside Camp');
     });
@@ -96,10 +87,7 @@ describe('OfflineAI - MockLLMProvider', () => {
         },
       };
 
-      const response = await provider.generate(
-        'Compare trails',
-        { context }
-      );
+      const response = await provider.generate('Compare trails', { context });
 
       expect(response).toContain('Test Trail');
     });
@@ -114,10 +102,7 @@ describe('OfflineAI - MockLLMProvider', () => {
         // weather is optional
       };
 
-      const response = await provider.generate(
-        'Hello',
-        { context }
-      );
+      const response = await provider.generate('Hello', { context });
 
       expect(response).toContain('Simple Trail');
     });
