@@ -54,7 +54,7 @@ describe('OfflineAI - MockLLMProvider', () => {
 
       expect(response).toBeDefined();
       // Should mention weather-relevant items
-      expect(response.toLowerCase()).toMatch(/rain|wet|precipitation|rainy|coat| Jacket|umbrella/);
+      expect(response.toLowerCase()).toMatch(/rain|wet|precipitation|rainy|coat|jacket|umbrella/);
     });
 
     it('should handle empty context gracefully', async () => {
