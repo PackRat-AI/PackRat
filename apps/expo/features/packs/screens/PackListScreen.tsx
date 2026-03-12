@@ -13,6 +13,7 @@ import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -41,7 +42,7 @@ function CreatePackIconButton() {
   const { t } = useTranslation();
   return (
     <Link href="/pack/new" asChild>
-      <Pressable testID="create-pack-button" accessibilityLabel={t('packs.createNewPack')}>
+      <Pressable testID={TestIds.CreatePackButton} accessibilityLabel={t('packs.createNewPack')}>
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>

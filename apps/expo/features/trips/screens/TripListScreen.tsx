@@ -2,6 +2,7 @@ import { LargeTitleHeader, type LargeTitleSearchBarRef } from '@packrat/ui/nativ
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useRef } from 'react';
@@ -15,7 +16,7 @@ function CreateTripIconButton() {
   const { t } = useTranslation();
   return (
     <Link href="/trip/new" asChild>
-      <Pressable testID="create-trip-button" accessibilityLabel={t('trips.createNewTrip')}>
+      <Pressable testID={TestIds.CreateTripButton} accessibilityLabel={t('trips.createNewTrip')}>
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>
