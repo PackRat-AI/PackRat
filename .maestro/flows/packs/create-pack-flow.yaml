@@ -1,5 +1,3 @@
-appId: com.andrewbierman.packrat
----
 # Create Pack Flow: Navigate to packs tab and create a new pack
 - waitForAnimationToEnd
 

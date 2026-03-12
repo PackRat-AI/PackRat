@@ -1,5 +1,3 @@
-appId: com.andrewbierman.packrat
----
 # Logout Flow: Navigate to profile and sign out
 - waitForAnimationToEnd
 

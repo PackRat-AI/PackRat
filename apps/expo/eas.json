@@ -17,6 +17,9 @@
     "e2e": {
       "ios": {
         "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "production": {
