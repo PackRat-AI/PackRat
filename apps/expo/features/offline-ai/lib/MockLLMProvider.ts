@@ -27,6 +27,7 @@ export interface GenerateOptions {
 export class MockLLMProvider {
   async generate(_prompt: string, options?: GenerateOptions): Promise<string> {
     const context = options?.context;
+
     // If no context provided, return default greeting
     if (!context) {
       return 'Hello! How can I help you with your outdoor adventure today?';
@@ -83,7 +84,7 @@ export class MockLLMProvider {
 
     // If we have context but no specific response content, add a default
     if (parts.length === 0) {
-      return `Hello! How can I help you with your outdoor adventure today?`;
+      return 'Hello! How can I help you with your outdoor adventure today?';
     }
 
     return parts.join('').trim();
