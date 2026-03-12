@@ -3,6 +3,7 @@ import { Icon } from '@roninoss/icons';
 import Screen from 'expo-app/components/Screen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useRef } from 'react';
@@ -13,9 +14,10 @@ import type { Trip } from '../types';
 
 function CreateTripIconButton() {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   return (
     <Link href="/trip/new" asChild>
-      <Pressable>
+      <Pressable testID={TestIds.CreateTripButton} accessibilityLabel={t('trips.createNewTrip')}>
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>
