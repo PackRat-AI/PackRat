@@ -45,6 +45,11 @@ export default (): ExpoConfig =>
         favicon: './assets/favicon.png',
       },
       plugins: [
+        // expo-dev-client native module should only be compiled into development builds.
+        // In preview/production binaries, omitting the plugin ensures the native module
+        // is absent so the JS-side guard in DevClientProvider has no native counterpart
+        // to accidentally activate dev tooling or LogBox overlays.
+        ...(IS_DEV ? (['expo-dev-client'] as const) : []),
         'expo-router',
         'expo-sqlite',
         [
