@@ -217,42 +217,27 @@ export default function AIChat() {
     contentHeight: 0,
   });
 
-  const updateArrowVisibility = React.useCallback((shouldBeVisible: boolean) => {
-    setIsArrowButtonVisible((prev) => (prev === shouldBeVisible ? prev : shouldBeVisible));
-  }, []);
-
-  const onScroll = React.useCallback(
-    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
-      listLayoutRef.current.offset = e.nativeEvent.contentOffset.y;
-      updateArrowVisibility(
-        listLayoutRef.current.contentHeight >
-          listLayoutRef.current.containerHeight + listLayoutRef.current.offset + HEADER_HEIGHT + 5,
-      );
-    },
-    [updateArrowVisibility],
-  );
-
-  const onLayout = React.useCallback(
-    (e: { nativeEvent: { layout: { height: number } } }) => {
-      listLayoutRef.current.containerHeight = e.nativeEvent.layout.height;
-      updateArrowVisibility(
-        listLayoutRef.current.contentHeight >
-          listLayoutRef.current.containerHeight + listLayoutRef.current.offset + HEADER_HEIGHT + 5,
-      );
-    },
-    [updateArrowVisibility],
-  );
-
-  const onContentSizeChange = React.useCallback(
-    (_contentWidth: number, contentHeight: number) => {
-      listLayoutRef.current.contentHeight = contentHeight;
-      updateArrowVisibility(
-        contentHeight >
-          listLayoutRef.current.containerHeight + listLayoutRef.current.offset + HEADER_HEIGHT + 5,
-      );
-    },
-    [updateArrowVisibility],
-  );
+  const onScroll = (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+    listLayoutRef.current.offset = e.nativeEvent.contentOffset.y;
+    setIsArrowButtonVisible(
+      listLayoutRef.current.contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
+  const onLayout = (e: { nativeEvent: { layout: { height: number } } }) => {
+    listLayoutRef.current.containerHeight = e.nativeEvent.layout.height;
+    setIsArrowButtonVisible(
+      listLayoutRef.current.contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
+  const onContentSizeChange = (_contentWidth: number, contentHeight: number) => {
+    listLayoutRef.current.contentHeight = contentHeight;
+    setIsArrowButtonVisible(
+      contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
 
   return (
     <>
@@ -274,9 +259,7 @@ export default function AIChat() {
           ref={scrollViewRef}
           onLayout={onLayout}
           onScroll={onScroll}
-          scrollEventThrottle={16}
           onContentSizeChange={onContentSizeChange}
-          automaticallyAdjustContentInsets={false}
           scrollIndicatorInsets={{
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
