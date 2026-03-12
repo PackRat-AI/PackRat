@@ -10,7 +10,6 @@ import { getPackItemDetailOptions } from 'expo-app/features/packs/utils/getPackI
 import { getTripDetailOptions } from 'expo-app/features/trips/utils/getTripDetailOptions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
-import 'expo-dev-client';
 import { Stack } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import { View } from 'react-native';
