@@ -91,6 +91,42 @@ function CatalogItemsScreen() {
 
   const ItemSeparatorComponent = useMemo(() => () => <View className="h-2" />, []);
 
+  const listHeader = useMemo(() => {
+    if (isSearching) return null;
+
+    return (
+      <>
+        <CategoriesFilter
+          data={categories}
+          onFilter={setActiveFilter}
+          activeFilter={activeFilter}
+          error={categoriesError}
+          retry={refetchCategories}
+          className="px-4 py-2"
+        />
+
+        <View className="mb-4 px-4">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-muted-foreground">{totalItemsText}</Text>
+          </View>
+
+          {paginatedItems.length > 0 && (
+            <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
+          )}
+        </View>
+      </>
+    );
+  }, [
+    isSearching,
+    categories,
+    activeFilter,
+    categoriesError,
+    totalItemsText,
+    paginatedItems.length,
+    showingText,
+    refetchCategories,
+  ]);
+
   return (
     <Screen>
       <LargeTitleHeader
@@ -116,11 +152,13 @@ function CatalogItemsScreen() {
                         </Text>
                       )}
                     </View>
+
                     {searchResults.map((item: CatalogItem) => (
                       <View className="px-4 pt-4" key={item.id}>
                         <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
                       </View>
                     ))}
+
                     {searchResults.length === 0 && (
                       <View className="flex-1 items-center justify-center p-8">
                         {vectorError ? (
@@ -162,17 +200,6 @@ function CatalogItemsScreen() {
         }}
       />
 
-      {!isSearching && (
-        <CategoriesFilter
-          data={categories}
-          onFilter={setActiveFilter}
-          activeFilter={activeFilter}
-          error={categoriesError}
-          retry={refetchCategories}
-          className="px-4 py-2"
-        />
-      )}
-
       <FlatList
         key={activeFilter}
         data={paginatedItems}
@@ -181,9 +208,11 @@ function CatalogItemsScreen() {
           <CatalogItemCard item={item} onPress={() => handleItemPress(item)} />
         )}
         ItemSeparatorComponent={ItemSeparatorComponent}
+        ListHeaderComponent={listHeader}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
+        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
         ListFooterComponent={
           <View className="py-4">
             {isFetchingNextPage ? (
@@ -198,18 +227,6 @@ function CatalogItemsScreen() {
               </Text>
             ) : null}
           </View>
-        }
-        ListHeaderComponent={
-          !isSearching ? (
-            <View className="mb-4">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-muted-foreground">{totalItemsText}</Text>
-              </View>
-              {paginatedItems.length > 0 && (
-                <Text className="mt-1 text-xs text-muted-foreground">{showingText}</Text>
-              )}
-            </View>
-          ) : null
         }
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center p-8">
@@ -226,6 +243,7 @@ function CatalogItemsScreen() {
                 <Text className="text-center text-muted-foreground">
                   {paginatedError.message || t('catalog.somethingWentWrong')}
                 </Text>
+
                 <TouchableOpacity
                   onPress={() => refetch()}
                   className="mt-4 rounded-lg bg-primary px-4 py-2"
@@ -248,7 +266,6 @@ function CatalogItemsScreen() {
             )}
           </View>
         }
-        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
       />
     </Screen>
   );

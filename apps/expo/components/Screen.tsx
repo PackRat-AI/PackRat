@@ -2,7 +2,7 @@ import { useColorScheme } from '@packrat/ui/nativewindui';
 import { StatusBar } from 'expo-status-bar';
 import type React from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -18,17 +18,20 @@ export const Screen: React.FC<ScreenProps> = ({ children, style, ...rest }) => {
 
   const containerStyle: ViewStyle = {
     flex: 1,
+    paddingTop: insets.top,
     paddingBottom: insets.bottom + PADDING_BOTTOM + TAB_BAR_INSET,
     ...style,
   };
 
   return (
-    <View style={containerStyle} {...rest}>
-      <StatusBar
-        style={Platform.OS === 'ios' ? 'light' : colorScheme === 'dark' ? 'light' : 'dark'}
-      />
-      {children}
-    </View>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <View style={containerStyle} {...rest}>
+        <StatusBar
+          style={Platform.OS === 'ios' ? 'light' : colorScheme === 'dark' ? 'light' : 'dark'}
+        />
+        {children}
+      </View>
+    </SafeAreaView>
   );
 };
 
