@@ -1,12 +1,11 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { Alert, type AlertRef, Button, Text } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
 import { isArray } from 'radash';
-import { useRef } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Alert, Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
@@ -22,7 +21,6 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
   const deletePack = useDeletePack();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
-  const alertRef = useRef<AlertRef>(null);
   const insets = useSafeAreaInsets();
   const isOwnedByUser = usePackOwnershipCheck(packArg.id);
   const packFromStore = usePackDetailsFromStore(packArg.id); // Use pack from store if it's owned by the current user so that component observe changes to it and thus update properly.
@@ -70,14 +68,14 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
             router.push({ pathname: '/pack/[id]/edit', params: { id: pack.id } });
             break;
           case destructiveButtonIndex:
-            alertRef.current?.alert({
-              title: 'Delete pack?',
-              message: 'Are you sure you want to delete this pack? This action cannot be undone.',
-              buttons: [
+            Alert.alert(
+              'Delete pack?',
+              'Are you sure you want to delete this pack? This action cannot be undone.',
+              [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'OK', onPress: () => deletePack(pack.id) },
+                { text: 'OK', style: 'destructive', onPress: () => deletePack(pack.id) },
               ],
-            });
+            );
             break;
         }
       },
@@ -121,22 +119,18 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
           </Text>
         </View>
 
-        <View className="flex-row items-baseline justify-between">
-          {pack.tags && isArray(pack.tags) && pack.tags.length > 0 ? (
-            <View className="mt-3 flex-row flex-wrap">
-              {pack.tags.map((tag) => (
-                <View
-                  key={tag}
-                  className="mb-1 mr-2 rounded-full bg-neutral-200 dark:bg-neutral-700 px-2 py-1"
-                >
-                  <Text className="text-xs text-foreground">#{tag}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          <Alert title="" buttons={[]} ref={alertRef} />
-        </View>
+        {pack.tags && isArray(pack.tags) && pack.tags.length > 0 && (
+          <View className="mt-3 flex-row flex-wrap">
+            {pack.tags.map((tag) => (
+              <View
+                key={tag}
+                className="mb-1 mr-2 rounded-full bg-neutral-200 px-2 py-1 dark:bg-neutral-700"
+              >
+                <Text className="text-xs text-foreground">#{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
     </Pressable>
   );
