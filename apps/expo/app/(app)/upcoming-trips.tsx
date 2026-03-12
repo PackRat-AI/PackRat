@@ -1,4 +1,4 @@
-import { LargeTitleHeader, List, ListItem, Text } from '@packrat/ui/nativewindui';
+import { List, ListItem, Text } from '@packrat/ui/nativewindui';
 import { format } from 'date-fns';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
