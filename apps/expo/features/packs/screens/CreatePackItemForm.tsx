@@ -108,7 +108,7 @@ export const CreatePackItemForm = ({
           description: '',
           weight: 0,
           weightUnit: 'g' as WeightUnit,
-          quantity: 0,
+          quantity: 1,
           category: '',
           consumable: false,
           worn: false,
