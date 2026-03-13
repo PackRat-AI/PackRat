@@ -6,9 +6,8 @@ import { useForm } from '@tanstack/react-form';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,23 +20,31 @@ import {
 } from 'react-native';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
-import { useTripLocation } from '../store/tripLocationStore';
+import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
 import type { Trip } from '../types';
 
-const tripFormSchema = z.object({
-  name: z.string().min(1, 'Trip name is required'),
-  description: z.string().optional(),
-  location: z
-    .object({
-      latitude: z.number(),
-      longitude: z.number(),
-      name: z.string().optional(),
-    })
-    .optional(),
-  startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().min(1, 'End date is required'),
-  packId: z.string().optional(),
-});
+const tripFormSchema = z
+  .object({
+    name: z.string().min(1, 'Trip name is required'),
+    description: z.string().optional(),
+    location: z
+      .object({
+        latitude: z.number(),
+        longitude: z.number(),
+        name: z.string().optional(),
+      })
+      .optional(),
+    startDate: z.string().min(1, 'Start date is required'),
+    endDate: z.string().min(1, 'End date is required'),
+    packId: z.string().optional(),
+  })
+  .refine(
+    ({ startDate, endDate }) => !startDate || !endDate || new Date(endDate) >= new Date(startDate),
+    {
+      message: 'End date must be after start date',
+      path: ['endDate'],
+    },
+  );
 
 type TripFormValues = z.infer<typeof tripFormSchema>;
 
@@ -56,13 +63,26 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
 
+  // Reset the shared location store on mount (to clear stale state from any
+  // previous edit session) and on unmount (to clean up for future forms), so
+  // that a location selected in one edit session never leaks into the next.
+  useEffect(() => {
+    tripLocationStore.set(null);
+    return () => {
+      tripLocationStore.set(null);
+    };
+  }, []);
+
   const formatDate = (isoString?: string) => isoString?.split('T')[0] || '';
 
   const form = useForm({
     defaultValues: {
       name: trip?.name || '',
       description: trip?.description || '',
-      location: location ?? undefined,
+      // Use the trip's own location as the form default, not the global location
+      // store. The store is only updated when the user explicitly picks a new
+      // location via the location-search screen.
+      location: trip?.location ?? undefined,
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
       packId: trip?.packId,
@@ -156,8 +176,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         : t('trips.addLocation')}
                   </Text>
                 </Pressable>
-                {location && (
-                  <Pressable onPress={() => setLocation(null)}>
+                {(location || trip?.location) && (
+                  <Pressable
+                    onPress={() => {
+                      setLocation(null);
+                      form.setFieldValue('location', undefined);
+                    }}
+                  >
                     <Text className="text-red-500 font-semibold px-2">{t('common.clear')}</Text>
                   </Pressable>
                 )}
@@ -233,7 +258,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           setShowStartPicker(false);
                           if (date) {
                             const dateStr = date.toISOString().split('T')[0];
-                            assertDefined(dateStr);
                             field.handleChange(dateStr);
                           }
                         }}
@@ -268,7 +292,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           setShowEndPicker(false);
                           if (date) {
                             const dateStr = date.toISOString().split('T')[0];
-                            assertDefined(dateStr);
                             field.handleChange(dateStr);
                           }
                         }}
