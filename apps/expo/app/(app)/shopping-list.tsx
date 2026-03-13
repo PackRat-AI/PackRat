@@ -5,6 +5,7 @@ import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
@@ -90,7 +91,7 @@ function PriorityBadge({ priority }: { priority: string }) {
     }
   };
 
-  const getPriorityKey = () => {
+  const getPriorityKey = (): TranslationKeys => {
     switch (priority) {
       case 'High':
         return 'shopping.high';
@@ -99,7 +100,7 @@ function PriorityBadge({ priority }: { priority: string }) {
       case 'Low':
         return 'shopping.low';
       default:
-        return priority;
+        return 'shopping.low';
     }
   };
 

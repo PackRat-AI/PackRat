@@ -27,4 +27,3 @@ export type TranslationKeys = ParseKeys;
  * ```
  */
 export type TranslationFunction = TFunction;
-

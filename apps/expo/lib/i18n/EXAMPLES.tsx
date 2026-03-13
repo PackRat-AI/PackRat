@@ -5,8 +5,8 @@
  * system in the PackRat app.
  */
 
-import { t } from 'expo-app/lib/i18n';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { t } from 'expo-app/lib/i18n';
 import { Button, Text, View } from 'react-native';
 
 /**
@@ -27,7 +27,7 @@ export function BasicExample() {
 /**
  * Example 2: Translation with interpolation (variables)
  */
-export function InterpolationExample({ userName }: { userName: string }) {
+export function InterpolationExample() {
   const { t } = useTranslation();
 
   return (
@@ -55,7 +55,7 @@ export function PropsExample() {
  * Example 4: Using translations outside components
  * (e.g., in utility functions, validation, etc.)
  */
-export function validateForm(formData: any) {
+export function validateForm(formData: Record<string, unknown>) {
   if (!formData.email) {
     // Use the configured t() from expo-app/lib/i18n when outside a React component
     return { error: t('errors.somethingWentWrong') };
@@ -137,4 +137,3 @@ export function ListExample() {
  * Translation file location: apps/expo/lib/i18n/locales/en.json
  * TypeScript types: apps/expo/lib/i18n/i18next.d.ts (module augmentation)
  */
-

@@ -42,4 +42,3 @@ if (!i18next.isInitialized) {
 export const t = i18next.t.bind(i18next);
 
 export default i18next;
-

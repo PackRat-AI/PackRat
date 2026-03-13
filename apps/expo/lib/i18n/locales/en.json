@@ -38,7 +38,8 @@
     "looksLikeError": "Looks like something went wrong. Retry?",
     "tryAgain": "Try again",
     "tryAgainButton": "Try Again",
-    "unexpectedError": "The application encountered an unexpected error. You can try again or go back to the home screen."
+    "unexpectedError": "The application encountered an unexpected error. You can try again or go back to the home screen.",
+    "error": "Error"
   },
   "auth": {
     "signIn": "Sign In",
@@ -330,8 +331,8 @@
     "change": "Change",
     "image": "Image",
     "itemName": "Item Name",
+    "itemDetails": "Item Details",
     "categoryExample": "Category (e.g., Shelter, Cooking)",
-    "weightAndQuantity": "Weight & Quantity",
     "weightEach": "WEIGHT (EACH)",
     "weight": "Weight",
     "unit": "Unit",
