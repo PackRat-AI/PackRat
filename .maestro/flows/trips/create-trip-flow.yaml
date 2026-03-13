@@ -2,7 +2,8 @@ appId: com.packratai.mobile
 ---
 # Create Trip Flow: Create a trip and verify it appears in the list
 # Also tests BUG-2 — Select Pack picker broken (GH issue #1944)
-- launchApp
+- launchApp:
+    stopApp: true
 - waitForAnimationToEnd
 
 # Navigate to the Trips tab
