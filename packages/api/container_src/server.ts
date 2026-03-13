@@ -252,6 +252,11 @@ async function fetchTikTokPostData(
     });
 
     if (result.status !== 'success') {
+      console.error('Response debug:', {
+        status: result.status,
+        url,
+        result: JSON.stringify(result, null, 2),
+      });
       throw new Error(`TikTok API failed: ${result.status}`);
     }
 
