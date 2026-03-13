@@ -1,7 +1,7 @@
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useState } from 'react';
-import Toast from 'react-native-toast-message';
+import { toast } from 'sonner-native';
 import type { PackItem, WeightUnit } from '../types';
 import { useCreatePackItem } from './useCreatePackItem';
 
@@ -36,10 +36,7 @@ export function useAddCatalogItem() {
       },
     });
 
-    Toast.show({
-      type: 'success',
-      text1: `Item added to pack`,
-    });
+    toast.success('Item added to pack');
 
     setIsLoading(false);
   };

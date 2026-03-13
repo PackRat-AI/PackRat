@@ -11,7 +11,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { toast } from 'sonner-native';
 import type { CatalogItem, CatalogItemWithPackItemFields } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 import { useBulkAddCatalogItems } from '../hooks';
@@ -153,10 +153,7 @@ export function ItemsScanScreen() {
   const handleCatalogItemsSelected = async () => {
     router.back();
     await addItemsToPack(packId as string, selectedCatalogItemsList);
-    Toast.show({
-      type: 'success',
-      text1: `Added ${selectedCatalogItemsList.length} items to your pack`,
-    });
+    toast.success(`Added ${selectedCatalogItemsList.length} items to your pack`);
   };
 
   return (

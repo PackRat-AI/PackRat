@@ -21,7 +21,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { toast } from 'sonner-native';
 import { useCatalogItemDetails } from '../hooks';
 import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
 import type { CatalogItem } from '../types';
@@ -101,10 +101,7 @@ export function AddCatalogItemDetailsScreen() {
       };
     });
     setIsAdding(false);
-    Toast.show({
-      type: 'success',
-      text1: t('catalog.itemAdded'),
-    });
+    toast.success(t('catalog.itemAdded'));
     // Navigate back to the catalog item detail screen
     router.dismissTo({
       pathname: '/catalog/[id]',

@@ -13,7 +13,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { toast } from 'sonner-native';
 import type { CatalogItem, CatalogItemWithPackItemFields } from '../../catalog/types';
 import { useBulkAddCatalogItems } from '../hooks';
 
@@ -160,15 +160,12 @@ export function ItemsScanScreen() {
       await addItemsToPackTemplate(packTemplateId as string, selectedCatalogItemsList);
       const itemWord =
         selectedCatalogItemsList.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
-      Toast.show({
-        type: 'success',
-        text1: t('packTemplates.addedItems', { count: selectedCatalogItemsList.length, itemWord }),
-      });
+      toast.success(
+        t('packTemplates.addedItems', { count: selectedCatalogItemsList.length, itemWord }),
+      );
     } catch {
-      Toast.show({
-        type: 'error',
-        text1: t('errors.somethingWentWrong'),
-        text2: t('errors.tryAgain'),
+      toast.error(t('errors.somethingWentWrong'), {
+        description: t('errors.tryAgain'),
       });
     }
   };

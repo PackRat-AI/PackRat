@@ -17,7 +17,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { toast } from 'sonner-native';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
@@ -35,7 +35,7 @@ export function PackDetailScreen() {
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     packingModeStore[id as string].get() || {},
   );
 
@@ -95,25 +95,22 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     packingModeStore[id as string].set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-    Toast.show({
-      type: 'success',
-      text1: 'Packing state saved',
-    });
+    toast.success('Packing state saved');
   };
 
   const handleExitPackingMode = () => {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       setPackedItems(packingModeStore[id as string].get() || {});
     };
 
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     const packingState = packingModeStore[id as string].get() || {};
 
     if (

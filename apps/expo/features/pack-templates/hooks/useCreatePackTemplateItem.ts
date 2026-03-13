@@ -18,9 +18,9 @@ export function useCreatePackTemplateItem() {
         deleted: false,
       };
 
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       packTemplateItemsStore[id].set(newItem);
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       packTemplatesStore[packTemplateId].localUpdatedAt.set(new Date().toISOString());
     },
     [],

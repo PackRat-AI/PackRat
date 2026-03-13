@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { toast } from 'sonner-native';
 import { useBulkAddCatalogItems } from '../hooks';
 
 interface AddPackTemplateItemActionsProps {
@@ -119,10 +119,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
       await addItemsToPackTemplate(packTemplateId, catalogItems as CatalogItemWithPackItemFields[]);
       const itemWord =
         catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
-      Toast.show({
-        type: 'success',
-        text1: t('packTemplates.addedItems', { count: catalogItems.length, itemWord }),
-      });
+      toast.success(t('packTemplates.addedItems', { count: catalogItems.length, itemWord }));
     };
 
     return (

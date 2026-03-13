@@ -10,7 +10,7 @@ import { tripsStore } from 'expo-app/features/trips/store/trips';
  */
 export function useTripDetailsFromStore(id: string) {
   const trip = use$(() => {
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     const trip_ = tripsStore[id].get();
 
     return trip_;

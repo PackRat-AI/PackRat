@@ -4,9 +4,9 @@ import { useCallback } from 'react';
 export function useDeletePack() {
   const deletePack = useCallback((id: string) => {
     // Soft delete by setting deleted flag
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     getPackItems(id).forEach((item) => packItemsStore[item.id].deleted.set(true));
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     packsStore[id].deleted.set(true);
   }, []);
 

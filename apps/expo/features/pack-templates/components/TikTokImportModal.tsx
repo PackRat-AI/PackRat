@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { toast } from 'sonner-native';
 import { useGenerateTemplateFromTikTok } from '../hooks';
 
 interface TikTokImportModalProps {
@@ -31,10 +31,7 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
 
   const handleGenerate = () => {
     if (!tiktokUrl.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: t('packTemplates.tiktokUrlRequired'),
-      });
+      toast.error(t('packTemplates.tiktokUrlRequired'));
       return;
     }
 
@@ -46,10 +43,7 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
       {
         onSuccess: (template) => {
           onClose();
-          Toast.show({
-            type: 'success',
-            text1: t('packTemplates.tiktokImportSuccess'),
-          });
+          toast.success(t('packTemplates.tiktokImportSuccess'));
           router.push({
             pathname: '/pack-templates/[id]',
             params: { id: template.id },
@@ -57,10 +51,7 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
         },
         onError: (error) => {
           console.error('TikTok import error:', error);
-          Toast.show({
-            type: 'error',
-            text1: t('packTemplates.tiktokImportError'),
-          });
+          toast.error(t('packTemplates.tiktokImportError'));
         },
       },
     );

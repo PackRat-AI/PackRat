@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useCallback, useState } from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { toast } from 'sonner-native';
 import { ReportModal } from './ReportModal';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
@@ -57,24 +57,15 @@ export const ChatBubble = React.memo(function ChatBubble({
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       // Show success feedback
-      Toast.show({
-        type: 'success',
-        text1: t('ai.copied'),
-      });
+      toast.success(t('ai.copied'));
     } catch (error) {
       console.error('Failed to copy text:', error);
-      Toast.show({
-        type: 'error',
-        text1: t('ai.failedToCopyText'),
-      });
+      toast.error(t('ai.failedToCopyText'));
     }
   }, [item, t]);
 
   const handleReportSuccess = useCallback(() => {
-    Toast.show({
-      type: 'success',
-      text1: t('ai.reportSubmitted'),
-    });
+    toast.success(t('ai.reportSubmitted'));
   }, [t]);
 
   const handleReport = useCallback(() => setIsReportModalVisible(true), []);
