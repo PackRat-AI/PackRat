@@ -148,7 +148,7 @@
       },
       "containers": [
         {
-          "name": "packrat-api-TikTokContainer-dev",
+          "name": "packrat-api-tiktokcontainer-dev",
           "class_name": "TikTokContainer",
           "image": "./Dockerfile",
           "max_instances": 5
