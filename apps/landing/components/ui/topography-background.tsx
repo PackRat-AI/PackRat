@@ -26,6 +26,7 @@ export default function TopographyBackground() {
           <pattern id="topo-pattern" x="0" y="0" width="1000" height="1000" patternUnits="userSpaceOnUse">
             <g fill="none" stroke="${color}" strokeWidth="0.5" strokeOpacity="${opacity}">
               ${Array.from({ length: 40 })
+                // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
                 .map((_, i) => {
                   const y = i * 25;
                   return `

@@ -48,6 +48,7 @@ export default function MainNav() {
   }, []);
 
   // Handle smooth scrolling when clicking on navigation links
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('http')) {
       // External link → open in a new tab

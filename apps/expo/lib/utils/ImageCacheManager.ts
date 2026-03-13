@@ -39,6 +39,8 @@ export class ImageCacheManager {
   /**
    * Download and cache an image
    */
+
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   public async cacheRemoteImage(fileName: string, remoteUrl: string): Promise<string> {
     await this.initCacheDirectory();
 
@@ -64,6 +66,7 @@ export class ImageCacheManager {
     return localUri;
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   public async cacheLocalTempImage(tempImageUri: string, fileName: string): Promise<void> {
     await this.initCacheDirectory();
 

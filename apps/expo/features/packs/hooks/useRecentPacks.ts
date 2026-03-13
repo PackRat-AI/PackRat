@@ -7,6 +7,7 @@ export function useRecentPacks() {
   const packs = usePacks();
   const recentPacks = use$(() => {
     // Sort by localCreatedAt from latest to oldest
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     const sortedPacks = packs.sort((a, b) => {
       // Convert dates to timestamps for comparison
       const dateA = new Date(a.localCreatedAt).getTime();

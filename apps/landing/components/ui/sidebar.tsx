@@ -54,6 +54,7 @@ const SidebarProvider = React.forwardRef<
     onOpenChange?: (open: boolean) => void;
   }
 >(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   (
     {
       defaultOpen = true,
@@ -159,6 +160,7 @@ const Sidebar = React.forwardRef<
     collapsible?: 'offcanvas' | 'icon' | 'none';
   }
 >(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   (
     {
       side = 'left',
@@ -257,6 +259,7 @@ Sidebar.displayName = 'Sidebar';
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar } = useSidebar();
 
@@ -281,6 +284,7 @@ const SidebarTrigger = React.forwardRef<
 SidebarTrigger.displayName = 'SidebarTrigger';
 
 const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<'button'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => {
     const { toggleSidebar } = useSidebar();
 
@@ -309,6 +313,7 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<'bu
 SidebarRail.displayName = 'SidebarRail';
 
 const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<'main'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => {
     return (
       <main
@@ -328,6 +333,7 @@ SidebarInset.displayName = 'SidebarInset';
 const SidebarInput = React.forwardRef<
   React.ElementRef<typeof Input>,
   React.ComponentProps<typeof Input>
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, ...props }, ref) => {
   return (
     <Input
@@ -344,6 +350,7 @@ const SidebarInput = React.forwardRef<
 SidebarInput.displayName = 'SidebarInput';
 
 const SidebarHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => {
     return (
       <div
@@ -358,6 +365,7 @@ const SidebarHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<'div
 SidebarHeader.displayName = 'SidebarHeader';
 
 const SidebarFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => {
     return (
       <div
@@ -374,6 +382,7 @@ SidebarFooter.displayName = 'SidebarFooter';
 const SidebarSeparator = React.forwardRef<
   React.ElementRef<typeof Separator>,
   React.ComponentProps<typeof Separator>
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, ...props }, ref) => {
   return (
     <Separator
@@ -387,6 +396,7 @@ const SidebarSeparator = React.forwardRef<
 SidebarSeparator.displayName = 'SidebarSeparator';
 
 const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => {
     return (
       <div
@@ -404,6 +414,7 @@ const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<'di
 SidebarContent.displayName = 'SidebarContent';
 
 const SidebarGroup = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => {
     return (
       <div
@@ -420,6 +431,7 @@ SidebarGroup.displayName = 'SidebarGroup';
 const SidebarGroupLabel = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & { asChild?: boolean }
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : 'div';
 
@@ -441,6 +453,7 @@ SidebarGroupLabel.displayName = 'SidebarGroupLabel';
 const SidebarGroupAction = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<'button'> & { asChild?: boolean }
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : 'button';
 
@@ -462,6 +475,7 @@ const SidebarGroupAction = React.forwardRef<
 SidebarGroupAction.displayName = 'SidebarGroupAction';
 
 const SidebarGroupContent = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
@@ -474,6 +488,7 @@ const SidebarGroupContent = React.forwardRef<HTMLDivElement, React.ComponentProp
 SidebarGroupContent.displayName = 'SidebarGroupContent';
 
 const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<'ul'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <ul
       ref={ref}
@@ -486,6 +501,7 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<'ul'
 SidebarMenu.displayName = 'SidebarMenu';
 
 const SidebarMenuItem = React.forwardRef<HTMLLIElement, React.ComponentProps<'li'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <li
       ref={ref}
@@ -527,6 +543,7 @@ const SidebarMenuButton = React.forwardRef<
     tooltip?: string | React.ComponentProps<typeof TooltipContent>;
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   (
     {
       asChild = false,
@@ -584,6 +601,7 @@ const SidebarMenuAction = React.forwardRef<
     asChild?: boolean;
     showOnHover?: boolean;
   }
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, asChild = false, showOnHover = false, ...props }, ref) => {
   const Comp = asChild ? Slot : 'button';
 
@@ -610,6 +628,7 @@ const SidebarMenuAction = React.forwardRef<
 SidebarMenuAction.displayName = 'SidebarMenuAction';
 
 const SidebarMenuBadge = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
@@ -634,6 +653,7 @@ const SidebarMenuSkeleton = React.forwardRef<
   React.ComponentProps<'div'> & {
     showIcon?: boolean;
   }
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, showIcon = false, ...props }, ref) => {
   // Random width between 50 to 90%.
   const width = React.useMemo(() => {
@@ -663,6 +683,7 @@ const SidebarMenuSkeleton = React.forwardRef<
 SidebarMenuSkeleton.displayName = 'SidebarMenuSkeleton';
 
 const SidebarMenuSub = React.forwardRef<HTMLUListElement, React.ComponentProps<'ul'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <ul
       ref={ref}
@@ -679,6 +700,7 @@ const SidebarMenuSub = React.forwardRef<HTMLUListElement, React.ComponentProps<'
 SidebarMenuSub.displayName = 'SidebarMenuSub';
 
 const SidebarMenuSubItem = React.forwardRef<HTMLLIElement, React.ComponentProps<'li'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ ...props }, ref) => <li ref={ref} {...props} />,
 );
 SidebarMenuSubItem.displayName = 'SidebarMenuSubItem';
@@ -690,6 +712,7 @@ const SidebarMenuSubButton = React.forwardRef<
     size?: 'sm' | 'md';
     isActive?: boolean;
   }
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ asChild = false, size = 'md', isActive, className, ...props }, ref) => {
   const Comp = asChild ? Slot : 'a';
 

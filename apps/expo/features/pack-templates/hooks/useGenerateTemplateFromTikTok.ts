@@ -78,10 +78,10 @@ export function useGenerateTemplateFromTikTok() {
     },
     onSuccess: (data) => {
       const { items, ...template } = data;
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       packTemplatesStore[template.id].set(template);
       for (const item of items) {
-        // @ts-ignore: Safe because Legend-State uses Proxy
+        // @ts-expect-error: Safe because Legend-State uses Proxy
         packTemplateItemsStore[item.id].set(item);
       }
     },

@@ -97,6 +97,7 @@ export function ProfileScreen() {
 
             <View className="items-center">
               <Text className="text-2xl font-bold text-gray-900">
+                {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
                 {packs?.reduce((total, pack) => total + (getPackItems(pack.id)?.length ?? 0), 0)}
               </Text>
               <Text className="text-gray-500">{t('profile.items')}</Text>

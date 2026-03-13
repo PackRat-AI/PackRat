@@ -115,6 +115,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     // Filter out nulls and sort by score
     const guides = searchResults
       .filter((guide): guide is NonNullable<typeof guide> => guide !== null)
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       .sort((a, b) => b.score - a.score)
       .map(({ score, ...guide }) => guide); // Remove score from final output
 

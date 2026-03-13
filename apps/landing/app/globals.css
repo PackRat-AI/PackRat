@@ -164,14 +164,16 @@
 
 /* Gradient mesh background */
 .bg-gradient-mesh {
-  background-image: radial-gradient(at 67% 33%, hsla(180, 70%, 40%, 0.15) 0px, transparent 50%),
+  background-image:
+    radial-gradient(at 67% 33%, hsla(180, 70%, 40%, 0.15) 0px, transparent 50%),
     radial-gradient(at 33% 67%, hsla(24, 95%, 53%, 0.15) 0px, transparent 50%),
     radial-gradient(at 80% 80%, hsla(242, 100%, 70%, 0.15) 0px, transparent 50%),
     radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 0.15) 0px, transparent 50%);
 }
 
 .dark .bg-gradient-mesh {
-  background-image: radial-gradient(at 67% 33%, hsla(180, 70%, 40%, 0.15) 0px, transparent 50%),
+  background-image:
+    radial-gradient(at 67% 33%, hsla(180, 70%, 40%, 0.15) 0px, transparent 50%),
     radial-gradient(at 33% 67%, hsla(24, 95%, 53%, 0.15) 0px, transparent 50%),
     radial-gradient(at 80% 80%, hsla(242, 100%, 70%, 0.15) 0px, transparent 50%),
     radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 0.15) 0px, transparent 50%);

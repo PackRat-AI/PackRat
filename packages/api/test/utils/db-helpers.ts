@@ -91,6 +91,8 @@ export async function seedCatalogItem(overrides?: Partial<InferInsertModel<typeo
  * Seeds multiple catalog items into the test database
  * @returns Array of created catalog items with ids
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function seedCatalogItems(
   count: number,
   overrides?: Partial<InferInsertModel<typeof catalogItems>>,
@@ -99,6 +101,7 @@ export async function seedCatalogItems(
   // The createDb function is mocked to return the test database, so we can pass an empty context
   const db = createDb({} as unknown as Context);
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const items = Array.from({ length: count }, (_, i) => {
     const baseItem = createTestCatalogItem({
       ...overrides,
@@ -139,12 +142,15 @@ export async function seedPackTemplate(
  * Seeds multiple pack templates into the test database
  * @returns Array of created pack templates with ids
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function seedPackTemplates(
   count: number,
   overrides?: Partial<InferInsertModel<typeof packTemplates>>,
 ) {
   const db = createDb({} as unknown as Context);
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const templates = Array.from({ length: count }, (_, i) => {
     return createTestPackTemplate({
       ...overrides,
@@ -161,6 +167,8 @@ export async function seedPackTemplates(
  * Seeds a pack template item into the test database
  * @returns The created pack template item with id
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function seedPackTemplateItem(
   packTemplateId: string,
   overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,
@@ -180,6 +188,8 @@ export async function seedPackTemplateItem(
  * Seeds multiple pack template items into the test database
  * @returns Array of created pack template items with ids
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function seedPackTemplateItems(
   packTemplateId: string,
   count: number,
@@ -187,6 +197,7 @@ export async function seedPackTemplateItems(
 ) {
   const db = createDb({} as unknown as Context);
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const items = Array.from({ length: count }, (_, i) => {
     return createTestPackTemplateItem(packTemplateId, {
       ...overrides,
@@ -219,12 +230,15 @@ export async function seedPack(overrides?: Partial<InferInsertModel<typeof packs
  * Seeds multiple packs into the test database
  * @returns Array of created packs with ids
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function seedPacks(
   count: number,
   overrides?: Partial<InferInsertModel<typeof packs>>,
 ) {
   const db = createDb({} as unknown as Context);
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const packsData = Array.from({ length: count }, (_, i) => {
     return createTestPack({
       ...overrides,
@@ -241,6 +255,8 @@ export async function seedPacks(
  * Seeds a pack item into the test database
  * @returns The created pack item with id
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function seedPackItem(
   packId: string,
   overrides?: Partial<InferInsertModel<typeof packItems>>,
@@ -260,6 +276,8 @@ export async function seedPackItem(
  * Seeds multiple pack items into the test database
  * @returns Array of created pack items with ids
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function seedPackItems(
   packId: string,
   count: number,
@@ -267,6 +285,7 @@ export async function seedPackItems(
 ) {
   const db = createDb({} as unknown as Context);
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const items = Array.from({ length: count }, (_, i) => {
     return createTestPackItem(packId, {
       ...overrides,

@@ -89,6 +89,8 @@ export class ImageDetectionService {
   /**
    * Detect items in an image and find matching catalog items
    */
+
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   async detectAndMatchItems(
     imageUrl: string,
     matchLimit: number = 3,
@@ -115,6 +117,7 @@ export class ImageDetectionService {
 
       // Combine detected items with their catalog matches
       const itemsWithMatches: DetectedItemWithMatches[] = highConfidenceItems
+        // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
         .map((detected, index) => ({
           detected,
           catalogMatches: result.items[index],

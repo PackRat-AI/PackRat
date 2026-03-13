@@ -26,7 +26,7 @@ export function mapCsvRowToItem({
 
   const reviewCountStr =
     fieldMap.reviewCount !== undefined ? values[fieldMap.reviewCount] : undefined;
-  item.reviewCount = reviewCountStr ? parseInt(reviewCountStr) || 0 : 0;
+  item.reviewCount = reviewCountStr ? parseInt(reviewCountStr, 10) || 0 : 0;
 
   if (fieldMap.categories !== undefined && values[fieldMap.categories]) {
     const val = values[fieldMap.categories]?.trim();
@@ -178,6 +178,7 @@ export function mapCsvRowToItem({
   return item;
 }
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function parseWeight(
   weightStr: string,
   unitStr?: string,
@@ -227,6 +228,7 @@ export function normalizeJsonString(value: string): string {
       .replace(/([{,]\s*)'([^']+?)'\s*:/g, '$1"$2":')
 
       // Convert string values from 'value' to "escaped value"
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       .replace(/:\s*'(.*?)'(?=\s*[},])/g, (_, val) => {
         const escaped = val
           .replace(/\\/g, '\\\\') // Escape backslashes
@@ -237,6 +239,7 @@ export function normalizeJsonString(value: string): string {
       })
 
       // Decode \xNN hex escapes to characters
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       .replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
 
       // Escape lone backslashes (e.g., \ not followed by valid escape)

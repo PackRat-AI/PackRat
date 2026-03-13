@@ -23,6 +23,7 @@ export interface GapAnalysisResponse {
 }
 
 // API function
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const analyzePackGaps = async (
   packId: string,
   context?: GapAnalysisRequest,

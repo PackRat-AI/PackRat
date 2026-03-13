@@ -7,6 +7,7 @@ export function usePackWeightAnalysis(packId: string) {
 
   const consumableWeightInGrams = pack.items
     .filter((item) => item.consumable)
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .reduce((sum, item) => {
       const unit = item.weightUnit || 'g';
       const weight = item.weight || 0;
@@ -15,6 +16,7 @@ export function usePackWeightAnalysis(packId: string) {
 
   const wornWeightInGrams = pack.items
     .filter((item) => item.worn)
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .reduce((sum, item) => {
       const unit = item.weightUnit || 'g';
       const weight = item.weight || 0;

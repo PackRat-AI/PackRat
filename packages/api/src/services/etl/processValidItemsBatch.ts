@@ -35,6 +35,7 @@ export async function processValidItemsBatch({
     });
 
     // Combine items with their embeddings
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     const itemsWithEmbeddings = mergedItems.map((item, index) => ({
       ...item,
       embedding: embeddings[index],

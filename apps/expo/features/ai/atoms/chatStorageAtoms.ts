@@ -82,6 +82,8 @@ export async function loadChatMessages(context: ChatContext): Promise<UIMessage[
 /**
  * Saves chat messages to AsyncStorage
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function saveChatMessages(context: ChatContext, messages: UIMessage[]): Promise<void> {
   try {
     const key = getChatStorageKey(context);

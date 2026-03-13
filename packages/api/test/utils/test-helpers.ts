@@ -4,6 +4,7 @@ import app from '../../src/index';
 
 // Extend expect with custom matchers
 expect.extend({
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   toBeOneOf(received: unknown, expected: unknown[]) {
     const pass = expected.includes(received);
     return {
@@ -31,10 +32,12 @@ export const TEST_ADMIN = {
 };
 
 // Helper to create authenticated API requests
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const api = (path: string, init?: RequestInit) =>
   app.fetch(new Request(`http://localhost/api${path}`, init));
 
 // Helper to create requests with authentication token
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const apiWithAuth = async (
   path: string,
   init?: RequestInit,
@@ -54,11 +57,13 @@ export const apiWithAuth = async (
 };
 
 // Helper to create admin authenticated requests
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const apiWithAdmin = async (path: string, init?: RequestInit) => {
   return apiWithAuth(path, init, TEST_ADMIN);
 };
 
 // Helper for basic auth (admin routes)
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
   const credentials = btoa('admin:admin-password');
   return app.fetch(
@@ -81,22 +86,27 @@ export const createTestRequestBody = (data: unknown) => ({
 
 // Helper to test common HTTP methods
 export const httpMethods = {
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   get: (_url: string, options?: RequestInit) => ({ method: 'GET', ...options }),
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   post: (_url: string, body?: unknown, options?: RequestInit) => ({
     method: 'POST',
     ...createTestRequestBody(body),
     ...options,
   }),
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   put: (_url: string, body?: unknown, options?: RequestInit) => ({
     method: 'PUT',
     ...createTestRequestBody(body),
     ...options,
   }),
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   patch: (_url: string, body?: unknown, options?: RequestInit) => ({
     method: 'PATCH',
     ...createTestRequestBody(body),
     ...options,
   }),
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   delete: (_url: string, options?: RequestInit) => ({ method: 'DELETE', ...options }),
 };
 
@@ -119,6 +129,7 @@ export const expectSuccess = (response: Response) => {
 };
 
 // Helper to test response JSON structure
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const expectJsonResponse = async (response: Response, expectedFields?: string[]) => {
   expectSuccess(response);
   const data = await response.json();
@@ -134,6 +145,7 @@ export const expectJsonResponse = async (response: Response, expectedFields?: st
 };
 
 // Helper to create API request with API key authentication
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const apiWithApiKey = (path: string, init?: RequestInit) => {
   return app.fetch(
     new Request(`http://localhost/api${path}`, {

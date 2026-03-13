@@ -272,6 +272,7 @@ chatRoutes.openapi(getReportsRoute, async (c) => {
   }
 
   const reportedItems = await db.query.reportedContent.findMany({
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     orderBy: (reportedContent, { desc }) => [desc(reportedContent.createdAt)],
     with: {
       user: true,
@@ -358,7 +359,7 @@ chatRoutes.openapi(updateReportRoute, async (c) => {
     return c.json({ error: 'Unauthorized' }, 403);
   }
 
-  const id = Number.parseInt(c.req.param('id'));
+  const id = Number.parseInt(c.req.param('id'), 10);
   const { status } = await c.req.json();
 
   await db

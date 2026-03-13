@@ -57,6 +57,7 @@ function getAllPosts(): PostMetadata[] {
 }
 
 // Update author in a specific post
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function updatePostAuthor(post: PostMetadata, newAuthor: string): boolean {
   try {
     const fileContent = fs.readFileSync(post.filePath, 'utf8');
@@ -93,6 +94,7 @@ function showAuthorDistribution(): void {
 
   // Sort by count descending
   const sortedAuthors = Object.entries(distribution).sort(
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     ([, countA], [, countB]) => countB - countA,
   );
 
@@ -110,12 +112,14 @@ function listAvailableAuthors(): void {
   console.log(chalk.blue('\n=== Available Authors ==='));
   console.log(chalk.blue(`Found ${authors.length} authors in existing content:`));
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   authors.forEach((author, index) => {
     console.log(`  ${index + 1}. ${author}`);
   });
 }
 
 // Update a specific post by slug
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function updatePostBySlug(slug: string, newAuthor: string): void {
   const posts = getAllPosts();
   const post = posts.find((p) => p.slug === slug);
@@ -123,7 +127,9 @@ function updatePostBySlug(slug: string, newAuthor: string): void {
   if (!post) {
     console.error(chalk.red(`Error: Post with slug "${slug}" not found.`));
     console.log(chalk.yellow('Available slugs:'));
-    posts.forEach((p) => console.log(`  - ${p.slug}`));
+    posts.forEach((p) => {
+      console.log(`  - ${p.slug}`);
+    });
     return;
   }
 
@@ -139,6 +145,7 @@ function findPostsByTitle(searchTitle: string): PostMetadata[] {
 }
 
 // Update posts by title search
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
   const matchingPosts = findPostsByTitle(searchTitle);
 
@@ -149,6 +156,7 @@ function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
 
   if (matchingPosts.length > 1) {
     console.log(chalk.yellow(`Found ${matchingPosts.length} matching posts:`));
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     matchingPosts.forEach((post, index) => {
       console.log(`  ${index + 1}. "${post.title}" (${post.slug}) - Author: ${post.author}`);
     });
@@ -162,6 +170,7 @@ function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
 }
 
 // Update all posts by current author name
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
   const posts = getAllPosts();
   const matchingPosts = posts.filter((post) => post.author === currentAuthor);
@@ -170,7 +179,9 @@ function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
     console.error(chalk.red(`No posts found with author: "${currentAuthor}"`));
     console.log(chalk.yellow('Available authors:'));
     const authors = getUniqueAuthors();
-    authors.forEach((author) => console.log(`  - ${author}`));
+    authors.forEach((author) => {
+      console.log(`  - ${author}`);
+    });
     return;
   }
 
@@ -199,6 +210,7 @@ function rebalanceAuthors(): void {
   });
 
   const mainAuthors = Object.entries(distribution)
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .sort(([, countA], [, countB]) => countB - countA)
     .slice(0, 6)
     .map(([author]) => author);
@@ -207,7 +219,9 @@ function rebalanceAuthors(): void {
 
   console.log(chalk.blue(`\n=== Rebalancing Authors ===`));
   console.log(chalk.blue(`Using top ${mainAuthors.length} authors for rebalancing:`));
-  mainAuthors.forEach((author) => console.log(`  - ${author}`));
+  mainAuthors.forEach((author) => {
+    console.log(`  - ${author}`);
+  });
   console.log(chalk.blue(`Target per author: ~${targetPerAuthor} posts`));
 
   // Get current distribution for main authors only
@@ -254,6 +268,7 @@ function rebalanceAuthors(): void {
   let updatedCount = 0;
   postsToReassign.forEach((post) => {
     // Find author with least posts using pre-computed counts
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     const authorWithLeast = mainAuthors.reduce((min, author) =>
       (authorCounts[author] ?? 0) < (authorCounts[min] ?? 0) ? author : min,
     );
@@ -364,6 +379,7 @@ if (isMainModule()) {
           console.log(chalk.yellow(`No posts found matching: "${args[1]}"`));
         } else {
           console.log(chalk.blue(`Found ${matchingPosts.length} posts matching "${args[1]}":`));
+          // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
           matchingPosts.forEach((post, index) => {
             console.log(`  ${index + 1}. "${post.title}" (${post.slug}) - Author: ${post.author}`);
           });

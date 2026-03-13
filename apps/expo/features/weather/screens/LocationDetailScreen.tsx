@@ -269,6 +269,7 @@ export default function LocationDetailScreen() {
                 <View className="mt-8 rounded-xl bg-white/10 p-4">
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {location.hourlyForecast ? (
+                      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
                       location.hourlyForecast.map((hour, index) => (
                         <View key={hour.time} className="mr-4 min-w-[50px] items-center">
                           <Text className="text-white">
@@ -302,6 +303,7 @@ export default function LocationDetailScreen() {
                       : t('weather.dailyForecast')}
                   </Text>
                   {location.dailyForecast ? (
+                    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
                     location.dailyForecast.map((day, index) => (
                       <View
                         key={day.day}

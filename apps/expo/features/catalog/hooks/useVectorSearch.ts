@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const vectorSearchApi = async (query: string, limit?: number) => {
   try {
     const response = await axiosInstance.get('/api/catalog/vector-search', {

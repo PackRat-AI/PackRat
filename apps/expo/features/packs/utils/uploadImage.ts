@@ -2,6 +2,7 @@ import { userStore } from 'expo-app/features/auth/store';
 import axiosInstance from 'expo-app/lib/api/client';
 import * as FileSystem from 'expo-file-system/legacy';
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const uploadImage = async (fileName: string, uri: string): Promise<string | undefined> => {
   if (!fileName || fileName.trim() === '') {
     console.warn('Skipping upload: fileName is empty');
@@ -35,6 +36,7 @@ export const uploadImage = async (fileName: string, uri: string): Promise<string
 };
 
 // Function to get a presigned URL for uploading
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const getPresignedUrl = async (
   fileName: string,
   contentType: string,

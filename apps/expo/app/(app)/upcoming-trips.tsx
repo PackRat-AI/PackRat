@@ -14,6 +14,7 @@ function formatDate(dateString?: string) {
 }
 
 // Calculate trip status based on dates
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function getTripStatus(trip: { startDate?: string; endDate?: string }, t: TranslationFunction) {
   if (!trip.startDate || !trip.endDate) return { status: t('trips.notStarted'), completion: 0 };
 
@@ -142,83 +143,79 @@ export default function UpcomingTripsScreen() {
   const selectedPack = selectedTrip ? packs.find((p) => p.id === selectedTrip.packId) : undefined;
 
   return (
-    <>
-      <ScrollView className="flex-1">
-        <View className="p-4">
-          <Text variant="subhead" className="mb-2 text-muted-foreground">
-            {t('trips.plannedAdventures')}
-          </Text>
-        </View>
+    <ScrollView className="flex-1">
+      <View className="p-4">
+        <Text variant="subhead" className="mb-2 text-muted-foreground">
+          {t('trips.plannedAdventures')}
+        </Text>
+      </View>
 
-        {/* Trip List */}
-        <List
-          data={upcomingTrips.map((trip) => ({
-            id: trip.id,
-            trip,
-            title: trip.name,
-            subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
-              trip.startDate,
-            )} to ${formatDate(trip.endDate)}`,
-          }))}
-          extraData={selectedTripId}
-          keyExtractor={(item) => item.id}
-          renderItem={(info) => {
-            const { trip } = info.item;
-            const { status, completion } = getTripStatus(trip, t);
+      {/* Trip List */}
+      <List
+        data={upcomingTrips.map((trip) => ({
+          id: trip.id,
+          trip,
+          title: trip.name,
+          subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
+            trip.startDate,
+          )} to ${formatDate(trip.endDate)}`,
+        }))}
+        extraData={selectedTripId}
+        keyExtractor={(item) => item.id}
+        renderItem={(info) => {
+          const { trip } = info.item;
+          const { status, completion } = getTripStatus(trip, t);
 
-            return (
-              <ListItem
-                {...info}
-                // leftView={<TripImage uri={trip.imageUrl} />}
-                rightView={
-                  <View className="flex-row items-center">
-                    <PackStatus status={status} completion={completion} />
-                  </View>
-                }
-                onPress={() => setSelectedTripId(trip.id)}
-                className={
-                  selectedTripId === trip.id
-                    ? 'bg-muted/50 dark:bg-slate-950'
-                    : 'dark:bg-transparent'
-                }
-              />
-            );
-          }}
-        />
+          return (
+            <ListItem
+              {...info}
+              // leftView={<TripImage uri={trip.imageUrl} />}
+              rightView={
+                <View className="flex-row items-center">
+                  <PackStatus status={status} completion={completion} />
+                </View>
+              }
+              onPress={() => setSelectedTripId(trip.id)}
+              className={
+                selectedTripId === trip.id ? 'bg-muted/50 dark:bg-slate-950' : 'dark:bg-transparent'
+              }
+            />
+          );
+        }}
+      />
 
-        {/* Trip Summary */}
-        {selectedTrip && (
-          <View className="mx-4 my-4 rounded-lg bg-card">
-            <View className="border-border/25 dark:border-border/80 border-b p-4">
-              <Text variant="heading" className="font-semibold">
-                {selectedTrip.name}
+      {/* Trip Summary */}
+      {selectedTrip && (
+        <View className="mx-4 my-4 rounded-lg bg-card">
+          <View className="border-border/25 dark:border-border/80 border-b p-4">
+            <Text variant="heading" className="font-semibold">
+              {selectedTrip.name}
+            </Text>
+            <Text variant="subhead" className="mt-1 text-muted-foreground">
+              {selectedTrip.location?.name ?? 'No location'}
+            </Text>
+          </View>
+
+          <View className="flex-row justify-between p-4">
+            <View className="flex-1">
+              <Text variant="footnote" className="text-muted-foreground">
+                DATES
               </Text>
-              <Text variant="subhead" className="mt-1 text-muted-foreground">
-                {selectedTrip.location?.name ?? 'No location'}
+              <Text variant="subhead" className="mt-1">
+                {formatDate(selectedTrip.startDate)} - {formatDate(selectedTrip.endDate)}
               </Text>
             </View>
-
-            <View className="flex-row justify-between p-4">
-              <View className="flex-1">
-                <Text variant="footnote" className="text-muted-foreground">
-                  DATES
-                </Text>
-                <Text variant="subhead" className="mt-1">
-                  {formatDate(selectedTrip.startDate)} - {formatDate(selectedTrip.endDate)}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text variant="footnote" className="text-muted-foreground">
-                  PACK
-                </Text>
-                <Text variant="subhead" className="mt-1">
-                  {selectedPack ? `${selectedPack.items.length} items` : 'No pack assigned'}
-                </Text>
-              </View>
+            <View className="flex-1">
+              <Text variant="footnote" className="text-muted-foreground">
+                PACK
+              </Text>
+              <Text variant="subhead" className="mt-1">
+                {selectedPack ? `${selectedPack.items.length} items` : 'No pack assigned'}
+              </Text>
             </View>
           </View>
-        )}
-      </ScrollView>
-    </>
+        </View>
+      )}
+    </ScrollView>
   );
 }

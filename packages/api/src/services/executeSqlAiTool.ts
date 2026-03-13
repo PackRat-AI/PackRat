@@ -38,6 +38,7 @@ export async function executeSqlAiTool(params: Params) {
 
   // Execute with timeout
   const startTime = Date.now();
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const timeoutPromise = new Promise((_, reject) =>
     setTimeout(() => reject(new Error('Query timeout')), 30000),
   );

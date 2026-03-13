@@ -18,6 +18,7 @@ interface AddPackItemActionsProps {
 }
 
 export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   function AddPackItemActions({ packId }, ref) {
     const { t } = useTranslation();
     const [isCatalogModalVisible, setIsCatalogModalVisible] = React.useState(false);

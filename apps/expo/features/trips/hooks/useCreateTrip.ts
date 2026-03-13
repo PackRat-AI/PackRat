@@ -16,7 +16,7 @@ export function useCreateTrip() {
       localUpdatedAt: timestamp,
       deleted: false,
     };
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     tripsStore[id].set(newTrip);
 
     return id;

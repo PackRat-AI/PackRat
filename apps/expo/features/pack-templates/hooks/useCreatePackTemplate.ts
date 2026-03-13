@@ -16,7 +16,7 @@ export function useCreatePackTemplate() {
       deleted: false,
     };
 
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     packTemplatesStore[id].set(newTemplate);
   }, []);
 

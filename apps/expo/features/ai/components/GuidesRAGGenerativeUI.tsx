@@ -81,6 +81,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
       .join(' ');
   };
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const truncateText = (text: string, maxLength = 120) => {
     if (text.length <= maxLength) return text;
     return `${text.substring(0, maxLength).trim()}...`;
@@ -173,6 +174,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
               scrollEventThrottle={16}
               className="mb-4 max-h-80"
             >
+              {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
               {toolInvocation.output.data.data.map((guide, _index) => (
                 <TouchableOpacity
                   key={guide.file_id}
@@ -234,6 +236,7 @@ export function GuidesRAGGenerativeUI({ toolInvocation }: GuidesRAGGenerativeUIP
             {/* Pagination Dots */}
             {toolInvocation.output.data.data.length > 1 && (
               <View className="flex-row items-center justify-center gap-2 px-4">
+                {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
                 {toolInvocation.output.data.data.map((item, index) => (
                   <TouchableOpacity
                     key={item.file_id}

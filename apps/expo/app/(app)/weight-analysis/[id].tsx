@@ -86,6 +86,7 @@ export default function WeightAnalysisScreen() {
           </Text>
         </View>
 
+        {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
         {data.categories.map((category, categoryIndex) => (
           <View key={category.name} className="mx-4 mb-4 rounded-lg bg-card">
             {/* Category Header */}
@@ -104,9 +105,10 @@ export default function WeightAnalysisScreen() {
             <View>
               {items
                 .filter((item) => item.category.trim() === category.name.trim())
+                // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
                 .map((item, itemIndex) => (
                   <View
-                    key={`${categoryIndex}-${item.id}`}
+                    key={`${category.name}-${item.id}`}
                     className={cn(
                       'flex-row items-center justify-between p-4',
                       itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',

@@ -16,11 +16,13 @@ type HorizontalCatalogItemCardProps = {
     }
 );
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const formatPrice = (price?: number | null, currency?: string | null) => {
   if (!price) return '';
   return `${currency || '$'}${price.toFixed(2)}`;
 };
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const formatWeight = (weight?: number | null, unit?: string | null) => {
   if (!weight) return '';
   return `${weight}${unit || 'g'}`;

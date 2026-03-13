@@ -1,6 +1,7 @@
 import { convertFromGrams, convertToGrams } from 'expo-app/features/packs/utils';
 import type { PackTemplate, WeightUnit } from '../types';
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const computePackTemplateWeights = (
   template: Omit<PackTemplate, 'baseWeight' | 'totalWeight'>,
   preferredUnit: WeightUnit = 'g',

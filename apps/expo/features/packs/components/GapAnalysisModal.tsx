@@ -30,98 +30,92 @@ export function GapAnalysisModal({
   const { isDarkColorScheme, colors } = useColorScheme();
 
   return (
-    <>
-      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-        <View className="flex-1 bg-background">
-          <View className="flex-row items-center justify-between border-b border-border p-4">
-            <View className="flex-1">
-              <Text
-                variant="footnote"
-                className="uppercase text-xs"
-                style={{ color: colors.grey2 }}
-              >
-                {t('packs.gapAnalysis')}
-              </Text>
-              <Text numberOfLines={1}>{pack.name}</Text>
-              <View className="flex-row items-center gap-2">
-                <View className="flex-row items-center gap-1">
-                  <Icon
-                    materialIcon={{ type: 'MaterialCommunityIcons', name: 'hiking' }}
-                    ios={{ name: 'figure.hiking' }}
-                    size={16}
-                    color={colors.grey}
-                  />
-                  <Text className="text-sm text-muted-foreground">{pack.category}</Text>
-                </View>
-                {location && (
-                  <>
-                    <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
-                    <View className="flex-row items-center gap-1">
-                      <Icon
-                        materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
-                        ios={{ name: 'mappin' }}
-                        size={16}
-                        color={colors.grey}
-                      />
-                      <Text className="text-sm text-muted-foreground">{location}</Text>
-                    </View>
-                  </>
-                )}
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <View className="flex-1 bg-background">
+        <View className="flex-row items-center justify-between border-b border-border p-4">
+          <View className="flex-1">
+            <Text variant="footnote" className="uppercase text-xs" style={{ color: colors.grey2 }}>
+              {t('packs.gapAnalysis')}
+            </Text>
+            <Text numberOfLines={1}>{pack.name}</Text>
+            <View className="flex-row items-center gap-2">
+              <View className="flex-row items-center gap-1">
+                <Icon
+                  materialIcon={{ type: 'MaterialCommunityIcons', name: 'hiking' }}
+                  ios={{ name: 'figure.hiking' }}
+                  size={16}
+                  color={colors.grey}
+                />
+                <Text className="text-sm text-muted-foreground">{pack.category}</Text>
               </View>
-            </View>
-            <TouchableOpacity onPress={onClose} className="p-1">
-              <Icon name="close" size={24} color={colors.foreground} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Content */}
-          <ScrollView contentContainerClassName={cn('p-4', !analysis && 'flex-1')}>
-            {isLoading ? (
-              <View className="flex-1 items-center justify-center py-8">
-                <ActivityIndicator size="large" />
-                <Text className="mt-4 text-muted-foreground">{t('packs.analyzing')}</Text>
-              </View>
-            ) : analysis ? (
-              <View>
-                {analysis.gaps.length > 0 ? (
-                  analysis.gaps.map((gap) => (
-                    <GapSuggestion key={gap.suggestion} packId={pack.id} gap={gap} />
-                  ))
-                ) : (
-                  <View className="items-center py-8 mt-32">
-                    <Icon name="check-circle" size={48} color={colors.primary} />
-                    <Text className="mt-4 text-center font-medium text-foreground">
-                      {t('packs.packLooksComplete')}
-                    </Text>
-                    <Text className="mt-2 text-center text-sm text-muted-foreground">
-                      {t('packs.noSignificantGaps')}
-                    </Text>
+              {location && (
+                <>
+                  <View className="mx-1 h-1 w-1 rounded-full bg-muted-foreground" />
+                  <View className="flex-row items-center gap-1">
+                    <Icon
+                      materialIcon={{ type: 'MaterialIcons', name: 'location-on' }}
+                      ios={{ name: 'mappin' }}
+                      size={16}
+                      color={colors.grey}
+                    />
+                    <Text className="text-sm text-muted-foreground">{location}</Text>
                   </View>
-                )}
-              </View>
-            ) : (
-              <View className="flex-1 items-center justify-center py-8">
-                <View className="bg-destructive/10 dark:bg-destructive/90 mb-4 rounded-full p-4">
-                  <Icon
-                    name="exclamation"
-                    size={32}
-                    color={isDarkColorScheme ? '#ef4444' : colors.destructive}
-                  />
-                </View>
-                <Text className="mb-2 text-center text-lg font-medium text-foreground">
-                  {t('packs.unableToAnalyzePack')}
-                </Text>
-                <Text className="mb-6 text-center text-sm text-muted-foreground">
-                  {t('packs.pleaseTryAgain')}
-                </Text>
-                <Button onPress={onRetry} variant="secondary">
-                  <Text>{t('packs.retry')}</Text>
-                </Button>
-              </View>
-            )}
-          </ScrollView>
+                </>
+              )}
+            </View>
+          </View>
+          <TouchableOpacity onPress={onClose} className="p-1">
+            <Icon name="close" size={24} color={colors.foreground} />
+          </TouchableOpacity>
         </View>
-      </Modal>
-    </>
+
+        {/* Content */}
+        <ScrollView contentContainerClassName={cn('p-4', !analysis && 'flex-1')}>
+          {isLoading ? (
+            <View className="flex-1 items-center justify-center py-8">
+              <ActivityIndicator size="large" />
+              <Text className="mt-4 text-muted-foreground">{t('packs.analyzing')}</Text>
+            </View>
+          ) : analysis ? (
+            <View>
+              {analysis.gaps.length > 0 ? (
+                analysis.gaps.map((gap) => (
+                  <GapSuggestion key={gap.suggestion} packId={pack.id} gap={gap} />
+                ))
+              ) : (
+                <View className="items-center py-8 mt-32">
+                  <Icon name="check-circle" size={48} color={colors.primary} />
+                  <Text className="mt-4 text-center font-medium text-foreground">
+                    {t('packs.packLooksComplete')}
+                  </Text>
+                  <Text className="mt-2 text-center text-sm text-muted-foreground">
+                    {t('packs.noSignificantGaps')}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="flex-1 items-center justify-center py-8">
+              <View className="bg-destructive/10 dark:bg-destructive/90 mb-4 rounded-full p-4">
+                <Icon
+                  name="exclamation"
+                  size={32}
+                  color={isDarkColorScheme ? '#ef4444' : colors.destructive}
+                />
+              </View>
+              <Text className="mb-2 text-center text-lg font-medium text-foreground">
+                {t('packs.unableToAnalyzePack')}
+              </Text>
+              <Text className="mb-6 text-center text-sm text-muted-foreground">
+                {t('packs.pleaseTryAgain')}
+              </Text>
+              <Button onPress={onRetry} variant="secondary">
+                <Text>{t('packs.retry')}</Text>
+              </Button>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
   );
 }

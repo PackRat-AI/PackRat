@@ -40,6 +40,7 @@ const ChartContainer = React.forwardRef<
     config: ChartConfig;
     children: React.ComponentProps<typeof RechartsPrimitive.ResponsiveContainer>['children'];
   }
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ id, className, children, config, ...props }, ref) => {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`;
@@ -106,6 +107,7 @@ const ChartTooltipContent = React.forwardRef<
       labelKey?: string;
     }
 >(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   (
     {
       active,
@@ -169,6 +171,7 @@ const ChartTooltipContent = React.forwardRef<
       >
         {!nestLabel ? tooltipLabel : null}
         <div className="grid gap-1.5">
+          {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
           {payload.map((item, index) => {
             const key = `${nameKey || item.name || item.dataKey || 'value'}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
@@ -249,6 +252,7 @@ const ChartLegendContent = React.forwardRef<
       hideIcon?: boolean;
       nameKey?: string;
     }
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, hideIcon = false, payload, verticalAlign = 'bottom', nameKey }, ref) => {
   const { config } = useChart();
 
@@ -296,6 +300,7 @@ const ChartLegendContent = React.forwardRef<
 ChartLegendContent.displayName = 'ChartLegend';
 
 // Helper to extract item config from a payload.
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key: string) {
   if (typeof payload !== 'object' || payload === null) {
     return undefined;

@@ -9,6 +9,7 @@ export function useAddCatalogItem() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackItem();
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const addItemToPack = async (
     packId: string,
     catalogItem: CatalogItem,

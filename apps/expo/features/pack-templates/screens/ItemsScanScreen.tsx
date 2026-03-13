@@ -139,6 +139,7 @@ export function ItemsScanScreen() {
 
   // Get unique catalog items (in case same item matches multiple detections)
   const uniqueCatalogItems = allCatalogItems.reduce(
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     (acc, item) => {
       const existing = acc.find((existing) => existing.id === item.id);
       if (!existing || item.similarity > existing.similarity) {

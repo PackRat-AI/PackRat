@@ -29,7 +29,7 @@ export default function FaqSection() {
   });
 
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: ignore
+    // biome-ignore lint/correctness/useUniqueElementIds: ignore
     <section id="faq" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background pattern */}
       <GradientBackground variant="mesh" />
@@ -55,6 +55,7 @@ export default function FaqSection() {
         <div className="mx-auto max-w-3xl">
           <GradientBorderCard className="bg-card/80 backdrop-blur-sm">
             <Accordion type="single" collapsible className="w-full">
+              {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
               {faqs.map((faq, index) => (
                 <div key={faq.question}>
                   <AccordionItem value={`item-${index}`} className="border-b border-border">

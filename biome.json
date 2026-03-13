@@ -40,7 +40,17 @@
             "max": 1
           }
         }
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off"
       }
+    }
+  },
+  "css": {
+    "parser": {
+      "cssModules": false,
+      "allowWrongLineComments": false,
+      "tailwindDirectives": true
     }
   },
   "javascript": {

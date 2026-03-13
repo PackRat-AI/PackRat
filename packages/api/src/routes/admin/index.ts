@@ -15,11 +15,13 @@ const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 adminRoutes.use(
   '*',
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   (_c, next) => {
     console.log('adminRoutes');
     return next();
   },
   basicAuth({
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     verifyUser: (username, password, c) => {
       return username === getEnv(c).ADMIN_USERNAME && password === getEnv(c).ADMIN_PASSWORD;
     },
@@ -27,6 +29,7 @@ adminRoutes.use(
   }),
 );
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const adminLayout = (title: string, content: unknown) => html`
 <!DOCTYPE html>
 <html lang="en">

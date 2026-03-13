@@ -49,6 +49,7 @@ export function useAuthActions() {
     await ImageCacheManager.clearCache();
   };
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -191,6 +192,7 @@ export function useAuthActions() {
     }
   };
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     setIsLoading(true);
     try {
@@ -270,6 +272,7 @@ export function useAuthActions() {
     }
   };
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const resetPassword = async (email: string, code: string, newPassword: string) => {
     try {
       const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/reset-password`, {
@@ -293,6 +296,7 @@ export function useAuthActions() {
     }
   };
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const verifyEmail = async (email: string, code: string) => {
     try {
       const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/verify-email`, {

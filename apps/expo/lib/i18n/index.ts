@@ -25,6 +25,8 @@ i18n.defaultLocale = 'en';
  * @param options - Optional interpolation values
  * @returns Translated string
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const t = (key: string, options?: TranslateOptions) => {
   return i18n.t(key, options);
 };
