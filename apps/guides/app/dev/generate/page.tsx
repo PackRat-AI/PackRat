@@ -261,7 +261,6 @@ export default function GeneratePage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Title</Label>
-                  {/** biome-ignore lint/correctness/useUniqueElementIds: ignore */}
                   <Input
                     id="title"
                     value={title}
@@ -272,7 +271,6 @@ export default function GeneratePage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
-                  {/** biome-ignore lint/correctness/useUniqueElementIds: ignore */}
                   <Textarea
                     id="description"
                     value={description}
@@ -321,7 +319,6 @@ export default function GeneratePage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="author">Author (optional)</Label>
-                  {/** biome-ignore lint/correctness/useUniqueElementIds: ignore */}
                   <Input
                     id="author"
                     value={author}
@@ -331,7 +328,6 @@ export default function GeneratePage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {/** biome-ignore lint/correctness/useUniqueElementIds: ignore */}
                   <Switch
                     id="generate-full"
                     checked={generateFull}
@@ -404,7 +400,6 @@ export default function GeneratePage() {
                 <div className="flex justify-between">
                   <Label htmlFor="batch-count">Number of Posts: {batchCount}</Label>
                 </div>
-                {/** biome-ignore lint/correctness/useUniqueElementIds: ignore */}
                 <Slider
                   id="batch-count"
                   min={1}

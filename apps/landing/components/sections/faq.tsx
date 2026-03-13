@@ -29,7 +29,6 @@ export default function FaqSection() {
   });
 
   return (
-    // biome-ignore lint/correctness/useUniqueElementIds: ignore
     <section id="faq" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background pattern */}
       <GradientBackground variant="mesh" />

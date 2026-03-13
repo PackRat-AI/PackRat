@@ -10,7 +10,6 @@ import Link from 'next/link';
 
 export default function FeatureSection() {
   return (
-    // biome-ignore lint/correctness/useUniqueElementIds: ignore
     <section id="features" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background decorations */}
       <GradientBackground variant="mesh" />

@@ -6,7 +6,6 @@ import { LucideIcon } from 'landing-app/lib/icons';
 
 export default function IntegrationSection() {
   return (
-    // biome-ignore lint/correctness/useUniqueElementIds: ignore
     <section id="integrations" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background pattern */}
       <GradientBackground variant="mesh" />

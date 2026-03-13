@@ -7,7 +7,6 @@ import { QuoteIcon } from 'lucide-react';
 
 export default function TestimonialsSection() {
   return (
-    // biome-ignore lint/correctness/useUniqueElementIds: ignore
     <section
       id="testimonials"
       className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted/50"
