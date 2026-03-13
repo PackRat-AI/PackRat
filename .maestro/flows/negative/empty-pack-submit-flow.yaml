@@ -2,13 +2,48 @@ appId: com.packratai.mobile
 ---
 # Empty Pack Submit Flow: Tests that creating a pack with no name is prevented
 # Verifies form validation on the pack creation form
-- launchApp
+# Note: This flow runs after invalid-login which clears state, so we re-login first
+- launchApp:
+    clearState: true
+    stopApp: true
 - waitForAnimationToEnd
 
-# Navigate to Packs tab
+# Login first (state was cleared by previous flow)
+- extendedWaitUntil:
+    visible:
+      text: "Sign In"
+    timeout: 10000
+
 - tapOn:
-    text: "Packs"
+    text: "Sign In"
 - waitForAnimationToEnd
+
+- runFlow:
+    when:
+      notVisible:
+        text: "Email"
+    commands:
+      - tapOn:
+          text: "Sign In"
+      - waitForAnimationToEnd
+
+- tapOn:
+    text: "Email"
+- inputText: ${TEST_EMAIL}
+
+- tapOn:
+    text: "Password"
+- inputText: ${TEST_PASSWORD}
+
+- hideKeyboard
+
+- tapOn:
+    text: "Submit"
+
+- extendedWaitUntil:
+    visible:
+      text: "Dashboard"
+    timeout: 20000
 
 # Open create pack form via deep link
 - openLink: "packrat://pack/new"
@@ -41,7 +76,6 @@ appId: com.packratai.mobile
     text: "Pack Name"
 
 # Try to submit without filling any fields
-# Scroll to and tap Create Pack submit button
 - scrollUntilVisible:
     element:
       text: "Create Pack"
