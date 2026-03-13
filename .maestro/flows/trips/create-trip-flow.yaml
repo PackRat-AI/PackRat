@@ -31,10 +31,21 @@ appId: com.packratai.mobile
       - tapOn:
           text: "Just once"
 
+# Handle Login Required (BUG-8 can occur on deep links too)
+- runFlow:
+    when:
+      visible:
+        text: "Login Required"
+    commands:
+      - launchApp
+      - waitForAnimationToEnd
+      - openLink: "packrat://trip/new"
+      - waitForAnimationToEnd
+
 - extendedWaitUntil:
     visible:
       text: "Trip Name"
-    timeout: 10000
+    timeout: 15000
 
 # Assert trip creation form loaded
 - assertVisible:

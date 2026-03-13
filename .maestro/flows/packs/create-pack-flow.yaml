@@ -1,6 +1,7 @@
 appId: com.packratai.mobile
 ---
 # Create Pack Flow: Navigate to packs tab and create a new pack
+- launchApp
 - waitForAnimationToEnd
 
 # Navigate to the Packs tab
