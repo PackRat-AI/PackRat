@@ -8,9 +8,11 @@ The PackRat Expo app has been set up with internationalization (i18n) support fo
 
 ### 1. Core Infrastructure
 
-- **expo-localization** (v~16.1.7): Detects device locale
-- **i18n-js** (v^4.4.3): Manages translations
+- **expo-localization** (v~16.1.6): Detects device locale
+- **i18next** (v^25.8.18): Core i18n library
+- **react-i18next** (v^16.5.6): React bindings (provides `useTranslation` hook)
 - **Configuration**: `apps/expo/lib/i18n/index.ts`
+- **TypeScript Types**: `apps/expo/lib/i18n/i18next.d.ts` (module augmentation)
 - **Translation Hook**: `apps/expo/lib/hooks/useTranslation.ts`
 
 ### 2. English Translations
@@ -62,16 +64,17 @@ Created comprehensive developer resources:
 apps/expo/
 ├── lib/
 │   ├── i18n/
-│   │   ├── index.ts              # i18n configuration
+│   │   ├── index.ts              # i18next configuration + resources
+│   │   ├── i18next.d.ts          # TypeScript module augmentation
+│   │   ├── types.ts              # TranslationKeys convenience type
 │   │   ├── locales/
 │   │   │   └── en.json           # English translations
 │   │   ├── README.md             # Documentation
 │   │   ├── MIGRATION.md          # Migration guide
 │   │   ├── EXAMPLES.tsx          # Code examples
-│   │   ├── types.ts              # TypeScript types
 │   │   └── extract-strings.js   # Helper script
 │   └── hooks/
-│       └── useTranslation.ts     # Translation hook
+│       └── useTranslation.ts     # Re-exports useTranslation from react-i18next
 └── package.json                  # Updated with dependencies
 ```
 
@@ -105,8 +108,8 @@ const { t } = useTranslation();
 ### Outside Components
 
 ```tsx
-import { t } from 'expo-app/lib/i18n';
-const message = t('errors.somethingWentWrong');
+import i18next from 'i18next';
+const message = i18next.t('errors.somethingWentWrong');
 ```
 
 ## Next Steps
@@ -137,7 +140,11 @@ When ready to add other languages:
 4. Import in `lib/i18n/index.ts`:
    ```typescript
    import es from './locales/es.json';
-   i18n.translations = { en, es };
+
+   export const resources = {
+     en: { translation: en },
+     es: { translation: es },
+   } as const;
    ```
 
 The app automatically uses the device language if available, falling back to English.
@@ -163,7 +170,9 @@ The infrastructure is complete. Developers can now gradually migrate remaining c
 ## Resources
 
 - [Expo Localization Docs](https://docs.expo.dev/versions/latest/sdk/localization/)
-- [i18n-js Documentation](https://github.com/fnando/i18n)
+- [i18next Documentation](https://www.i18next.com/)
+- [react-i18next Documentation](https://react.i18next.com/)
+- [i18next TypeScript Guide](https://www.i18next.com/overview/typescript)
 - Local docs: `apps/expo/lib/i18n/README.md`
 - Migration guide: `apps/expo/lib/i18n/MIGRATION.md`
 - Code examples: `apps/expo/lib/i18n/EXAMPLES.tsx`

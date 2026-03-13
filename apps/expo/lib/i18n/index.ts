@@ -1,35 +1,29 @@
 import * as Localization from 'expo-localization';
-import { I18n, type TranslateOptions } from 'i18n-js';
+import i18next from 'i18next';
+import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
-import type { TranslationKeys } from './types';
 
-// Create i18n instance
-const i18n = new I18n();
-
-// Set the key-value pairs for translations
-i18n.translations = {
-  en,
-};
-
-// Set the locale once at the beginning of your app
-i18n.locale = Localization.getLocales()[0]?.languageCode ?? 'en';
-
-// When a value is missing from a language, it'll fall back to English
-i18n.enableFallback = true;
-
-// Default to lowercase locale tags for consistency
-i18n.defaultLocale = 'en';
+export const defaultNS = 'translation' as const;
 
 /**
- * Translate a key to its localized string.
- * The `key` parameter is strictly typed to the keys present in `en.json` so
- * TypeScript will report an error whenever an unknown or misspelled key is used.
- * @param key - Translation key in dot notation (e.g., 'common.welcome')
- * @param options - Optional interpolation values
- * @returns Translated string
+ * Translation resources keyed by locale then namespace.
+ * Typed `as const` so TypeScript infers the exact shape of every key/value,
+ * which is what the `CustomTypeOptions` module augmentation in `i18next.d.ts`
+ * relies on for full compile-time key safety.
  */
-export const t = (key: TranslationKeys, options?: TranslateOptions) => {
-  return i18n.t(key, options);
-};
+export const resources = {
+  en: { translation: en },
+} as const;
 
-export default i18n;
+i18next.use(initReactI18next).init({
+  resources,
+  lng: Localization.getLocales()[0]?.languageCode ?? 'en',
+  fallbackLng: 'en',
+  defaultNS,
+  interpolation: {
+    escapeValue: false, // React already escapes values
+  },
+});
+
+export default i18next;
+

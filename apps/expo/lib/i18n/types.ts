@@ -1,35 +1,21 @@
 /**
- * TypeScript type definitions for i18n translation keys.
+ * Convenience re-export of the translation key type.
  *
- * `TranslationKeys` is automatically derived from `en.json` so that every key
- * added to the translation file is instantly available for type-checking and
- * autocomplete — no manual maintenance required.
+ * The authoritative type safety comes from the `i18next.d.ts` module
+ * augmentation in this directory, which wires `en.json` into i18next's
+ * `CustomTypeOptions`.  This means i18next's own `t()` function and the
+ * `useTranslation` hook automatically enforce correct keys — no manual
+ * maintenance required.
  *
- * TypeScript will produce a compile-time error whenever code references a key
- * that does not exist in the English translation file, ensuring we are always
- * alerted to missing or mistyped translation values.
+ * `TranslationKeys` is provided here as a convenience for the rare cases
+ * where code outside of React components needs to refer to the key type
+ * directly (e.g., prop types that accept a pre-translated key string).
+ *
+ * @see https://www.i18next.com/overview/typescript
  */
 
-import type { TranslateOptions } from 'i18n-js';
-import type en from './locales/en.json';
-
-/**
- * Recursively builds a union of all dot-notation paths through a nested
- * translation object.  Only string leaf values produce keys; intermediate
- * object nodes are not included so every key points to an actual translated
- * string.
- */
-type NestedKeyOf<T extends Record<string, unknown>> = {
-  [K in keyof T & string]: T[K] extends Record<string, unknown>
-    ? `${K}.${NestedKeyOf<T[K] & Record<string, unknown>>}`
-    : K;
-}[keyof T & string];
+import type { ParseKeys } from 'i18next';
 
 /** Union of every valid translation key derived from `en.json`. */
-export type TranslationKeys = NestedKeyOf<typeof en>;
+export type TranslationKeys = ParseKeys;
 
-/**
- * Type-safe translation function signature.
- * Usage: t('common.welcome') — autocompletes and type-checks all keys.
- */
-export type TranslationFunction = (key: TranslationKeys, options?: TranslateOptions) => string;

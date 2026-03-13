@@ -5,8 +5,8 @@
  * system in the PackRat app.
  */
 
+import i18next from 'i18next';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { t } from 'expo-app/lib/i18n';
 import { Button, Text, View } from 'react-native';
 
 /**
@@ -57,8 +57,8 @@ export function PropsExample() {
  */
 export function validateForm(formData: any) {
   if (!formData.email) {
-    // Using t() directly without the hook
-    return { error: t('errors.somethingWentWrong') };
+    // Use i18next.t() directly when outside a React component
+    return { error: i18next.t('errors.somethingWentWrong') };
   }
   return { success: true };
 }
@@ -66,12 +66,14 @@ export function validateForm(formData: any) {
 /**
  * Example 5: Type safety for translation keys
  *
- * With proper TypeScript types, attempting to use an unknown key is a
- * compile-time error — TypeScript will underline it red and report:
- *   "Argument of type '"someNonExistentKey"' is not assignable to
- *    parameter of type 'TranslationKeys'"
+ * With the `CustomTypeOptions` module augmentation in `i18next.d.ts`, the
+ * `t()` function only accepts keys that exist in `en.json`.  TypeScript will
+ * report a compile-time error for any unknown or misspelled key:
+ *   "Argument of type '"someNonExistentKey"' is not assignable to parameter
+ *    of type 'ParseKeys<Ns>'"
  *
  * This ensures missing translations are caught before they reach production.
+ * @see https://www.i18next.com/overview/typescript
  */
 export function FallbackExample() {
   const { t } = useTranslation();
@@ -130,7 +132,9 @@ export function ListExample() {
  * 2. Use in component: const { t } = useTranslation();
  * 3. Translate text: t('section.key')
  * 4. With variables: t('key', { variable: value })
- * 5. Outside components: import { t } from 'expo-app/lib/i18n';
+ * 5. Outside components: import i18next from 'i18next'; i18next.t('key')
  *
  * Translation file location: apps/expo/lib/i18n/locales/en.json
+ * TypeScript types: apps/expo/lib/i18n/i18next.d.ts (module augmentation)
  */
+
