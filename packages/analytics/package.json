@@ -14,7 +14,9 @@
     "chalk": "^5.4.1",
     "citty": "^0.2.1",
     "cli-table3": "^0.6.5",
-    "consola": "^3.4.2"
+    "consola": "^3.4.2",
+    "radash": "^12.1.1",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/bun": "latest",
