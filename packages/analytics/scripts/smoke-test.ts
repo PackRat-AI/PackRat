@@ -7,11 +7,7 @@
  * we fall back to running the analytics CLI under Node.
  */
 
-import { resolve } from 'node:path';
 import { DuckDBInstance } from '@duckdb/node-api';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: resolve(import.meta.dirname, '../.env') });
 
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;

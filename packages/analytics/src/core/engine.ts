@@ -1,14 +1,18 @@
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DuckDBInstance } from '@duckdb/node-api';
-import { R2_ACCESS_KEY_ID, R2_BUCKET_NAME, R2_ENDPOINT_URL, R2_SECRET_ACCESS_KEY } from './env.js';
+import { DBConfig } from './constants';
+import { R2_ACCESS_KEY_ID, R2_BUCKET_NAME, R2_ENDPOINT_URL, R2_SECRET_ACCESS_KEY } from './env';
+import { QueryBuilder } from './query-builder';
 
 export class PackRatEngine {
   private instance: DuckDBInstance | null = null;
   private connection: DuckDBConnection | null = null;
   readonly bucketPath: string;
+  readonly queryBuilder: QueryBuilder;
 
   constructor() {
     this.bucketPath = `s3://${R2_BUCKET_NAME}`;
+    this.queryBuilder = new QueryBuilder(this.bucketPath);
   }
 
   async connect(): Promise<DuckDBConnection> {
@@ -20,7 +24,7 @@ export class PackRatEngine {
     // Load httpfs extension
     await this.connection.run('INSTALL httpfs; LOAD httpfs;');
 
-    // Configure R2 credentials
+    // Configure R2 credentials and DuckDB settings
     const endpoint = R2_ENDPOINT_URL.replace('https://', '');
     await this.connection.run(`
       SET s3_region='auto';
@@ -28,8 +32,8 @@ export class PackRatEngine {
       SET s3_access_key_id='${R2_ACCESS_KEY_ID}';
       SET s3_secret_access_key='${R2_SECRET_ACCESS_KEY}';
       SET s3_use_ssl=true;
-      SET memory_limit='8GB';
-      SET threads=4;
+      SET memory_limit='${DBConfig.MEMORY_LIMIT}';
+      SET threads=${DBConfig.THREAD_COUNT};
     `);
 
     return this.connection;

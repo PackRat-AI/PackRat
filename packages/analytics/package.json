@@ -14,8 +14,7 @@
     "chalk": "^5.4.1",
     "citty": "^0.2.1",
     "cli-table3": "^0.6.5",
-    "consola": "^3.4.2",
-    "dotenv": "^16.5.0"
+    "consola": "^3.4.2"
   },
   "devDependencies": {
     "@types/bun": "latest",
