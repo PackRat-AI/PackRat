@@ -99,14 +99,20 @@ appId: com.packratai.mobile
 
 - waitForAnimationToEnd
 
-# Set Start Date
+# Set Start Date — date picker can be flaky, use repeat for reliability
 - scrollUntilVisible:
     element:
       text: "Start Date"
     direction: DOWN
-- tapOn:
-    text: "Start Date"
-- waitForAnimationToEnd
+    centerElement: true
+- repeat:
+    whileNotVisible: "OK"
+    maxPasses: 3
+    commands:
+      - tapOn:
+          text: "Start Date"
+          retryTapIfNoChange: true
+      - waitForAnimationToEnd
 # Accept default date (today)
 - tapOn:
     text: "OK"
@@ -117,9 +123,15 @@ appId: com.packratai.mobile
     element:
       text: "End Date"
     direction: DOWN
-- tapOn:
-    text: "End Date"
-- waitForAnimationToEnd
+    centerElement: true
+- repeat:
+    whileNotVisible: "OK"
+    maxPasses: 3
+    commands:
+      - tapOn:
+          text: "End Date"
+          retryTapIfNoChange: true
+      - waitForAnimationToEnd
 # Accept default date (today)
 - tapOn:
     text: "OK"
