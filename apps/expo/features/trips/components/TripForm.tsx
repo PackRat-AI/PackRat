@@ -109,6 +109,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
+                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="pl-2 justify-center">
                         <Icon name="map" size={16} color={colors.grey3} />
@@ -217,13 +218,20 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <FormItem>
                     <Pressable
                       onPress={() => setShowStartPicker(true)}
-                      className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card"
+                      className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
+                        field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
+                      }`}
                     >
                       <Text className="text-foreground font-medium">{t('trips.startDate')}</Text>
                       <Text className="text-muted-foreground">
                         {field.state.value || t('trips.selectDate')}
                       </Text>
                     </Pressable>
+                    {field.state.meta.errors[0]?.message && (
+                      <Text className="text-destructive text-sm mt-1">
+                        {field.state.meta.errors[0].message}
+                      </Text>
+                    )}
 
                     {showStartPicker && (
                       <DateTimePicker
@@ -252,13 +260,20 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <FormItem>
                     <Pressable
                       onPress={() => setShowEndPicker(true)}
-                      className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card"
+                      className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
+                        field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
+                      }`}
                     >
                       <Text className="text-foreground font-medium">{t('trips.endDate')}</Text>
                       <Text className="text-muted-foreground">
                         {field.state.value || t('trips.selectDate')}
                       </Text>
                     </Pressable>
+                    {field.state.meta.errors[0]?.message && (
+                      <Text className="text-destructive text-sm mt-1">
+                        {field.state.meta.errors[0].message}
+                      </Text>
+                    )}
 
                     {showEndPicker && (
                       <DateTimePicker

@@ -32,9 +32,9 @@ import type { PackTemplateItem, PackTemplateItemInput } from '../types';
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
   description: z.string(),
-  weight: z.preprocess((val) => (val === '' ? 0 : Number(val)), z.number().min(0)),
+  weight: z.number().min(0, 'Weight must be a positive number'),
   weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
-  quantity: z.preprocess((val) => (val === '' ? 1 : Number(val)), z.number().int().min(1)),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
   category: z.string(),
   consumable: z.boolean(),
   worn: z.boolean(),
@@ -77,17 +77,33 @@ export const CreatePackTemplateItemForm = ({
   );
 
   const form = useForm({
-    defaultValues: existingItem || {
-      name: '',
-      description: '',
-      weight: 0,
-      weightUnit: 'g' as WeightUnit,
-      quantity: 1,
-      category: '',
-      consumable: false,
-      worn: false,
-      notes: '',
-      image: null,
+    defaultValues: existingItem
+      ? {
+          name: existingItem.name,
+          description: existingItem.description || '',
+          weight: existingItem.weight,
+          weightUnit: existingItem.weightUnit as WeightUnit,
+          quantity: existingItem.quantity,
+          category: existingItem.category || '',
+          consumable: existingItem.consumable,
+          worn: existingItem.worn,
+          notes: existingItem.notes || '',
+          image: existingItem.image || null,
+        }
+      : {
+          name: '',
+          description: '',
+          weight: 0,
+          weightUnit: 'g' as WeightUnit,
+          quantity: 1,
+          category: '',
+          consumable: false,
+          worn: false,
+          notes: '',
+          image: null,
+        },
+    validators: {
+      onChange: itemFormSchema,
     },
     onSubmit: async ({ value }) => {
       try {
@@ -194,6 +210,7 @@ export const CreatePackTemplateItemForm = ({
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
+                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="backpack" size={16} color={colors.grey3} />
@@ -261,6 +278,7 @@ export const CreatePackTemplateItemForm = ({
                       field.handleChange(Number.isFinite(parsed) ? parsed : 0);
                     }}
                     keyboardType="decimal-pad"
+                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="dumbbell" size={16} color={colors.grey3} />
@@ -303,6 +321,7 @@ export const CreatePackTemplateItemForm = ({
                       field.handleChange(intValue);
                     }}
                     keyboardType="numeric"
+                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="circle-outline" size={16} color={colors.grey3} />
