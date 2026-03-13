@@ -108,8 +108,8 @@ const { t } = useTranslation();
 ### Outside Components
 
 ```tsx
-import i18next from 'i18next';
-const message = i18next.t('errors.somethingWentWrong');
+import { t } from 'expo-app/lib/i18n';
+const message = t('errors.somethingWentWrong');
 ```
 
 ## Next Steps

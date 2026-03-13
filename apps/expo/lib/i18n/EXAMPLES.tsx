@@ -5,7 +5,7 @@
  * system in the PackRat app.
  */
 
-import i18next from 'i18next';
+import { t } from 'expo-app/lib/i18n';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Button, Text, View } from 'react-native';
 
@@ -57,8 +57,8 @@ export function PropsExample() {
  */
 export function validateForm(formData: any) {
   if (!formData.email) {
-    // Use i18next.t() directly when outside a React component
-    return { error: i18next.t('errors.somethingWentWrong') };
+    // Use the configured t() from expo-app/lib/i18n when outside a React component
+    return { error: t('errors.somethingWentWrong') };
   }
   return { success: true };
 }
@@ -132,7 +132,7 @@ export function ListExample() {
  * 2. Use in component: const { t } = useTranslation();
  * 3. Translate text: t('section.key')
  * 4. With variables: t('key', { variable: value })
- * 5. Outside components: import i18next from 'i18next'; i18next.t('key')
+ * 5. Outside components: import { t } from 'expo-app/lib/i18n'; t('key')
  *
  * Translation file location: apps/expo/lib/i18n/locales/en.json
  * TypeScript types: apps/expo/lib/i18n/i18next.d.ts (module augmentation)

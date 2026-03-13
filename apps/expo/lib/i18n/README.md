@@ -72,13 +72,15 @@ const { t } = useTranslation();
 
 ### Direct Translation (without hook)
 
-For use outside of React components:
+For use outside of React components (utility functions, validation helpers, etc.):
 
 ```tsx
-import i18next from 'i18next';
+import { t } from 'expo-app/lib/i18n';
 
-const message = i18next.t('errors.somethingWentWrong');
+const message = t('errors.somethingWentWrong');
 ```
+
+This uses the configured i18next instance exported from `lib/i18n/index.ts`, which guarantees the instance is always initialised before `t` is called.
 
 ## Translation Keys
 
