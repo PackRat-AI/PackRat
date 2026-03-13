@@ -26,7 +26,7 @@ import {
   schemaIsCurrent,
 } from './cache-metadata';
 import { DBConfig } from './constants';
-import { R2_ACCESS_KEY_ID, R2_BUCKET_NAME, R2_ENDPOINT_URL, R2_SECRET_ACCESS_KEY } from './env';
+import { env } from './env';
 import { QueryBuilder, SQLFragments } from './query-builder';
 
 const TABLE_NAME = 'gear_data';
@@ -41,7 +41,7 @@ export class LocalCacheManager {
 
   constructor(cacheDir = 'data/cache') {
     this.cacheDir = cacheDir;
-    this.queryBuilder = new QueryBuilder(`s3://${R2_BUCKET_NAME}`);
+    this.queryBuilder = new QueryBuilder(`s3://${env().R2_BUCKET_NAME}`);
   }
 
   // ── Connection ──────────────────────────────────────────────────────
@@ -91,6 +91,7 @@ export class LocalCacheManager {
     }
 
     // Install httpfs for R2 access
+    const { R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ENDPOINT_URL } = env();
     await conn.run('INSTALL httpfs; LOAD httpfs;');
     const endpoint = R2_ENDPOINT_URL.replace('https://', '');
     await conn.run(`

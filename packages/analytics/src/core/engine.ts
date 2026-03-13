@@ -1,7 +1,7 @@
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { DBConfig } from './constants';
-import { R2_ACCESS_KEY_ID, R2_BUCKET_NAME, R2_ENDPOINT_URL, R2_SECRET_ACCESS_KEY } from './env';
+import { env } from './env';
 import { QueryBuilder } from './query-builder';
 
 export class PackRatEngine {
@@ -11,12 +11,15 @@ export class PackRatEngine {
   readonly queryBuilder: QueryBuilder;
 
   constructor() {
+    const { R2_BUCKET_NAME } = env();
     this.bucketPath = `s3://${R2_BUCKET_NAME}`;
     this.queryBuilder = new QueryBuilder(this.bucketPath);
   }
 
   async connect(): Promise<DuckDBConnection> {
     if (this.connection) return this.connection;
+
+    const { R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ENDPOINT_URL } = env();
 
     this.instance = await DuckDBInstance.create(':memory:');
     this.connection = await this.instance.connect();
