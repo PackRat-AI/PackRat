@@ -1,20 +1,14 @@
 # PackRat 🎒
 
-PackRat is the ultimate adventure planner designed for those who love to explore the great outdoors. Our app helps users plan and organize their trips with ease, whether it's a weekend camping trip, a day hike, or a cross-country road trip.
-
-With PackRat, you can create and manage trips, discover new destinations, and stay informed with up-to-date weather forecasts. Our app integrates with Mapbox to provide you with accurate maps and directions to your destinations, as well as suggestions for popular outdoor activities based on the location and season of your trip.
-
-So pack your bags, grab your friends, and get ready for your next adventure with PackRat!
+PackRat is the ultimate adventure planner for outdoor enthusiasts. Plan and organize your trips, manage gear, track trail conditions, and get AI-powered recommendations — all from one cross-platform app.
 
 > [!NOTE]
-> This project is currently in alpha. Please report any issues or bugs you encounter. Thank you for your patience and support!
-
-> [!IMPORTANT]
-> This project is still in development and may contain bugs or issues. Please use the app with caution and report any problems you encounter. Thank you for your understanding and cooperation.
+> This project is currently in alpha. Please report any issues or bugs you encounter.
 
 **Build & CI:**
 ![Biome Check](https://github.com/PackRat-AI/PackRat/actions/workflows/biome.yml/badge.svg)
 ![Check Types](https://github.com/PackRat-AI/PackRat/actions/workflows/check-types.yml/badge.svg)
+![API Tests](https://github.com/PackRat-AI/PackRat/actions/workflows/api-tests.yml/badge.svg)
 ![Database Migrations](https://github.com/PackRat-AI/PackRat/actions/workflows/migrations.yml/badge.svg)
 
 **Repository Info:**
@@ -30,218 +24,171 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 
 ## Table of Contents
 
-- [PackRat 🎒](#packrat-)
-  - [Table of Contents](#table-of-contents)
-  - [Overview 🌐](#overview-)
-  - [Documentation 📚](#documentation-)
-  - [Features 🚀](#features-)
-  - [Technologies used 💻](#technologies-used-)
-  - [🗂 Folder layout](#-folder-layout)
-  - [🆕 Add new dependencies](#-add-new-dependencies)
-    - [Pure JS dependencies](#pure-js-dependencies)
-    - [Native dependencies](#native-dependencies)
-    - [Mobile app dependencies](#mobile-app-dependencies)
-    - [API dependencies](#api-dependencies)
-    - [Web app dependencies](#web-app-dependencies)
-  - [Dependency management](#dependency-management)
-  - [Local installation 📲](#local-installation-)
-    - [Dependencies](#dependencies)
-    - [GitHub Packages Authentication](#github-packages-authentication)
-    - [Environment Setup](#environment-setup)
-    - [Git Hooks Setup](#git-hooks-setup)
-    - [Installation & Development](#installation--development)
-    - [Debugging 🐛](#debugging-)
-  - [API Architecture](#api-architecture)
-  - [Contributing 🤝](#contributing-)
-  - [User Stories:](#user-stories)
-  - [User Features:](#user-features)
-    - [Registration and Authentication:](#registration-and-authentication)
-    - [Main Dashboard:](#main-dashboard)
-    - [Destination Search:](#destination-search)
-    - [Accessing Profile Information:](#accessing-profile-information)
-    - [Profile User Overview:](#profile-user-overview)
-    - [Favorite Trips and Packs:](#favorite-trips-and-packs)
-    - [Profile Management:](#profile-management)
-    - [Appearance Theme Customization:](#appearance-theme-customization)
-    - [Profile Editing:](#profile-editing)
-  - [Pack Features:](#pack-features)
-    - [Pack Creation and Access Settings:](#pack-creation-and-access-settings)
-    - [Adding Items to Packs:](#adding-items-to-packs)
-    - [Pack Scoring System:](#pack-scoring-system)
-    - [Navigating to the Dashboard:](#navigating-to-the-dashboard)
-  - [Trip Features:](#trip-features)
-    - [Trip Creation and Management:](#trip-creation-and-management)
-    - [Setting up a Trip:](#setting-up-a-trip)
-    - [Accessing Saved Trips:](#accessing-saved-trips)
-    - [Viewing Trip Details:](#viewing-trip-details)
-  - [Items Feature:](#items-feature)
-    - [Dashboard:](#dashboard)
-    - [Adding Items:](#adding-items)
-  - [Feed Feature:](#feed-feature)
-    - [Exploring Backpackers:](#exploring-backpackers)
-    - [Pack List Interaction:](#pack-list-interaction)
-    - [Item Management:](#item-management)
-    - [Returning to Feed Dashboard:](#returning-to-feed-dashboard)
-  - [👏 Special Thanks](#-special-thanks)
-  - [License 📝](#license-)
+- [Overview](#overview-)
+- [Features](#features-)
+- [Technologies Used](#technologies-used-)
+- [Folder Layout](#-folder-layout)
+- [Adding Dependencies](#-add-new-dependencies)
+- [Local Installation](#local-installation-)
+  - [Prerequisites](#prerequisites)
+  - [GitHub Packages Authentication](#github-packages-authentication)
+  - [Environment Setup](#environment-setup)
+  - [Git Hooks](#git-hooks-setup)
+  - [Running the Apps](#installation--development)
+  - [Debugging](#debugging-)
+  - [Code Quality](#code-quality)
+  - [Testing](#testing-)
+- [API Architecture](#api-architecture)
+- [Contributing](#contributing-)
+- [License](#license-)
 
 ## Overview 🌐
 
 With **PackRat**, you can:
 
-- Create and manage trips.
-- Discover new destinations.
-- Stay informed with up-to-date weather forecasts.
-- Access accurate maps and directions with our integration to Mapbox.
-- Get suggestions for popular outdoor activities based on your trip's location and season.
-
-So pack your bags, grab your friends, and get ready for your next adventure with **PackRat**!
-
-## Documentation 📚
-
-> [!WARNING]
-> While the app is in alpha, please be aware that there may be bugs or issues. We appreciate your patience and support as we work to improve the app. Data may be lost or corrupted during this time, so please use the app with caution. Thank you for your understanding and cooperation.
-
-<div align="center">
-
-[![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](/docs/ "Go to project documentation")
-
-</div>
+- **Plan trips** — Create and manage outdoor adventures with dates, locations, and gear.
+- **Manage packs** — Build packing lists, score them for completeness, and share them publicly or keep them private.
+- **Browse the gear catalog** — Search a curated catalog of outdoor gear and add items directly to your packs.
+- **Pack templates** — Save and reuse pack configurations for common trip types.
+- **AI assistant** — Chat with an AI guide for trip suggestions, gear advice, and more.
+- **Weather forecasts** — Get up-to-date weather for your trip location.
+- **Trail conditions** — Report and browse real-time trail condition updates from the community.
+- **Season suggestions** — Receive gear and activity recommendations based on your trip's location and season.
+- **Weight analysis** — Analyze your pack weight breakdown by category.
 
 ## Features 🚀
 
-- Create and manage trips: users can create new trips and manage existing ones by adding details such as dates, locations, and activities.
-- Map integration: PackRat integrates with Mapbox to provide users with accurate maps and directions to their destinations.
-- Activity suggestions: the app suggests popular outdoor activities based on the location and season of the trip.
-- Packing list: users can create and manage packing lists for their trips to ensure they have everything they need.
-- Weather forecast: PackRat provides up-to-date weather forecasts for the trip location to help users prepare accordingly.
-- User authentication: the app uses user authentication to ensure privacy and data security.
+| Feature | Status |
+|---------|--------|
+| Trip creation and management | ✅ |
+| Pack management (items, weight, scoring) | ✅ |
+| Gear catalog | ✅ |
+| Pack templates | ✅ |
+| AI chat assistant | ✅ |
+| Weather forecasts | ✅ |
+| Trail conditions reporting | ✅ |
+| Season suggestions | ✅ |
+| Weight analysis | ✅ |
+| Pack sharing (public/private) | ✅ |
+| Shopping list | ⚙️ Beta |
+| Pack insights | ⚙️ Beta |
+| Email / password authentication | ✅ |
+| Google OAuth | ✅ |
+| Apple Sign-In | ✅ |
 
-## Technologies used 💻
+## Technologies Used 💻
 
-PackRat is built using the following modern technologies:
+PackRat is built on a modern, fully TypeScript stack:
 
-- **React Native + Expo**: Cross-platform mobile development with Expo Router
-- **Next.js**: Server-side rendering for web applications (landing page and guides)
-- **Hono.js**: Fast, lightweight web framework running on Cloudflare Workers
-- **PostgreSQL + Drizzle ORM**: Type-safe database operations with Neon serverless database
-- **Jotai + TanStack Query**: Modern state management and data fetching
-- **AI SDK + OpenAI**: AI-powered features and content generation
-- **Bun**: Fast JavaScript runtime and package manager
-- **Biome**: Modern linting and formatting toolchain
-- **TypeScript**: Full type safety across the entire stack
-- **Tailwind CSS + NativeWind**: Utility-first styling for web and mobile
-- **Mapbox**: Location data platform for mobile and web applications
+| Layer | Technology |
+|-------|-----------|
+| Mobile | React Native + Expo (Expo Router) |
+| Web | Next.js 15 (landing page and guides site) |
+| API | Hono.js on Cloudflare Workers |
+| Database | PostgreSQL via Neon + Drizzle ORM |
+| State management | Jotai + TanStack Query |
+| AI | Vercel AI SDK, OpenAI, Perplexity |
+| Storage | Cloudflare R2 |
+| Styling | Tailwind CSS + NativeWind |
+| Package manager | Bun (monorepo workspaces) |
+| Linting / formatting | Biome |
+| Type safety | TypeScript throughout |
 
-## 🗂 Folder layout
+## 🗂 Folder Layout
 
-The main folders are:
+```
+apps/
+  expo/           React Native mobile app (Expo Router, NativeWind)
+    app/          File-based routes and layouts
+    features/     Feature modules (ai, auth, packs, trips, catalog, …)
+    components/   Shared UI components
+    atoms/        Jotai atoms for global state
+    lib/          Utilities, API client, i18n, hooks
+    assets/       Images, fonts, and other static assets
+  landing/        Marketing website (Next.js 15)
+  guides/         Outdoor guides content site (Next.js 15, MDX)
 
-- **`apps/`** - Applications
-  - `expo/` - React Native mobile app with Expo Router
-    - `app/` - App router screens and layouts
-    - `features/` - Feature-based modules (auth, packs, etc.)
-    - `components/` - Reusable UI components
-    - `atoms/` - Jotai atoms for global state
-    - `providers/` - React context providers
-    - `lib/` - Utility libraries and configurations
-    - `assets/` - Images, fonts, and other static assets
-  - `landing/` - Next.js landing page website
-  - `guides/` - Next.js documentation and guides site
+packages/
+  api/            Hono.js API server on Cloudflare Workers
+    src/          Routes, middleware, and services
+    drizzle/      Database schema and migrations
+    test/         API integration tests
+  ui/             Shared UI component library (private GitHub package)
+```
 
-- **`packages/`** - Shared packages across apps
-  - `api/` - Hono.js API server running on Cloudflare Workers
-    - `src/` - Source code with routes, middleware, and services
-    - `drizzle/` - Database schema and migrations
-    - `test/` - API tests
-  - `ui/` - Shared UI components and design system
-
-## 🆕 Add new dependencies
+## 🆕 Add New Dependencies
 
 ### Pure JS dependencies
 
-For pure JavaScript libraries that work across all platforms (mobile, web, API):
+For libraries that work in any JavaScript environment:
 
 ```sh
-# Install in the root to share across all apps
+# Install at the root to share across all apps
 bun add lodash
 
-# Or install in specific package if only used there
-cd packages/api
-bun add dayjs
+# Or install in a specific package
+cd packages/api && bun add dayjs
 ```
 
-These dependencies work without platform-specific code and can be safely used in any JavaScript environment.
+### Native dependencies (React Native)
 
-### Native dependencies
-
-For React Native modules that require platform-specific code (Android/iOS):
+For modules that require native code (Android/iOS):
 
 ```sh
 cd apps/expo
 bun add react-native-reanimated
 
-# Don't forget to rebuild after adding native dependencies
+# Rebuild after adding native dependencies
 bun --cwd apps/expo run expo prebuild --clean
 ```
 
-Native dependencies often require additional configuration and may need platform-specific setup. Always check the library's installation guide for React Native.
-
 ### Mobile app dependencies
-
-For React Native dependencies, install them in the Expo app:
 
 ```sh
 cd apps/expo
-bun add react-native-reanimated
+bun add <package>
 ```
 
 ### API dependencies
 
-For API/server dependencies:
-
 ```sh
 cd packages/api
-bun add hono
+bun add <package>
 ```
 
 ### Web app dependencies
 
-For Next.js apps (landing/guides):
-
 ```sh
 cd apps/landing  # or apps/guides
-bun add next
+bun add <package>
 ```
 
-## Dependency management
+## Dependency Management
 
-Use ManypKG to check for dependency issues across the monorepo:
+Use [Manypkg](https://github.com/Thinkmill/manypkg) to keep dependency versions consistent across the monorepo:
 
 ```sh
-bun check:deps
-bun fix:deps
+bun check:deps   # find mismatches
+bun fix:deps     # auto-fix mismatches
 ```
 
-## Local installation 📲
+## Local Installation 📲
 
-PackRat is a modern monorepo with mobile, web, and API applications. Follow the steps below to install and run the applications.
+### Prerequisites
 
-### Dependencies
-
-- [Bun](https://bun.sh) - Primary package manager and runtime
-- [Node.js](https://nodejs.org/) - Required for some tooling
-- [Expo CLI](https://docs.expo.io/workflow/expo-cli/) - For mobile development
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) - For API deployment
-- [GitHub CLI](https://cli.github.com/) - For authenticating with GitHub packages
+- [Bun](https://bun.sh) — primary package manager and runtime
+- [Node.js](https://nodejs.org/) — required by some tooling
+- [Expo CLI](https://docs.expo.io/workflow/expo-cli/) — for mobile development
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) — for API development and deployment
+- [GitHub CLI](https://cli.github.com/) — for authenticating with GitHub Packages
 
 ### GitHub Packages Authentication
 
-PackRat uses private packages from GitHub Package Registry. You need to authenticate to install dependencies:
+PackRat uses a private package (`@packrat-ai/nativewindui`) from GitHub Package Registry. You must authenticate before installing dependencies.
 
 #### Local Development
 
-1. Install GitHub CLI:
+1. Install the GitHub CLI:
 
    ```bash
    # macOS
@@ -250,35 +197,30 @@ PackRat uses private packages from GitHub Package Registry. You need to authenti
    # Windows
    winget install --id GitHub.cli
 
-   # Linux - see https://github.com/cli/cli#installation
+   # Linux — see https://github.com/cli/cli#installation
    ```
 
-2. Authenticate with GitHub CLI:
+2. Log in and add the `read:packages` scope:
 
    ```bash
    gh auth login
-   ```
-
-3. Add the `read:packages` scope to your authentication:
-
-   ```bash
    gh auth refresh -h github.com -s read:packages
    ```
 
-4. Dependencies will now install automatically:
+3. Install dependencies (authentication is handled automatically):
+
    ```bash
    bun install
    ```
 
-   > **Note**: The `preinstall` script automatically configures GitHub authentication using the GitHub CLI token. The script maps your GitHub CLI token to `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` which is used by `bunfig.toml` for package authentication.
+   > The `preinstall` script maps your GitHub CLI token to `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`, which `bunfig.toml` uses for package authentication.
 
-#### CI/CD
+#### CI / CD
 
-For GitHub Actions and other CI platforms:
+1. Create a Personal Access Token (PAT) with the `read:packages` scope.
+2. Add it as a repository secret named `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`.
+3. Pass it in your workflow:
 
-1. Create a Personal Access Token (PAT) with `read:packages` scope
-2. Add it as a secret named `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` in your repository settings
-3. Pass it as an environment variable in your workflow:
    ```yaml
    - name: Install dependencies
      env:
@@ -286,59 +228,66 @@ For GitHub Actions and other CI platforms:
      run: bun install
    ```
 
-> **Note**: The default `GITHUB_TOKEN` provided by GitHub Actions does not have access to packages in other repositories, even within the same organization. A custom PAT is required.
+   > The default `GITHUB_TOKEN` cannot access packages from other repositories; a custom PAT is required.
 
 ### Environment Setup
 
 1. Clone the repository:
-   HTTPS:
 
-```bash
-git clone https://github.com/PackRat-AI/PackRat.git
-```
+   ```bash
+   # HTTPS
+   git clone https://github.com/PackRat-AI/PackRat.git
 
-SSH:
+   # SSH
+   git clone git@github.com:PackRat-AI/PackRat.git
 
-```bash
-git clone git@github.com:PackRat-AI/PackRat.git
-```
+   cd PackRat
+   ```
 
-2. Navigate to the `PackRat` directory:
+2. Copy the example environment file and fill in your values:
 
-```
-cd PackRat
-```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-3. Set up environment variables:
+   Key variables to configure:
 
-   This project uses a centralized environment configuration strategy. All environment variables are defined in a single source of truth (e.g. .env.local) located at the root of the project.
+   | Variable | Description |
+   |----------|-------------|
+   | `NEON_DATABASE_URL` | Neon PostgreSQL connection string |
+   | `JWT_SECRET` | Secret for signing JWT tokens |
+   | `OPENAI_API_KEY` | OpenAI API key for AI features |
+   | `EXPO_PUBLIC_API_URL` | API base URL (default: `http://localhost:8787`) |
+   | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS client ID |
+   | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID for R2 storage |
 
-   A .dev.vars file will be automatically generated for development tools.
+   See `.env.example` for the full list of required variables.
 
-   Run bun install to regenerate .dev.vars whenever environment variables are changed.
+   > Variables prefixed with `EXPO_PUBLIC_` are bundled into the mobile app. Never put secrets in these variables.
 
-   Only variables prefixed with PUBLIC\_ will be bundled into the Expo app (e.g., PUBLIC_API_URL). These are safe to expose in the client environment.
+3. Install dependencies:
 
-   ⚠️ Do not include secrets (e.g., private API keys) in PUBLIC\_ variables — they may be exposed in the bundled app.
+   ```bash
+   bun install
+   ```
+
+   A `.dev.vars` file for Wrangler is generated automatically. Re-run `bun install` whenever environment variables change.
 
 ### Git Hooks Setup
 
-PackRat uses Lefthook for git hooks to ensure code quality. The hooks are automatically installed when you run `bun install`.
+PackRat uses [Lefthook](https://github.com/evilmartians/lefthook) for git hooks. Hooks are installed automatically by `bun install`.
 
-- **Pre-push hook**: Runs `bun format` to check code formatting before pushing
-- **Configuration**: See `lefthook.yml` in the root directory
+- **Pre-commit hook**: runs `bun check` (Biome lint) on staged files before every commit.
 
-If you need to skip hooks temporarily, use:
+To bypass hooks temporarily:
 
 ```bash
-git push --no-verify
+git commit --no-verify
 ```
 
 ### Installation & Development
 
 #### Install dependencies
-
-From the root directory:
 
 ```bash
 bun install
@@ -346,309 +295,121 @@ bun install
 
 #### Running the applications
 
-You can run each application independently:
-
-**Mobile App (Expo):**
+**API Server** (runs on `http://localhost:8787`):
 
 ```bash
-# Start Expo development server
-bun expo
-
-# Or run directly on device/simulator
-bun android  # for Android
-bun ios       # for iOS
-```
-
-**API Server:**
-
-```bash
-# Start API in development mode
 bun api
 ```
 
-**Landing Page:**
+**Mobile App (Expo)**:
 
 ```bash
-cd apps/landing
-bun dev
+bun expo          # start Expo dev server
+bun android       # run on Android device/simulator
+bun ios           # run on iOS device/simulator
 ```
 
-**Guides Site:**
+**Landing Page** (runs on `http://localhost:3000`):
 
 ```bash
-cd apps/guides
-bun dev
+cd apps/landing && bun dev
 ```
 
-#### Development workflow
-
-For mobile development, you'll typically run:
+**Guides Site** (runs on `http://localhost:3001`):
 
 ```bash
-# Terminal 1: Start the API
+cd apps/guides && bun dev
+```
+
+#### Typical development workflow
+
+```bash
+# Terminal 1: start the API
 bun api
 
-# Terminal 2: Start the mobile app
+# Terminal 2: start the mobile app
 bun expo
 ```
 
 ### Debugging 🐛
 
-#### Common Issues
-
-**Expo/Mobile App Issues:**
+**Expo / mobile issues:**
 
 ```bash
-# Doctor check for Expo setup
-bun --cwd apps/expo run expo-doctor
-
-# Fix dependencies
-bun --cwd apps/expo run expo install --fix
-
-# Clean build
-bun --cwd apps/expo run expo prebuild --clean
-
-# Clear cache
-bun expo --clear
+bun --cwd apps/expo run expo-doctor    # check Expo setup
+bun --cwd apps/expo run expo install --fix   # fix dependency versions
+bun --cwd apps/expo run expo prebuild --clean  # clean native build
+bun expo --clear                        # clear Metro cache
 ```
 
-**Dependency Issues:**
+**Dependency issues:**
 
 ```bash
-# Check monorepo dependencies
-bun check:deps
-
-# Fix dependency mismatches
-bun fix:deps
-
-# Clean and reinstall
-bun clean
-bun install
+bun check:deps   # find monorepo dependency mismatches
+bun fix:deps     # auto-fix mismatches
+bun clean && bun install  # full clean reinstall
 ```
 
-**API/Cloudflare Issues:**
+**API / Cloudflare issues:**
 
-- Check that your `wrangler.jsonc` is configured correctly in `packages/api/`
-- Ensure your Cloudflare environment variables are set
-- Use `bun api` to start the development server locally
+- Verify `packages/api/wrangler.jsonc` is configured correctly.
+- Ensure all Cloudflare environment variables are set in `.env.local`.
+- Run `bun api` to start the local Wrangler dev server.
 
 ### Code Quality
 
-PackRat uses modern tools for code quality and consistency:
-
 ```bash
-# Format all code
-bun format
-
-# Lint and fix issues
-bun lint
-
-# Type checking
-bun check-types
-
-# Check dependency consistency
-bun check:deps
+bun format        # auto-format all files (Biome)
+bun lint          # lint and auto-fix issues (Biome)
+bun check-types   # TypeScript type checking (tsc)
+bun check:deps    # check monorepo dependency consistency
 ```
 
-The project uses [Lefthook](https://github.com/evilmartians/lefthook) for git hooks - these run automatically on push to ensure code quality.
+All formatting and linting is handled by [Biome](https://biomejs.dev). See `biome.json` for the project configuration.
+
+### Testing 🧪
+
+**API unit tests:**
+
+```bash
+cd packages/api && bun test
+# or from the root:
+bun test:api:unit
+```
+
+**Expo unit tests:**
+
+```bash
+bun test:expo
+```
+
+Tests run sequentially to avoid database conflicts. Ensure your environment variables are configured before running API tests.
 
 ## API Architecture
 
-The PackRat API is built with:
+The PackRat API is built on:
 
-- **Hono.js** - Fast, lightweight web framework
-- **Cloudflare Workers** - Serverless edge computing platform
-- **Drizzle ORM** - Type-safe database operations
-- **PostgreSQL** - Database hosted on Neon
-- **OpenAI integration** - AI-powered features
+- **[Hono.js](https://hono.dev)** — fast, lightweight web framework with OpenAPI support
+- **[Cloudflare Workers](https://workers.cloudflare.com)** — serverless edge runtime
+- **[Drizzle ORM](https://orm.drizzle.team)** — type-safe SQL query builder
+- **[PostgreSQL on Neon](https://neon.tech)** — serverless PostgreSQL database
+- **[OpenAI / Vercel AI SDK](https://sdk.vercel.ai)** — AI-powered features
 
-See `packages/api/` for the complete API implementation.
+All routes use `OpenAPIHono` with `createRoute` for fully typed, self-documenting endpoints. Authentication is handled by JWT bearer tokens or API keys via `authMiddleware`.
+
+See `packages/api/README.md` for setup and development details.
 
 ## Contributing 🤝
 
 > [!TIP]
-> We have an active community of contributors and users who are happy to help. Join us on Discord to get involved!
+> We have an active community of contributors. Open an issue or pull request to get started!
 
-Contributions to PackRat are welcome! To contribute, follow these steps:
-
-1. Clone this repository.
-2. Create a new branch.
+1. Fork and clone the repository.
+2. Create a feature branch: `git checkout -b feature/my-feature`.
 3. Make your changes and commit them.
-4. Push your changes to the remote branch.
-5. Open a pull request.
-6. Wait for your pull request to be reviewed and merged.
-7. Celebrate! 🎉
+4. Push to your fork and open a pull request.
 
-## User Stories:
-
-<details>
-<summary><b>User Stories 📖</b> (Click to expand)</summary>
-
-## User Features:
-
-### Registration and Authentication:
-
-- Users can create an account by accessing the menu and selecting the 'Register' option. Additionally, they have the option to sign up directly from the login page.
-
-### Main Dashboard:
-
-- On the main page, users have several options to choose from:
-- Quick actions
-- Search for new trails
-- Access other menu options
-- View their feed, which displays previously created packs.
-- Users can search for a destination directly on the main dashboard, which will then redirect them to the maps interface.
-
-### Destination Search:
-
-- Users have the capability to search for a destination directly on the main dashboard.
-- Upon initiating a search, users are redirected to the maps interface for further exploration and planning.
-
-### Accessing Profile Information:
-
-- Users can conveniently access their profile information from the menu under the Profile feature.
-
-### Profile User Overview:
-
-- The dashboard provides users with a comprehensive overview of their profile.
-- It prominently displays the user's username and account photo for quick identification.
-
-### Favorite Trips and Packs:
-
-- Users have immediate access to their favorite trips and packs directly from the dashboard.
-- By selecting the "View details" option, users can delve into more details about their favorite trips and packs.
-
-### Profile Management:
-
-- Users can effortlessly manage their profile information from the dashboard.
-- By clicking on the settings button icon, users are directed to the profile settings section where they can make necessary updates seamlessly.
-
-### Appearance Theme Customization:
-
-- Users have the option to personalize their experience by changing the theme.
-- They can choose between light mode or dark mode based on their preference.
-- Additionally, users have the option to purchase additional themes for further customization. (Note: This feature may require updates.)
-
-### Profile Editing:
-
-- Users can easily edit their profile settings by clicking the "show dialog" option.
-- This allows them to update their name and “food preferences”, with a wide range of options to choose from. (Note: This feature may require updates.)
-
-## Pack Features:
-
-### Pack Creation and Access Settings:
-
-- Users are prompted to input a name for their pack when creating it.
-- Users have the option to choose the accessibility setting for their pack, deciding whether it will be public or private.
-
-### Adding Items to Packs:
-
-- When users add an item to the pack, they are required to provide:
-- The name of the item.
-- The weight of the item.
-- The quantity of the item.
-- The category the item belongs to (food, water, essentials).
-- After providing the necessary details, users click "Add Item" to include it in the pack dashboard.
-
-### Pack Scoring System:
-
-- Users can view their pack score, which is generated based on several criteria:
-- The total weight of the pack.
-- The presence of essential items.
-- The degree of redundancy in items.
-- The versatility of the items included.
-
-### Navigating to the Dashboard:
-
-- Users can easily return to the dashboard by following these steps:
-
-1. Access the menu.
-2. Select the "Home" option.
-
-## Trip Features:
-
-### Trip Creation and Management:
-
-- Users have two methods for creating a trip:
-- Directly from the main page dashboard using the quick actions feature.
-- By navigating to the 'Trips' option in the menu.
-
-### Setting up a Trip:
-
-- Users initiate trip setup by selecting their backpacking destination.
-- Nearby trails and parks are displayed for exploration.
-- Users can:
-- Choose gear from their saved packs.
-- Create a new pack and add items directly on the page.
-- Select the target date for their trip using a calendar to specify the duration.
-- A map showcasing the trip destination is provided for reference.
-- Once all details are confirmed, users:
-- Save their trip.
-- Input a name and description.
-- Choose the trip's accessibility setting (public or private).
-- A weather forecast and summary of the destination, trails, dates, and trip duration are displayed for easy reference.
-
-### Accessing Saved Trips:
-
-- Users can easily access their saved trips from the menu by selecting the 'Trips' option.
-- Within the 'Trips' section, users can:
-- Organize their trips by sorting them from favorites to most recent.
-- Utilize a search bar to quickly locate a specific trip by name.
-
-### Viewing Trip Details:
-
-- When users select a trip from the dashboard, they are presented with detailed information including:
-- The trip's description.
-- Destination.
-- Start and end dates.
-- Additionally, users can:
-- Conveniently view the weather forecast for the selected dates directly on the same page.
-- Access the maps interface for further exploration.
-- At the bottom of the page, users can find the Trip Score, providing an overall assessment of the trip's suitability and preparedness.
-
-## Items Feature:
-
-### Dashboard:
-
-- Users are able to view their items used in their saved packs.
-- They can sort how many items will show up on screen. They can choose from 10, 20, and 50.
-- Users have the option to add new items.
-
-### Adding Items:
-
-- User needs to fill out the following fields:
-- Item Name
-- Weight – they can choose the unit of measurement. Includes lb, kg, oz, and g.
-- Quantity
-- Category
-
-## Feed Feature:
-
-### Exploring Backpackers:
-
-- Users can browse through a list of other backpackers.
-- Navigate the page using the search and sort options.
-
-### Pack List Interaction:
-
-- Upon opening a pack list, users have several options available:
-- They can view the profile of the backpacker associated with the pack.
-- Users also have the ability to copy the pack list for their own use.
-- The pack list includes detailed information such as item name, weight, quantity, and category.
-
-### Item Management:
-
-- Users can interact with items on the pack list by:
-- Editing, deleting, or ignoring items as needed.
-- The total weight of the pack is dynamically calculated and displayed at the bottom of the page.
-- Users can easily add new items to the pack list as well.
-- At the bottom of the page, users can view the Pack Score.
-
-### Returning to Feed Dashboard:
-
-- Users can navigate back to the feed dashboard by accessing the menu and selecting the "feed" option.
-
-</details>
+Please ensure your changes pass linting (`bun lint`) and type checking (`bun check-types`) before opening a PR.
 
 ## 👏 Special Thanks
 
@@ -656,14 +417,10 @@ Contributions to PackRat are welcome! To contribute, follow these steps:
 - [OpenStreetMap Developers](https://www.openstreetmap.org/)
 - [RN MapBox Developers](https://github.com/rnmapbox/maps)
 - [Cloudflare Developers](https://twitter.com/CloudflareDev)
-- [Yusuke Wada](https://twitter.com/yusukebe) - Creator of Hono.js
-- [Nate Birdman](https://twitter.com/natebirdman) - Creator of Tamagui
-- [Fernando Rojo](https://twitter.com/fernandotherojo) - Creator of Zeego
-- [Tanner Linsley](https://twitter.com/tannerlinsley) - Creator of TanStack
-- [Timothy Miller](https://twitter.com/ogtimothymiller) - Creator of T4 Stack
-- [Expo Developers](https://twitter.com/expo) - Office hours
-- [Shopify Developers](https://twitter.com/ShopifyDevs)
+- [Yusuke Wada](https://twitter.com/yusukebe) — Creator of Hono.js
+- [Tanner Linsley](https://twitter.com/tannerlinsley) — Creator of TanStack
+- [Expo Developers](https://twitter.com/expo)
 
 ## License 📝
 
-PackRat is licensed under the terms of the [GNU General Public License v3.0](LICENSE). See `LICENSE` for more information.
+PackRat is licensed under the [GNU General Public License v3.0](LICENSE).
