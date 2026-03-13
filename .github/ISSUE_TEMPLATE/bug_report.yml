@@ -1,0 +1,97 @@
+name: Bug Report
+description: File a bug report to help us improve PackRat
+title: '[Bug]: '
+labels: ['bug', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! Please provide as much detail as possible.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the app is affected?
+      options:
+        - Mobile app (Expo / React Native)
+        - API / Backend
+        - Landing page
+        - Guides site
+        - CI / CD
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what happened…
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Step-by-step instructions to reliably reproduce the problem.
+      placeholder: |
+        1. Go to '...'
+        2. Tap on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: What version of the app are you running?
+      placeholder: e.g. 1.2.3
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iOS
+        - Android
+        - Web
+        - All platforms
+      multiple: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or screenshots
+      description: Paste any relevant log output or attach screenshots here.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-flight checklist
+      options:
+        - label: I have searched for existing issues and this is not a duplicate.
+          required: true
+        - label: I have read the contributing guidelines.
+          required: true
