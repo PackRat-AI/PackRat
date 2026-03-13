@@ -71,6 +71,11 @@ export class LocalCacheManager {
     return this.conn;
   }
 
+  /** Public accessor for DuckDB connection (used by SpecParser, etc). */
+  getConnection(): DuckDBConnection {
+    return this.getConn();
+  }
+
   // ── Cache Lifecycle ─────────────────────────────────────────────────
 
   async createLocalCache(forceRefresh = false): Promise<void> {

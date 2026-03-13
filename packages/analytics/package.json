@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "packrat": "bun run src/cli.ts",
+    "packrat": "bun run src/cli/index.ts",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest watch"

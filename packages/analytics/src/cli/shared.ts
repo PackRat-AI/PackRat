@@ -1,0 +1,78 @@
+/**
+ * Shared CLI utilities: cache initialization, output formatting.
+ */
+
+import chalk from 'chalk';
+import Table from 'cli-table3';
+import consola from 'consola';
+import { LocalCacheManager } from '../core/local-cache';
+
+let _cache: LocalCacheManager | null = null;
+
+/** Get or initialize the local cache manager. */
+export async function getCache(): Promise<LocalCacheManager> {
+  if (_cache) return _cache;
+  _cache = new LocalCacheManager();
+  await _cache.connect();
+  return _cache;
+}
+
+/** Ensure cache is populated, refreshing if needed. */
+export async function ensureCache(forceRefresh = false): Promise<LocalCacheManager> {
+  const cache = await getCache();
+  const stats = cache.getCacheStats();
+  if (forceRefresh || stats.recordCount === 0) {
+    consola.start('Refreshing cache from R2...');
+    await cache.createLocalCache(forceRefresh);
+    const updated = cache.getCacheStats();
+    consola.success(
+      `Cache ready: ${updated.recordCount.toLocaleString()} products from ${updated.sites.length} sites`,
+    );
+  }
+  return cache;
+}
+
+/** Print an array of objects as a formatted CLI table. */
+export function printTable(rows: Record<string, unknown>[], options?: { title?: string }): void {
+  if (rows.length === 0) {
+    consola.warn('No results found.');
+    return;
+  }
+
+  const keys = Object.keys(rows[0]);
+
+  const table = new Table({
+    head: keys.map((k) => chalk.cyan(k)),
+    style: { head: [], border: [] },
+  });
+
+  for (const row of rows) {
+    table.push(keys.map((k) => formatValue(row[k])));
+  }
+
+  if (options?.title) {
+    console.log(`\n${chalk.bold(options.title)}`);
+  }
+  console.log(table.toString());
+  console.log(chalk.dim(`${rows.length} rows`));
+}
+
+/** Print a key-value summary. */
+export function printSummary(data: Record<string, unknown>, title?: string): void {
+  if (title) console.log(`\n${chalk.bold(title)}`);
+
+  const table = new Table({ style: { head: [], border: [] } });
+  for (const [key, value] of Object.entries(data)) {
+    table.push([chalk.cyan(key), formatValue(value)]);
+  }
+  console.log(table.toString());
+}
+
+function formatValue(val: unknown): string {
+  if (val === null || val === undefined) return chalk.dim('—');
+  if (typeof val === 'number') {
+    return Number.isInteger(val) ? val.toLocaleString() : val.toFixed(2);
+  }
+  const str = String(val);
+  return str.length > 60 ? `${str.slice(0, 57)}...` : str;
+}
