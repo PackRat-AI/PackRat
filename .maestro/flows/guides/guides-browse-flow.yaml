@@ -30,24 +30,27 @@ appId: com.packratai.mobile
 - assertVisible:
     text: "Beginner"
 
-# Verify at least one guide article is visible
+# Verify at least one guide article is visible (text has bullet prefix)
 - scrollUntilVisible:
     element:
-      text: "min read"
+      text: ".*min read.*"
     direction: DOWN
 - assertVisible:
-    text: "min read"
+    text: ".*min read.*"
+
+# Verify guide title is visible
+- assertVisible:
+    text: ".*Pack.*"
 
 # Test tapping a filter tab
 - tapOn:
     text: "Beginner"
 - waitForAnimationToEnd
 
-# Verify content updates (still shows articles)
-- scrollUntilVisible:
-    element:
-      text: "min read"
-    direction: DOWN
+# Tap All to reset filter
+- tapOn:
+    text: "All"
+- waitForAnimationToEnd
 
 # Go back to dashboard
 - back

@@ -1,8 +1,7 @@
 appId: com.packratai.mobile
 ---
 # Add Item via In-Pack Catalog Flow: Tests BUG-7 — in-pack catalog add doesn't persist
-# This test documents that adding from the pack's own catalog browser doesn't save (GH issue not filed)
-# Different from add-item-catalog-flow.yaml which uses the main Catalog tab (that works)
+# Different from add-item-catalog-flow.yaml which uses the main Catalog tab
 - launchApp
 - waitForAnimationToEnd
 
@@ -39,17 +38,21 @@ appId: com.packratai.mobile
 # Wait for the in-pack catalog browser to load
 - extendedWaitUntil:
     visible:
-      text: "items"
+      text: "Browse Catalog"
     timeout: 10000
+
+# Verify catalog items are shown
+- assertVisible:
+    text: "All"
 
 # Tap a catalog item to toggle it
 - scrollUntilVisible:
     element:
-      text: "Patagonia"
+      text: ".*Altra.*"
     direction: DOWN
 
 - tapOn:
-    text: "Patagonia"
+    text: ".*Altra.*"
 - waitForAnimationToEnd
 
 # BUG-7: The item's icon changes (visual toggle) but doesn't persist

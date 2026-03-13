@@ -1,62 +1,69 @@
 appId: com.packratai.mobile
 ---
 # Login Flow: Launch app and sign in with email/password
+# Handles both fresh launch (needs login) and already-logged-in states
 - launchApp
 - waitForAnimationToEnd
 
-# The app may land on a "Brace Yourself" splash or onboarding screen
-# Look for the Sign In button (could be "Sign In", "Log in", or on a sub-screen)
-- extendedWaitUntil:
-    visible:
-      text: "Sign In"
-    timeout: 10000
-
-- tapOn:
-    text: "Sign In"
-- waitForAnimationToEnd
-
-# If we hit the "Brace Yourself" screen, we need to tap Sign In again to get to the form
+# Check if already logged in (Dashboard visible = already authenticated)
 - runFlow:
     when:
       visible:
-        text: "Welcome back!"
-    commands: []
+        text: "Dashboard"
+    commands:
+      - assertVisible:
+          text: "Dashboard"
 
-# If we're on the splash and not the form yet, tap Sign In one more time
+# If not logged in, proceed with authentication
 - runFlow:
     when:
       notVisible:
-        text: "Welcome back!"
+        text: "Dashboard"
     commands:
+      # Wait for auth screen
+      - extendedWaitUntil:
+          visible:
+            text: "Sign In"
+          timeout: 10000
+
       - tapOn:
           text: "Sign In"
       - waitForAnimationToEnd
 
-# Now on the login form — fill credentials
-- assertVisible:
-    text: "Email"
+      # May need a second tap if on splash screen
+      - runFlow:
+          when:
+            notVisible:
+              text: "Email"
+          commands:
+            - tapOn:
+                text: "Sign In"
+            - waitForAnimationToEnd
 
-- tapOn:
-    text: "Email"
-- inputText: ${TEST_EMAIL}
+      # Fill credentials
+      - assertVisible:
+          text: "Email"
 
-- tapOn:
-    text: "Password"
-- inputText: ${TEST_PASSWORD}
+      - tapOn:
+          text: "Email"
+      - inputText: ${TEST_EMAIL}
 
-- hideKeyboard
+      - tapOn:
+          text: "Password"
+      - inputText: ${TEST_PASSWORD}
 
-# Button text changes to "Submit" after filling credentials
-- tapOn:
-    text: "Submit"
+      - hideKeyboard
 
-# Wait for login to complete and main app to load
-- extendedWaitUntil:
-    visible:
-      text: "Dashboard"
-    timeout: 20000
+      - tapOn:
+          text: "Submit"
 
-# Assert we're logged in — bottom nav should show all tabs
+      # Wait for login to complete
+      - extendedWaitUntil:
+          visible:
+            text: "Dashboard"
+          timeout: 20000
+
+# Final assertion — should be on Dashboard either way
 - assertVisible:
     text: "Dashboard"
 - assertVisible:

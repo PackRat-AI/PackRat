@@ -14,7 +14,7 @@ appId: com.packratai.mobile
 - assertVisible:
     text: "Catalog"
 - assertVisible:
-    text: "items"
+    text: ".*items.*"
 
 # Scroll down to see catalog items
 - scrollUntilVisible:
@@ -30,8 +30,12 @@ appId: com.packratai.mobile
 # Assert item detail loaded
 - assertVisible:
     text: "Item Details"
-- assertVisible:
-    text: "Add to Pack"
+
+# Scroll to Add to Pack button
+- scrollUntilVisible:
+    element:
+      text: "Add to Pack"
+    direction: DOWN
 
 # Tap "Add to Pack"
 - tapOn:
@@ -64,7 +68,6 @@ appId: com.packratai.mobile
 # Tap the "Add to Pack" submit button
 - tapOn:
     text: "Add to Pack"
-    index: 1
 - waitForAnimationToEnd
 
 # Verify we returned to item detail and pack count increased
