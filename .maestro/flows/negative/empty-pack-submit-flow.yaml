@@ -1,0 +1,61 @@
+appId: com.packratai.mobile
+---
+# Empty Pack Submit Flow: Tests that creating a pack with no name is prevented
+# Verifies form validation on the pack creation form
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Open create pack form via deep link
+- openLink: "packrat://pack/new"
+- waitForAnimationToEnd
+
+# Handle Android "Open with" chooser if two builds are installed
+- runFlow:
+    when:
+      visible:
+        text: "Open with"
+    commands:
+      - tapOn:
+          text: "PackRat"
+          index: 1
+- runFlow:
+    when:
+      visible:
+        text: "Just once"
+    commands:
+      - tapOn:
+          text: "Just once"
+
+- extendedWaitUntil:
+    visible:
+      text: "Create Pack"
+    timeout: 10000
+
+# Assert form loaded
+- assertVisible:
+    text: "Pack Name"
+
+# Try to submit without filling any fields
+# Scroll to and tap Create Pack submit button
+- scrollUntilVisible:
+    element:
+      text: "Create Pack"
+    direction: DOWN
+
+- tapOn:
+    text: "Create Pack"
+    index: 1
+- waitForAnimationToEnd
+
+# Should NOT navigate away — should show validation error or stay on form
+- assertVisible:
+    text: "Pack Name"
+
+# Go back without creating
+- back
+- waitForAnimationToEnd

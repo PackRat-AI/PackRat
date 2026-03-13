@@ -1,0 +1,65 @@
+appId: com.packratai.mobile
+---
+# Login Flow: Launch app and sign in with email/password
+- launchApp
+- waitForAnimationToEnd
+
+# The app may land on a "Brace Yourself" splash or onboarding screen
+# Look for the Sign In button (could be "Sign In", "Log in", or on a sub-screen)
+- extendedWaitUntil:
+    visible:
+      text: "Sign In"
+    timeout: 10000
+
+- tapOn:
+    text: "Sign In"
+- waitForAnimationToEnd
+
+# If we hit the "Brace Yourself" screen, we need to tap Sign In again to get to the form
+- runFlow:
+    when:
+      visible:
+        text: "Welcome back!"
+    commands: []
+
+# If we're on the splash and not the form yet, tap Sign In one more time
+- runFlow:
+    when:
+      notVisible:
+        text: "Welcome back!"
+    commands:
+      - tapOn:
+          text: "Sign In"
+      - waitForAnimationToEnd
+
+# Now on the login form — fill credentials
+- assertVisible:
+    text: "Email"
+
+- tapOn:
+    text: "Email"
+- inputText: ${TEST_EMAIL}
+
+- tapOn:
+    text: "Password"
+- inputText: ${TEST_PASSWORD}
+
+- hideKeyboard
+
+# Button text changes to "Submit" after filling credentials
+- tapOn:
+    text: "Submit"
+
+# Wait for login to complete and main app to load
+- extendedWaitUntil:
+    visible:
+      text: "Dashboard"
+    timeout: 20000
+
+# Assert we're logged in — bottom nav should show all tabs
+- assertVisible:
+    text: "Dashboard"
+- assertVisible:
+    text: "Packs"
+- assertVisible:
+    text: "Trips"

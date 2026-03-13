@@ -1,0 +1,49 @@
+appId: com.packratai.mobile
+---
+# AI Chat Pack Flow: Tests the pack-specific AI assistant
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap into Maestro Test Pack
+- tapOn:
+    text: "Maestro Test Pack"
+- waitForAnimationToEnd
+
+# Tap Ask AI button
+- tapOn:
+    text: "Ask AI"
+- waitForAnimationToEnd
+
+# Assert pack-specific AI greeting
+- extendedWaitUntil:
+    visible:
+      text: "Maestro Test Pack"
+    timeout: 10000
+
+# Assert suggestion chips are present
+- assertVisible:
+    text: "SUGGESTIONS"
+
+# Tap a suggestion chip to test AI response
+- tapOn:
+    text: "What am I missing from my pack?"
+- waitForAnimationToEnd
+
+# Wait for AI response (can take ~15s)
+- extendedWaitUntil:
+    visible:
+      text: "essential"
+    timeout: 30000
+
+# Use system back to exit
+- back
+- waitForAnimationToEnd
+
+# Go back to packs list
+- back
+- waitForAnimationToEnd

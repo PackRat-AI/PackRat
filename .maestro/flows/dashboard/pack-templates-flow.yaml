@@ -1,0 +1,45 @@
+appId: com.packratai.mobile
+---
+# Pack Templates Flow: Tests the pack templates section from dashboard
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Dashboard
+- tapOn:
+    text: "Dashboard"
+- waitForAnimationToEnd
+
+# Scroll to find the Pack Templates tile
+- scrollUntilVisible:
+    element:
+      text: "Pack Templates"
+    direction: DOWN
+
+# Tap the Pack Templates tile
+- tapOn:
+    text: "Pack Templates"
+- waitForAnimationToEnd
+
+# Assert templates page loaded
+- extendedWaitUntil:
+    visible:
+      text: "All"
+    timeout: 10000
+
+# Verify template tabs exist (All / App / Yours)
+- assertVisible:
+    text: "App"
+
+# Verify templates content loads
+- scrollUntilVisible:
+    element:
+      text: "Hiking"
+    direction: DOWN
+
+# Go back to dashboard
+- back
+- waitForAnimationToEnd
+
+# Verify we returned to Dashboard
+- assertVisible:
+    text: "Dashboard"

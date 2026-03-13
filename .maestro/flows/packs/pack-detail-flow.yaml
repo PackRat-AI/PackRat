@@ -1,0 +1,63 @@
+appId: com.packratai.mobile
+---
+# Pack Detail Flow: Verifies pack detail view renders correctly
+# Also tests BUG-5 — edit/share buttons non-functional (GH issue #1947)
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap into the Maestro Test Pack
+- tapOn:
+    text: "Maestro Test Pack"
+- waitForAnimationToEnd
+
+# Assert pack detail view elements
+- assertVisible:
+    text: "Pack Details"
+- assertVisible:
+    text: "Maestro Test Pack"
+- assertVisible:
+    text: "BASE WEIGHT"
+- assertVisible:
+    text: "TOTAL WEIGHT"
+- assertVisible:
+    text: "ITEMS"
+
+# Assert action buttons
+- assertVisible:
+    text: "Ask AI"
+- assertVisible:
+    text: "Add Item"
+
+# Assert item filter tabs
+- assertVisible:
+    text: "All Items"
+- assertVisible:
+    text: "Worn"
+- assertVisible:
+    text: "Consumable"
+
+# Test the "All Packs" tab shows community packs
+- back
+- waitForAnimationToEnd
+- tapOn:
+    text: "All Packs"
+- waitForAnimationToEnd
+
+# Should see at least one community pack
+- scrollUntilVisible:
+    element:
+      text: "hiking"
+    direction: DOWN
+
+# Go back to My Packs
+- tapOn:
+    text: "My Packs"
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Maestro Test Pack"

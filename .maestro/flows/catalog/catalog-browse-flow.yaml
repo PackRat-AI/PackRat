@@ -1,0 +1,32 @@
+appId: com.packratai.mobile
+---
+# Catalog Browse Flow: Verifies catalog tab loads items and filters
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Catalog tab
+- tapOn:
+    text: "Catalog"
+- waitForAnimationToEnd
+
+# Assert catalog header and item count
+- assertVisible:
+    text: "Catalog"
+- assertVisible:
+    text: ".*items.*"
+
+# Assert category filter tabs
+- assertVisible:
+    text: "All"
+- assertVisible:
+    text: "Clothing"
+
+# Scroll to verify items render
+- scrollUntilVisible:
+    element:
+      text: "Patagonia"
+    direction: DOWN
+
+# Verify item card elements (brand, weight indicator)
+- assertVisible:
+    text: "Patagonia"

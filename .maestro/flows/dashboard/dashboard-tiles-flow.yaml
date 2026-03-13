@@ -1,0 +1,134 @@
+appId: com.packratai.mobile
+---
+# Dashboard Tiles Flow: Verifies all dashboard tiles render and key tiles are tappable
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Dashboard tab
+- tapOn:
+    text: "Dashboard"
+- waitForAnimationToEnd
+
+# Assert top-level dashboard elements
+- assertVisible:
+    text: "Dashboard"
+
+# Verify Current Pack tile
+- assertVisible:
+    text: "Current Pack"
+
+# Verify Recent Packs tile
+- assertVisible:
+    text: "Recent Packs"
+
+# Verify PackRat AI tile
+- scrollUntilVisible:
+    element:
+      text: "PackRat AI"
+    direction: DOWN
+- assertVisible:
+    text: "PackRat AI"
+
+# Verify Pack Stats tile
+- scrollUntilVisible:
+    element:
+      text: "Pack Stats"
+    direction: DOWN
+- assertVisible:
+    text: "Pack Stats"
+
+# Verify Weight Analysis tile
+- scrollUntilVisible:
+    element:
+      text: "Weight Analysis"
+    direction: DOWN
+- assertVisible:
+    text: "Weight Analysis"
+
+# Verify Pack Categories tile
+- scrollUntilVisible:
+    element:
+      text: "Pack Categories"
+    direction: DOWN
+- assertVisible:
+    text: "Pack Categories"
+
+# Verify Upcoming Trips tile
+- scrollUntilVisible:
+    element:
+      text: "Upcoming Trips"
+    direction: DOWN
+- assertVisible:
+    text: "Upcoming Trips"
+
+# Verify Trail Conditions tile
+- scrollUntilVisible:
+    element:
+      text: "Trail Conditions"
+    direction: DOWN
+- assertVisible:
+    text: "Trail Conditions"
+
+# Verify Weather tile
+- scrollUntilVisible:
+    element:
+      text: "Weather"
+    direction: DOWN
+- assertVisible:
+    text: "Weather"
+
+# Verify Weather Alerts tile
+- scrollUntilVisible:
+    element:
+      text: "Weather Alerts"
+    direction: DOWN
+- assertVisible:
+    text: "Weather Alerts"
+
+# Verify Gear Inventory tile
+- scrollUntilVisible:
+    element:
+      text: "Gear Inventory"
+    direction: DOWN
+- assertVisible:
+    text: "Gear Inventory"
+
+# Verify Pack Templates tile
+- scrollUntilVisible:
+    element:
+      text: "Pack Templates"
+    direction: DOWN
+- assertVisible:
+    text: "Pack Templates"
+
+# Verify Guides tile
+- scrollUntilVisible:
+    element:
+      text: "Guides"
+    direction: DOWN
+- assertVisible:
+    text: "Guides"
+
+# Tap Current Pack tile to verify it's navigable
+- swipe:
+    direction: DOWN
+    duration: 400
+- swipe:
+    direction: DOWN
+    duration: 400
+- swipe:
+    direction: DOWN
+    duration: 400
+- tapOn:
+    text: "Current Pack"
+- waitForAnimationToEnd
+
+# Verify Current Pack detail view loaded
+- extendedWaitUntil:
+    visible:
+      text: "Current Pack"
+    timeout: 5000
+
+# Go back to dashboard
+- back
+- waitForAnimationToEnd

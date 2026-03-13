@@ -1,0 +1,62 @@
+appId: com.packratai.mobile
+---
+# Add Item via In-Pack Catalog Flow: Tests BUG-7 — in-pack catalog add doesn't persist
+# This test documents that adding from the pack's own catalog browser doesn't save (GH issue not filed)
+# Different from add-item-catalog-flow.yaml which uses the main Catalog tab (that works)
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap into Maestro Test Pack
+- tapOn:
+    text: "Maestro Test Pack"
+- waitForAnimationToEnd
+
+# Assert pack detail loaded
+- assertVisible:
+    text: "Pack Details"
+
+# Tap Add Item
+- tapOn:
+    text: "Add Item"
+- waitForAnimationToEnd
+
+# Assert bottom sheet with options
+- assertVisible:
+    text: "Add Manually"
+- assertVisible:
+    text: "Add from Catalog"
+
+# Select Add from Catalog (within pack context)
+- tapOn:
+    text: "Add from Catalog"
+- waitForAnimationToEnd
+
+# Wait for the in-pack catalog browser to load
+- extendedWaitUntil:
+    visible:
+      text: "items"
+    timeout: 10000
+
+# Tap a catalog item to toggle it
+- scrollUntilVisible:
+    element:
+      text: "Patagonia"
+    direction: DOWN
+
+- tapOn:
+    text: "Patagonia"
+- waitForAnimationToEnd
+
+# BUG-7: The item's icon changes (visual toggle) but doesn't persist
+# Go back to pack detail
+- back
+- waitForAnimationToEnd
+
+# Go back to packs list
+- back
+- waitForAnimationToEnd

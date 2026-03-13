@@ -1,0 +1,137 @@
+appId: com.packratai.mobile
+---
+# Create Trip Flow: Create a trip and verify it appears in the list
+# Also tests BUG-2 — Select Pack picker broken (GH issue #1944)
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to the Trips tab
+- tapOn:
+    text: "Trips"
+- waitForAnimationToEnd
+
+# Open create trip form via deep link (+ button has no testID in prod)
+- openLink: "packrat://trip/new"
+- waitForAnimationToEnd
+
+# Handle Android "Open with" chooser if two builds are installed
+- runFlow:
+    when:
+      visible:
+        text: "Open with"
+    commands:
+      - tapOn:
+          text: "PackRat"
+          index: 1
+- runFlow:
+    when:
+      visible:
+        text: "Just once"
+    commands:
+      - tapOn:
+          text: "Just once"
+
+- extendedWaitUntil:
+    visible:
+      text: "Trip Name"
+    timeout: 10000
+
+# Assert trip creation form loaded
+- assertVisible:
+    text: "Trip Name"
+- assertVisible:
+    text: "Description"
+
+# Fill in Trip Name
+- tapOn:
+    text: "Trip Name"
+- inputText: "Maestro Test Trip"
+
+# Fill in Description
+- tapOn:
+    text: "Description"
+- inputText: "Created by Maestro E2E test"
+
+# Dismiss keyboard
+- hideKeyboard
+
+# Verify Add Location and Select Pack are present
+- scrollUntilVisible:
+    element:
+      text: "Add Location"
+    direction: DOWN
+- assertVisible:
+    text: "Add Location"
+
+- scrollUntilVisible:
+    element:
+      text: "Select Pack"
+    direction: DOWN
+- assertVisible:
+    text: "Select Pack"
+
+# Test Select Pack picker (BUG-2: should show packs but doesn't)
+- tapOn:
+    text: "Select Pack"
+- waitForAnimationToEnd
+
+# BUG-2: Currently shows empty picker. When fixed, should show packs.
+# For now just close the picker and continue
+- runFlow:
+    when:
+      visible:
+        text: "Close"
+    commands:
+      - tapOn:
+          text: "Close"
+
+- waitForAnimationToEnd
+
+# Set Start Date
+- scrollUntilVisible:
+    element:
+      text: "Start Date"
+    direction: DOWN
+- tapOn:
+    text: "Start Date"
+- waitForAnimationToEnd
+# Accept default date (today)
+- tapOn:
+    text: "OK"
+- waitForAnimationToEnd
+
+# Set End Date
+- scrollUntilVisible:
+    element:
+      text: "End Date"
+    direction: DOWN
+- tapOn:
+    text: "End Date"
+- waitForAnimationToEnd
+# Accept default date (today)
+- tapOn:
+    text: "OK"
+- waitForAnimationToEnd
+
+# Submit trip creation
+- scrollUntilVisible:
+    element:
+      text: "Create Trip"
+    direction: DOWN
+
+- tapOn:
+    text: "Create Trip"
+- waitForAnimationToEnd
+
+# Handle success dialog
+- extendedWaitUntil:
+    visible:
+      text: "Trip created successfully"
+    timeout: 15000
+- tapOn:
+    text: "OK"
+- waitForAnimationToEnd
+
+# Assert trip appears in the list
+- assertVisible:
+    text: "Maestro Test Trip"

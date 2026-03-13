@@ -1,0 +1,97 @@
+appId: com.packratai.mobile
+---
+# Create Pack Flow: Navigate to packs tab and create a new pack
+- waitForAnimationToEnd
+
+# Navigate to the Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Verify we're on the Packs screen
+- assertVisible:
+    text: "My Packs"
+- assertVisible:
+    text: "All Packs"
+
+# Verify category filters render
+- assertVisible:
+    text: "All"
+- assertVisible:
+    text: "Hiking"
+
+# Open create pack form via deep link
+# Note: openLink triggers Android chooser when two builds are installed.
+# We use openLink with chooser handling as a workaround for the
+# untappable + button (search bar overlay blocks it in LargeTitleHeader)
+- openLink: "packrat://pack/new"
+- waitForAnimationToEnd
+
+# Handle Android "Open with" chooser if two builds are installed
+- runFlow:
+    when:
+      visible:
+        text: "Open with"
+    commands:
+      - tapOn:
+          text: "PackRat"
+          index: 1
+- runFlow:
+    when:
+      visible:
+        text: "Just once"
+    commands:
+      - tapOn:
+          text: "Just once"
+
+- extendedWaitUntil:
+    visible:
+      text: "Create Pack"
+    timeout: 10000
+
+# Assert form fields
+- assertVisible:
+    text: "Pack Name"
+- assertVisible:
+    text: "Description"
+
+# Fill in Pack Name
+- tapOn:
+    text: "Pack Name"
+- inputText: "Maestro Test Pack"
+
+# Fill in Description
+- tapOn:
+    text: "Description"
+- inputText: "Created by Maestro E2E test"
+
+# Dismiss keyboard
+- hideKeyboard
+
+# Verify activity type dropdown is present (default: hiking)
+- assertVisible:
+    text: "hiking"
+
+# Verify public toggle exists
+- scrollUntilVisible:
+    element:
+      text: "Make Pack Public"
+    direction: DOWN
+- assertVisible:
+    text: "Make Pack Public"
+
+# Submit the form
+- tapOn:
+    text: "Create Pack"
+    index: 1
+- waitForAnimationToEnd
+
+# Wait for navigation back to pack list
+- extendedWaitUntil:
+    visible:
+      text: "My Packs"
+    timeout: 15000
+
+# Assert pack was created and appears in the list
+- assertVisible:
+    text: "Maestro Test Pack"

@@ -1,0 +1,72 @@
+appId: com.packratai.mobile
+---
+# Add Item from Catalog Flow: Tests adding an item to a pack via catalog detail
+# This path works (unlike Add Manually) — verifies the working add-to-pack flow
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Catalog tab
+- tapOn:
+    text: "Catalog"
+- waitForAnimationToEnd
+
+# Assert catalog loaded with items
+- assertVisible:
+    text: "Catalog"
+- assertVisible:
+    text: "items"
+
+# Scroll down to see catalog items
+- scrollUntilVisible:
+    element:
+      text: "Patagonia"
+    direction: DOWN
+
+# Tap the first visible catalog item
+- tapOn:
+    text: "Patagonia"
+- waitForAnimationToEnd
+
+# Assert item detail loaded
+- assertVisible:
+    text: "Item Details"
+- assertVisible:
+    text: "Add to Pack"
+
+# Tap "Add to Pack"
+- tapOn:
+    text: "Add to Pack"
+- waitForAnimationToEnd
+
+# Assert pack picker shows packs
+- assertVisible:
+    text: "ADDING"
+
+# Select the Maestro Test Pack
+- tapOn:
+    text: "Maestro Test Pack"
+- waitForAnimationToEnd
+
+# Assert we see the add-to-pack confirmation form
+- assertVisible:
+    text: "Selected Pack"
+- assertVisible:
+    text: "Maestro Test Pack"
+- assertVisible:
+    text: "Quantity"
+
+# Scroll to find the submit button
+- scrollUntilVisible:
+    element:
+      text: "Add to Pack"
+    direction: DOWN
+
+# Tap the "Add to Pack" submit button
+- tapOn:
+    text: "Add to Pack"
+    index: 1
+- waitForAnimationToEnd
+
+# Verify we returned to item detail and pack count increased
+- assertVisible:
+    text: "Item Details"

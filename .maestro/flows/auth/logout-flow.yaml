@@ -1,0 +1,56 @@
+appId: com.packratai.mobile
+---
+# Logout Flow: Navigate to profile and sign out
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to the Profile tab
+- tapOn:
+    text: "Profile"
+- waitForAnimationToEnd
+
+# Assert profile loaded
+- assertVisible:
+    text: "Account Information"
+
+# Scroll to Log Out button
+- scrollUntilVisible:
+    element:
+      text: "Log Out"
+    direction: DOWN
+
+- tapOn:
+    text: "Log Out"
+- waitForAnimationToEnd
+
+# Handle possible sync confirmation dialog
+- runFlow:
+    when:
+      visible:
+        text: "Sync in progress"
+    commands:
+      - tapOn:
+          text: "Log Out"
+          index: 1
+
+- waitForAnimationToEnd
+
+# Handle post-logout dialog
+- runFlow:
+    when:
+      visible:
+        text: "Stay logged out"
+    commands:
+      - tapOn:
+          text: "Stay logged out"
+
+- waitForAnimationToEnd
+
+# Assert we're back on auth/onboarding screen
+- extendedWaitUntil:
+    visible:
+      text: "Sign In"
+    timeout: 10000
+
+- assertVisible:
+    text: "Sign In"

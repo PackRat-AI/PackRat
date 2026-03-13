@@ -1,0 +1,69 @@
+appId: com.packratai.mobile
+---
+# Trip Edit Flow: Tests editing an existing trip
+# Requires a trip to exist (create-trip-flow.yaml must run first)
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Trips tab
+- tapOn:
+    text: "Trips"
+- waitForAnimationToEnd
+
+# Tap into existing Maestro Test Trip
+- tapOn:
+    text: "Maestro Test Trip"
+- waitForAnimationToEnd
+
+# Assert trip detail loaded
+- assertVisible:
+    text: "Maestro Test Trip"
+
+# Look for Edit button/icon
+- scrollUntilVisible:
+    element:
+      text: "Edit"
+    direction: DOWN
+
+- tapOn:
+    text: "Edit"
+- waitForAnimationToEnd
+
+# Assert edit form loaded with pre-filled data
+- extendedWaitUntil:
+    visible:
+      text: "Trip Name"
+    timeout: 5000
+
+# Verify existing data is pre-filled
+- assertVisible:
+    text: "Maestro Test Trip"
+
+# Verify other form fields are present
+- assertVisible:
+    text: "Description"
+
+# Verify Select Pack is present (BUG-2 applies here too)
+- scrollUntilVisible:
+    element:
+      text: "Select Pack"
+    direction: DOWN
+- assertVisible:
+    text: "Select Pack"
+
+# Verify Update Trip button exists
+- scrollUntilVisible:
+    element:
+      text: "Update Trip"
+    direction: DOWN
+- assertVisible:
+    text: "Update Trip"
+
+# Don't submit — just verify the edit form works
+# Go back without saving
+- back
+- waitForAnimationToEnd
+
+# Go back to trips list
+- back
+- waitForAnimationToEnd

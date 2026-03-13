@@ -1,0 +1,26 @@
+appId: com.packratai.mobile
+---
+# Profile View Flow: Verifies profile tab renders user info
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Profile tab
+- tapOn:
+    text: "Profile"
+- waitForAnimationToEnd
+
+# Assert profile elements
+- assertVisible:
+    text: "Account Information"
+- assertVisible:
+    text: "Name"
+- assertVisible:
+    text: "Email"
+
+# Assert Log Out button exists
+- scrollUntilVisible:
+    element:
+      text: "Log Out"
+    direction: DOWN
+- assertVisible:
+    text: "Log Out"

@@ -1,0 +1,58 @@
+appId: com.packratai.mobile
+---
+# Catalog Item Detail Flow: Verifies rich item detail page
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Catalog tab
+- tapOn:
+    text: "Catalog"
+- waitForAnimationToEnd
+
+# Scroll to find an item and tap it
+- scrollUntilVisible:
+    element:
+      text: "Patagonia"
+    direction: DOWN
+
+- tapOn:
+    text: "Patagonia"
+- waitForAnimationToEnd
+
+# Assert item detail page elements
+- assertVisible:
+    text: "Item Details"
+- assertVisible:
+    text: "CATEGORIES"
+- assertVisible:
+    text: "WEIGHT"
+
+# Scroll to verify more detail sections
+- scrollUntilVisible:
+    element:
+      text: "Add to Pack"
+    direction: DOWN
+
+- assertVisible:
+    text: "Add to Pack"
+
+- scrollUntilVisible:
+    element:
+      text: "View on Retailer Site"
+    direction: DOWN
+
+- assertVisible:
+    text: "View on Retailer Site"
+
+# Verify specifications section exists
+- scrollUntilVisible:
+    element:
+      text: "Specifications"
+    direction: DOWN
+
+- assertVisible:
+    text: "Specifications"
+
+# Go back
+- back
+- waitForAnimationToEnd

@@ -1,0 +1,33 @@
+appId: com.packratai.mobile
+---
+# Trip Detail Flow: Verifies trip detail and edit functionality
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Trips tab
+- tapOn:
+    text: "Trips"
+- waitForAnimationToEnd
+
+# Tap into Maestro Test Trip
+- tapOn:
+    text: "Maestro Test Trip"
+- waitForAnimationToEnd
+
+# Assert trip detail elements
+- assertVisible:
+    text: "Trip Details"
+- assertVisible:
+    text: "Maestro Test Trip"
+- assertVisible:
+    text: "Dates"
+- assertVisible:
+    text: "Start Date"
+- assertVisible:
+    text: "End Date"
+- assertVisible:
+    text: "Details"
+
+# Go back
+- back
+- waitForAnimationToEnd

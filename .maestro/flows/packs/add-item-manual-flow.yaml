@@ -1,0 +1,91 @@
+appId: com.packratai.mobile
+---
+# Add Item Manually Flow: Tests BUG-1 — adding a manual item to a pack
+# This test is expected to FAIL until BUG-1 is fixed (GH issue #1943)
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap into the first pack (Maestro Test Pack should exist from prior flow)
+- tapOn:
+    text: "Maestro Test Pack"
+- waitForAnimationToEnd
+
+# Assert pack detail loaded
+- assertVisible:
+    text: "Pack Details"
+- assertVisible:
+    text: "Add Item"
+
+# Tap Add Item
+- tapOn:
+    text: "Add Item"
+- waitForAnimationToEnd
+
+# Assert bottom sheet with options
+- assertVisible:
+    text: "Add Manually"
+- assertVisible:
+    text: "Scan Items from Photo"
+- assertVisible:
+    text: "Add from Catalog"
+
+# Select Add Manually
+- tapOn:
+    text: "Add Manually"
+- waitForAnimationToEnd
+
+# Assert add item form loaded
+- assertVisible:
+    text: "Item Name"
+
+# Fill in Item Name
+- tapOn:
+    text: "Item Name"
+- inputText: "Test Headlamp"
+
+# Fill in Description
+- tapOn:
+    text: "Description"
+- inputText: "Lightweight headlamp for hiking"
+
+# Fill in Category
+- tapOn:
+    text: "Category (e.g., Shelter, Cooking)"
+- inputText: "Lighting"
+
+# Dismiss keyboard
+- hideKeyboard
+
+# Scroll to weight field
+- scrollUntilVisible:
+    element:
+      text: "Unit"
+    direction: DOWN
+
+# Scroll to submit button
+- scrollUntilVisible:
+    element:
+      text: "Add Item"
+    direction: DOWN
+
+# Tap submit
+- tapOn:
+    text: "Add Item"
+    index: 1
+- waitForAnimationToEnd
+
+# BUG-1: This currently shows "Failed to save item" error
+# When fixed, these assertions should pass:
+- extendedWaitUntil:
+    visible:
+      text: "Pack Details"
+    timeout: 10000
+
+# Verify item was added (will fail until bug is fixed)
+- assertVisible:
+    text: "Test Headlamp"

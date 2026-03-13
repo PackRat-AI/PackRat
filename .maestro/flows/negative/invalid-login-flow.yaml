@@ -1,0 +1,55 @@
+appId: com.packratai.mobile
+---
+# Invalid Login Flow: Tests error handling for wrong credentials
+# This is a standalone flow — it clears state and tests login failure
+- launchApp:
+    clearState: true
+    stopApp: true
+- waitForAnimationToEnd
+
+# Navigate to Sign In
+- extendedWaitUntil:
+    visible:
+      text: "Sign In"
+    timeout: 10000
+
+- tapOn:
+    text: "Sign In"
+- waitForAnimationToEnd
+
+# Handle possible multi-step auth screens
+- runFlow:
+    when:
+      notVisible:
+        text: "Email"
+    commands:
+      - tapOn:
+          text: "Sign In"
+      - waitForAnimationToEnd
+
+# Fill in invalid credentials
+- tapOn:
+    text: "Email"
+- inputText: "invalid@nonexistent.com"
+
+- tapOn:
+    text: "Password"
+- inputText: "wrongpassword123"
+
+- hideKeyboard
+
+# Submit
+- tapOn:
+    text: "Submit"
+- waitForAnimationToEnd
+
+# Should show an error — NOT navigate to Dashboard
+# Wait a bit for the error to appear
+- extendedWaitUntil:
+    notVisible:
+      text: "Dashboard"
+    timeout: 10000
+
+# We should still be on the login screen
+- assertVisible:
+    text: "Email"

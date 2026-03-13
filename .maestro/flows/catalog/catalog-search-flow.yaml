@@ -1,0 +1,34 @@
+appId: com.packratai.mobile
+---
+# Catalog Search Flow: Tests BUG-4 — catalog search doesn't filter (GH issue #1946)
+# This test is expected to FAIL until BUG-4 is fixed
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Catalog tab
+- tapOn:
+    text: "Catalog"
+- waitForAnimationToEnd
+
+# Note the initial item count
+- assertVisible:
+    text: "78,891 items"
+
+# Tap search icon to open search
+- tapOn:
+    text: "Search catalog items..."
+- waitForAnimationToEnd
+
+# Type a search query
+- inputText: "tent"
+- hideKeyboard
+- waitForAnimationToEnd
+
+# BUG-4: Currently search does NOT filter results
+# When fixed, the item count should decrease and results should be tent-related
+- assertNotVisible:
+    text: "78,891 items"
+
+# Clear search to restore catalog
+- back
+- waitForAnimationToEnd

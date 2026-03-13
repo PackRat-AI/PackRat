@@ -1,0 +1,58 @@
+appId: com.packratai.mobile
+---
+# Guides Browse Flow: Tests the guides content section
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Dashboard
+- tapOn:
+    text: "Dashboard"
+- waitForAnimationToEnd
+
+# Scroll to find the Guides tile
+- scrollUntilVisible:
+    element:
+      text: "Guides"
+    direction: DOWN
+
+# Tap the Guides tile
+- tapOn:
+    text: "Guides"
+- waitForAnimationToEnd
+
+# Assert guides page loaded with filter tabs
+- extendedWaitUntil:
+    visible:
+      text: "All"
+    timeout: 10000
+
+# Verify filter categories exist
+- assertVisible:
+    text: "Beginner"
+
+# Verify at least one guide article is visible
+- scrollUntilVisible:
+    element:
+      text: "min read"
+    direction: DOWN
+- assertVisible:
+    text: "min read"
+
+# Test tapping a filter tab
+- tapOn:
+    text: "Beginner"
+- waitForAnimationToEnd
+
+# Verify content updates (still shows articles)
+- scrollUntilVisible:
+    element:
+      text: "min read"
+    direction: DOWN
+
+# Go back to dashboard
+- back
+- waitForAnimationToEnd
+
+# Verify we returned to Dashboard
+- assertVisible:
+    text: "Dashboard"
