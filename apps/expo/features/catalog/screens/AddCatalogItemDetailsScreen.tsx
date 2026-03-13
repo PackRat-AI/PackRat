@@ -1,6 +1,7 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useQueryClient } from '@tanstack/react-query';
+import * as Burnt from 'burnt';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -21,7 +22,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import { useCatalogItemDetails } from '../hooks';
 import { cacheCatalogItemImage } from '../lib/cacheCatalogItemImage';
 import type { CatalogItem } from '../types';
@@ -101,9 +101,9 @@ export function AddCatalogItemDetailsScreen() {
       };
     });
     setIsAdding(false);
-    Toast.show({
-      type: 'success',
-      text1: t('catalog.itemAdded'),
+    Burnt.toast({
+      title: t('catalog.itemAdded'),
+      preset: 'done',
     });
     // Navigate back to the catalog item detail screen
     router.dismissTo({

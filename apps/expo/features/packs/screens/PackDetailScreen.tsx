@@ -1,6 +1,7 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -17,7 +18,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
@@ -99,9 +99,9 @@ export function PackDetailScreen() {
     packingModeStore[id as string].set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-    Toast.show({
-      type: 'success',
-      text1: 'Packing state saved',
+    Burnt.toast({
+      title: 'Packing state saved',
+      preset: 'done',
     });
   };
 

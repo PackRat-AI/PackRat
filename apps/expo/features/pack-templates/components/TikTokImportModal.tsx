@@ -1,5 +1,6 @@
 import { ActivityIndicator, Text, TextField } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import * as Burnt from 'burnt';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
@@ -13,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import { useGenerateTemplateFromTikTok } from '../hooks';
 
 interface TikTokImportModalProps {
@@ -31,9 +31,9 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
 
   const handleGenerate = () => {
     if (!tiktokUrl.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: t('packTemplates.tiktokUrlRequired'),
+      Burnt.toast({
+        title: t('packTemplates.tiktokUrlRequired'),
+        preset: 'error',
       });
       return;
     }
@@ -46,9 +46,9 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
       {
         onSuccess: (template) => {
           onClose();
-          Toast.show({
-            type: 'success',
-            text1: t('packTemplates.tiktokImportSuccess'),
+          Burnt.toast({
+            title: t('packTemplates.tiktokImportSuccess'),
+            preset: 'done',
           });
           router.push({
             pathname: '/pack-templates/[id]',
@@ -57,9 +57,9 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
         },
         onError: (error) => {
           console.error('TikTok import error:', error);
-          Toast.show({
-            type: 'error',
-            text1: t('packTemplates.tiktokImportError'),
+          Burnt.toast({
+            title: t('packTemplates.tiktokImportError'),
+            preset: 'error',
           });
         },
       },
