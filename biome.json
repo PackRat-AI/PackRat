@@ -32,7 +32,15 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "style": {
+        "useMaxParams": {
+          "level": "warn",
+          "options": {
+            "maxParameters": 1
+          }
+        }
+      }
     }
   },
   "javascript": {
