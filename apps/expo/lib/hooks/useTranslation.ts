@@ -2,6 +2,7 @@ import * as Localization from 'expo-localization';
 import type { TranslateOptions } from 'i18n-js';
 import { useEffect, useState } from 'react';
 import i18n from '../i18n';
+import type { TranslationKeys } from '../i18n/types';
 
 /**
  * Custom hook for accessing translations
@@ -21,12 +22,15 @@ export function useTranslation() {
   }, [locale]);
 
   /**
-   * Translate function
+   * Translate function.
+   * The `key` parameter is strictly typed to the keys present in `en.json` so
+   * TypeScript will report an error whenever an unknown or misspelled key is
+   * used.
    * @param key - Translation key in dot notation (e.g., 'common.welcome')
    * @param options - Optional interpolation values
    * @returns Translated string
    */
-  const t = (key: string, options?: TranslateOptions) => {
+  const t = (key: TranslationKeys, options?: TranslateOptions) => {
     return i18n.t(key, options);
   };
 

@@ -1,6 +1,7 @@
 import * as Localization from 'expo-localization';
 import { I18n, type TranslateOptions } from 'i18n-js';
 import en from './locales/en.json';
+import type { TranslationKeys } from './types';
 
 // Create i18n instance
 const i18n = new I18n();
@@ -20,12 +21,14 @@ i18n.enableFallback = true;
 i18n.defaultLocale = 'en';
 
 /**
- * Translate a key to its localized string
+ * Translate a key to its localized string.
+ * The `key` parameter is strictly typed to the keys present in `en.json` so
+ * TypeScript will report an error whenever an unknown or misspelled key is used.
  * @param key - Translation key in dot notation (e.g., 'common.welcome')
  * @param options - Optional interpolation values
  * @returns Translated string
  */
-export const t = (key: string, options?: TranslateOptions) => {
+export const t = (key: TranslationKeys, options?: TranslateOptions) => {
   return i18n.t(key, options);
 };
 

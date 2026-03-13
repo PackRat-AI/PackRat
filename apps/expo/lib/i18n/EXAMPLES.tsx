@@ -64,15 +64,22 @@ export function validateForm(formData: any) {
 }
 
 /**
- * Example 5: Default fallback values
+ * Example 5: Type safety for translation keys
+ *
+ * With proper TypeScript types, attempting to use an unknown key is a
+ * compile-time error — TypeScript will underline it red and report:
+ *   "Argument of type '"someNonExistentKey"' is not assignable to
+ *    parameter of type 'TranslationKeys'"
+ *
+ * This ensures missing translations are caught before they reach production.
  */
 export function FallbackExample() {
   const { t } = useTranslation();
 
   return (
     <View>
-      {/* If translation key doesn't exist, shows the key itself */}
-      <Text>{t('someNonExistentKey')}</Text>
+      {/* TypeScript will error if the key does not exist in en.json */}
+      {/* t('someNonExistentKey') ← compile-time error */}
 
       {/* Best practice: Always add keys to en.json first */}
       <Text>{t('common.welcome')}</Text>
