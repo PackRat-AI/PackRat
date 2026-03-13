@@ -462,17 +462,32 @@ export class QueryBuilder {
         `;
   }
 
-  /** Build CREATE TABLE AS SELECT for cache population. */
-  createCacheTable(tableName = 'gear_data'): string {
-    return `
-        CREATE TABLE ${tableName} AS
-        ${this.normalizedSelectQuery()}
-        `;
+  /**
+   * Build statements to create and incrementally populate the cache table.
+   * Returns one CREATE TABLE per glob pattern to avoid OOM on large datasets.
+   */
+  createCacheTableStatements(tableName = 'gear_data'): string[] {
+    const select = SQLFragments.selectFields().join(',\n            ');
+    const conditions = SQLFragments.baseWhere();
+    const where = conditions.filter(Boolean).join(' AND ');
+    const globs = R2_CSV_GLOBS;
+
+    const statements: string[] = [];
+    for (let i = 0; i < globs.length; i++) {
+      const source = SQLFragments.readCsvSource(this.bucketPath, [globs[i]]);
+      const query = `SELECT ${select} FROM ${source} WHERE ${where}`;
+      statements.push(
+        i === 0 ? `CREATE TABLE ${tableName} AS ${query}` : `INSERT INTO ${tableName} ${query}`,
+      );
+    }
+    return statements;
   }
 
-  /** Build CREATE TABLE AS SELECT for price history cache. */
-  createPriceHistoryTable(tableName = 'price_history'): string {
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+  /**
+   * Build statements to create and incrementally populate the price history table.
+   * Returns one CREATE/INSERT per glob pattern.
+   */
+  createPriceHistoryStatements(tableName = 'price_history'): string[] {
     const maxP = DBConfig.MAX_VALID_PRICE;
 
     const nameVariations = FIELD_MAPPINGS.name ?? ['name'];
@@ -483,21 +498,31 @@ export class QueryBuilder {
     const brandParts = brandVariations.map((v) => `NULLIF(TRIM(TRY_CAST(${v} AS VARCHAR)), '')`);
     const brandCoalesce = `COALESCE(${brandParts.join(', ')}, '')`;
 
-    return `
-        CREATE TABLE ${tableName} AS
+    const selectPart = `
         SELECT
             regexp_extract(filename, '${SITE_EXTRACT_REGEX}', 1) as site,
             regexp_extract(filename, '(\\d{4}-\\d{2}-\\d{2})T', 1) as scrape_date,
             ${nameCoalesce} as name,
             ${brandCoalesce} as brand,
-            TRY_CAST(price AS DOUBLE) as price
-        FROM ${source}
+            TRY_CAST(price AS DOUBLE) as price`;
+
+    const wherePart = `
         WHERE ${nameCoalesce} != ''
           AND TRY_CAST(price AS DOUBLE) IS NOT NULL
           AND TRY_CAST(price AS DOUBLE) > 0
           AND TRY_CAST(price AS DOUBLE) < ${maxP}
           AND regexp_extract(filename, '(\\d{4}-\\d{2}-\\d{2})T', 1) IS NOT NULL
-          AND regexp_extract(filename, '(\\d{4}-\\d{2}-\\d{2})T', 1) != ''
-        `;
+          AND regexp_extract(filename, '(\\d{4}-\\d{2}-\\d{2})T', 1) != ''`;
+
+    const globs = R2_CSV_GLOBS;
+    const statements: string[] = [];
+    for (let i = 0; i < globs.length; i++) {
+      const source = SQLFragments.readCsvSource(this.bucketPath, [globs[i]]);
+      const query = `${selectPart} FROM ${source} ${wherePart}`;
+      statements.push(
+        i === 0 ? `CREATE TABLE ${tableName} AS ${query}` : `INSERT INTO ${tableName} ${query}`,
+      );
+    }
+    return statements;
   }
 }

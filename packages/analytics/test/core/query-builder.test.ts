@@ -261,24 +261,29 @@ describe('QueryBuilder', () => {
     });
   });
 
-  describe('createCacheTable', () => {
-    it('wraps normalized query in CREATE TABLE', () => {
-      const sql = qb.createCacheTable();
-      expect(sql).toContain('CREATE TABLE gear_data AS');
+  describe('createCacheTableStatements', () => {
+    it('returns one CREATE and one INSERT for two globs', () => {
+      const stmts = qb.createCacheTableStatements();
+      expect(stmts.length).toBe(2);
+      expect(stmts[0]).toContain('CREATE TABLE gear_data AS');
+      expect(stmts[1]).toContain('INSERT INTO gear_data');
     });
 
     it('uses custom table name', () => {
-      const sql = qb.createCacheTable('my_cache');
-      expect(sql).toContain('CREATE TABLE my_cache AS');
+      const stmts = qb.createCacheTableStatements('my_cache');
+      expect(stmts[0]).toContain('CREATE TABLE my_cache AS');
+      expect(stmts[1]).toContain('INSERT INTO my_cache');
     });
   });
 
-  describe('createPriceHistoryTable', () => {
-    it('generates price history table', () => {
-      const sql = qb.createPriceHistoryTable();
-      expect(sql).toContain('CREATE TABLE price_history AS');
-      expect(sql).toContain('scrape_date');
-      expect(sql).toContain('price');
+  describe('createPriceHistoryStatements', () => {
+    it('returns incremental statements with expected columns', () => {
+      const stmts = qb.createPriceHistoryStatements();
+      expect(stmts.length).toBe(2);
+      expect(stmts[0]).toContain('CREATE TABLE price_history AS');
+      expect(stmts[0]).toContain('scrape_date');
+      expect(stmts[0]).toContain('price');
+      expect(stmts[1]).toContain('INSERT INTO price_history');
     });
   });
 });

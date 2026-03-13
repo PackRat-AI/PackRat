@@ -105,12 +105,16 @@ export class LocalCacheManager {
       SET http_timeout=${DBConfig.HTTP_TIMEOUT};
     `);
 
-    // Drop and rebuild tables
+    // Drop and rebuild tables incrementally (one glob at a time to avoid OOM)
     await conn.run(`DROP TABLE IF EXISTS ${TABLE_NAME}`);
     await conn.run(`DROP TABLE IF EXISTS ${PRICE_HISTORY_TABLE}`);
 
-    await conn.run(this.queryBuilder.createCacheTable(TABLE_NAME));
-    await conn.run(this.queryBuilder.createPriceHistoryTable(PRICE_HISTORY_TABLE));
+    for (const stmt of this.queryBuilder.createCacheTableStatements(TABLE_NAME)) {
+      await conn.run(stmt);
+    }
+    for (const stmt of this.queryBuilder.createPriceHistoryStatements(PRICE_HISTORY_TABLE)) {
+      await conn.run(stmt);
+    }
 
     // Create indexes for fast queries
     await conn.run(`CREATE INDEX IF NOT EXISTS idx_site ON ${TABLE_NAME}(site)`);
