@@ -53,9 +53,11 @@ export class LocalCacheManager {
     this.instance = await DuckDBInstance.create(dbPath(this.cacheDir));
     this.conn = await this.instance.connect();
 
-    await this.conn.run(
-      `SET memory_limit='${DBConfig.MEMORY_LIMIT}'; SET threads=${DBConfig.THREAD_COUNT};`,
-    );
+    await this.conn.run(`
+      SET memory_limit='${DBConfig.MEMORY_LIMIT}';
+      SET threads=${DBConfig.THREAD_COUNT};
+      SET temp_directory='${this.cacheDir}/tmp';
+    `);
 
     this.metadata = loadMetadata(this.cacheDir);
     return this.conn;
