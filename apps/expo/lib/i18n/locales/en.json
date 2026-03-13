@@ -333,6 +333,7 @@
     "itemName": "Item Name",
     "itemDetails": "Item Details",
     "categoryExample": "Category (e.g., Shelter, Cooking)",
+    "weightAndQuantity": "Weight & Quantity",
     "weightEach": "WEIGHT (EACH)",
     "weight": "Weight",
     "unit": "Unit",
