@@ -1,7 +1,9 @@
 /**
- * Cache metadata persistence using Zod validation and Bun file I/O.
+ * Cache metadata persistence using Zod validation.
+ * Uses node:fs which works under both Bun and Node (vitest).
  */
 
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { DBConfig } from './constants';
@@ -28,18 +30,18 @@ export function dbPath(cacheDir: string): string {
   return join(cacheDir, DB_FILENAME);
 }
 
-export async function loadMetadata(cacheDir: string): Promise<CacheMetadataFile | null> {
-  const file = Bun.file(metadataPath(cacheDir));
-  if (!(await file.exists())) return null;
+export function loadMetadata(cacheDir: string): CacheMetadataFile | null {
+  const path = metadataPath(cacheDir);
+  if (!existsSync(path)) return null;
 
-  const raw = await file.json();
+  const raw = JSON.parse(readFileSync(path, 'utf-8'));
   const result = MetadataSchema.safeParse(raw);
   return result.success ? result.data : null;
 }
 
-export async function saveMetadata(cacheDir: string, data: CacheMetadataFile): Promise<void> {
+export function saveMetadata(cacheDir: string, data: CacheMetadataFile): void {
   const validated = MetadataSchema.parse(data);
-  await Bun.write(metadataPath(cacheDir), JSON.stringify(validated, null, 2));
+  writeFileSync(metadataPath(cacheDir), JSON.stringify(validated, null, 2));
 }
 
 export function needsUpdate(metadata: CacheMetadataFile | null): boolean {

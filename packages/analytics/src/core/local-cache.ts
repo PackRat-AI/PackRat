@@ -57,7 +57,7 @@ export class LocalCacheManager {
       `SET memory_limit='${DBConfig.MEMORY_LIMIT}'; SET threads=${DBConfig.THREAD_COUNT};`,
     );
 
-    this.metadata = await loadMetadata(this.cacheDir);
+    this.metadata = loadMetadata(this.cacheDir);
     return this.conn;
   }
 
@@ -123,7 +123,7 @@ export class LocalCacheManager {
     const sites = sitesResult.getRows().map((r) => String(r[0]));
 
     const now = new Date().toISOString();
-    await saveMetadata(this.cacheDir, {
+    saveMetadata(this.cacheDir, {
       version: DBConfig.CACHE_VERSION,
       schema_version: DBConfig.SCHEMA_VERSION,
       created_at: this.metadata?.created_at ?? now,
@@ -131,7 +131,7 @@ export class LocalCacheManager {
       record_count: recordCount,
       sites,
     });
-    this.metadata = await loadMetadata(this.cacheDir);
+    this.metadata = loadMetadata(this.cacheDir);
   }
 
   getCacheStats(): { recordCount: number; sites: string[]; updatedAt: string | undefined } {
