@@ -33,7 +33,7 @@ describe('SQLFragments', () => {
     it('generates COALESCE for name field with all variations', () => {
       const sql = SQLFragments.safeCoalesce('name');
       expect(sql).toContain('COALESCE(');
-      expect(sql).toContain('heading'); // alternate column name
+      expect(sql).toContain('name'); // column name from FIELD_MAPPINGS
       expect(sql).toContain("'Unknown'"); // default
       expect(sql).toContain('as name');
     });
@@ -71,7 +71,6 @@ describe('SQLFragments', () => {
   describe('readCsvSource', () => {
     it('generates read_csv_auto with bucket path', () => {
       const sql = SQLFragments.readCsvSource('s3://my-bucket');
-      expect(sql).toContain("'s3://my-bucket/v1/*/*.csv'");
       expect(sql).toContain("'s3://my-bucket/v2/*/*.csv'");
       expect(sql).toContain('union_by_name=true');
       expect(sql).toContain('filename=true');
@@ -111,7 +110,7 @@ describe('SQLFragments', () => {
       expect(sql).toContain("'%tent%'");
       expect(sql).toContain('OR');
       // Should reference field mapping variations
-      expect(sql).toContain('heading'); // name variation
+      expect(sql).toContain('categories'); // category variation from FIELD_MAPPINGS
     });
 
     it('escapes SQL injection in keyword', () => {

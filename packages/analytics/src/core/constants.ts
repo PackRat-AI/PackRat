@@ -75,7 +75,9 @@ export const SITE_EXTRACT_REGEX = 'v[12]/([^/]+)/';
 
 export const R2_CSV_GLOB_V1 = 'v1/*/*.csv';
 export const R2_CSV_GLOB_V2 = 'v2/*/*.csv';
-export const R2_CSV_GLOBS = [R2_CSV_GLOB_V1, R2_CSV_GLOB_V2];
+// v1 contains legacy format CSVs with malformed/empty files; skip by default.
+// Restore with: R2_CSV_GLOBS = [R2_CSV_GLOB_V1, R2_CSV_GLOB_V2]
+export const R2_CSV_GLOBS = [R2_CSV_GLOB_V2];
 
 // ── Field Mappings ────────────────────────────────────────────────────
 
@@ -84,15 +86,15 @@ export const R2_CSV_GLOBS = [R2_CSV_GLOB_V1, R2_CSV_GLOB_V2];
  * Used by COALESCE queries to handle schema differences across sites.
  */
 export const FIELD_MAPPINGS: Record<string, string[]> = {
-  name: ['name', 'heading'],
-  brand: ['brand', 'brand_name'],
-  category: ['category', 'categories', 'product_type', 'type'],
-  price: ['price', 'offer_price', 'discount_price'],
+  // V2 CSV columns use camelCase from Pydantic model
+  name: ['name'],
+  brand: ['brand'],
+  category: ['categories'],
+  price: ['price'],
   availability: ['availability'],
-  description: ['description', 'details'],
-  product_url: ['product_url', 'productUrl', 'url'],
-  image_url: ['image_url', 'images', 'image'],
-  // V2 fields — CSVs use camelCase from Pydantic model
+  description: ['description'],
+  product_url: ['productUrl'],
+  image_url: ['images'],
   compare_at_price: ['compareAtPrice'],
   rating_value: ['ratingValue'],
   review_count: ['reviewCount'],

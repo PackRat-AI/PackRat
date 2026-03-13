@@ -153,8 +153,7 @@ export class SQLFragments {
             strict_mode=false,
             union_by_name=true,
             filename=true,
-            sample_size=20480,
-            all_varchar=false)`;
+            sample_size=20480)`;
   }
 
   /** Standard SELECT fields for normalized gear data. */
