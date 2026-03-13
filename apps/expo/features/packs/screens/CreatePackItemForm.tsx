@@ -30,7 +30,7 @@ import type { PackItem, PackItemInput } from '../types';
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
   description: z.string(),
-  weight: z.number().min(0, 'Weight must be a positive number'),
+  weight: z.number().min(0, 'Weight cannot be negative'),
   weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
   category: z.string(),
