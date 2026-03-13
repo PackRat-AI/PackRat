@@ -99,21 +99,41 @@ appId: com.packratai.mobile
 
 - waitForAnimationToEnd
 
-# Set Start Date — date picker can be flaky, use repeat for reliability
+# Set Start Date — tap date row, handle flaky picker with conditional retry
 - scrollUntilVisible:
     element:
       text: "Start Date"
     direction: DOWN
     centerElement: true
-- repeat:
-    whileNotVisible: "OK"
-    maxPasses: 3
+- tapOn:
+    text: "Start Date"
+    retryTapIfNoChange: true
+- waitForAnimationToEnd
+# Retry if date picker didn't open
+- runFlow:
+    when:
+      notVisible:
+        text: "OK"
+    commands:
+      - tapOn:
+          text: "Start Date"
+          retryTapIfNoChange: true
+      - waitForAnimationToEnd
+# One more retry attempt
+- runFlow:
+    when:
+      notVisible:
+        text: "OK"
     commands:
       - tapOn:
           text: "Start Date"
           retryTapIfNoChange: true
       - waitForAnimationToEnd
 # Accept default date (today)
+- extendedWaitUntil:
+    visible:
+      text: "OK"
+    timeout: 5000
 - tapOn:
     text: "OK"
 - waitForAnimationToEnd
@@ -124,15 +144,34 @@ appId: com.packratai.mobile
       text: "End Date"
     direction: DOWN
     centerElement: true
-- repeat:
-    whileNotVisible: "OK"
-    maxPasses: 3
+- tapOn:
+    text: "End Date"
+    retryTapIfNoChange: true
+- waitForAnimationToEnd
+# Retry if date picker didn't open
+- runFlow:
+    when:
+      notVisible:
+        text: "OK"
+    commands:
+      - tapOn:
+          text: "End Date"
+          retryTapIfNoChange: true
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      notVisible:
+        text: "OK"
     commands:
       - tapOn:
           text: "End Date"
           retryTapIfNoChange: true
       - waitForAnimationToEnd
 # Accept default date (today)
+- extendedWaitUntil:
+    visible:
+      text: "OK"
+    timeout: 5000
 - tapOn:
     text: "OK"
 - waitForAnimationToEnd
