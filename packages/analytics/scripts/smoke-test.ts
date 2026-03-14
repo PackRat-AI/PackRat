@@ -52,15 +52,16 @@ async function main() {
     try {
       const countReader = await conn.runAndReadAll(`
         SELECT count(*) as cnt
-        FROM read_csv_auto('s3://${R2_BUCKET_NAME}/v2/rei/*.csv',
+        FROM read_csv_auto('s3://${R2_BUCKET_NAME}/v2/*/*.csv',
           ignore_errors=true,
           union_by_name=true,
-          filename=true
+          filename=true,
+          sample_size=20480
         )
         LIMIT 1
       `);
       const countRows = countReader.getRows();
-      console.log(`   OK: Found ${countRows[0]?.[0]} rows from REI v2 CSVs\n`);
+      console.log(`   OK: Found ${countRows[0]?.[0]} rows from v2 CSVs\n`);
     } catch (err) {
       console.log(`   WARN: R2 query failed (may need valid credentials): ${err}\n`);
     }

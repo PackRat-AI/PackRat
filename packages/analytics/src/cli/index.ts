@@ -44,6 +44,14 @@ const main = defineCommand({
     // Advanced analytics
     'market-share': () => import('./commands/market-share').then((m) => m.default),
 
+    // Enrichment & dedup
+    resolve: () => import('./commands/resolve').then((m) => m.default),
+    reviews: () => import('./commands/reviews').then((m) => m.default),
+    images: () => import('./commands/images').then((m) => m.default),
+
+    // Schema analysis
+    schema: () => import('./commands/schema').then((m) => m.default),
+
     // Export
     export: () => import('./commands/export').then((m) => m.default),
   },

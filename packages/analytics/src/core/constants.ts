@@ -135,4 +135,8 @@ export const QUALITY_WEIGHTS: Record<string, number> = {
   image_present: 0.1,
 };
 
-export const PREFERRED_SITES = ['rei', 'backcountry', 'patagonia', 'moosejaw', 'sierra'];
+/**
+ * High-quality sites preferred for deduplication and ranking.
+ * Populated at runtime from cached site list; these are fallback defaults.
+ */
+export const PREFERRED_SITES: string[] = [];
