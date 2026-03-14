@@ -203,6 +203,7 @@ const generateFromTikTokRoutes = new OpenAPIHono<{
 }>();
 
 generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
+  let tiktokUrl: string | undefined;
   try {
     const auth = c.get('user');
 
@@ -211,7 +212,8 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     }
 
     const body = c.req.valid('json');
-    const { tiktokUrl, isAppTemplate } = body;
+    const { isAppTemplate } = body;
+    tiktokUrl = body.tiktokUrl;
 
     const { OPENAI_API_KEY } = getEnv(c);
     const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
@@ -310,8 +312,6 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     // Prepare DB records
     const now = new Date();
     const templateId = `pt_${nanoid()}`;
-    const resolvedName = name ?? analysis.templateName;
-    const resolvedCategory = category ?? analysis.templateCategory;
 
     // Insert the pack template and its items in a single transaction to ensure atomicity
     const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
@@ -320,11 +320,11 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
         .values({
           id: templateId,
           userId: auth.userId,
-          name: resolvedName,
+          name: analysis.templateName,
           description: analysis.templateDescription,
-          category: resolvedCategory,
+          category: analysis.templateCategory,
           image: null,
-          tags: [resolvedCategory],
+          tags: [analysis.templateCategory],
           isAppTemplate: isAppTemplate ?? true,
           deleted: false,
           contentSource: 'tiktok',
