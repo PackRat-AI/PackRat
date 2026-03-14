@@ -58,7 +58,16 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
 
-  const formatDate = (isoString?: string) => isoString?.split('T')[0] || '';
+  const formatDate = (value?: unknown) => {
+    if (!value) return '';
+    if (value instanceof Date) {
+      return value.toISOString().split('T')[0];
+    }
+    if (typeof value === 'string') {
+      return value.split('T')[0];
+    }
+    return '';
+  };
 
   const form = useForm({
     defaultValues: {
