@@ -48,14 +48,6 @@ export default (): ExpoConfig =>
         'expo-router',
         'expo-sqlite',
         [
-          'expo-build-properties',
-          {
-            ios: {
-              deploymentTarget: '13.0',
-            },
-          },
-        ],
-        [
           '@react-native-google-signin/google-signin',
           {
             iosUrlScheme:
