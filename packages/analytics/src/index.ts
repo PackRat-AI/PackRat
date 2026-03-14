@@ -1,7 +1,8 @@
 export * from './core/cache-metadata';
+export { CatalogCacheManager } from './core/catalog-cache';
+export { configureS3, createCatalogConnection } from './core/connection';
 export * from './core/constants';
 export { DataExporter } from './core/data-export';
-export { PackRatEngine } from './core/engine';
 export { Enrichment, normalizeImageUrl, rankImage } from './core/enrichment';
 export { EntityResolver } from './core/entity-resolver';
 export { LocalCacheManager } from './core/local-cache';

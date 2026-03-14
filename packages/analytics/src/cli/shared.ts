@@ -5,14 +5,22 @@
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import consola from 'consola';
+import { CatalogCacheManager } from '../core/catalog-cache';
+import { env } from '../core/env';
 import { LocalCacheManager } from '../core/local-cache';
 
 let _cache: LocalCacheManager | null = null;
 
-/** Get or initialize the local cache manager. */
+/** Get or initialize the cache manager (local or catalog based on ANALYTICS_MODE). */
 export async function getCache(): Promise<LocalCacheManager> {
   if (_cache) return _cache;
-  _cache = new LocalCacheManager();
+
+  if (env().ANALYTICS_MODE === 'catalog') {
+    _cache = new CatalogCacheManager();
+  } else {
+    _cache = new LocalCacheManager();
+  }
+
   await _cache.connect();
   return _cache;
 }
@@ -20,6 +28,12 @@ export async function getCache(): Promise<LocalCacheManager> {
 /** Ensure cache is populated, refreshing if needed. */
 export async function ensureCache(forceRefresh = false): Promise<LocalCacheManager> {
   const cache = await getCache();
+
+  if (env().ANALYTICS_MODE === 'catalog') {
+    // Catalog mode — data lives in Iceberg, no local refresh needed
+    return cache;
+  }
+
   const stats = cache.getCacheStats();
   if (forceRefresh || stats.recordCount === 0) {
     consola.start('Refreshing cache from R2...');
