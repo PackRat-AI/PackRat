@@ -1,6 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { ErrorState } from 'expo-app/components/ErrorState';
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
@@ -11,7 +12,6 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import type { CatalogItem, CatalogItemWithPackItemFields } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 import { useBulkAddCatalogItems } from '../hooks';
@@ -153,9 +153,9 @@ export function ItemsScanScreen() {
   const handleCatalogItemsSelected = async () => {
     router.back();
     await addItemsToPack(packId as string, selectedCatalogItemsList);
-    Toast.show({
-      type: 'success',
-      text1: `Added ${selectedCatalogItemsList.length} items to your pack`,
+    Burnt.toast({
+      title: `Added ${selectedCatalogItemsList.length} items to your pack`,
+      preset: 'done',
     });
   };
 

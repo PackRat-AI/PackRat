@@ -2,6 +2,7 @@ import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import type { ToolUIPart, UIMessage } from 'ai';
+import * as Burnt from 'burnt';
 import { Markdown } from 'expo-app/components/Markdown';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -11,7 +12,6 @@ import * as Haptics from 'expo-haptics';
 import React, { useCallback, useState } from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import { ReportModal } from './ReportModal';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
@@ -57,23 +57,23 @@ export const ChatBubble = React.memo(function ChatBubble({
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       // Show success feedback
-      Toast.show({
-        type: 'success',
-        text1: t('ai.copied'),
+      Burnt.toast({
+        title: t('ai.copied'),
+        preset: 'done',
       });
     } catch (error) {
       console.error('Failed to copy text:', error);
-      Toast.show({
-        type: 'error',
-        text1: t('ai.failedToCopyText'),
+      Burnt.toast({
+        title: t('ai.failedToCopyText'),
+        preset: 'error',
       });
     }
   }, [item, t]);
 
   const handleReportSuccess = useCallback(() => {
-    Toast.show({
-      type: 'success',
-      text1: t('ai.reportSubmitted'),
+    Burnt.toast({
+      title: t('ai.reportSubmitted'),
+      preset: 'done',
     });
   }, [t]);
 

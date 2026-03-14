@@ -1,7 +1,7 @@
+import * as Burnt from 'burnt';
 import { cacheCatalogItemImage } from 'expo-app/features/catalog/lib/cacheCatalogItemImage';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useState } from 'react';
-import Toast from 'react-native-toast-message';
 import type { PackItem, WeightUnit } from '../types';
 import { useCreatePackItem } from './useCreatePackItem';
 
@@ -36,9 +36,9 @@ export function useAddCatalogItem() {
       },
     });
 
-    Toast.show({
-      type: 'success',
-      text1: `Item added to pack`,
+    Burnt.toast({
+      title: 'Item added to pack',
+      preset: 'done',
     });
 
     setIsLoading(false);
