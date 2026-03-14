@@ -37,12 +37,19 @@ export class LocalCacheManager {
   private instance: DuckDBInstance | null = null;
   private conn: DuckDBConnection | null = null;
   private metadata: CacheMetadataFile | null = null;
+  private _queryBuilder: QueryBuilder | null = null;
   readonly cacheDir: string;
-  readonly queryBuilder: QueryBuilder;
 
   constructor(cacheDir = 'data/cache') {
     this.cacheDir = cacheDir;
-    this.queryBuilder = new QueryBuilder(`s3://${env().R2_BUCKET_NAME}`);
+  }
+
+  /** Lazily initialized — avoids calling env() at construction time. */
+  get queryBuilder(): QueryBuilder {
+    if (!this._queryBuilder) {
+      this._queryBuilder = new QueryBuilder(`s3://${env().R2_BUCKET_NAME}`);
+    }
+    return this._queryBuilder;
   }
 
   // ── Connection ──────────────────────────────────────────────────────
