@@ -25,6 +25,7 @@ import {
   saveMetadata,
   schemaIsCurrent,
 } from './cache-metadata';
+import { configureS3 } from './connection';
 import { DBConfig } from './constants';
 import { env } from './env';
 import { QueryBuilder, SQLFragments } from './query-builder';
@@ -92,18 +93,8 @@ export class LocalCacheManager {
       return;
     }
 
-    // Install httpfs for R2 access
-    const { R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_ENDPOINT_URL } = env();
-    await conn.run('INSTALL httpfs; LOAD httpfs;');
-    const endpoint = R2_ENDPOINT_URL.replace('https://', '');
-    await conn.run(`
-      SET s3_region='auto';
-      SET s3_endpoint='${endpoint}';
-      SET s3_access_key_id='${R2_ACCESS_KEY_ID}';
-      SET s3_secret_access_key='${R2_SECRET_ACCESS_KEY}';
-      SET s3_use_ssl=true;
-      SET http_timeout=${DBConfig.HTTP_TIMEOUT};
-    `);
+    // Configure S3/R2 credentials for CSV access
+    await configureS3(conn);
 
     // Drop and rebuild tables
     await conn.run(`DROP TABLE IF EXISTS ${TABLE_NAME}`);
