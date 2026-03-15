@@ -58,7 +58,14 @@ export function useGenerateTemplateFromTikTok() {
 
         if (error && typeof error === 'object' && 'response' in error) {
           const errorData = (
-            error as { response?: { data?: { code?: string; existingTemplateId?: string } } }
+            error as {
+              response?: {
+                data?: {
+                  code?: string;
+                  existingTemplateId?: string;
+                };
+              };
+            }
           ).response?.data;
           if (errorData) {
             errorCode = errorData.code;
@@ -66,9 +73,7 @@ export function useGenerateTemplateFromTikTok() {
           }
         }
 
-        const tikTokError = new Error(
-          `Failed to generate template from TikTok: ${message}`,
-        ) as TikTokImportError;
+        const tikTokError = new Error(message) as TikTokImportError;
         tikTokError.status = status;
         tikTokError.code = errorCode;
         tikTokError.existingTemplateId = existingTemplateId;

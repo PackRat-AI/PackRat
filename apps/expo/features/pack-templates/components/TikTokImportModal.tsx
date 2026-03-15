@@ -57,8 +57,26 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
         },
         onError: (error) => {
           console.error('TikTok import error:', error);
+
+          // Handle duplicate template case - navigate to existing template
+          if (error.code === 'DUPLICATE_TEMPLATE' && error.existingTemplateId) {
+            onClose();
+            Burnt.toast({
+              title: t('packTemplates.templateAlreadyExists'),
+              preset: 'none',
+            });
+            router.push({
+              pathname: '/pack-templates/[id]',
+              params: { id: error.existingTemplateId },
+            });
+            return;
+          }
+
+          // Handle other errors
+          const errorMessage = error.message || t('packTemplates.tiktokImportError');
           Burnt.toast({
-            title: t('packTemplates.tiktokImportError'),
+            title: t('packTemplates.importFailed'),
+            message: errorMessage,
             preset: 'error',
           });
         },

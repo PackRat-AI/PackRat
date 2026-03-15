@@ -8,6 +8,9 @@ export const ErrorResponseSchema = z
     code: z.string().optional().openapi({
       description: 'Error code for programmatic handling',
     }),
+    existingTemplateId: z.string().optional().openapi({
+      description: 'ID of existing template when there is a conflict (409 errors)',
+    }),
   })
   .openapi('ErrorResponse');
 
