@@ -179,7 +179,7 @@ const generateFromTikTokRoute = createRoute({
       },
     },
     409: {
-      description: 'Conflict - Template already exists for this TikTok content',
+      description: 'Conflict - Template already exists for this TikTok content.',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
@@ -241,7 +241,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
           code: 'TIKTOK_SERVICE_ERROR',
         },
-        400,
+        500,
       );
     }
 
@@ -260,11 +260,12 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       .limit(1);
 
     if (existingTemplate.length > 0) {
+      const existing = existingTemplate[0];
       return c.json(
         {
-          error: `A template already exists for this TikTok content (ID: ${existingTemplate[0].id}). Duplicate templates are not allowed.`,
+          error: 'Template already exists for this TikTok content.',
           code: 'DUPLICATE_TEMPLATE',
-          existingTemplateId: existingTemplate[0].id,
+          existingTemplateId: existing.id,
         },
         409,
       );
@@ -389,7 +390,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
 
     return c.json(
       {
-        error: `Failed to generate template: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error: `Server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         code: errorCode,
       },
       500,
