@@ -1,6 +1,6 @@
 {
   "name": "container",
-  "version": "1.0.0",
+  "version": "2.0.15",
   "type": "module",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
