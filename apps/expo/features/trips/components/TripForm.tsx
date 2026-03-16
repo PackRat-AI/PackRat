@@ -9,18 +9,10 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useMemo, useState } from 'react';
+import { Alert, Modal, Pressable, Text, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
 import { useTripLocation } from '../store/tripLocationStore';
@@ -49,6 +41,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const { t } = useTranslation();
   const createTrip = useCreateTrip();
   const updateTrip = useUpdateTrip();
+  const insets = useSafeAreaInsets();
   const isEditingExistingTrip = !!trip;
 
   const { location, setLocation } = useTripLocation();
@@ -96,18 +89,26 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     },
   });
 
+  const contentContainerStyle = useMemo(
+    () => ({ padding: 32, paddingBottom: insets.bottom + 32 }),
+    [insets.bottom],
+  );
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1"
-    >
+    <>
       <Stack.Screen
         options={{
           title: isEditingExistingTrip ? t('trips.editTrip') : t('trips.newTrip'),
         }}
       />
 
-      <ScrollView contentContainerClassName="p-8">
+      <KeyboardAwareScrollView
+        bottomOffset={8}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={contentContainerStyle}
+      >
         <Form>
           <FormSection ios={{ title: t('trips.tripDetails') }}>
             {/* Trip Name */}
@@ -330,7 +331,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
             </Pressable>
           )}
         </form.Subscribe>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
+    </>
   );
 };
