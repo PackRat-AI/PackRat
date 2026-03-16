@@ -9,7 +9,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -89,6 +89,11 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     },
   });
 
+  const contentContainerStyle = useMemo(
+    () => ({ padding: 32, paddingBottom: insets.bottom + 32 }),
+    [insets.bottom],
+  );
+
   return (
     <>
       <Stack.Screen
@@ -102,7 +107,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={{ padding: 32, paddingBottom: insets.bottom + 32 }}
+        contentContainerStyle={contentContainerStyle}
       >
         <Form>
           <FormSection ios={{ title: t('trips.tripDetails') }}>

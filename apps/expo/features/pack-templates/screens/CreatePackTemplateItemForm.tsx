@@ -10,7 +10,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Alert, Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -180,13 +180,18 @@ export const CreatePackTemplateItemForm = ({
       ? { uri: ImageCacheManager.cacheDirectory + form.getFieldValue('image') }
       : null;
 
+  const contentContainerStyle = useMemo(
+    () => ({ padding: 32, paddingBottom: insets.bottom + 32 }),
+    [insets.bottom],
+  );
+
   return (
     <KeyboardAwareScrollView
       bottomOffset={8}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={{ padding: 32, paddingBottom: insets.bottom + 32 }}
+      contentContainerStyle={contentContainerStyle}
     >
       <Form>
         <FormSection
