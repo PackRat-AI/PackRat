@@ -2,12 +2,9 @@ import { useColorScheme } from '@packrat/ui/nativewindui';
 import { StatusBar } from 'expo-status-bar';
 import type React from 'react';
 import { Platform, type ViewStyle } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets, type SafeAreaViewProps } from 'react-native-safe-area-context';
 
-interface TabScreenProps {
-  children: React.ReactNode;
-  style?: ViewStyle;
-}
+interface TabScreenProps extends SafeAreaViewProps {}
 
 export const TabScreen: React.FC<TabScreenProps> = ({ children, style, ...rest }) => {
   const { colorScheme } = useColorScheme();
