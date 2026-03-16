@@ -1,6 +1,6 @@
 import { LargeTitleHeader, type LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import Screen from 'expo-app/components/Screen';
+import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
@@ -57,7 +57,7 @@ export function TripsListScreen() {
   };
 
   return (
-    <Screen>
+    <TabScreen>
       <LargeTitleHeader
         title={t('trips.trips')}
         backVisible={false}
@@ -89,6 +89,6 @@ export function TripsListScreen() {
         ListEmptyComponent={renderEmptyState()}
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </Screen>
+    </TabScreen>
   );
 }

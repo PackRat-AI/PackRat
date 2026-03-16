@@ -13,7 +13,7 @@ import {
   useColorScheme,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Screen from 'expo-app/components/Screen';
+import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -60,7 +60,7 @@ function Profile() {
   ];
 
   return (
-    <Screen>
+    <TabScreen>
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <List
@@ -72,7 +72,7 @@ function Profile() {
         ListHeaderComponent={<ListHeaderComponent />}
         ListFooterComponent={<ListFooterComponent />}
       />
-    </Screen>
+    </TabScreen>
   );
 }
 

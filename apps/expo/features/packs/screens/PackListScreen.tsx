@@ -6,7 +6,7 @@ import {
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import Screen from 'expo-app/components/Screen';
+import TabScreen from 'expo-app/components/TabScreen';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
@@ -180,7 +180,7 @@ export function PackListScreen() {
   };
 
   return (
-    <Screen>
+    <TabScreen>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
@@ -285,6 +285,6 @@ export function PackListScreen() {
         }
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </Screen>
+    </TabScreen>
   );
 }
