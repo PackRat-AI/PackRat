@@ -2,7 +2,7 @@ import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
-import Screen from 'expo-app/components/Screen';
+import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -128,7 +128,7 @@ function CatalogItemsScreen() {
   ]);
 
   return (
-    <Screen>
+    <TabScreen>
       <LargeTitleHeader
         title={t('catalog.title')}
         backVisible={false}
@@ -267,7 +267,7 @@ function CatalogItemsScreen() {
           </View>
         }
       />
-    </Screen>
+    </TabScreen>
   );
 }
 

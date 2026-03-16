@@ -39,21 +39,19 @@ function RootLayout() {
   const { colorScheme, isDarkColorScheme } = useColorScheme();
 
   return (
-    <>
+    <Providers>
       <StatusBar
         key={`root-status-bar-${isDarkColorScheme ? 'light' : 'dark'}`}
         style={isDarkColorScheme ? 'light' : 'dark'}
       />
-      <Providers>
-        <NavThemeProvider value={NAV_THEME[colorScheme]}>
-          <Stack screenOptions={SCREEN_OPTIONS}>
-            <Stack.Screen name="(app)" />
-            <Stack.Screen name="auth" />
-          </Stack>
-          <Alert title="" buttons={[]} ref={appAlert} />
-        </NavThemeProvider>
-      </Providers>
-    </>
+      <NavThemeProvider value={NAV_THEME[colorScheme]}>
+        <Stack screenOptions={SCREEN_OPTIONS}>
+          <Stack.Screen name="(app)" />
+          <Stack.Screen name="auth" />
+        </Stack>
+        <Alert title="" buttons={[]} ref={appAlert} />
+      </NavThemeProvider>
+    </Providers>
   );
 }
 
