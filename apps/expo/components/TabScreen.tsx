@@ -2,7 +2,11 @@ import { useColorScheme } from '@packrat/ui/nativewindui';
 import { StatusBar } from 'expo-status-bar';
 import type React from 'react';
 import { Platform, type ViewStyle } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets, type SafeAreaViewProps } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  type SafeAreaViewProps,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 interface TabScreenProps extends SafeAreaViewProps {}
 
