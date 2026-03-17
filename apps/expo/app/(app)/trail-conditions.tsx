@@ -188,7 +188,7 @@ function TrailConditionCard({ trail }: { trail: TrailCondition }) {
 
         {trail.location && (
           <View className="mt-2 flex-row items-center gap-1">
-            <Icon name="map-marker" size={12} color="#6b7280" />
+            <Icon name="map-marker-outline" size={12} color="#6b7280" />
             <Text variant="caption2" className="text-muted-foreground">
               {trail.location.latitude.toFixed(4)}, {trail.location.longitude.toFixed(4)}
             </Text>

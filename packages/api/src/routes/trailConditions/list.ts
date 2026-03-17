@@ -45,7 +45,7 @@ trailConditionListRoutes.openapi(listTrailConditionsRoute, async (c) => {
   try {
     const db = createDb(c);
     const { limit = 100, offset = 0 } = c.req.valid('query');
-    const [items, [{ total }]] = await Promise.all([
+    const [items, countResult] = await Promise.all([
       db
         .select()
         .from(trailConditions)
@@ -54,6 +54,7 @@ trailConditionListRoutes.openapi(listTrailConditionsRoute, async (c) => {
         .offset(offset),
       db.select({ total: count() }).from(trailConditions),
     ]);
+    const total = countResult[0]?.total ?? 0;
 
     return c.json({ items, total }, 200);
   } catch (error) {
@@ -101,13 +102,14 @@ trailConditionListRoutes.openapi(createTrailConditionRoute, async (c) => {
 
   try {
     // Compute initial trust score based on reporter history
-    const [{ count }] = await db
+    const countRows = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(trailConditions)
       .where(eq(trailConditions.userId, auth.userId));
+    const reportCount = countRows[0]?.count ?? 0;
 
     // Trust score starts at 0.5 for new reporters, increasing with more reports
-    const baseScore = Math.min(0.5 + count * 0.05, 0.9);
+    const baseScore = Math.min(0.5 + reportCount * 0.05, 0.9);
 
     const [newReport] = await db
       .insert(trailConditions)
