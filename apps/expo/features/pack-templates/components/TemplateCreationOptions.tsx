@@ -13,7 +13,6 @@ import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TikTokImportModal } from './TikTokImportModal';
 
-// biome-ignore lint/suspicious/noEmptyBlockStatements: Empty props type needed for forwardRef compatibility
 type TemplateCreationOptionsProps = object;
 
 export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
