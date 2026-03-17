@@ -10,6 +10,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
   vector,
 } from 'drizzle-orm/pg-core';
@@ -523,16 +524,22 @@ export const posts = pgTable('posts', {
 });
 
 // Post likes table
-export const postLikes = pgTable('post_likes', {
-  id: serial('id').primaryKey(),
-  postId: integer('post_id')
-    .references(() => posts.id, { onDelete: 'cascade' })
-    .notNull(),
-  userId: integer('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+export const postLikes = pgTable(
+  'post_likes',
+  {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id')
+      .references(() => posts.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniquePostUser: unique('post_likes_post_id_user_id_unique').on(table.postId, table.userId),
+  }),
+);
 
 // Post comments table
 export const postComments = pgTable('post_comments', {
@@ -550,16 +557,25 @@ export const postComments = pgTable('post_comments', {
 });
 
 // Comment likes table
-export const commentLikes = pgTable('comment_likes', {
-  id: serial('id').primaryKey(),
-  commentId: integer('comment_id')
-    .references(() => postComments.id, { onDelete: 'cascade' })
-    .notNull(),
-  userId: integer('user_id')
-    .references(() => users.id, { onDelete: 'cascade' })
-    .notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+export const commentLikes = pgTable(
+  'comment_likes',
+  {
+    id: serial('id').primaryKey(),
+    commentId: integer('comment_id')
+      .references(() => postComments.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueCommentUser: unique('comment_likes_comment_id_user_id_unique').on(
+      table.commentId,
+      table.userId,
+    ),
+  }),
+);
 
 // Relations
 export const postsRelations = relations(posts, ({ one, many }) => ({

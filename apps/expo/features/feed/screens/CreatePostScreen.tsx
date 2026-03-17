@@ -1,6 +1,5 @@
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { userStore } from 'expo-app/features/auth/store';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

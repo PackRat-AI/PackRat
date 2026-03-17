@@ -225,11 +225,11 @@ const deleteCommentRoute = createRoute({
 
 commentsRoutes.openapi(deleteCommentRoute, async (c) => {
   const auth = c.get('user');
-  const { commentId } = c.req.valid('param');
+  const { postId, commentId } = c.req.valid('param');
   const db = createDb(c);
 
   const comment = await db.query.postComments.findFirst({
-    where: eq(postComments.id, commentId),
+    where: and(eq(postComments.id, commentId), eq(postComments.postId, postId)),
   });
 
   if (!comment) {
@@ -272,11 +272,11 @@ const toggleCommentLikeRoute = createRoute({
 
 commentsRoutes.openapi(toggleCommentLikeRoute, async (c) => {
   const auth = c.get('user');
-  const { commentId } = c.req.valid('param');
+  const { postId, commentId } = c.req.valid('param');
   const db = createDb(c);
 
   const comment = await db.query.postComments.findFirst({
-    where: eq(postComments.id, commentId),
+    where: and(eq(postComments.id, commentId), eq(postComments.postId, postId)),
   });
 
   if (!comment) {
