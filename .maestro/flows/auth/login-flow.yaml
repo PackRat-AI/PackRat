@@ -1,0 +1,43 @@
+# Login Flow: Navigate to auth screen and sign in with email and password
+- launchApp
+
+# Wait for the auth entry screen to appear
+- waitForAnimationToEnd
+
+# Tap the "Sign In" (email) button to navigate to the email login screen
+- tapOn:
+    id: "sign-in-email-button"
+
+# Wait for login form to appear
+- waitForAnimationToEnd
+
+# Fill in the email field
+- tapOn:
+    id: "email-input"
+- typeText: ${TEST_EMAIL}
+
+# Fill in the password field
+- tapOn:
+    id: "password-input"
+- typeText: ${TEST_PASSWORD}
+
+# Dismiss the keyboard before submitting
+- hideKeyboard
+
+# Submit login form via the continue button
+- tapOn:
+    id: "continue-button"
+
+# Wait for navigation to complete — login can take a few seconds
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: "Packs"
+    timeout: 15000
+
+# Assert we are now logged in by navigating to Packs and verifying a stable testID
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "create-pack-button"
