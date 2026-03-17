@@ -926,5 +926,57 @@
     "by": "By",
     "updated": "Updated",
     "all": "All"
+  },
+  "wildlife": {
+    "wildlife": "Wildlife",
+    "tileSubtitle": "Identify plants & animals offline",
+    "identify": "Identify",
+    "identifySpecies": "Identify Species",
+    "identifyNow": "Identify Now",
+    "identifying": "Identifying...",
+    "recentIdentifications": "Recent Identifications",
+    "noIdentifications": "No Identifications Yet",
+    "noIdentificationsDescription": "Take a photo of a plant or animal to identify it. Works offline!",
+    "identificationResults": "Identification Results",
+    "offlineResults": "Offline Results (matches from local database)",
+    "noResultsFound": "No Species Found",
+    "noResultsDescription": "Try adding a description or taking a clearer photo with better lighting.",
+    "addPhoto": "Add a Photo",
+    "takePhoto": "Take Photo",
+    "chooseFromLibrary": "Choose from Library",
+    "changePhoto": "Change Photo",
+    "describeSpecies": "Describe what you see (optional)",
+    "descriptionPlaceholder": "e.g. small orange butterfly, three-leaflet plant, large brown bird...",
+    "failedToSelectImage": "Failed to select image. Please try again.",
+    "speciesDetail": "Species Detail",
+    "speciesNotFound": "Species not found.",
+    "unknownSpecies": "Unknown species",
+    "historyLoadError": "Failed to load identification history.",
+    "description": "Description",
+    "characteristics": "Characteristics",
+    "habitat": "Habitat",
+    "interestingFacts": "Interesting Facts",
+    "source": {
+      "online": "online",
+      "offline": "offline"
+    },
+    "dangerLevel": {
+      "safe": "safe",
+      "caution": "caution",
+      "dangerous": "dangerous"
+    },
+    "category": {
+      "mammal": "mammal",
+      "bird": "bird",
+      "reptile": "reptile",
+      "amphibian": "amphibian",
+      "insect": "insect",
+      "plant": "plant",
+      "flower": "flower",
+      "tree": "tree",
+      "mushroom": "mushroom",
+      "fish": "fish",
+      "other": "other"
+    }
   }
 }
