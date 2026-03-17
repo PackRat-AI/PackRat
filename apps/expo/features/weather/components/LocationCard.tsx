@@ -4,6 +4,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { WeatherLocation } from '../types';
 
 interface LocationCardProps {
@@ -17,6 +18,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
   const { colors, colorScheme } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const handleLongPress = () => {
     const options = location.isActive
@@ -42,6 +44,7 @@ export function LocationCard({ location, onPress, onSetActive, onRemove }: Locat
         message: `${location.temperature}° - ${location.condition}`,
         containerStyle: {
           backgroundColor: colorScheme === 'dark' ? colors.card : 'white',
+          paddingBottom: insets.bottom,
         },
         textStyle: {
           color: colors.foreground,

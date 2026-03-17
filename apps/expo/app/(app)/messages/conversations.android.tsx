@@ -73,7 +73,6 @@ export default function ConversationsAndroidScreen() {
         data={ITEMS}
         extraData={[selectedMessages, isDarkColorScheme]}
         contentInsetAdjustmentBehavior="automatic"
-        estimatedItemSize={72}
         ItemSeparatorComponent={renderItemSeparator}
         contentContainerClassName="ios:pt-4 pt-2"
         ListFooterComponent={<View className="h-16" />} // Prevent last message from being blocked by the FAB/Toolbar

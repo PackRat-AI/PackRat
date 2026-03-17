@@ -3,6 +3,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
@@ -13,7 +14,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBulkAddCatalogItems } from '../hooks';
 
 interface AddPackTemplateItemActionsProps {
@@ -27,6 +28,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
     const { showActionSheetWithOptions } = useActionSheet();
     const { colors } = useColorScheme();
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
     const { addItemsToPackTemplate } = useBulkAddCatalogItems();
     const { trackRecentlyUsed } = useRecentlyUsedCatalogItems();
@@ -70,6 +72,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
           cancelButtonIndex,
           containerStyle: {
             backgroundColor: colors.card,
+            paddingBottom: insets.bottom,
           },
           textStyle: {
             color: colors.foreground,
@@ -119,9 +122,9 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
       await addItemsToPackTemplate(packTemplateId, catalogItems as CatalogItemWithPackItemFields[]);
       const itemWord =
         catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
-      Toast.show({
-        type: 'success',
-        text1: t('packTemplates.addedItems', { count: catalogItems.length, itemWord }),
+      Burnt.toast({
+        title: t('packTemplates.addedItems', { count: catalogItems.length, itemWord }),
+        preset: 'done',
       });
     };
 
@@ -133,6 +136,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
           enablePanDownToClose
           backgroundStyle={{ backgroundColor: colors.card }}
           handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+          bottomInset={insets.bottom}
         >
           <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
             <View className="gap-2 mb-4">

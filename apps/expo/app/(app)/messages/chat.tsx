@@ -157,8 +157,6 @@ export default function ChatIos() {
           behavior="padding"
         >
           <FlashList
-            inverted
-            estimatedItemSize={70}
             ListFooterComponent={<View style={{ height: HEADER_HEIGHT + insets.top }} />}
             ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
             keyboardDismissMode="on-drag"
