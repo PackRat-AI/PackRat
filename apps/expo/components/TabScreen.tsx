@@ -1,7 +1,7 @@
 import { useColorScheme } from '@packrat/ui/nativewindui';
 import { StatusBar } from 'expo-status-bar';
 import type React from 'react';
-import { Platform, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 import {
   SafeAreaView,
   type SafeAreaViewProps,
@@ -20,7 +20,7 @@ export const TabScreen: React.FC<TabScreenProps> = ({ children, style, ...rest }
     flex: 1,
     ...(Platform.OS === 'ios' ? { paddingTop: insets.top } : {}),
     paddingBottom: TAB_BAR_INSET,
-    ...style,
+    ...(StyleSheet.flatten(style) as ViewStyle),
   };
 
   return (
