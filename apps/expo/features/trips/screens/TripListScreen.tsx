@@ -12,6 +12,29 @@ import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
 import type { Trip } from '../types';
 
+function TrailConditionsBanner() {
+  const { colors } = useColorScheme();
+  const { t } = useTranslation();
+  return (
+    <Link href="/trail-conditions" asChild>
+      <Pressable>
+        <View className="mx-4 mb-2 mt-3 flex-row items-center justify-between rounded-xl bg-violet-500/10 px-4 py-3">
+          <View className="flex-row items-center">
+            <View className="h-8 w-8 items-center justify-center rounded-full bg-violet-500">
+              <Icon name="terrain" size={18} color="white" />
+            </View>
+            <View className="ml-3">
+              <Text className="font-semibold text-foreground">{t('trips.trailConditions')}</Text>
+              <Text className="text-xs text-muted-foreground">{t('trailConditions.subtitle')}</Text>
+            </View>
+          </View>
+          <Icon name="chevron-right" size={18} color={colors.grey} />
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
+
 function CreateTripIconButton() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
@@ -81,6 +104,7 @@ export function TripsListScreen() {
       <FlatList
         data={trips || []}
         keyExtractor={(trip) => trip.id}
+        ListHeaderComponent={<TrailConditionsBanner />}
         renderItem={({ item: trip }) => (
           <View className="px-4 pt-4">
             <TripCard trip={trip} onPress={handleTripPress} />
