@@ -157,7 +157,9 @@ export function TripCard({ trip, onPress }: TripCardProps) {
               <View className="flex-row items-center">
                 <Icon name="clock-outline" size={13} color={colors.grey2} />
                 <Text className="ml-1 text-xs text-muted-foreground">
-                  {t('trips.days', { count: durationDays })}
+                  {durationDays === 1
+                    ? t('trips.day')
+                    : t('trips.days', { count: durationDays })}
                 </Text>
               </View>
             )}
