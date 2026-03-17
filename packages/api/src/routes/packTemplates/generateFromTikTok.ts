@@ -56,7 +56,7 @@ async function fetchTikTokPostData(
     const { TIKTOK_CONTAINER } = getEnv(c);
 
     // Get the container instance using the binding
-    const container = getContainer(TIKTOK_CONTAINER);
+    const container = getContainer(TIKTOK_CONTAINER as any);
 
     // Make request to the container's /import endpoint
     const response = await container.fetch(
@@ -233,9 +233,8 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     } catch (apiError) {
       console.error('TikTok service call failed:', apiError);
       c.get('sentry').captureException(apiError, {
-        tags: { errorType: 'tiktok_service_error' },
-        extra: { tiktokUrl },
-      });
+        extra: { tiktokUrl, errorType: 'tiktok_service_error' },
+      } as any);
       return c.json(
         {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
@@ -260,7 +259,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       .limit(1);
 
     if (existingTemplate.length > 0) {
-      const existing = existingTemplate[0];
+      const existing = existingTemplate[0]!;
       return c.json(
         {
           error: 'Template already exists for this TikTok content.',
@@ -372,9 +371,8 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
   } catch (error) {
     console.error('Error generating pack template from TikTok:', error);
     c.get('sentry').captureException(error, {
-      tags: { errorType: 'template_generation_error' },
-      extra: { tiktokUrl },
-    });
+      extra: { tiktokUrl, errorType: 'template_generation_error' },
+    } as any);
 
     // Determine specific error type based on error context
     let errorCode = 'UNKNOWN_ERROR';
