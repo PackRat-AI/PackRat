@@ -127,14 +127,24 @@ export function TripCard({ trip, onPress }: TripCardProps) {
           <View className="mt-3 flex-row items-center flex-wrap gap-3">
             {trip.startDate && trip.endDate ? (
               <View className="flex-row items-center">
-                <Icon name="calendar" size={13} color={colors.grey2} />
+                <Icon
+                  materialIcon={{ type: 'MaterialIcons', name: 'calendar-today' }}
+                  ios={{ name: 'calendar' }}
+                  size={13}
+                  color={colors.grey2}
+                />
                 <Text className="ml-1 text-xs text-muted-foreground">
                   {formatShortDate(trip.startDate)} – {formatShortDate(trip.endDate)}
                 </Text>
               </View>
             ) : trip.startDate ? (
               <View className="flex-row items-center">
-                <Icon name="calendar" size={13} color={colors.grey2} />
+                <Icon
+                  materialIcon={{ type: 'MaterialIcons', name: 'calendar-today' }}
+                  ios={{ name: 'calendar' }}
+                  size={13}
+                  color={colors.grey2}
+                />
                 <Text className="ml-1 text-xs text-muted-foreground">
                   {t('trips.startDate')}: {formatShortDate(trip.startDate)}
                 </Text>
