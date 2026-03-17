@@ -78,7 +78,7 @@ export function TripNotificationsList({
       {notifications.map((notification) => (
         <Pressable
           key={`${notification.tripId}-${notification.type}`}
-          onPress={() => router.push(`/trips/${notification.tripId}`)}
+          onPress={() => router.push(`/trip/${notification.tripId}`)}
           className="mb-3 rounded-xl border border-border bg-card p-4"
         >
           <View className="flex-row items-start gap-3">

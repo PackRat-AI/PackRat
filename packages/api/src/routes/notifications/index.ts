@@ -75,7 +75,7 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
     const now = new Date();
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // Use calendar-date noon as "today" boundary to avoid timezone edge cases
+    // Use calendar-date midnight as "today" boundary to avoid timezone edge cases
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     // Fetch upcoming trips filtered at DB level (no full table scan)
