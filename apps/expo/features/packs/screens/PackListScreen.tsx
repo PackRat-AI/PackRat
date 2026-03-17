@@ -6,6 +6,7 @@ import {
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import Screen from 'expo-app/components/Screen';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { SearchResults } from 'expo-app/features/packs/components/SearchResults';
@@ -13,6 +14,7 @@ import SyncBanner from 'expo-app/features/packs/components/SyncBanner';
 import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packListAtoms';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
@@ -21,7 +23,6 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -38,9 +39,10 @@ type FilterOption = {
 
 function CreatePackIconButton() {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   return (
     <Link href="/pack/new" asChild>
-      <Pressable>
+      <Pressable testID={TestIds.CreatePackButton} accessibilityLabel={t('packs.createNewPack')}>
         <Icon name="plus" color={colors.foreground} />
       </Pressable>
     </Link>
@@ -178,7 +180,7 @@ export function PackListScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1">
+    <Screen>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
@@ -283,6 +285,6 @@ export function PackListScreen() {
         }
         contentContainerStyle={{ flexGrow: 1 }}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

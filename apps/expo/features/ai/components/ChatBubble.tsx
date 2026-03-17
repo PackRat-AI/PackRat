@@ -2,15 +2,16 @@ import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import type { ToolUIPart, UIMessage } from 'ai';
+import * as Burnt from 'burnt';
 import { Markdown } from 'expo-app/components/Markdown';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { formatAIResponse } from 'expo-app/utils/format-ai-response';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { TouchableOpacity, View, type ViewStyle } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReportModal } from './ReportModal';
 import { ToolInvocationRenderer } from './ToolInvocationRenderer';
 
@@ -25,11 +26,17 @@ interface ChatBubbleProps {
   status: 'submitted' | 'streaming' | 'ready' | 'error';
 }
 
-export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps) {
+export const ChatBubble = React.memo(function ChatBubble({
+  item,
+  userQuery,
+  isLast,
+  status,
+}: ChatBubbleProps) {
   const isAI = item.role === 'assistant';
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const [isReportModalVisible, setIsReportModalVisible] = useState(false);
 
@@ -50,23 +57,23 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       // Show success feedback
-      Toast.show({
-        type: 'success',
-        text1: t('ai.copied'),
+      Burnt.toast({
+        title: t('ai.copied'),
+        preset: 'done',
       });
     } catch (error) {
       console.error('Failed to copy text:', error);
-      Toast.show({
-        type: 'error',
-        text1: t('ai.failedToCopyText'),
+      Burnt.toast({
+        title: t('ai.failedToCopyText'),
+        preset: 'error',
       });
     }
   }, [item, t]);
 
   const handleReportSuccess = useCallback(() => {
-    Toast.show({
-      type: 'success',
-      text1: t('ai.reportSubmitted'),
+    Burnt.toast({
+      title: t('ai.reportSubmitted'),
+      preset: 'done',
     });
   }, [t]);
 
@@ -179,7 +186,7 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
         </>
       )}
 
-      <Sheet ref={bottomSheetRef} snapPoints={['100%']} index={0}>
+      <Sheet ref={bottomSheetRef} snapPoints={['100%']} index={0} bottomInset={insets.bottom}>
         <BottomSheetScrollView className="flex-1 px-4" style={{ flex: 1 }}>
           <View>
             <Text variant="heading" className="text-center mb-6">
@@ -206,4 +213,4 @@ export function ChatBubble({ item, userQuery, isLast, status }: ChatBubbleProps)
       </Sheet>
     </View>
   );
-}
+});

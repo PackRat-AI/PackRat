@@ -120,7 +120,8 @@ export default function AppLayout() {
         <Stack.Screen
           name="upcoming-trips"
           options={{
-            headerShown: false,
+            headerShown: true,
+            headerTitle: '',
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}

@@ -20,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreatePackItem, useUpdatePackItem } from '../hooks';
 import { useImagePicker } from '../hooks/useImagePicker';
@@ -29,15 +30,9 @@ import type { PackItem, PackItemInput } from '../types';
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
   description: z.string(),
-  weight: z.preprocess(
-    (val) => (val === '' ? 0 : Number(val)),
-    z.number().min(0, 'Weight must be a positive number'),
-  ),
+  weight: z.number().min(0, 'Weight cannot be negative'),
   weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
-  quantity: z.preprocess(
-    (val) => (val === '' ? 1 : Number(val)),
-    z.number().int().min(1, 'Quantity must be at least 1'),
-  ),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
   category: z.string(),
   consumable: z.boolean(),
   worn: z.boolean(),
@@ -64,6 +59,7 @@ export const CreatePackItemForm = ({
   const { showActionSheetWithOptions } = useActionSheet();
   const createPackItem = useCreatePackItem();
   const updatePackItem = useUpdatePackItem();
+  const insets = useSafeAreaInsets();
   const {
     selectedImage,
     pickImage,
@@ -80,6 +76,9 @@ export const CreatePackItemForm = ({
   // Track if the image has been changed
   const [imageChanged, setImageChanged] = useState(false);
   const [descriptionHeight, setDescriptionHeight] = useState(40);
+  const [weightText, setWeightText] = useState(
+    existingItem?.weight != null ? String(existingItem.weight) : '0',
+  );
 
   const hasMounted = useRef(false);
 
@@ -91,17 +90,33 @@ export const CreatePackItemForm = ({
   }, []);
 
   const form = useForm({
-    defaultValues: (existingItem as ItemFormValues) || {
-      name: '',
-      description: '',
-      weight: 0,
-      weightUnit: 'g' as WeightUnit,
-      quantity: 0,
-      category: '',
-      consumable: false,
-      worn: false,
-      notes: '',
-      image: null,
+    defaultValues: existingItem
+      ? {
+          name: existingItem.name,
+          description: existingItem.description || '',
+          weight: existingItem.weight,
+          weightUnit: existingItem.weightUnit as WeightUnit,
+          quantity: existingItem.quantity,
+          category: existingItem.category || '',
+          consumable: existingItem.consumable,
+          worn: existingItem.worn,
+          notes: existingItem.notes || '',
+          image: existingItem.image || null,
+        }
+      : {
+          name: '',
+          description: '',
+          weight: 0,
+          weightUnit: 'g' as WeightUnit,
+          quantity: 1,
+          category: '',
+          consumable: false,
+          worn: false,
+          notes: '',
+          image: null,
+        },
+    validators: {
+      onChange: itemFormSchema,
     },
     onSubmit: async ({ value }) => {
       try {
@@ -151,6 +166,7 @@ export const CreatePackItemForm = ({
         cancelButtonIndex,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: insets.bottom,
         },
         textStyle: {
           color: colors.foreground,
@@ -208,7 +224,7 @@ export const CreatePackItemForm = ({
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
-            ios={{ title: t('packs.itemDetails') }}
+            ios={{ title: t('items.itemDetails') }}
             footnote="Enter the basic information about your item"
           >
             <form.Field name="name">
@@ -220,6 +236,7 @@ export const CreatePackItemForm = ({
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
+                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="backpack" size={16} color={colors.grey3} />
@@ -285,10 +302,15 @@ export const CreatePackItemForm = ({
                 <FormItem>
                   <TextField
                     placeholder={t('packs.weight')}
-                    value={field.state.value.toString()}
+                    value={weightText}
                     onBlur={field.handleBlur}
-                    onChangeText={(text) => field.handleChange(Number(text) || 0)}
-                    keyboardType="numeric"
+                    onChangeText={(text) => {
+                      setWeightText(text);
+                      const parsed = parseFloat(text);
+                      field.handleChange(Number.isFinite(parsed) ? parsed : 0);
+                    }}
+                    keyboardType="decimal-pad"
+                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="dumbbell" size={16} color={colors.grey3} />
@@ -331,6 +353,7 @@ export const CreatePackItemForm = ({
                       field.handleChange(intValue);
                     }}
                     keyboardType="numeric"
+                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="ios:pl-2 justify-center pl-2">
                         <Icon name="circle-outline" size={16} color={colors.grey3} />

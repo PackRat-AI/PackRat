@@ -6,6 +6,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeleteTrip } from '../hooks/useDeleteTrip';
 import type { Trip } from '../types';
 
@@ -36,6 +37,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const alertRef = useRef<AlertRef>(null);
+  const insets = useSafeAreaInsets();
 
   const durationDays = getTripDurationDays(trip.startDate, trip.endDate);
 
@@ -57,7 +59,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
         destructiveButtonIndex,
         title: trip.name,
         message: trip.description || undefined,
-        containerStyle: { backgroundColor: colors.card },
+        containerStyle: { backgroundColor: colors.card, paddingBottom: insets.bottom },
         textStyle: { color: colors.foreground },
         titleTextStyle: { color: colors.foreground, fontWeight: '600' },
         messageTextStyle: { color: colors.grey2 },

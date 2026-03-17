@@ -1,6 +1,6 @@
 import { userStore } from 'expo-app/features/auth/store';
 import axiosInstance from 'expo-app/lib/api/client';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export const uploadImage = async (fileName: string, uri: string): Promise<string | undefined> => {
   if (!fileName || fileName.trim() === '') {

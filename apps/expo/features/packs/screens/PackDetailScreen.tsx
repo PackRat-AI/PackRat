@@ -1,6 +1,7 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
@@ -15,8 +16,8 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
@@ -65,6 +66,7 @@ export function PackDetailScreen() {
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
   const { colors } = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   const bottomSheetRef = useSheetRef();
   const addItemActionsRef = useSheetRef();
@@ -97,9 +99,9 @@ export function PackDetailScreen() {
     packingModeStore[id as string].set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-    Toast.show({
-      type: 'success',
-      text1: 'Packing state saved',
+    Burnt.toast({
+      title: 'Packing state saved',
+      preset: 'done',
     });
   };
 
@@ -561,6 +563,7 @@ export function PackDetailScreen() {
         enablePanDownToClose
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+        bottomInset={insets.bottom}
         onDismiss={handleBottomSheetDismiss}
       >
         <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>

@@ -116,19 +116,27 @@ export default function LandingHero() {
               </Button>
             </motion.div>
 
+            {siteConfig.hero.socialProof && (
+              <motion.p
+                className="text-xs text-muted-foreground flex items-center gap-1"
+                variants={itemVariants}
+              >
+                <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
+                {siteConfig.hero.socialProof}
+              </motion.p>
+            )}
+
             <motion.div
               className="flex flex-col sm:flex-row items-center gap-6 pt-4"
               variants={itemVariants}
             >
               <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
+                {siteConfig.testimonials.items.slice(0, 4).map((user) => (
                   <div
-                    key={i}
+                    key={user.id}
                     className="w-10 h-10 rounded-full border-2 border-background flex items-center justify-center overflow-hidden bg-primary/20"
                   >
-                    <span className="text-xs font-bold text-primary">
-                      {String.fromCharCode(64 + i)}
-                    </span>
+                    <span className="text-xs font-bold text-primary">{user.initials}</span>
                   </div>
                 ))}
               </div>

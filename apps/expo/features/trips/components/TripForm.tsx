@@ -6,6 +6,7 @@ import { useForm } from '@tanstack/react-form';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -19,6 +20,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
 import { useTripLocation } from '../store/tripLocationStore';
@@ -57,7 +59,16 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
 
-  const formatDate = (isoString?: string) => isoString?.split('T')[0] || '';
+  const formatDate = (value?: unknown) => {
+    if (!value) return '';
+    if (value instanceof Date) {
+      return value.toISOString().split('T')[0];
+    }
+    if (typeof value === 'string') {
+      return value.split('T')[0];
+    }
+    return '';
+  };
 
   const form = useForm({
     defaultValues: {
@@ -110,6 +121,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                     value={field.state.value}
                     onChangeText={field.handleChange}
                     onBlur={field.handleBlur}
+                    errorMessage={field.state.meta.errors[0]?.message}
                     leftView={
                       <View className="pl-2 justify-center">
                         <Icon name="map" size={16} color={colors.grey3} />
@@ -201,7 +213,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   </Pressable>
 
                   <Modal visible={showPackModal} animationType="slide" transparent>
-                    <View className="flex-1 justify-end bg-black/40">
+                    <SafeAreaView className="flex-1 justify-end bg-black/40">
                       <View className="bg-background rounded-t-2xl p-4">
                         <View className="flex-row justify-between items-center mb-2">
                           <Text className="text-lg font-semibold">{t('trips.selectPack')}</Text>
@@ -220,7 +232,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                           ))}
                         </Picker>
                       </View>
-                    </View>
+                    </SafeAreaView>
                   </Modal>
                 </FormItem>
               )}
@@ -233,13 +245,20 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <FormItem>
                     <Pressable
                       onPress={() => setShowStartPicker(true)}
-                      className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card"
+                      className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
+                        field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
+                      }`}
                     >
                       <Text className="text-foreground font-medium">{t('trips.startDate')}</Text>
                       <Text className="text-muted-foreground">
                         {field.state.value || t('trips.selectDate')}
                       </Text>
                     </Pressable>
+                    {field.state.meta.errors[0]?.message && (
+                      <Text className="text-destructive text-sm mt-1">
+                        {field.state.meta.errors[0].message}
+                      </Text>
+                    )}
 
                     {showStartPicker && (
                       <DateTimePicker
@@ -268,13 +287,20 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                   <FormItem>
                     <Pressable
                       onPress={() => setShowEndPicker(true)}
-                      className="flex-row items-center justify-between border border-border rounded-lg p-3 bg-card"
+                      className={`flex-row items-center justify-between border rounded-lg p-3 bg-card ${
+                        field.state.meta.errors.length > 0 ? 'border-destructive' : 'border-border'
+                      }`}
                     >
                       <Text className="text-foreground font-medium">{t('trips.endDate')}</Text>
                       <Text className="text-muted-foreground">
                         {field.state.value || t('trips.selectDate')}
                       </Text>
                     </Pressable>
+                    {field.state.meta.errors[0]?.message && (
+                      <Text className="text-destructive text-sm mt-1">
+                        {field.state.meta.errors[0].message}
+                      </Text>
+                    )}
 
                     {showEndPicker && (
                       <DateTimePicker
@@ -302,6 +328,7 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
         <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
           {([canSubmit, isSubmitting]) => (
             <Pressable
+              testID={TestIds.SubmitTripButton}
               onPress={() => form.handleSubmit()}
               disabled={!canSubmit || isSubmitting}
               className={`mt-6 rounded-lg px-4 py-3.5 ${
