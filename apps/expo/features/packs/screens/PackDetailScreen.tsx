@@ -446,18 +446,28 @@ export function PackDetailScreen() {
         {/* Actions */}
         <View className="p-4">
           <View className="gap-4 flex-row items-center">
-            <Button variant="secondary" onPress={handleAskAI} className="flex-1">
+            <Button
+              variant="secondary"
+              onPress={handleAskAI}
+              className="flex-1"
+              testID="ask-ai-button"
+            >
               <Text>Ask AI</Text>
             </Button>
 
             {isOwnedByUser && (
-              <Button variant="secondary" onPress={handleAddItem}>
+              <Button variant="secondary" onPress={handleAddItem} testID="add-item-button">
                 <Text>Add Item</Text>
               </Button>
             )}
 
             {isOwnedByUser && (
-              <Button variant="secondary" size="icon" onPress={handleMoreActionsPress}>
+              <Button
+                variant="secondary"
+                size="icon"
+                onPress={handleMoreActionsPress}
+                testID="pack-more-actions"
+              >
                 <Icon name="dots-horizontal" size={20} color={colors.grey2} />
               </Button>
             )}

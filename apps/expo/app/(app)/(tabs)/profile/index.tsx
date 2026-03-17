@@ -180,6 +180,7 @@ function ListFooterComponent() {
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
+        testID="sign-out-button"
         disabled={isSigningOut}
         onPress={() => {
           if (hasUnsyncedChanges()) {
