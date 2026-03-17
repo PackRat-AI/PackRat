@@ -120,6 +120,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
             <View className="gap-2 mb-4">
               <TouchableOpacity
+                testID="add-manually-option"
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={() => {
                   ref && typeof ref !== 'function' && ref.current?.close();
@@ -136,6 +137,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
+                testID="scan-from-photo-option"
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={handleAddFromPhoto}
               >
@@ -146,6 +148,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
+                testID="add-from-catalog-option"
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={handleAddFromCatalog}
               >

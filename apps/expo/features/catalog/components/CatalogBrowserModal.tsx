@@ -196,7 +196,7 @@ export function CatalogBrowserModal({
           ) : (
             <FlatList
               data={items}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item, index) => `${item.id}-${index}`}
               renderItem={renderItem}
               contentContainerStyle={{ padding: 16 }}
               ItemSeparatorComponent={ItemSeparatorComponent}

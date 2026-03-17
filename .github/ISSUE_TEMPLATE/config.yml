@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: PackRat Discussions
+    url: https://github.com/PackRat-AI/PackRat/discussions
+    about: Ask questions, share ideas, and connect with the PackRat community.

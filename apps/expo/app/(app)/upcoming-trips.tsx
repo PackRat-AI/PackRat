@@ -1,11 +1,10 @@
-import { LargeTitleHeader, List, ListItem, Text } from '@packrat/ui/nativewindui';
+import { List, ListItem, Text } from '@packrat/ui/nativewindui';
 import { format } from 'date-fns';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
 
@@ -107,17 +106,29 @@ export default function UpcomingTripsScreen() {
   const trips = useTrips();
   const packs = useDetailedPacks();
 
-  const upcomingTrips = trips.filter(
-    (t) => !!t.startDate && new Date(t.startDate).getTime() > Date.now(),
+  // Memoised so the reference is stable across renders and the selection effect
+  // only fires when the underlying trips array actually changes.
+  const upcomingTrips = useMemo(
+    () => trips.filter((t) => !!t.startDate && new Date(t.startDate).getTime() > Date.now()),
+    [trips],
   );
 
-  const [selectedTrip, setSelectedTrip] = useState(upcomingTrips[0]);
+  const [selectedTripId, setSelectedTripId] = useState<string | undefined>(upcomingTrips[0]?.id);
 
   useEffect(() => {
-    if (!selectedTrip && upcomingTrips.length > 0) {
-      setSelectedTrip(upcomingTrips[0]);
+    if (!upcomingTrips.length) {
+      setSelectedTripId(undefined);
+      return;
     }
-  }, [upcomingTrips, selectedTrip]);
+
+    const stillSelected = selectedTripId
+      ? upcomingTrips.some((trip) => trip.id === selectedTripId)
+      : false;
+
+    if (!stillSelected) {
+      setSelectedTripId(upcomingTrips[0]?.id);
+    }
+  }, [upcomingTrips, selectedTripId]);
 
   if (!upcomingTrips.length) {
     return (
@@ -127,11 +138,11 @@ export default function UpcomingTripsScreen() {
     );
   }
 
+  const selectedTrip = upcomingTrips.find((t) => t.id === selectedTripId);
   const selectedPack = selectedTrip ? packs.find((p) => p.id === selectedTrip.packId) : undefined;
 
   return (
     <>
-      <LargeTitleHeader title={t('trips.upcomingTrips')} />
       <ScrollView className="flex-1">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">
@@ -142,16 +153,17 @@ export default function UpcomingTripsScreen() {
         {/* Trip List */}
         <List
           data={upcomingTrips.map((trip) => ({
+            id: trip.id,
+            trip,
             title: trip.name,
             subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
               trip.startDate,
             )} to ${formatDate(trip.endDate)}`,
           }))}
-          keyExtractor={(_, index) => index.toString()}
+          extraData={selectedTripId}
+          keyExtractor={(item) => item.id}
           renderItem={(info) => {
-            const trip = upcomingTrips[info.index];
-            assertDefined(trip);
-
+            const { trip } = info.item;
             const { status, completion } = getTripStatus(trip, t);
 
             return (
@@ -163,9 +175,9 @@ export default function UpcomingTripsScreen() {
                     <PackStatus status={status} completion={completion} />
                   </View>
                 }
-                onPress={() => setSelectedTrip(trip)}
+                onPress={() => setSelectedTripId(trip.id)}
                 className={
-                  selectedTrip?.id === trip.id
+                  selectedTripId === trip.id
                     ? 'bg-muted/50 dark:bg-slate-950'
                     : 'dark:bg-transparent'
                 }

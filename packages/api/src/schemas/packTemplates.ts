@@ -8,6 +8,9 @@ export const ErrorResponseSchema = z
     code: z.string().optional().openapi({
       description: 'Error code for programmatic handling',
     }),
+    existingTemplateId: z.string().optional().openapi({
+      description: 'ID of existing template when there is a conflict (409 errors)',
+    }),
   })
   .openapi('ErrorResponse');
 
@@ -59,6 +62,14 @@ export const PackTemplateSchema = z
     updatedAt: z.string().datetime().openapi({
       example: '2024-01-01T12:00:00Z',
       description: 'When the template was last updated on the server',
+    }),
+    contentSource: z.string().nullable().openapi({
+      example: 'tiktok',
+      description: 'Source platform where this template was imported from',
+    }),
+    contentId: z.string().nullable().openapi({
+      example: '1234567890',
+      description: 'ID of the content from the source platform',
     }),
   })
   .openapi('PackTemplate');
@@ -299,3 +310,18 @@ export const SuccessResponseSchema = z
     }),
   })
   .openapi('SuccessResponse');
+
+export const GenerateFromTikTokRequestSchema = z
+  .object({
+    tiktokUrl: z.string().url().openapi({
+      example: 'https://www.tiktok.com/@user/video/1234567890',
+      description: 'The TikTok slideshow URL',
+    }),
+    isAppTemplate: z.boolean().optional().default(true).openapi({
+      example: true,
+      description: 'Whether this should be a featured template (admin only)',
+    }),
+  })
+  .openapi('GenerateFromTikTokRequest');
+
+export const GenerateFromTikTokResponseSchema = PackTemplateWithItemsSchema;
