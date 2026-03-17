@@ -69,6 +69,7 @@ export async function setup() {
   try {
     console.log('🐳 Starting Docker Compose for tests...');
     execSync(`docker compose -f ${COMPOSE_FILE} up -d`, { stdio: 'inherit' });
+    dockerStarted = true;
     await waitForPostgres(5433);
     console.log('🚀 Test database ready!');
 
@@ -84,7 +85,13 @@ export async function setup() {
   }
 }
 
+let dockerStarted = false;
+
 export async function teardown() {
+  if (!dockerStarted) {
+    console.log('⏭️  Docker was never started – skipping teardown');
+    return;
+  }
   console.log('🧹 Stopping Docker Compose...');
   execSync(`docker compose -f ${COMPOSE_FILE} down -v`, { stdio: 'inherit' });
   console.log('✅ Docker Compose stopped');

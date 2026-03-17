@@ -436,7 +436,7 @@ beforeAll(async () => {
 
 // Clean up database after each test to ensure isolation
 beforeEach(async () => {
-  if (!testClient) return;
+  if (!isConnected) return;
 
   // Delete from tables in reverse dependency order to avoid foreign key violations
   // This is safer than TRUNCATE CASCADE and less prone to deadlocks
