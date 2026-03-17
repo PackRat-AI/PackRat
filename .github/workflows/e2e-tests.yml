@@ -148,7 +148,7 @@ jobs:
           maestro --device "$SIMULATOR_UDID" test \
             --format junit \
             --output test-results/maestro-results.xml \
-            .maestro/config.yaml
+            .maestro/
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
@@ -257,10 +257,13 @@ jobs:
           script: |
             mkdir -p test-results
             adb install apps/expo/build/PackRat.apk
+            cp .maestro/config.yaml .maestro/config.yaml.bak
+            cp .maestro/config-android.yaml .maestro/config.yaml
             maestro test \
               --format junit \
               --output test-results/maestro-results.xml \
-              .maestro/config-android.yaml
+              .maestro/
+            mv .maestro/config.yaml.bak .maestro/config.yaml
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
