@@ -395,7 +395,10 @@
     "destination": "Destination",
     "duration": "Duration",
     "packWeight": "Pack Weight",
-    "days": "{{count}} days",
+    "days": {
+      "one": "{{count}} day",
+      "other": "{{count}} days"
+    },
     "searchTrips": "Search trips",
     "dates": "Dates",
     "startDate": "Start Date",
