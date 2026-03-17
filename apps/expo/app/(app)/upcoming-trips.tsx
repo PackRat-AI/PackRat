@@ -4,8 +4,7 @@ import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
 
@@ -107,22 +106,24 @@ export default function UpcomingTripsScreen() {
   const trips = useTrips();
   const packs = useDetailedPacks();
 
-  const upcomingTrips = trips.filter(
-    (t) => !!t.startDate && new Date(t.startDate).getTime() > Date.now(),
+  const upcomingTrips = useMemo(
+    () => trips.filter((t) => !!t.startDate && new Date(t.startDate).getTime() > Date.now()),
+    [trips],
   );
 
   const [selectedTrip, setSelectedTrip] = useState(upcomingTrips[0]);
 
   useEffect(() => {
-    if (!selectedTrip && upcomingTrips.length > 0) {
+    const isSelectedValid = selectedTrip && upcomingTrips.some((t) => t.id === selectedTrip.id);
+    if (!isSelectedValid && upcomingTrips.length > 0) {
       setSelectedTrip(upcomingTrips[0]);
     }
   }, [upcomingTrips, selectedTrip]);
 
   const renderItem = useCallback(
     (info: { item: { id: string; title: string; subTitle: string }; index: number }) => {
-      const trip = upcomingTrips[info.index];
-      assertDefined(trip);
+      const trip = upcomingTrips.find((t) => t.id === info.item.id);
+      if (!trip) return null;
 
       const { status, completion } = getTripStatus(trip, t);
 
