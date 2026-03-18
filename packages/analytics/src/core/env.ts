@@ -10,6 +10,7 @@ const envSchema = z
     R2_ACCESS_KEY_ID: z.string().optional(),
     R2_SECRET_ACCESS_KEY: z.string().optional(),
     PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: z.string().optional(),
+    PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME: z.string().optional(),
     R2_BUCKET_NAME: z.string().optional(),
     R2_ENDPOINT_URL: z.string().url().optional(),
     CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
@@ -23,7 +24,7 @@ const envSchema = z
     ANALYTICS_MODE: raw.ANALYTICS_MODE,
     R2_ACCESS_KEY_ID: raw.R2_ACCESS_KEY_ID ?? '',
     R2_SECRET_ACCESS_KEY: raw.R2_SECRET_ACCESS_KEY ?? '',
-    R2_BUCKET_NAME: raw.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME ?? raw.R2_BUCKET_NAME ?? '',
+    R2_BUCKET_NAME: raw.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME ?? raw.PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME ?? raw.R2_BUCKET_NAME ?? '',
     R2_ENDPOINT_URL:
       raw.R2_ENDPOINT_URL ??
       (raw.CLOUDFLARE_ACCOUNT_ID
@@ -47,6 +48,20 @@ const envSchema = z
           code: z.ZodIssueCode.custom,
           message: 'R2_SECRET_ACCESS_KEY is required for local mode',
           path: ['R2_SECRET_ACCESS_KEY'],
+        });
+      }
+      if (!data.R2_BUCKET_NAME) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'R2_BUCKET_NAME (or PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME / PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME) is required for local mode',
+          path: ['R2_BUCKET_NAME'],
+        });
+      }
+      if (!data.R2_ENDPOINT_URL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'R2_ENDPOINT_URL (or CLOUDFLARE_ACCOUNT_ID) is required for local mode',
+          path: ['R2_ENDPOINT_URL'],
         });
       }
     }

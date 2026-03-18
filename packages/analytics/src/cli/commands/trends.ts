@@ -9,10 +9,14 @@ export default defineCommand({
     site: { type: 'string', alias: 's', description: 'Filter to specific site' },
   },
   async run({ args }) {
+    const days = Number.parseInt(String(args.days), 10);
+    if (!Number.isFinite(days) || days <= 0) {
+      throw new Error(`Invalid --days value: "${args.days}". Must be a positive integer.`);
+    }
     const cache = await ensureCache();
     const rows = await cache.searchTrends(args.keyword, {
       site: args.site,
-      days: Number(args.days),
+      days,
     });
     printTable(rows as unknown as Record<string, unknown>[], {
       title: `Price Trends: "${args.keyword}"`,

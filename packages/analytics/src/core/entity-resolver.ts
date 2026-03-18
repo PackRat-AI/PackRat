@@ -206,7 +206,10 @@ export class EntityResolver {
     const columns = result.columnNames();
     return result.getRows().map((row, idx) => {
       const obj: Record<string, unknown> = {};
-      for (let i = 0; i < columns.length; i++) obj[columns[i]] = row[i];
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        if (col !== undefined) obj[col] = row[i];
+      }
       return {
         idx,
         site: String(obj.site ?? ''),
@@ -376,7 +379,10 @@ export class EntityResolver {
     const columns = result.columnNames();
     return result.getRows().map((row) => {
       const obj: Record<string, unknown> = {};
-      for (let i = 0; i < columns.length; i++) obj[columns[i]] = row[i];
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        if (col !== undefined) obj[col] = row[i];
+      }
       return obj as unknown as EntityRow;
     });
   }

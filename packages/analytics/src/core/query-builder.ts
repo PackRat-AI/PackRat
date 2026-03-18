@@ -257,7 +257,7 @@ export class QueryBuilder {
     sites?: string[],
     minPrice?: number,
     maxPrice?: number,
-    limit = DBConfig.DEFAULT_LIMIT,
+    limit: number = DBConfig.DEFAULT_LIMIT,
   ): string {
     const select = SQLFragments.selectFields().join(',\n            ');
     const source = SQLFragments.readCsvSource(this.bucketPath);
@@ -375,7 +375,7 @@ export class QueryBuilder {
     maxPrice: number,
     category?: string,
     sites?: string[],
-    limit = DBConfig.DEFAULT_LIMIT,
+    limit: number = DBConfig.DEFAULT_LIMIT,
   ): string {
     const select = SQLFragments.selectFields().join(',\n            ');
     const source = SQLFragments.readCsvSource(this.bucketPath);

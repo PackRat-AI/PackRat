@@ -53,7 +53,8 @@ export function printTable(rows: Record<string, unknown>[], options?: { title?: 
     return;
   }
 
-  const keys = Object.keys(rows[0]);
+  const firstRow = rows[0]!;
+  const keys = Object.keys(firstRow);
 
   const table = new Table({
     head: keys.map((k) => chalk.cyan(k)),

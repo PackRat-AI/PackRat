@@ -134,7 +134,10 @@ export function parseFillPower(text: string): number | null {
 export function parseWaterproofRating(text: string): number | null {
   const match = WATERPROOF.exec(text);
   if (match) {
-    return Number.parseInt(match[1].replace(/,/g, ''));
+    const raw = Number.parseInt(match[1]!.replace(/,/g, ''));
+    // If "k" or "K" prefix was captured in the regex (e.g., "20k mm"), multiply by 1000
+    const hasKMultiplier = /(\d[\d,]*)\s*k\s*mm\b/i.exec(text);
+    return hasKMultiplier ? raw * 1000 : raw;
   }
   return null;
 }
@@ -224,7 +227,8 @@ export class SpecParser {
     for (const row of rows) {
       const obj: Record<string, unknown> = {};
       for (let i = 0; i < columns.length; i++) {
-        obj[columns[i]] = row[i];
+        const col = columns[i];
+        if (col !== undefined) obj[col] = row[i];
       }
       allSpecs.push(extractSpecsFromRow(obj as unknown as ProductRow));
     }
@@ -263,14 +267,14 @@ export class SpecParser {
 
     const parsed = allSpecs.filter(
       (s) =>
-        s.weight_grams ||
-        s.capacity_liters ||
-        s.temp_rating_f ||
-        s.fill_power ||
-        s.waterproof_rating ||
-        s.seasons ||
-        s.gender ||
-        s.fabric,
+        s.weight_grams !== null ||
+        s.capacity_liters !== null ||
+        s.temp_rating_f !== null ||
+        s.fill_power !== null ||
+        s.waterproof_rating !== null ||
+        s.seasons !== null ||
+        s.gender !== null ||
+        s.fabric !== null,
     ).length;
 
     return { total: allSpecs.length, parsed };
@@ -288,7 +292,8 @@ export class SpecParser {
     return result.getRows().map((row) => {
       const obj: Record<string, unknown> = {};
       for (let i = 0; i < columns.length; i++) {
-        obj[columns[i]] = row[i];
+        const col = columns[i];
+        if (col !== undefined) obj[col] = row[i];
       }
       return obj as unknown as ProductSpecs;
     });
@@ -321,10 +326,10 @@ export class SpecParser {
     const conditions: string[] = [];
     if (category)
       conditions.push(`LOWER(category) LIKE '%${SQLFragments.escapeSql(category.toLowerCase())}%'`);
-    if (maxWeightG) conditions.push(`weight_grams IS NOT NULL AND weight_grams <= ${maxWeightG}`);
-    if (maxTempF) conditions.push(`temp_rating_f IS NOT NULL AND temp_rating_f <= ${maxTempF}`);
-    if (maxPrice) conditions.push(`price <= ${maxPrice}`);
-    if (minPrice) conditions.push(`price >= ${minPrice}`);
+    if (maxWeightG !== undefined) conditions.push(`weight_grams IS NOT NULL AND weight_grams <= ${maxWeightG}`);
+    if (maxTempF !== undefined) conditions.push(`temp_rating_f IS NOT NULL AND temp_rating_f <= ${maxTempF}`);
+    if (maxPrice !== undefined) conditions.push(`price <= ${maxPrice}`);
+    if (minPrice !== undefined) conditions.push(`price >= ${minPrice}`);
     if (gender) conditions.push(`gender = '${SQLFragments.escapeSql(gender)}'`);
     if (seasons) conditions.push(`seasons = '${SQLFragments.escapeSql(seasons)}'`);
 
@@ -340,7 +345,8 @@ export class SpecParser {
     return result.getRows().map((row) => {
       const obj: Record<string, unknown> = {};
       for (let i = 0; i < columns.length; i++) {
-        obj[columns[i]] = row[i];
+        const col = columns[i];
+        if (col !== undefined) obj[col] = row[i];
       }
       return obj as unknown as ProductSpecs;
     });

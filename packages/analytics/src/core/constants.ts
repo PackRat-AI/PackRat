@@ -44,7 +44,22 @@ export type DedupStrategy = (typeof DedupStrategy)[keyof typeof DedupStrategy];
 
 // ── Database Configuration ────────────────────────────────────────────
 
-export const DBConfig = {
+export const DBConfig: {
+  MEMORY_LIMIT: string;
+  THREAD_COUNT: number;
+  HTTP_TIMEOUT: number;
+  CACHE_REFRESH_HOURS: number;
+  CACHE_VERSION: string;
+  SCHEMA_VERSION: string;
+  DEFAULT_LIMIT: number;
+  MAX_VALID_PRICE: number;
+  MIN_VALID_PRICE: number;
+  PRICE_ROUND_DIGITS: number;
+  NAME_TRUNCATE_LENGTH: number;
+  DEAL_NAME_TRUNCATE_LENGTH: number;
+  MIN_GROUP_COUNT: number;
+  MIN_CATEGORY_COUNT: number;
+} = {
   MEMORY_LIMIT: '4GB',
   THREAD_COUNT: 4,
   HTTP_TIMEOUT: 300_000,
@@ -67,7 +82,7 @@ export const DBConfig = {
   // Grouping thresholds
   MIN_GROUP_COUNT: 3,
   MIN_CATEGORY_COUNT: 5,
-} as const;
+};
 
 // ── R2 / File Path Patterns ───────────────────────────────────────────
 

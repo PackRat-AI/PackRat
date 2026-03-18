@@ -64,7 +64,7 @@ export class LocalCacheManager {
     await this.conn.run(`
       SET memory_limit='${DBConfig.MEMORY_LIMIT}';
       SET threads=${DBConfig.THREAD_COUNT};
-      SET temp_directory='${this.cacheDir}/tmp';
+      SET temp_directory='${SQLFragments.escapeSql(this.cacheDir)}/tmp';
     `);
 
     this.metadata = loadMetadata(this.cacheDir);
@@ -157,7 +157,10 @@ export class LocalCacheManager {
     return result.getRows().map((row) => {
       const obj: Record<string, unknown> = {};
       for (let i = 0; i < columns.length; i++) {
-        obj[columns[i]] = row[i];
+        const col = columns[i];
+        if (col !== undefined) {
+          obj[col] = row[i];
+        }
       }
       return obj as T;
     });

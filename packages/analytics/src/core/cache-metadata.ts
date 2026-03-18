@@ -34,7 +34,12 @@ export function loadMetadata(cacheDir: string): CacheMetadataFile | null {
   const path = metadataPath(cacheDir);
   if (!existsSync(path)) return null;
 
-  const raw = JSON.parse(readFileSync(path, 'utf-8'));
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(path, 'utf-8'));
+  } catch {
+    return null;
+  }
   const result = MetadataSchema.safeParse(raw);
   return result.success ? result.data : null;
 }

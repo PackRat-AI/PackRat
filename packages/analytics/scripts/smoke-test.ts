@@ -12,7 +12,11 @@ import { DuckDBInstance } from '@duckdb/node-api';
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
 const R2_ENDPOINT_URL = process.env.R2_ENDPOINT_URL;
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME ?? 'packrat-scrapy-bucket';
+const R2_BUCKET_NAME = process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME ?? process.env.PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME ?? process.env.R2_BUCKET_NAME ?? 'packrat-scrapy-bucket';
+
+function escapeSql(value: string): string {
+  return value.replaceAll("'", "''");
+}
 
 async function main() {
   console.log('=== DuckDB Smoke Test ===\n');
@@ -40,9 +44,9 @@ async function main() {
     const endpoint = R2_ENDPOINT_URL.replace('https://', '');
     await conn.run(`
       SET s3_region='auto';
-      SET s3_endpoint='${endpoint}';
-      SET s3_access_key_id='${R2_ACCESS_KEY_ID}';
-      SET s3_secret_access_key='${R2_SECRET_ACCESS_KEY}';
+      SET s3_endpoint='${escapeSql(endpoint)}';
+      SET s3_access_key_id='${escapeSql(R2_ACCESS_KEY_ID)}';
+      SET s3_secret_access_key='${escapeSql(R2_SECRET_ACCESS_KEY)}';
       SET s3_use_ssl=true;
     `);
     console.log('   OK: R2 credentials configured\n');
@@ -52,7 +56,7 @@ async function main() {
     try {
       const countReader = await conn.runAndReadAll(`
         SELECT count(*) as cnt
-        FROM read_csv_auto('s3://${R2_BUCKET_NAME}/v2/*/*.csv',
+        FROM read_csv_auto('s3://${escapeSql(R2_BUCKET_NAME)}/v2/*/*.csv',
           ignore_errors=true,
           union_by_name=true,
           filename=true,
