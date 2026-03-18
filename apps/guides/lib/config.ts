@@ -33,6 +33,10 @@ export const navigationConfig = {
       title: 'Safety',
       href: '/?category=safety',
     },
+    {
+      title: '← packratai.com',
+      href: 'https://packratai.com',
+    },
   ],
   // Maximum number of categories to show in header
   maxCategories: 4,
@@ -81,10 +85,11 @@ export const footerConfig = {
     {
       title: 'Company',
       links: [
-        { title: 'About Us', href: '#' },
-        { title: 'Contact', href: '#' },
-        { title: 'Privacy Policy', href: '#' },
-        { title: 'Terms of Service', href: '#' },
+        { title: 'About Us', href: 'https://packratai.com/about' },
+        { title: 'Download App', href: 'https://packratai.com/#download' },
+        { title: 'Contact', href: 'mailto:hello@packratai.com' },
+        { title: 'Privacy Policy', href: 'https://packratai.com/privacy-policy' },
+        { title: 'Terms of Service', href: 'https://packratai.com/terms-of-service' },
       ],
     },
   ],

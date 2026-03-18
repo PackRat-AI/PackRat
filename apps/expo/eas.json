@@ -14,6 +14,14 @@
       "autoIncrement": true,
       "channel": "preview"
     },
+    "e2e": {
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "channel": "production"

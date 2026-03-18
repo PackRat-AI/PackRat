@@ -1,0 +1,22 @@
+# Catalog Browse Flow: Verify catalog tab loads items and categories
+- waitForAnimationToEnd
+
+# Navigate to Catalog tab
+- tapOn:
+    text: "Catalog"
+- waitForAnimationToEnd
+
+# Assert catalog loaded with items
+- assertVisible:
+    text: "Catalog"
+
+# Scroll to verify items render
+- scrollUntilVisible:
+    element:
+      text: ".*\\$.*"
+    direction: DOWN
+
+# Go back to a stable state
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd

@@ -1,0 +1,46 @@
+# Create Trip Flow: Navigate to trips tab and create a new trip
+- waitForAnimationToEnd
+
+# Navigate to the Trips tab
+- tapOn:
+    text: "Trips"
+
+- waitForAnimationToEnd
+
+# Tap the header "+" button (testID: create-trip-button) to open the trip creation form
+- tapOn:
+    id: "create-trip-button"
+
+- waitForAnimationToEnd
+
+# Fill in the Trip Name field
+- tapOn:
+    text: "Trip Name"
+- typeText: ${TRIP_NAME}
+
+# Fill in the Description field
+- tapOn:
+    text: "Description"
+- typeText: "Created by Maestro E2E test"
+
+# Dismiss the keyboard before submitting
+- hideKeyboard
+
+# Submit the form via the submit button (testID: submit-trip-button)
+- tapOn:
+    id: "submit-trip-button"
+
+- waitForAnimationToEnd
+
+# Wait until the submit button disappears, confirming navigation away from the form
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-trip-button"
+    timeout: 15000
+
+# Assert we are back on the trips list (not still on the form) by checking
+# for the header create button, then verify the new trip appears
+- assertVisible:
+    id: "create-trip-button"
+- assertVisible:
+    text: ${TRIP_NAME}

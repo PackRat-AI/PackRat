@@ -2,7 +2,8 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import { Image, SafeAreaView, View } from 'react-native';
+import { Image, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@packrat/ui/nativewindui';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 
 export function CategoriesFilter({
@@ -31,7 +32,7 @@ export function CategoriesFilter({
           activeFilter === filter ? 'text-primary-foreground' : 'text-foreground'
         }`}
       >
-        {filter}
+        {decodeHtmlEntities(filter)}
       </Text>
     </TouchableOpacity>
   );
@@ -62,7 +63,7 @@ export function CategoriesFilter({
                 <View
                   // biome-ignore lint/suspicious/noArrayIndexKey: just for skeleton
                   key={i}
-                  className="h-8 w-20 rounded-full mr-2 bg-neutral-300 dark:bg-neutral-600 animate-pulse"
+                  className="h-8 w-20 rounded-full mr-2 bg-neutral-300 dark:bg-neutral-600"
                 />
               ))
             : data.map(renderFilterChip)}

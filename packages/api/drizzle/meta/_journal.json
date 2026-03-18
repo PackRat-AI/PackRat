@@ -243,8 +243,15 @@
     {
       "idx": 33,
       "version": "7",
+      "when": 1773066716880,
+      "tag": "0033_stormy_next_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
       "when": 1773076068676,
-      "tag": "0033_trail_conditions",
+      "tag": "0034_trail_conditions",
       "breakpoints": true
     }
   ]

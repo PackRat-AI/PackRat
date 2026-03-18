@@ -64,6 +64,29 @@
   "ai": {
     "binding": "AI"
   },
+  // TikTok Container configuration - runs Node.js TikTok API service
+  "containers": [
+    {
+      "class_name": "TikTokContainer",
+      "image": "./Dockerfile",
+      "max_instances": 5
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "TikTokContainer",
+        "name": "TIKTOK_CONTAINER"
+      }
+    ]
+  },
+  // Migrations for Durable Objects (including TikTok Container)
+  "migrations": [
+    {
+      "new_sqlite_classes": ["TikTokContainer"],
+      "tag": "v1"
+    }
+  ],
   "env": {
     "dev": {
       "version_metadata": {
@@ -122,7 +145,30 @@
       },
       "ai": {
         "binding": "AI"
-      }
+      },
+      "containers": [
+        {
+          "name": "packrat-api-container-dev",
+          "class_name": "TikTokContainer",
+          "image": "./Dockerfile",
+          "max_instances": 5
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "TikTokContainer",
+            "name": "TIKTOK_CONTAINER"
+          }
+        ]
+      },
+      // Migrations for Durable Objects (including TikTok Container)
+      "migrations": [
+        {
+          "new_sqlite_classes": ["TikTokContainer"],
+          "tag": "v1"
+        }
+      ]
     }
   }
 }

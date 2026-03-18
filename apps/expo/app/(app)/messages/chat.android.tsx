@@ -88,9 +88,7 @@ export default function ChatAndroid() {
         behavior="padding"
       >
         <FlashList
-          inverted
           extraData={selectedMessages}
-          estimatedItemSize={70}
           ListFooterComponent={<View style={{ height: HEADER_HEIGHT + insets.top }} />}
           ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
           keyboardDismissMode="on-drag"

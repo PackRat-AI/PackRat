@@ -6,7 +6,8 @@ import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeig
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function WeightCard({
   title,
