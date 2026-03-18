@@ -268,7 +268,28 @@ export type TranslationKeys =
   | 'experience.beginner'
   | 'experience.intermediate'
   | 'experience.advanced'
-  | 'experience.expert';
+  | 'experience.expert'
+  // Voice Commands
+  | 'voice.voiceCommands'
+  | 'voice.handsFreeNavigation'
+  | 'voice.screenDescription'
+  | 'voice.offlineCapable'
+  | 'voice.offlineDescription'
+  | 'voice.holdToSpeak'
+  | 'voice.holdMicDescription'
+  | 'voice.startListening'
+  | 'voice.stopListening'
+  | 'voice.listening'
+  | 'voice.processing'
+  | 'voice.error'
+  | 'voice.trackingActive'
+  | 'voice.trackingInactive'
+  | 'voice.waypointsCount'
+  | 'voice.lastHeard'
+  | 'voice.executedCommand'
+  | 'voice.availableCommands'
+  | 'voice.tapCommandToTest'
+  | 'voice.testCommand';
 
 /**
  * Type-safe translation function

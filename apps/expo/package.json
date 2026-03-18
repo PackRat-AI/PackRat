@@ -91,6 +91,7 @@
     "expo-navigation-bar": "~5.0.10",
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
+    "expo-speech": "~14.0.0",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
     "expo-store-review": "~9.0.9",
