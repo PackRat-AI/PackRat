@@ -4,6 +4,7 @@ export * from './useCreatePackTemplate';
 export * from './useCreatePackTemplateItem';
 export * from './useDeletePackTemplate';
 export * from './useDeletePackTemplateItem';
+export * from './useGenerateTemplateFromTikTok';
 export * from './usePackTemplateItem';
 export * from './usePackTemplates';
 export * from './usePackTemplatesDetails';

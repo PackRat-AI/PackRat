@@ -6,6 +6,7 @@ export interface Trip {
   id: string;
   name: string;
   description?: string;
+  notes?: string;
 
   // ✅ Structured location instead of string
   location?: {

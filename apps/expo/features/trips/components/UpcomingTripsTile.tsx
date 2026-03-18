@@ -5,13 +5,14 @@ import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 export function UpcomingTripsTile() {
   const router = useRouter();
   const { t } = useTranslation();
   const alertRef = useRef<AlertRef>(null);
+  const [showAlert, setShowAlert] = useState(false);
 
   // ✅ get all trips
   const trips = useTrips();
@@ -25,7 +26,7 @@ export function UpcomingTripsTile() {
   // ✅ when tapped
   const handlePress = () => {
     if (upcomingTrips.length === 0) {
-      alertRef.current?.show();
+      setShowAlert(true);
       return;
     }
     router.push('/upcoming-trips');
@@ -73,19 +74,21 @@ export function UpcomingTripsTile() {
       />
 
       {/* ✅ Alert for when no trips exist */}
-      <Alert
-        title={t('trips.noTripsYetTitle')}
-        message={t('trips.createTripsToSee')}
-        materialIcon={{ name: 'information-outline' }}
-        materialWidth={370}
-        buttons={[
-          {
-            text: t('trips.gotIt'),
-            style: 'default',
-          },
-        ]}
-        ref={alertRef}
-      />
+      {showAlert && (
+        <Alert
+          title={t('trips.noTripsYetTitle')}
+          message={t('trips.createTripsToSee')}
+          materialIcon={{ name: 'information-outline' }}
+          materialWidth={370}
+          buttons={[
+            {
+              text: t('trips.gotIt'),
+              style: 'default',
+              onPress: () => setShowAlert(false),
+            },
+          ]}
+        />
+      )}
     </>
   );
 }

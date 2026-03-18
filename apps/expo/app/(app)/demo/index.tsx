@@ -46,7 +46,6 @@ export default function Screen() {
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
         data={data}
-        estimatedItemSize={200}
         contentContainerClassName="py-4 android:pb-12"
         extraData={searchValue}
         removeClippedSubviews={false} // used for selecting text on android
