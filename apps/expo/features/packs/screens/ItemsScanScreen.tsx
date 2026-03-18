@@ -1,6 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { ErrorState } from 'expo-app/components/ErrorState';
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
@@ -10,7 +11,7 @@ import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CatalogItem, CatalogItemWithPackItemFields } from '../../catalog/types';
 import { HorizontalCatalogItemCard } from '../components/HorizontalCatalogItemCard';
 import { useBulkAddCatalogItems } from '../hooks';
@@ -25,6 +26,7 @@ export function ItemsScanScreen() {
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
   const { showActionSheetWithOptions } = useActionSheet();
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
+  const insets = useSafeAreaInsets();
 
   const { mutate: scanImage, isPending: isScanning, data } = useImageDetection();
   const { addItemsToPack } = useBulkAddCatalogItems();
@@ -69,6 +71,7 @@ export function ItemsScanScreen() {
         cancelButtonIndex,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: insets.bottom,
         },
         textStyle: {
           color: colors.foreground,
@@ -150,9 +153,9 @@ export function ItemsScanScreen() {
   const handleCatalogItemsSelected = async () => {
     router.back();
     await addItemsToPack(packId as string, selectedCatalogItemsList);
-    Toast.show({
-      type: 'success',
-      text1: `Added ${selectedCatalogItemsList.length} items to your pack`,
+    Burnt.toast({
+      title: `Added ${selectedCatalogItemsList.length} items to your pack`,
+      preset: 'done',
     });
   };
 

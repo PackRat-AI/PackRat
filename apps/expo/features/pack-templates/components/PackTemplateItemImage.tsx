@@ -1,5 +1,6 @@
 import { useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
 import { CachedImage } from 'expo-app/features/packs/components/CachedImage';
 import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
 import { type ImageProps, View } from 'react-native';
@@ -20,6 +21,10 @@ export function PackTemplateItemImage({ item, ...imageProps }: PackTemplateItemI
         <Icon name="image" size={24} color={colors.grey} />
       </View>
     );
+
+  if (item.catalogItemId) {
+    return <CatalogItemImage imageUrl={item.image} {...imageProps} />;
+  }
 
   const imageUrl = buildImageUrl(item);
 

@@ -1,10 +1,10 @@
-import { LargeTitleHeader, List, ListItem, Text } from '@packrat/ui/nativewindui';
+import { List, ListItem, Text } from '@packrat/ui/nativewindui';
 import { format } from 'date-fns';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
 
@@ -106,45 +106,29 @@ export default function UpcomingTripsScreen() {
   const trips = useTrips();
   const packs = useDetailedPacks();
 
+  // Memoised so the reference is stable across renders and the selection effect
+  // only fires when the underlying trips array actually changes.
   const upcomingTrips = useMemo(
     () => trips.filter((t) => !!t.startDate && new Date(t.startDate).getTime() > Date.now()),
     [trips],
   );
 
-  const [selectedTrip, setSelectedTrip] = useState(upcomingTrips[0]);
+  const [selectedTripId, setSelectedTripId] = useState<string | undefined>(upcomingTrips[0]?.id);
 
   useEffect(() => {
-    const isSelectedValid = selectedTrip && upcomingTrips.some((t) => t.id === selectedTrip.id);
-    if (!isSelectedValid && upcomingTrips.length > 0) {
-      setSelectedTrip(upcomingTrips[0]);
+    if (!upcomingTrips.length) {
+      setSelectedTripId(undefined);
+      return;
     }
-  }, [upcomingTrips, selectedTrip]);
 
-  const renderItem = useCallback(
-    (info: { item: { id: string; title: string; subTitle: string }; index: number }) => {
-      const trip = upcomingTrips.find((t) => t.id === info.item.id);
-      if (!trip) return null;
+    const stillSelected = selectedTripId
+      ? upcomingTrips.some((trip) => trip.id === selectedTripId)
+      : false;
 
-      const { status, completion } = getTripStatus(trip, t);
-
-      return (
-        <ListItem
-          {...info}
-          // leftView={<TripImage uri={trip.imageUrl} />}
-          rightView={
-            <View className="flex-row items-center">
-              <PackStatus status={status} completion={completion} />
-            </View>
-          }
-          onPress={() => setSelectedTrip(trip)}
-          className={
-            selectedTrip?.id === trip.id ? 'bg-muted/50 dark:bg-slate-950' : 'dark:bg-transparent'
-          }
-        />
-      );
-    },
-    [upcomingTrips, selectedTrip, t],
-  );
+    if (!stillSelected) {
+      setSelectedTripId(upcomingTrips[0]?.id);
+    }
+  }, [upcomingTrips, selectedTripId]);
 
   if (!upcomingTrips.length) {
     return (
@@ -154,11 +138,11 @@ export default function UpcomingTripsScreen() {
     );
   }
 
+  const selectedTrip = upcomingTrips.find((t) => t.id === selectedTripId);
   const selectedPack = selectedTrip ? packs.find((p) => p.id === selectedTrip.packId) : undefined;
 
   return (
     <>
-      <LargeTitleHeader title={t('trips.upcomingTrips')} />
       <ScrollView className="flex-1">
         <View className="p-4">
           <Text variant="subhead" className="mb-2 text-muted-foreground">
@@ -170,14 +154,36 @@ export default function UpcomingTripsScreen() {
         <List
           data={upcomingTrips.map((trip) => ({
             id: trip.id,
+            trip,
             title: trip.name,
             subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
               trip.startDate,
             )} to ${formatDate(trip.endDate)}`,
           }))}
+          extraData={selectedTripId}
           keyExtractor={(item) => item.id}
-          extraData={selectedTrip?.id}
-          renderItem={renderItem}
+          renderItem={(info) => {
+            const { trip } = info.item;
+            const { status, completion } = getTripStatus(trip, t);
+
+            return (
+              <ListItem
+                {...info}
+                // leftView={<TripImage uri={trip.imageUrl} />}
+                rightView={
+                  <View className="flex-row items-center">
+                    <PackStatus status={status} completion={completion} />
+                  </View>
+                }
+                onPress={() => setSelectedTripId(trip.id)}
+                className={
+                  selectedTripId === trip.id
+                    ? 'bg-muted/50 dark:bg-slate-950'
+                    : 'dark:bg-transparent'
+                }
+              />
+            );
+          }}
         />
 
         {/* Trip Summary */}

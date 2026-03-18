@@ -5,7 +5,8 @@ import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { getPackItems } from 'expo-app/features/packs/store';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { currentUser } from '../data/mockData';
 
 export function ProfileScreen() {
