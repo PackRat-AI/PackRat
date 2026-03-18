@@ -1,0 +1,18 @@
+# Maestro E2E Test Suite Configuration – Android
+# https://maestro.mobile.dev
+
+appId: com.packratai.mobile
+
+flows:
+  - flows/setup/*.yaml
+  - flows/auth/*.yaml
+  - flows/trips/*.yaml
+  - flows/packs/*.yaml
+
+executionOrder:
+  flowsOrder:
+    - flows/setup/clear-state.yaml
+    - flows/auth/login-flow.yaml
+    - flows/trips/create-trip-flow.yaml
+    - flows/packs/create-pack-flow.yaml
+    - flows/auth/logout-flow.yaml

@@ -13,6 +13,7 @@ import {
 import { Icon } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Linking, Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ToolInvocation } from '../types';
 import { ToolCard } from './ToolCard';
 
@@ -51,6 +52,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
   const bottomSheetRef = useSheetRef();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const handleCardPress = () => {
     bottomSheetRef.current?.present();
@@ -93,7 +95,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
             onPress={handleCardPress}
             icon={<Fontisto name="world-o" size={16} color={colors.foreground} />}
           />
-          <Sheet ref={bottomSheetRef} snapPoints={['85%']}>
+          <Sheet ref={bottomSheetRef} snapPoints={['85%']} bottomInset={insets.bottom}>
             <BottomSheetScrollView className="flex-1 px-4" style={{ flex: 1 }}>
               <View>
                 {/* Header */}

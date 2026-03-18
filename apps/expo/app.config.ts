@@ -37,7 +37,7 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.14',
+      version: '2.0.15',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
@@ -58,6 +58,8 @@ export default (): ExpoConfig =>
         'expo-web-browser',
         'expo-apple-authentication',
         'expo-localization',
+        '@react-native-community/datetimepicker',
+        '@sentry/react-native',
       ],
       experiments: {
         typedRoutes: true,

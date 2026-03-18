@@ -16,7 +16,7 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
     const { JWT_SECRET } = getEnv(c);
 
     try {
-      const payload = await verify(token, JWT_SECRET);
+      const payload = await verify(token, JWT_SECRET, { alg: 'HS256' });
       c.set('user', payload);
       return next();
     } catch (_error) {
