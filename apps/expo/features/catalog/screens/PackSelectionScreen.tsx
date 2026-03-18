@@ -1,11 +1,18 @@
-import { Button, SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
+import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useDetailedPacks } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, Platform, Pressable, TouchableOpacity, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  type TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
@@ -18,7 +25,7 @@ export function PackSelectionScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   // On Android, manually focus the SearchInput when the area is pressed.
   // This fixes an issue where the keyboard doesn't reappear after being dismissed.

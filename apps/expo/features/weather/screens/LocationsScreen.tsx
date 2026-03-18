@@ -1,10 +1,4 @@
-import {
-  Button,
-  LargeTitleHeader,
-  SearchInput,
-  type SearchInputRef,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { Button, LargeTitleHeader, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { cn } from 'expo-app/lib/cn';
@@ -21,6 +15,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -41,7 +36,7 @@ function LocationsScreen() {
   const { setActiveLocation } = useActiveLocation();
   const { isRefreshing, refreshAllLocations } = useLocationRefresh();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const searchInputRef = useRef<TextInput>(null);
   const { removeLocation } = useLocations();
 
   // On Android, manually focus the SearchInput when the area is pressed.

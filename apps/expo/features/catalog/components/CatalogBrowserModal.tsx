@@ -1,4 +1,4 @@
-import { Button, SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
+import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
@@ -14,6 +14,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -41,7 +42,7 @@ export function CatalogBrowserModal({
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   // On Android, manually focus the SearchInput when the area is pressed.
   // This fixes an issue where the keyboard doesn't reappear after being dismissed.

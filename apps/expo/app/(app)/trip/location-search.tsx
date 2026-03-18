@@ -1,14 +1,9 @@
-import {
-  ActivityIndicator,
-  Button,
-  SearchInput,
-  type SearchInputRef,
-} from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, SearchInput } from '@packrat/ui/nativewindui';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Pressable, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, Text, type TextInput, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
@@ -16,7 +11,7 @@ import { useTripLocation } from '../../../features/trips/store/tripLocationStore
 export default function LocationSearchScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const searchInputRef = useRef<TextInput>(null);
   const { setLocation } = useTripLocation();
   const { t } = useTranslation();
 
