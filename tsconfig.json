@@ -25,6 +25,7 @@
     "**/build",
     "**/.next",
     "**/.expo",
-    "**/coverage"
+    "**/coverage",
+    "packages/api/container_src"
   ]
 }

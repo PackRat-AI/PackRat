@@ -12,10 +12,10 @@ import {
   FlatList,
   Modal,
   RefreshControl,
-  SafeAreaView,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDebounce } from 'use-debounce';
 import { useCatalogItemsInfinite } from '../hooks';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
@@ -182,7 +182,7 @@ export function CatalogBrowserModal({
           ) : (
             <FlatList
               data={items}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item, index) => `${item.id}-${index}`}
               renderItem={renderItem}
               contentContainerStyle={{ padding: 16 }}
               ItemSeparatorComponent={ItemSeparatorComponent}
