@@ -173,7 +173,7 @@
     "requiredPlaceholder": "required",
     "optionalPlaceholder": "optional",
     "usernameFootnote": "Choose a unique identifier for your account.",
-    "notificationsFootnote": "Receive communication including announcements, marketing, recommendations, and updates about products, services, and software.",
+    "notificationsFootnote": "Receive communication including announcements, marketing, recommendations, trip reminders, and updates about products, services, and software.",
     "dangerZone": "Danger Zone"
   },
   "navigation": {
@@ -926,5 +926,15 @@
     "by": "By",
     "updated": "Updated",
     "all": "All"
+  },
+  "notifications": {
+    "tripReminders": "Trip Reminders",
+    "tripRemindersSubtitle": "Smart reminders to help you prepare for upcoming adventures",
+    "loadingReminders": "Loading your trip reminders...",
+    "loadError": "Could not load trip reminders. Please try again.",
+    "noUpcomingReminders": "No upcoming trip reminders. Create a trip to get started!",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "daysAway": "{{count}} days away"
   }
 }
