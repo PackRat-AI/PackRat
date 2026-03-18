@@ -469,6 +469,47 @@ export const catalogItemEtlJobsRelations = relations(catalogItemEtlJobs, ({ one 
   }),
 }));
 
+// Trail condition enum
+const trailConditionEnum = pgEnum('trail_condition', [
+  'excellent',
+  'good',
+  'fair',
+  'poor',
+  'closed',
+]);
+
+// Trail conditions table
+export const trailConditions = pgTable(
+  'trail_conditions',
+  {
+    id: text('id').primaryKey(),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    trailName: text('trail_name').notNull(),
+    location: jsonb('location').$type<{ latitude: number; longitude: number; name?: string }>(),
+    condition: trailConditionEnum('condition').notNull(),
+    details: text('details').notNull(),
+    photos: jsonb('photos').$type<string[]>().default([]),
+    trustScore: real('trust_score').notNull().default(0.5),
+    verifiedCount: integer('verified_count').notNull().default(0),
+    helpfulCount: integer('helpful_count').notNull().default(0),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('trail_conditions_user_id_idx').on(table.userId),
+    createdAtIdx: index('trail_conditions_created_at_idx').on(table.createdAt),
+  }),
+);
+
+export const trailConditionsRelations = relations(trailConditions, ({ one }) => ({
+  user: one(users, {
+    fields: [trailConditions.userId],
+    references: [users.id],
+  }),
+}));
+
 // Infer models from tables
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
@@ -509,3 +550,6 @@ export type NewTrip = InferInsertModel<typeof trips>;
 export type PackTemplateWithItems = PackTemplate & {
   items: PackTemplateItem[];
 };
+
+export type TrailCondition = InferSelectModel<typeof trailConditions>;
+export type NewTrailCondition = InferInsertModel<typeof trailConditions>;

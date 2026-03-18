@@ -1,5 +1,7 @@
 export function getRelativeTime(dateString: string): string {
-  const diff = (Date.now() - new Date(dateString).getTime()) / 1000;
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return 'Unknown';
+  const diff = (Date.now() - date.getTime()) / 1000;
   const units = [
     { label: 'month', seconds: 2592000 },
     { label: 'week', seconds: 604800 },
