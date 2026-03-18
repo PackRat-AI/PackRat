@@ -12,7 +12,7 @@ import {
 
 export function getPackItemDetailOptions({ route }: { route: { params?: { id?: string } } }) {
   return {
-    title: t('packs.itemDetails'),
+    title: t('items.itemDetails'),
     headerRight: () => {
       const { colors } = useColorScheme();
       const router = useRouter();

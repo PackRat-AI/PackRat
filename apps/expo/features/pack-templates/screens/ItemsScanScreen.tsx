@@ -1,6 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { ErrorState } from 'expo-app/components/ErrorState';
 import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
@@ -12,7 +13,7 @@ import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CatalogItem, CatalogItemWithPackItemFields } from '../../catalog/types';
 import { useBulkAddCatalogItems } from '../hooks';
 
@@ -25,6 +26,7 @@ export function ItemsScanScreen() {
   const { selectedImage, pickImage, takePhoto } = useImagePicker(fileInfo as SelectedImage);
   const { showActionSheetWithOptions } = useActionSheet();
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
+  const insets = useSafeAreaInsets();
 
   const { mutate: scanImage, isPending: isScanning, data } = useImageDetection();
   const { addItemsToPackTemplate } = useBulkAddCatalogItems();
@@ -73,6 +75,7 @@ export function ItemsScanScreen() {
         cancelButtonIndex,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: insets.bottom,
         },
         textStyle: {
           color: colors.foreground,
@@ -157,15 +160,15 @@ export function ItemsScanScreen() {
       await addItemsToPackTemplate(packTemplateId as string, selectedCatalogItemsList);
       const itemWord =
         selectedCatalogItemsList.length === 1 ? t('packTemplates.item') : t('packTemplates.items');
-      Toast.show({
-        type: 'success',
-        text1: t('packTemplates.addedItems', { count: selectedCatalogItemsList.length, itemWord }),
+      Burnt.toast({
+        title: t('packTemplates.addedItems', { count: selectedCatalogItemsList.length, itemWord }),
+        preset: 'done',
       });
     } catch {
-      Toast.show({
-        type: 'error',
-        text1: t('errors.somethingWentWrong'),
-        text2: t('errors.tryAgain'),
+      Burnt.toast({
+        title: t('errors.somethingWentWrong'),
+        message: t('errors.tryAgain'),
+        preset: 'error',
       });
     }
   };

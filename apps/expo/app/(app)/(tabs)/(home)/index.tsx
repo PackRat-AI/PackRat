@@ -2,13 +2,13 @@
 
 import type { LargeTitleSearchBarRef, ListDataItem } from '@packrat/ui/nativewindui';
 import {
-  ESTIMATED_ITEM_HEIGHT,
   LargeTitleHeader,
   List,
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import TabScreen from 'expo-app/components/TabScreen';
 import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
@@ -32,6 +32,7 @@ import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { VoiceCommandsTile } from 'expo-app/features/voice/components/VoiceCommandsTile';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
@@ -170,8 +171,6 @@ function DemoIcon() {
   );
 }
 
-import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
@@ -220,7 +219,7 @@ export default function DashboardScreen() {
   }, [searchValue, dashboardLayout]);
 
   return (
-    <View className="flex-1">
+    <TabScreen>
       <LargeTitleHeader
         title={t('dashboard.title')}
         searchBar={{
@@ -292,13 +291,12 @@ export default function DashboardScreen() {
         contentInsetAdjustmentBehavior="automatic"
         variant="insets"
         data={dashboardLayout}
-        estimatedItemSize={ESTIMATED_ITEM_HEIGHT.titleOnly}
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
-        ListFooterComponent={<View className="h-12" />} // 👈 Add margin below last item
+        ListFooterComponent={<View className="h-12" />}
       />
-    </View>
+    </TabScreen>
   );
 }
 

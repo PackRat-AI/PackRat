@@ -1,0 +1,25 @@
+# Empty Trip Submit Flow: Verify form validation prevents empty trip creation
+- waitForAnimationToEnd
+
+# Navigate to Trips tab
+- tapOn:
+    text: "Trips"
+- waitForAnimationToEnd
+
+# Tap create trip button
+- tapOn:
+    id: "create-trip-button"
+- waitForAnimationToEnd
+
+# Try to submit without filling any fields
+- tapOn:
+    id: "submit-trip-button"
+- waitForAnimationToEnd
+
+# Should still be on the form
+- assertVisible:
+    id: "submit-trip-button"
+
+# Go back
+- back
+- waitForAnimationToEnd

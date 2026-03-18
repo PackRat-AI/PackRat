@@ -5,7 +5,6 @@ import {
   Avatar,
   AvatarFallback,
   Button,
-  ESTIMATED_ITEM_HEIGHT,
   List,
   ListItem,
   type ListRenderItemInfo,
@@ -14,6 +13,7 @@ import {
   useColorScheme,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -24,10 +24,8 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
-import { Platform, SafeAreaView, View } from 'react-native';
-
-const ESTIMATED_ITEM_SIZE =
-  ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
+import { Platform, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function Profile() {
   const user = useUser();
@@ -62,7 +60,7 @@ function Profile() {
   ];
 
   return (
-    <>
+    <TabScreen>
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <List
@@ -70,12 +68,11 @@ function Profile() {
         variant="insets"
         data={DATA}
         sectionHeaderAsGap={Platform.OS === 'ios'}
-        estimatedItemSize={ESTIMATED_ITEM_SIZE}
         renderItem={renderItem}
         ListHeaderComponent={<ListHeaderComponent />}
         ListFooterComponent={<ListFooterComponent />}
       />
-    </>
+    </TabScreen>
   );
 }
 
@@ -183,6 +180,7 @@ function ListFooterComponent() {
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
+        testID="sign-out-button"
         disabled={isSigningOut}
         onPress={() => {
           if (hasUnsyncedChanges()) {

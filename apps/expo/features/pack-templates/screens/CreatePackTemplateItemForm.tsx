@@ -10,19 +10,10 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import type { WeightUnit } from 'expo-app/types';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
-import {
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { Alert, Image, Pressable, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreatePackTemplateItem } from '../hooks/useCreatePackTemplateItem';
 import { useUpdatePackTemplateItem } from '../hooks/useUpdatePackTemplateItem';
@@ -31,9 +22,9 @@ import type { PackTemplateItem, PackTemplateItemInput } from '../types';
 const itemFormSchema = z.object({
   name: z.string().min(1, 'Item name is required'),
   description: z.string(),
-  weight: z.preprocess((val) => (val === '' ? 0 : Number(val)), z.number().min(0)),
+  weight: z.number().min(0, 'Weight cannot be negative'),
   weightUnit: z.enum(['g', 'oz', 'kg', 'lb']),
-  quantity: z.preprocess((val) => (val === '' ? 1 : Number(val)), z.number().int().min(1)),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
   category: z.string(),
   consumable: z.boolean(),
   worn: z.boolean(),
@@ -58,6 +49,7 @@ export const CreatePackTemplateItemForm = ({
   const { showActionSheetWithOptions } = useActionSheet();
   const createItem = useCreatePackTemplateItem();
   const updateItem = useUpdatePackTemplateItem();
+  const insets = useSafeAreaInsets();
   const {
     selectedImage,
     pickImage,
@@ -70,19 +62,38 @@ export const CreatePackTemplateItemForm = ({
   const initialImageUrl = useRef(existingItem?.image || null);
   const isEditing = !!existingItem;
   const [imageChanged, setImageChanged] = useState(false);
+  const [weightText, setWeightText] = useState(
+    existingItem?.weight != null ? String(existingItem.weight) : '0',
+  );
 
   const form = useForm({
-    defaultValues: existingItem || {
-      name: '',
-      description: '',
-      weight: 0,
-      weightUnit: 'g' as WeightUnit,
-      quantity: 1,
-      category: '',
-      consumable: false,
-      worn: false,
-      notes: '',
-      image: null,
+    defaultValues: existingItem
+      ? {
+          name: existingItem.name,
+          description: existingItem.description || '',
+          weight: existingItem.weight,
+          weightUnit: existingItem.weightUnit as WeightUnit,
+          quantity: existingItem.quantity,
+          category: existingItem.category || '',
+          consumable: existingItem.consumable,
+          worn: existingItem.worn,
+          notes: existingItem.notes || '',
+          image: existingItem.image || null,
+        }
+      : {
+          name: '',
+          description: '',
+          weight: 0,
+          weightUnit: 'g' as WeightUnit,
+          quantity: 1,
+          category: '',
+          consumable: false,
+          worn: false,
+          notes: '',
+          image: null,
+        },
+    validators: {
+      onChange: itemFormSchema,
     },
     onSubmit: async ({ value }) => {
       try {
@@ -138,6 +149,7 @@ export const CreatePackTemplateItemForm = ({
         cancelButtonIndex,
         containerStyle: {
           backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
+          paddingBottom: insets.bottom,
         },
         textStyle: { color: colors.foreground },
       },
@@ -168,279 +180,289 @@ export const CreatePackTemplateItemForm = ({
       ? { uri: ImageCacheManager.cacheDirectory + form.getFieldValue('image') }
       : null;
 
+  const contentContainerStyle = useMemo(
+    () => ({ padding: 32, paddingBottom: insets.bottom + 32 }),
+    [insets.bottom],
+  );
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1"
+    <KeyboardAwareScrollView
+      bottomOffset={8}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={contentContainerStyle}
     >
-      <ScrollView contentContainerClassName="p-8">
-        <Form>
-          <FormSection
-            ios={{ title: t('packTemplates.itemDetails') }}
-            footnote={t('packTemplates.enterBasicInfo')}
-          >
-            <form.Field name="name">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    placeholder={t('items.itemName')}
-                    autoFocus
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
-                    leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="backpack" size={16} color={colors.grey3} />
-                      </View>
-                    }
-                  />
-                </FormItem>
-              )}
-            </form.Field>
+      <Form>
+        <FormSection
+          ios={{ title: t('packTemplates.itemDetails') }}
+          footnote={t('packTemplates.enterBasicInfo')}
+        >
+          <form.Field name="name">
+            {(field) => (
+              <FormItem>
+                <TextField
+                  placeholder={t('items.itemName')}
+                  autoFocus
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChangeText={field.handleChange}
+                  errorMessage={field.state.meta.errors[0]?.message}
+                  leftView={
+                    <View className="ios:pl-2 justify-center pl-2">
+                      <Icon name="backpack" size={16} color={colors.grey3} />
+                    </View>
+                  }
+                />
+              </FormItem>
+            )}
+          </form.Field>
 
-            <form.Field name="description">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    placeholder={t('packTemplates.description')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
-                    multiline
-                    numberOfLines={3}
-                    textAlignVertical="top"
-                    leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="information" size={16} color={colors.grey3} />
-                      </View>
-                    }
-                  />
-                </FormItem>
-              )}
-            </form.Field>
+          <form.Field name="description">
+            {(field) => (
+              <FormItem>
+                <TextField
+                  placeholder={t('packTemplates.description')}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChangeText={field.handleChange}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  leftView={
+                    <View className="ios:pl-2 justify-center pl-2">
+                      <Icon name="information" size={16} color={colors.grey3} />
+                    </View>
+                  }
+                />
+              </FormItem>
+            )}
+          </form.Field>
 
-            <form.Field name="category">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    placeholder={t('packTemplates.category')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
-                    leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="tag" size={16} color={colors.grey3} />
-                      </View>
-                    }
-                  />
-                </FormItem>
-              )}
-            </form.Field>
-          </FormSection>
+          <form.Field name="category">
+            {(field) => (
+              <FormItem>
+                <TextField
+                  placeholder={t('packTemplates.category')}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChangeText={field.handleChange}
+                  leftView={
+                    <View className="ios:pl-2 justify-center pl-2">
+                      <Icon name="tag" size={16} color={colors.grey3} />
+                    </View>
+                  }
+                />
+              </FormItem>
+            )}
+          </form.Field>
+        </FormSection>
 
-          <FormSection
-            ios={{ title: t('items.itemWeight') }}
-            footnote={t('packTemplates.enterBasicInfo')}
-          >
-            <form.Field name="weight">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    placeholder={t('items.itemWeight')}
-                    value={field.state.value.toString()}
-                    onBlur={field.handleBlur}
-                    onChangeText={(text) => field.handleChange(Number(text) || 0)}
-                    keyboardType="numeric"
-                    leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="dumbbell" size={16} color={colors.grey3} />
-                      </View>
-                    }
-                  />
-                </FormItem>
-              )}
-            </form.Field>
+        <FormSection
+          ios={{ title: t('items.itemWeight') }}
+          footnote={t('packTemplates.enterBasicInfo')}
+        >
+          <form.Field name="weight">
+            {(field) => (
+              <FormItem>
+                <TextField
+                  placeholder={t('items.itemWeight')}
+                  value={weightText}
+                  onBlur={field.handleBlur}
+                  onChangeText={(text) => {
+                    setWeightText(text);
+                    const parsed = parseFloat(text);
+                    field.handleChange(Number.isFinite(parsed) ? parsed : 0);
+                  }}
+                  keyboardType="decimal-pad"
+                  errorMessage={field.state.meta.errors[0]?.message}
+                  leftView={
+                    <View className="ios:pl-2 justify-center pl-2">
+                      <Icon name="dumbbell" size={16} color={colors.grey3} />
+                    </View>
+                  }
+                />
+              </FormItem>
+            )}
+          </form.Field>
 
-            <form.Field name="weightUnit">
-              {(field) => (
-                <FormItem>
-                  <View className="px-2 py-2">
-                    <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
-                    <SegmentedControl
-                      values={WEIGHT_UNITS}
-                      selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
-                      onIndexChange={(index) => {
-                        const selectedUnit = WEIGHT_UNITS[index];
-                        if (selectedUnit) {
-                          field.handleChange(selectedUnit);
-                        }
-                      }}
-                    />
-                  </View>
-                </FormItem>
-              )}
-            </form.Field>
-
-            <form.Field name="quantity">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    placeholder={t('items.itemQuantity')}
-                    value={field.state.value === 0 ? '' : field.state.value.toString()}
-                    onBlur={field.handleBlur}
-                    onChangeText={(text) => {
-                      const intValue = text === '' ? 0 : parseInt(text, 10);
-                      field.handleChange(intValue);
+          <form.Field name="weightUnit">
+            {(field) => (
+              <FormItem>
+                <View className="px-2 py-2">
+                  <Text className="text-foreground/70 mb-2 text-sm">Unit</Text>
+                  <SegmentedControl
+                    values={WEIGHT_UNITS}
+                    selectedIndex={WEIGHT_UNITS.indexOf(field.state.value as WeightUnit)}
+                    onIndexChange={(index) => {
+                      const selectedUnit = WEIGHT_UNITS[index];
+                      if (selectedUnit) {
+                        field.handleChange(selectedUnit);
+                      }
                     }}
-                    keyboardType="numeric"
-                    leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="circle-outline" size={16} color={colors.grey3} />
-                      </View>
-                    }
                   />
-                </FormItem>
-              )}
-            </form.Field>
-          </FormSection>
+                </View>
+              </FormItem>
+            )}
+          </form.Field>
 
-          <FormSection
-            ios={{ title: t('packTemplates.type') }}
-            footnote={t('packTemplates.enterBasicInfo')}
-          >
-            <form.Field name="consumable">
-              {(field) => (
-                <FormItem>
-                  <View className="flex-row items-center justify-between p-4">
-                    <View className="flex-row items-center">
-                      <Icon name="silverware-fork-knife" size={18} color={colors.foreground} />
-                      <Text className="ml-2 font-medium text-foreground">
-                        {t('packTemplates.consumable')}
-                      </Text>
+          <form.Field name="quantity">
+            {(field) => (
+              <FormItem>
+                <TextField
+                  placeholder={t('items.itemQuantity')}
+                  value={field.state.value === 0 ? '' : field.state.value.toString()}
+                  onBlur={field.handleBlur}
+                  onChangeText={(text) => {
+                    const intValue = text === '' ? 0 : parseInt(text, 10);
+                    field.handleChange(intValue);
+                  }}
+                  keyboardType="numeric"
+                  errorMessage={field.state.meta.errors[0]?.message}
+                  leftView={
+                    <View className="ios:pl-2 justify-center pl-2">
+                      <Icon name="circle-outline" size={16} color={colors.grey3} />
                     </View>
-                    <Switch
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
-                      trackColor={{
-                        false: 'hsl(var(--muted))',
-                        true: 'hsl(var(--primary))',
-                      }}
-                      ios_backgroundColor="hsl(var(--muted))"
-                    />
+                  }
+                />
+              </FormItem>
+            )}
+          </form.Field>
+        </FormSection>
+
+        <FormSection
+          ios={{ title: t('packTemplates.type') }}
+          footnote={t('packTemplates.enterBasicInfo')}
+        >
+          <form.Field name="consumable">
+            {(field) => (
+              <FormItem>
+                <View className="flex-row items-center justify-between p-4">
+                  <View className="flex-row items-center">
+                    <Icon name="silverware-fork-knife" size={18} color={colors.foreground} />
+                    <Text className="ml-2 font-medium text-foreground">
+                      {t('packTemplates.consumable')}
+                    </Text>
                   </View>
-                </FormItem>
-              )}
-            </form.Field>
-
-            <form.Field name="worn">
-              {(field) => (
-                <FormItem>
-                  <View className="flex-row items-center justify-between p-4">
-                    <View className="flex-row items-center">
-                      <Icon name="account-circle" size={18} color={colors.foreground} />
-                      <Text className="ml-2 font-medium text-foreground">
-                        {t('packTemplates.worn')}
-                      </Text>
-                    </View>
-                    <Switch
-                      value={field.state.value}
-                      onValueChange={field.handleChange}
-                      trackColor={{
-                        false: 'hsl(var(--muted))',
-                        true: 'hsl(var(--primary))',
-                      }}
-                      ios_backgroundColor="hsl(var(--muted))"
-                    />
-                  </View>
-                </FormItem>
-              )}
-            </form.Field>
-          </FormSection>
-
-          <FormSection
-            ios={{ title: t('common.name') }}
-            footnote={t('packTemplates.enterBasicInfo')}
-          >
-            <form.Field name="image">
-              {(_field) => (
-                <FormItem>
-                  {displayImage ? (
-                    <View className="relative">
-                      <Image
-                        source={displayImage}
-                        className="h-48 w-full rounded-lg"
-                        resizeMode="cover"
-                      />
-                      <TouchableOpacity
-                        className="absolute right-2 top-2 rounded-full bg-black bg-opacity-50 p-1"
-                        onPress={handleRemoveImage}
-                      >
-                        <Icon name="close" size={20} color="#ffffff" />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      className="h-48 items-center justify-center rounded-lg border border-dashed border-input bg-background p-4"
-                      onPress={handleAddImage}
-                    >
-                      <Icon name="camera" size={32} color={colors.foreground} />
-                      <Text className="mt-2 text-muted-foreground">
-                        {t('packTemplates.addManually')}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </FormItem>
-              )}
-            </form.Field>
-          </FormSection>
-
-          <FormSection
-            ios={{ title: t('packTemplates.notes') }}
-            footnote={t('packTemplates.enterBasicInfo')}
-          >
-            <form.Field name="notes">
-              {(field) => (
-                <FormItem>
-                  <TextField
-                    placeholder={t('packTemplates.notes')}
+                  <Switch
                     value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChangeText={field.handleChange}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                    leftView={
-                      <View className="ios:pl-2 justify-center pl-2">
-                        <Icon name="note-text-outline" size={16} color={colors.grey3} />
-                      </View>
-                    }
+                    onValueChange={field.handleChange}
+                    trackColor={{
+                      false: 'hsl(var(--muted))',
+                      true: 'hsl(var(--primary))',
+                    }}
+                    ios_backgroundColor="hsl(var(--muted))"
                   />
-                </FormItem>
-              )}
-            </form.Field>
-          </FormSection>
-        </Form>
+                </View>
+              </FormItem>
+            )}
+          </form.Field>
 
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-          {([canSubmit, isSubmitting]) => (
-            <Pressable
-              onPress={form.handleSubmit}
-              disabled={!canSubmit || isSubmitting}
-              className={`mt-6 rounded-lg px-4 py-3.5 ${
-                !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
-              }`}
-            >
-              <Text className="text-center text-base font-semibold text-primary-foreground">
-                {isSubmitting
-                  ? t('common.loading')
-                  : isEditing
-                    ? t('packTemplates.updateTemplate')
-                    : t('packTemplates.addItem')}
-              </Text>
-            </Pressable>
-          )}
-        </form.Subscribe>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <form.Field name="worn">
+            {(field) => (
+              <FormItem>
+                <View className="flex-row items-center justify-between p-4">
+                  <View className="flex-row items-center">
+                    <Icon name="account-circle" size={18} color={colors.foreground} />
+                    <Text className="ml-2 font-medium text-foreground">
+                      {t('packTemplates.worn')}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={field.state.value}
+                    onValueChange={field.handleChange}
+                    trackColor={{
+                      false: 'hsl(var(--muted))',
+                      true: 'hsl(var(--primary))',
+                    }}
+                    ios_backgroundColor="hsl(var(--muted))"
+                  />
+                </View>
+              </FormItem>
+            )}
+          </form.Field>
+        </FormSection>
+
+        <FormSection ios={{ title: t('common.name') }} footnote={t('packTemplates.enterBasicInfo')}>
+          <form.Field name="image">
+            {(_field) => (
+              <FormItem>
+                {displayImage ? (
+                  <View className="relative">
+                    <Image
+                      source={displayImage}
+                      className="h-48 w-full rounded-lg"
+                      resizeMode="cover"
+                    />
+                    <TouchableOpacity
+                      className="absolute right-2 top-2 rounded-full bg-black bg-opacity-50 p-1"
+                      onPress={handleRemoveImage}
+                    >
+                      <Icon name="close" size={20} color="#ffffff" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    className="h-48 items-center justify-center rounded-lg border border-dashed border-input bg-background p-4"
+                    onPress={handleAddImage}
+                  >
+                    <Icon name="camera" size={32} color={colors.foreground} />
+                    <Text className="mt-2 text-muted-foreground">
+                      {t('packTemplates.addManually')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </FormItem>
+            )}
+          </form.Field>
+        </FormSection>
+
+        <FormSection
+          ios={{ title: t('packTemplates.notes') }}
+          footnote={t('packTemplates.enterBasicInfo')}
+        >
+          <form.Field name="notes">
+            {(field) => (
+              <FormItem>
+                <TextField
+                  placeholder={t('packTemplates.notes')}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChangeText={field.handleChange}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  leftView={
+                    <View className="ios:pl-2 justify-center pl-2">
+                      <Icon name="note-text-outline" size={16} color={colors.grey3} />
+                    </View>
+                  }
+                />
+              </FormItem>
+            )}
+          </form.Field>
+        </FormSection>
+      </Form>
+
+      <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+        {([canSubmit, isSubmitting]) => (
+          <Pressable
+            onPress={form.handleSubmit}
+            disabled={!canSubmit || isSubmitting}
+            className={`mt-6 rounded-lg px-4 py-3.5 ${
+              !canSubmit || isSubmitting ? 'bg-primary/70' : 'bg-primary'
+            }`}
+          >
+            <Text className="text-center text-base font-semibold text-primary-foreground">
+              {isSubmitting
+                ? t('common.loading')
+                : isEditing
+                  ? t('packTemplates.updateTemplate')
+                  : t('packTemplates.addItem')}
+            </Text>
+          </Pressable>
+        )}
+      </form.Subscribe>
+    </KeyboardAwareScrollView>
   );
 };

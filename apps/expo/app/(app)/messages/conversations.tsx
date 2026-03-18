@@ -91,7 +91,6 @@ export default function ConversationsIosScreen() {
         extraData={[isSelecting, selectedMessages]}
         contentInsetAdjustmentBehavior="automatic"
         ListFooterComponent={isSelecting ? <View className="h-[46px]" /> : undefined}
-        estimatedItemSize={88}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
       />
