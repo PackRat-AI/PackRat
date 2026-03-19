@@ -70,7 +70,7 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
             )}
             {item.ratingValue && (
               <View className="flex-row items-center gap-1">
-                <Icon name="star" size={12} color={colors.yellow} />
+                <Icon name="star" size={12} color={'rgb(255, 204, 0)'} />
                 <Text className="text-sm text-muted-foreground">{item.ratingValue.toFixed(1)}</Text>
               </View>
             )}

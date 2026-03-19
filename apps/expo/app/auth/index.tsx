@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
@@ -27,7 +27,7 @@ type RouteParams = {
 export default function AuthIndexScreen() {
   const { signInWithGoogle, signInWithApple, isLoading } = useAuth();
   const { t } = useTranslation();
-  const alertRef = React.useRef<AlertRef>(null);
+  const alertRef = React.useRef<AlertMethods>(null);
   const {
     redirectTo = '/',
     showSignInCopy,

@@ -40,7 +40,7 @@ export function GapSuggestion({ gap, packId }: GapSuggestionProps) {
       case 'must-have':
         return isDarkColorScheme ? '#ef4444' : colors.destructive;
       case 'nice-to-have':
-        return colors.yellow;
+        return 'rgb(255, 204, 0)';
       case 'optional':
         return colors.primary;
       default:

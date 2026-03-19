@@ -76,7 +76,7 @@ export function CatalogItemDetailScreen() {
               </View>
               {item.ratingValue && (
                 <View className="flex-row items-center">
-                  <Icon name="star" size={16} color={colors.yellow} />
+                  <Icon name="star" size={16} color={'rgb(255, 204, 0)'} />
                   <Text className="ml-1 text-sm text-muted-foreground">
                     {item.ratingValue.toFixed(1)}
                   </Text>
