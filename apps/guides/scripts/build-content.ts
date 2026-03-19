@@ -38,6 +38,7 @@ async function buildContent() {
         content, // Include the raw content
       };
     })
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .sort((a: Post, b: Post) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Process each post's content to HTML

@@ -21,6 +21,7 @@ interface AddPackTemplateItemActionsProps {
 }
 
 export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProps>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   function AddPackTemplateItemActions({ packTemplateId }, ref) {
     const [isCatalogModalVisible, setIsCatalogModalVisible] = React.useState(false);
     const { pickImage, takePhoto } = useImagePicker();

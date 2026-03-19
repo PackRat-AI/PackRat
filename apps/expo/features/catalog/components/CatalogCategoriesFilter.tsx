@@ -32,7 +32,8 @@ export function CatalogCategoriesFilter({
     <View className="bg-background px-4 py-2">
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
         {isLoading
-          ? Array.from({ length: 10 }).map((_, i) => (
+          ? // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
+            Array.from({ length: 10 }).map((_, i) => (
               <View
                 // biome-ignore lint/suspicious/noArrayIndexKey: just for skeleton
                 key={i}

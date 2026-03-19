@@ -274,4 +274,6 @@ export type TranslationKeys =
  * Type-safe translation function
  * Usage: t('common.welcome') - will autocomplete and type-check keys
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export type TranslationFunction = (key: TranslationKeys, options?: TranslateOptions) => string;

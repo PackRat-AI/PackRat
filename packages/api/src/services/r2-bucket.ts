@@ -235,6 +235,7 @@ export class R2BucketService {
     options: R2GetOptions & { onlyIf: R2Conditional | Headers },
   ): Promise<R2ObjectBody | R2Object | null>;
   get(key: string, options?: R2GetOptions): Promise<R2ObjectBody | null>;
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   async get(key: string, options?: R2GetOptions): Promise<R2ObjectBody | R2Object | null> {
     try {
       const command = new GetObjectCommand({
@@ -289,6 +290,7 @@ export class R2BucketService {
           chunks.push(value);
         }
 
+        // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
         const bodyArray = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
         let offset = 0;
         for (const chunk of chunks) {
@@ -405,6 +407,7 @@ export class R2BucketService {
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
     options?: R2PutOptions,
   ): Promise<R2Object>;
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   async put(
     key: string,
     value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
@@ -471,6 +474,7 @@ export class R2BucketService {
     }
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   async createMultipartUpload(
     key: string,
     options?: R2MultipartOptions,
@@ -495,14 +499,17 @@ export class R2BucketService {
     return this.createMultipartUploadObject(key, uploadId);
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   resumeMultipartUpload(key: string, uploadId: string): R2MultipartUpload {
     return this.createMultipartUploadObject(key, uploadId);
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   private createMultipartUploadObject(key: string, uploadId: string): R2MultipartUpload {
     return {
       key,
       uploadId,
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       uploadPart: async (
         partNumber: number,
         value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
@@ -581,6 +588,7 @@ export class R2BucketService {
     throw new Error('Unsupported value type');
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   private createR2Object(key: string, response: Record<string, unknown>): R2Object {
     const r2Object = {
       key,
@@ -607,10 +615,10 @@ export class R2BucketService {
 
     // Add range if present
     if (response.ContentRange) {
-      // @ts-ignore - ignore
+      // @ts-expect-error - ignore
       r2Object.range = response.ContentRange; // Assign the value if it exists
     } else {
-      // @ts-ignore - ignore
+      // @ts-expect-error - ignore
       r2Object.range = undefined; // Explicitly set to undefined if not present
     }
 

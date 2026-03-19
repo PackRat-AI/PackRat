@@ -6,6 +6,7 @@ type ChatContext = {
   contextType: 'item' | 'pack' | 'general';
 };
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function generatePromptWithContext(userMessage: string, context?: ChatContext): string {
   if (!context || context.contextType === 'general') {
     return userMessage;

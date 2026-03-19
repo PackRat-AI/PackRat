@@ -2,6 +2,7 @@ import { cn } from 'landing-app/lib/utils';
 import * as React from 'react';
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'textarea'>>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => {
     return (
       <textarea

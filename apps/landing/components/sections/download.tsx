@@ -11,6 +11,7 @@ import type React from 'react';
 
 export default function DownloadSection() {
   // Handle smooth scrolling when clicking on navigation links
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const targetId = href.substring(1);
@@ -22,7 +23,6 @@ export default function DownloadSection() {
   };
 
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="download" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 -z-10 bg-primary/5 dark:bg-primary/10"></div>

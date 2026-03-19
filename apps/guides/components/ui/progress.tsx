@@ -7,6 +7,7 @@ import * as React from 'react';
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, value, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}

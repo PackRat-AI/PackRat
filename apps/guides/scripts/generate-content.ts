@@ -163,6 +163,7 @@ function getExistingContent(): ContentMetadata[] {
 }
 
 // Generate topic ideas based on categories and existing content
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function generateTopicIdeas(
   count: number,
   categories?: ContentCategory[],
@@ -180,6 +181,7 @@ async function generateTopicIdeas(
   if (existingContent.length > 0) {
     // Limit to 20 most recent articles to avoid token limits
     const recentContent = existingContent
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 20);
 
@@ -212,6 +214,7 @@ async function generateTopicIdeas(
 
     // Find underrepresented categories
     const sortedCategories = Object.entries(categoryDistribution)
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       .sort(([, countA], [, countB]) => countA - countB)
       .map(([category]) => category as ContentCategory);
 
@@ -288,6 +291,7 @@ async function generateTopicIdeas(
 }
 
 // Generate full MDX content for a topic with awareness of existing content
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function generateMdxContent(
   metadata: ContentMetadata,
   existingContent: ContentMetadata[] = [],
@@ -303,6 +307,7 @@ async function generateMdxContent(
         content.categories.some((category) => metadata.categories.includes(category)) &&
         content.title !== metadata.title,
     )
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .sort((a, b) => {
       // Count matching categories
       const aMatches = a.categories.filter((c) => metadata.categories.includes(c)).length;
@@ -355,6 +360,7 @@ async function generateMdxContent(
 }
 
 // Generate a single post
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function generatePost(
   request: ContentRequest,
   existingContent: ContentMetadata[] = [],
@@ -414,6 +420,7 @@ async function generatePost(
 }
 
 // Generate multiple posts
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function generatePosts(count: number, categories?: ContentCategory[]): Promise<string[]> {
   try {
     // Get existing content first
@@ -486,6 +493,7 @@ function generateContentReport(): void {
 
   console.log(chalk.blue(`\nCategory Distribution:`));
   Object.entries(categoryDistribution)
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .sort(([, countA], [, countB]) => countB - countA)
     .forEach(([category, count]) => {
       const percentage = ((count / existingContent.length) * 100).toFixed(1);
@@ -501,6 +509,7 @@ function generateContentReport(): void {
 
   console.log(chalk.blue(`\nDifficulty Distribution:`));
   Object.entries(difficultyDistribution)
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .sort(([, countA], [, countB]) => countB - countA)
     .forEach(([difficulty, count]) => {
       const percentage = ((count / existingContent.length) * 100).toFixed(1);
@@ -515,6 +524,7 @@ function generateContentReport(): void {
 
   console.log(chalk.blue(`\nAuthor Distribution:`));
   Object.entries(authorDistribution)
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .sort(([, countA], [, countB]) => countB - countA)
     .forEach(([author, count]) => {
       const percentage = ((count / existingContent.length) * 100).toFixed(1);
@@ -547,7 +557,7 @@ if (require.main === module) {
     process.exit(0);
   }
 
-  const count = (args[0] && Number.parseInt(args[0])) || 5;
+  const count = (args[0] && Number.parseInt(args[0], 10)) || 5;
   const categoryArgs = args.slice(1) as ContentCategory[];
 
   console.log(chalk.blue(`Starting content generation: ${count} posts`));

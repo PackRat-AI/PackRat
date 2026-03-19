@@ -7,6 +7,7 @@ export class PackItemService {
   private db;
   private userId: number;
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   constructor(c: Context, userId: number) {
     this.db = createDb(c);
     this.userId = userId;

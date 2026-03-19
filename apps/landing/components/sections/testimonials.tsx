@@ -7,7 +7,6 @@ import { QuoteIcon } from 'lucide-react';
 
 export default function TestimonialsSection() {
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section
       id="testimonials"
       className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted/50"
@@ -56,6 +55,7 @@ export default function TestimonialsSection() {
               </p>
 
               <div className="mt-4 md:mt-6 flex">
+                {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
                 {Array.from({ length: 5 }).map((_, i) => (
                   <svg
                     // biome-ignore lint/suspicious/noArrayIndexKey: ignore

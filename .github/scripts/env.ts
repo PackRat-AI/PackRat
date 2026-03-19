@@ -36,6 +36,7 @@ const expoFileContent = envFileContent
     } else if (line.startsWith('EXPO_PUBLIC_')) {
       return line;
     }
+    return undefined;
   })
   .join('\n');
 const expoNoTelemetry = 'EXPO_NO_TELEMETRY=true';

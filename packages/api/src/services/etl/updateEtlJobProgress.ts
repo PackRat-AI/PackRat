@@ -3,6 +3,7 @@ import { etlJobs } from '@packrat/api/db/schema';
 import type { Env } from '@packrat/api/types/env';
 import { eq, sql } from 'drizzle-orm';
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function updateEtlJobProgress(
   env: Env,
   params: { jobId: string; valid?: number; invalid?: number },

@@ -4,6 +4,7 @@ import * as React from 'react';
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, type, ...props }, ref) => {
     return (
       <input

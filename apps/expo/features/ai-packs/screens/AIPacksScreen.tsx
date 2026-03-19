@@ -89,7 +89,7 @@ export function AIPacksScreen() {
                 <TextInput
                   className="border border-border rounded-lg px-3 py-2 text-foreground bg-background"
                   value={field.state.value.toString()}
-                  onChangeText={(text) => field.handleChange(Number.parseInt(text) || 1)}
+                  onChangeText={(text) => field.handleChange(Number.parseInt(text, 10) || 1)}
                   keyboardType="numeric"
                   placeholder={t('ai.enterCount')}
                 />

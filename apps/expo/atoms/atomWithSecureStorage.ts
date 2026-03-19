@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { atom } from 'jotai';
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const atomWithSecureStorage = <T>(key: string, initialValue: T) => {
   const baseAtom = atom(initialValue);
 
@@ -13,6 +14,7 @@ export const atomWithSecureStorage = <T>(key: string, initialValue: T) => {
 
   const derivedAtom = atom(
     (get) => get(baseAtom),
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     (get, set, update) => {
       const nextValue = typeof update === 'function' ? update(get(baseAtom)) : update;
       set(baseAtom, nextValue);

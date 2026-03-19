@@ -6,6 +6,8 @@ import type { MaterialIconName } from '@roninoss/icons';
  * @param isDay Whether it's daytime (true) or nighttime (false)
  * @returns The icon name to use
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function getWeatherIconName(code: number, isDay = 1): MaterialIconName {
   // Clear conditions
   if (code === 1000) {
@@ -81,6 +83,8 @@ export function getWeatherIconName(code: number, isDay = 1): MaterialIconName {
  * @param isDay Whether it's daytime (true) or nighttime (false)
  * @returns The icon name to use
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function getWeatherIconByCondition(condition: string, isDay = 1): MaterialIconName {
   const conditionLower = condition.toLowerCase();
 
@@ -148,6 +152,8 @@ export function getWeatherIconByCondition(condition: string, isDay = 1): Materia
 /**
  * Get background gradient colors based on weather condition
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function getWeatherBackgroundColors(code: number, isNight: boolean): string[] {
   if (isNight) {
     // Night gradients

@@ -5,6 +5,7 @@ export function useBottomSheetAction(sheetRef: React.RefObject<BottomSheetModal 
   const [pending, setPending] = useState<(() => void) | null>(null);
 
   const run = useCallback(
+    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     (fn: () => void, { defer = true } = {}) => {
       if (!sheetRef.current || !defer) {
         sheetRef.current?.close();

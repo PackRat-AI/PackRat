@@ -27,6 +27,7 @@ import {
 import type { Context } from 'hono';
 import { getEmbeddingText } from '../utils/embeddingHelper';
 
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
   isContext;
 
@@ -34,6 +35,7 @@ export class CatalogService {
   private db;
   private env: Env;
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
     if (isContext(contextOrEnv, isHonoContext)) {
       this.db = createDb(contextOrEnv);
@@ -184,6 +186,7 @@ export class CatalogService {
     };
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   async vectorSearch(
     q: string,
     limit: number = 10,
@@ -256,6 +259,7 @@ export class CatalogService {
     };
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   async batchVectorSearch(
     queries: string[],
     limit: number = 5,
@@ -336,6 +340,7 @@ export class CatalogService {
       .onConflictDoUpdate({
         target: catalogItems.sku,
         set: Object.values(columns).reduce(
+          // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
           (acc, col) => {
             acc[col.name] = sql.raw(`COALESCE(catalog_items.${col.name}, excluded."${col.name}")`);
             return acc;
@@ -376,6 +381,7 @@ export class CatalogService {
       });
 
       // Update items with new embeddings
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       const updatePromises = itemsToUpdate.map((item, index) =>
         this.db
           .update(catalogItems)
@@ -389,6 +395,7 @@ export class CatalogService {
     return upsertedItems;
   }
 
+  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   async trackEtlJob(itemIds: Pick<CatalogItem, 'id'>[], jobId: string): Promise<void> {
     await this.db.insert(catalogItemEtlJobs).values(
       itemIds.map((item) => ({

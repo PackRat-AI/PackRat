@@ -108,6 +108,7 @@ export default function OneTimePasswordScreen() {
   // Handles both email verification for new accounts and password reset modes
   async function onSubmit() {
     const errorIndexes = codeValues
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       .map((str, index) => (str === '' ? index : -1))
       .filter((index) => index !== -1);
 
@@ -171,6 +172,7 @@ export default function OneTimePasswordScreen() {
             </Text>
           </View>
           <View className="flex-row justify-between gap-2 py-3">
+            {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
             {codeValues.map((value, index) => (
               <OTPField
                 // biome-ignore lint/suspicious/noArrayIndexKey: really no definite id here. code values could repeat.

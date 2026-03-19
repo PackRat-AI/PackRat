@@ -27,6 +27,8 @@ export const createTestPackTemplate = (
 /**
  * Test fixture for creating a pack template item
  */
+
+// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const createTestPackTemplateItem = (
   packTemplateId: string,
   overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,

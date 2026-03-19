@@ -144,6 +144,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
         return createMockR2Object(guide);
       }
 
+      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       async put(key: string, _value: unknown, _options?: unknown) {
         return createMockR2Object({
           key,

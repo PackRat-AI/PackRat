@@ -26,7 +26,7 @@ export function useGeneratePacks() {
   const generatedPacksFromStore = use$(() => {
     if (mutation.data) {
       return mutation.data.map((pack) =>
-        // @ts-ignore: Safe because Legend-State uses Proxy
+        // @ts-expect-error: Safe because Legend-State uses Proxy
         packsStore[pack.id].get(),
       );
     }

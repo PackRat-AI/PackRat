@@ -182,6 +182,7 @@ export function CatalogBrowserModal({
           ) : (
             <FlatList
               data={items}
+              // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
               keyExtractor={(item, index) => `${item.id}-${index}`}
               renderItem={renderItem}
               contentContainerStyle={{ padding: 16 }}

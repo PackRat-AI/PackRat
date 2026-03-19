@@ -27,9 +27,9 @@ export function useCreatePackItem() {
         deleted: false,
       };
 
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       packItemsStore[id].set(newItem);
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       packsStore[packId].localUpdatedAt.set(new Date().toISOString());
       recordPackWeight(packId);
     },
