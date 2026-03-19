@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -12,7 +12,7 @@ export function WeightAnalysisTile() {
   const { t } = useTranslation();
   const router = useRouter();
   const currentPack = useCurrentPack();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
 
   const packWeight = currentPack?.totalWeight ?? 0;
   const route: Href | null = currentPack ? `/weight-analysis/${currentPack.id}` : null;

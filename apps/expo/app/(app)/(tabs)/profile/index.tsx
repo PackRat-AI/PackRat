@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
   Alert,
@@ -140,7 +140,7 @@ function ListFooterComponent() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -150,7 +150,7 @@ function ListFooterComponent() {
       alertRef.current?.alert({
         title: t('auth.loggedOut'),
         message: t('auth.loggedOutMessage'),
-        materialIcon: { name: 'check-circle-outline', color: colors.green },
+        materialIcon: { name: 'check-circle-outline', color: 'rgb(48, 164, 108)' },
         buttons: [
           {
             text: t('auth.stayLoggedOut'),

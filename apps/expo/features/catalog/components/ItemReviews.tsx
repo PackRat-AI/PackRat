@@ -69,7 +69,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
               <View className="flex-row items-center">
                 {review.verified && (
                   <View className="mr-2 flex-row items-center">
-                    <Icon name="check-circle-outline" size={14} color={colors.green} />
+                    <Icon name="check-circle-outline" size={14} color={'rgb(48, 164, 108)'} />
                     <Text className="ml-1 text-xs text-green-900 dark:text-green-500">
                       {t('catalog.verified')}
                     </Text>
@@ -81,7 +81,7 @@ export function ItemReviews({ reviews }: ItemReviewsProps) {
                       key={star}
                       name={star <= review.rating ? 'star' : 'star-outline'}
                       size={14}
-                      color={colors.yellow}
+                      color={'rgb(255, 204, 0)'}
                     />
                   ))}
                 </View>

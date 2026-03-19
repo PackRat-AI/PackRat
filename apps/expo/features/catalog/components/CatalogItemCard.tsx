@@ -41,7 +41,7 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
                 </View>
                 {item.ratingValue && (
                   <View className="flex-row items-center">
-                    <Icon name="star" size={14} color={colors.yellow} />
+                    <Icon name="star" size={14} color={'rgb(255, 204, 0)'} />
                     <Text className="ml-1 text-xs text-muted-foreground">
                       {item.ratingValue.toFixed(1)}
                     </Text>

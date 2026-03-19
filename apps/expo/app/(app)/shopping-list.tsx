@@ -144,7 +144,7 @@ function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
 
         {item.purchased && (
           <View className="mt-3 flex-row items-center gap-1">
-            <Icon name="check-circle" size={16} color={colors.green} />
+            <Icon name="check-circle" size={16} color={'rgb(48, 164, 108)'} />
             <Text variant="footnote" className="text-green-500">
               {t('shopping.purchased')}
             </Text>

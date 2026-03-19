@@ -112,7 +112,7 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
                   toolInvocation.output.data.sources.length > 0 && (
                     <View className="mb-6">
                       <View className="flex-row items-center mb-3">
-                        <Icon name="link" size={16} color={colors.green} />
+                        <Icon name="link" size={16} color={'rgb(48, 164, 108)'} />
                         <Text variant="caption1" className="uppercase tracking-wide">
                           {t('ai.tools.sources', {
                             count: toolInvocation.output.data.sources.length,
