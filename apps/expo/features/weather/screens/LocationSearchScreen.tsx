@@ -1,4 +1,4 @@
-import { SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
+import { SearchInput, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
@@ -15,6 +15,7 @@ import {
   Keyboard,
   Linking,
   Platform,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -32,7 +33,7 @@ export default function LocationSearchScreen() {
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const searchInputRef = useRef<TextInput>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<number | null>(null);

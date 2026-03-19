@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
   Alert,
@@ -10,7 +10,6 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
   Text,
-  useColorScheme,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TabScreen from 'expo-app/components/TabScreen';
@@ -20,6 +19,7 @@ import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
 import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
@@ -140,7 +140,7 @@ function ListFooterComponent() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {

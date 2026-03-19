@@ -1,6 +1,6 @@
 'use client';
 
-import type { LargeTitleSearchBarRef, ListDataItem } from '@packrat/ui/nativewindui';
+import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
   LargeTitleHeader,
   List,
@@ -167,7 +167,7 @@ function DemoIcon() {
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const { t } = useTranslation();
 
   const dashboardLayout = useRef([
