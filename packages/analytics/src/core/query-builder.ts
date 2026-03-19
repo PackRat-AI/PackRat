@@ -188,13 +188,13 @@ export class SQLFragments {
     const maxP = DBConfig.MAX_VALID_PRICE;
     return [
       'name IS NOT NULL',
-      "TRIM(COALESCE(name, '')) != ''",
+      "TRIM(COALESCE(TRY_CAST(name AS VARCHAR), '')) != ''",
       `(
                 (TRY_CAST(price AS DOUBLE) IS NOT NULL AND TRY_CAST(price AS DOUBLE) > 0 AND TRY_CAST(price AS DOUBLE) < ${maxP})
                 OR
-                (TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) IS NOT NULL
-                AND TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) > 0
-                AND TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) < ${maxP})
+                (TRY_CAST(REGEXP_REPLACE(COALESCE(TRY_CAST(price AS VARCHAR), ''), '[^0-9.]', '') AS DOUBLE) IS NOT NULL
+                AND TRY_CAST(REGEXP_REPLACE(COALESCE(TRY_CAST(price AS VARCHAR), ''), '[^0-9.]', '') AS DOUBLE) > 0
+                AND TRY_CAST(REGEXP_REPLACE(COALESCE(TRY_CAST(price AS VARCHAR), ''), '[^0-9.]', '') AS DOUBLE) < ${maxP})
             )`,
     ];
   }
@@ -227,16 +227,16 @@ export class SQLFragments {
       conditions.push(`(
                 (TRY_CAST(price AS DOUBLE) IS NOT NULL AND TRY_CAST(price AS DOUBLE) >= ${minPrice})
                 OR
-                (TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) IS NOT NULL
-                 AND TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) >= ${minPrice})
+                (TRY_CAST(REGEXP_REPLACE(COALESCE(TRY_CAST(price AS VARCHAR), ''), '[^0-9.]', '') AS DOUBLE) IS NOT NULL
+                 AND TRY_CAST(REGEXP_REPLACE(COALESCE(TRY_CAST(price AS VARCHAR), ''), '[^0-9.]', '') AS DOUBLE) >= ${minPrice})
             )`);
     }
     if (maxPrice !== undefined) {
       conditions.push(`(
                 (TRY_CAST(price AS DOUBLE) IS NOT NULL AND TRY_CAST(price AS DOUBLE) <= ${maxPrice})
                 OR
-                (TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) IS NOT NULL
-                 AND TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) <= ${maxPrice})
+                (TRY_CAST(REGEXP_REPLACE(COALESCE(TRY_CAST(price AS VARCHAR), ''), '[^0-9.]', '') AS DOUBLE) IS NOT NULL
+                 AND TRY_CAST(REGEXP_REPLACE(COALESCE(TRY_CAST(price AS VARCHAR), ''), '[^0-9.]', '') AS DOUBLE) <= ${maxPrice})
             )`);
     }
     return conditions;
@@ -449,9 +449,9 @@ export class QueryBuilder {
   }
 
   /** Build a SELECT query for normalized gear data (no CREATE TABLE). */
-  normalizedSelectQuery(): string {
+  normalizedSelectQuery(globPatterns?: string[]): string {
     const select = SQLFragments.selectFields().join(',\n            ');
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+    const source = SQLFragments.readCsvSource(this.bucketPath, globPatterns);
     const conditions = SQLFragments.baseWhere();
 
     return `
@@ -462,16 +462,24 @@ export class QueryBuilder {
   }
 
   /** Build CREATE TABLE AS SELECT for cache population. */
-  createCacheTable(tableName = 'gear_data'): string {
+  createCacheTable(tableName = 'gear_data', globPatterns?: string[]): string {
     return `
         CREATE TABLE ${tableName} AS
-        ${this.normalizedSelectQuery()}
+        ${this.normalizedSelectQuery(globPatterns)}
         `;
   }
 
-  /** Build CREATE TABLE AS SELECT for price history cache. */
-  createPriceHistoryTable(tableName = 'price_history'): string {
-    const source = SQLFragments.readCsvSource(this.bucketPath);
+  /** Build INSERT INTO SELECT for batched cache population. */
+  insertIntoCacheTable(tableName = 'gear_data', globPatterns?: string[]): string {
+    return `
+        INSERT INTO ${tableName}
+        ${this.normalizedSelectQuery(globPatterns)}
+        `;
+  }
+
+  /** Price history SELECT query (no CREATE/INSERT prefix). */
+  private priceHistorySelectQuery(globPatterns?: string[]): string {
+    const source = SQLFragments.readCsvSource(this.bucketPath, globPatterns);
     const maxP = DBConfig.MAX_VALID_PRICE;
 
     const nameVariations = FIELD_MAPPINGS.name ?? ['name'];
@@ -483,7 +491,6 @@ export class QueryBuilder {
     const brandCoalesce = `COALESCE(${brandParts.join(', ')}, '')`;
 
     return `
-        CREATE TABLE ${tableName} AS
         SELECT
             regexp_extract(filename, '${SITE_EXTRACT_REGEX}', 1) as site,
             regexp_extract(filename, '(\\d{4}-\\d{2}-\\d{2})T', 1) as scrape_date,
@@ -497,6 +504,22 @@ export class QueryBuilder {
           AND TRY_CAST(price AS DOUBLE) < ${maxP}
           AND regexp_extract(filename, '(\\d{4}-\\d{2}-\\d{2})T', 1) IS NOT NULL
           AND regexp_extract(filename, '(\\d{4}-\\d{2}-\\d{2})T', 1) != ''
+        `;
+  }
+
+  /** Build CREATE TABLE AS SELECT for price history cache. */
+  createPriceHistoryTable(tableName = 'price_history', globPatterns?: string[]): string {
+    return `
+        CREATE TABLE ${tableName} AS
+        ${this.priceHistorySelectQuery(globPatterns)}
+        `;
+  }
+
+  /** Build INSERT INTO SELECT for batched price history population. */
+  insertIntoPriceHistoryTable(tableName = 'price_history', globPatterns?: string[]): string {
+    return `
+        INSERT INTO ${tableName}
+        ${this.priceHistorySelectQuery(globPatterns)}
         `;
   }
 }

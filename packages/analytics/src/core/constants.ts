@@ -45,7 +45,7 @@ export type DedupStrategy = (typeof DedupStrategy)[keyof typeof DedupStrategy];
 // ── Database Configuration ────────────────────────────────────────────
 
 export const DBConfig = {
-  MEMORY_LIMIT: '4GB',
+  MEMORY_LIMIT: '2GB',
   THREAD_COUNT: 4,
   HTTP_TIMEOUT: 300_000,
 

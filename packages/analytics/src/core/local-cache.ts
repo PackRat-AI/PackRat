@@ -5,7 +5,7 @@
  * sub-second queries. Ported from Python local_cache.py.
  */
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, realpathSync } from 'node:fs';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { tryit } from 'radash';
@@ -58,16 +58,18 @@ export class LocalCacheManager {
     if (this.conn) return this.conn;
 
     mkdirSync(this.cacheDir, { recursive: true });
-    this.instance = await DuckDBInstance.create(dbPath(this.cacheDir));
+    // Resolve symlinks so DuckDB writes temp/WAL files to the actual disk
+    const resolvedDir = realpathSync(this.cacheDir);
+    this.instance = await DuckDBInstance.create(dbPath(resolvedDir));
     this.conn = await this.instance.connect();
 
     await this.conn.run(`
       SET memory_limit='${DBConfig.MEMORY_LIMIT}';
       SET threads=${DBConfig.THREAD_COUNT};
-      SET temp_directory='${this.cacheDir}/tmp';
+      SET temp_directory='${resolvedDir}/tmp';
     `);
 
-    this.metadata = loadMetadata(this.cacheDir);
+    this.metadata = loadMetadata(resolvedDir) ?? loadMetadata(this.cacheDir);
     return this.conn;
   }
 
@@ -103,12 +105,48 @@ export class LocalCacheManager {
     // Configure S3/R2 credentials for CSV access
     await configureS3(conn);
 
+    // Discover site directories for batched ingest
+    const bucketPath = `s3://${env().R2_BUCKET_NAME}`;
+    const sitesResult = await conn.runAndReadAll(
+      `SELECT DISTINCT regexp_extract(file, 'v2/([^/]+)/', 1) as site
+       FROM glob('${bucketPath}/v2/*/*.csv')
+       WHERE regexp_extract(file, 'v2/([^/]+)/', 1) IS NOT NULL
+         AND regexp_extract(file, 'v2/([^/]+)/', 1) != ''
+       ORDER BY site`,
+    );
+    const sites = sitesResult.getRows().map((r) => String(r[0]));
+
     // Drop and rebuild tables
     await conn.run(`DROP TABLE IF EXISTS ${TABLE_NAME}`);
     await conn.run(`DROP TABLE IF EXISTS ${PRICE_HISTORY_TABLE}`);
 
-    await conn.run(this.queryBuilder.createCacheTable(TABLE_NAME));
-    await conn.run(this.queryBuilder.createPriceHistoryTable(PRICE_HISTORY_TABLE));
+    if (sites.length === 0) {
+      // Fallback: single-pass ingest (original behavior)
+      await conn.run(this.queryBuilder.createCacheTable(TABLE_NAME));
+      await conn.run(this.queryBuilder.createPriceHistoryTable(PRICE_HISTORY_TABLE));
+    } else {
+      // Batched ingest: one site at a time to control memory
+      const consola = await import('consola').then((m) => m.default);
+      let first = true;
+      for (const site of sites) {
+        consola.info(`  Ingesting ${site}...`);
+        const siteGlob = `v2/${site}/*.csv`;
+        if (first) {
+          await conn.run(this.queryBuilder.createCacheTable(TABLE_NAME, [siteGlob]));
+          await conn.run(
+            this.queryBuilder.createPriceHistoryTable(PRICE_HISTORY_TABLE, [siteGlob]),
+          );
+          first = false;
+        } else {
+          await conn.run(this.queryBuilder.insertIntoCacheTable(TABLE_NAME, [siteGlob]));
+          await conn.run(
+            this.queryBuilder.insertIntoPriceHistoryTable(PRICE_HISTORY_TABLE, [siteGlob]),
+          );
+        }
+        // Force checkpoint to flush to disk and free memory
+        await conn.run('CHECKPOINT');
+      }
+    }
 
     // Create indexes for fast queries
     await conn.run(`CREATE INDEX IF NOT EXISTS idx_site ON ${TABLE_NAME}(site)`);
@@ -123,10 +161,10 @@ export class LocalCacheManager {
     const countResult = await conn.runAndReadAll(`SELECT COUNT(*) as cnt FROM ${TABLE_NAME}`);
     const recordCount = Number(countResult.getRows()[0]?.[0] ?? 0);
 
-    const sitesResult = await conn.runAndReadAll(
+    const cachedSitesResult = await conn.runAndReadAll(
       `SELECT DISTINCT site FROM ${TABLE_NAME} ORDER BY site`,
     );
-    const sites = sitesResult.getRows().map((r) => String(r[0]));
+    const cachedSites = cachedSitesResult.getRows().map((r) => String(r[0]));
 
     const now = new Date().toISOString();
     saveMetadata(this.cacheDir, {
@@ -135,7 +173,7 @@ export class LocalCacheManager {
       created_at: this.metadata?.created_at ?? now,
       updated_at: now,
       record_count: recordCount,
-      sites,
+      sites: cachedSites,
     });
     this.metadata = loadMetadata(this.cacheDir);
   }
