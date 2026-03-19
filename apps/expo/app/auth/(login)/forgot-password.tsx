@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   AlertAnchor,
   Button,
@@ -32,7 +32,7 @@ const emailSchema = z.object({
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const alertRef = React.useRef<AlertRef>(null);
+  const alertRef = React.useRef<AlertMethods>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const { forgotPassword } = useAuthActions();
   const needsReauth = useAtomValue(needsReauthAtom);

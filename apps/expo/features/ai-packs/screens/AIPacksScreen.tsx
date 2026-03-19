@@ -1,7 +1,7 @@
 import {
   ActivityIndicator,
   Alert,
-  type AlertRef,
+  type AlertMethods,
   Button,
   LargeTitleHeader,
   Text,
@@ -20,7 +20,7 @@ import { useGeneratePacks } from '../hooks/useGeneratedPacks';
 export function AIPacksScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const { mutateAsync: generatePacks, isPending, generatedPacksFromStore } = useGeneratePacks();
   const [packsModalVisible, setPacksModalVisible] = useState(false);
   const router = useRouter();
@@ -35,7 +35,7 @@ export function AIPacksScreen() {
         alertRef.current?.alert({
           title: t('ai.packsGenerated'),
           message: t('ai.successfullyGenerated', { count: packs.length }),
-          materialIcon: { name: 'backpack', color: colors.green },
+          materialIcon: { name: 'bag-personal', color: colors.green },
           buttons: [
             { text: t('ai.return'), onPress: () => {} },
             {

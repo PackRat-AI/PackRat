@@ -55,12 +55,12 @@ export default function SettingsAndroidStyleScreen() {
         />
       )}
       <List
-        rootStyle={Platform.select({
+        style={Platform.select({
           ios: undefined,
           default: { paddingTop: insets.top },
         })}
         stickyHeaderIndices={Platform.select({ ios: undefined, default: [1] })}
-        rootClassName="bg-background ios:bg-background"
+        className="bg-background ios:bg-background"
         contentContainerClassName="pt-4 ios:pt-0"
         contentInsetAdjustmentBehavior="automatic"
         variant="full-width"

@@ -1,4 +1,4 @@
-import { LargeTitleHeader, type LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -28,7 +28,7 @@ export function TripsListScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const trips = useTrips();
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const handleTripPress = useCallback(
     (trip: Trip) => {
