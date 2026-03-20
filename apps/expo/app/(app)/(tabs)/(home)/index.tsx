@@ -15,6 +15,7 @@ import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
 import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
+import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
 import { GearInventoryTile } from 'expo-app/features/packs/components/GearInventoryTile';
@@ -129,6 +130,11 @@ const tileInfo = {
     keywords: ['guides', 'help', 'tutorial', 'documentation', 'learn'],
     component: GuidesTile,
   },
+  feed: {
+    title: 'Feed',
+    keywords: ['feed', 'photos', 'social', 'share', 'posts'],
+    component: FeedTile,
+  },
 };
 
 type TileName = keyof typeof tileInfo;
@@ -191,6 +197,7 @@ export default function DashboardScreen() {
     ...(featureFlags.enableShoppingList ? ['shopping-list'] : []),
     ...(featureFlags.enableSharedPacks ? ['shared-packs'] : []),
     ...(featureFlags.enablePackTemplates ? ['pack-templates'] : []),
+    ...(featureFlags.enableFeed ? ['feed'] : []),
     'gap 4',
     'guides',
   ]).current;
