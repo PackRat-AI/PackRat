@@ -30,7 +30,7 @@ import * as FileSystem from 'expo-file-system';
 import { router, Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Alert, Platform, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB

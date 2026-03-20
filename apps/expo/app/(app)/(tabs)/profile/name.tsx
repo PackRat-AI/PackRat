@@ -80,7 +80,7 @@ export default function NameScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom }}
       >
         <Form className="gap-5 px-4 pt-8">
-          <FormSection materialIconProps={{ name: 'person-outline' }}>
+          <FormSection materialIconProps={{ name: 'account-circle' }}>
             <FormItem>
               <TextField
                 textContentType="givenName"
@@ -116,7 +116,7 @@ export default function NameScreen() {
           {Platform.OS !== 'ios' && (
             <View className="items-end">
               <Button
-                className={cn('px-6', !canSave && 'bg-muted')}
+                // className={cn('px-6', !canSave && 'bg-muted')}
                 disabled={!canSave || isLoading}
                 onPress={handleSave}
               >
