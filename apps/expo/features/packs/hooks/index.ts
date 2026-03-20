@@ -16,7 +16,6 @@ export * from './usePackGapAnalysis';
 export * from './usePackItemDetailsFromApi';
 export * from './usePackItemDetailsFromStore';
 export * from './usePackItemOwnershipCheck';
-export * from './usePackItemSuggestions';
 export * from './usePackOwnershipCheck';
 export * from './usePacks';
 export * from './useSeasonSuggestions';

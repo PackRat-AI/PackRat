@@ -6,7 +6,6 @@ import {
   AvatarFallback,
   AvatarImage,
   Button,
-  ESTIMATED_ITEM_HEIGHT,
   List,
   ListItem,
   type ListRenderItemInfo,
@@ -15,13 +14,14 @@ import {
   useColorScheme,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
-import { ProfileAuthWall } from 'expo-app/features/profile/components';
-import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
+import { ProfileAuthWall } from 'expo-app/features/profile/components';
+import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -30,10 +30,8 @@ import * as FileSystem from 'expo-file-system';
 import { router, Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
-import { Alert, Linking, Platform, SafeAreaView, TouchableOpacity, View } from 'react-native';
-
-const ESTIMATED_ITEM_SIZE =
-  ESTIMATED_ITEM_HEIGHT[Platform.OS === 'ios' ? 'titleOnly' : 'withSubTitle'];
+import { Platform, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -71,7 +69,7 @@ function Profile() {
   ];
 
   return (
-    <>
+    <TabScreen>
       <Stack.Screen options={SCREEN_OPTIONS} />
 
       <List
@@ -79,12 +77,11 @@ function Profile() {
         variant="insets"
         data={DATA}
         sectionHeaderAsGap={Platform.OS === 'ios'}
-        estimatedItemSize={ESTIMATED_ITEM_SIZE}
         renderItem={renderItem}
         ListHeaderComponent={<ListHeaderComponent />}
         ListFooterComponent={<ListFooterComponent />}
       />
-    </>
+    </TabScreen>
   );
 }
 
@@ -172,9 +169,7 @@ function ListHeaderComponent() {
     <SafeAreaView className="ios:pb-8 items-center pb-4 pt-8">
       <TouchableOpacity onPress={handleAvatarPress} disabled={isUploading}>
         <Avatar alt={`${displayName}'s Profile`} className="h-24 w-24">
-          {avatarUri ? (
-            <AvatarImage source={{ uri: avatarUri }} />
-          ) : null}
+          {avatarUri ? <AvatarImage source={{ uri: avatarUri }} /> : null}
           <AvatarFallback>
             <Text
               variant="largeTitle"
@@ -245,6 +240,7 @@ function ListFooterComponent() {
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
+        testID="sign-out-button"
         disabled={isSigningOut}
         onPress={() => {
           if (hasUnsyncedChanges()) {
