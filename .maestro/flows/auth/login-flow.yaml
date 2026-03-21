@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Login Flow: Navigate to auth screen and sign in with email and password
 - launchApp
 
