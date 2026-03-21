@@ -340,10 +340,9 @@ async function fetchTikTokPostData(
 
     const result = await Tiktok.Downloader(url, {
       version: 'v1',
-      showOriginalResponse: true,
     });
 
-    console.log('TikTok API Raw Response:', JSON.stringify(result, null, 2));
+    console.log('TikTok API Parsed Response:', JSON.stringify(result, null, 2));
 
     if (result.status !== 'success') {
       console.error('Response debug:', {
@@ -360,31 +359,24 @@ async function fetchTikTokPostData(
     let contentId: string | undefined;
 
     // Get caption from description
-    if (result.resultNotParsed.content?.desc) {
-      caption = result.resultNotParsed.content.desc;
+    if (result.result?.desc) {
+      caption = result.result.desc;
     }
 
-    // Get content ID (aweme_id)
-    if (result.resultNotParsed.content?.aweme_id) {
-      contentId = result.resultNotParsed.content.aweme_id;
+    // Get content ID
+    if (result.result?.id) {
+      contentId = result.result.id;
     }
 
-    // Check for video content first
-    if (
-      result.resultNotParsed.content?.video?.play_addr?.url_list &&
-      result.resultNotParsed.content.video.play_addr.url_list.length > 0
-    ) {
-      videoUrl = result.resultNotParsed.content.video.play_addr.url_list[0];
-    }
-
-    // Get slideshow images from image_post_info (if no video or as fallback)
-    if (result.resultNotParsed.content?.image_post_info?.images) {
-      for (const image of result.resultNotParsed.content.image_post_info.images) {
-        if (image.display_image?.url_list && image.display_image.url_list.length > 0) {
-          // Use the first URL from the list (usually the best quality)
-          imageUrls.push(image.display_image.url_list[0]);
-        }
+    // Check content type and extract URLs accordingly
+    if (result.result?.type === 'video' && result.result.video?.playAddr) {
+      // Handle video content
+      if (Array.isArray(result.result.video.playAddr) && result.result.video.playAddr.length > 0) {
+        videoUrl = result.result.video.playAddr[0];
       }
+    } else if (result.result?.type === 'image' && result.result.images) {
+      // Handle image slideshow content
+      imageUrls.push(...result.result.images);
     }
 
     // Check if we have any content
@@ -474,8 +466,8 @@ app.post('/import', async (c) => {
       hasImages
         ? downloadAndRehostImages(fetchedData.imageUrls, fetchedData.contentId || 'unknown')
         : Promise.resolve({ rehostedUrls: [], failedCount: 0, expiresAt: '' }),
-      hasVideo
-        ? downloadAndRehostVideo(fetchedData.videoUrl!, fetchedData.contentId || 'unknown')
+      hasVideo && fetchedData.videoUrl
+        ? downloadAndRehostVideo(fetchedData.videoUrl, fetchedData.contentId || 'unknown')
         : Promise.resolve(null),
     ]);
 
