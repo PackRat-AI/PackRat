@@ -205,16 +205,16 @@ const generateFromTikTokRoutes = new OpenAPIHono<{
 }>();
 
 generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
+  const auth = c.get('user');
+
+  if (auth.role !== 'ADMIN') {
+    return c.json({ error: 'Forbidden: Admin access required' }, 403);
+  }
+
+  const body = c.req.valid('json');
+  const { tiktokUrl, isAppTemplate } = body;
+
   try {
-    const auth = c.get('user');
-
-    if (auth.role !== 'ADMIN') {
-      return c.json({ error: 'Forbidden: Admin access required' }, 403);
-    }
-
-    const body = c.req.valid('json');
-    const { tiktokUrl, isAppTemplate } = body;
-
     const { OPENAI_API_KEY } = getEnv(c);
     const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -312,8 +312,8 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     // Prepare DB records
     const now = new Date();
     const templateId = `pt_${nanoid()}`;
-    const resolvedName = name ?? analysis.templateName;
-    const resolvedCategory = category ?? analysis.templateCategory;
+    const resolvedName = analysis.templateName;
+    const resolvedCategory = analysis.templateCategory;
 
     // Insert the pack template and its items in a single transaction to ensure atomicity
     const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
