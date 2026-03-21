@@ -7,6 +7,7 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
 import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity, View } from 'react-native';
@@ -120,7 +121,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
           <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
             <View className="gap-2 mb-4">
               <TouchableOpacity
-                testID="add-manually-option"
+                testID={TestIds.AddManuallyOption}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={() => {
                   ref && typeof ref !== 'function' && ref.current?.close();
@@ -137,7 +138,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                testID="scan-from-photo-option"
+                testID={TestIds.ScanFromPhotoOption}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={handleAddFromPhoto}
               >
@@ -148,7 +149,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
-                testID="add-from-catalog-option"
+                testID={TestIds.AddFromCatalogOption}
                 className="flex-row gap-2 items-center rounded-lg border border-border bg-card p-4"
                 onPress={handleAddFromCatalog}
               >

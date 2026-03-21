@@ -18,6 +18,7 @@ import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { ProfileAuthWall } from 'expo-app/features/profile/components';
+import { TestIds } from 'expo-app/lib/testIds';
 import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -180,7 +181,7 @@ function ListFooterComponent() {
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
-        testID="sign-out-button"
+        testID={TestIds.SignOutButton}
         disabled={isSigningOut}
         onPress={() => {
           if (hasUnsyncedChanges()) {
