@@ -584,10 +584,10 @@ export class R2BucketService {
   private createR2Object(key: string, response: Record<string, unknown>): R2Object {
     const r2Object: R2Object = {
       key,
-      version: String(response.VersionId || ''),
-      size: Number(response.ContentLength) || 0,
+      version: (response.VersionId as string | undefined) ?? '',
+      size: (response.ContentLength as number | undefined) ?? 0,
       etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
-      httpEtag: String(response.ETag || ''),
+      httpEtag: (response.ETag as string | undefined) ?? '',
       checksums: this.createChecksums(response),
       uploaded: new Date(String(response.LastModified) || new Date()),
       httpMetadata: {
@@ -598,8 +598,11 @@ export class R2BucketService {
         cacheControl: response.CacheControl,
         cacheExpiry: response.Expires,
       },
-      customMetadata: (response.Metadata as Record<string, string>) || {},
-      storageClass: String(response.StorageClass || 'STANDARD'),
+      customMetadata:
+        response.Metadata !== null && typeof response.Metadata === 'object'
+          ? (response.Metadata as Record<string, string>)
+          : {},
+      storageClass: (response.StorageClass as string | undefined) ?? 'STANDARD',
       range: undefined,
       writeHttpMetadata: (_headers: Record<string, string>) => {
         // This is a no-op in our implementation
