@@ -332,7 +332,6 @@
     "change": "Change",
     "image": "Image",
     "itemName": "Item Name",
-    "itemDetails": "Item Details",
     "categoryExample": "Category (e.g., Shelter, Cooking)",
     "weightAndQuantity": "Weight & Quantity",
     "weightEach": "WEIGHT (EACH)",
@@ -397,10 +396,8 @@
     "destination": "Destination",
     "duration": "Duration",
     "packWeight": "Pack Weight",
-    "days": {
-      "one": "{{count}} day",
-      "other": "{{count}} days"
-    },
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
     "searchTrips": "Search trips",
     "dates": "Dates",
     "startDate": "Start Date",
