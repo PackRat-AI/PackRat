@@ -9,7 +9,6 @@ const Tabs = TabsPrimitive.Root;
 const TabsList = React.forwardRef<
   React.ComponentRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
@@ -25,7 +24,6 @@ TabsList.displayName = TabsPrimitive.List.displayName;
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
@@ -41,7 +39,6 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}

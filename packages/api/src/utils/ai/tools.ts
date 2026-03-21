@@ -10,7 +10,6 @@ import { tool } from 'ai';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function createTools(c: Context, userId: number) {
   const packService = new PackService(c, userId);
   const packItemService = new PackItemService(c, userId);

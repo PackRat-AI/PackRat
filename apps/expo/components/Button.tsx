@@ -11,7 +11,6 @@ type ButtonProps = {
   title?: string;
 } & TouchableOpacityProps;
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const Button = forwardRef<View, ButtonProps>(({ title, ...touchableProps }, ref) => {
   return (
     <TouchableOpacity ref={ref} {...touchableProps} style={[styles.button, touchableProps.style]}>

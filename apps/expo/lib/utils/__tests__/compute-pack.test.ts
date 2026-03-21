@@ -26,7 +26,6 @@ function makePackItem(
   };
 }
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function makePack(items: PackItem[] = [], overrides: Partial<Pack> = {}): Pack {
   return {
     id: 'pack-1',

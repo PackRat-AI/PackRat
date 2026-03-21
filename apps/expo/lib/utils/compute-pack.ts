@@ -1,7 +1,6 @@
 import type { Pack, WeightUnit } from 'expo-app/types';
 
 // Convert weights to a standard unit (grams) for calculations
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const convertToGrams = (weight: number, unit: WeightUnit): number => {
   switch (unit) {
     case 'g':
@@ -18,7 +17,6 @@ const convertToGrams = (weight: number, unit: WeightUnit): number => {
 };
 
 // Convert from grams back to the desired unit
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const convertFromGrams = (grams: number, unit: WeightUnit): number => {
   switch (unit) {
     case 'g':
@@ -34,7 +32,6 @@ const convertFromGrams = (grams: number, unit: WeightUnit): number => {
   }
 };
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const computePackWeights = (pack: Pack, preferredUnit: WeightUnit = 'g'): Pack => {
   if (!pack.items) {
     throw new Error(`Pack with ID ${pack.id} has no items`);
@@ -71,7 +68,6 @@ export const computePackWeights = (pack: Pack, preferredUnit: WeightUnit = 'g'):
 };
 
 // Helper function to compute weights for a list of packs
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const computePacksWeights = (packs: Pack[], preferredUnit: WeightUnit = 'g'): Pack[] => {
   return packs.map((pack) => computePackWeights(pack, preferredUnit));
 };

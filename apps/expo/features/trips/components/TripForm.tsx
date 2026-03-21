@@ -230,7 +230,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
                         display="default"
-                        // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
                         onChange={(_event, date) => {
                           setShowStartPicker(false);
                           if (date) {
@@ -266,7 +265,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         value={field.state.value ? new Date(field.state.value) : new Date()}
                         mode="date"
                         display="default"
-                        // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
                         onChange={(_event, date) => {
                           setShowEndPicker(false);
                           if (date) {

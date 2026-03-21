@@ -55,7 +55,6 @@ export default function TestimonialsSection() {
               </p>
 
               <div className="mt-4 md:mt-6 flex">
-                {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
                 {Array.from({ length: 5 }).map((_, i) => (
                   <svg
                     // biome-ignore lint/suspicious/noArrayIndexKey: ignore

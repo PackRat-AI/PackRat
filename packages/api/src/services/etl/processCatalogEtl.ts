@@ -77,7 +77,6 @@ export async function processCatalogETL({
       const row = record as string[];
       if (!isHeaderProcessed) {
         fieldMap = row.reduce(
-          // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
           (acc, header, idx) => {
             acc[header.trim()] = idx;
             return acc;

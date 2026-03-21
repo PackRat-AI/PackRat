@@ -70,7 +70,6 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout);
 };
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'ADD_TOAST':

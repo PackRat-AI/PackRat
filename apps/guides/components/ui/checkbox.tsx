@@ -8,7 +8,6 @@ import * as React from 'react';
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}

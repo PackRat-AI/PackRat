@@ -8,7 +8,6 @@ export const asyncStorage = createJSONStorage<WeatherLocation[]>(() => ({
     const value = await AsyncStorage.getItem(key);
     return value ? JSON.parse(value) : null;
   },
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   setItem: async (key: string, value: unknown) => {
     await AsyncStorage.setItem(key, JSON.stringify(value));
   },

@@ -130,7 +130,6 @@ export const ChatBubble = React.memo(function ChatBubble({
           isAI ? 'w-full' : 'py-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-2xl',
         )}
       >
-        {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
         {item.parts.map((part, idx) => {
           const key = `${part.type}-${idx}`;
           if (part.type === 'text')

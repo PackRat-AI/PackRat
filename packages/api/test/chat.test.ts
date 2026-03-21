@@ -219,7 +219,6 @@ describe('Chat Routes', () => {
     it('handles multiple rapid requests', async () => {
       const requests = Array(5)
         .fill(null)
-        // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
         .map((_, i) =>
           apiWithAuth(
             '/chat',

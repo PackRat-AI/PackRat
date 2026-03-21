@@ -97,7 +97,6 @@ export default function ChatIos() {
       previousTranslateX.value = translateX.value;
     })
     // Prevents blocking the scroll view and the swipe to go back gesture on iOS
-    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     .onTouchesMove((evt, state) => {
       if (!initialTouchLocation.value || !evt.changedTouches.length) {
         state.fail();

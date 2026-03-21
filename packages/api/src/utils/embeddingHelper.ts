@@ -2,7 +2,6 @@ import type { CatalogItem, PackItem } from '../db/schema';
 
 type ItemForEmbedding = Partial<CatalogItem> | Partial<PackItem>;
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const getEmbeddingText = (
   item: ItemForEmbedding,
   existingItem?: Partial<CatalogItem> | Partial<PackItem>,

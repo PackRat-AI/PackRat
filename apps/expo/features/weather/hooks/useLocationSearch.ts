@@ -34,7 +34,6 @@ export function useLocationSearch() {
     }
   };
 
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const searchByCoordinates = async (latitude: number, longitude: number) => {
     setIsLoading(true);
     setError(null);

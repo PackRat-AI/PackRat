@@ -10,7 +10,6 @@ import {
 import { createTestUser } from './utils/user-helpers';
 
 // Helper for auth-specific API calls
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const authApi = (path: string, init?: RequestInit) =>
   app.fetch(new Request(`http://localhost/api/auth${path}`, init));
 

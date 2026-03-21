@@ -11,7 +11,6 @@ export interface AIRequestLog {
   error?: string;
 }
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function logAIRequest(
   env: Env,
   headers: Headers,

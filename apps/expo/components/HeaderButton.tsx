@@ -3,7 +3,6 @@ import { forwardRef } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
 export const HeaderButton = forwardRef<typeof Pressable, { onPress?: () => void }>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ onPress }, _ref) => {
     return (
       <Pressable onPress={onPress}>

@@ -14,7 +14,6 @@ export type User = {
 // Token storage atom
 export const tokenAtom = atomWithStorage<string | null>('access_token', null, {
   getItem: (key) => Storage.getItemSync(key),
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   setItem: (key, value) => {
     if (value === null) return Storage.removeItemSync(key);
     return Storage.setItemSync(key, value);
@@ -24,7 +23,6 @@ export const tokenAtom = atomWithStorage<string | null>('access_token', null, {
 
 export const refreshTokenAtom = atomWithStorage<string | null>('refresh_token', null, {
   getItem: (key) => Storage.getItemSync(key),
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   setItem: (key, value) => {
     if (value === null) return Storage.removeItemSync(key);
     return Storage.setItemSync(key, value);

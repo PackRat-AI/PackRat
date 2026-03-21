@@ -27,7 +27,6 @@ export async function searchLocations(query: string): Promise<LocationSearchResu
  * Search for locations by coordinates
  */
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function searchLocationsByCoordinates(
   latitude: number,
   longitude: number,
@@ -158,7 +157,6 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
  * Get background gradient colors based on weather condition
  */
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function getWeatherBackgroundColors(
   code: number,
   isNight: boolean,

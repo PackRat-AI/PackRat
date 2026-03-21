@@ -2,7 +2,6 @@ import type { PackWithItems } from '@packrat/api/db/schema';
 import type { WeightUnit } from '@packrat/api/types';
 
 // Convert weights to a standard unit (grams) for calculations
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const convertToGrams = (weight: number, unit: WeightUnit): number => {
   switch (unit) {
     case 'g':
@@ -19,7 +18,6 @@ const convertToGrams = (weight: number, unit: WeightUnit): number => {
 };
 
 // Convert from grams back to the desired unit
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const convertFromGrams = (grams: number, unit: WeightUnit): number => {
   switch (unit) {
     case 'g':
@@ -35,7 +33,6 @@ const convertFromGrams = (grams: number, unit: WeightUnit): number => {
   }
 };
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const computePackWeights = (
   pack: PackWithItems,
   preferredUnit: WeightUnit = 'g',
@@ -79,7 +76,6 @@ export const computePackWeights = (
 };
 
 // Helper function to compute weights for a list of packs
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const computePacksWeights = (
   packs: PackWithItems[],
   preferredUnit: WeightUnit = 'g',

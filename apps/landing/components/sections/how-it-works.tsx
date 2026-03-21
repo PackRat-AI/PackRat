@@ -46,7 +46,6 @@ export default function HowItWorksSection() {
           <div className="absolute left-1/2 top-12 h-[calc(100%-5rem)] w-[2px] -translate-x-1/2 bg-gradient-to-b from-orange-300 via-orange-300 to-transparent lg:left-1/2 lg:top-1/2 lg:h-[2px] lg:w-[calc(100%-15rem)] lg:-translate-y-1/2 lg:bg-gradient-to-r hidden md:block" />
 
           <div className="grid gap-8 md:gap-12 lg:gap-16 lg:grid-cols-3">
-            {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
             {siteConfig.howItWorks.steps.map((step, index) => {
               const icon = stepIcons[index];
               assertDefined(icon);

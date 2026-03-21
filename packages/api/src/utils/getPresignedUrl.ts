@@ -3,7 +3,6 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { Context } from 'hono';
 import { getEnv } from './env-validation';
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export async function getPresignedUrl(
   c: Context,
   command: GetObjectCommand | PutObjectCommand,

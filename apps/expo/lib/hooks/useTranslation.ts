@@ -27,7 +27,6 @@ export function useTranslation() {
    * @returns Translated string
    */
 
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const t = (key: string, options?: TranslateOptions) => {
     return i18n.t(key, options);
   };

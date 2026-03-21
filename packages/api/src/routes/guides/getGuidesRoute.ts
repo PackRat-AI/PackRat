@@ -119,7 +119,6 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
     // Apply sorting
     if (sort) {
-      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       filteredGuides.sort((a, b) => {
         const aValue = String(a[sort.field as keyof typeof a]);
         const bValue = String(b[sort.field as keyof typeof b]);
@@ -132,7 +131,6 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       });
     } else {
       // Default sort by title
-      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       filteredGuides.sort((a, b) => String(a.title).localeCompare(String(b.title)));
     }
 

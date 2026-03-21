@@ -1,6 +1,5 @@
 import type { WeightUnit } from '../types';
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const convertFromGrams = (grams: number, unit: WeightUnit): number => {
   switch (unit) {
     case 'g':

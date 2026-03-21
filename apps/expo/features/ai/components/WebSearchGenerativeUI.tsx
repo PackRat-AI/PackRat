@@ -120,7 +120,6 @@ export function WebSearchGenerativeUI({ toolInvocation }: WebSearchGenerativeUIP
                         </Text>
                       </View>
                       <View className="gap-3">
-                        {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
                         {toolInvocation.output.data.sources.map((source, index) => (
                           <Pressable
                             key={source.id || index}

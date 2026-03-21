@@ -33,7 +33,6 @@ export default function GearInventoryScreen() {
 
   const groupByCategory = (items: PackItem[]) => {
     return items.reduce(
-      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       (acc, item) => {
         const category = item.category || 'Other';
 

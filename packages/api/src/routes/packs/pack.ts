@@ -334,9 +334,7 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
   }
 
   const avgEmbedding = firstEmbedding.map(
-    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     (_, i) =>
-      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       existingEmbeddings.reduce((sum, emb) => sum + (emb?.[i] ?? 0), 0) / existingEmbeddings.length,
   );
 

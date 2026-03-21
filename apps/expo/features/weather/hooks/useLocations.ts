@@ -29,7 +29,6 @@ export function useLocations() {
     setBaseLocations(locations.filter((loc) => loc.id !== locationId));
   };
 
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const updateLocation = (locationId: number, updates: Partial<WeatherLocation>) => {
     if (locationsState.state !== 'hasData') return;
 

@@ -19,7 +19,6 @@ const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
 // Apply global middleware
 app
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   .use((c, next) => {
     return sentry({
       environment: getEnv(c).ENVIRONMENT,
@@ -32,7 +31,6 @@ app
       _experiments: { enableLogs: true },
     })(c, next);
   })
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   .use((c, next) => {
     const sentry = c.get('sentry');
     const user = c.get('user');
@@ -41,7 +39,6 @@ app
     }
     return next();
   })
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   .onError((err, c) => {
     console.error('Error occurred:', err);
     if (err instanceof HTTPException) {
@@ -82,7 +79,6 @@ export { TikTokContainer };
 
 export default {
   fetch: app.fetch,
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
       if (!env.ETL_QUEUE) {

@@ -81,7 +81,6 @@ function IconView({ className, name }: { className?: string; name: MaterialIconN
   );
 }
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function keyExtractor(item: MockData, _index: number) {
   return typeof item === 'string' ? item : item.id;
 }

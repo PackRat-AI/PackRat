@@ -20,7 +20,6 @@ const colors = {
   cyan: '\x1b[36m',
 };
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function log(message: string, color: keyof typeof colors = 'reset') {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
@@ -37,7 +36,6 @@ async function hasCleanScript(workspacePath: string): Promise<boolean> {
   }
 }
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function cleanWorkspace(workspacePath: string, workspaceName: string): Promise<CleanResult> {
   log(`\nCleaning ${workspaceName}...`, 'cyan');
 
@@ -146,7 +144,6 @@ async function main() {
   const successful = results.filter((r) => r.success).length;
   const failed = results.filter((r) => !r.success).length;
   const byMethod = results.reduce(
-    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     (acc, r) => {
       if (r.success) acc[r.method]++;
       return acc;

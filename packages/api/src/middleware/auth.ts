@@ -3,7 +3,6 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import type { MiddlewareHandler } from 'hono';
 import { verify } from 'hono/jwt';
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const authMiddleware: MiddlewareHandler = async (c, next) => {
   const authHeader = c.req.header('Authorization');
 

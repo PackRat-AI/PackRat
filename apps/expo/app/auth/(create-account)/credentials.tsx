@@ -139,7 +139,12 @@ export default function CredentialsScreen() {
         };
 
         // Call signup function with all user data
-        await signUp(userData.email, userData.password, userData.firstName, userData.lastName);
+        await signUp({
+          email: userData.email,
+          password: userData.password,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+        });
 
         // Navigate to verification code screen
         router.push({

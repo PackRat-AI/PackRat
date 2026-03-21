@@ -2,7 +2,6 @@ import { cn } from 'landing-app/lib/utils';
 import * as React from 'react';
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
@@ -14,7 +13,6 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
 Card.displayName = 'Card';
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn('flex flex-col space-y-1.5 p-6', className)} {...props} />
   ),
@@ -22,7 +20,6 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 CardHeader.displayName = 'CardHeader';
 
 const CardTitle = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
@@ -34,7 +31,6 @@ const CardTitle = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivE
 CardTitle.displayName = 'CardTitle';
 
 const CardDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn('text-sm text-muted-foreground', className)} {...props} />
   ),
@@ -42,7 +38,6 @@ const CardDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HT
 CardDescription.displayName = 'CardDescription';
 
 const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
   ),
@@ -50,7 +45,6 @@ const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
 CardContent.displayName = 'CardContent';
 
 const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, ...props }, ref) => (
     <div ref={ref} className={cn('flex items-center p-6 pt-0', className)} {...props} />
   ),

@@ -138,7 +138,6 @@ function parseContentFile(filePath: string): {
  * Write enhanced content back to file
  */
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function writeEnhancedContent(
   filePath: string,
   metadata: Record<string, unknown>,
@@ -152,7 +151,6 @@ function writeEnhancedContent(
  * Enhance a single content file
  */
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function enhanceFile(
   filePath: string,
   options: CliOptions,

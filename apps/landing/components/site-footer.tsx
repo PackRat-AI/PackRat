@@ -10,7 +10,6 @@ import type React from 'react';
 
 export default function SiteFooter() {
   // Handle smooth scrolling when clicking on navigation links
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const targetId = href.substring(1);

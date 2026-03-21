@@ -90,7 +90,6 @@ export function CatalogItemsGenerativeUI({ toolInvocation }: CatalogItemsGenerat
             // pagingEnabled
           >
             <View className="flex-row gap-4">
-              {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
               {items.map((item, _index) => (
                 <View key={item.id} style={{ width: screenWidth - 64 }}>
                   <CatalogItemCard onPress={() => handleItemPress(item)} item={item} />

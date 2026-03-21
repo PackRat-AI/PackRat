@@ -54,7 +54,6 @@ export default function FaqSection() {
         <div className="mx-auto max-w-3xl">
           <GradientBorderCard className="bg-card/80 backdrop-blur-sm">
             <Accordion type="single" collapsible className="w-full">
-              {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
               {faqs.map((faq, index) => (
                 <div key={faq.question}>
                   <AccordionItem value={`item-${index}`} className="border-b border-border">

@@ -105,7 +105,6 @@ export const SimilarItems: React.FC<SimilarItemsProps> = ({
           showsHorizontalScrollIndicator={false}
           data={Array(3).fill(null)}
           renderItem={() => <LoadingCard />}
-          // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
           keyExtractor={(_, index) => `loading-${index}`}
           contentContainerStyle={{ paddingHorizontal: 16 }}
         />

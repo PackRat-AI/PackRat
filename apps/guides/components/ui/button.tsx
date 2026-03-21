@@ -36,7 +36,6 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
     return (

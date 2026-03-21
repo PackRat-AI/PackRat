@@ -98,7 +98,6 @@ function MemberAvatars({ members }: { members: { id: string; name: string; avata
 
   return (
     <View className="flex-row">
-      {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
       {displayMembers.map((member, index) => (
         <Avatar
           alt={member.name}

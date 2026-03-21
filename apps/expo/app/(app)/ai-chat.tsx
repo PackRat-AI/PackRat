@@ -231,7 +231,6 @@ export default function AIChat() {
         listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
     );
   };
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const onContentSizeChange = (_contentWidth: number, contentHeight: number) => {
     listLayoutRef.current.contentHeight = contentHeight;
     setIsArrowButtonVisible(
@@ -279,7 +278,6 @@ export default function AIChat() {
             />
           </View>
 
-          {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
           {messages.map((item, index) => {
             // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;

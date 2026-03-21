@@ -9,7 +9,6 @@ import * as React from 'react';
 const InputOTP = React.forwardRef<
   React.ElementRef<typeof OTPInput>,
   React.ComponentPropsWithoutRef<typeof OTPInput>
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, containerClassName, ...props }, ref) => (
   <OTPInput
     ref={ref}
@@ -26,7 +25,6 @@ InputOTP.displayName = 'InputOTP';
 const InputOTPGroup = React.forwardRef<
   React.ElementRef<'div'>,
   React.ComponentPropsWithoutRef<'div'>
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ className, ...props }, ref) => (
   <div ref={ref} className={cn('flex items-center', className)} {...props} />
 ));
@@ -35,7 +33,6 @@ InputOTPGroup.displayName = 'InputOTPGroup';
 const InputOTPSlot = React.forwardRef<
   React.ElementRef<'div'>,
   React.ComponentPropsWithoutRef<'div'> & { index: number }
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ index, className, ...props }, ref) => {
   const inputOTPContext = React.useContext(OTPInputContext);
   const slotProps = inputOTPContext.slots[index];
@@ -66,7 +63,6 @@ InputOTPSlot.displayName = 'InputOTPSlot';
 const InputOTPSeparator = React.forwardRef<
   React.ElementRef<'div'>,
   React.ComponentPropsWithoutRef<'div'>
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 >(({ ...props }, ref) => (
   <div ref={ref} aria-hidden="true" {...props}>
     <Dot />

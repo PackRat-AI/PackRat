@@ -50,7 +50,6 @@ function CustomList({
 }) {
   return (
     <View>
-      {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
       {data.map((item, index) => (
         <View key={keyExtractor(item, index)}>{renderItem(item, index)}</View>
       ))}
@@ -175,7 +174,6 @@ export default function CurrentPackScreen() {
           <CustomList
             data={uniqueCategories}
             keyExtractor={(item) => (item as CategorySummary).name}
-            // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
             renderItem={(item, index) => (
               <CategoryItem category={item as CategorySummary} index={index} />
             )}
@@ -192,9 +190,7 @@ export default function CurrentPackScreen() {
 
           <CustomList
             data={pack.items}
-            // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
             keyExtractor={(_, index) => index.toString()}
-            // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
             renderItem={(item, index) => <ItemRow item={item as PackItem} index={index} />}
           />
         </View>

@@ -1,4 +1,3 @@
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function convertToGrams(weight: number, unit: string): number {
   switch (unit.toLowerCase()) {
     case 'kg':

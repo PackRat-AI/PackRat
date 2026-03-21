@@ -59,8 +59,7 @@ export function CategoriesFilter({
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
           {!data
-            ? // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
-              Array.from({ length: 10 }).map((_, i) => (
+            ? Array.from({ length: 10 }).map((_, i) => (
                 <View
                   // biome-ignore lint/suspicious/noArrayIndexKey: just for skeleton
                   key={i}

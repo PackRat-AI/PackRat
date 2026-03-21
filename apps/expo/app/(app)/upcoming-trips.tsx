@@ -14,7 +14,6 @@ function formatDate(dateString?: string) {
 }
 
 // Calculate trip status based on dates
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function getTripStatus(trip: { startDate?: string; endDate?: string }, t: TranslationFunction) {
   if (!trip.startDate || !trip.endDate) return { status: t('trips.notStarted'), completion: 0 };
 

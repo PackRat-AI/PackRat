@@ -25,7 +25,6 @@ export function RecentPacksTile() {
       titleClassName="text-lg"
       leftView={
         <View className="flex-row px-3">
-          {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
           {recentPacks.slice(0, 2).map((pack, index) => {
             const img = pack?.image ?? fallbackImage;
             return (

@@ -2,7 +2,6 @@ import type { Pack, WeightUnit } from '../types';
 import { convertFromGrams } from './convertFromGrams';
 import { convertToGrams } from './convertToGrams';
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const computePackWeights = (
   pack: Omit<Pack, 'baseWeight' | 'totalWeight'>,
   preferredUnit: WeightUnit = 'g',

@@ -32,7 +32,6 @@ interface TemplateItemsSectionProps {
 }
 
 // Helper function to format weight
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const formatWeight = (weight: number, unit: string) => {
   if (weight < 1 && unit === 'kg') {
     return `${(weight * 1000).toFixed(0)}g`;
@@ -106,7 +105,6 @@ const TemplateItemCard = ({ item }: { item: PackTemplateItem }) => {
 export const TemplateItemsSection = ({ templateItems }: TemplateItemsSectionProps) => {
   // Calculate total weight and item count for template
   const templateStats = templateItems.reduce(
-    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     (acc, item) => ({
       totalWeight: acc.totalWeight + item.weight * item.quantity,
       totalItems: acc.totalItems + item.quantity,

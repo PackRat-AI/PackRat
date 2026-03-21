@@ -2,7 +2,6 @@ import { cn } from 'landing-app/lib/utils';
 import * as React from 'react';
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   ({ className, type, ...props }, ref) => {
     return (
       <input

@@ -21,7 +21,6 @@ export interface SimilarItemsParams {
 }
 
 // API function for catalog item similar items
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const getSimilarCatalogItems = async (
   id: string,
   params?: SimilarItemsParams,
@@ -41,7 +40,6 @@ export const getSimilarCatalogItems = async (
 };
 
 // API function for pack item similar items
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export const getSimilarPackItems = async (
   packId: string,
   itemId: string,
@@ -62,7 +60,6 @@ export const getSimilarPackItems = async (
 };
 
 // Hook for catalog item similar items
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function useSimilarCatalogItems(id: string, params?: SimilarItemsParams) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
@@ -75,7 +72,6 @@ export function useSimilarCatalogItems(id: string, params?: SimilarItemsParams) 
 }
 
 // Hook for pack item similar items
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function useSimilarPackItems(packId: string, itemId: string, params?: SimilarItemsParams) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 

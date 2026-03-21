@@ -25,7 +25,6 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 // Create database connection based on URL type
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const createConnection = (url: string, useNeonHttp?: boolean) => {
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL (tests)

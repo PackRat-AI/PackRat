@@ -43,7 +43,6 @@ export class PackService {
   private userId: number;
   private readonly c: Context;
 
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   constructor(c: Context, userId: number) {
     this.db = createDb(c);
     this.userId = userId;
@@ -160,26 +159,23 @@ export class PackService {
       1,
     );
 
-    return (
-      packItemConcepts
-        // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
-        .map((item, idx) => {
-          const catalogItem = searchResults.items[idx]?.[0];
-          if (!catalogItem) {
-            return null;
-          }
+    return packItemConcepts
+      .map((item, idx) => {
+        const catalogItem = searchResults.items[idx]?.[0];
+        if (!catalogItem) {
+          return null;
+        }
 
-          return {
-            ...item,
-            catalogItemId: catalogItem.id,
-            name: catalogItem.name,
-            description: catalogItem.description,
-            weight: catalogItem.weight,
-            weightUnit: catalogItem.weightUnit,
-            image: catalogItem.images?.[0],
-          };
-        })
-        .filter((item): item is NonNullable<typeof item> => item !== null)
-    );
+        return {
+          ...item,
+          catalogItemId: catalogItem.id,
+          name: catalogItem.name,
+          description: catalogItem.description,
+          weight: catalogItem.weight,
+          weightUnit: catalogItem.weightUnit,
+          image: catalogItem.images?.[0],
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
   }
 }

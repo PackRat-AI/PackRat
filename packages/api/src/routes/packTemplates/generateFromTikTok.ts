@@ -49,7 +49,6 @@ Focus on items that would realistically appear in an outdoor adventure packing l
  * Fetch TikTok slideshow data using TikTok Container binding
  */
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function fetchTikTokPostData(
   c: Context<{ Bindings: Env; Variables: Variables }>,
   url: string,
@@ -337,7 +336,6 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
         .returning();
 
       // Insert template items — prefer catalog match, fall back to detected item data
-      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       const itemRecords = analysis.items.map((detected, index) => {
         const catalogMatches = batchResult.items[index] ?? [];
         const bestMatch = catalogMatches[0];

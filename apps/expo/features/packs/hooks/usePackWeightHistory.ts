@@ -52,7 +52,6 @@ const getMonthlyWeightAverages = (data: PackWeightHistoryEntry[]) => {
   });
 
   // Sort chronologically by year + month
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   return monthlyAverages.sort((a, b) => {
     const aKey = `${a.year}-${monthNames.indexOf(a.month)}`;
     const bKey = `${b.year}-${monthNames.indexOf(b.month)}`;
@@ -72,7 +71,6 @@ export function usePackWeightHistory(packId: string) {
   const weightHistory = use$(() => {
     const history = Object.values(packWeigthHistoryStore.get())
       .filter((item) => item.packId === packId)
-      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       .sort((a, b) => {
         // Convert dates to timestamps for comparison
         const dateA = new Date(a.localCreatedAt).getTime();

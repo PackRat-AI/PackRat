@@ -10,7 +10,6 @@ export function useCreatePackFromTemplate() {
   const createPackItem = useCreatePackItem();
 
   const createPackFromTemplate = useCallback(
-    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     (packTemplateId: string, packData: PackInput) => {
       const packId = createPack(packData);
 

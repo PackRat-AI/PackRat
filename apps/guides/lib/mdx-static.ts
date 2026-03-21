@@ -14,7 +14,6 @@ export function getMdxContent(slug: string): string {
   return postContent[slug] || `<p>Content not found for ${slug}</p>`;
 }
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 export function getRelatedPosts(post: Post, count = 3): Post[] {
   // Filter out the current post
   const otherPosts = posts.filter((p) => p.slug !== post.slug);
@@ -25,7 +24,6 @@ export function getRelatedPosts(post: Post, count = 3): Post[] {
   );
 
   // Sort by number of matching categories
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   relatedByCategory.sort((a, b) => {
     const aMatches =
       a.categories?.filter((category) => post.categories?.includes(category)).length || 0;

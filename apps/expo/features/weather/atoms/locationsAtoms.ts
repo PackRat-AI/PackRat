@@ -27,7 +27,6 @@ export const activeLocationAtom = atom(
     // Return null during loading or error states
     return null;
   },
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   (get, set, newActiveId: number) => {
     const locationsResult = get(locationsAtom);
 

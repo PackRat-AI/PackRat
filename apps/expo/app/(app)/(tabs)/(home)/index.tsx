@@ -315,7 +315,6 @@ function renderDashboardItem<T extends ListDataItem>(info: ListRenderItemInfo<T>
   );
 }
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function keyExtractor(item: string, _index: number) {
   return item;
 }

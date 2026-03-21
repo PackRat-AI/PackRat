@@ -60,7 +60,6 @@ const TikTokImportSchema = z.object({
  * Detect image content type and file extension from response headers or buffer
  */
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 function detectImageTypeAndExtension(
   response: Response,
   buffer?: ArrayBuffer,
@@ -134,7 +133,6 @@ function detectImageTypeAndExtension(
  * Download image and rehost to R2 with 5-minute expiration
  */
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function downloadAndRehostImage(
   imageUrl: string,
   contentId: string,
@@ -203,7 +201,6 @@ async function downloadAndRehostImage(
  * Download and rehost multiple images with best effort approach
  */
 
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 async function downloadAndRehostImages(
   imageUrls: string[],
   contentId: string,
@@ -221,14 +218,12 @@ async function downloadAndRehostImages(
 
   // Process all images in parallel with best effort approach
   const results = await Promise.allSettled(
-    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     imageUrls.map((url, index) => downloadAndRehostImage(url, contentId, index)),
   );
 
   const rehostedUrls: string[] = [];
   let failedCount = 0;
 
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   results.forEach((result, index) => {
     if (result.status === 'fulfilled' && result.value) {
       rehostedUrls.push(result.value);
@@ -400,7 +395,6 @@ app.post('/import', async (c) => {
 });
 
 // Error handler
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 app.onError((err, c) => {
   console.error('Unhandled error:', err);
   return c.json(

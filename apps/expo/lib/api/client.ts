@@ -37,7 +37,6 @@ let failedQueue: Array<{
 }> = [];
 
 // Process the queue of failed requests
-// biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
 const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue.forEach((request) => {
     if (error) {
@@ -85,7 +84,6 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // If already refreshing, add request to queue
-        // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject, config: originalRequest });
         });

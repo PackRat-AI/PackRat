@@ -34,7 +34,6 @@ export default function SeasonSuggestionsScreen() {
     });
   };
 
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const handleCreatePack = (suggestion: PackSuggestion, index: number) => {
     setCreatingPackIndex(index);
 
@@ -123,7 +122,6 @@ export default function SeasonSuggestionsScreen() {
                 </View>
               </View>
 
-              {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
               {seasonSuggestionsMutation.data.suggestions.map((suggestion, index) => (
                 <View key={suggestion.name} className="rounded-xl border border-border bg-card p-4">
                   <View className="mb-3">

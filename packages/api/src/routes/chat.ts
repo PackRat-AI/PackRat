@@ -272,7 +272,6 @@ chatRoutes.openapi(getReportsRoute, async (c) => {
   }
 
   const reportedItems = await db.query.reportedContent.findMany({
-    // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
     orderBy: (reportedContent, { desc }) => [desc(reportedContent.createdAt)],
     with: {
       user: true,

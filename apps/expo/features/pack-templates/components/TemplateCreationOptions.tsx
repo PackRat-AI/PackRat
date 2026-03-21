@@ -16,7 +16,6 @@ import { TikTokImportModal } from './TikTokImportModal';
 type TemplateCreationOptionsProps = Record<string, never>;
 
 export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   function TemplateCreationOptions(_props, ref) {
     const { t } = useTranslation();
     const { colors } = useColorScheme();

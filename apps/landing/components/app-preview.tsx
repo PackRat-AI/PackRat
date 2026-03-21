@@ -52,7 +52,6 @@ export default function AppPreview() {
         </motion.div>
       </AnimatePresence>
       <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-2 z-10">
-        {/** biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter */}
         {screens.map((_, index) => (
           <button
             // biome-ignore lint/suspicious/noArrayIndexKey: ignore

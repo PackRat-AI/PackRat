@@ -26,7 +26,6 @@ export default function ReportedContentScreen() {
     return item.status === selectedFilter;
   });
 
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const handleReview = (id: string, status: 'reviewed' | 'dismissed') => {
     updateMutation.mutate({ id, status });
   };

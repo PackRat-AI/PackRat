@@ -8,7 +8,6 @@ export function useBulkAddCatalogItems() {
   const [isLoading, setIsLoading] = useState(false);
   const createItem = useCreatePackItem();
 
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const addItemsToPack = async (packId: string, catalogItems: CatalogItemWithPackItemFields[]) => {
     if (catalogItems.length === 0) return;
 

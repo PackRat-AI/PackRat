@@ -49,7 +49,6 @@ const DefaultFallback = () => {
 };
 
 export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBoundaryProps) {
-  // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
   const handleError = (error: unknown, info: { componentStack: string }) => {
     // Log the error to your preferred logging service
     console.error('Error caught by ErrorBoundary:', error);
@@ -65,7 +64,6 @@ export function ErrorBoundary({ children, fallback, onReset, onError }: ErrorBou
     <Sentry.ErrorBoundary
       fallback={fallback ? fallback : DefaultFallback}
       onReset={onReset}
-      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       onError={(error: unknown, componentStack: ErrorInfo['componentStack']) =>
         handleError(error, { componentStack: componentStack || '' })
       }

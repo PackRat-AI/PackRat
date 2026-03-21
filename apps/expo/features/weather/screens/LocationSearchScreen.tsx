@@ -200,7 +200,6 @@ export default function LocationSearchScreen() {
       });
 
       // Set a timeout for location retrieval
-      // biome-ignore lint/complexity/useMaxParams: existing code - migrate to single typed object parameter
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Location request timed out')), 15000),
       );
