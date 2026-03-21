@@ -52,14 +52,11 @@ BreadcrumbLink.displayName = 'BreadcrumbLink';
 
 const BreadcrumbPage = React.forwardRef<HTMLSpanElement, React.ComponentPropsWithoutRef<'span'>>(
   ({ className, ...props }, ref) => (
-    // biome-ignore lint/a11y/useSemanticElements: shadcn BreadcrumbPage uses <span> with role="link" intentionally
     <span
       ref={ref}
-      role="link"
       aria-disabled="true"
       aria-current="page"
       className={cn('font-normal text-foreground', className)}
-      tabIndex={0}
       {...props}
     />
   ),

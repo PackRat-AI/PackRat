@@ -1,3 +1,4 @@
+import type { Container } from '@cloudflare/containers';
 import type { Ai, DurableObjectNamespace, Queue, R2Bucket } from '@cloudflare/workers-types';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
@@ -109,7 +110,7 @@ export type ValidatedEnv = Omit<
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
   // TikTok Container Durable Object binding
-  TIKTOK_CONTAINER: DurableObjectNamespace;
+  TIKTOK_CONTAINER: DurableObjectNamespace<Container<unknown>>;
 };
 
 // Cache for validated environments per request

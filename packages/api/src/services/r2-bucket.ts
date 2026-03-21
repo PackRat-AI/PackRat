@@ -582,12 +582,12 @@ export class R2BucketService {
   }
 
   private createR2Object(key: string, response: Record<string, unknown>): R2Object {
-    const r2Object = {
+    const r2Object: R2Object = {
       key,
-      version: response.VersionId || '',
-      size: response.ContentLength || 0,
+      version: String(response.VersionId || ''),
+      size: Number(response.ContentLength) || 0,
       etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
-      httpEtag: response.ETag || '',
+      httpEtag: String(response.ETag || ''),
       checksums: this.createChecksums(response),
       uploaded: new Date(String(response.LastModified) || new Date()),
       httpMetadata: {
@@ -598,23 +598,15 @@ export class R2BucketService {
         cacheControl: response.CacheControl,
         cacheExpiry: response.Expires,
       },
-      customMetadata: response.Metadata || {},
-      storageClass: response.StorageClass || 'STANDARD',
+      customMetadata: (response.Metadata as Record<string, string>) || {},
+      storageClass: String(response.StorageClass || 'STANDARD'),
+      range: undefined,
       writeHttpMetadata: (_headers: Record<string, string>) => {
         // This is a no-op in our implementation
       },
     };
 
-    // Add range if present
-    if (response.ContentRange) {
-      // @ts-expect-error - ignore
-      r2Object.range = response.ContentRange; // Assign the value if it exists
-    } else {
-      // @ts-expect-error - ignore
-      r2Object.range = undefined; // Explicitly set to undefined if not present
-    }
-
-    return r2Object as R2Object;
+    return r2Object;
   }
 
   private createChecksums(response: Record<string, unknown>): R2Checksums {

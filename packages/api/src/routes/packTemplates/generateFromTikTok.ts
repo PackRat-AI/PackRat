@@ -232,8 +232,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     } catch (apiError) {
       console.error('TikTok service call failed:', apiError);
       c.get('sentry').captureException(apiError, {
-        tags: { errorType: 'tiktok_service_error' },
-        extra: { tiktokUrl },
+        extra: { tiktokUrl, errorType: 'tiktok_service_error' },
       });
       return c.json(
         {
@@ -372,8 +371,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
   } catch (error) {
     console.error('Error generating pack template from TikTok:', error);
     c.get('sentry').captureException(error, {
-      tags: { errorType: 'template_generation_error' },
-      extra: { tiktokUrl },
+      extra: { tiktokUrl, errorType: 'template_generation_error' },
     });
 
     // Determine specific error type based on error context
