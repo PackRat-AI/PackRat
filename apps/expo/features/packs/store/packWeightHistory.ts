@@ -4,6 +4,7 @@ import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { isAuthed } from 'expo-app/features/auth/store';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { obs } from 'expo-app/lib/store';
 import Storage from 'expo-sqlite/kv-store';
 import { nanoid } from 'nanoid/non-secure';
 import type { PackWeightHistoryEntry } from '../types';
@@ -68,16 +69,14 @@ syncObservable(
 );
 
 export function recordPackWeight(packId: string) {
-  // @ts-expect-error: Safe because Legend-State uses Proxy
-  const pack = packsStore[packId].peek();
+  const pack = obs(packsStore, packId).peek();
   const packItems = Object.values(packItemsStore.peek()).filter(
     (item) => item.packId === packId && !item.deleted,
   );
   const { totalWeight } = computePackWeights({ ...pack, items: packItems });
   const id = nanoid();
 
-  // @ts-expect-error: Safe because Legend-State uses Proxy
-  packWeigthHistoryStore[id].set({
+  obs(packWeigthHistoryStore, id).set({
     id,
     packId,
     weight: totalWeight,

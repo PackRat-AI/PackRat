@@ -13,6 +13,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { obs } from 'expo-app/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -35,8 +36,7 @@ export function PackDetailScreen() {
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
-    // @ts-expect-error: Safe because Legend-State uses Proxy
-    packingModeStore[id as string].get() || {},
+    obs(packingModeStore, id as string).get() || {},
   );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
@@ -95,8 +95,7 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    // @ts-expect-error: Safe because Legend-State uses Proxy
-    packingModeStore[id as string].set({ ...packedItems });
+    obs(packingModeStore, id as string).set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
     Toast.show({
@@ -109,12 +108,10 @@ export function PackDetailScreen() {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-      // @ts-expect-error: Safe because Legend-State uses Proxy
-      setPackedItems(packingModeStore[id as string].get() || {});
+      setPackedItems(obs(packingModeStore, id as string).get() || {});
     };
 
-    // @ts-expect-error: Safe because Legend-State uses Proxy
-    const packingState = packingModeStore[id as string].get() || {};
+    const packingState = obs(packingModeStore, id as string).get() || {};
 
     if (
       Object.entries(packedItems).every(([key, val]) =>

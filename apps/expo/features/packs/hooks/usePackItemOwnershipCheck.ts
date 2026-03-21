@@ -1,8 +1,8 @@
+import { obs } from 'expo-app/lib/store';
 import { packItemsStore } from '../store';
 
 export function usePackItemOwnershipCheck(id: string) {
-  // @ts-expect-error: Safe because Legend-State uses Proxy
-  const packItem = packItemsStore[id].peek();
+  const packItem = obs(packItemsStore, id).peek();
 
   return !!packItem;
 }

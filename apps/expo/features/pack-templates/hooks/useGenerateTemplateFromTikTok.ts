@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { obs } from 'expo-app/lib/store';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
 import type { PackTemplateInStore } from '../types';
@@ -78,11 +79,9 @@ export function useGenerateTemplateFromTikTok() {
     },
     onSuccess: (data) => {
       const { items, ...template } = data;
-      // @ts-expect-error: Safe because Legend-State uses Proxy
-      packTemplatesStore[template.id].set(template);
+      obs(packTemplatesStore, template.id).set(template);
       for (const item of items) {
-        // @ts-expect-error: Safe because Legend-State uses Proxy
-        packTemplateItemsStore[item.id].set(item);
+        obs(packTemplateItemsStore, item.id).set(item);
       }
     },
   });

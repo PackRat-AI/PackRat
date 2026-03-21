@@ -1,10 +1,10 @@
+import { obs } from 'expo-app/lib/store';
 import { useCallback } from 'react';
 import { packTemplatesStore } from '../store/packTemplates';
 
 export function useDeletePackTemplate() {
   const del = useCallback((id: string) => {
-    // @ts-expect-error: Safe because Legend-State uses Proxy
-    packTemplatesStore[id].deleted.set(true);
+    obs(packTemplatesStore, id).deleted.set(true);
   }, []);
 
   return del;
