@@ -28,6 +28,7 @@ export const apiEnvSchema = z.object({
 
   // AI & External APIs
   OPENAI_API_KEY: z.string().startsWith('sk-'),
+  GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
   AI_PROVIDER: z.enum(['openai', 'cloudflare-workers-ai']),
   PERPLEXITY_API_KEY: z.string().startsWith('pplx-'),
 

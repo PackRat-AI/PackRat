@@ -315,7 +315,7 @@ export const GenerateFromTikTokRequestSchema = z
   .object({
     tiktokUrl: z.string().url().openapi({
       example: 'https://www.tiktok.com/@user/video/1234567890',
-      description: 'The TikTok slideshow URL',
+      description: 'The TikTok content URL (supports both slideshows and videos)',
     }),
     isAppTemplate: z.boolean().optional().default(true).openapi({
       example: true,
