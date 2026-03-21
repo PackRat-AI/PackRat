@@ -342,8 +342,6 @@ async function fetchTikTokPostData(
       version: 'v1',
     });
 
-    console.log('TikTok API Parsed Response:', JSON.stringify(result, null, 2));
-
     if (result.status !== 'success') {
       console.error('Response debug:', {
         status: result.status,
