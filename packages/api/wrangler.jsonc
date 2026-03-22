@@ -165,8 +165,16 @@
       // Migrations for Durable Objects (including App Container)
       "migrations": [
         {
-          "new_sqlite_classes": ["AppContainer"],
+          "new_sqlite_classes": ["TikTokContainer"],
           "tag": "v1"
+        },
+        {
+          "new_sqlite_classes": ["AppContainer"],
+          "tag": "v2"
+        },
+        {
+          "deleted_classes": ["TikTokContainer"],
+          "tag": "v3"
         }
       ]
     }
