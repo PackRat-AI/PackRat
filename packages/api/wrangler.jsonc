@@ -85,6 +85,14 @@
     {
       "new_sqlite_classes": ["TikTokContainer"],
       "tag": "v1"
+    },
+    {
+      "tag": "v2",
+      "deleted_classes": ["TikTokContainer"]
+    },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": ["TikTokContainer"]
     }
   ],
   "env": {
