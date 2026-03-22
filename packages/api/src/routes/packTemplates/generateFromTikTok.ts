@@ -56,10 +56,10 @@ async function fetchTikTokPostData(
   url: string,
 ): Promise<{ imageUrls: string[]; videoUrl?: string; caption?: string; contentId?: string }> {
   try {
-    const { TIKTOK_CONTAINER } = getEnv(c);
+    const { APP_CONTAINER } = getEnv(c);
 
     // Get the container instance using the binding
-    const container = getContainer(TIKTOK_CONTAINER as any);
+    const container = getContainer(APP_CONTAINER as any);
 
     // Make request to the container's /import endpoint
     const response = await container.fetch(
