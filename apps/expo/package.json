@@ -1,6 +1,6 @@
 {
   "name": "packrat-expo-app",
-  "version": "2.0.15",
+  "version": "2.0.16",
   "main": "expo-router/entry",
   "scripts": {
     "android": "APP_VARIANT=development expo run:android",
@@ -102,7 +102,7 @@
     "i18n-js": "^4.4.3",
     "jotai": "^2.12.2",
     "lodash.debounce": "^4.0.8",
-    "nativewind": "^4.1.23",
+    "nativewind": "^4.2.3",
     "radash": "^12.1.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
