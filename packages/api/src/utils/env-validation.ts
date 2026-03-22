@@ -62,7 +62,7 @@ export const apiEnvSchema = z.object({
   ETL_QUEUE: z.unknown(),
   LOGS_QUEUE: z.unknown(),
   EMBEDDINGS_QUEUE: z.unknown(),
-  // TikTok Container binding (Durable Object)
+  // App container Durable Object binding (APP_CONTAINER)
   APP_CONTAINER: z.unknown(),
 });
 
@@ -109,7 +109,7 @@ export type ValidatedEnv = Omit<
   ETL_QUEUE: Queue;
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
-  // TikTok Container Durable Object binding
+  // AppContainer Durable Object binding (APP_CONTAINER)
   APP_CONTAINER: DurableObjectNamespace;
 };
 
