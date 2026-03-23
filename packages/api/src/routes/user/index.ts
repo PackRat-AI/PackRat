@@ -63,6 +63,7 @@ userRoutes.openapi(getUserProfileRoute, async (c) => {
         email: users.email,
         firstName: users.firstName,
         lastName: users.lastName,
+        avatarUrl: users.avatarUrl,
         role: users.role,
         emailVerified: users.emailVerified,
         createdAt: users.createdAt,
@@ -165,7 +166,7 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
   try {
     const auth = c.get('user');
 
-    const { firstName, lastName, email } = c.req.valid('json');
+    const { firstName, lastName, email, avatarUrl } = c.req.valid('json');
     const db = createDb(c);
 
     // If email is being updated, check if it's already in use
@@ -191,6 +192,7 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
 
     if (firstName !== undefined) updateData.firstName = firstName;
     if (lastName !== undefined) updateData.lastName = lastName;
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
     if (email !== undefined) {
       updateData.email = email.toLowerCase();
       updateData.emailVerified = false; // Reset verification if email changes
@@ -220,6 +222,7 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
           email: updatedUser.email,
           firstName: updatedUser.firstName,
           lastName: updatedUser.lastName,
+          avatarUrl: updatedUser.avatarUrl,
           role: updatedUser.role,
           emailVerified: updatedUser.emailVerified,
           createdAt: updatedUser.createdAt?.toISOString() || null,

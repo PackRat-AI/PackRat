@@ -38,7 +38,7 @@ const createMockContainerFetch = (contentId?: string) =>
 // Store the mock to allow reconfiguring per test
 let mockContainerFetch = createMockContainerFetch();
 
-// Mock the @cloudflare/containers module (needs Container class for TikTokContainer)
+// Mock the @cloudflare/containers module (needs Container class for AppContainer)
 vi.mock('@cloudflare/containers', () => ({
   Container: class MockContainer {},
   getContainer: vi.fn(() => ({
