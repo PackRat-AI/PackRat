@@ -525,7 +525,12 @@
     "anonymous": "Anonymous",
     "links": "Links",
     "moreLike": "More like {{itemName}}",
-    "match": "match"
+    "match": "match",
+    "popularItems": "Popular Items",
+    "recentlyUsed": "Recently Used",
+    "selectedItemsQuantity": "Selected Items ({{count}})",
+    "noRecentlyUsedItems": "No recently used items yet",
+    "quantityFor": "Qty for {{name}}"
   },
   "welcome": {
     "features": {

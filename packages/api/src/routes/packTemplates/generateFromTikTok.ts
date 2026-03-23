@@ -242,7 +242,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       console.error('TikTok service call failed:', apiError);
       c.get('sentry').captureException(apiError, {
         extra: { tiktokUrl, errorType: 'tiktok_service_error' },
-      } as any);
+      } as unknown);
       return c.json(
         {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
