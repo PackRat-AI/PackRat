@@ -4,8 +4,15 @@ import { useDetailedPacks } from 'expo-app/features/packs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { FlatList, TouchableOpacity, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  type TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
@@ -18,6 +25,15 @@ export function PackSelectionScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const { colors } = useColorScheme();
   const { t } = useTranslation();
+  const searchInputRef = useRef<TextInput>(null);
+
+  // On Android, manually focus the SearchInput when the area is pressed.
+  // This fixes an issue where the keyboard doesn't reappear after being dismissed.
+  const handleSearchInputPressIn = useCallback(() => {
+    if (Platform.OS === 'android') {
+      searchInputRef.current?.focus();
+    }
+  }, []);
 
   const filteredPacks = useMemo(() => {
     if (!packs) return [];
@@ -79,14 +95,15 @@ export function PackSelectionScreen() {
       )}
 
       <View className="p-4">
-        <View className="mb-4">
+        <Pressable className="mb-4" onPressIn={handleSearchInputPressIn}>
           <SearchInput
+            ref={searchInputRef}
             textContentType="none"
             autoComplete="off"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-        </View>
+        </Pressable>
 
         {filteredPacks && filteredPacks.length > 0 ? (
           <>

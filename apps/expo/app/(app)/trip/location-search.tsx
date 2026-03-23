@@ -2,8 +2,8 @@ import { ActivityIndicator, Button, SearchInput } from '@packrat/ui/nativewindui
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Platform, Pressable, Text, type TextInput, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
@@ -11,6 +11,7 @@ import { useTripLocation } from '../../../features/trips/store/tripLocationStore
 export default function LocationSearchScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
+  const searchInputRef = useRef<TextInput>(null);
   const { setLocation } = useTripLocation();
   const { t } = useTranslation();
 
@@ -21,6 +22,22 @@ export default function LocationSearchScreen() {
     longitude: number;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Focus search input on mount with a delay to ensure the screen transition is complete
+  // and the input is ready to receive focus
+  useEffect(() => {
+    setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 300);
+  }, []);
+
+  // On Android, manually focus the SearchInput when the area is pressed.
+  // This fixes an issue where the keyboard doesn't reappear after being dismissed.
+  const handleSearchInputPressIn = () => {
+    if (Platform.OS === 'android') {
+      searchInputRef.current?.focus();
+    }
+  };
 
   const GOOGLE_MAPS_API_KEY =
     Constants.expoConfig?.extra?.googleMapsApiKey || process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -90,14 +107,15 @@ export default function LocationSearchScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="p-4 border-b border-border bg-background flex-row items-center space-x-2">
-        <View className="flex-1">
+        <Pressable className="flex-1" onPressIn={handleSearchInputPressIn}>
           <SearchInput
+            ref={searchInputRef}
             placeholder={t('location.searchForPlace')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
           />
-        </View>
+        </Pressable>
         <Button onPress={handleSearch} variant="secondary" size="sm">
           <Text className="text-foreground font-medium">{t('location.searchButton')}</Text>
         </Button>

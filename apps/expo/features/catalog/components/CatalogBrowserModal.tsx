@@ -6,12 +6,15 @@ import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/Ho
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useAtom } from 'jotai';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Modal,
+  Platform,
+  Pressable,
   RefreshControl,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -39,6 +42,15 @@ export function CatalogBrowserModal({
   const [activeFilter, setActiveFilter] = useState<'All' | string>('All');
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [debouncedSearchValue] = useDebounce(searchValue, 400);
+  const searchInputRef = useRef<TextInput>(null);
+
+  // On Android, manually focus the SearchInput when the area is pressed.
+  // This fixes an issue where the keyboard doesn't reappear after being dismissed.
+  const handleSearchInputPressIn = useCallback(() => {
+    if (Platform.OS === 'android') {
+      searchInputRef.current?.focus();
+    }
+  }, []);
 
   const isSearching = debouncedSearchValue.length > 0;
 
@@ -134,13 +146,16 @@ export function CatalogBrowserModal({
 
         {/* Search and Filter */}
         <View className="p-4">
-          <SearchInput
-            textContentType="none"
-            autoComplete="off"
-            value={searchValue}
-            onChangeText={setSearchValue}
-            placeholder={t('catalog.searchEllipsis')}
-          />
+          <Pressable onPressIn={handleSearchInputPressIn}>
+            <SearchInput
+              ref={searchInputRef}
+              textContentType="none"
+              autoComplete="off"
+              value={searchValue}
+              onChangeText={setSearchValue}
+              placeholder={t('catalog.searchEllipsis')}
+            />
+          </Pressable>
 
           {!isSearching && categories && (
             <View className="mt-3">

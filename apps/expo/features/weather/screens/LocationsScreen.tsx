@@ -11,9 +11,11 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -34,8 +36,16 @@ function LocationsScreen() {
   const { setActiveLocation } = useActiveLocation();
   const { isRefreshing, refreshAllLocations } = useLocationRefresh();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchInputRef = useRef(null);
+  const searchInputRef = useRef<TextInput>(null);
   const { removeLocation } = useLocations();
+
+  // On Android, manually focus the SearchInput when the area is pressed.
+  // This fixes an issue where the keyboard doesn't reappear after being dismissed.
+  const handleSearchInputPressIn = useCallback(() => {
+    if (Platform.OS === 'android') {
+      searchInputRef.current?.focus();
+    }
+  }, []);
 
   // Determine if we're loading
   const isLoading = locationsState.state === 'loading';
@@ -133,7 +143,7 @@ function LocationsScreen() {
         )}
       />
 
-      <View className="p-4">
+      <Pressable className="p-4" onPressIn={handleSearchInputPressIn}>
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchSavedLocations')}
@@ -148,7 +158,7 @@ function LocationsScreen() {
             }
           }}
         />
-      </View>
+      </Pressable>
 
       {showNoSearchResults && (
         <Animated.View

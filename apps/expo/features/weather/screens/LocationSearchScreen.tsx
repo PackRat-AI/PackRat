@@ -1,4 +1,4 @@
-import { SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
+import { SearchInput, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
@@ -15,6 +15,8 @@ import {
   Keyboard,
   Linking,
   Platform,
+  Pressable,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -32,12 +34,20 @@ export default function LocationSearchScreen() {
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const searchInputRef = useRef<TextInput>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<number | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+
+  // On Android, manually focus the SearchInput when the area is pressed.
+  // This fixes an issue where the keyboard doesn't reappear after being dismissed.
+  const handleSearchInputPressIn = () => {
+    if (Platform.OS === 'android') {
+      searchInputRef.current?.focus();
+    }
+  };
 
   // Focus search input on mount
   useEffect(() => {
@@ -389,7 +399,7 @@ export default function LocationSearchScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Search Input */}
-      <View className="px-4">
+      <Pressable className="px-4" onPressIn={handleSearchInputPressIn}>
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchForCity')}
@@ -399,7 +409,7 @@ export default function LocationSearchScreen() {
           autoFocus
           clearButtonMode="while-editing"
         />
-      </View>
+      </Pressable>
 
       {/* Results List */}
       {isLoading && query.length > 0 ? (
