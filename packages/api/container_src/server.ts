@@ -1,4 +1,5 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GoogleGenAI } from '@google/genai';
 import Tiktok from '@tobyg74/tiktok-api-dl';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -14,6 +15,7 @@ const EnvSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string(),
   R2_BUCKET_NAME: z.string(),
   R2_PUBLIC_URL: z.string().url(),
+  GOOGLE_GENAI_API_KEY: z.string(),
 });
 
 type Env = z.infer<typeof EnvSchema>;
@@ -30,6 +32,11 @@ function validateEnv(): Env {
 // Initialize R2 client
 let s3Client: S3Client | null = null;
 let env: Env | null = null;
+
+// GoogleGenAI client (for video upload)
+const googleAi = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_GENAI_API_KEY,
+});
 
 try {
   env = validateEnv();
@@ -225,18 +232,11 @@ async function downloadAndRehostImage(
 }
 
 /**
- * Download video and rehost to R2 with 5-minute expiration
+ * Download video and upload to Google AI, returning file.uri as videoUrl
  */
-async function downloadAndRehostVideo(videoUrl: string, contentId: string): Promise<string | null> {
-  if (!s3Client || !env) {
-    console.warn('R2 client not available, skipping video rehosting');
-    return null;
-  }
-
+async function uploadVideoToGoogle(videoUrl: string): Promise<string | null> {
   try {
-    console.log(`Downloading video: ${videoUrl}`);
-
-    // Download video with TikTok-compatible headers
+    console.log(`Downloading video for Google upload: ${videoUrl}`);
     const response = await fetch(videoUrl, {
       headers: {
         'User-Agent':
@@ -248,41 +248,58 @@ async function downloadAndRehostVideo(videoUrl: string, contentId: string): Prom
         Connection: 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
       },
-      signal: AbortSignal.timeout(60000), // 60 second timeout for videos
+      signal: AbortSignal.timeout(60000),
     });
-
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-
     const videoBuffer = await response.arrayBuffer();
-
-    // Detect the actual video type and extension
-    const { contentType, extension } = detectMediaTypeAndExtension(response, videoBuffer, true);
-
-    const timestamp = Date.now();
-    const videoKey = `tiktok-temp/${contentId}/${timestamp}-video.${extension}`;
-
-    console.log(`Uploading video to R2: ${videoKey} (${contentType})`);
-
-    // Upload to R2 with temporary storage
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: env.R2_BUCKET_NAME,
-        Key: videoKey,
-        Body: new Uint8Array(videoBuffer),
-        ContentType: contentType,
-      }),
-    );
-
-    const rehostedUrl = `${env.R2_PUBLIC_URL}/${videoKey}`;
-    console.log(`Successfully rehosted video: ${rehostedUrl}`);
-
-    return rehostedUrl;
+    const contentType = response.headers.get('content-type') || 'video/mp4';
+    const videoBlob = new Blob([videoBuffer], { type: contentType });
+    console.log('Uploading video to Google AI...');
+    const myfile = await googleAi.files.upload({
+      file: videoBlob,
+      config: { mimeType: videoBlob.type },
+    });
+    console.log(`Video uploaded to Google AI. File URI: ${myfile.uri}, name: ${myfile.name}`);
+    // Wait for ACTIVE state
+    if (!myfile.name) throw new Error('Google AI upload did not return a file name');
+    await waitForFileToBeActiveGoogle(googleAi, myfile.name);
+    return myfile.uri || null;
   } catch (error) {
-    console.error('Failed to rehost video:', error);
+    console.error('Failed to upload video to Google:', error);
     return null;
   }
+}
+
+/**
+ * Wait for uploaded file to become ACTIVE before using it for inference (GoogleGenAI)
+ */
+async function waitForFileToBeActiveGoogle(
+  ai: GoogleGenAI,
+  fileName: string,
+  maxWaitTimeMs: number = 300000,
+): Promise<void> {
+  const startTime = Date.now();
+  while (Date.now() - startTime < maxWaitTimeMs) {
+    const fileInfo = await ai.files.get({ name: fileName });
+    console.log(`File status: ${fileInfo.state}`);
+    if (fileInfo.state === 'ACTIVE') {
+      console.log('File is now ACTIVE and ready for inference');
+      return;
+    }
+    if (fileInfo.state === 'FAILED') {
+      throw new Error(`File processing failed. File state: ${fileInfo.state}`);
+    }
+    if (fileInfo.state === 'PROCESSING') {
+      console.log('File is still processing, waiting...');
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+    } else {
+      console.log(`Unexpected file state: ${fileInfo.state}, continuing to wait...`);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
+  throw new Error(`Timeout: File did not become ACTIVE within ${maxWaitTimeMs / 1000} seconds`);
 }
 
 /**
@@ -459,13 +476,13 @@ app.post('/import', async (c) => {
       failedVideo?: boolean;
     };
 
-    // Process images and video rehosting in parallel for efficiency
+    // Process images and video upload in parallel for efficiency
     const [imageResult, videoResult] = await Promise.allSettled([
       hasImages
         ? downloadAndRehostImages(fetchedData.imageUrls, fetchedData.contentId || 'unknown')
         : Promise.resolve({ rehostedUrls: [], failedCount: 0, expiresAt: '' }),
       hasVideo && fetchedData.videoUrl
-        ? downloadAndRehostVideo(fetchedData.videoUrl, fetchedData.contentId || 'unknown')
+        ? uploadVideoToGoogle(fetchedData.videoUrl)
         : Promise.resolve(null),
     ]);
 
@@ -483,7 +500,7 @@ app.post('/import', async (c) => {
       expiresAt = imgExpiresAt;
     }
 
-    // Process video rehosting results
+    // Process video upload results
     let finalVideoUrl = fetchedData.videoUrl;
     let videoFailed = false;
 
@@ -493,7 +510,7 @@ app.post('/import', async (c) => {
       } else {
         videoFailed = true;
         if (videoResult.status === 'rejected') {
-          console.error('Video rehosting failed:', videoResult.reason);
+          console.error('Video upload to Google failed:', videoResult.reason);
         }
       }
     }
@@ -505,8 +522,8 @@ app.post('/import', async (c) => {
       contentId: fetchedData.contentId,
     };
 
-    // Add metadata if rehosting was attempted
-    if (s3Client && env && (hasImages || hasVideo)) {
+    // Add metadata if rehosting/upload was attempted
+    if ((s3Client && env && hasImages) || hasVideo) {
       responseData.expiresAt = expiresAt;
       if (imageFailedCount > 0) {
         responseData.failedImages = imageFailedCount;
@@ -519,7 +536,7 @@ app.post('/import', async (c) => {
     console.log(
       `Returning ${responseData.imageUrls.length} images${responseData.videoUrl ? ' and 1 video' : ''}${
         responseData.failedImages ? ` (${responseData.failedImages} images failed)` : ''
-      }${responseData.failedVideo ? ' (video rehosting failed)' : ''}`,
+      }${responseData.failedVideo ? ' (video upload failed)' : ''}`,
     );
 
     return c.json({
