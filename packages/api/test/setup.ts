@@ -45,13 +45,14 @@ const testEnv = {
   PACKRAT_GUIDES_BASE_URL: 'https://guides.test.com',
 };
 
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
 
 let testClient: Client;
-let testDb: ReturnType<typeof drizzle>;
+let testDb: NodePgDatabase<typeof schema> & { $client: Client };
 let isConnected = false;
 
 // Mock AWS SDK S3Client to prevent actual network calls
@@ -422,7 +423,7 @@ beforeAll(async () => {
 
   try {
     await testClient.connect();
-    testDb = drizzle(testClient, { schema }) as unknown;
+    testDb = drizzle(testClient, { schema });
     isConnected = true;
     console.log('✅ Test database connected successfully');
   } catch (error) {
