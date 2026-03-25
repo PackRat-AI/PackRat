@@ -240,9 +240,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       contentId = data.contentId;
     } catch (apiError) {
       console.error('TikTok service call failed:', apiError);
-      c.get('sentry').captureException(apiError, {
-        extra: { tiktokUrl, errorType: 'tiktok_service_error' },
-      } as unknown);
+      c.get('sentry').captureException(apiError);
       return c.json(
         {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
@@ -388,9 +386,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     return c.json({ ...newTemplate, items: insertedItems }, 201);
   } catch (error) {
     console.error('Error generating pack template from TikTok:', error);
-    c.get('sentry').captureException(error, {
-      extra: { tiktokUrl, errorType: 'template_generation_error' },
-    } as any);
+    c.get('sentry').captureException(error);
 
     // Determine specific error type based on error context
     let errorCode = 'UNKNOWN_ERROR';

@@ -150,6 +150,7 @@ jobs:
             --output test-results/maestro-results.xml \
             .maestro/
         env:
+          APP_ID: com.andrewbierman.packrat
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
@@ -233,6 +234,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g"
 
       - name: Enable KVM for hardware acceleration
         run: |
@@ -265,6 +267,7 @@ jobs:
               .maestro/
             mv .maestro/config.yaml.bak .maestro/config.yaml
         env:
+          APP_ID: com.packratai.mobile
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}

@@ -1,3 +1,5 @@
+appId: ${APP_ID}
+---
 # Login Flow: Navigate to auth screen and sign in with email and password
 - launchApp
 

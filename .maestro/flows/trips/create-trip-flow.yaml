@@ -1,3 +1,5 @@
+appId: ${APP_ID}
+---
 # Create Trip Flow: Navigate to trips tab and create a new trip
 - waitForAnimationToEnd
 

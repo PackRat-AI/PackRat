@@ -113,19 +113,18 @@ function LeftView({
       createDropdownItem({
         actionKey: 'go-home',
         title: 'Go Home',
-        icon: { name: 'home' },
+        icon: { name: 'house.fill' },
       }),
       createDropdownItem({
         actionKey: 'select-messages',
         title: 'Select messages',
-        icon: { name: 'checkmark.circle', namingScheme: 'sfSymbol' },
+        icon: { name: 'checkmark.circle' },
       }),
       createDropdownItem({
         actionKey: 'toggle-theme',
         title: 'Toggle Theme',
         icon: {
           name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
-          namingScheme: 'sfSymbol',
         },
       }),
     ];
@@ -220,12 +219,12 @@ const CONTEXT_MENU_ITEMS = [
   createContextItem({
     actionKey: 'hide-alerts',
     title: 'Hide Alerts',
-    icon: { name: 'bell-outline' },
+    icon: { name: 'bell' },
   }),
   createContextItem({
     actionKey: 'delete',
     title: 'Delete',
-    icon: { name: 'trash-can-outline', color: 'red' },
+    icon: { name: 'trash', color: 'red' },
     destructive: true,
   }),
 ];

@@ -1,3 +1,5 @@
+appId: ${APP_ID}
+---
 # Logout Flow: Navigate to profile and sign out
 - waitForAnimationToEnd
 

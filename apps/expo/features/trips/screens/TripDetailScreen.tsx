@@ -1,7 +1,7 @@
 import {
   ActivityIndicator,
   Alert,
-  type AlertRef,
+  type AlertMethods,
   Button,
   Card,
   Text,
@@ -24,7 +24,7 @@ export function TripDetailScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
 
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
