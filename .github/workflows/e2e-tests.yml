@@ -233,6 +233,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+          GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g"
 
       - name: Enable KVM for hardware acceleration
         run: |

@@ -40,5 +40,8 @@
   },
   "trustedDependencies": [
     "@sentry/cli"
-  ]
+  ],
+  "overrides": {
+    "@expo/vector-icons": "^15.0.3"
+  }
 }

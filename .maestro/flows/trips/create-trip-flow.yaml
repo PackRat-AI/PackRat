@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Create Trip Flow: Navigate to trips tab and create a new trip
 - waitForAnimationToEnd
 

@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Dashboard Tiles Flow: Verify dashboard loads with key tiles
 - waitForAnimationToEnd
 
