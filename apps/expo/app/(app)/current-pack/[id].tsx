@@ -15,7 +15,8 @@ import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function WeightCard({
   title,

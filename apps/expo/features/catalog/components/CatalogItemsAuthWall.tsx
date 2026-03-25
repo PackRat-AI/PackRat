@@ -2,7 +2,8 @@ import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { usePathname, useRouter } from 'expo-router';
-import { SafeAreaView, View } from 'react-native';
+import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function CatalogItemsAuthWall() {
   const router = useRouter();

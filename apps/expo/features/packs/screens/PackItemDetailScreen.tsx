@@ -14,7 +14,8 @@ import {
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PackItemImage } from '../components/PackItemImage';
 import { SimilarItemsForPackItem } from '../components/SimilarItemsForPackItem';
 import {

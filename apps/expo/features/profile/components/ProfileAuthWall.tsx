@@ -2,7 +2,8 @@ import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Stack, usePathname, useRouter } from 'expo-router';
-import { SafeAreaView, View } from 'react-native';
+import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export function ProfileAuthWall() {
   const router = useRouter();

@@ -63,7 +63,7 @@ syncObservable(
     updatePartial: true,
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage),
+      plugin: observablePersistSqlite(Storage as any),
       retrySync: true,
       name: 'packTemplateItems',
     },

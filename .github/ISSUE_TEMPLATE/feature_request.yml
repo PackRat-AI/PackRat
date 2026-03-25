@@ -1,0 +1,90 @@
+name: Feature Request
+description: Suggest a new feature or improvement for PackRat
+title: "Feature Request: "
+labels: ["enhancement", "feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please fill out the sections below so we can understand and evaluate your idea.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of PackRat does this feature relate to?
+      multiple: true
+      options:
+        - Mobile App (iOS)
+        - Mobile App (Android)
+        - Web App (packratai.com)
+        - Guides Site (guides.packratai.com)
+        - API / Backend
+        - AI / ML features
+        - Packs & Gear management
+        - Trips
+        - Catalog
+        - Weather
+        - Trail Conditions
+        - Maps & Navigation
+        - User Profile & Settings
+        - Notifications
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Describe the pain point or limitation you are experiencing.
+      placeholder: I'm frustrated when… / It would be helpful if…
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature or improvement you would like to see. Be as specific as possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds? Why are they insufficient?
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What does "done" look like? List the specific behaviors or outcomes the feature must satisfy.
+      placeholder: |
+        - [ ] User can …
+        - [ ] The app displays …
+        - [ ] API returns …
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / Design References
+      description: Attach any wireframes, screenshots, or links to design references that illustrate the feature.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (your assessment)
+      options:
+        - "High — blocks a core workflow"
+        - "Medium — noticeably improves the experience"
+        - "Low — nice to have"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context, links, or references that might be helpful.

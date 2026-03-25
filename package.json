@@ -1,6 +1,6 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.14",
+  "version": "2.0.16",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -19,11 +19,13 @@
     "format": "biome format --write",
     "lint": "biome check --write",
     "lint-unsafe": "biome check --write --unsafe",
-    "check": "biome check",
+    "check": "biome check --no-errors-on-unmatched",
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
     "ios": "cd apps/expo && bun ios",
     "api": "bun run --cwd packages/api dev",
+    "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
+    "test:expo": "vitest run --config apps/expo/vitest.config.ts",
     "bump": "bun .github/scripts/bump.ts"
   },
   "devDependencies": {
@@ -35,5 +37,8 @@
     "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
     "lefthook": "^1.11.14"
-  }
+  },
+  "trustedDependencies": [
+    "@sentry/cli"
+  ]
 }

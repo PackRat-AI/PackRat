@@ -23,6 +23,7 @@ const testEnv = {
 
   // AI & External APIs
   OPENAI_API_KEY: 'sk-test-key',
+  GOOGLE_GENERATIVE_AI_API_KEY: 'test-google-key',
   AI_PROVIDER: 'openai',
   PERPLEXITY_API_KEY: 'pplx-test-key',
 
@@ -421,7 +422,7 @@ beforeAll(async () => {
 
   try {
     await testClient.connect();
-    testDb = drizzle(testClient, { schema }) as any;
+    testDb = drizzle(testClient, { schema }) as unknown;
     isConnected = true;
     console.log('✅ Test database connected successfully');
   } catch (error) {

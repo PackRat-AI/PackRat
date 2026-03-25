@@ -5,6 +5,7 @@ import { ErrorBoundary } from 'expo-app/components/initial/ErrorBoundary';
 import 'expo-app/utils/polyfills';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { JotaiProvider } from './JotaiProvider';
 import { TanstackProvider } from './TanstackProvider';
 
@@ -13,14 +14,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <JotaiProvider>
         <TanstackProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <KeyboardProvider>
-              <ActionSheetProvider>
-                <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
-              </ActionSheetProvider>
-              <PortalHost />
-            </KeyboardProvider>
-          </GestureHandlerRootView>
+          <SafeAreaProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <KeyboardProvider>
+                <ActionSheetProvider>
+                  <BottomSheetModalProvider>{children}</BottomSheetModalProvider>
+                </ActionSheetProvider>
+                <PortalHost />
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </SafeAreaProvider>
         </TanstackProvider>
       </JotaiProvider>
     </ErrorBoundary>
