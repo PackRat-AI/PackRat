@@ -386,9 +386,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
     return c.json({ ...newTemplate, items: insertedItems }, 201);
   } catch (error) {
     console.error('Error generating pack template from TikTok:', error);
-    c.get('sentry').captureException(error, {
-      extra: { tiktokUrl, errorType: 'template_generation_error' },
-    } as any);
+    c.get('sentry').captureException(error);
 
     // Determine specific error type based on error context
     let errorCode = 'UNKNOWN_ERROR';
