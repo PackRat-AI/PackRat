@@ -1,4 +1,4 @@
-appId: com.andrewbierman.packrat
+appId: ${APP_ID}
 ---
 # Clear app state before running tests to ensure a clean environment
 - launchApp:

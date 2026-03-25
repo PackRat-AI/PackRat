@@ -150,6 +150,7 @@ jobs:
             --output test-results/maestro-results.xml \
             .maestro/
         env:
+          APP_ID: com.andrewbierman.packrat
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
@@ -266,6 +267,7 @@ jobs:
               .maestro/
             mv .maestro/config.yaml.bak .maestro/config.yaml
         env:
+          APP_ID: com.packratai.mobile
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
