@@ -32,7 +32,7 @@ export default function LocationSearchScreen() {
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const searchInputRef: SearchInputRef = useRef(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<number | null>(null);
@@ -43,7 +43,7 @@ export default function LocationSearchScreen() {
   useEffect(() => {
     setTimeout(() => {
       searchInputRef.current?.focus();
-    }, 300);
+    }, 600);
   }, []);
 
   // Load recent searches from AsyncStorage
@@ -396,7 +396,6 @@ export default function LocationSearchScreen() {
           value={query}
           onChangeText={handleSearchChange}
           containerClassName="border border-border"
-          autoFocus
           clearButtonMode="while-editing"
         />
       </View>
