@@ -130,7 +130,7 @@ export default function AppLayout() {
           name="weather-alerts"
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: 'card',
             animation: 'slide_from_bottom',
           }}
         />

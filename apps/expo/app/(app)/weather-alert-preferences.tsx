@@ -1,4 +1,11 @@
-import { Form, FormItem, FormSection, LargeTitleHeader, Text, Toggle } from '@packrat/ui/nativewindui';
+import {
+  Form,
+  FormItem,
+  FormSection,
+  LargeTitleHeader,
+  Text,
+  Toggle,
+} from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -113,9 +120,7 @@ export default function WeatherAlertPreferencesScreen() {
           <FormSection
             ios={{ title: t('weather.alertTypes') }}
             materialIconProps={{ name: 'alert-outline' }}
-            footnote={
-              alertTypesDisabled ? t('weather.weatherNotificationsDesc') : undefined
-            }
+            footnote={alertTypesDisabled ? t('weather.weatherNotificationsDesc') : undefined}
           >
             {ALERT_TYPE_CONFIGS.map(({ key, iconName, iconColor }) => (
               <View
@@ -133,7 +138,9 @@ export default function WeatherAlertPreferencesScreen() {
                     </View>
                     <View className="flex-1">
                       <Text
-                        className={alertTypesDisabled ? 'font-medium text-muted-foreground' : 'font-medium'}
+                        className={
+                          alertTypesDisabled ? 'font-medium text-muted-foreground' : 'font-medium'
+                        }
                       >
                         {t(`weather.${key}` as never)}
                       </Text>
@@ -142,10 +149,7 @@ export default function WeatherAlertPreferencesScreen() {
                       </Text>
                     </View>
                   </View>
-                  <Toggle
-                    value={preferences[key]}
-                    onValueChange={onToggle(key)}
-                  />
+                  <Toggle value={preferences[key]} onValueChange={onToggle(key)} />
                 </FormItem>
               </View>
             ))}
