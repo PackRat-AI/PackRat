@@ -18,15 +18,15 @@ appId: ${APP_ID}
 # Fill in the Trip Name field
 - tapOn:
     text: "Trip Name"
-- typeText: ${TRIP_NAME}
+- inputText: ${TRIP_NAME}
 
 # Fill in the Description field
 - tapOn:
     text: "Description"
-- typeText: "Created by Maestro E2E test"
+- inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
-- hideKeyboard
+- pressKey: hide keyboard
 
 # Submit the form via the submit button (testID: submit-trip-button)
 - tapOn:
