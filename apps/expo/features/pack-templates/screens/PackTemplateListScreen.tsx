@@ -110,7 +110,7 @@ export function PackTemplateListScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 " style={{ backgroundColor: 'red' }}>
+    <SafeAreaView className="flex-1 ">
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}
         searchBar={{
