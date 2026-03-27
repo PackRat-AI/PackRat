@@ -13,6 +13,7 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -77,7 +78,7 @@ const getPasswordStrength = (password: string) => {
     strength++;
   }
 
-  let labelKey = 'auth.veryWeak';
+  let labelKey: TranslationKeys = 'auth.veryWeak';
   let color = 'bg-red-500';
 
   if (strength === 1) {

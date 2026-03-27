@@ -38,7 +38,8 @@
     "looksLikeError": "Looks like something went wrong. Retry?",
     "tryAgain": "Try again",
     "tryAgainButton": "Try Again",
-    "unexpectedError": "The application encountered an unexpected error. You can try again or go back to the home screen."
+    "unexpectedError": "The application encountered an unexpected error. You can try again or go back to the home screen.",
+    "error": "Error"
   },
   "auth": {
     "signIn": "Sign In",
@@ -396,10 +397,8 @@
     "destination": "Destination",
     "duration": "Duration",
     "packWeight": "Pack Weight",
-    "days": {
-      "one": "{{count}} day",
-      "other": "{{count}} days"
-    },
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
     "searchTrips": "Search trips",
     "dates": "Dates",
     "startDate": "Start Date",
