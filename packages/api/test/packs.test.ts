@@ -10,6 +10,7 @@ import {
   expectNotFound,
   expectUnauthorized,
   httpMethods,
+  shouldSkipIntegrationTests,
   TEST_USER,
 } from './utils/test-helpers';
 
@@ -54,7 +55,7 @@ vi.mock('../src/services/packService', async () => {
   };
 });
 
-describe('Packs Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Packs Routes', () => {
   let testPackId: string;
   let testPackItemId: string;
   let testCatalogItemId: number;

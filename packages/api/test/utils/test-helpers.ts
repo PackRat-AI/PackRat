@@ -13,6 +13,15 @@ expect.extend({
   },
 });
 
+/**
+ * `true` when the integration-test database is NOT available.
+ * Defaults to skipping unless `INTEGRATION_DB_AVAILABLE` is explicitly
+ * set to `'true'` by the global setup, so tests are safely skipped when
+ * the env var is unset or not propagated into the test worker.
+ * Use with `describe.skipIf(shouldSkipIntegrationTests)(...)`.
+ */
+export const shouldSkipIntegrationTests = process.env.INTEGRATION_DB_AVAILABLE !== 'true';
+
 // Test user data for consistent testing
 export const TEST_USER = {
   id: 1,

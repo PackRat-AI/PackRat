@@ -4,9 +4,10 @@ import {
   apiWithBasicAuth,
   expectJsonResponse,
   expectUnauthorized,
+  shouldSkipIntegrationTests,
 } from './utils/test-helpers';
 
-describe('Admin Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Admin Routes', () => {
   describe('Authentication', () => {
     it('requires basic auth for all admin routes', async () => {
       const routes = ['/', '/stats', '/users-list', '/packs', '/catalog'];

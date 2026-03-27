@@ -12,9 +12,10 @@ import {
   expectNotFound,
   expectUnauthorized,
   httpMethods,
+  shouldSkipIntegrationTests,
 } from './utils/test-helpers';
 
-describe('Pack Templates Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Pack Templates Routes', () => {
   // Seed a test user before all tests
   beforeAll(async () => {
     await seedTestUser();

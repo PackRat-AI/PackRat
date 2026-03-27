@@ -5,9 +5,10 @@ import {
   expectBadRequest,
   expectJsonResponse,
   expectUnauthorized,
+  shouldSkipIntegrationTests,
 } from './utils/test-helpers';
 
-describe('Weather Routes', () => {
+describe.skipIf(shouldSkipIntegrationTests)('Weather Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
