@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -115,11 +116,17 @@ function LocationsScreen() {
   const showSearchResults = isSearchFocused && searchQuery.length > 0;
   const showNoSearchResults = showSearchResults && filteredLocations.length === 0;
   const showLocationsList = filteredLocations.length > 0;
+  const headerPaddingTop = Platform.OS === 'ios' ? 80 : 24;
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, paddingTop: headerPaddingTop }}>
       <LargeTitleHeader
         title={t('weather.weather')}
+        leftView={() => (
+          <Pressable onPress={() => router.back()} className="mr-2">
+            <Icon name="arrow-left" color={colors.foreground} size={24} />
+          </Pressable>
+        )}
         rightView={() => (
           <View className="flex-row items-center pr-2">
             <Pressable className="opacity-80" onPress={handleAddLocation}>
