@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PackTemplateCard } from '../components/PackTemplateCard';
 import TemplateCreationOptions from '../components/TemplateCreationOptions';
 import { usePackTemplates } from '../hooks';
@@ -47,6 +47,7 @@ export function PackTemplateListScreen() {
   const templateOptionsRef = useRef<BottomSheetModal>(null);
 
   const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const insets = useSafeAreaInsets();
 
   // Filter options with translations
   const filterOptions: FilterOption[] = [
@@ -110,7 +111,7 @@ export function PackTemplateListScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 ">
+    <SafeAreaView className="flex-1 " style={{ paddingTop: insets.top }}>
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}
         searchBar={{
@@ -127,7 +128,7 @@ export function PackTemplateListScreen() {
         )}
       />
 
-      <View className="bg-background gap-2 px-4 pb-2">
+      <View className="bg-background gap-2 px-4 pb-2" style={{ paddingTop: insets.top + 22 }}>
         <SegmentedControl
           enabled={isAuthenticated}
           values={[t('packTemplates.all'), t('packTemplates.app'), t('packTemplates.yours')]}
