@@ -119,7 +119,7 @@ function LocationsScreen() {
   const headerPaddingTop = Platform.OS === 'ios' ? 80 : 24;
 
   return (
-    <SafeAreaView style={{ flex: 1, paddingTop: headerPaddingTop }}>
+    <SafeAreaView style={{ flex: 1, paddingTop: insets.top }}>
       <LargeTitleHeader
         title={t('weather.weather')}
         leftView={() => (
@@ -140,7 +140,7 @@ function LocationsScreen() {
         )}
       />
 
-      <View className="p-4">
+      <View className="p-4" style={{ paddingTop: insets.top }}>
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchSavedLocations')}
