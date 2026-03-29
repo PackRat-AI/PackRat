@@ -16,7 +16,7 @@ import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
 import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function WeightCard({
   title,
@@ -132,16 +132,17 @@ export default function CurrentPackScreen() {
 
   const pack = usePackDetailsFromStore(params.id as string);
   const uniqueCategories = computeCategorySummaries(pack);
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" style={{ paddingTop: insets.top }}>
       <LargeTitleHeader title={t('packs.currentPack')} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         removeClippedSubviews={false}
       >
-        <View className="flex-row items-center p-4">
+        <View className="flex-row items-center p-4" style={{ paddingTop: insets.top }}>
           <Avatar className="mr-4 h-16 w-16" alt="">
             <AvatarImage source={{ uri: pack.image }} />
             <AvatarFallback>
