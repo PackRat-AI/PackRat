@@ -15,3 +15,6 @@ export const localModelProgressAtom = atom<number>(0);
 
 /** Error message if model status is 'error' */
 export const localModelErrorAtom = atom<string | null>(null);
+
+/** Whether the model file is physically present on disk with the correct size */
+export const localModelFileAvailableAtom = atom<boolean>(false);

@@ -1,6 +1,6 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
-import { ActivityIndicator, Sheet, Text } from '@packrat/ui/nativewindui';
+import { Sheet, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -8,7 +8,12 @@ import { useAtom, useAtomValue } from 'jotai';
 import * as React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import type { AIMode } from '../atoms/aiModeAtoms';
-import { aiModeAtom, localModelProgressAtom, localModelStatusAtom } from '../atoms/aiModeAtoms';
+import {
+  aiModeAtom,
+  localModelFileAvailableAtom,
+  localModelProgressAtom,
+  localModelStatusAtom,
+} from '../atoms/aiModeAtoms';
 import { LLAMA_MODEL_SIZE } from '../lib/constants';
 import { downloadLocalModel, isAppleModelSupported } from '../lib/localModelManager';
 import { CircularDownloadButton } from './CircularDownloadButton';
@@ -22,6 +27,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
     const [mode, setMode] = useAtom(aiModeAtom);
     const modelStatus = useAtomValue(localModelStatusAtom);
     const progress = useAtomValue(localModelProgressAtom);
+    const isModelFileAvailable = useAtomValue(localModelFileAvailableAtom);
 
     const isApple = isAppleModelSupported();
     const isModelReady = modelStatus === 'ready';
@@ -128,8 +134,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
             {/* Right side: checkmark or circular download/progress button */}
             {mode === 'local' && isModelReady ? (
               <Icon name="check" size={20} color={colors.primary} />
-            ) : !isModelReady /** best is checking if ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf exists and downloaded fully? */ ||
-              isDownloading ? (
+            ) : !isModelFileAvailable || isDownloading ? (
               <CircularDownloadButton
                 progress={progress}
                 isDownloading={isDownloading}

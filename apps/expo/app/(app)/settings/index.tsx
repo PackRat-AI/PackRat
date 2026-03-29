@@ -1,11 +1,11 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
-import { LlamaEngine } from '@react-native-ai/llama';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
 import {
+  localModelFileAvailableAtom,
   localModelProgressAtom,
   localModelStatusAtom,
 } from 'expo-app/features/ai/atoms/aiModeAtoms';
-import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE } from 'expo-app/features/ai/lib/constants';
+import { LLAMA_MODEL_SIZE } from 'expo-app/features/ai/lib/constants';
 import {
   deleteLocalModel,
   downloadLocalModel,
@@ -18,7 +18,6 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
-import * as React from 'react';
 import { Alert, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 import Toast from 'react-native-toast-message';
 
@@ -28,19 +27,13 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
   const modelStatus = useAtomValue(localModelStatusAtom);
   const progress = useAtomValue(localModelProgressAtom);
-  const [isDownloaded, setIsDownloaded] = React.useState(false);
+  const isDownloaded = useAtomValue(localModelFileAvailableAtom);
 
   const isApple = isAppleModelSupported();
   const isDownloading = modelStatus === 'downloading';
   const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
   const isReady = modelStatus === 'ready';
   const isError = modelStatus === 'error';
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-check when modelStatus changes
-  React.useEffect(() => {
-    if (isApple) return;
-    LlamaEngine.isDownloaded(LLAMA_MODEL_ID).then(setIsDownloaded);
-  }, [isApple, modelStatus]);
 
   const handleDelete = () => {
     Alert.alert(
@@ -53,7 +46,6 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await deleteLocalModel();
-            setIsDownloaded(false);
             Toast.show({ type: 'success', text1: 'Model deleted', position: 'bottom' });
           },
         },

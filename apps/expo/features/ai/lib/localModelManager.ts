@@ -8,16 +8,36 @@
  * from any component, even while the bottom sheet is closed.
  */
 
-import { LlamaEngine, type LlamaLanguageModel, llama } from '@react-native-ai/llama';
+import { type LlamaLanguageModel, llama } from '@react-native-ai/llama';
 import { store } from 'expo-app/atoms/store';
 import { Platform } from 'react-native';
+import RNBlobUtil from 'react-native-blob-util';
 import {
   localModelErrorAtom,
+  localModelFileAvailableAtom,
   localModelProgressAtom,
   localModelStatusAtom,
 } from '../atoms/aiModeAtoms';
 
-const LLAMA_MODEL_ID = 'ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf';
+import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from './constants';
+
+const LLAMA_MODEL_FILENAME = 'SmolLM3-Q4_K_M.gguf';
+
+function _getLlamaModelPath(): string {
+  return `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models/${LLAMA_MODEL_FILENAME}`;
+}
+
+/**
+ * Returns true only if the model file exists on disk AND its size matches
+ * the expected byte count, ruling out partial downloads.
+ */
+async function _isLlamaModelAvailable(): Promise<boolean> {
+  const path = _getLlamaModelPath();
+  const exists = await RNBlobUtil.fs.exists(path);
+  if (!exists) return false;
+  const stat = await RNBlobUtil.fs.stat(path);
+  return Number(stat.size) === LLAMA_MODEL_SIZE_BYTES;
+}
 
 // Module-level singletons — survive component unmounts
 let llamaModel: LlamaLanguageModel | null = null;
@@ -37,9 +57,9 @@ export function getLocalModel(): LlamaLanguageModel | null {
   return llamaModel;
 }
 
-/** Check if the local model is already downloaded (llama only). */
+/** Check if the local model file is fully present on disk (existence + size). */
 export async function isLlamaModelDownloaded(): Promise<boolean> {
-  return LlamaEngine.isDownloaded(LLAMA_MODEL_ID);
+  return _isLlamaModelAvailable();
 }
 
 /**
@@ -81,9 +101,16 @@ export async function downloadLocalModel(): Promise<void> {
     llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
   }
 
-  const isDownloaded = await llamaModel.isDownloaded();
+  const isAvailable = await _isLlamaModelAvailable();
 
-  if (!isDownloaded) {
+  if (!isAvailable) {
+    // Remove any partial download so the library starts fresh
+    const path = _getLlamaModelPath();
+    const partialExists = await RNBlobUtil.fs.exists(path);
+    if (partialExists) {
+      await RNBlobUtil.fs.unlink(path);
+    }
+
     store.set(localModelStatusAtom, 'downloading');
     store.set(localModelProgressAtom, 0);
     try {
@@ -108,16 +135,22 @@ export async function deleteLocalModel(): Promise<void> {
     } catch {
       // ignore unload errors
     }
-    try {
-      // LlamaLanguageModel has a remove() method that deletes from disk
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (llamaModel as any).remove?.();
-    } catch {
-      // ignore
-    }
     llamaModel = null;
   }
+
+  // Direct filesystem deletion — more reliable than the library's remove()
+  const path = _getLlamaModelPath();
+  try {
+    const exists = await RNBlobUtil.fs.exists(path);
+    if (exists) {
+      await RNBlobUtil.fs.unlink(path);
+    }
+  } catch {
+    // ignore deletion errors
+  }
+
   store.set(localModelStatusAtom, 'idle');
+  store.set(localModelFileAvailableAtom, false);
   store.set(localModelProgressAtom, 0);
 }
 
@@ -129,7 +162,7 @@ async function _initAppleModel(): Promise<void> {
     const { apple } = await import('@react-native-ai/apple');
     appleModel = apple();
     store.set(localModelStatusAtom, 'ready');
-  } catch (err) {
+  } catch {
     store.set(localModelStatusAtom, 'error');
     store.set(localModelErrorAtom, 'Apple Foundation Model is not available on this device.');
   }
@@ -139,9 +172,10 @@ async function _initLlamaModel(): Promise<void> {
   if (!llamaModel) {
     llamaModel = llama.languageModel(LLAMA_MODEL_ID, { n_ctx: 2048, n_gpu_layers: 99 });
   }
-  const isDownloaded = await llamaModel.isDownloaded();
-  if (!isDownloaded) {
-    // Not downloaded yet — surface idle so the UI shows the download button
+  const isAvailable = await _isLlamaModelAvailable();
+  store.set(localModelFileAvailableAtom, isAvailable);
+  if (!isAvailable) {
+    // Not fully downloaded yet — surface idle so the UI shows the download button
     store.set(localModelStatusAtom, 'idle');
     return;
   }
@@ -151,7 +185,9 @@ async function _initLlamaModel(): Promise<void> {
 async function _prepareLlamaModel(): Promise<void> {
   store.set(localModelStatusAtom, 'preparing');
   try {
-    await llamaModel!.prepare();
+    if (!llamaModel) throw new Error('llamaModel is not initialised');
+    await llamaModel.prepare();
+    store.set(localModelFileAvailableAtom, true);
     store.set(localModelStatusAtom, 'ready');
   } catch (err) {
     store.set(localModelStatusAtom, 'error');
