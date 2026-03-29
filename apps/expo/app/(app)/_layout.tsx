@@ -44,7 +44,7 @@ export default function AppLayout() {
       )}
       <Stack screenOptions={SCREEN_OPTIONS}>
         <Stack.Screen name="(tabs)" options={TABS_OPTIONS} />
-        <Stack.Screen name="modal" options={getModalOptions(t)} />
+        <Stack.Screen name="settings/index" options={getSettingsOptions(t)} />
         <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
         <Stack.Screen
           name="pack/[id]/index"
@@ -243,7 +243,7 @@ const TABS_OPTIONS = {
 } as const;
 
 // MODALS - These functions accept translation function t
-const getModalOptions = (t: TranslationFunction) =>
+const getSettingsOptions = (t: TranslationFunction) =>
   ({
     presentation: 'modal',
     animation: 'fade_from_bottom', // for android

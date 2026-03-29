@@ -11,7 +11,7 @@ export function AIChatTile() {
   const { t } = useTranslation();
 
   const route: Href = {
-    pathname: '/ai-chat-local',
+    pathname: '/ai-chat',
     params: {
       contextType: 'general',
     },

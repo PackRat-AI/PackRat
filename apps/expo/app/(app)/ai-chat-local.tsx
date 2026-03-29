@@ -1,6 +1,6 @@
-import { generateText, streamText } from 'ai';
-import { llama } from '@react-native-ai/llama';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { llama } from '@react-native-ai/llama';
+import { generateText, streamText } from 'ai';
 import { Screen } from 'expo-app/components/Screen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { Stack } from 'expo-router';
@@ -12,58 +12,53 @@ export default function AIChatLocal() {
   const [modelStatus, setModelStatus] = React.useState('idle');
   const [streamingStatus, setStreamingStatus] = React.useState('idle');
   const [isModelReady, setIsModelReady] = React.useState(false);
+  const [streamedText, setStreamedText] = React.useState('');
+  const [generatedText, setGeneratedText] = React.useState('');
   const modelRef = React.useRef<any>(null);
 
-  // Initialize model on component mount
+  const initializeModel = React.useCallback(async () => {
+    try {
+      setModelStatus('downloading');
+      console.log('Creating model instance...');
+
+      // Create model instance (Model ID format: "owner/repo/filename.gguf")
+      const model = llama.languageModel('ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf', {
+        n_ctx: 2048,
+        n_gpu_layers: 99,
+      });
+
+      // Download from HuggingFace (with progress)
+      console.log('Starting model download...');
+      await model.download((progress) => {
+        console.log(`Downloading: ${progress.percentage}%`);
+        setModelStatus(`downloading ${progress.percentage}%`);
+      });
+
+      setModelStatus('preparing');
+      console.log('Preparing model...');
+      // Initialize model (loads into memory)
+      await model.prepare();
+
+      modelRef.current = model;
+      setIsModelReady(true);
+      setModelStatus('ready');
+      console.log('Model loaded and ready!');
+    } catch (error) {
+      console.error('Failed to initialize model:', error);
+      setModelStatus('error');
+      Alert.alert('Error', 'Failed to initialize local AI model. Check console for details.');
+    }
+  }, []);
+
+  // Then call it from useEffect
   React.useEffect(() => {
-    const initializeModel = async () => {
-      try {
-        setModelStatus('downloading');
-        console.log('Creating model instance...');
-
-        // Create model instance (Model ID format: "owner/repo/filename.gguf")
-        const model = llama.languageModel(
-          'ggml-org/SmolLM3-3B-GGUF/SmolLM3-Q4_K_M.gguf',
-          {
-            n_ctx: 2048,
-            n_gpu_layers: 99,
-          },
-        );
-
-        // Download from HuggingFace (with progress)
-        console.log('Starting model download...');
-        await model.download((progress) => {
-          console.log(`Downloading: ${progress.percentage}%`);
-          setModelStatus(`downloading ${progress.percentage}%`);
-        });
-
-        setModelStatus('preparing');
-        console.log('Preparing model...');
-        // Initialize model (loads into memory)
-        await model.prepare();
-
-        modelRef.current = model;
-        setIsModelReady(true);
-        setModelStatus('ready');
-        console.log('Model loaded and ready!');
-      } catch (error) {
-        console.error('Failed to initialize model:', error);
-        setModelStatus('error');
-        Alert.alert(
-          'Error',
-          'Failed to initialize local AI model. Check console for details.',
-        );
-      }
-    };
-
     initializeModel();
     return () => {
-      // Cleanup model on unmount
       if (modelRef.current) {
         modelRef.current.unload().catch(console.error);
       }
     };
-  }, []);
+  }, [initializeModel]);
 
   const handleGenerateText = async () => {
     if (!modelRef.current || !isModelReady) {
@@ -73,6 +68,7 @@ export default function AIChatLocal() {
 
     try {
       setStreamingStatus('generating');
+      setGeneratedText(''); // Clear previous generated text
       console.log('Starting text generation...');
 
       // Generate text (non-streaming)
@@ -87,14 +83,12 @@ export default function AIChatLocal() {
       });
 
       console.log('Generated text:', text);
+      setGeneratedText(text); // Set the complete generated text
       setStreamingStatus('complete');
     } catch (error) {
       console.error('Text generation error:', error);
       setStreamingStatus('error');
-      Alert.alert(
-        'Error',
-        'Failed to generate text. Check console for details.',
-      );
+      Alert.alert('Error', 'Failed to generate text. Check console for details.');
     }
   };
 
@@ -106,6 +100,7 @@ export default function AIChatLocal() {
 
     try {
       setStreamingStatus('streaming');
+      setStreamedText(''); // Clear previous streamed text
       console.log('Starting text streaming...');
 
       // Stream text
@@ -126,9 +121,9 @@ export default function AIChatLocal() {
       let fullResponse = '';
 
       for await (const chunk of result.textStream) {
-        // process.stdout.write(chunk);
         console.log(chunk); // Also log each chunk
         fullResponse += chunk;
+        setStreamedText(fullResponse); // Update UI with accumulated text
       }
 
       console.log('\nStreaming complete. Full response:', fullResponse);
@@ -178,9 +173,7 @@ export default function AIChatLocal() {
         }}
       />
       <Screen>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 16, gap: 20 }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 20 }}>
           {/* Model Status Section */}
           <View style={{ gap: 12 }}>
             <Text
@@ -188,11 +181,11 @@ export default function AIChatLocal() {
                 fontSize: 18,
                 fontWeight: 'bold',
                 color: colors.foreground,
-              }}>
+              }}
+            >
               Model Status
             </Text>
-            <View
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View
                 style={{
                   width: 12,
@@ -205,22 +198,19 @@ export default function AIChatLocal() {
                 style={{
                   color: colors.foreground,
                   textTransform: 'capitalize',
-                }}>
+                }}
+              >
                 {modelStatus}
               </Text>
             </View>
 
             {modelStatus.includes('downloading') && (
-              <ActivityIndicator size='small' color={colors.primary} />
+              <ActivityIndicator size="small" color={colors.primary} />
             )}
 
             {modelStatus === 'error' && (
-              <Button
-                onPress={initializeModel}
-                style={{ backgroundColor: colors.primary }}>
-                <Text style={{ color: colors.background }}>
-                  Retry Initialize
-                </Text>
+              <Button onPress={initializeModel} style={{ backgroundColor: colors.primary }}>
+                <Text style={{ color: colors.background }}>Retry Initialize</Text>
               </Button>
             )}
           </View>
@@ -232,7 +222,8 @@ export default function AIChatLocal() {
                 fontSize: 18,
                 fontWeight: 'bold',
                 color: colors.foreground,
-              }}>
+              }}
+            >
               Local AI Controls
             </Text>
 
@@ -242,29 +233,103 @@ export default function AIChatLocal() {
                 disabled={!isModelReady || streamingStatus === 'generating'}
                 style={{
                   backgroundColor: isModelReady ? colors.primary : colors.muted,
-                  opacity:
-                    !isModelReady || streamingStatus === 'generating' ? 0.6 : 1,
-                }}>
-                <Text style={{ color: colors.background }}>
-                  Generate Text (Non-streaming)
-                </Text>
+                  opacity: !isModelReady || streamingStatus === 'generating' ? 0.6 : 1,
+                }}
+              >
+                <Text style={{ color: colors.background }}>Generate Text (Non-streaming)</Text>
               </Button>
 
               <Button
                 onPress={handleStreamText}
                 disabled={!isModelReady || streamingStatus === 'streaming'}
                 style={{
-                  backgroundColor: isModelReady
-                    ? colors.destructive
-                    : colors.muted,
-                  opacity:
-                    !isModelReady || streamingStatus === 'streaming' ? 0.6 : 1,
-                }}>
-                <Text style={{ color: colors.background }}>
-                  Stream Text (Check Console)
-                </Text>
+                  backgroundColor: isModelReady ? colors.destructive : colors.muted,
+                  opacity: !isModelReady || streamingStatus === 'streaming' ? 0.6 : 1,
+                }}
+              >
+                <Text style={{ color: colors.background }}>Stream Text</Text>
               </Button>
             </View>
+          </View>
+
+          {/* AI Response Section */}
+          <View style={{ gap: 12 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: 'bold',
+                color: colors.foreground,
+              }}
+            >
+              AI Response
+            </Text>
+
+            {/* Generated Text Display */}
+            {generatedText && (
+              <View
+                style={{
+                  backgroundColor: colors.muted,
+                  padding: 12,
+                  borderRadius: 8,
+                  borderLeftWidth: 3,
+                  borderLeftColor: colors.primary,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.mutedForeground,
+                    marginBottom: 4,
+                    fontWeight: '600',
+                  }}
+                >
+                  Generated Text:
+                </Text>
+                <Text style={{ color: colors.foreground, lineHeight: 20 }}>{generatedText}</Text>
+              </View>
+            )}
+
+            {/* Streaming Text Display */}
+            {(streamedText || streamingStatus === 'streaming') && (
+              <View
+                style={{
+                  backgroundColor: colors.muted,
+                  padding: 12,
+                  borderRadius: 8,
+                  borderLeftWidth: 3,
+                  borderLeftColor: colors.destructive,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.mutedForeground,
+                      fontWeight: '600',
+                    }}
+                  >
+                    Streaming Text:
+                  </Text>
+                  {streamingStatus === 'streaming' && (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.destructive}
+                      style={{ marginLeft: 8 }}
+                    />
+                  )}
+                </View>
+                <Text style={{ color: colors.foreground, lineHeight: 20 }}>
+                  {streamedText}
+                  {streamingStatus === 'streaming' && '▋'}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Streaming Status Section */}
@@ -274,11 +339,11 @@ export default function AIChatLocal() {
                 fontSize: 18,
                 fontWeight: 'bold',
                 color: colors.foreground,
-              }}>
-              Streaming Status
+              }}
+            >
+              Status
             </Text>
-            <View
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View
                 style={{
                   width: 12,
@@ -291,14 +356,14 @@ export default function AIChatLocal() {
                 style={{
                   color: colors.foreground,
                   textTransform: 'capitalize',
-                }}>
+                }}
+              >
                 {streamingStatus}
               </Text>
             </View>
 
-            {(streamingStatus === 'generating' ||
-              streamingStatus === 'streaming') && (
-              <ActivityIndicator size='small' color={colors.primary} />
+            {(streamingStatus === 'generating' || streamingStatus === 'streaming') && (
+              <ActivityIndicator size="small" color={colors.primary} />
             )}
           </View>
 
@@ -309,15 +374,16 @@ export default function AIChatLocal() {
                 fontSize: 16,
                 fontWeight: '600',
                 color: colors.foreground,
-              }}>
+              }}
+            >
               Instructions
             </Text>
             <Text style={{ color: colors.muted, lineHeight: 20 }}>
               1. Wait for the model to download and initialize{'\n'}
               2. Use "Generate Text" for single response generation{'\n'}
-              3. Use "Stream Text" to see streaming responses in console{'\n'}
-              4. Check Metro/Expo console for detailed output and streaming
-              chunks
+              3. Use "Stream Text" to see live streaming in the UI{'\n'}
+              4. Responses appear in the "AI Response" section above{'\n'}
+              5. Check Metro/Expo console for detailed technical output
             </Text>
           </View>
 
@@ -328,7 +394,8 @@ export default function AIChatLocal() {
                 fontSize: 16,
                 fontWeight: '600',
                 color: colors.foreground,
-              }}>
+              }}
+            >
               Model Information
             </Text>
             <Text style={{ color: colors.muted, lineHeight: 20 }}>
