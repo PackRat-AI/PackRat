@@ -146,7 +146,7 @@ export default function AppLayout() {
           name="trail-conditions"
           options={{
             headerShown: false,
-            presentation: 'modal',
+            presentation: 'card',
             animation: 'slide_from_bottom',
           }}
         />

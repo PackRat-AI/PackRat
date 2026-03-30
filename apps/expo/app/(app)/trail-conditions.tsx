@@ -6,16 +6,18 @@ import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hoo
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TrailConditionsScreen() {
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const { data: reports, isLoading, error } = useTrailConditionReports();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   if (!featureFlags.enableTrailConditions) return null;
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, paddingTop: insets.top }}>
       <LargeTitleHeader
         title={t('trailConditions.title')}
         rightView={() => (
@@ -105,6 +107,6 @@ export default function TrailConditionsScreen() {
           <SubmitConditionReportForm onSuccess={() => setShowSubmitForm(false)} />
         </View>
       </Modal>
-    </>
+    </SafeAreaView>
   );
 }
