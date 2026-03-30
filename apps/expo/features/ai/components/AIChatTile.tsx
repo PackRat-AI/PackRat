@@ -1,6 +1,5 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { isAuthed } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { type Href, useRouter } from 'expo-router';
@@ -17,17 +16,6 @@ export function AIChatTile() {
     },
   };
   const handlePress = () => {
-    if (isAuthed.peek()) {
-      // AI featuer is protected. Redirect user to the auth page if not authenticated.
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: JSON.stringify(route), // stringifying to pass along parameters
-          showSignInCopy: 'true',
-        },
-      });
-    }
-
     router.push(route);
   };
 

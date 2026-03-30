@@ -43,6 +43,7 @@
   "auth": {
     "signIn": "Sign In",
     "signInWithEmail": "Sign in with email",
+    "signInRequired": "Sign in to use cloud mode",
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "logOut": "Log Out",

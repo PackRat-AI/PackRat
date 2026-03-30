@@ -2,6 +2,7 @@ import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Sheet, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { useAuthState } from 'expo-app/features/auth/hooks/useAuthState';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useAtom, useAtomValue } from 'jotai';
@@ -28,6 +29,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
   function AIModeSheet(_props, ref) {
     const { colors } = useColorScheme();
     const { t } = useTranslation();
+    const { isAuthenticated } = useAuthState();
     const [mode, setMode] = useAtom(aiModeAtom);
     const modelStatus = useAtomValue(localModelStatusAtom);
     const progress = useAtomValue(localModelProgressAtom);
@@ -39,7 +41,14 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
     const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
     const isError = modelStatus === 'error';
 
+    React.useEffect(() => {
+      if (!isAuthenticated && mode === 'cloud') {
+        setMode('local');
+      }
+    }, [isAuthenticated, mode, setMode]);
+
     const handleSelectMode = (selected: AIMode) => {
+      if (selected === 'cloud' && !isAuthenticated) return;
       if (selected === 'local' && !isModelReady) {
         // trigger download/init but don't switch mode yet
         downloadLocalModel();
@@ -118,6 +127,8 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
           <TouchableOpacity
             className="mb-3 flex-row items-center rounded-xl border border-border bg-card p-4"
             onPress={() => handleSelectMode('cloud')}
+            disabled={!isAuthenticated}
+            style={{ opacity: isAuthenticated ? 1 : 0.4 }}
           >
             <View className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
               <Icon name="cloud-outline" size={18} color={colors.primary} />
@@ -127,6 +138,11 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
               <Text variant="footnote" className="text-muted-foreground">
                 PackRat servers · requires internet
               </Text>
+              {!isAuthenticated && (
+                <Text variant="footnote" className="text-muted-foreground">
+                  {t('auth.signInRequired')}
+                </Text>
+              )}
             </View>
             {mode === 'cloud' && <Icon name="check" size={20} color={colors.primary} />}
           </TouchableOpacity>
