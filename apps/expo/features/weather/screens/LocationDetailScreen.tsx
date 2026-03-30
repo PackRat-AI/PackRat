@@ -100,6 +100,7 @@ export default function LocationDetailScreen() {
         message: `${location.temperature}° - ${location.condition}`,
         containerStyle: {
           backgroundColor: colorScheme === 'dark' ? colors.card : 'white',
+          paddingBottom: insets.bottom,
         },
         textStyle: {
           color: colors.foreground,

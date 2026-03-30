@@ -101,6 +101,14 @@ export default function Header() {
           <Search />
           <ThemeToggle />
 
+          {/* Download CTA - desktop */}
+          <Link
+            href="https://packratai.com/#download"
+            className="hidden md:inline-flex items-center gap-1.5 ml-2 px-4 py-1.5 rounded-full bg-apple-blue text-white text-sm font-medium hover:bg-apple-blue/90 transition-colors"
+          >
+            Download Free
+          </Link>
+
           {/* Mobile menu - Apple style */}
           <Sheet>
             <SheetTrigger asChild>

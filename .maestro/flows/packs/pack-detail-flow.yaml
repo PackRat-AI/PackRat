@@ -1,0 +1,28 @@
+# Pack Detail Flow: Navigate to a pack and verify detail screen elements
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap the test pack
+- tapOn:
+    text: ${PACK_NAME}
+- waitForAnimationToEnd
+
+# Assert pack detail elements via testIDs
+- assertVisible:
+    id: "ask-ai-button"
+- assertVisible:
+    id: "add-item-button"
+- assertVisible:
+    id: "pack-more-actions"
+
+# Verify pack name is displayed
+- assertVisible:
+    text: ${PACK_NAME}
+
+# Go back to packs list
+- back
+- waitForAnimationToEnd

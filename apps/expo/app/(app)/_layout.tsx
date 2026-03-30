@@ -120,13 +120,22 @@ export default function AppLayout() {
         <Stack.Screen
           name="upcoming-trips"
           options={{
-            headerShown: false,
+            headerShown: true,
+            headerTitle: '',
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
           name="weather-alerts"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="weather-alert-preferences"
           options={{
             headerShown: false,
             presentation: 'modal',
@@ -260,7 +269,7 @@ const getTripNewOptions = (t: TranslationFunction) =>
 
 const getTripEditOptions = (t: TranslationFunction) =>
   ({
-    title: t('packs.editPack'),
+    title: t('trips.editTrip'),
     presentation: 'modal',
     animation: 'slide_from_bottom',
   }) as const;
