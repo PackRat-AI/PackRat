@@ -229,7 +229,7 @@ export type TranslationKeys =
   | 'ai.suggestions'
   | 'ai.cloud'
   | 'ai.local'
-  | 'ai.inferenceMode'
+  | 'ai.aiMode'
   | 'ai.downloadModel'
   | 'ai.downloadingModel'
   | 'ai.modelReady'

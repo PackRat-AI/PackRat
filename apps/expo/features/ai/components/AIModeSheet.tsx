@@ -102,7 +102,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
       >
         <BottomSheetView className="px-4 pb-8">
           <Text variant="title3" className="mb-4 mt-2 text-center font-semibold">
-            {t('ai.inferenceMode')}
+            {t('ai.aiMode')}
           </Text>
 
           {/* Cloud option */}

@@ -650,7 +650,7 @@
     "suggestions": "SUGGESTIONS",
     "cloud": "Cloud",
     "local": "Local",
-    "inferenceMode": "Inference",
+    "aiMode": "AI Mode",
     "downloadModel": "Download Model",
     "downloadingModel": "Downloading...",
     "modelReady": "Ready",
