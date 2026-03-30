@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type SurfaceCondition = 'Dry' | 'Muddy' | 'Snow' | 'Ice' | 'Closed';
 type ObstacleLevel = 'None' | 'Minor' | 'Major';
@@ -631,6 +632,7 @@ export default function TrailConditionsScreen() {
   const { colors } = useColorScheme();
   const [activeFilter, setActiveFilter] = useState<SurfaceCondition | 'All'>('All');
   const [reportModalVisible, setReportModalVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const filteredConditions =
     activeFilter === 'All'
@@ -638,7 +640,7 @@ export default function TrailConditionsScreen() {
       : TRAIL_CONDITIONS.filter((trail) => trail.surface === activeFilter);
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, paddingTop: insets.top }}>
       <LargeTitleHeader
         title={t('trailConditions.title')}
         rightView={() => (
@@ -654,7 +656,7 @@ export default function TrailConditionsScreen() {
         )}
       />
 
-      <ScrollView className="flex-1" stickyHeaderIndices={[0]}>
+      <ScrollView className="flex-1" stickyHeaderIndices={[0]} style={{ paddingTop: insets.top }}>
         {/* Filter bar — sticky */}
         <View className="border-b border-border bg-background px-4 pb-3 pt-2">
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -719,6 +721,6 @@ export default function TrailConditionsScreen() {
         visible={reportModalVisible}
         onClose={() => setReportModalVisible(false)}
       />
-    </>
+    </SafeAreaView>
   );
 }
