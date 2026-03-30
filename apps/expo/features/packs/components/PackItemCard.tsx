@@ -1,12 +1,12 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { Alert, type AlertRef, Text } from '@packrat/ui/nativewindui';
+import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { Pressable, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Pressable, TouchableWithoutFeedback, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useDeletePackItem,
   usePackItemDetailsFromStore,
@@ -37,7 +37,6 @@ export function PackItemCard({
 }: PackItemCardProps) {
   const router = useRouter();
   const { showActionSheetWithOptions } = useActionSheet();
-  const alertRef = useRef<AlertRef>(null);
   const isOwnedByUser = usePackItemOwnershipCheck(itemArg.id);
   const itemFromStore = usePackItemDetailsFromStore(itemArg.id); // Use item from store if it's user owned so that component observe changes to it and thus update properly.
   const item = isOwnedByUser ? itemFromStore : itemArg; // Use passed item if it's not owned by the current user.
@@ -45,6 +44,7 @@ export function PackItemCard({
 
   const deleteItem = useDeletePackItem();
   const { colors } = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   const isSelectable = 'onSelect' in restProps;
 
@@ -68,6 +68,7 @@ export function PackItemCard({
         message: item.description,
         containerStyle: {
           backgroundColor: colors.card,
+          paddingBottom: insets.bottom,
         },
         textStyle: {
           color: colors.foreground,
@@ -92,14 +93,10 @@ export function PackItemCard({
             });
             break;
           case destructiveButtonIndex:
-            alertRef.current?.alert({
-              title: 'Delete item?',
-              message: 'Are you sure you want to delete this item?',
-              buttons: [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'OK', onPress: () => deleteItem(item.id) },
-              ],
-            });
+            Alert.alert('Delete item?', 'Are you sure you want to delete this item?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'OK', style: 'destructive', onPress: () => deleteItem(item.id) },
+            ]);
             break;
         }
       },
@@ -178,7 +175,6 @@ export function PackItemCard({
           )}
         </View>
       </TouchableWithoutFeedback>
-      <Alert title="" buttons={[]} ref={alertRef} />
     </>
   );
 }

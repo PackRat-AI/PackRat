@@ -8,7 +8,7 @@ import {
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import Screen from 'expo-app/components/Screen';
+import TabScreen from 'expo-app/components/TabScreen';
 import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
@@ -212,7 +212,7 @@ export default function DashboardScreen() {
   }, [searchValue, dashboardLayout]);
 
   return (
-    <Screen>
+    <TabScreen>
       <LargeTitleHeader
         title={t('dashboard.title')}
         searchBar={{
@@ -287,8 +287,9 @@ export default function DashboardScreen() {
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
+        ListFooterComponent={<View className="h-12" />}
       />
-    </Screen>
+    </TabScreen>
   );
 }
 

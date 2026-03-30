@@ -1,4 +1,4 @@
-import type { Ai, Queue, R2Bucket } from '@cloudflare/workers-types';
+import type { Ai, DurableObjectNamespace, Queue, R2Bucket } from '@cloudflare/workers-types';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 import { z } from 'zod';
@@ -28,6 +28,7 @@ export const apiEnvSchema = z.object({
 
   // AI & External APIs
   OPENAI_API_KEY: z.string().startsWith('sk-'),
+  GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
   AI_PROVIDER: z.enum(['openai', 'cloudflare-workers-ai']),
   PERPLEXITY_API_KEY: z.string().startsWith('pplx-'),
 
@@ -43,6 +44,10 @@ export const apiEnvSchema = z.object({
   PACKRAT_BUCKET_R2_BUCKET_NAME: z.string(),
   PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: z.string(),
   PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: z.string(),
+  R2_PUBLIC_URL: z.string().url(),
+
+  // Container Configuration
+  CONTAINER_PORT: z.string().regex(/^\d+$/, 'Must be a valid port number').optional(),
 
   // Content & Guides
   PACKRAT_GUIDES_RAG_NAME: z.string(),
@@ -57,6 +62,8 @@ export const apiEnvSchema = z.object({
   ETL_QUEUE: z.unknown(),
   LOGS_QUEUE: z.unknown(),
   EMBEDDINGS_QUEUE: z.unknown(),
+  // App container Durable Object binding (APP_CONTAINER)
+  APP_CONTAINER: z.unknown(),
 });
 
 // Relaxed schema for test environments
@@ -74,6 +81,7 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   ETL_QUEUE: z.unknown().optional(),
   LOGS_QUEUE: z.unknown().optional(),
   EMBEDDINGS_QUEUE: z.unknown().optional(),
+  APP_CONTAINER: z.unknown().optional(),
 });
 
 // Infer the base type from Zod schema
@@ -90,6 +98,7 @@ export type ValidatedEnv = Omit<
   | 'ETL_QUEUE'
   | 'LOGS_QUEUE'
   | 'EMBEDDINGS_QUEUE'
+  | 'APP_CONTAINER'
 > & {
   // Properly typed Cloudflare bindings
   CF_VERSION_METADATA: WorkerVersionMetadata;
@@ -100,6 +109,8 @@ export type ValidatedEnv = Omit<
   ETL_QUEUE: Queue;
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
+  // AppContainer Durable Object binding (APP_CONTAINER)
+  APP_CONTAINER: DurableObjectNamespace;
 };
 
 // Cache for validated environments per request
@@ -150,6 +161,7 @@ export function getEnv(c: Context): ValidatedEnv {
     ETL_QUEUE: rawEnv.ETL_QUEUE || validated.data.ETL_QUEUE,
     LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
     EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
+    APP_CONTAINER: rawEnv.APP_CONTAINER || validated.data.APP_CONTAINER,
   } as ValidatedEnv;
 
   // Cache the result

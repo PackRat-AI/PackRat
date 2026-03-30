@@ -13,7 +13,8 @@ import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Linking, Text as RNText, SafeAreaView, ScrollView, View } from 'react-native';
+import { Linking, Text as RNText, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
 
@@ -185,12 +186,13 @@ export function CatalogItemDetailScreen() {
 
           <View className="mb-4 gap-2 flex-row justify-between">
             <View>
-              <Button onPress={handleAddToPack}>
+              <Button testID="add-to-pack-button" onPress={handleAddToPack}>
                 <Text>{t('catalog.addToPack')}</Text>
               </Button>
             </View>
             <View>
               <Button
+                testID="view-retailer-button"
                 variant="secondary"
                 onPress={() => Linking.openURL(item.productUrl as string)}
               >
