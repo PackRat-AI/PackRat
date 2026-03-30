@@ -1,12 +1,13 @@
 /**
  * Tools for the local on-device AI model (Apple Foundation Models / Llama).
  *
- * These tools operate purely on:
+ * These tools operate on:
  *  - Local Legend-State stores (packs, packItems) for data already on device
- *  - The API via axiosInstance for data that requires a network call (weather, catalog)
+ *  - The API via axiosInstance for data that requires a network call
  *
- * Server-only tools (webSearch, vectorSearch, RAG, executeSql) are intentionally
- * excluded because they depend on services only available in the Hono API context.
+ * All tools mirror the server-side tools in packages/api/src/utils/ai/tools.ts.
+ * Network-dependent tools (vectorSearch, RAG, webSearch, executeSql) proxy
+ * through authenticated API endpoints.
  */
 
 import { tool } from 'ai';
@@ -144,6 +145,138 @@ export function createLocalTools() {
           return {
             success: false,
             error: message ?? 'Failed to retrieve catalog items',
+          };
+        }
+      },
+    }),
+
+    catalogVectorSearch: tool({
+      description:
+        'Search the comprehensive gear database using vector/semantic similarity. Prefer this over getCatalogItems when the user describes gear in natural language rather than exact keywords.',
+      inputSchema: z.object({
+        query: z.string().min(1).describe('Natural language search query to find catalog items'),
+        limit: z
+          .number()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe('Number of results to return (default 10)'),
+        offset: z.number().min(0).optional().describe('Offset for pagination'),
+      }),
+      execute: async ({ query, limit = 10, offset = 0 }) => {
+        try {
+          const response = await axiosInstance.get('/api/catalog/vector-search', {
+            params: { q: query, limit, offset },
+          });
+          return { success: true, data: response.data };
+        } catch (error) {
+          const { message } = handleApiError(error);
+          return {
+            success: false,
+            error: message ?? 'Failed to perform vector search',
+          };
+        }
+      },
+    }),
+
+    searchPackratOutdoorGuidesRAG: tool({
+      description:
+        'Search the PackRat outdoor guides knowledge base using RAG (Retrieval-Augmented Generation). Use this when the user asks about hiking tips, gear advice, or outdoor techniques.',
+      inputSchema: z.object({
+        query: z.string().min(1).describe('Search query for outdoor guides'),
+        limit: z
+          .number()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe('Number of results to return (default 5)'),
+      }),
+      execute: async ({ query, limit = 5 }) => {
+        try {
+          const response = await axiosInstance.get('/api/ai/rag-search', {
+            params: { q: query, limit },
+          });
+          return { success: true, data: response.data };
+        } catch (error) {
+          const { message } = handleApiError(error);
+          return {
+            success: false,
+            error: message ?? 'Failed to search outdoor guides',
+          };
+        }
+      },
+    }),
+
+    webSearchTool: tool({
+      description: `Search the web for current information, news, deals, recommendations, and real-time data.
+        Use this when users ask about:
+        - Current events or recent news
+        - Product deals, prices, or reviews
+        - Travel recommendations (trails, hikes, destinations)
+        - Weather conditions
+        - Recent developments in any field
+        - Anything requiring up-to-date information`,
+      inputSchema: z.object({
+        query: z.string().describe('The search query - be specific and include relevant keywords'),
+      }),
+      execute: async ({ query }) => {
+        try {
+          const response = await axiosInstance.get('/api/ai/web-search', {
+            params: { q: query },
+          });
+          return { success: true, data: response.data };
+        } catch (error) {
+          const { message } = handleApiError(error);
+          return {
+            success: false,
+            error: message ?? 'Search failed',
+          };
+        }
+      },
+    }),
+
+    executeSql: tool({
+      description:
+        'Execute read-only SQL queries against the database. Only SELECT statements are allowed. Call getDatabaseSchema first if you need to know the available tables and columns.',
+      inputSchema: z.object({
+        query: z
+          .string()
+          .describe('SQL SELECT statement to execute. Must be a valid SELECT query.'),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe('Maximum number of rows to return (default: 100, max: 1000)'),
+      }),
+      execute: async ({ query, limit = 100 }) => {
+        try {
+          const response = await axiosInstance.post('/api/ai/execute-sql', { query, limit });
+          return response.data;
+        } catch (error) {
+          const { message } = handleApiError(error);
+          return {
+            success: false,
+            error: message ?? 'Failed to execute query',
+          };
+        }
+      },
+    }),
+
+    getDatabaseSchema: tool({
+      description:
+        'Retrieve the database schema (table names and columns). Call this before executeSql if you are unsure which tables or columns exist.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        try {
+          const response = await axiosInstance.get('/api/ai/db-schema');
+          return { success: true, data: response.data };
+        } catch (error) {
+          const { message } = handleApiError(error);
+          return {
+            success: false,
+            error: message ?? 'Failed to retrieve database schema',
           };
         }
       },
