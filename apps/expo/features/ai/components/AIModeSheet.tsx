@@ -18,7 +18,7 @@ import { LLAMA_MODEL_SIZE } from '../lib/constants';
 import {
   cancelLocalModelDownload,
   downloadLocalModel,
-  isAppleModelSupported,
+  isAppleIntelligenceAvailable,
 } from '../lib/localModelManager';
 import { CircularDownloadButton } from './CircularDownloadButton';
 
@@ -33,7 +33,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
     const progress = useAtomValue(localModelProgressAtom);
     const isModelFileAvailable = useAtomValue(localModelFileAvailableAtom);
 
-    const isApple = isAppleModelSupported();
+    const isApple = isAppleIntelligenceAvailable();
     const isModelReady = modelStatus === 'ready';
     const isDownloading = modelStatus === 'downloading';
     const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';

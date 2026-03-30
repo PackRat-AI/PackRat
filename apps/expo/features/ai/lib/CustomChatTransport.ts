@@ -5,14 +5,17 @@ import {
   convertToModelMessages,
   type LanguageModel,
   streamText,
+  type ToolSet,
   type UIMessageChunk,
 } from 'ai';
 
 export class CustomChatTransport implements ChatTransport<UIMessage> {
   private model: LanguageModel | undefined;
+  private tools: ToolSet | undefined;
 
-  constructor(model?: LanguageModel) {
+  constructor(model?: LanguageModel, tools?: ToolSet) {
     this.model = model;
+    this.tools = tools;
   }
 
   setModel(model: LanguageModel) {
@@ -37,7 +40,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
       model: this.model,
       messages: convertToModelMessages(options.messages),
       abortSignal: options.abortSignal,
-      toolChoice: 'auto',
+      ...(this.tools ? { tools: this.tools, toolChoice: 'auto' } : {}),
     });
 
     return result.toUIMessageStream({

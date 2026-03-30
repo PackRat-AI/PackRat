@@ -8,6 +8,7 @@
  * from any component, even while the bottom sheet is closed.
  */
 
+import { apple } from '@react-native-ai/apple';
 import { type LlamaLanguageModel, llama } from '@react-native-ai/llama';
 import { store } from 'expo-app/atoms/store';
 import { Platform } from 'react-native';
@@ -20,6 +21,7 @@ import {
 } from '../atoms/aiModeAtoms';
 
 import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from './constants';
+import { createLocalTools } from './tools';
 
 const LLAMA_MODEL_FILENAME = 'SmolLM3-Q4_K_M.gguf';
 const LLAMA_MODELS_DIR = `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models`;
@@ -55,16 +57,27 @@ let appleModel: any = null;
 let activeDownloadTask: any = null;
 let _isCancellingDownload = false;
 
-export function isAppleModelSupported(): boolean {
+/**
+ * Returns true if Apple Intelligence is available on this device.
+ * Requires iOS 26+, Apple Intelligence enabled in Settings, and the
+ * @react-native-ai/apple native module reporting availability.
+ * Falls back to Llama (via isAvailable() === false) if any check fails.
+ */
+export function isAppleIntelligenceAvailable(): boolean {
   if (Platform.OS !== 'ios') return false;
   const version =
     typeof Platform.Version === 'string' ? parseInt(Platform.Version, 10) : Platform.Version;
-  return version >= 26;
+  if (version < 26) return false;
+  try {
+    return apple.isAvailable();
+  } catch {
+    return false;
+  }
 }
 
 /** Returns the ready model instance, or null if not prepared yet. */
 export function getLocalModel(): LlamaLanguageModel | null {
-  if (isAppleModelSupported()) return appleModel;
+  if (isAppleIntelligenceAvailable()) return appleModel;
   return llamaModel;
 }
 
@@ -84,7 +97,7 @@ export async function initLocalModel(): Promise<void> {
   store.set(localModelStatusAtom, 'checking');
   store.set(localModelErrorAtom, null);
 
-  if (isAppleModelSupported()) {
+  if (isAppleIntelligenceAvailable()) {
     await _initAppleModel();
   } else {
     await _initLlamaModel();
@@ -96,7 +109,7 @@ export async function initLocalModel(): Promise<void> {
  * will fast-path to prepare().
  */
 export async function downloadLocalModel(): Promise<void> {
-  if (isAppleModelSupported()) {
+  if (isAppleIntelligenceAvailable()) {
     // Apple model needs no download — just init
     await _initAppleModel();
     return;
@@ -203,14 +216,15 @@ export async function deleteLocalModel(): Promise<void> {
 // ─── private helpers ───────────────────────────────────────────────────────
 
 async function _initAppleModel(): Promise<void> {
+  // isAppleIntelligenceAvailable() has already confirmed availability — just init.
   store.set(localModelStatusAtom, 'preparing');
   try {
-    const { apple } = await import('@react-native-ai/apple');
     appleModel = apple();
+    appleModel.updateTools(createLocalTools());
     store.set(localModelStatusAtom, 'ready');
   } catch {
     store.set(localModelStatusAtom, 'error');
-    store.set(localModelErrorAtom, 'Apple Foundation Model is not available on this device.');
+    store.set(localModelErrorAtom, 'Failed to initialise Apple Foundation Model.');
   }
 }
 

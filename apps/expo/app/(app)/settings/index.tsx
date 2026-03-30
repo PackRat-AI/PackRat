@@ -10,7 +10,7 @@ import {
   cancelLocalModelDownload,
   deleteLocalModel,
   downloadLocalModel,
-  isAppleModelSupported,
+  isAppleIntelligenceAvailable,
 } from 'expo-app/features/ai/lib/localModelManager';
 import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
@@ -30,7 +30,7 @@ export default function SettingsScreen() {
   const progress = useAtomValue(localModelProgressAtom);
   const isDownloaded = useAtomValue(localModelFileAvailableAtom);
 
-  const isApple = isAppleModelSupported();
+  const isApple = isAppleIntelligenceAvailable();
   const isDownloading = modelStatus === 'downloading';
   const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
   const isReady = modelStatus === 'ready';

@@ -15,6 +15,7 @@ import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
 import { CustomChatTransport } from 'expo-app/features/ai/lib/CustomChatTransport';
 import { getLocalModel, initLocalModel } from 'expo-app/features/ai/lib/localModelManager';
+import { createLocalTools } from 'expo-app/features/ai/lib/tools';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
@@ -117,11 +118,13 @@ export default function AIChat() {
   // Build the right transport based on current AI mode.
   // Recreated when aiMode or modelStatus changes (modelStatus drives local readiness).
   const isLocalReady = modelStatus === 'ready';
+  const tools = React.useMemo(() => createLocalTools(), []);
+
   const transport = React.useMemo(() => {
     if (aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
-        return new CustomChatTransport(model);
+        return new CustomChatTransport(model, tools);
       }
     }
     return new DefaultChatTransport({
@@ -136,7 +139,7 @@ export default function AIChat() {
         date: new Date().toLocaleString(),
       }),
     });
-  }, [aiMode, isLocalReady, token]);
+  }, [aiMode, isLocalReady, token, tools]);
 
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport,
