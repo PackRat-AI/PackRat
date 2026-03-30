@@ -62,6 +62,15 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
       : `${t('ai.llamaModel')} (${LLAMA_MODEL_SIZE})`;
 
     const localStatusNode = () => {
+      if (isDownloading) {
+        return (
+          <View className="flex-row items-center gap-2">
+            <Text variant="footnote" className="text-primary">
+              Downloading {progress}%
+            </Text>
+          </View>
+        );
+      }
       if (isPreparing) {
         return (
           <View className="flex-row items-center gap-2">

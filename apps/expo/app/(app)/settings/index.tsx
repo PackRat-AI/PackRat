@@ -7,6 +7,7 @@ import {
 } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import { LLAMA_MODEL_SIZE } from 'expo-app/features/ai/lib/constants';
 import {
+  cancelLocalModelDownload,
   deleteLocalModel,
   downloadLocalModel,
   isAppleModelSupported,
@@ -107,14 +108,26 @@ export default function SettingsScreen() {
 
                   {!isApple && (
                     <>
-                      {(!isDownloaded || isDownloading || isError) && !isPreparing && (
-                        <TouchableOpacity onPress={downloadLocalModel} disabled={isDownloading}>
+                      {isDownloading && (
+                        <View className="flex-row items-center gap-3">
+                          <Text variant="footnote" className="font-medium" color="tertiary">
+                            {progress}%
+                          </Text>
+                          <TouchableOpacity onPress={cancelLocalModelDownload}>
+                            <Text variant="footnote" className="font-medium text-destructive">
+                              {t('ai.cancel')}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                      {(!isDownloaded || isError) && !isDownloading && !isPreparing && (
+                        <TouchableOpacity onPress={downloadLocalModel}>
                           <Text
                             variant="footnote"
                             className="font-medium"
-                            style={{ color: isDownloading ? colors.grey2 : colors.primary }}
+                            style={{ color: colors.primary }}
                           >
-                            {isDownloading ? `${progress}%` : 'Download'}
+                            Download
                           </Text>
                         </TouchableOpacity>
                       )}
