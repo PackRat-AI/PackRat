@@ -22,9 +22,17 @@ import {
 import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from './constants';
 
 const LLAMA_MODEL_FILENAME = 'SmolLM3-Q4_K_M.gguf';
+const LLAMA_MODELS_DIR = `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models`;
 
 function _getLlamaModelPath(): string {
-  return `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models/${LLAMA_MODEL_FILENAME}`;
+  return `${LLAMA_MODELS_DIR}/${LLAMA_MODEL_FILENAME}`;
+}
+
+function _getLlamaDownloadUrl(): string {
+  const parts = LLAMA_MODEL_ID.split('/');
+  const filename = parts[parts.length - 1];
+  const repo = parts.slice(0, -1).join('/');
+  return `https://huggingface.co/${repo}/resolve/main/${filename}?download=true`;
 }
 
 /**
@@ -43,6 +51,9 @@ async function _isLlamaModelAvailable(): Promise<boolean> {
 let llamaModel: LlamaLanguageModel | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let appleModel: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let activeDownloadTask: any = null;
+let _isCancellingDownload = false;
 
 export function isAppleModelSupported(): boolean {
   if (Platform.OS !== 'ios') return false;
@@ -114,10 +125,22 @@ export async function downloadLocalModel(): Promise<void> {
     store.set(localModelStatusAtom, 'downloading');
     store.set(localModelProgressAtom, 0);
     try {
-      await llamaModel.download((progress) => {
-        store.set(localModelProgressAtom, Math.round(progress.percentage));
+      const dirExists = await RNBlobUtil.fs.exists(LLAMA_MODELS_DIR);
+      if (!dirExists) {
+        await RNBlobUtil.fs.mkdir(LLAMA_MODELS_DIR);
+      }
+      activeDownloadTask = RNBlobUtil.config({ path: _getLlamaModelPath(), fileCache: true }).fetch(
+        'GET',
+        _getLlamaDownloadUrl(),
+      );
+      activeDownloadTask.progress((received: number, total: number) => {
+        store.set(localModelProgressAtom, Math.round((Number(received) / Number(total)) * 100));
       });
+      await activeDownloadTask;
+      activeDownloadTask = null;
     } catch (err) {
+      activeDownloadTask = null;
+      if (_isCancellingDownload) return;
       store.set(localModelStatusAtom, 'error');
       store.set(localModelErrorAtom, err instanceof Error ? err.message : String(err));
       return;
@@ -125,6 +148,29 @@ export async function downloadLocalModel(): Promise<void> {
   }
 
   await _prepareLlamaModel();
+}
+
+/** Cancel an in-progress llama model download and reset state to idle. */
+export async function cancelLocalModelDownload(): Promise<void> {
+  _isCancellingDownload = true;
+  if (activeDownloadTask) {
+    activeDownloadTask.cancel();
+    activeDownloadTask = null;
+  }
+  store.set(localModelStatusAtom, 'idle');
+  store.set(localModelProgressAtom, 0);
+  store.set(localModelErrorAtom, null);
+  // Remove any partial file left by the cancelled download
+  const path = _getLlamaModelPath();
+  try {
+    const exists = await RNBlobUtil.fs.exists(path);
+    if (exists) {
+      await RNBlobUtil.fs.unlink(path);
+    }
+  } catch {
+    // ignore
+  }
+  _isCancellingDownload = false;
 }
 
 /** Delete the downloaded llama model from disk. */

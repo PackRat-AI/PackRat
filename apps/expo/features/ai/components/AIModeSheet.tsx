@@ -15,7 +15,11 @@ import {
   localModelStatusAtom,
 } from '../atoms/aiModeAtoms';
 import { LLAMA_MODEL_SIZE } from '../lib/constants';
-import { downloadLocalModel, isAppleModelSupported } from '../lib/localModelManager';
+import {
+  cancelLocalModelDownload,
+  downloadLocalModel,
+  isAppleModelSupported,
+} from '../lib/localModelManager';
 import { CircularDownloadButton } from './CircularDownloadButton';
 
 type AIModeSheetProps = Record<string, never>;
@@ -47,6 +51,10 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
 
     const handleDownload = () => {
       downloadLocalModel();
+    };
+
+    const handleCancel = () => {
+      cancelLocalModelDownload();
     };
 
     const localModelLabel = isApple
@@ -139,6 +147,7 @@ export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
                 progress={progress}
                 isDownloading={isDownloading}
                 onDownload={handleDownload}
+                onCancel={handleCancel}
                 size={36}
                 strokeWidth={3}
               />

@@ -2,12 +2,12 @@ import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as React from 'react';
 import { TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
 
 type Props = {
   progress: number;
   isDownloading: boolean;
   onDownload: () => void;
+  onCancel?: () => void;
   size?: number;
   strokeWidth?: number;
 };
@@ -16,6 +16,7 @@ export function CircularDownloadButton({
   progress,
   isDownloading,
   onDownload,
+  onCancel,
   size = 44,
   strokeWidth = 4,
 }: Props) {
@@ -34,11 +35,7 @@ export function CircularDownloadButton({
 
   const handlePress = () => {
     if (isDownloading) {
-      Toast.show({
-        type: 'success',
-        text1: 'To cancel the download, exit the app',
-        position: 'bottom',
-      });
+      onCancel?.();
       return;
     }
     onDownload();
