@@ -1,5 +1,7 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
+import * as Burnt from 'burnt';
+import { appAlert } from 'expo-app/app/_layout';
 import {
   localModelFileAvailableAtom,
   localModelProgressAtom,
@@ -19,8 +21,7 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
-import { Alert, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
   const { colorScheme, colors } = useColorScheme();
@@ -37,21 +38,21 @@ export default function SettingsScreen() {
   const isError = modelStatus === 'error';
 
   const handleDelete = () => {
-    Alert.alert(
-      t('ai.deleteModel'),
-      'This will remove the model from your device. You can re-download it later.',
-      [
+    appAlert.current?.alert({
+      title: t('ai.deleteModel'),
+      message: 'This will remove the model from your device. You can re-download it later.',
+      buttons: [
         { text: t('ai.cancel'), style: 'cancel' },
         {
           text: t('ai.deleteModel'),
           style: 'destructive',
           onPress: async () => {
             await deleteLocalModel();
-            Toast.show({ type: 'success', text1: 'Model deleted', position: 'bottom' });
+            Burnt.toast({ title: 'Model deleted', preset: 'done' });
           },
         },
       ],
-    );
+    });
   };
 
   const statusLabel = () => {
