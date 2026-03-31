@@ -2,9 +2,9 @@ import { type UIMessage, useChat } from '@ai-sdk/react';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
-import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
   clearChatMessages,
   loadChatMessages,
@@ -13,6 +13,9 @@ import {
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
 import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
+import { CustomChatTransport } from 'expo-app/features/ai/lib/CustomChatTransport';
+import { getLocalModel, initLocalModel } from 'expo-app/features/ai/lib/localModelManager';
+import { createLocalTools } from 'expo-app/features/ai/lib/tools';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
@@ -47,6 +50,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 const _dimensions = Dimensions.get('window');
@@ -54,23 +58,6 @@ const _dimensions = Dimensions.get('window');
 const ROOT_STYLE: ViewStyle = {
   flex: 1,
   minHeight: 2,
-};
-
-const _SPRING_CONFIG = {
-  damping: 15,
-  stiffness: 150,
-  mass: 0.5,
-  overshootClamping: false,
-  restDisplacementThreshold: 0.01,
-  restSpeedThreshold: 0.01,
-};
-
-const _HEADER_POSITION_STYLE: ViewStyle = {
-  position: 'absolute',
-  zIndex: 50,
-  top: 0,
-  left: 0,
-  right: 0,
 };
 
 export default function AIChat() {
@@ -83,6 +70,9 @@ export default function AIChat() {
   const [location, setLocation] = React.useState<WeatherLocation | null>(activeLocation);
   const scrollViewRef = React.useRef<ScrollView>(null);
   const { t } = useTranslation();
+
+  const aiMode = useAtomValue(aiModeAtom);
+  const modelStatus = useAtomValue(localModelStatusAtom);
 
   const context = React.useMemo(
     () => ({
@@ -116,23 +106,45 @@ export default function AIChat() {
     [context],
   );
 
-  const { messages, setMessages, error, sendMessage, stop, status } = useChat({
-    transport: new DefaultChatTransport({
-      fetch: expoFetch as unknown as typeof globalThis.fetch,
+  // Kick off model init check on mount (prepares already-downloaded models)
+  React.useEffect(() => {
+    initLocalModel();
+  }, []);
+
+  // Keep a ref for context body values so the transport closure stays fresh
+  const contextRef = React.useRef(context);
+  contextRef.current = context;
+
+  // Build the right transport based on current AI mode.
+  // Recreated when aiMode or modelStatus changes (modelStatus drives local readiness).
+  const isLocalReady = modelStatus === 'ready';
+  const tools = React.useMemo(() => createLocalTools(), []);
+
+  const transport = React.useMemo(() => {
+    if (aiMode === 'local' && isLocalReady) {
+      const model = getLocalModel();
+      if (model) {
+        return new CustomChatTransport(model, tools);
+      }
+    }
+    return new DefaultChatTransport({
+      fetch: undefined,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
       body: () => ({
-        contextType: context.contextType,
-        itemId: context.itemId,
-        packId: context.packId,
+        contextType: contextRef.current.contextType,
+        itemId: contextRef.current.itemId,
+        packId: contextRef.current.packId,
         location: locationRef.current,
         date: new Date().toLocaleString(),
       }),
-    }),
+    });
+  }, [aiMode, isLocalReady, token, tools]);
+
+  const { messages, setMessages, error, sendMessage, stop, status } = useChat({
+    transport,
     onError: (error: Error) => console.log(error, 'ERROR'),
-    experimental_throttle: 200, // Throttle updates to 200ms to prevent UI freezes (e.g. unresponsive button presses)
+    experimental_throttle: 200,
     messages: initialMessages,
   });
 
@@ -163,12 +175,10 @@ export default function AIChat() {
 
   // Save messages whenever they change with debouncing to reduce storage I/O
   React.useEffect(() => {
-    // Don't save if we're currently loading persisted messages or if there are no messages
     if (isLoadingPersistedRef.current || messages.length === 0) {
       return;
     }
 
-    // Debounce the save operation to reduce storage writes during rapid updates
     const timeoutId = setTimeout(() => {
       saveChatMessages(context, messages);
     }, 500);
@@ -186,6 +196,17 @@ export default function AIChat() {
 
   const handleSubmit = (text?: string) => {
     const messageText = text || input;
+
+    // Guard: local mode but model not ready
+    if (aiMode === 'local' && modelStatus !== 'ready') {
+      Toast.show({
+        type: 'error',
+        text1: t('ai.modelNotReady'),
+        position: 'bottom',
+      });
+      return;
+    }
+
     setLastUserMessage(messageText);
     setPreviousMessages(messages);
     sendMessage({ text: messageText });
@@ -279,7 +300,6 @@ export default function AIChat() {
           </View>
 
           {messages.map((item, index) => {
-            // Get the user query for this AI response
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
               const userMessage = messages[index - 1];
@@ -329,7 +349,7 @@ export default function AIChat() {
         <Composer
           textInputHeight={textInputHeight}
           input={input}
-          handleInputChange={setInput} // Pass the setter directly.
+          handleInputChange={setInput}
           handleSubmit={() => {
             handleSubmit();
           }}
