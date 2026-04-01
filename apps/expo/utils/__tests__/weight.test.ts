@@ -57,6 +57,11 @@ describe('convertWeight', () => {
   it('converts pounds to grams', () => {
     expect(convertWeight(1, 'lb', 'g')).toBe(454);
   });
+
+  it('returns original weight for unknown unit conversions', () => {
+    // When target unit is unknown, returns the original weight
+    expect(convertWeight(100, 'g', 'unknown' as WeightUnit)).toBe(100);
+  });
 });
 
 // ---------------------------------------------------------------------------
