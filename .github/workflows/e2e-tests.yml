@@ -31,7 +31,7 @@ env:
 jobs:
   ios-e2e:
     name: iOS E2E Tests
-    runs-on: macos-15
+    runs-on: macos-26-large
     timeout-minutes: 120
     # Skip on forked PRs — secrets are not available in forks
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
