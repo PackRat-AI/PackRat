@@ -115,4 +115,375 @@ describe('Pack Templates Routes', () => {
       expectNotFound(res);
     });
   });
+
+  describe('POST /pack-templates', () => {
+    it('should create a new pack template', async () => {
+      const templateData = {
+        id: `pt-test-${Date.now()}`,
+        name: 'Test Weekend Trip Template',
+        description: 'Template for weekend camping trips',
+        category: 'Camping',
+        tags: ['weekend', 'camping'],
+        localCreatedAt: new Date().toISOString(),
+        localUpdatedAt: new Date().toISOString(),
+      };
+
+      const res = await apiWithAuth('/pack-templates', {
+        method: 'POST',
+        body: JSON.stringify(templateData),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBe(templateData.id);
+      expect(data.name).toBe(templateData.name);
+      expect(data.category).toBe(templateData.category);
+    });
+
+    it('should create template with minimal fields', async () => {
+      const templateData = {
+        id: `pt-minimal-${Date.now()}`,
+        name: 'Minimal Template',
+        localCreatedAt: new Date().toISOString(),
+        localUpdatedAt: new Date().toISOString(),
+      };
+
+      const res = await apiWithAuth('/pack-templates', {
+        method: 'POST',
+        body: JSON.stringify(templateData),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBe(templateData.id);
+      expect(data.name).toBe(templateData.name);
+    });
+
+    it('should not allow regular user to create app template', async () => {
+      const templateData = {
+        id: `pt-app-${Date.now()}`,
+        name: 'Attempted App Template',
+        isAppTemplate: true,
+        localCreatedAt: new Date().toISOString(),
+        localUpdatedAt: new Date().toISOString(),
+      };
+
+      const res = await apiWithAuth('/pack-templates', {
+        method: 'POST',
+        body: JSON.stringify(templateData),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await expectJsonResponse(res);
+      // isAppTemplate should be false for non-admin users
+      expect(data.isAppTemplate).toBe(false);
+    });
+
+    it('should require authentication', async () => {
+      const templateData = {
+        id: `pt-unauth-${Date.now()}`,
+        name: 'Unauthorized Template',
+        localCreatedAt: new Date().toISOString(),
+        localUpdatedAt: new Date().toISOString(),
+      };
+
+      const res = await api('/pack-templates', {
+        method: 'POST',
+        body: JSON.stringify(templateData),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      expectUnauthorized(res);
+    });
+  });
+
+  describe('PUT /pack-templates/:id', () => {
+    it('should update a pack template', async () => {
+      const template = await seedPackTemplate({ name: 'Original Name' });
+
+      const updateData = {
+        name: 'Updated Name',
+        description: 'Updated description',
+      };
+
+      const res = await apiWithAuth(`/pack-templates/${template.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updateData),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.name).toBe('Updated Name');
+      expect(data.description).toBe('Updated description');
+    });
+
+    it('should update only provided fields', async () => {
+      const template = await seedPackTemplate({
+        name: 'Original',
+        description: 'Original Description',
+        category: 'Original Category',
+      });
+
+      const updateData = {
+        name: 'Updated Name Only',
+      };
+
+      const res = await apiWithAuth(`/pack-templates/${template.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updateData),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.name).toBe('Updated Name Only');
+      expect(data.description).toBe('Original Description');
+      expect(data.category).toBe('Original Category');
+    });
+
+    it('should return 404 for non-existent template', async () => {
+      const res = await apiWithAuth('/pack-templates/non-existent-id', {
+        method: 'PUT',
+        body: JSON.stringify({ name: 'Updated' }),
+      });
+
+      expectNotFound(res);
+    });
+
+    it('should require authentication', async () => {
+      const template = await seedPackTemplate();
+
+      const res = await api(`/pack-templates/${template.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: 'Updated' }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      expectUnauthorized(res);
+    });
+  });
+
+  describe('DELETE /pack-templates/:id', () => {
+    it('should delete a pack template', async () => {
+      const template = await seedPackTemplate({ name: 'To Delete' });
+
+      const res = await apiWithAuth(`/pack-templates/${template.id}`, {
+        method: 'DELETE',
+      });
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.success).toBe(true);
+
+      // Verify template is deleted
+      const getRes = await apiWithAuth(`/pack-templates/${template.id}`);
+      expectNotFound(getRes);
+    });
+
+    it('should return 404 for non-existent template', async () => {
+      const res = await apiWithAuth('/pack-templates/non-existent-id', {
+        method: 'DELETE',
+      });
+
+      expectNotFound(res);
+    });
+
+    it('should require authentication', async () => {
+      const template = await seedPackTemplate();
+
+      const res = await api(`/pack-templates/${template.id}`, {
+        method: 'DELETE',
+      });
+
+      expectUnauthorized(res);
+    });
+  });
+
+  describe('POST /pack-templates/:id/items', () => {
+    it('should add an item to a template', async () => {
+      const template = await seedPackTemplate();
+
+      const itemData = {
+        id: `pti-test-${Date.now()}`,
+        name: 'Test Item',
+        description: 'Test Description',
+        weight: 500,
+        weightUnit: 'g',
+        quantity: 2,
+        category: 'Gear',
+        consumable: false,
+        worn: false,
+      };
+
+      const res = await apiWithAuth(`/pack-templates/${template.id}/items`, {
+        method: 'POST',
+        body: JSON.stringify(itemData),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBe(itemData.id);
+      expect(data.name).toBe(itemData.name);
+      expect(data.quantity).toBe(2);
+    });
+
+    it('should add item with minimal fields', async () => {
+      const template = await seedPackTemplate();
+
+      const itemData = {
+        id: `pti-minimal-${Date.now()}`,
+        name: 'Minimal Item',
+        weight: 100,
+        weightUnit: 'g',
+      };
+
+      const res = await apiWithAuth(`/pack-templates/${template.id}/items`, {
+        method: 'POST',
+        body: JSON.stringify(itemData),
+      });
+
+      expect(res.status).toBe(201);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBe(itemData.id);
+      expect(data.quantity).toBe(1); // Default quantity
+    });
+
+    it('should return 404 for non-existent template', async () => {
+      const itemData = {
+        id: `pti-test-${Date.now()}`,
+        name: 'Test Item',
+        weight: 100,
+        weightUnit: 'g',
+      };
+
+      const res = await apiWithAuth('/pack-templates/non-existent/items', {
+        method: 'POST',
+        body: JSON.stringify(itemData),
+      });
+
+      expectNotFound(res);
+    });
+
+    it('should not allow adding items to app template by non-admin', async () => {
+      const template = await seedPackTemplate({ isAppTemplate: true });
+
+      const itemData = {
+        id: `pti-app-${Date.now()}`,
+        name: 'Test Item',
+        weight: 100,
+        weightUnit: 'g',
+      };
+
+      const res = await apiWithAuth(`/pack-templates/${template.id}/items`, {
+        method: 'POST',
+        body: JSON.stringify(itemData),
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should require authentication', async () => {
+      const template = await seedPackTemplate();
+
+      const itemData = {
+        id: `pti-unauth-${Date.now()}`,
+        name: 'Test Item',
+        weight: 100,
+        weightUnit: 'g',
+      };
+
+      const res = await api(`/pack-templates/${template.id}/items`, {
+        method: 'POST',
+        body: JSON.stringify(itemData),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      expectUnauthorized(res);
+    });
+  });
+
+  describe('PATCH /pack-templates/items/:itemId', () => {
+    it('should update a template item', async () => {
+      const template = await seedPackTemplate();
+      const item = await seedPackTemplateItem(template.id, { name: 'Original Item' });
+
+      const updateData = {
+        name: 'Updated Item',
+        quantity: 3,
+      };
+
+      const res = await apiWithAuth(`/pack-templates/items/${item.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updateData),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.name).toBe('Updated Item');
+      expect(data.quantity).toBe(3);
+    });
+
+    it('should return 404 for non-existent item', async () => {
+      const res = await apiWithAuth('/pack-templates/items/non-existent-id', {
+        method: 'PATCH',
+        body: JSON.stringify({ name: 'Updated' }),
+      });
+
+      expectNotFound(res);
+    });
+
+    it('should require authentication', async () => {
+      const template = await seedPackTemplate();
+      const item = await seedPackTemplateItem(template.id);
+
+      const res = await api(`/pack-templates/items/${item.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: 'Updated' }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      expectUnauthorized(res);
+    });
+  });
+
+  describe('DELETE /pack-templates/items/:itemId', () => {
+    it('should delete a template item', async () => {
+      const template = await seedPackTemplate();
+      const item = await seedPackTemplateItem(template.id);
+
+      const res = await apiWithAuth(`/pack-templates/items/${item.id}`, {
+        method: 'DELETE',
+      });
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.success).toBe(true);
+
+      // Verify item is deleted
+      const itemsRes = await apiWithAuth(`/pack-templates/${template.id}/items`);
+      const items = await itemsRes.json();
+      const deletedItem = (Array.isArray(items) ? items : items.items).find(
+        (i: { id: string }) => i.id === item.id,
+      );
+      expect(deletedItem).toBeUndefined();
+    });
+
+    it('should return 404 for non-existent item', async () => {
+      const res = await apiWithAuth('/pack-templates/items/non-existent-id', {
+        method: 'DELETE',
+      });
+
+      expectNotFound(res);
+    });
+
+    it('should require authentication', async () => {
+      const template = await seedPackTemplate();
+      const item = await seedPackTemplateItem(template.id);
+
+      const res = await api(`/pack-templates/items/${item.id}`, {
+        method: 'DELETE',
+      });
+
+      expectUnauthorized(res);
+    });
+  });
 });
