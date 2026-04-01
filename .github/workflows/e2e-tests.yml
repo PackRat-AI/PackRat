@@ -31,7 +31,7 @@ env:
 jobs:
   ios-e2e:
     name: iOS E2E Tests
-    runs-on: macos-26-large
+    runs-on: macos-15
     timeout-minutes: 120
     # Skip on forked PRs — secrets are not available in forks
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -43,6 +43,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.2'
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
