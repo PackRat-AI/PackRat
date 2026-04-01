@@ -104,6 +104,18 @@ describe('computePackWeights', () => {
     expect(result.baseWeight).toBe(2000);
   });
 
+  it('handles oz weight unit correctly', () => {
+    const items = [makePackItem({ weight: 1, weightUnit: 'oz' })];
+    const result = computePackWeights(makePack(items));
+    expect(result.totalWeight).toBeCloseTo(28, 0);
+  });
+
+  it('handles lb weight unit correctly', () => {
+    const items = [makePackItem({ weight: 1, weightUnit: 'lb' })];
+    const result = computePackWeights(makePack(items));
+    expect(result.totalWeight).toBeCloseTo(454, 0);
+  });
+
   it('respects the preferredUnit parameter (oz)', () => {
     const items = [makePackItem({ weight: 28.35, weightUnit: 'g' })];
     const result = computePackWeights(makePack(items), 'oz');
@@ -114,6 +126,12 @@ describe('computePackWeights', () => {
     const items = [makePackItem({ weight: 1000, weightUnit: 'g' })];
     const result = computePackWeights(makePack(items), 'kg');
     expect(result.totalWeight).toBe(1);
+  });
+
+  it('respects the preferredUnit parameter (lb)', () => {
+    const items = [makePackItem({ weight: 453.59, weightUnit: 'g' })];
+    const result = computePackWeights(makePack(items), 'lb');
+    expect(result.totalWeight).toBeCloseTo(1, 1);
   });
 
   it('preserves all other pack properties', () => {
