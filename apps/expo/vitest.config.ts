@@ -20,13 +20,24 @@ export default defineConfig({
     name: 'expo-unit',
     environment: 'node',
     globals: true,
-    include: [resolve(__dirname, '{utils,lib/utils}/**/*.test.ts')],
+    include: [
+      resolve(__dirname, '{utils,lib/utils}/**/*.test.ts'),
+      resolve(__dirname, 'features/**/utils/**/*.test.ts'),
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: resolve(__dirname, 'coverage/unit'),
-      include: ['utils/**/*.ts', 'lib/utils/**/*.ts'],
-      exclude: ['utils/**/*.test.ts', 'lib/utils/**/*.test.ts'],
+      include: [
+        'utils/**/*.ts',
+        'lib/utils/**/*.ts',
+        'features/**/utils/**/*.ts',
+      ],
+      exclude: [
+        'utils/**/*.test.ts',
+        'lib/utils/**/*.test.ts',
+        'features/**/utils/**/*.test.ts',
+      ],
     },
   },
 });
