@@ -16,10 +16,14 @@
     },
     "e2e": {
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "image": "latest"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "env": {
+          "GRADLE_OPTS": "-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dorg.gradle.jvmargs=-Xmx4096m"
+        }
       }
     },
     "production": {
