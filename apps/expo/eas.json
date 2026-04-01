@@ -21,10 +21,11 @@
       },
       "android": {
         "buildType": "apk",
-        "resourceClass": "medium",
-        "gradleCommand": ":app:assembleRelease -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease",
+        "resourceClass": "large",
+        "gradleCommand": ":app:bundleRelease -x lintVitalAnalyzeRelease",
         "env": {
-          "GRADLE_OPTS": "-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+          "GRADLE_OPTS": "-Xmx6144m -XX:MaxMetaspaceSize=1536m",
+          "JAVA_OPTS": "-Xmx6144m"
         }
       }
     },
