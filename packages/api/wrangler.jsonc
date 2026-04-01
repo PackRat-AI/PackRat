@@ -64,10 +64,10 @@
   "ai": {
     "binding": "AI"
   },
-  // TikTok Container configuration - runs Node.js TikTok API service
+  // App Container configuration - runs Node.js TikTok API service
   "containers": [
     {
-      "class_name": "TikTokContainer",
+      "class_name": "AppContainer",
       "image": "./Dockerfile",
       "max_instances": 5
     }
@@ -75,16 +75,25 @@
   "durable_objects": {
     "bindings": [
       {
-        "class_name": "TikTokContainer",
-        "name": "TIKTOK_CONTAINER"
+        "class_name": "AppContainer",
+        "name": "APP_CONTAINER"
       }
     ]
   },
-  // Migrations for Durable Objects (including TikTok Container)
+  // Migrations for Durable Objects (including App Container)
   "migrations": [
     {
       "new_sqlite_classes": ["TikTokContainer"],
       "tag": "v1"
+    },
+    {
+      "tag": "v2",
+      "renamed_classes": [
+        {
+          "from": "TikTokContainer",
+          "to": "AppContainer"
+        }
+      ]
     }
   ],
   "env": {
@@ -149,7 +158,7 @@
       "containers": [
         {
           "name": "packrat-api-container-dev",
-          "class_name": "TikTokContainer",
+          "class_name": "AppContainer",
           "image": "./Dockerfile",
           "max_instances": 5
         }
@@ -157,16 +166,24 @@
       "durable_objects": {
         "bindings": [
           {
-            "class_name": "TikTokContainer",
-            "name": "TIKTOK_CONTAINER"
+            "class_name": "AppContainer",
+            "name": "APP_CONTAINER"
           }
         ]
       },
-      // Migrations for Durable Objects (including TikTok Container)
+      // Migrations for Durable Objects (including App Container)
       "migrations": [
         {
           "new_sqlite_classes": ["TikTokContainer"],
           "tag": "v1"
+        },
+        {
+          "new_sqlite_classes": ["AppContainer"],
+          "tag": "v2"
+        },
+        {
+          "deleted_classes": ["TikTokContainer"],
+          "tag": "v3"
         }
       ]
     }

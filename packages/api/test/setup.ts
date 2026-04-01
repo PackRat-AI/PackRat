@@ -422,7 +422,7 @@ beforeAll(async () => {
 
   try {
     await testClient.connect();
-    testDb = drizzle(testClient, { schema }) as any;
+    testDb = drizzle(testClient, { schema }) as unknown;
     isConnected = true;
     console.log('✅ Test database connected successfully');
   } catch (error) {
