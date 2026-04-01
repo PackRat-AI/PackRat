@@ -21,8 +21,10 @@
       },
       "android": {
         "buildType": "apk",
+        "resourceClass": "m-medium",
+        "gradleCommand": ":app:assembleRelease -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease",
         "env": {
-          "GRADLE_OPTS": "-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dorg.gradle.jvmargs=-Xmx4096m"
+          "GRADLE_OPTS": "-Xmx4096m -XX:MaxMetaspaceSize=1024m"
         }
       }
     },
