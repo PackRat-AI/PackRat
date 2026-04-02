@@ -23,8 +23,8 @@ describe('decodeHtmlEntities', () => {
     });
 
     it('decodes apostrophe entities', () => {
-      expect(decodeHtmlEntities("It&#39;s working")).toBe("It's working");
-      expect(decodeHtmlEntities("It&apos;s also working")).toBe("It's also working");
+      expect(decodeHtmlEntities('It&#39;s working')).toBe("It's working");
+      expect(decodeHtmlEntities('It&apos;s also working')).toBe("It's also working");
     });
 
     it('decodes non-breaking space', () => {
@@ -65,7 +65,7 @@ describe('decodeHtmlEntities', () => {
 
     it('decodes mixed numeric and named entities', () => {
       expect(decodeHtmlEntities('&#39;Hello&#39; &amp; &#x22;Goodbye&#x22;')).toBe(
-        "'Hello' & \"Goodbye\"",
+        '\'Hello\' & "Goodbye"',
       );
     });
   });
@@ -128,7 +128,7 @@ describe('decodeHtmlEntities', () => {
     });
 
     it('handles text with apostrophes and quotes', () => {
-      const text = "It&#39;s a &quot;great&quot; day!";
+      const text = 'It&#39;s a &quot;great&quot; day!';
       expect(decodeHtmlEntities(text)).toBe('It\'s a "great" day!');
     });
   });
@@ -148,9 +148,7 @@ describe('decodeHtmlEntities', () => {
 
     it('limits entity name length to prevent performance issues', () => {
       // Entity names are limited to 2-6 characters
-      expect(decodeHtmlEntities('&verylongunknownentity;')).toBe(
-        '&verylongunknownentity;',
-      );
+      expect(decodeHtmlEntities('&verylongunknownentity;')).toBe('&verylongunknownentity;');
     });
   });
 });
