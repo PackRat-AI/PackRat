@@ -119,15 +119,9 @@ describe('WeatherService', () => {
 
       await service.getWeatherForLocation('New York City');
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('q=New%20York%20City'),
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('units=imperial'),
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('appid=test-api-key'),
-      );
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('q=New%20York%20City'));
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('units=imperial'));
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('appid=test-api-key'));
     });
 
     it('handles special characters in location names', async () => {
@@ -137,10 +131,10 @@ describe('WeatherService', () => {
         json: async () => mockResponse,
       });
 
-      await service.getWeatherForLocation('Château-d\'Œx, Switzerland');
+      await service.getWeatherForLocation("Château-d'Œx, Switzerland");
 
       expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('Ch%C3%A2teau-d\'%C5%92x%2C%20Switzerland'),
+        expect.stringContaining("Ch%C3%A2teau-d'%C5%92x%2C%20Switzerland"),
       );
     });
   });
@@ -185,9 +179,7 @@ describe('WeatherService', () => {
     it('throws error when fetch rejects', async () => {
       fetchMock.mockRejectedValue(new Error('Network error'));
 
-      await expect(service.getWeatherForLocation('Boston')).rejects.toThrow(
-        'Network error',
-      );
+      await expect(service.getWeatherForLocation('Boston')).rejects.toThrow('Network error');
     });
   });
 

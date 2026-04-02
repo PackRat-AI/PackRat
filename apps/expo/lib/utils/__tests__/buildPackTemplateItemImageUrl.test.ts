@@ -210,7 +210,7 @@ describe('buildPackTemplateItemImageUrl', () => {
     it('handles string | null union type', () => {
       const nullUrl = buildPackTemplateItemImageUrl(null);
       const stringUrl = buildPackTemplateItemImageUrl('image.jpg');
-      
+
       expect(nullUrl).toBeNull();
       expect(stringUrl).toBe('https://cdn.packrat.com/image.jpg');
     });
@@ -218,7 +218,7 @@ describe('buildPackTemplateItemImageUrl', () => {
     it('handles string | undefined union type', () => {
       const undefinedUrl = buildPackTemplateItemImageUrl(undefined);
       const stringUrl = buildPackTemplateItemImageUrl('image.jpg');
-      
+
       expect(undefinedUrl).toBeNull();
       expect(stringUrl).toBe('https://cdn.packrat.com/image.jpg');
     });

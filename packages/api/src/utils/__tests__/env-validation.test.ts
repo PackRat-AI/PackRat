@@ -172,15 +172,9 @@ describe('env-validation', () => {
     });
 
     it('validates AI_PROVIDER enum', () => {
-      expect(
-        apiEnvSchema.shape.AI_PROVIDER.safeParse('openai').success,
-      ).toBe(true);
-      expect(
-        apiEnvSchema.shape.AI_PROVIDER.safeParse('cloudflare-workers-ai').success,
-      ).toBe(true);
-      expect(
-        apiEnvSchema.shape.AI_PROVIDER.safeParse('invalid').success,
-      ).toBe(false);
+      expect(apiEnvSchema.shape.AI_PROVIDER.safeParse('openai').success).toBe(true);
+      expect(apiEnvSchema.shape.AI_PROVIDER.safeParse('cloudflare-workers-ai').success).toBe(true);
+      expect(apiEnvSchema.shape.AI_PROVIDER.safeParse('invalid').success).toBe(false);
     });
 
     it('validates EMAIL_PROVIDER enum', () => {
@@ -191,12 +185,8 @@ describe('env-validation', () => {
     });
 
     it('validates CONTAINER_PORT as numeric string', () => {
-      expect(
-        apiEnvSchema.shape.CONTAINER_PORT.safeParse('8080').success,
-      ).toBe(true);
-      expect(
-        apiEnvSchema.shape.CONTAINER_PORT.safeParse('3000').success,
-      ).toBe(true);
+      expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse('8080').success).toBe(true);
+      expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse('3000').success).toBe(true);
     });
 
     it('rejects non-numeric CONTAINER_PORT', () => {

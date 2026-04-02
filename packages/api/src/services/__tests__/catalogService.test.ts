@@ -1,6 +1,6 @@
+import * as embeddingService from '@packrat/api/services/embeddingService';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CatalogService } from '../catalogService';
-import * as embeddingService from '@packrat/api/services/embeddingService';
 
 // ---------------------------------------------------------------------------
 // Module-level mocks
@@ -129,7 +129,9 @@ describe('CatalogService', () => {
     });
 
     it('calls generateEmbedding with correct parameters', async () => {
-      vi.mocked(embeddingService.generateEmbedding).mockResolvedValueOnce(new Array(1536).fill(0.1));
+      vi.mocked(embeddingService.generateEmbedding).mockResolvedValueOnce(
+        new Array(1536).fill(0.1),
+      );
 
       // We can't fully test the DB query without a real/mocked database,
       // but we can verify the embedding generation was called correctly
