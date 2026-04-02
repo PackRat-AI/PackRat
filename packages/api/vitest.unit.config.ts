@@ -35,6 +35,8 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/index.ts',
         'src/db/migrations/**',
+        'src/routes/**', // Exclude routes - they require integration testing
+        'src/schemas/**', // Mostly type definitions
       ],
     },
   },
