@@ -16,12 +16,10 @@
     },
     "e2e": {
       "ios": {
-        "simulator": true,
-        "image": "latest"
+        "simulator": true
       },
       "android": {
         "buildType": "apk",
-        "resourceClass": "large",
         "gradleCommand": ":app:assembleRelease -x lintVitalAnalyzeRelease",
         "env": {
           "GRADLE_OPTS": "-Xmx6144m -XX:MaxMetaspaceSize=1536m",
