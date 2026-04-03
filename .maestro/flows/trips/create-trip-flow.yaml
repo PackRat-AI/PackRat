@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Create Trip Flow: Navigate to trips tab and create a new trip
 - waitForAnimationToEnd
 
@@ -16,12 +18,12 @@
 # Fill in the Trip Name field
 - tapOn:
     text: "Trip Name"
-- typeText: ${TRIP_NAME}
+- inputText: ${TRIP_NAME}
 
 # Fill in the Description field
 - tapOn:
     text: "Description"
-- typeText: "Created by Maestro E2E test"
+- inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
 - hideKeyboard

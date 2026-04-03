@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Login Flow: Navigate to auth screen and sign in with email and password
 - launchApp
 
@@ -14,12 +16,12 @@
 # Fill in the email field
 - tapOn:
     id: "email-input"
-- typeText: ${TEST_EMAIL}
+- inputText: ${TEST_EMAIL}
 
 # Fill in the password field
 - tapOn:
     id: "password-input"
-- typeText: ${TEST_PASSWORD}
+- inputText: ${TEST_PASSWORD}
 
 # Dismiss the keyboard before submitting
 - hideKeyboard
