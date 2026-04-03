@@ -11,7 +11,15 @@ import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PackTemplateCard } from '../components/PackTemplateCard';
 import TemplateCreationOptions from '../components/TemplateCreationOptions';
@@ -111,7 +119,10 @@ export function PackTemplateListScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 " style={{ paddingTop: insets.top }}>
+    <SafeAreaView
+      className="flex-1 "
+      style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}
+    >
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}
         searchBar={{
@@ -128,7 +139,10 @@ export function PackTemplateListScreen() {
         )}
       />
 
-      <View className="bg-background gap-2 px-4 pb-2" style={{ paddingTop: insets.top + 22 }}>
+      <View
+        className="bg-background gap-2 px-4 pb-2"
+        style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+      >
         <SegmentedControl
           enabled={isAuthenticated}
           values={[t('packTemplates.all'), t('packTemplates.app'), t('packTemplates.yours')]}
