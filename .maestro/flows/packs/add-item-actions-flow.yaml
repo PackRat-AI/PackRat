@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Add Item Actions Flow: Verify the add-item bottom sheet options
 - waitForAnimationToEnd
 

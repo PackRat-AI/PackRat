@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Create Pack Flow: Navigate to packs tab and create a new pack
 - waitForAnimationToEnd
 
@@ -16,12 +18,12 @@
 # Fill in Pack Name
 - tapOn:
     text: "Pack Name"
-- typeText: ${PACK_NAME}
+- inputText: ${PACK_NAME}
 
 # Fill in Description
 - tapOn:
     text: "Description"
-- typeText: "Created by Maestro E2E test"
+- inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
 - hideKeyboard

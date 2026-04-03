@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Profile View Flow: Navigate to profile and verify account info
 - waitForAnimationToEnd
 

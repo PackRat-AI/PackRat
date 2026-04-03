@@ -6,17 +6,33 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
 
 ```text
 .maestro/
-├── config.yaml                    # Maestro suite configuration & flow order
+├── config.yaml                    # Workspace configuration (test discovery, env vars)
+├── config-android.yaml            # Android-specific workspace configuration 
+├── master-flow.yaml               # Main orchestration flow (iOS)
+├── master-flow-android.yaml       # Android orchestration flow
 └── flows/
     ├── setup/
     │   └── clear-state.yaml       # Clears app state before test suite
     ├── auth/
     │   ├── login-flow.yaml        # Sign in with email and password
     │   └── logout-flow.yaml       # Sign out from the app
+    ├── dashboard/
+    │   └── dashboard-tiles-flow.yaml  # Test dashboard navigation
     ├── trips/
-    │   └── create-trip-flow.yaml  # Create a new trip
-    └── packs/
-        └── create-pack-flow.yaml  # Create a new pack
+    │   ├── create-trip-flow.yaml  # Create a new trip
+    │   └── trip-detail-flow.yaml  # View trip details
+    ├── packs/
+    │   ├── create-pack-flow.yaml  # Create a new pack
+    │   ├── pack-detail-flow.yaml  # View pack details
+    │   └── add-item-actions-flow.yaml  # Add items to packs
+    ├── catalog/
+    │   ├── catalog-browse-flow.yaml   # Browse item catalog
+    │   └── catalog-item-detail-flow.yaml  # View item details
+    ├── profile/
+    │   └── profile-view-flow.yaml     # View user profile
+    └── negative/
+        ├── empty-pack-submit-flow.yaml   # Test validation errors
+        └── empty-trip-submit-flow.yaml   # Test validation errors
 ```
 
 ## Prerequisites
@@ -42,9 +58,14 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
 
 ## Running Tests
 
-### Run all flows
+### Run the complete test suite (recommended)
 ```bash
-maestro test .maestro/config.yaml
+maestro test .maestro/master-flow.yaml
+```
+
+### Run Android-specific test suite
+```bash
+maestro test --config .maestro/config-android.yaml .maestro/master-flow-android.yaml
 ```
 
 ### Run a single flow
@@ -54,7 +75,7 @@ maestro test .maestro/flows/auth/login-flow.yaml
 
 ### Run with JUnit output (for CI)
 ```bash
-maestro test --format junit --output test-results.xml .maestro/config.yaml
+maestro test --format junit --output test-results.xml .maestro/master-flow.yaml
 ```
 
 ### Run on a specific simulator
