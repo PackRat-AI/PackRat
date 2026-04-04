@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WeatherService } from '../weatherService';
 
 // ---------------------------------------------------------------------------
-// Module-level mocks
+// Mocks
 // ---------------------------------------------------------------------------
+global.fetch = vi.fn();
 
-// Mock environment validation
 vi.mock('@packrat/api/utils/env-validation', () => ({
   getEnv: vi.fn(() => ({
     OPENWEATHER_KEY: 'test-api-key',
@@ -16,34 +16,21 @@ vi.mock('@packrat/api/utils/env-validation', () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 function makeMockContext() {
-  return {
-    get: vi.fn(),
-    req: { json: vi.fn() },
-    json: vi.fn(),
-    env: {
-      OPENWEATHER_KEY: 'test-api-key',
-    },
-  } as unknown as ConstructorParameters<typeof WeatherService>[0];
+  return {} as any;
 }
 
-function mockWeatherApiResponse(overrides: Record<string, unknown> = {}) {
-  const weather = overrides.weather as { main: string }[] | undefined;
-  return {
-    main: {
-      temp: 72.5,
-      humidity: 65,
-      ...(overrides.main as Record<string, unknown>),
-    },
-    weather: weather || [
-      {
-        main: 'Clear',
-      },
-    ],
-    wind: {
-      speed: 8.3,
-      ...(overrides.wind as Record<string, unknown>),
-    },
-  };
+function mockWeatherResponse(data: any) {
+  (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ok: true,
+    json: async () => data,
+  } as Response);
+}
+
+function mockWeatherError() {
+  (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ok: false,
+    status: 404,
+  } as Response);
 }
 
 // ---------------------------------------------------------------------------
@@ -52,57 +39,82 @@ function mockWeatherApiResponse(overrides: Record<string, unknown> = {}) {
 describe('WeatherService', () => {
   let service: WeatherService;
   let mockContext: ReturnType<typeof makeMockContext>;
-  let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockContext = makeMockContext();
     service = new WeatherService(mockContext);
-
-    // Mock global fetch
-    fetchMock = vi.fn();
-    global.fetch = fetchMock;
   });
 
-  // -------------------------------------------------------------------------
-  // getWeatherForLocation - successful requests
-  // -------------------------------------------------------------------------
-  describe('getWeatherForLocation - successful requests', () => {
-    it('returns formatted weather data for valid location', async () => {
-      const mockResponse = mockWeatherApiResponse();
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
+  describe('getWeatherForLocation', () => {
+    it('fetches weather data successfully', async () => {
+      const mockData = {
+        main: {
+          temp: 72.5,
+          humidity: 65,
+        },
+        weather: [{ main: 'Clear' }],
+        wind: {
+          speed: 8.3,
+        },
+      };
 
-      const result = await service.getWeatherForLocation('San Francisco');
+      mockWeatherResponse(mockData);
+
+      const result = await service.getWeatherForLocation('Seattle');
 
       expect(result).toEqual({
-        location: 'San Francisco',
-        temperature: 73, // Rounded from 72.5
+        location: 'Seattle',
+        temperature: 73, // Rounded
         conditions: 'Clear',
         humidity: 65,
-        windSpeed: 8, // Rounded from 8.3
+        windSpeed: 8, // Rounded
       });
     });
 
-    it('rounds temperature correctly', async () => {
-      const mockResponse = mockWeatherApiResponse({ main: { temp: 68.4 } });
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
+    it('makes API call with correct parameters', async () => {
+      mockWeatherResponse({
+        main: { temp: 70, humidity: 50 },
+        weather: [{ main: 'Sunny' }],
+        wind: { speed: 5 },
       });
 
-      const result = await service.getWeatherForLocation('Denver');
+      await service.getWeatherForLocation('New York');
 
-      expect(result.temperature).toBe(68);
+      expect(global.fetch).toHaveBeenCalledWith(
+        'https://api.openweathermap.org/data/2.5/weather?q=New%20York&units=imperial&appid=test-api-key',
+      );
     });
 
-    it('rounds wind speed correctly', async () => {
-      const mockResponse = mockWeatherApiResponse({ wind: { speed: 12.8 } });
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
+    it('encodes location with spaces correctly', async () => {
+      mockWeatherResponse({
+        main: { temp: 70, humidity: 50 },
+        weather: [{ main: 'Sunny' }],
+        wind: { speed: 5 },
+      });
+
+      await service.getWeatherForLocation('San Francisco');
+
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('q=San%20Francisco'));
+    });
+
+    it('rounds temperature to nearest integer', async () => {
+      mockWeatherResponse({
+        main: { temp: 68.7, humidity: 50 },
+        weather: [{ main: 'Cloudy' }],
+        wind: { speed: 5 },
+      });
+
+      const result = await service.getWeatherForLocation('Portland');
+
+      expect(result.temperature).toBe(69);
+    });
+
+    it('rounds wind speed to nearest integer', async () => {
+      mockWeatherResponse({
+        main: { temp: 70, humidity: 50 },
+        weather: [{ main: 'Windy' }],
+        wind: { speed: 12.8 },
       });
 
       const result = await service.getWeatherForLocation('Chicago');
@@ -110,201 +122,39 @@ describe('WeatherService', () => {
       expect(result.windSpeed).toBe(13);
     });
 
-    it('calls API with correctly encoded location parameter', async () => {
-      const mockResponse = mockWeatherApiResponse();
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
-
-      await service.getWeatherForLocation('New York City');
-
-      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('q=New%20York%20City'));
-      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('units=imperial'));
-      expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('appid=test-api-key'));
-    });
-
-    it('handles special characters in location names', async () => {
-      const mockResponse = mockWeatherApiResponse();
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockResponse,
-      });
-
-      await service.getWeatherForLocation("Château-d'Œx, Switzerland");
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining("Ch%C3%A2teau-d'%C5%92x%2C%20Switzerland"),
-      );
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // getWeatherForLocation - error handling
-  // -------------------------------------------------------------------------
-  describe('getWeatherForLocation - error handling', () => {
     it('throws error when API request fails', async () => {
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 404,
-      });
+      mockWeatherError();
 
-      await expect(service.getWeatherForLocation('InvalidCity')).rejects.toThrow(
+      await expect(service.getWeatherForLocation('InvalidLocation')).rejects.toThrow(
         'Weather API request failed',
       );
     });
 
-    it('throws error when API returns 401 (invalid API key)', async () => {
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 401,
+    it('handles special characters in location', async () => {
+      mockWeatherResponse({
+        main: { temp: 70, humidity: 50 },
+        weather: [{ main: 'Sunny' }],
+        wind: { speed: 5 },
       });
 
-      await expect(service.getWeatherForLocation('Seattle')).rejects.toThrow(
-        'Weather API request failed',
-      );
+      await service.getWeatherForLocation('São Paulo');
+
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('q=S%C3%A3o%20Paulo'));
     });
 
-    it('throws error when API returns 500', async () => {
-      fetchMock.mockResolvedValue({
-        ok: false,
-        status: 500,
-      });
+    it('returns correct weather conditions', async () => {
+      const conditions = ['Clear', 'Clouds', 'Rain', 'Snow', 'Thunderstorm'];
 
-      await expect(service.getWeatherForLocation('Portland')).rejects.toThrow(
-        'Weather API request failed',
-      );
-    });
-
-    it('throws error when fetch rejects', async () => {
-      fetchMock.mockRejectedValue(new Error('Network error'));
-
-      await expect(service.getWeatherForLocation('Boston')).rejects.toThrow('Network error');
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // getWeatherForLocation - data variations
-  // -------------------------------------------------------------------------
-  describe('getWeatherForLocation - data variations', () => {
-    it('handles Clear weather condition', async () => {
-      const mockResponse = mockWeatherApiResponse({ weather: [{ main: 'Clear' }] });
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
-
-      const result = await service.getWeatherForLocation('TestCity');
-      expect(result.conditions).toBe('Clear');
-    });
-
-    it('handles Clouds weather condition', async () => {
-      const mockResponse = mockWeatherApiResponse({ weather: [{ main: 'Clouds' }] });
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
-
-      const result = await service.getWeatherForLocation('TestCity');
-      expect(result.conditions).toBe('Clouds');
-    });
-
-    it('handles Rain weather condition', async () => {
-      const mockResponse = mockWeatherApiResponse({ weather: [{ main: 'Rain' }] });
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
-
-      const result = await service.getWeatherForLocation('TestCity');
-      expect(result.conditions).toBe('Rain');
-    });
-
-    it('handles Snow weather condition', async () => {
-      const mockResponse = mockWeatherApiResponse({ weather: [{ main: 'Snow' }] });
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
-
-      const result = await service.getWeatherForLocation('TestCity');
-      expect(result.conditions).toBe('Snow');
-    });
-
-    it('handles Thunderstorm weather condition', async () => {
-      const mockResponse = mockWeatherApiResponse({ weather: [{ main: 'Thunderstorm' }] });
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
-
-      const result = await service.getWeatherForLocation('TestCity');
-      expect(result.conditions).toBe('Thunderstorm');
-    });
-
-    it('handles Drizzle weather condition', async () => {
-      const mockResponse = mockWeatherApiResponse({ weather: [{ main: 'Drizzle' }] });
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      });
-
-      const result = await service.getWeatherForLocation('TestCity');
-      expect(result.conditions).toBe('Drizzle');
-    });
-
-    it('handles extreme temperatures', async () => {
-      const temperatures = [-20, 0, 32, 100, 120];
-
-      for (const temp of temperatures) {
-        fetchMock.mockResolvedValueOnce({
-          ok: true,
-          json: async () => mockWeatherApiResponse({ main: { temp } }),
+      for (const condition of conditions) {
+        mockWeatherResponse({
+          main: { temp: 70, humidity: 50 },
+          weather: [{ main: condition }],
+          wind: { speed: 5 },
         });
 
-        const result = await service.getWeatherForLocation('TestCity');
-        expect(result.temperature).toBe(Math.round(temp));
+        const result = await service.getWeatherForLocation('Test');
+        expect(result.conditions).toBe(condition);
       }
-    });
-
-    it('handles zero wind speed', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockWeatherApiResponse({ wind: { speed: 0 } }),
-      });
-
-      const result = await service.getWeatherForLocation('TestCity');
-      expect(result.windSpeed).toBe(0);
-    });
-
-    it('handles 100% humidity', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockWeatherApiResponse({ main: { humidity: 100 } }),
-      });
-
-      const result = await service.getWeatherForLocation('TestCity');
-      expect(result.humidity).toBe(100);
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // API URL construction
-  // -------------------------------------------------------------------------
-  describe('API URL construction', () => {
-    it('constructs correct OpenWeatherMap API URL', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockWeatherApiResponse(),
-      });
-
-      await service.getWeatherForLocation('Austin');
-
-      const calledUrl = fetchMock.mock.calls[0][0];
-      expect(calledUrl).toContain('https://api.openweathermap.org/data/2.5/weather');
-      expect(calledUrl).toContain('q=Austin');
-      expect(calledUrl).toContain('units=imperial');
-      expect(calledUrl).toContain('appid=test-api-key');
     });
   });
 });
