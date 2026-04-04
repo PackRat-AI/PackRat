@@ -64,7 +64,6 @@ export default defineConfig({
         'src/services/r2-bucket.ts',
         'src/services/packItemService.ts',
       ],
-      // Set realistic thresholds for business logic files
       thresholds: {
         statements: 80,
       },
