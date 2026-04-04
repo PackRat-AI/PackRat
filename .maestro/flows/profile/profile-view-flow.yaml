@@ -1,4 +1,4 @@
-appId: com.andrewbierman.packrat
+appId: ${APP_ID}
 ---
 # Profile View Flow: Navigate to profile and verify account info
 - waitForAnimationToEnd

@@ -1,4 +1,4 @@
-appId: com.andrewbierman.packrat
+appId: ${APP_ID}
 ---
 # Login Flow: Navigate to auth screen and sign in with email and password
 - launchApp
@@ -16,7 +16,7 @@ appId: com.andrewbierman.packrat
 # Fill in the email field
 - tapOn:
     id: "email-input"
-- inputText: ${TEST_EMAIL}
+- inputText: "${TEST_EMAIL}"
 
 # Fill in the password field
 - tapOn:

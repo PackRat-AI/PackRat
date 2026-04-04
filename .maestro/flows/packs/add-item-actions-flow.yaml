@@ -1,4 +1,4 @@
-appId: com.andrewbierman.packrat
+appId: ${APP_ID}
 ---
 # Add Item Actions Flow: Verify the add-item bottom sheet options
 - waitForAnimationToEnd

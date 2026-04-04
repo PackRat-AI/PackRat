@@ -1,4 +1,4 @@
-appId: com.andrewbierman.packrat
+appId: ${APP_ID}
 ---
 # Dashboard Tiles Flow: Verify dashboard loads with key tiles
 - waitForAnimationToEnd
