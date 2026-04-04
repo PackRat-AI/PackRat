@@ -154,12 +154,12 @@ jobs:
           maestro --device "$SIMULATOR_UDID" test \
             --format junit \
             --output test-results/maestro-results.xml \
+            -e TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}" \
+            -e TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}" \
+            -e TRIP_NAME="E2E-Trip-${{ github.run_id }}" \
+            -e PACK_NAME="E2E-Pack-${{ github.run_id }}" \
+            -e APP_ID="com.andrewbierman.packrat.preview" \
             .maestro/master-flow.yaml
-        env:
-          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-          TRIP_NAME: E2E-Trip-${{ github.run_id }}
-          PACK_NAME: E2E-Pack-${{ github.run_id }}
 
       - name: Upload test results
         if: always()
@@ -267,12 +267,12 @@ jobs:
               --config .maestro/config-android.yaml \
               --format junit \
               --output test-results/maestro-results.xml \
+              -e TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}" \
+              -e TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}" \
+              -e TRIP_NAME="E2E-Trip-${{ github.run_id }}" \
+              -e PACK_NAME="E2E-Pack-${{ github.run_id }}" \
+              -e APP_ID="com.packratai.mobile.preview" \
               .maestro/master-flow-android.yaml
-        env:
-          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-          TRIP_NAME: E2E-Trip-${{ github.run_id }}
-          PACK_NAME: E2E-Pack-${{ github.run_id }}
 
       - name: Upload test results
         if: always()
