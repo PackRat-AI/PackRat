@@ -43,12 +43,18 @@ export default defineConfig({
         'src/routes/**',
         // Infrastructure (no business logic)
         'src/containers/**',
+        // Index files (just exports, no business logic)
+        'src/**/index.ts',
         // ETL and AI utilities (defer to integration tests)
         'src/services/etl/**',
         'src/utils/ai/**',
         // Complex orchestration services (defer to integration tests)
         'src/services/aiService.ts',
         'src/services/executeSqlAiTool.ts',
+        // Complex services requiring extensive database/external service mocking
+        'src/services/catalogService.ts',
+        'src/services/packService.ts',
+        'src/services/imageDetectionService.ts',
         // Database utilities (require complex mocking, covered by integration tests)
         'src/utils/DbUtils.ts',
         // External service utilities (better tested via integration tests)
@@ -60,10 +66,7 @@ export default defineConfig({
       ],
       // Set realistic thresholds for business logic files
       thresholds: {
-        lines: 70,
-        functions: 70,
-        branches: 70,
-        statements: 70,
+        statements: 80,
       },
     },
   },

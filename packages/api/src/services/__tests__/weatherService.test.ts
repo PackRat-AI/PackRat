@@ -95,9 +95,7 @@ describe('WeatherService', () => {
 
       await service.getWeatherForLocation('San Francisco');
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('q=San%20Francisco'),
-      );
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('q=San%20Francisco'));
     });
 
     it('rounds temperature to nearest integer', async () => {
@@ -141,9 +139,7 @@ describe('WeatherService', () => {
 
       await service.getWeatherForLocation('São Paulo');
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('q=S%C3%A3o%20Paulo'),
-      );
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('q=S%C3%A3o%20Paulo'));
     });
 
     it('returns correct weather conditions', async () => {

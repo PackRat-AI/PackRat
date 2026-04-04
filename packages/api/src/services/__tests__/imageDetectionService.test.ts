@@ -31,7 +31,7 @@ vi.mock('@packrat/api/utils/ai/models', () => ({
 
 vi.mock('../catalogService', () => ({
   CatalogService: vi.fn().mockImplementation(() => ({
-    vectorSearch: vi.fn().mockResolvedValue([]),
+    batchVectorSearch: vi.fn().mockResolvedValue({ items: [] }),
   })),
 }));
 
@@ -39,7 +39,7 @@ vi.mock('../catalogService', () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 function makeMockContext() {
-  return {} as any;
+  return {} as ConstructorParameters<typeof ImageDetectionService>[0];
 }
 
 // ---------------------------------------------------------------------------
@@ -174,6 +174,209 @@ describe('ImageDetectionService', () => {
       const result = await service.detectAndMatchItems('https://example.com/empty.jpg');
 
       expect(result).toEqual([]);
+    });
+
+    it('filters out low confidence items (< 0.5)', async () => {
+      const { generateObject } = await import('ai');
+      const mockGenerateObject = generateObject as ReturnType<typeof vi.fn>;
+      const { CatalogService } = await import('../catalogService');
+      const MockCatalogService = CatalogService as ReturnType<typeof vi.fn>;
+
+      const mockBatchVectorSearch = vi.fn().mockResolvedValue({
+        items: [[{ id: 1, name: 'Tent', score: 0.9 }]],
+      });
+      MockCatalogService.mockImplementation(() => ({
+        batchVectorSearch: mockBatchVectorSearch,
+      }));
+
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          items: [
+            {
+              name: 'High Confidence Item',
+              description: 'Clear item',
+              confidence: 0.8,
+            },
+            {
+              name: 'Low Confidence Item',
+              description: 'Unclear item',
+              confidence: 0.3,
+            },
+          ],
+        },
+      });
+
+      await service.detectAndMatchItems('https://example.com/test.jpg');
+
+      // Should only search for the high confidence item
+      expect(mockBatchVectorSearch).toHaveBeenCalledWith(['High Confidence Item Clear item'], 3);
+    });
+
+    it('combines detected items with catalog matches', async () => {
+      const { generateObject } = await import('ai');
+      const mockGenerateObject = generateObject as ReturnType<typeof vi.fn>;
+      const { CatalogService } = await import('../catalogService');
+      const MockCatalogService = CatalogService as ReturnType<typeof vi.fn>;
+
+      const mockBatchVectorSearch = vi.fn().mockResolvedValue({
+        items: [
+          [{ id: 1, name: 'Mountain Tent', score: 0.9 }],
+          [{ id: 2, name: 'Sleeping Bag', score: 0.8 }],
+        ],
+      });
+      MockCatalogService.mockImplementation(() => ({
+        batchVectorSearch: mockBatchVectorSearch,
+      }));
+
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          items: [
+            {
+              name: 'Tent',
+              description: '2-person tent',
+              confidence: 0.9,
+              quantity: 1,
+              category: 'Shelter',
+            },
+            {
+              name: 'Sleeping Bag',
+              description: 'Down sleeping bag',
+              confidence: 0.85,
+              quantity: 1,
+              category: 'Sleep',
+            },
+          ],
+        },
+      });
+
+      const result = await service.detectAndMatchItems('https://example.com/gear.jpg');
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        detected: {
+          name: 'Tent',
+          description: '2-person tent',
+          confidence: 0.9,
+        },
+        catalogMatches: [{ id: 1, name: 'Mountain Tent', score: 0.9 }],
+      });
+      expect(result[1]).toMatchObject({
+        detected: {
+          name: 'Sleeping Bag',
+          description: 'Down sleeping bag',
+          confidence: 0.85,
+        },
+        catalogMatches: [{ id: 2, name: 'Sleeping Bag', score: 0.8 }],
+      });
+    });
+
+    it('filters out items with no catalog matches', async () => {
+      const { generateObject } = await import('ai');
+      const mockGenerateObject = generateObject as ReturnType<typeof vi.fn>;
+      const { CatalogService } = await import('../catalogService');
+      const MockCatalogService = CatalogService as ReturnType<typeof vi.fn>;
+
+      const mockBatchVectorSearch = vi.fn().mockResolvedValue({
+        items: [
+          [{ id: 1, name: 'Tent', score: 0.9 }], // has matches
+          [], // no matches
+        ],
+      });
+      MockCatalogService.mockImplementation(() => ({
+        batchVectorSearch: mockBatchVectorSearch,
+      }));
+
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          items: [
+            {
+              name: 'Tent',
+              description: '2-person tent',
+              confidence: 0.9,
+            },
+            {
+              name: 'Obscure Item',
+              description: 'Unknown item',
+              confidence: 0.7,
+            },
+          ],
+        },
+      });
+
+      const result = await service.detectAndMatchItems('https://example.com/gear.jpg');
+
+      // Should only return the item with catalog matches
+      expect(result).toHaveLength(1);
+      expect(result[0].detected.name).toBe('Tent');
+    });
+
+    it('handles catalog service errors gracefully', async () => {
+      const { generateObject } = await import('ai');
+      const mockGenerateObject = generateObject as ReturnType<typeof vi.fn>;
+      const { CatalogService } = await import('../catalogService');
+      const MockCatalogService = CatalogService as ReturnType<typeof vi.fn>;
+
+      const mockBatchVectorSearch = vi.fn().mockRejectedValue(new Error('Catalog unavailable'));
+      MockCatalogService.mockImplementation(() => ({
+        batchVectorSearch: mockBatchVectorSearch,
+      }));
+
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          items: [
+            {
+              name: 'Tent',
+              description: '2-person tent',
+              confidence: 0.9,
+            },
+          ],
+        },
+      });
+
+      await expect(service.detectAndMatchItems('https://example.com/gear.jpg')).rejects.toThrow(
+        'Failed to analyze image: Catalog unavailable',
+      );
+    });
+
+    it('handles analysis errors gracefully', async () => {
+      const { generateObject } = await import('ai');
+      const mockGenerateObject = generateObject as ReturnType<typeof vi.fn>;
+
+      mockGenerateObject.mockRejectedValue(new Error('AI service error'));
+
+      await expect(service.detectAndMatchItems('https://example.com/gear.jpg')).rejects.toThrow(
+        'Failed to analyze image: AI service error',
+      );
+    });
+
+    it('respects custom matchLimit parameter', async () => {
+      const { generateObject } = await import('ai');
+      const mockGenerateObject = generateObject as ReturnType<typeof vi.fn>;
+      const { CatalogService } = await import('../catalogService');
+      const MockCatalogService = CatalogService as ReturnType<typeof vi.fn>;
+
+      const mockBatchVectorSearch = vi.fn().mockResolvedValue({
+        items: [[{ id: 1, name: 'Tent', score: 0.9 }]],
+      });
+      MockCatalogService.mockImplementation(() => ({
+        batchVectorSearch: mockBatchVectorSearch,
+      }));
+
+      mockGenerateObject.mockResolvedValue({
+        object: {
+          items: [
+            {
+              name: 'Tent',
+              description: '2-person tent',
+              confidence: 0.9,
+            },
+          ],
+        },
+      });
+
+      await service.detectAndMatchItems('https://example.com/gear.jpg', 5);
+
+      expect(mockBatchVectorSearch).toHaveBeenCalledWith(['Tent 2-person tent'], 5);
     });
   });
 });

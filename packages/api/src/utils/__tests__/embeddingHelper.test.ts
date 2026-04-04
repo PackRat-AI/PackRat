@@ -64,8 +64,8 @@ describe('embeddingHelper', () => {
         name: 'GPS Device',
         techs: {
           'Battery Life': '20 hours',
-          'Waterproof': 'IPX7',
-          'Weight': '200g',
+          Waterproof: 'IPX7',
+          Weight: '200g',
         },
       };
 
