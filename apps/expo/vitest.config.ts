@@ -31,6 +31,9 @@ export default defineConfig({
         'lib/utils/**/*.test.ts',
         'utils/polyfills.ts', // Infrastructure/setup file - no business logic to test
       ],
+      thresholds: {
+        statements: 75,
+      },
     },
   },
 });
