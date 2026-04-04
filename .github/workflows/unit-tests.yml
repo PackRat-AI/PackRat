@@ -1,0 +1,92 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: ["main", "development"]
+    paths:
+      - "package.json"
+      - "bun.lockb"
+      - "packages/api/src/**"
+      - "packages/api/package.json"
+      - "packages/api/vitest.unit.config.ts"
+      - "apps/expo/package.json"
+      - "apps/expo/vitest.config.ts"
+      - "apps/expo/utils/**"
+      - "apps/expo/lib/utils/**"
+      - "apps/expo/features/packs/utils/**"
+  pull_request:
+    branches: ["**"]
+    paths:
+      - "package.json"
+      - "bun.lockb"
+      - "packages/api/src/**"
+      - "packages/api/package.json"
+      - "packages/api/vitest.unit.config.ts"
+      - "apps/expo/package.json"
+      - "apps/expo/vitest.config.ts"
+      - "apps/expo/utils/**"
+      - "apps/expo/lib/utils/**"
+      - "apps/expo/features/packs/utils/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  api-unit-tests:
+    name: API Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+        
+      - name: Run API unit tests
+        run: bun run --cwd packages/api test:unit:coverage
+        
+      - name: Report API coverage
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: API Unit Tests Coverage
+          json-summary-path: ./coverage/unit/coverage-summary.json
+          json-final-path: ./coverage/unit/coverage-final.json
+          vite-config-path: ./vitest.unit.config.ts
+          working-directory: ./packages/api
+
+  expo-unit-tests:
+    name: Expo Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+        
+      - name: Run Expo unit tests
+        run: bun run --cwd apps/expo test:coverage
+        
+      - name: Report Expo coverage
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: Expo Unit Tests Coverage
+          json-summary-path: ./coverage/unit/coverage-summary.json
+          json-final-path: ./coverage/unit/coverage-final.json
+          vite-config-path: ./vitest.config.ts
+          working-directory: ./apps/expo
