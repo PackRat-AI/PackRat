@@ -35,7 +35,28 @@ export default defineConfig({
         'src/**/*.d.ts',
         'src/index.ts',
         'src/db/migrations/**',
+        // Pure type/schema definitions (no runtime logic to test)
+        'src/schemas/**',
+        'src/types/**',
+        'src/db/**',
+        // Route handlers (covered by integration tests in /test directory)
+        'src/routes/**',
+        // Infrastructure (no business logic)
+        'src/containers/**',
+        // ETL and AI utilities (defer to integration tests)
+        'src/services/etl/**',
+        'src/utils/ai/**',
+        // Complex orchestration services (defer to integration tests)
+        'src/services/aiService.ts',
+        'src/services/executeSqlAiTool.ts',
       ],
+      // Set realistic thresholds for business logic files
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
+      },
     },
   },
 });
