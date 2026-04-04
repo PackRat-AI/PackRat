@@ -49,6 +49,14 @@ export default defineConfig({
         // Complex orchestration services (defer to integration tests)
         'src/services/aiService.ts',
         'src/services/executeSqlAiTool.ts',
+        // Database utilities (require complex mocking, covered by integration tests)
+        'src/utils/DbUtils.ts',
+        // External service utilities (better tested via integration tests)
+        'src/utils/email.ts',
+        'src/utils/getPresignedUrl.ts',
+        'src/utils/env-validation.ts',
+        'src/services/r2-bucket.ts',
+        'src/services/packItemService.ts',
       ],
       // Set realistic thresholds for business logic files
       thresholds: {
