@@ -57,9 +57,9 @@ jobs:
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           name: API Unit Tests Coverage
-          json-summary-path: ./packages/api/coverage/unit/coverage-summary.json
-          json-final-path: ./packages/api/coverage/unit/coverage-final.json
-          vite-config-path: ./packages/api/vitest.unit.config.ts
+          json-summary-path: ./coverage/unit/coverage-summary.json
+          json-final-path: ./coverage/unit/coverage-final.json
+          vite-config-path: ./vitest.unit.config.ts
           working-directory: ./packages/api
 
   expo-unit-tests:
@@ -86,7 +86,7 @@ jobs:
         uses: davelosert/vitest-coverage-report-action@v2
         with:
           name: Expo Unit Tests Coverage
-          json-summary-path: ./apps/expo/coverage/unit/coverage-summary.json
-          json-final-path: ./apps/expo/coverage/unit/coverage-final.json
-          vite-config-path: ./apps/expo/vitest.config.ts
+          json-summary-path: ./coverage/unit/coverage-summary.json
+          json-final-path: ./coverage/unit/coverage-final.json
+          vite-config-path: ./vitest.config.ts
           working-directory: ./apps/expo
