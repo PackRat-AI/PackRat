@@ -1,0 +1,59 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: ["main", "development"]
+    paths:
+      - "packages/api/src/**"
+      - "apps/expo/utils/**"
+      - "apps/expo/lib/utils/**"
+      - "apps/expo/features/packs/utils/**"
+  pull_request:
+    branches: ["**"]
+    paths:
+      - "packages/api/src/**"
+      - "apps/expo/utils/**"
+      - "apps/expo/lib/utils/**"
+      - "apps/expo/features/packs/utils/**"
+
+permissions:
+  contents: read
+
+jobs:
+  api-unit-tests:
+    name: API Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+        
+      - name: Run API unit tests
+        run: bun test:api:unit
+
+  expo-unit-tests:
+    name: Expo Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+          
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+        
+      - name: Run Expo unit tests
+        run: bun test:expo
