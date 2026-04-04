@@ -37,7 +37,7 @@ jobs:
         run: bun install
         
       - name: Run API unit tests
-        run: bun test:api:unit
+        run: bun --cwd packages/api test:unit:coverage 
 
   expo-unit-tests:
     name: Expo Unit Tests
@@ -56,4 +56,4 @@ jobs:
         run: bun install
         
       - name: Run Expo unit tests
-        run: bun test:expo
+        run: bun --cwd apps/expo test:coverage
