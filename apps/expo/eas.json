@@ -15,6 +15,9 @@
       "channel": "preview"
     },
     "e2e": {
+      "environment": "preview",
+      "distribution": "internal",
+      "channel": "preview",
       "ios": {
         "simulator": true
       },
