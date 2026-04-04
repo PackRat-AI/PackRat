@@ -1,4 +1,4 @@
-appId: com.andrewbierman.packrat
+appId: ${APP_ID}
 ---
 # Pack Detail Flow: Navigate to a pack and verify detail screen elements
 - waitForAnimationToEnd

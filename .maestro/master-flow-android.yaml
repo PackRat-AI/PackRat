@@ -1,4 +1,4 @@
-appId: com.packratai.mobile
+appId: ${APP_ID}
 ---
 # PackRat E2E Test Suite - Android Master Flow
 # This flow orchestrates key test flows for Android
