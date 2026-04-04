@@ -6,9 +6,21 @@ import { CatalogService } from '../catalogService';
 // Module-level mocks
 // ---------------------------------------------------------------------------
 
+const mockDb = {
+  query: {
+    catalogItems: {
+      findMany: vi.fn(),
+    },
+  },
+  select: vi.fn(),
+  insert: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
+
 vi.mock('@packrat/api/db', () => ({
-  createDb: vi.fn(),
-  createDbClient: vi.fn(),
+  createDb: vi.fn(() => mockDb),
+  createDbClient: vi.fn(() => mockDb),
 }));
 
 // Mock embedding service
