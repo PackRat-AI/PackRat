@@ -4,20 +4,33 @@ on:
   push:
     branches: ["main", "development"]
     paths:
+      - "package.json"
+      - "bun.lockb"
       - "packages/api/src/**"
+      - "packages/api/package.json"
+      - "packages/api/vitest.unit.config.ts"
+      - "apps/expo/package.json"
+      - "apps/expo/vitest.config.ts"
       - "apps/expo/utils/**"
       - "apps/expo/lib/utils/**"
       - "apps/expo/features/packs/utils/**"
   pull_request:
     branches: ["**"]
     paths:
+      - "package.json"
+      - "bun.lockb"
       - "packages/api/src/**"
+      - "packages/api/package.json"
+      - "packages/api/vitest.unit.config.ts"
+      - "apps/expo/package.json"
+      - "apps/expo/vitest.config.ts"
       - "apps/expo/utils/**"
       - "apps/expo/lib/utils/**"
       - "apps/expo/features/packs/utils/**"
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   api-unit-tests:
@@ -37,7 +50,17 @@ jobs:
         run: bun install
         
       - name: Run API unit tests
-        run: bun --cwd packages/api test:unit:coverage 
+        run: bun run --cwd packages/api test:unit:coverage
+        
+      - name: Report API coverage
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: API Unit Tests Coverage
+          json-summary-path: ./packages/api/coverage/unit/coverage-summary.json
+          json-final-path: ./packages/api/coverage/unit/coverage-final.json
+          vite-config-path: ./packages/api/vitest.unit.config.ts
+          working-directory: ./packages/api
 
   expo-unit-tests:
     name: Expo Unit Tests
@@ -56,4 +79,14 @@ jobs:
         run: bun install
         
       - name: Run Expo unit tests
-        run: bun --cwd apps/expo test:coverage
+        run: bun run --cwd apps/expo test:coverage
+        
+      - name: Report Expo coverage
+        if: always()
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: Expo Unit Tests Coverage
+          json-summary-path: ./apps/expo/coverage/unit/coverage-summary.json
+          json-final-path: ./apps/expo/coverage/unit/coverage-final.json
+          vite-config-path: ./apps/expo/vitest.config.ts
+          working-directory: ./apps/expo
