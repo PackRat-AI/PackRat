@@ -9,9 +9,12 @@ vi.mock('ai', () => ({
 }));
 
 vi.mock('@ai-sdk/openai', () => ({
-  createOpenAI: vi.fn(() => ({
-    __mockModel: true,
-  })),
+  createOpenAI: vi.fn(() =>
+    vi.fn((modelName) => ({
+      __mockModel: true,
+      name: modelName,
+    })),
+  ),
 }));
 
 vi.mock('@packrat/api/utils/env-validation', () => ({

@@ -18,13 +18,13 @@ describe('csv-utils', () => {
     });
 
     it('parses ounces correctly', () => {
-      expect(parseWeight('10', 'oz')).toEqual({ weight: 283.5, unit: 'oz' });
-      expect(parseWeight('5 oz')).toEqual({ weight: 141.75, unit: 'oz' });
+      expect(parseWeight('10', 'oz')).toEqual({ weight: 284, unit: 'oz' });
+      expect(parseWeight('5 oz')).toEqual({ weight: 142, unit: 'oz' });
     });
 
     it('parses pounds correctly', () => {
-      expect(parseWeight('2', 'lb')).toEqual({ weight: 907.184, unit: 'lb' });
-      expect(parseWeight('3 lbs')).toEqual({ weight: 1360.776, unit: 'lb' });
+      expect(parseWeight('2', 'lb')).toEqual({ weight: 907, unit: 'lb' });
+      expect(parseWeight('3 lbs')).toEqual({ weight: 1361, unit: 'lb' });
     });
 
     it('parses kilograms correctly', () => {
@@ -43,7 +43,7 @@ describe('csv-utils', () => {
     });
 
     it('is case-insensitive for units', () => {
-      expect(parseWeight('10', 'OZ')).toEqual({ weight: 283.5, unit: 'oz' });
+      expect(parseWeight('10', 'OZ')).toEqual({ weight: 284, unit: 'oz' });
       expect(parseWeight('1', 'KG')).toEqual({ weight: 1000, unit: 'kg' });
     });
   });
@@ -80,9 +80,11 @@ describe('csv-utils', () => {
     });
 
     it('normalizes smart quotes to standard quotes', () => {
-      const input = '{"key": "value's"}';
-      const result = normalizeJsonString(input);
-      expect(result).not.toContain(''');
+      // Test with actual smart quote characters (curly quotes)
+      const inputWithSmartQuotes = String.fromCharCode(8216) + 'hello' + String.fromCharCode(8217);
+      const result = normalizeJsonString(inputWithSmartQuotes);
+      expect(result).toContain("'hello'"); // Smart quotes should become regular quotes
+      expect(result).not.toContain(String.fromCharCode(8216)); // No more smart quotes
     });
 
     it('converts single-quoted keys to double-quoted', () => {

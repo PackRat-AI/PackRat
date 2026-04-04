@@ -23,7 +23,9 @@ vi.mock('node:crypto', () => ({
 
 vi.mock('bcryptjs', () => ({
   hash: vi.fn((password: string) => Promise.resolve(`hashed_${password}`)),
-  compare: vi.fn((password: string, hash: string) => Promise.resolve(hash === `hashed_${password}`)),
+  compare: vi.fn((password: string, hash: string) =>
+    Promise.resolve(hash === `hashed_${password}`),
+  ),
 }));
 
 vi.mock('hono/jwt', () => ({
@@ -36,7 +38,7 @@ vi.mock('hono/jwt', () => ({
   }),
 }));
 
-vi.mock('@packrat/api/utils/env-validation', () => ({
+vi.mock('../env-validation', () => ({
   getEnv: vi.fn(() => ({
     JWT_SECRET: 'test-secret',
     PACKRAT_API_KEY: 'test-api-key',
@@ -266,9 +268,9 @@ describe('auth utilities', () => {
       expect(isValidApiKey(c)).toBe(false);
     });
 
-    it('returns false when PACKRAT_API_KEY env var is not set', () => {
-      const { getEnv } = require('@packrat/api/utils/env-validation');
-      getEnv.mockReturnValueOnce({ PACKRAT_API_KEY: undefined });
+    it('returns false when PACKRAT_API_KEY env var is not set', async () => {
+      const { getEnv } = await import('../env-validation');
+      vi.mocked(getEnv).mockReturnValueOnce({ PACKRAT_API_KEY: undefined } as any);
 
       const c = makeMockContext();
       expect(isValidApiKey(c)).toBe(false);
