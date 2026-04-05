@@ -100,9 +100,10 @@ function WeatherAlertCard({ alert }: { alert: WeatherAlert }) {
 
           <View className="ml-3 flex-1">
             <View className="flex-row items-center justify-between">
-              <Text variant="heading" className="font-semibold">
+              <Text variant="heading" className="font-semibold flex-1 mr-2" numberOfLines={2}>
                 {alert.type}
               </Text>
+
               <AlertSeverity severity={alert.severity} />
             </View>
             <Text variant="subhead" className="text-muted-foreground">
@@ -132,7 +133,7 @@ export default function WeatherAlertsScreen() {
   const { alerts, loading, error, activeLocation } = useWeatherAlerts();
 
   return (
-    <SafeAreaView style={{ flex: 1, paddingTop: 2 }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <LargeTitleHeader title={t('weather.weatherAlertsTitle')} />
       <ScrollView className="flex-1 mt-20">
         <View className="flex-row items-center justify-between p-4">
