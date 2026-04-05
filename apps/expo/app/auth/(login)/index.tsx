@@ -98,7 +98,10 @@ export default function LoginScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              {Platform.select({ ios: t('auth.welcomeBack'), default: t('auth.signIn') })}
+              {Platform.select({
+                ios: t('auth.welcomeBack'),
+                default: t('auth.signIn'),
+              })}
             </Text>
             {Platform.OS !== 'ios' && (
               <Text className="ios:text-sm text-center text-muted-foreground">
@@ -222,6 +225,7 @@ export default function LoginScreen() {
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, _isSubmitting]) => (
                   <Button
+                    testID={TestIds.ContinueButton}
                     disabled={!canSubmit || loading}
                     onPress={() => {
                       if (focusedTextField === 'email') {
