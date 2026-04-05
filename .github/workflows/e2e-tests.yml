@@ -172,8 +172,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-e2e-failure-artifacts
-          path: ~/.maestro/tests/
+          path: test-results/maestro-artifacts/
           retention-days: 7
+          if-no-files-found: warn
 
       - name: Shutdown simulator
         if: always()
@@ -281,5 +282,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-e2e-failure-artifacts
-          path: ~/.maestro/tests/
+          path: test-results/maestro-artifacts/
           retention-days: 7
+          if-no-files-found: warn

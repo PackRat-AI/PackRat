@@ -31,8 +31,13 @@ CURRENT_MONTH=$(date +"%-m")
 START_TAPS=$(( ($(get_year "$START_DATE") - CURRENT_YEAR) * 12 + ($(get_month_num "$START_DATE") - CURRENT_MONTH) ))
 END_TAPS=$(( ($(get_year "$END_DATE") - CURRENT_YEAR) * 12 + ($(get_month_num "$END_DATE") - CURRENT_MONTH) ))
 
+# Create test-results directory if it doesn't exist
+mkdir -p test-results/maestro-artifacts
+
 if [ "$PLATFORM" = "ios" ]; then
-  maestro test --config .maestro/config.yaml $@ \
+  maestro test --config .maestro/config.yaml \
+    --test-output-dir test-results/maestro-artifacts \
+    $@ \
     -e TEST_EMAIL="${TEST_EMAIL:-qa1.admin@packratai.com}" \
     -e TEST_PASSWORD="${TEST_PASSWORD:-Ab12345.}" \
     -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
@@ -48,7 +53,9 @@ if [ "$PLATFORM" = "ios" ]; then
     -e END_TAPS="$END_TAPS" \
     .maestro/master-flow.yaml
 else
-  maestro test --config .maestro/config-android.yaml $@ \
+  maestro test --config .maestro/config-android.yaml \
+    --test-output-dir test-results/maestro-artifacts \
+    $@ \
     -e TEST_EMAIL="${TEST_EMAIL:-qa1.admin@packratai.com}" \
     -e TEST_PASSWORD="${TEST_PASSWORD:-Ab12345.}" \
     -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
