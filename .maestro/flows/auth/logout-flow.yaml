@@ -35,14 +35,14 @@ appId: ${APP_ID}
 
 - waitForAnimationToEnd
 
-# Handle post-logout dialog - choose to stay logged out
+# Handle post-logout dialog - choose to Sign-in again
 - runFlow:
     when:
       visible:
-        text: "Stay logged out"
+        text: "Sign-in again"
     commands:
       - tapOn:
-          text: "Stay logged out"
+          text: "Sign-in again"
 
 - waitForAnimationToEnd
 
