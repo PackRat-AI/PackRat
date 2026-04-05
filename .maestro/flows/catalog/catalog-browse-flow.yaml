@@ -1,3 +1,5 @@
+appId: com.andrewbierman.packrat
+---
 # Catalog Browse Flow: Verify catalog tab loads items and categories
 - waitForAnimationToEnd
 

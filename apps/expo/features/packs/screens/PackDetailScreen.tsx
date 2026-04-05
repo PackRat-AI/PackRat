@@ -14,6 +14,7 @@ import { cn } from 'expo-app/lib/cn';
 import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -450,13 +451,13 @@ export function PackDetailScreen() {
               variant="secondary"
               onPress={handleAskAI}
               className="flex-1"
-              testID="ask-ai-button"
+              testID={TestIds.AskAIButton}
             >
               <Text>Ask AI</Text>
             </Button>
 
             {isOwnedByUser && (
-              <Button variant="secondary" onPress={handleAddItem} testID="add-item-button">
+              <Button variant="secondary" onPress={handleAddItem} testID={TestIds.AddItemButton}>
                 <Text>Add Item</Text>
               </Button>
             )}
@@ -466,7 +467,7 @@ export function PackDetailScreen() {
                 variant="secondary"
                 size="icon"
                 onPress={handleMoreActionsPress}
-                testID="pack-more-actions"
+                testID={TestIds.PackMoreActions}
               >
                 <Icon name="dots-horizontal" size={20} color={colors.grey2} />
               </Button>
