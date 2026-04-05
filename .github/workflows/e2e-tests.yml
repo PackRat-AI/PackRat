@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 env:
-  MAESTRO_VERSION: 1.40.0
+  MAESTRO_VERSION: 2.3.0
 
 jobs:
   ios-e2e:
