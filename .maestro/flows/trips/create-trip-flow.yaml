@@ -98,5 +98,11 @@ appId: ${APP_ID}
 # for the header create button, then verify the new trip appears
 - assertVisible:
     id: "create-trip-button"
+- scrollUntilVisible:
+    element:
+      text: ${TRIP_NAME}
+    direction: DOWN
+    timeout: 15000
 - assertVisible:
     text: ${TRIP_NAME}
+

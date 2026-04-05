@@ -44,5 +44,10 @@ appId: ${APP_ID}
 # Also confirm we are on the packs list by checking for the create button
 - assertVisible:
     id: "create-pack-button"
+- scrollUntilVisible:
+    element:
+      text: ${PACK_NAME}
+    direction: DOWN
+    timeout: 15000
 - assertVisible:
     text: ${PACK_NAME}
