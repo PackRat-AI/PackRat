@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 env:
-  MAESTRO_VERSION: 1.40.0
+  MAESTRO_VERSION: 2.3.0
 
 jobs:
   ios-e2e:
@@ -76,6 +76,9 @@ jobs:
           export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Log Maestro Version
+        run: maestro -v
 
       - name: Build iOS app for simulator
         run: |
@@ -151,15 +154,13 @@ jobs:
       - name: Run Maestro E2E tests
         run: |
           mkdir -p test-results
-          maestro --device "$SIMULATOR_UDID" test \
-            --format junit \
-            --output test-results/maestro-results.xml \
-            .maestro/
+          bun test:e2e:ios --device "$SIMULATOR_UDID" --format junit --output test-results/maestro-results.xml
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
+          APP_ID: com.andrewbierman.packrat.preview
 
       - name: Upload test results
         if: always()
@@ -262,19 +263,15 @@ jobs:
           disable-animations: true
           script: |
             mkdir -p test-results
+            adb shell pm disable-user com.android.launcher3 || true
+            adb shell pm disable-user com.google.android.apps.nexuslauncher || true
             adb install apps/expo/build/PackRat.apk
-            cp .maestro/config.yaml .maestro/config.yaml.bak
-            cp .maestro/config-android.yaml .maestro/config.yaml
-            maestro test \
-              --format junit \
-              --output test-results/maestro-results.xml \
-              .maestro/
-            mv .maestro/config.yaml.bak .maestro/config.yaml
-        env:
-          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-          TRIP_NAME: E2E-Trip-${{ github.run_id }}
-          PACK_NAME: E2E-Pack-${{ github.run_id }}
+            export TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}"
+            export TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}"
+            export TRIP_NAME="E2E-Trip-${{ github.run_id }}"
+            export PACK_NAME="E2E-Pack-${{ github.run_id }}"
+            export APP_ID="com.packratai.mobile.preview"
+            bun test:e2e:android --format junit --output test-results/maestro-results.xml
 
       - name: Upload test results
         if: always()

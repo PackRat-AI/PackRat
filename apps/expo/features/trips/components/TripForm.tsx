@@ -3,6 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import * as Burnt from 'burnt';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -10,7 +11,7 @@ import { TestIds } from 'expo-app/lib/testIds';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
@@ -79,14 +80,23 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       try {
         if (isEditingExistingTrip) {
           await updateTrip({ ...trip, ...submitData });
-          Alert.alert(t('common.success'), t('trips.tripUpdatedSuccess'));
+          Burnt.toast({
+            title: t('trips.tripUpdatedSuccess'),
+            preset: 'done',
+          });
         } else {
           await createTrip(submitData);
-          Alert.alert(t('common.success'), t('trips.tripCreatedSuccess'));
+          Burnt.toast({
+            title: t('trips.tripCreatedSuccess'),
+            preset: 'done',
+          });
         }
         router.back();
       } catch (_e) {
-        Alert.alert(t('common.error'), t('errors.tryAgain'));
+        Burnt.toast({
+          title: t('errors.tryAgain'),
+          preset: 'error',
+        });
       }
     },
   });

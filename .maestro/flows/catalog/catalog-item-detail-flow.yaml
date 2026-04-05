@@ -1,3 +1,5 @@
+appId: ${APP_ID}
+---
 # Catalog Item Detail Flow: Tap a catalog item and verify detail page
 - waitForAnimationToEnd
 
