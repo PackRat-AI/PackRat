@@ -20,6 +20,9 @@
       "channel": "preview",
       "ios": {
         "simulator": true
+      },
+      "android": {
+        "gradleCommand": ":app:assembleDebug"
       }
     },
     "production": {
