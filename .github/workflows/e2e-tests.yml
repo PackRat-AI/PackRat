@@ -263,6 +263,8 @@ jobs:
           disable-animations: true
           script: |
             mkdir -p test-results
+            adb shell pm disable-user com.android.launcher3 || true
+            adb shell pm disable-user com.google.android.apps.nexuslauncher || true
             adb install apps/expo/build/PackRat.apk
             export TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}"
             export TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}"
