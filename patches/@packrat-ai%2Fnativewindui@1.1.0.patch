@@ -1,0 +1,19 @@
+diff --git a/src/components/LargeTitleHeader/LargeTitleHeader.ios.tsx b/src/components/LargeTitleHeader/LargeTitleHeader.ios.tsx
+index 14ceafc28e763848f174e74d7c5f9aa46e4edcce..bf4d5e27be2a5b314bc7058ea198b52d6005d4e4 100644
+--- a/src/components/LargeTitleHeader/LargeTitleHeader.ios.tsx
++++ b/src/components/LargeTitleHeader/LargeTitleHeader.ios.tsx
+@@ -54,12 +54,12 @@ function propsToScreenOptions(
+     headerShadowVisible: props.shadowVisible,
+     headerLeft: props.leftView
+       ? (headerProps) => (
+-          <View className="flex-row justify-center gap-4">{props.leftView!(headerProps)}</View>
++          <View>{props.leftView!(headerProps)}</View>
+         )
+       : undefined,
+     headerRight: props.rightView
+       ? (headerProps) => (
+-          <View className="flex-row justify-center gap-4">{props.rightView!(headerProps)}</View>
++          <View>{props.rightView!(headerProps)}</View>
+         )
+       : undefined,
+     headerShown: props.shown,
