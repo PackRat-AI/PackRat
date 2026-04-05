@@ -121,7 +121,7 @@ export function PackTemplateListScreen() {
   return (
     <SafeAreaView
       className="flex-1 "
-      style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}
+      style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
     >
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}

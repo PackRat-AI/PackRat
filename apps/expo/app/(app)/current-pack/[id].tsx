@@ -144,7 +144,7 @@ export default function CurrentPackScreen() {
       >
         <View
           className="flex-row items-center p-4"
-          style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}
+          style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
         >
           <Avatar className="mr-4 h-16 w-16" alt="">
             <AvatarImage source={{ uri: pack.image }} />
