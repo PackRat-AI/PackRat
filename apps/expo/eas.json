@@ -22,7 +22,12 @@
         "simulator": true
       },
       "android": {
-        "gradleCommand": ":app:assembleDebug"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease -x lintVitalAnalyzeRelease",
+        "env": {
+          "GRADLE_OPTS": "-Xmx6144m -XX:MaxMetaspaceSize=1536m",
+          "JAVA_OPTS": "-Xmx6144m"
+        }
       }
     },
     "production": {
