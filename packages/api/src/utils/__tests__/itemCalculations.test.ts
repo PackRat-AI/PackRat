@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { CatalogItem, PackItem } from '@packrat/api/types';
+import { describe, expect, it } from 'vitest';
 import {
   calculateTotalWeight,
   getEffectiveWeight,

@@ -57,7 +57,7 @@ export default function WeightAnalysisScreen() {
       >
         <View
           className="grid grid-cols-2 gap-3 p-4"
-          style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}
+          style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
         >
           <WeightCard
             title={t('packs.baseWeight')}

@@ -139,7 +139,7 @@ function LocationsScreen() {
         )}
       />
 
-      <View className="p-4" style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
+      <View className="p-4" style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}>
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchSavedLocations')}
