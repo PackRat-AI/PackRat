@@ -2,6 +2,7 @@
 set -e
 
 PLATFORM=$1  # "ios" or "android"
+shift  # Remove first argument so $@ contains only the additional options
 
 # Generate unique ID for this test run
 UNIQUE_ID=$(date +%s)
@@ -31,7 +32,7 @@ START_TAPS=$(( ($(get_year "$START_DATE") - CURRENT_YEAR) * 12 + ($(get_month_nu
 END_TAPS=$(( ($(get_year "$END_DATE") - CURRENT_YEAR) * 12 + ($(get_month_num "$END_DATE") - CURRENT_MONTH) ))
 
 if [ "$PLATFORM" = "ios" ]; then
-  maestro test --config .maestro/config.yaml .maestro/master-flow.yaml \
+  maestro test --config .maestro/config.yaml $@ \
     -e TEST_EMAIL="${TEST_EMAIL:-qa1.admin@packratai.com}" \
     -e TEST_PASSWORD="${TEST_PASSWORD:-Ab12345.}" \
     -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
@@ -44,9 +45,10 @@ if [ "$PLATFORM" = "ios" ]; then
     -e END_YEAR="$(get_year "$END_DATE")" \
     -e END_MONTH="$(get_month "$END_DATE")" \
     -e END_DAY="$(get_day "$END_DATE")" \
-    -e END_TAPS="$END_TAPS"
+    -e END_TAPS="$END_TAPS" \
+    .maestro/master-flow.yaml
 else
-  maestro test --config .maestro/config-android.yaml .maestro/master-flow-android.yaml \
+  maestro test --config .maestro/config-android.yaml $@ \
     -e TEST_EMAIL="${TEST_EMAIL:-qa1.admin@packratai.com}" \
     -e TEST_PASSWORD="${TEST_PASSWORD:-Ab12345.}" \
     -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
@@ -59,5 +61,6 @@ else
     -e END_YEAR="$(get_year "$END_DATE")" \
     -e END_MONTH="$(get_month "$END_DATE")" \
     -e END_DAY="$(get_day "$END_DATE")" \
-    -e END_TAPS="$END_TAPS"
+    -e END_TAPS="$END_TAPS" \
+    .maestro/master-flow-android.yaml
 fi

@@ -151,15 +151,13 @@ jobs:
       - name: Run Maestro E2E tests
         run: |
           mkdir -p test-results
-          maestro --device "$SIMULATOR_UDID" test \
-            --format junit \
-            --output test-results/maestro-results.xml \
-            -e TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}" \
-            -e TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}" \
-            -e TRIP_NAME="E2E-Trip-${{ github.run_id }}" \
-            -e PACK_NAME="E2E-Pack-${{ github.run_id }}" \
-            -e APP_ID="com.andrewbierman.packrat.preview" \
-            .maestro/master-flow.yaml
+          bun test:e2e:ios --device "$SIMULATOR_UDID" --format junit --output test-results/maestro-results.xml
+        env:
+          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          TRIP_NAME: E2E-Trip-${{ github.run_id }}
+          PACK_NAME: E2E-Pack-${{ github.run_id }}
+          APP_ID: com.andrewbierman.packrat.preview
 
       - name: Upload test results
         if: always()
@@ -263,16 +261,12 @@ jobs:
           script: |
             mkdir -p test-results
             adb install apps/expo/build/PackRat.apk
-            maestro test \
-              --config .maestro/config-android.yaml \
-              --format junit \
-              --output test-results/maestro-results.xml \
-              -e TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}" \
-              -e TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}" \
-              -e TRIP_NAME="E2E-Trip-${{ github.run_id }}" \
-              -e PACK_NAME="E2E-Pack-${{ github.run_id }}" \
-              -e APP_ID="com.packratai.mobile.preview" \
-              .maestro/master-flow-android.yaml
+            export TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}"
+            export TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}"
+            export TRIP_NAME="E2E-Trip-${{ github.run_id }}"
+            export PACK_NAME="E2E-Pack-${{ github.run_id }}"
+            export APP_ID="com.packratai.mobile.preview"
+            bun test:e2e:android --format junit --output test-results/maestro-results.xml
 
       - name: Upload test results
         if: always()
