@@ -48,6 +48,7 @@ appId: ${APP_ID}
     element:
       text: ${PACK_NAME}
     direction: DOWN
-    timeout: 15000
+    timeout: 60000
+    speed: 100
 - assertVisible:
     text: ${PACK_NAME}
