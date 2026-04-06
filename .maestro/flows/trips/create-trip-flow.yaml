@@ -103,7 +103,7 @@ appId: ${APP_ID}
       text: ${TRIP_NAME}
     direction: DOWN
     timeout: 60000
-    speed: 100
+    speed: 99
 - assertVisible:
     text: ${TRIP_NAME}
 
