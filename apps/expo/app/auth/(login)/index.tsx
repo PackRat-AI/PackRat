@@ -110,13 +110,17 @@ export default function LoginScreen() {
             )}
           </View>
           <View className="ios:pt-4 pt-6">
-            <Form className="gap-2">
-              <FormSection className="ios:bg-background">
-                <FormItem>
+            <Form className="gap-2" accessible={Platform.OS === 'ios' ? false : undefined}>
+              <FormSection
+                className="ios:bg-background"
+                accessible={Platform.OS === 'ios' ? false : undefined}
+              >
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <form.Field name="email">
                     {(field) => (
                       <TextField
                         testID={TestIds.EmailInput}
+                        accessible={Platform.OS === 'ios' ? true : undefined}
                         placeholder={Platform.select({
                           ios: 'Email',
                           default: '',
@@ -143,11 +147,12 @@ export default function LoginScreen() {
                     )}
                   </form.Field>
                 </FormItem>
-                <FormItem>
+                <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <form.Field name="password">
                     {(field) => (
                       <TextField
                         testID={TestIds.PasswordInput}
+                        accessible={Platform.OS === 'ios' ? true : undefined}
                         placeholder={Platform.select({
                           ios: 'Password',
                           default: '',
@@ -185,6 +190,7 @@ export default function LoginScreen() {
         </View>
       </KeyboardAwareScrollView>
       <KeyboardStickyView
+        accessible={Platform.OS === 'ios' ? false : undefined}
         offset={{
           closed: 0,
           opened: Platform.select({
@@ -194,11 +200,12 @@ export default function LoginScreen() {
         }}
       >
         {Platform.OS === 'ios' ? (
-          <View className="px-12 py-4">
+          <View className="px-12 py-4" accessible={false}>
             <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
               {([canSubmit, _isSubmitting]) => (
                 <Button
                   testID={TestIds.ContinueButton}
+                  accessible={true}
                   size="lg"
                   disabled={!canSubmit || loading}
                   onPress={() => form.handleSubmit()}
@@ -209,7 +216,7 @@ export default function LoginScreen() {
             </form.Subscribe>
           </View>
         ) : (
-          <View className="flex-row justify-between py-4 pl-6 pr-8">
+          <View className="flex-row justify-between py-4 pl-6 pr-8" accessible={false}>
             {!needsReauth && (
               <Button
                 variant="plain"
@@ -221,11 +228,12 @@ export default function LoginScreen() {
                 <Text className="px-0.5 text-sm text-primary">{t('auth.createAccount')}</Text>
               </Button>
             )}
-            <View className="ml-auto">
+            <View className="ml-auto" accessible={false}>
               <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
                 {([canSubmit, _isSubmitting]) => (
                   <Button
                     testID={TestIds.ContinueButton}
+                    accessible={true}
                     disabled={!canSubmit || loading}
                     onPress={() => {
                       if (focusedTextField === 'email') {
