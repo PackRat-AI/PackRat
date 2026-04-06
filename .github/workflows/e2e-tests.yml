@@ -71,15 +71,6 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Maestro CLI
-        run: |
-          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
-          curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
-
-      - name: Log Maestro Version
-        run: maestro -v
-
       - name: Build iOS app for simulator
         run: |
           cd apps/expo
@@ -93,6 +84,12 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+
+      - name: Install Maestro CLI
+        run: |
+          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
       - name: Extract iOS simulator build
         run: |
