@@ -172,107 +172,107 @@ jobs:
           xcrun simctl shutdown "$SIMULATOR_UDID" || true
           xcrun simctl delete "$SIMULATOR_UDID" || true
 
-  # android-e2e:
-  #   name: Android E2E Tests
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 120
-  #   # Skip on forked PRs — secrets are not available in forks
-  #   if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+  android-e2e:
+    name: Android E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    # Skip on forked PRs — secrets are not available in forks
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
-  #   env:
-  #     TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-  #     TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+    env:
+      TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  #     - name: Setup Bun
-  #       uses: oven-sh/setup-bun@v1
-  #       with:
-  #         bun-version: latest
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
 
-  #     - name: Install dependencies
-  #       env:
-  #         PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-  #       run: bun install
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
 
-  #     - name: Setup Expo
-  #       uses: expo/expo-github-action@v8
-  #       with:
-  #         eas-version: latest
-  #         token: ${{ secrets.EXPO_TOKEN }}
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
-  #     - name: Setup Java
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         distribution: temurin
-  #         java-version: "17"
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
-  #     - name: Install Maestro CLI
-  #       run: |
-  #         export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
-  #         curl -Ls "https://get.maestro.mobile.dev" | bash
-  #         echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+      - name: Install Maestro CLI
+        run: |
+          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
-  #     - name: Build Android APK for emulator
-  #       run: |
-  #         cd apps/expo
-  #         mkdir -p build
-  #         eas build \
-  #           --platform android \
-  #           --profile e2e \
-  #           --non-interactive \
-  #           --local \
-  #           --output ./build/PackRat.apk
-  #       env:
-  #         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-  #         PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+      - name: Build Android APK for emulator
+        run: |
+          cd apps/expo
+          mkdir -p build
+          eas build \
+            --platform android \
+            --profile e2e \
+            --non-interactive \
+            --local \
+            --output ./build/PackRat.apk
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
-  #     - name: Enable KVM for hardware acceleration
-  #       run: |
-  #         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
-  #           | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-  #         sudo udevadm control --reload-rules
-  #         sudo udevadm trigger --name-match=kvm
+      - name: Enable KVM for hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
-  #     - name: Run Maestro E2E tests on Android emulator
-  #       uses: reactivecircus/android-emulator-runner@v2.34.0
-  #       with:
-  #         api-level: 34
-  #         target: google_apis
-  #         arch: x86_64
-  #         profile: pixel_6
-  #         avd-name: PackRat-E2E
-  #         force-avd-creation: false
-  #         emulator-options: >-
-  #           -no-snapshot-save -no-window -gpu swiftshader_indirect
-  #           -noaudio -no-boot-anim -camera-back none
-  #         disable-animations: true
-  #         script: |
-  #           mkdir -p test-results
-  #           adb shell pm disable-user com.android.launcher3 || true
-  #           adb shell pm disable-user com.google.android.apps.nexuslauncher || true
-  #           adb install apps/expo/build/PackRat.apk
-  #           export TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}"
-  #           export TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}"
-  #           export TRIP_NAME="E2E-Trip-${{ github.run_id }}"
-  #           export PACK_NAME="E2E-Pack-${{ github.run_id }}"
-  #           export APP_ID="com.packratai.mobile.preview"
-  #           bun test:e2e:android --format junit --output test-results/maestro-results.xml
+      - name: Run Maestro E2E tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2.34.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          avd-name: PackRat-E2E
+          force-avd-creation: false
+          emulator-options: >-
+            -no-snapshot-save -no-window -gpu swiftshader_indirect
+            -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            mkdir -p test-results
+            adb shell pm disable-user com.android.launcher3 || true
+            adb shell pm disable-user com.google.android.apps.nexuslauncher || true
+            adb install apps/expo/build/PackRat.apk
+            export TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}"
+            export TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}"
+            export TRIP_NAME="E2E-Trip-${{ github.run_id }}"
+            export PACK_NAME="E2E-Pack-${{ github.run_id }}"
+            export APP_ID="com.packratai.mobile.preview"
+            bun test:e2e:android --format junit --output test-results/maestro-results.xml
 
-  #     - name: Upload test results
-  #       if: always()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: android-e2e-results
-  #         path: test-results/
-  #         retention-days: 30
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-e2e-results
+          path: test-results/
+          retention-days: 30
 
-  #     - name: Upload Maestro screenshots and videos on failure
-  #       if: failure()
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: android-e2e-failure-artifacts
-  #         path: ~/.maestro/tests/
-  #         retention-days: 7
+      - name: Upload Maestro screenshots and videos on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-e2e-failure-artifacts
+          path: ~/.maestro/tests/
+          retention-days: 7
