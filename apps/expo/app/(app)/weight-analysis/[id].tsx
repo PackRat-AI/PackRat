@@ -6,7 +6,7 @@ import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeig
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function WeightCard({
@@ -48,14 +48,17 @@ export default function WeightAnalysisScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView className="flex-1" style={{ paddingTop: insets.top }}>
+    <SafeAreaView className="flex-1" style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
       <LargeTitleHeader title={t('packs.weightAnalysis')} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         removeClippedSubviews={false}
       >
-        <View className="grid grid-cols-2 gap-3 p-4" style={{ paddingTop: insets.top }}>
+        <View
+          className="grid grid-cols-2 gap-3 p-4"
+          style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+        >
           <WeightCard
             title={t('packs.baseWeight')}
             weight={`${data.baseWeight} g`}

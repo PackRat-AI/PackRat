@@ -23,10 +23,17 @@ export default defineConfig({
     include: [resolve(__dirname, '{utils,lib/utils}/**/*.test.ts')],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'lcov', 'html'],
+      reporter: ['text', 'json-summary', 'json', 'lcov', 'html'],
       reportsDirectory: resolve(__dirname, 'coverage/unit'),
       include: ['utils/**/*.ts', 'lib/utils/**/*.ts'],
-      exclude: ['utils/**/*.test.ts', 'lib/utils/**/*.test.ts'],
+      exclude: [
+        'utils/**/*.test.ts',
+        'lib/utils/**/*.test.ts',
+        'utils/polyfills.ts', // Infrastructure/setup file - no business logic to test
+      ],
+      thresholds: {
+        statements: 75,
+      },
     },
   },
 });

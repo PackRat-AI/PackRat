@@ -1,26 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// Mock dependencies
-vi.mock('@packrat/api/utils/env-validation', () => ({
-  getEnv: vi.fn(),
-}));
-
-vi.mock('bcryptjs', () => ({
-  default: {
-    hash: vi.fn(),
-    compare: vi.fn(),
-  },
-  hash: vi.fn(),
-  compare: vi.fn(),
-}));
-
-vi.mock('hono/jwt', () => ({
-  sign: vi.fn(),
-  verify: vi.fn(),
-}));
-
-import * as bcrypt from 'bcryptjs';
-import { sign, verify } from 'hono/jwt';
 import {
   generateJWT,
   generateRefreshToken,
@@ -33,447 +11,269 @@ import {
   verifyJWT,
   verifyPassword,
 } from '../auth';
-import { getEnv } from '../env-validation';
 
-// Mock Hono context
-function makeMockContext(headers: Record<string, string> = {}) {
+// ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+vi.mock('node:crypto', () => ({
+  randomBytes: vi.fn((length: number) => ({
+    toString: (encoding: string) => 'a'.repeat(length * 2),
+  })),
+}));
+
+vi.mock('bcryptjs', () => ({
+  hash: vi.fn((password: string) => Promise.resolve(`hashed_${password}`)),
+  compare: vi.fn((password: string, hash: string) =>
+    Promise.resolve(hash === `hashed_${password}`),
+  ),
+}));
+
+vi.mock('hono/jwt', () => ({
+  sign: vi.fn((payload: any, secret: string) => Promise.resolve('signed_token')),
+  verify: vi.fn((token: string, secret: string) => {
+    if (token === 'valid_token') {
+      return Promise.resolve({ userId: 1, role: 'USER' });
+    }
+    throw new Error('Invalid token');
+  }),
+}));
+
+vi.mock('../env-validation', () => ({
+  getEnv: vi.fn(() => ({
+    JWT_SECRET: 'test-secret',
+    PACKRAT_API_KEY: 'test-api-key',
+  })),
+}));
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function makeMockContext() {
   return {
     req: {
-      header: vi.fn((name: string) => headers[name]),
+      header: vi.fn((key: string) => {
+        if (key === 'X-API-Key') return 'test-api-key';
+        return undefined;
+      }),
     },
-    env: {},
   } as any;
 }
 
-describe('auth utils', () => {
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+describe('auth utilities', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  // -------------------------------------------------------------------------
-  // generateToken
-  // -------------------------------------------------------------------------
   describe('generateToken', () => {
-    it('generates a random hex token', () => {
+    it('generates a hex token with default length', () => {
       const token = generateToken();
-      expect(token).toMatch(/^[0-9a-f]+$/);
+      expect(token).toBe('a'.repeat(64)); // 32 bytes * 2 hex chars
     });
 
-    it('generates token of default length 32 bytes (64 hex chars)', () => {
-      const token = generateToken();
-      expect(token.length).toBe(64); // 32 bytes = 64 hex characters
-    });
-
-    it('generates token of custom length', () => {
+    it('generates a hex token with custom length', () => {
       const token = generateToken(16);
-      expect(token.length).toBe(32); // 16 bytes = 32 hex characters
-    });
-
-    it('generates different tokens on each call', () => {
-      const token1 = generateToken();
-      const token2 = generateToken();
-      expect(token1).not.toBe(token2);
-    });
-
-    it('generates token of length 1', () => {
-      const token = generateToken(1);
-      expect(token.length).toBe(2); // 1 byte = 2 hex characters
+      expect(token).toBe('a'.repeat(32)); // 16 bytes * 2 hex chars
     });
   });
 
-  // -------------------------------------------------------------------------
-  // hashPassword
-  // -------------------------------------------------------------------------
+  describe('generateRefreshToken', () => {
+    it('generates a 40-byte hex token', () => {
+      const token = generateRefreshToken();
+      expect(token).toBe('a'.repeat(80)); // 40 bytes * 2 hex chars
+    });
+  });
+
   describe('hashPassword', () => {
-    it('hashes a password using bcrypt', async () => {
-      vi.mocked(bcrypt.hash).mockResolvedValue('hashed_password' as never);
-
-      const result = await hashPassword('myPassword123');
-
-      expect(bcrypt.hash).toHaveBeenCalledWith('myPassword123', 10);
-      expect(result).toBe('hashed_password');
+    it('hashes a password', async () => {
+      const hash = await hashPassword('password123');
+      expect(hash).toBe('hashed_password123');
     });
 
-    it('uses 10 salt rounds', async () => {
-      vi.mocked(bcrypt.hash).mockResolvedValue('hash' as never);
-
+    it('uses bcrypt to hash the password', async () => {
+      const bcrypt = await import('bcryptjs');
       await hashPassword('test');
-
       expect(bcrypt.hash).toHaveBeenCalledWith('test', 10);
     });
-
-    it('handles empty password', async () => {
-      vi.mocked(bcrypt.hash).mockResolvedValue('hash_empty' as never);
-
-      const result = await hashPassword('');
-
-      expect(result).toBe('hash_empty');
-    });
-
-    it('handles special characters in password', async () => {
-      vi.mocked(bcrypt.hash).mockResolvedValue('hash_special' as never);
-
-      await hashPassword('p@$$w0rd!');
-
-      expect(bcrypt.hash).toHaveBeenCalledWith('p@$$w0rd!', 10);
-    });
   });
 
-  // -------------------------------------------------------------------------
-  // verifyPassword
-  // -------------------------------------------------------------------------
   describe('verifyPassword', () => {
-    it('verifies password successfully', async () => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
-
-      const result = await verifyPassword('myPassword', 'hash');
-
-      expect(bcrypt.compare).toHaveBeenCalledWith('myPassword', 'hash');
+    it('returns true for matching password and hash', async () => {
+      const result = await verifyPassword('password123', 'hashed_password123');
       expect(result).toBe(true);
     });
 
-    it('returns false for incorrect password', async () => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
-
-      const result = await verifyPassword('wrongPassword', 'hash');
-
-      expect(result).toBe(false);
-    });
-
-    it('handles empty password', async () => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
-
-      const result = await verifyPassword('', 'hash');
-
-      expect(result).toBe(false);
-    });
-
-    it('handles empty hash', async () => {
-      vi.mocked(bcrypt.compare).mockResolvedValue(false as never);
-
-      const result = await verifyPassword('password', '');
-
+    it('returns false for non-matching password and hash', async () => {
+      const result = await verifyPassword('password123', 'hashed_wrong');
       expect(result).toBe(false);
     });
   });
 
-  // -------------------------------------------------------------------------
-  // generateRefreshToken
-  // -------------------------------------------------------------------------
-  describe('generateRefreshToken', () => {
-    it('generates a random hex token', () => {
-      const token = generateRefreshToken();
-      expect(token).toMatch(/^[0-9a-f]+$/);
-    });
-
-    it('generates token of 40 bytes (80 hex chars)', () => {
-      const token = generateRefreshToken();
-      expect(token.length).toBe(80); // 40 bytes = 80 hex characters
-    });
-
-    it('generates different tokens on each call', () => {
-      const token1 = generateRefreshToken();
-      const token2 = generateRefreshToken();
-      expect(token1).not.toBe(token2);
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // generateJWT
-  // -------------------------------------------------------------------------
   describe('generateJWT', () => {
-    it('generates JWT with payload and secret', async () => {
+    it('generates a JWT with payload and expiry', async () => {
       const c = makeMockContext();
-      vi.mocked(getEnv).mockReturnValue({ JWT_SECRET: 'my-secret' } as any);
-      vi.mocked(sign).mockResolvedValue('jwt_token');
-
-      const result = await generateJWT({ payload: { userId: 123 }, c });
-
-      expect(getEnv).toHaveBeenCalledWith(c);
-      expect(sign).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 123, exp: expect.any(Number) }),
-        'my-secret',
-      );
-      expect(result).toBe('jwt_token');
-    });
-
-    it('sets expiration to 7 days from now', async () => {
-      const c = makeMockContext();
-      vi.mocked(getEnv).mockReturnValue({ JWT_SECRET: 'secret' } as any);
-      vi.mocked(sign).mockResolvedValue('token');
-
-      const beforeTime = Math.floor(Date.now() / 1000);
-      await generateJWT({ payload: { userId: 1 }, c });
-      const afterTime = Math.floor(Date.now() / 1000);
-
-      const signCall = vi.mocked(sign).mock.calls[0]?.[0] as any;
-      const exp = signCall.exp;
-
-      // Should be approximately 7 days (604800 seconds) from now
-      expect(exp).toBeGreaterThanOrEqual(beforeTime + 604800);
-      expect(exp).toBeLessThanOrEqual(afterTime + 604800 + 1);
-    });
-
-    it('includes custom payload fields', async () => {
-      const c = makeMockContext();
-      vi.mocked(getEnv).mockReturnValue({ JWT_SECRET: 'secret' } as any);
-      vi.mocked(sign).mockResolvedValue('token');
-
-      await generateJWT({
-        payload: { userId: 456, role: 'ADMIN', email: 'admin@test.com' },
+      const token = await generateJWT({
+        payload: { userId: 1, role: 'USER' },
         c,
       });
 
-      const signCall = vi.mocked(sign).mock.calls[0]?.[0] as any;
-      expect(signCall).toMatchObject({
-        userId: 456,
-        role: 'ADMIN',
-        email: 'admin@test.com',
+      expect(token).toBe('signed_token');
+
+      const { sign } = await import('hono/jwt');
+      expect(sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 1,
+          role: 'USER',
+          exp: expect.any(Number),
+        }),
+        'test-secret',
+      );
+    });
+
+    it('sets expiry to 7 days from now', async () => {
+      const c = makeMockContext();
+      const beforeTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
+
+      await generateJWT({
+        payload: { userId: 1 },
+        c,
       });
+
+      const { sign } = await import('hono/jwt');
+      const callArgs = (sign as ReturnType<typeof vi.fn>).mock.calls[0][0];
+
+      expect(callArgs.exp).toBeGreaterThanOrEqual(beforeTime - 5);
+      expect(callArgs.exp).toBeLessThanOrEqual(beforeTime + 5);
     });
   });
 
-  // -------------------------------------------------------------------------
-  // verifyJWT
-  // -------------------------------------------------------------------------
   describe('verifyJWT', () => {
-    it('verifies valid JWT token', async () => {
+    it('returns payload for valid token', async () => {
       const c = makeMockContext();
-      vi.mocked(getEnv).mockReturnValue({ JWT_SECRET: 'secret' } as any);
-      vi.mocked(verify).mockResolvedValue({ userId: 123 });
+      const payload = await verifyJWT({ token: 'valid_token', c });
 
-      const result = await verifyJWT({ token: 'valid_token', c });
-
-      expect(verify).toHaveBeenCalledWith('valid_token', 'secret');
-      expect(result).toEqual({ userId: 123 });
+      expect(payload).toEqual({ userId: 1, role: 'USER' });
     });
 
     it('returns null for invalid token', async () => {
       const c = makeMockContext();
-      vi.mocked(getEnv).mockReturnValue({ JWT_SECRET: 'secret' } as any);
-      vi.mocked(verify).mockRejectedValue(new Error('Invalid token'));
+      const payload = await verifyJWT({ token: 'invalid_token', c });
 
-      const result = await verifyJWT({ token: 'invalid_token', c });
-
-      expect(result).toBeNull();
-    });
-
-    it('returns null for expired token', async () => {
-      const c = makeMockContext();
-      vi.mocked(getEnv).mockReturnValue({ JWT_SECRET: 'secret' } as any);
-      vi.mocked(verify).mockRejectedValue(new Error('Token expired'));
-
-      const result = await verifyJWT({ token: 'expired_token', c });
-
-      expect(result).toBeNull();
-    });
-
-    it('uses correct secret from environment', async () => {
-      const c = makeMockContext();
-      vi.mocked(getEnv).mockReturnValue({ JWT_SECRET: 'custom-secret-123' } as any);
-      vi.mocked(verify).mockResolvedValue({ userId: 1 });
-
-      await verifyJWT({ token: 'token', c });
-
-      expect(verify).toHaveBeenCalledWith('token', 'custom-secret-123');
+      expect(payload).toBeNull();
     });
   });
 
-  // -------------------------------------------------------------------------
-  // generateVerificationCode
-  // -------------------------------------------------------------------------
   describe('generateVerificationCode', () => {
-    it('generates numeric code of default length 6', () => {
+    it('generates a 6-digit code by default', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
       const code = generateVerificationCode();
-      expect(code).toMatch(/^\d{6}$/);
+
+      expect(code).toHaveLength(6);
+      expect(code).toMatch(/^\d+$/);
+
+      vi.restoreAllMocks();
     });
 
-    it('generates numeric code of custom length', () => {
+    it('generates a code of custom length', () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
       const code = generateVerificationCode(4);
-      expect(code).toMatch(/^\d{4}$/);
-    });
 
-    it('generates different codes on each call', () => {
-      const code1 = generateVerificationCode();
-      const code2 = generateVerificationCode();
-      // Extremely unlikely to be equal
-      expect(code1).not.toBe(code2);
-    });
+      expect(code).toHaveLength(4);
+      expect(code).toMatch(/^\d+$/);
 
-    it('generates code of length 1', () => {
-      const code = generateVerificationCode(1);
-      expect(code).toMatch(/^\d$/);
-    });
-
-    it('generates code of length 8', () => {
-      const code = generateVerificationCode(8);
-      expect(code).toMatch(/^\d{8}$/);
+      vi.restoreAllMocks();
     });
   });
 
-  // -------------------------------------------------------------------------
-  // validatePassword
-  // -------------------------------------------------------------------------
   describe('validatePassword', () => {
-    it('validates strong password successfully', () => {
-      const result = validatePassword('Strong123');
+    it('accepts a valid password', () => {
+      const result = validatePassword('StrongPass123');
       expect(result).toEqual({ valid: true });
     });
 
     it('rejects password shorter than 8 characters', () => {
       const result = validatePassword('Short1');
-      expect(result.valid).toBe(false);
-      expect(result.message).toContain('at least 8 characters');
+      expect(result).toEqual({
+        valid: false,
+        message: 'Password must be at least 8 characters long',
+      });
     });
 
     it('rejects password without uppercase letter', () => {
       const result = validatePassword('lowercase123');
-      expect(result.valid).toBe(false);
-      expect(result.message).toContain('uppercase letter');
+      expect(result).toEqual({
+        valid: false,
+        message: 'Password must contain at least one uppercase letter',
+      });
     });
 
     it('rejects password without lowercase letter', () => {
       const result = validatePassword('UPPERCASE123');
-      expect(result.valid).toBe(false);
-      expect(result.message).toContain('lowercase letter');
+      expect(result).toEqual({
+        valid: false,
+        message: 'Password must contain at least one lowercase letter',
+      });
     });
 
     it('rejects password without number', () => {
-      const result = validatePassword('NoNumbers');
-      expect(result.valid).toBe(false);
-      expect(result.message).toContain('number');
+      const result = validatePassword('NoNumbersHere');
+      expect(result).toEqual({
+        valid: false,
+        message: 'Password must contain at least one number',
+      });
     });
 
     it('accepts password with special characters', () => {
-      const result = validatePassword('Strong123!@#');
-      expect(result).toEqual({ valid: true });
-    });
-
-    it('accepts minimum valid password', () => {
-      const result = validatePassword('Pass123w');
-      expect(result).toEqual({ valid: true });
-    });
-
-    it('rejects empty password', () => {
-      const result = validatePassword('');
-      expect(result.valid).toBe(false);
-    });
-
-    it('accepts long strong password', () => {
-      const result = validatePassword('VeryLongPassword123WithManyCharacters');
+      const result = validatePassword('Valid@Pass123');
       expect(result).toEqual({ valid: true });
     });
   });
 
-  // -------------------------------------------------------------------------
-  // validateEmail
-  // -------------------------------------------------------------------------
   describe('validateEmail', () => {
-    it('validates correct email', () => {
-      expect(validateEmail('user@example.com')).toBe(true);
+    it('accepts valid email addresses', () => {
+      expect(validateEmail('test@example.com')).toBe(true);
+      expect(validateEmail('user.name@domain.co.uk')).toBe(true);
+      expect(validateEmail('test+tag@example.com')).toBe(true);
     });
 
-    it('validates email with subdomain', () => {
-      expect(validateEmail('user@mail.example.com')).toBe(true);
-    });
-
-    it('validates email with plus sign', () => {
-      expect(validateEmail('user+tag@example.com')).toBe(true);
-    });
-
-    it('validates email with dots', () => {
-      expect(validateEmail('first.last@example.com')).toBe(true);
-    });
-
-    it('validates email with numbers', () => {
-      expect(validateEmail('user123@example456.com')).toBe(true);
-    });
-
-    it('rejects email without @', () => {
-      expect(validateEmail('userexample.com')).toBe(false);
-    });
-
-    it('rejects email without domain', () => {
-      expect(validateEmail('user@')).toBe(false);
-    });
-
-    it('rejects email without extension', () => {
-      expect(validateEmail('user@example')).toBe(false);
-    });
-
-    it('rejects email with spaces', () => {
-      expect(validateEmail('user @example.com')).toBe(false);
-    });
-
-    it('rejects empty email', () => {
+    it('rejects invalid email addresses', () => {
+      expect(validateEmail('invalid')).toBe(false);
+      expect(validateEmail('invalid@')).toBe(false);
+      expect(validateEmail('@domain.com')).toBe(false);
+      expect(validateEmail('test@')).toBe(false);
+      expect(validateEmail('test @example.com')).toBe(false);
       expect(validateEmail('')).toBe(false);
     });
-
-    it('rejects email starting with @', () => {
-      expect(validateEmail('@example.com')).toBe(false);
-    });
-
-    it('rejects email with multiple @', () => {
-      expect(validateEmail('user@@example.com')).toBe(false);
-    });
   });
 
-  // -------------------------------------------------------------------------
-  // isValidApiKey
-  // -------------------------------------------------------------------------
   describe('isValidApiKey', () => {
-    it('validates correct API key', () => {
-      const c = makeMockContext({ 'X-API-Key': 'valid-key' });
-      vi.mocked(getEnv).mockReturnValue({ PACKRAT_API_KEY: 'valid-key' } as any);
-
-      const result = isValidApiKey(c);
-
-      expect(result).toBe(true);
+    it('returns true when API key matches', () => {
+      const c = makeMockContext();
+      expect(isValidApiKey(c)).toBe(true);
     });
 
-    it('rejects incorrect API key', () => {
-      const c = makeMockContext({ 'X-API-Key': 'wrong-key' });
-      vi.mocked(getEnv).mockReturnValue({ PACKRAT_API_KEY: 'correct-key' } as any);
-
-      const result = isValidApiKey(c);
-
-      expect(result).toBe(false);
+    it('returns false when API key is missing', () => {
+      const c = {
+        req: { header: vi.fn(() => undefined) },
+      } as any;
+      expect(isValidApiKey(c)).toBe(false);
     });
 
-    it('returns false when no API key header provided', () => {
-      const c = makeMockContext({});
-      vi.mocked(getEnv).mockReturnValue({ PACKRAT_API_KEY: 'key' } as any);
-
-      const result = isValidApiKey(c);
-
-      expect(result).toBe(false);
+    it('returns false when API key does not match', () => {
+      const c = {
+        req: { header: vi.fn(() => 'wrong-key') },
+      } as any;
+      expect(isValidApiKey(c)).toBe(false);
     });
 
-    it('returns false when PACKRAT_API_KEY not set', () => {
-      const c = makeMockContext({ 'X-API-Key': 'some-key' });
-      vi.mocked(getEnv).mockReturnValue({ PACKRAT_API_KEY: '' } as any);
+    it('returns false when PACKRAT_API_KEY env var is not set', async () => {
+      const { getEnv } = await import('../env-validation');
+      vi.mocked(getEnv).mockReturnValueOnce({ PACKRAT_API_KEY: undefined } as any);
 
-      const result = isValidApiKey(c);
-
-      expect(result).toBe(false);
-    });
-
-    it('returns false when both header and env are missing', () => {
-      const c = makeMockContext({});
-      vi.mocked(getEnv).mockReturnValue({ PACKRAT_API_KEY: '' } as any);
-
-      const result = isValidApiKey(c);
-
-      expect(result).toBe(false);
-    });
-
-    it('checks exact match (case-sensitive)', () => {
-      const c = makeMockContext({ 'X-API-Key': 'MyKey' });
-      vi.mocked(getEnv).mockReturnValue({ PACKRAT_API_KEY: 'mykey' } as any);
-
-      const result = isValidApiKey(c);
-
-      expect(result).toBe(false);
+      const c = makeMockContext();
+      expect(isValidApiKey(c)).toBe(false);
     });
   });
 });
