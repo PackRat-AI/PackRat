@@ -4,7 +4,7 @@ import { WeatherService } from '../weatherService';
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
-global.fetch = vi.fn();
+global.fetch = vi.fn() as any;
 
 vi.mock('@packrat/api/utils/env-validation', () => ({
   getEnv: vi.fn(() => ({
@@ -20,14 +20,14 @@ function makeMockContext() {
 }
 
 function mockWeatherResponse(data: any) {
-  (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+  (global.fetch as any).mockResolvedValue({
     ok: true,
     json: async () => data,
   } as Response);
 }
 
 function mockWeatherError() {
-  (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+  (global.fetch as any).mockResolvedValue({
     ok: false,
     status: 404,
   } as Response);

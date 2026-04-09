@@ -142,7 +142,7 @@ describe('auth utilities', () => {
       });
 
       const { sign } = await import('hono/jwt');
-      const callArgs = (sign as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      const callArgs = (sign as ReturnType<typeof vi.fn>).mock.calls[0]![0];
 
       expect(callArgs.exp).toBeGreaterThanOrEqual(beforeTime - 5);
       expect(callArgs.exp).toBeLessThanOrEqual(beforeTime + 5);
