@@ -20,8 +20,8 @@ describe('env-validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset test environment detection
-    delete process.env.NODE_ENV;
-    delete process.env.VITEST;
+    delete (process.env as any).NODE_ENV;
+    delete (process.env as any).VITEST;
   });
 
   // -------------------------------------------------------------------------
@@ -205,7 +205,7 @@ describe('env-validation', () => {
   // -------------------------------------------------------------------------
   describe('getEnv', () => {
     it('returns validated environment in production', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const mockEnv = {
         ENVIRONMENT: 'production',
@@ -258,7 +258,7 @@ describe('env-validation', () => {
     });
 
     it('uses relaxed validation in test environment', () => {
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const minimalEnv = {
         JWT_SECRET: 'test-secret',
@@ -289,7 +289,7 @@ describe('env-validation', () => {
     });
 
     it('caches validated environment per context', () => {
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
       const c = makeMockContext();
       vi.mocked(env).mockReturnValue({ JWT_SECRET: 'secret' } as any);
 
@@ -301,7 +301,7 @@ describe('env-validation', () => {
     });
 
     it('does not cache across different contexts', () => {
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const c1 = makeMockContext();
       const c2 = makeMockContext();
@@ -316,7 +316,7 @@ describe('env-validation', () => {
     });
 
     it('throws error for invalid environment in production', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
 
       const invalidEnv = {
         JWT_SECRET: 'secret',
@@ -330,7 +330,7 @@ describe('env-validation', () => {
     });
 
     it('merges Cloudflare bindings from raw env', () => {
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
 
       const mockAI = { run: vi.fn() };
       const mockBucket = { get: vi.fn() };
@@ -441,7 +441,7 @@ describe('env-validation', () => {
   // -------------------------------------------------------------------------
   describe('test environment detection', () => {
     it('detects NODE_ENV=test', () => {
-      process.env.NODE_ENV = 'test';
+      (process.env as any).NODE_ENV = 'test';
       const c = makeMockContext();
       vi.mocked(env).mockReturnValue({} as any);
 
@@ -459,7 +459,7 @@ describe('env-validation', () => {
     });
 
     it('uses production schema when not in test', () => {
-      delete process.env.NODE_ENV;
+      delete (process.env as any).NODE_ENV;
       delete process.env.VITEST;
 
       const c = makeMockContext();

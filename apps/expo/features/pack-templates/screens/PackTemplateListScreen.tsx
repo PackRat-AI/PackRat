@@ -1,5 +1,5 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
+import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
@@ -54,7 +54,7 @@ export function PackTemplateListScreen() {
   const { t } = useTranslation();
   const templateOptionsRef = useRef<BottomSheetModal>(null);
 
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const insets = useSafeAreaInsets();
 
   // Filter options with translations

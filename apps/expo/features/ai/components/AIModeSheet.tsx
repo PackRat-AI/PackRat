@@ -23,7 +23,7 @@ import {
 } from '../lib/localModelManager';
 import { CircularDownloadButton } from './CircularDownloadButton';
 
-type AIModeSheetProps = Record<string, never>;
+type AIModeSheetProps = {};
 
 export const AIModeSheet = React.forwardRef<BottomSheetModal, AIModeSheetProps>(
   function AIModeSheet(_props, ref) {

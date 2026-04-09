@@ -307,7 +307,7 @@ describe('ImageDetectionService', () => {
 
       // Should only return the item with catalog matches
       expect(result).toHaveLength(1);
-      expect(result[0].detected.name).toBe('Tent');
+      expect(result[0]!.detected.name).toBe('Tent');
     });
 
     it('handles catalog service errors gracefully', async () => {
