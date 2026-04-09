@@ -44,7 +44,7 @@ export default function LocationSearchScreen() {
   useEffect(() => {
     setTimeout(() => {
       searchInputRef.current?.focus();
-    }, 300);
+    }, 600);
   }, []);
 
   // Load recent searches from AsyncStorage
@@ -397,7 +397,6 @@ export default function LocationSearchScreen() {
           value={query}
           onChangeText={handleSearchChange}
           containerClassName="border border-border"
-          autoFocus
           clearButtonMode="while-editing"
         />
       </View>

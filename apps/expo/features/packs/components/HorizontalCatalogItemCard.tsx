@@ -36,11 +36,12 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
       onPress={isSelectable ? () => restProps.onSelect(item) : restProps.onPress}
     >
       <View
-        className={`rounded-lg flex-row gap-3 border p-4 ${
-          isSelectable && restProps.selected
-            ? 'border-primary bg-primary/5'
-            : 'border-border bg-card'
-        }`}
+        className={`rounded-lg flex-row gap-3 border p-4 bg-red
+           ${
+             isSelectable && restProps.selected
+               ? 'border-primary bg-primary/5'
+               : 'border-border bg-card'
+           }`}
       >
         {/* Image */}
         <CatalogItemImage
@@ -56,7 +57,7 @@ export function HorizontalCatalogItemCard({ item, ...restProps }: HorizontalCata
           </Text>
           {item.brand && <Text className="text-sm text-muted-foreground">{item.brand}</Text>}
 
-          <View className="mt-2 flex-row items-center gap-4">
+          <View className="mt-2 flex-row flex-wrap items-center gap-x-4 gap-y-1">
             <Text>
               {item.price && (
                 <Text className="text-sm font-medium text-foreground">

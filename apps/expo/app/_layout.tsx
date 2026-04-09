@@ -1,3 +1,5 @@
+import '../polyfills';
+
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';

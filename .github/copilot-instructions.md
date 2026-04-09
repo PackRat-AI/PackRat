@@ -88,7 +88,7 @@ cd apps/guides && bun dev
 - Runs on `http://localhost:3001` (if 3000 is taken)
 
 #### **Testing**
-- **API Tests**: `cd packages/api && bun test` -- NEVER CANCEL: Takes ~5 seconds
+- **API Tests**: `cd packages/api && bun run test` -- NEVER CANCEL: Takes ~5 seconds
 - Tests run sequentially (`fileParallelism: false` in `packages/api/vitest.config.ts`) to avoid database deadlocks
 - Tests expect environment variables to be configured (see `.env.example`)
 

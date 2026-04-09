@@ -136,7 +136,7 @@ type TileName = keyof typeof tileInfo;
 function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
-    <Link href="/modal" asChild>
+    <Link href="/settings" asChild>
       <Pressable className="opacity-80">
         {({ pressed }) => (
           <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>

@@ -5,6 +5,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  avatarUrl?: string | null;
   role: 'USER' | 'ADMIN';
   preferredWeightUnit: WeightUnit;
 }
