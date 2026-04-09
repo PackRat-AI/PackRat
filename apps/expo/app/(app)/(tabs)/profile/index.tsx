@@ -30,7 +30,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { router, Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
-import { Alert, Platform, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -137,8 +137,8 @@ function ListHeaderComponent() {
       if (!image) return;
 
       // Validate file size before uploading (5 MB limit)
-      const info = await FileSystem.getInfoAsync(image.uri, { size: true });
-      if (info.exists && info.size > AVATAR_MAX_BYTES) {
+      const info = await FileSystem.getInfoAsync(image.uri);
+      if (info.exists && 'size' in info && info.size > AVATAR_MAX_BYTES) {
         Alert.alert(t('errors.somethingWentWrong'), t('profile.imageTooLarge'));
         return;
       }

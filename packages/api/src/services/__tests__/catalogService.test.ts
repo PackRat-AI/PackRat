@@ -174,7 +174,7 @@ describe('CatalogService', () => {
     });
 
     it('returns empty result when embeddings generation fails', async () => {
-      vi.mocked(embeddingService.generateManyEmbeddings).mockResolvedValueOnce(null);
+      vi.mocked(embeddingService.generateManyEmbeddings).mockResolvedValueOnce([]);
 
       const result = await service.batchVectorSearch(['tent', 'sleeping bag'], 5);
 

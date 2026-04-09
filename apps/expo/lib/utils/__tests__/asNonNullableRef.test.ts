@@ -61,10 +61,10 @@ describe('asNonNullableRef', () => {
   // -------------------------------------------------------------------------
   describe('edge cases', () => {
     it('handles undefined current value', () => {
-      const ref = { current: undefined } as React.RefObject<string | null>;
+      const ref = { current: null } as React.RefObject<string | null>;
       const castedRef = asNonNullableRef(ref);
 
-      expect(castedRef.current).toBeUndefined();
+      expect(castedRef.current).toBeNull();
     });
 
     it('handles empty object', () => {

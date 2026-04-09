@@ -17,33 +17,31 @@ import {
 const mockPackItem: PackItem = {
   id: 'pack-1',
   packId: 'pack-123',
-  itemId: 'item-1',
   name: 'Tent',
   weight: 2500,
   weightUnit: 'g',
   quantity: 2,
+  category: 'Shelter',
   notes: 'Lightweight camping tent',
   worn: false,
   consumable: false,
-  ownerId: 'user-1',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  deleted: false,
+  userId: 1,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 const mockCatalogItem: CatalogItem = {
-  id: 'catalog-1',
+  id: 1,
   name: 'Sleeping Bag',
   description: 'Warm sleeping bag',
-  category: 'Shelter',
   sku: 'SB-001',
   weight: 1500,
+  weightUnit: 'g',
   price: 199.99,
   seller: 'OutdoorGear',
   productUrl: 'https://example.com/sleeping-bag',
-  imageUrl: 'https://example.com/images/sleeping-bag.jpg',
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 describe('itemCalculations', () => {
@@ -60,7 +58,7 @@ describe('itemCalculations', () => {
     });
 
     it('returns false for item with undefined packId', () => {
-      const itemWithUndefinedPackId = { ...mockPackItem, packId: undefined };
+      const itemWithUndefinedPackId = { ...mockPackItem, packId: undefined as any };
       expect(isPackItem(itemWithUndefinedPackId)).toBe(false);
     });
 
@@ -371,17 +369,16 @@ describe('itemCalculations', () => {
       const minimalItem: PackItem = {
         id: 'min-1',
         packId: 'pack-1',
-        itemId: 'item-1',
         name: 'Minimal',
         weight: 0,
         weightUnit: 'g',
         quantity: 1,
+        category: 'Misc',
         worn: false,
         consumable: false,
-        ownerId: 'user-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deleted: false,
+        userId: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       expect(isPackItem(minimalItem)).toBe(true);

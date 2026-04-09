@@ -43,7 +43,7 @@ aiRoutes.openapi(ragSearchRoute, async (c) => {
     const { q: query, limit } = c.req.valid('query');
     const aiService = new AIService(c);
     const result = await aiService.searchPackratOutdoorGuidesRAG(query, limit);
-    return c.json(result, 200);
+    return c.json(result as any, 200);
   } catch (error) {
     console.error('RAG search error:', error);
     return c.json({ error: 'Failed to search outdoor guides' }, 500);

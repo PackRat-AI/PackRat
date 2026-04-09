@@ -61,7 +61,7 @@ describe('WeatherService', () => {
 
     // Mock global fetch
     fetchMock = vi.fn();
-    global.fetch = fetchMock;
+    (global.fetch as any) = fetchMock;
   });
 
   // -------------------------------------------------------------------------
@@ -300,7 +300,7 @@ describe('WeatherService', () => {
 
       await service.getWeatherForLocation('Austin');
 
-      const calledUrl = fetchMock.mock.calls[0][0];
+      const calledUrl = fetchMock.mock.calls[0]?.[0];
       expect(calledUrl).toContain('https://api.openweathermap.org/data/2.5/weather');
       expect(calledUrl).toContain('q=Austin');
       expect(calledUrl).toContain('units=imperial');

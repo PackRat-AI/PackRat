@@ -86,7 +86,7 @@ describe('auth utils', () => {
   // -------------------------------------------------------------------------
   describe('hashPassword', () => {
     it('hashes a password using bcrypt', async () => {
-      vi.mocked(bcrypt.hash).mockResolvedValue('hashed_password');
+      vi.mocked(bcrypt.hash).mockResolvedValue('hashed_password' as never);
 
       const result = await hashPassword('myPassword123');
 
@@ -95,7 +95,7 @@ describe('auth utils', () => {
     });
 
     it('uses 10 salt rounds', async () => {
-      vi.mocked(bcrypt.hash).mockResolvedValue('hash');
+      vi.mocked(bcrypt.hash).mockResolvedValue('hash' as never);
 
       await hashPassword('test');
 
@@ -103,7 +103,7 @@ describe('auth utils', () => {
     });
 
     it('handles empty password', async () => {
-      vi.mocked(bcrypt.hash).mockResolvedValue('hash_empty');
+      vi.mocked(bcrypt.hash).mockResolvedValue('hash_empty' as never);
 
       const result = await hashPassword('');
 
@@ -111,7 +111,7 @@ describe('auth utils', () => {
     });
 
     it('handles special characters in password', async () => {
-      vi.mocked(bcrypt.hash).mockResolvedValue('hash_special');
+      vi.mocked(bcrypt.hash).mockResolvedValue('hash_special' as never);
 
       await hashPassword('p@$$w0rd!');
 
@@ -206,7 +206,7 @@ describe('auth utils', () => {
       await generateJWT({ payload: { userId: 1 }, c });
       const afterTime = Math.floor(Date.now() / 1000);
 
-      const signCall = vi.mocked(sign).mock.calls[0][0] as any;
+      const signCall = vi.mocked(sign).mock.calls[0]?.[0] as any;
       const exp = signCall.exp;
 
       // Should be approximately 7 days (604800 seconds) from now
@@ -224,7 +224,7 @@ describe('auth utils', () => {
         c,
       });
 
-      const signCall = vi.mocked(sign).mock.calls[0][0] as any;
+      const signCall = vi.mocked(sign).mock.calls[0]?.[0] as any;
       expect(signCall).toMatchObject({
         userId: 456,
         role: 'ADMIN',

@@ -103,7 +103,6 @@ export default function ChatScreen() {
           onChangeText={setInputText}
           placeholder="Type a message..."
           multiline
-          maxHeight={100}
           style={{
             flex: 1,
             borderWidth: 1,
