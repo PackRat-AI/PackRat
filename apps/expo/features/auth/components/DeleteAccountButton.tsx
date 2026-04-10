@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
@@ -11,7 +11,7 @@ export function DeleteAccountButton() {
   const { colors } = useColorScheme();
   const { deleteAccount } = useAuth();
   const { t } = useTranslation();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   return (

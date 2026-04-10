@@ -120,7 +120,7 @@ vi.mock('@packrat/api/services/catalogService', () => ({
   })),
 }));
 
-describe('Generate From TikTok Routes', () => {
+describe('Generate From Online Content Routes', () => {
   beforeAll(async () => {
     // Seed both a regular user and an admin user
     await seedTestUser();
@@ -139,11 +139,11 @@ describe('Generate From TikTok Routes', () => {
   });
 
   describe('Authentication', () => {
-    it('requires auth for generate-from-tiktok endpoint', async () => {
+    it('requires auth for generate-from-online-content endpoint', async () => {
       const res = await api(
-        '/pack-templates/generate-from-tiktok',
+        '/pack-templates/generate-from-online-content',
         httpMethods.post('', {
-          tiktokUrl: 'https://www.tiktok.com/@user/video/1234567890',
+          contentUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
       expectUnauthorized(res);
@@ -153,9 +153,9 @@ describe('Generate From TikTok Routes', () => {
   describe('Authorization', () => {
     it('returns 403 for non-admin users', async () => {
       const res = await apiWithAuth(
-        '/pack-templates/generate-from-tiktok',
+        '/pack-templates/generate-from-online-content',
         httpMethods.post('', {
-          tiktokUrl: 'https://www.tiktok.com/@user/video/1234567890',
+          contentUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
 
@@ -166,9 +166,9 @@ describe('Generate From TikTok Routes', () => {
   });
 
   describe('Request Validation', () => {
-    it('requires tiktokUrl field', async () => {
+    it('requires contentUrl field', async () => {
       const res = await apiWithAdmin(
-        '/pack-templates/generate-from-tiktok',
+        '/pack-templates/generate-from-online-content',
         httpMethods.post('', {}),
       );
       expectBadRequest(res);
@@ -176,9 +176,9 @@ describe('Generate From TikTok Routes', () => {
 
     it('requires valid URL format', async () => {
       const res = await apiWithAdmin(
-        '/pack-templates/generate-from-tiktok',
+        '/pack-templates/generate-from-online-content',
         httpMethods.post('', {
-          tiktokUrl: 'not-a-valid-url',
+          contentUrl: 'invalid-url',
         }),
       );
       expectBadRequest(res);
@@ -200,9 +200,9 @@ describe('Generate From TikTok Routes', () => {
       mockContainerFetch = createMockContainerFetch(duplicateContentId);
 
       const res = await apiWithAdmin(
-        '/pack-templates/generate-from-tiktok',
+        '/pack-templates/generate-from-online-content',
         httpMethods.post('', {
-          tiktokUrl: 'https://www.tiktok.com/@user/video/1234567890',
+          contentUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
 
@@ -214,12 +214,12 @@ describe('Generate From TikTok Routes', () => {
     });
   });
 
-  describe('POST /pack-templates/generate-from-tiktok', () => {
-    it('successfully generates template from TikTok URL', async () => {
+  describe('POST /pack-templates/generate-from-online-content', () => {
+    it('successfully generates template from online content URL', async () => {
       const res = await apiWithAdmin(
-        '/pack-templates/generate-from-tiktok',
+        '/pack-templates/generate-from-online-content',
         httpMethods.post('', {
-          tiktokUrl: 'https://www.tiktok.com/@user/video/9999999999',
+          contentUrl: 'https://www.tiktok.com/@user/video/9999999999',
         }),
       );
 
@@ -245,9 +245,9 @@ describe('Generate From TikTok Routes', () => {
 
     it('accepts isAppTemplate flag', async () => {
       const res = await apiWithAdmin(
-        '/pack-templates/generate-from-tiktok',
+        '/pack-templates/generate-from-online-content',
         httpMethods.post('', {
-          tiktokUrl: 'https://www.tiktok.com/@user/video/6666666666',
+          contentUrl: 'https://www.tiktok.com/@user/video/temp-test',
           isAppTemplate: false,
         }),
       );
@@ -259,9 +259,9 @@ describe('Generate From TikTok Routes', () => {
 
     it('returns items with matched catalog data when available', async () => {
       const res = await apiWithAdmin(
-        '/pack-templates/generate-from-tiktok',
+        '/pack-templates/generate-from-online-content',
         httpMethods.post('', {
-          tiktokUrl: 'https://www.tiktok.com/@user/video/5555555555',
+          contentUrl: 'https://www.tiktok.com/@user/video/catalog-test',
         }),
       );
 

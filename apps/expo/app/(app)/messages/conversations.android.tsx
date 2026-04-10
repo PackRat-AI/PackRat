@@ -85,7 +85,7 @@ export default function ConversationsAndroidScreen() {
         >
           <Toolbar
             leftView={<View className="flex-1" />}
-            rightView={<ToolbarCTA className="h-8 w-8" icon={{ name: 'pencil-box-outline' }} />}
+            rightView={<ToolbarCTA className="h-8 w-8" icon={{ name: 'square.and.pencil' }} />}
             iosBlurIntensity={30}
           />
         </Animated.View>
@@ -114,14 +114,13 @@ function LeftView() {
       createDropdownItem({
         actionKey: 'go-home',
         title: 'Go Home',
-        icon: { name: 'home' },
+        icon: { name: 'house.fill' },
       }),
       createDropdownItem({
         actionKey: 'toggle-theme',
         title: 'Toggle Theme',
         icon: {
           name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
-          namingScheme: 'sfSymbol',
         },
       }),
     ];
