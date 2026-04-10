@@ -7,6 +7,7 @@ import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
+import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/useRecentlyUsedCatalogItems';
 import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { useImagePicker } from 'expo-app/features/packs';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -30,6 +31,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
     const insets = useSafeAreaInsets();
 
     const { addItemsToPackTemplate } = useBulkAddCatalogItems();
+    const { trackRecentlyUsed } = useRecentlyUsedCatalogItems();
 
     const handleAddFromCatalog = () => {
       if (!isAuthed.peek()) {
@@ -116,6 +118,7 @@ export default React.forwardRef<BottomSheetModal, AddPackTemplateItemActionsProp
     };
 
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
+      trackRecentlyUsed(catalogItems);
       await addItemsToPackTemplate(packTemplateId, catalogItems as CatalogItemWithPackItemFields[]);
       const itemWord =
         catalogItems.length === 1 ? t('packTemplates.item') : t('packTemplates.items');

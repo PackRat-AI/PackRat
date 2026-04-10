@@ -28,6 +28,7 @@ export const apiEnvSchema = z.object({
 
   // AI & External APIs
   OPENAI_API_KEY: z.string().startsWith('sk-'),
+  GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
   AI_PROVIDER: z.enum(['openai', 'cloudflare-workers-ai']),
   PERPLEXITY_API_KEY: z.string().startsWith('pplx-'),
 
@@ -61,8 +62,8 @@ export const apiEnvSchema = z.object({
   ETL_QUEUE: z.unknown(),
   LOGS_QUEUE: z.unknown(),
   EMBEDDINGS_QUEUE: z.unknown(),
-  // TikTok Container binding (Durable Object)
-  TIKTOK_CONTAINER: z.unknown(),
+  // App container Durable Object binding (APP_CONTAINER)
+  APP_CONTAINER: z.unknown(),
 });
 
 // Relaxed schema for test environments
@@ -80,7 +81,7 @@ const testEnvSchema = apiEnvSchema.partial().extend({
   ETL_QUEUE: z.unknown().optional(),
   LOGS_QUEUE: z.unknown().optional(),
   EMBEDDINGS_QUEUE: z.unknown().optional(),
-  TIKTOK_CONTAINER: z.unknown().optional(),
+  APP_CONTAINER: z.unknown().optional(),
 });
 
 // Infer the base type from Zod schema
@@ -97,7 +98,7 @@ export type ValidatedEnv = Omit<
   | 'ETL_QUEUE'
   | 'LOGS_QUEUE'
   | 'EMBEDDINGS_QUEUE'
-  | 'TIKTOK_CONTAINER'
+  | 'APP_CONTAINER'
 > & {
   // Properly typed Cloudflare bindings
   CF_VERSION_METADATA: WorkerVersionMetadata;
@@ -108,8 +109,8 @@ export type ValidatedEnv = Omit<
   ETL_QUEUE: Queue;
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
-  // TikTok Container Durable Object binding
-  TIKTOK_CONTAINER: DurableObjectNamespace;
+  // AppContainer Durable Object binding (APP_CONTAINER)
+  APP_CONTAINER: DurableObjectNamespace;
 };
 
 // Cache for validated environments per request
@@ -160,7 +161,7 @@ export function getEnv(c: Context): ValidatedEnv {
     ETL_QUEUE: rawEnv.ETL_QUEUE || validated.data.ETL_QUEUE,
     LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
     EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
-    TIKTOK_CONTAINER: rawEnv.TIKTOK_CONTAINER || validated.data.TIKTOK_CONTAINER,
+    APP_CONTAINER: rawEnv.APP_CONTAINER || validated.data.APP_CONTAINER,
   } as ValidatedEnv;
 
   // Cache the result

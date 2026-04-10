@@ -80,7 +80,7 @@ export default function PackCategoriesScreen() {
         </ScrollView>
       ) : (
         <View className="flex-1 items-center justify-center">
-          <Text>{t('packs.noCategorizedItems')}</Text>
+          <Text className="text-center">{t('packs.noCategorizedItems')}</Text>
         </View>
       )}
     </>
