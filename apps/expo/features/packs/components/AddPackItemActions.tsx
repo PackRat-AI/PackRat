@@ -5,12 +5,13 @@ import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { isAuthed } from 'expo-app/features/auth/store';
 import { CatalogBrowserModal } from 'expo-app/features/catalog/components';
+import { useRecentlyUsedCatalogItems } from 'expo-app/features/catalog/hooks/useRecentlyUsedCatalogItems';
 import type { CatalogItem, CatalogItemWithPackItemFields } from 'expo-app/features/catalog/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { router } from 'expo-router';
 import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { Alert, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBulkAddCatalogItems, useImagePicker } from '../hooks';
 
@@ -28,6 +29,7 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
     const insets = useSafeAreaInsets();
 
     const { addItemsToPack } = useBulkAddCatalogItems();
+    const { trackRecentlyUsed } = useRecentlyUsedCatalogItems();
 
     const handleAddFromPhoto = () => {
       ref && typeof ref !== 'function' && ref.current?.close();
@@ -104,7 +106,13 @@ export default React.forwardRef<BottomSheetModal, AddPackItemActionsProps>(
 
     const handleCatalogItemsSelected = async (catalogItems: CatalogItem[]) => {
       if (catalogItems.length > 0) {
-        await addItemsToPack(packId as string, catalogItems as CatalogItemWithPackItemFields[]);
+        trackRecentlyUsed(catalogItems);
+        try {
+          await addItemsToPack(packId, catalogItems as CatalogItemWithPackItemFields[]);
+        } catch (error) {
+          console.error('Error adding catalog items to pack:', error);
+          Alert.alert(t('common.error'), t('catalog.somethingWentWrong'));
+        }
       }
     };
 

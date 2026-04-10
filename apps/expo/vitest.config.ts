@@ -7,7 +7,7 @@ import { defineConfig } from 'vitest/config';
  * Runs pure utility and logic tests in a Node.js environment.
  * Does not require React Native, Expo, or any native modules.
  *
- * Run with: bun test (from apps/expo) or bun test:expo (from monorepo root)
+ * Run with: bun run test (from apps/expo) or bun test:expo (from monorepo root)
  */
 export default defineConfig({
   resolve: {
@@ -23,10 +23,17 @@ export default defineConfig({
     include: [resolve(__dirname, '{utils,lib/utils}/**/*.test.ts')],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'lcov', 'html'],
+      reporter: ['text', 'json-summary', 'json', 'lcov', 'html'],
       reportsDirectory: resolve(__dirname, 'coverage/unit'),
       include: ['utils/**/*.ts', 'lib/utils/**/*.ts'],
-      exclude: ['utils/**/*.test.ts', 'lib/utils/**/*.test.ts'],
+      exclude: [
+        'utils/**/*.test.ts',
+        'lib/utils/**/*.test.ts',
+        'utils/polyfills.ts', // Infrastructure/setup file - no business logic to test
+      ],
+      thresholds: {
+        statements: 75,
+      },
     },
   },
 });

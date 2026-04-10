@@ -80,7 +80,7 @@ export default function NameScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom }}
       >
         <Form className="gap-5 px-4 pt-8">
-          <FormSection materialIconProps={{ name: 'account-circle' }}>
+          <FormSection materialIconProps={{ name: 'account-outline' }}>
             <FormItem>
               <TextField
                 textContentType="givenName"

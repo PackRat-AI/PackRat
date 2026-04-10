@@ -1,10 +1,12 @@
+import '../polyfills';
+
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
-import { Alert, type AlertRef } from '@packrat-ai/nativewindui';
+import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
@@ -29,12 +31,12 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-export let appAlert: React.RefObject<AlertRef | null>;
+export let appAlert: React.RefObject<AlertMethods | null>;
 
 function RootLayout() {
   useInitialAndroidBarSync();
 
-  appAlert = useRef<AlertRef>(null);
+  appAlert = useRef<AlertMethods>(null);
 
   const { colorScheme, isDarkColorScheme } = useColorScheme();
 
