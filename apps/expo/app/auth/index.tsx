@@ -1,10 +1,11 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
 import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
@@ -26,7 +27,7 @@ type RouteParams = {
 export default function AuthIndexScreen() {
   const { signInWithGoogle, signInWithApple, isLoading } = useAuth();
   const { t } = useTranslation();
-  const alertRef = React.useRef<AlertRef>(null);
+  const alertRef = React.useRef<AlertMethods>(null);
   const {
     redirectTo = '/',
     showSignInCopy,
@@ -126,6 +127,7 @@ export default function AuthIndexScreen() {
           )}
           <Link href={'/auth/(login)'} asChild>
             <Button
+              testID={TestIds.SignInEmailButton}
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >

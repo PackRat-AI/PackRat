@@ -1,215 +1,166 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  ESTIMATED_ITEM_HEIGHT,
-  LargeTitleHeader,
-  List,
-  ListItem,
-  type ListRenderItemInfo,
-  ListSectionHeader,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
-import { cn } from 'expo-app/lib/cn';
+import * as Burnt from 'burnt';
+import { appAlert } from 'expo-app/app/_layout';
+import {
+  localModelFileAvailableAtom,
+  localModelProgressAtom,
+  localModelStatusAtom,
+} from 'expo-app/features/ai/atoms/aiModeAtoms';
+import { LLAMA_MODEL_SIZE } from 'expo-app/features/ai/lib/constants';
+import {
+  cancelLocalModelDownload,
+  deleteLocalModel,
+  downloadLocalModel,
+  isAppleIntelligenceAvailable,
+} from 'expo-app/features/ai/lib/localModelManager';
+import { DeleteAccountButton } from 'expo-app/features/auth/components/DeleteAccountButton';
+import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { View } from 'react-native';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import Constants from 'expo-constants';
+import { StatusBar } from 'expo-status-bar';
+import { useAtomValue } from 'jotai';
+import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 
-export default function SettingsIosStyleScreen() {
-  return (
-    <>
-      <LargeTitleHeader title="Settings" searchBar={{ iosHideWhenScrolling: true }} />
-      <List
-        contentContainerClassName="pt-4"
-        contentInsetAdjustmentBehavior="automatic"
-        variant="insets"
-        data={DATA}
-        estimatedItemSize={ESTIMATED_ITEM_HEIGHT.titleOnly}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        sectionHeaderAsGap
-      />
-    </>
-  );
-}
+export default function SettingsScreen() {
+  const { colorScheme, colors } = useColorScheme();
+  const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
+  const modelStatus = useAtomValue(localModelStatusAtom);
+  const progress = useAtomValue(localModelProgressAtom);
+  const isDownloaded = useAtomValue(localModelFileAvailableAtom);
 
-function renderItem<T extends (typeof DATA)[number]>(info: ListRenderItemInfo<T>) {
-  if (typeof info.item === 'string') {
-    return <ListSectionHeader {...info} />;
-  }
+  const isApple = isAppleIntelligenceAvailable();
+  const isDownloading = modelStatus === 'downloading';
+  const isPreparing = modelStatus === 'preparing' || modelStatus === 'checking';
+  const isReady = modelStatus === 'ready';
+  const isError = modelStatus === 'error';
+
+  const handleDelete = () => {
+    appAlert.current?.alert({
+      title: t('ai.deleteModel'),
+      message: 'This will remove the model from your device. You can re-download it later.',
+      buttons: [
+        { text: t('ai.cancel'), style: 'cancel' },
+        {
+          text: t('ai.deleteModel'),
+          style: 'destructive',
+          onPress: async () => {
+            await deleteLocalModel();
+            Burnt.toast({ title: 'Model deleted', preset: 'done' });
+          },
+        },
+      ],
+    });
+  };
+
+  const statusLabel = () => {
+    if (isApple) return isReady ? t('ai.modelReady') : t('ai.modelPreparing');
+    if (isDownloading) return 'Downloading';
+    if (isPreparing) return t('ai.modelPreparing');
+    if (isReady) return t('ai.modelReady');
+    if (isError) return t('ai.modelError');
+    if (isDownloaded) return 'Downloaded';
+    return 'Not downloaded';
+  };
+
+  const iconName: MaterialIconName = isApple ? 'apple' : 'atom';
+
   return (
-    <ListItem
-      className={cn(
-        'ios:pl-0 pl-2',
-        info.index === 0 && 'ios:border-t-0 border-border/25 dark:border-border/80 border-t',
-      )}
-      titleClassName="text-lg"
-      leftView={info.item.leftView}
-      rightView={
-        <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-          {info.item.rightText && (
-            <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-              {info.item.rightText}
-            </Text>
-          )}
-          {info.item.badge && (
-            <View className="h-5 w-5 items-center justify-center rounded-full bg-destructive">
-              <Text variant="footnote" className="font-bold leading-4 text-destructive-foreground">
-                {info.item.badge}
-              </Text>
+    <ScrollView className="flex-1 px-4 py-6">
+      <View className="gap-6">
+        <StatusBar
+          style={Platform.OS === 'ios' ? 'light' : colorScheme === 'dark' ? 'light' : 'dark'}
+        />
+
+        <View>
+          <Text variant="subhead" className="mb-3">
+            {t('ai.modelManagement')}
+          </Text>
+          <View className="rounded-xl border border-border bg-card p-4">
+            <View className="flex-row items-start gap-3">
+              <View
+                className="mt-0.5 h-10 w-10 items-center justify-center rounded-xl"
+                style={{ backgroundColor: isApple ? '#a855f720' : '#6366f120' }}
+              >
+                <Icon name={iconName} size={22} color={isApple ? '#a855f7' : '#6366f1'} />
+              </View>
+              <View className="flex-1">
+                <Text className="font-semibold">
+                  {isApple ? t('ai.appleFoundationModel') : t('ai.llamaModel')}
+                </Text>
+                <Text variant="footnote" className="mt-0.5 text-muted-foreground">
+                  {isApple
+                    ? 'Built into iOS 26+ · no download required'
+                    : `SmolLM3-Q4_K_M.gguf · ${LLAMA_MODEL_SIZE}`}
+                </Text>
+
+                {/* Status + action row */}
+                <View className="mt-2 flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-1.5">
+                    {(isDownloading || isPreparing) && (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    )}
+                    <Text variant="footnote" color="tertiary">
+                      {statusLabel()}
+                    </Text>
+                  </View>
+
+                  {!isApple && (
+                    <>
+                      {isDownloading && (
+                        <View className="flex-row items-center gap-3">
+                          <Text variant="footnote" className="font-medium" color="tertiary">
+                            {progress}%
+                          </Text>
+                          <TouchableOpacity onPress={cancelLocalModelDownload}>
+                            <Text variant="footnote" className="font-medium text-destructive">
+                              {t('ai.cancel')}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                      {(!isDownloaded || isError) && !isDownloading && !isPreparing && (
+                        <TouchableOpacity onPress={downloadLocalModel}>
+                          <Text
+                            variant="footnote"
+                            className="font-medium"
+                            style={{ color: colors.primary }}
+                          >
+                            Download
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      {isDownloaded && !isDownloading && !isPreparing && (
+                        <TouchableOpacity onPress={handleDelete}>
+                          <Text variant="footnote" className="font-medium text-destructive">
+                            {t('ai.deleteModel')}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                </View>
+              </View>
             </View>
-          )}
-          <ChevronRight />
+          </View>
         </View>
-      }
-      {...info}
-      onPress={() => console.log('onPress')}
-    />
+
+        {isAuthenticated && (
+          <View>
+            <Text variant="subhead" className="mb-4">
+              {t('profile.dangerZone')}
+            </Text>
+            <DeleteAccountButton />
+          </View>
+        )}
+      </View>
+      {Constants.expoConfig && (
+        <Text variant="footnote" className="self-center mt-8" color="tertiary">
+          {Constants.expoConfig.name} v{Constants.expoConfig.version}
+        </Text>
+      )}
+    </ScrollView>
   );
 }
-
-function ChevronRight() {
-  const { colors } = useColorScheme();
-  return <Icon name="chevron-right" size={17} color={colors.grey} />;
-}
-
-function IconView({ className, name }: { className?: string; name: MaterialIconName }) {
-  return (
-    <View className="px-3">
-      <View className={cn('h-6 w-6 items-center justify-center rounded-md', className)}>
-        <Icon name={name} size={15} color="white" />
-      </View>
-    </View>
-  );
-}
-
-function keyExtractor(item: MockData, _index: number) {
-  return typeof item === 'string' ? item : item.id;
-}
-
-type MockData =
-  | {
-      id: string;
-      title: string;
-      subTitle?: string;
-      leftView?: React.ReactNode;
-      rightText?: string;
-      badge?: number;
-    }
-  | string;
-
-const DATA: MockData[] = [
-  {
-    id: '1',
-    title: 'NativeWind UI',
-    subTitle: 'Apple ID, iCloud+ & Purchases',
-    leftView: (
-      <View className="px-3">
-        <Avatar alt="NativeWindUI's avatar">
-          <AvatarImage
-            source={{
-              uri: 'https://pbs.twimg.com/profile_images/1782428433898708992/1voyv4_A_400x400.jpg',
-            }}
-          />
-          <AvatarFallback>
-            <Text>NU</Text>
-          </AvatarFallback>
-        </Avatar>
-      </View>
-    ),
-  },
-  {
-    id: '2',
-    title: 'Team members',
-    leftView: (
-      <View className="flex-row px-3 ">
-        <Avatar alt="Zach Nugent's avatar" className="h-6 w-6">
-          <AvatarImage
-            source={{
-              uri: 'https://avatars.githubusercontent.com/u/63797719?v=4',
-            }}
-          />
-          <AvatarFallback>
-            <Text>ZN</Text>
-          </AvatarFallback>
-        </Avatar>
-        <Avatar alt="Dan Stepanov's avatar" className="-ml-2 h-6 w-6">
-          <AvatarImage
-            source={{
-              uri: 'https://avatars.githubusercontent.com/u/5482800?v=4',
-            }}
-          />
-          <AvatarFallback>
-            <Text>DS</Text>
-          </AvatarFallback>
-        </Avatar>
-      </View>
-    ),
-  },
-
-  {
-    id: '3',
-    title: 'Memberships & Subscriptions',
-    badge: 3,
-  },
-  'gap 2',
-  {
-    id: '4',
-    title: 'Wi-Fi',
-    rightText: "NU's iPhone",
-    leftView: <IconView name="wifi" className="bg-blue-500" />,
-  },
-  {
-    id: '5',
-    title: 'Play Station',
-    leftView: <IconView name="sony-playstation" className="bg-blue-600" />,
-  },
-  {
-    id: '6',
-    title: 'Gift Cards',
-    leftView: <IconView name="card-giftcard" className="bg-green-500" />,
-  },
-
-  'gap 3',
-  {
-    id: '7',
-    title: 'Locations',
-    leftView: <IconView name="map-outline" className="bg-red-500" />,
-  },
-  {
-    id: '8',
-    title: 'Notifications',
-    leftView: <IconView name="bell-outline" className="bg-destructive" />,
-  },
-  {
-    id: '9',
-    title: 'Focus',
-    leftView: <IconView name="weather-night" className="bg-violet-500" />,
-  },
-  {
-    id: '10',
-    title: 'Screen Time',
-    leftView: <IconView name="timer-outline" className="bg-violet-600" />,
-  },
-  'gap 4',
-  {
-    id: '11',
-    title: 'General',
-    leftView: <IconView name="cog-outline" className="bg-gray-500" />,
-  },
-  {
-    id: '12',
-    title: 'Game Center',
-    leftView: <IconView name="controller-classic-outline" className="bg-gray-600" />,
-  },
-  {
-    id: '13',
-    title: 'Accessibility',
-    leftView: <IconView name="accessibility" className="bg-sky-500" />,
-  },
-  {
-    id: '14',
-    title: 'Artificial Intelligence',
-    leftView: <IconView name="star-four-points" className="bg-sky-400" />,
-  },
-];

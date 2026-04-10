@@ -1,24 +1,34 @@
 name: Feature Request
 description: Suggest a new feature or improvement for PackRat
-title: '[Feature]: '
-labels: ['enhancement', 'needs-triage']
+title: "Feature Request: "
+labels: ["enhancement", "feature"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for suggesting a new feature! Please fill in as much detail as you can.
+        Thanks for suggesting a new feature! Please fill out the sections below so we can understand and evaluate your idea.
 
   - type: dropdown
     id: area
     attributes:
       label: Area
-      description: Which part of the app would this feature affect?
+      description: Which part of PackRat does this feature relate to?
+      multiple: true
       options:
-        - Mobile app (Expo / React Native)
+        - Mobile App (iOS)
+        - Mobile App (Android)
+        - Web App (packratai.com)
+        - Guides Site (guides.packratai.com)
         - API / Backend
-        - Landing page
-        - Guides site
-        - CI / CD
+        - AI / ML features
+        - Packs & Gear management
+        - Trips
+        - Catalog
+        - Weather
+        - Trail Conditions
+        - Maps & Navigation
+        - User Profile & Settings
+        - Notifications
         - Other
     validations:
       required: true
@@ -26,38 +36,55 @@ body:
   - type: textarea
     id: problem
     attributes:
-      label: Problem statement
-      description: Is your feature request related to a problem? Please describe it.
-      placeholder: I'm always frustrated when…
+      label: Problem Statement
+      description: What problem does this feature solve? Describe the pain point or limitation you are experiencing.
+      placeholder: I'm frustrated when… / It would be helpful if…
     validations:
       required: true
 
   - type: textarea
     id: solution
     attributes:
-      label: Proposed solution
-      description: A clear and concise description of what you want to happen.
+      label: Proposed Solution
+      description: Describe the feature or improvement you would like to see. Be as specific as possible.
     validations:
       required: true
 
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives considered
-      description: Describe any alternative solutions or features you've considered.
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds? Why are they insufficient?
 
   - type: textarea
-    id: context
+    id: acceptance-criteria
     attributes:
-      label: Additional context
-      description: Add any other context, mockups, or screenshots about the feature request here.
+      label: Acceptance Criteria
+      description: What does "done" look like? List the specific behaviors or outcomes the feature must satisfy.
+      placeholder: |
+        - [ ] User can …
+        - [ ] The app displays …
+        - [ ] API returns …
 
-  - type: checkboxes
-    id: terms
+  - type: textarea
+    id: mockups
     attributes:
-      label: Pre-flight checklist
+      label: Mockups / Design References
+      description: Attach any wireframes, screenshots, or links to design references that illustrate the feature.
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (your assessment)
       options:
-        - label: I have searched for existing issues and this is not a duplicate.
-          required: true
-        - label: I have read the contributing guidelines.
-          required: true
+        - "High — blocks a core workflow"
+        - "Medium — noticeably improves the experience"
+        - "Low — nice to have"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context, links, or references that might be helpful.

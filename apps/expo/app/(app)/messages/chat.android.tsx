@@ -88,9 +88,7 @@ export default function ChatAndroid() {
         behavior="padding"
       >
         <FlashList
-          inverted
           extraData={selectedMessages}
-          estimatedItemSize={70}
           ListFooterComponent={<View style={{ height: HEADER_HEIGHT + insets.top }} />}
           ListHeaderComponent={<Animated.View style={toolbarHeightStyle} />}
           keyboardDismissMode="on-drag"
@@ -240,17 +238,17 @@ const CONTEXT_MENU_ITEMS = [
   createDropdownItem({
     actionKey: 'reply',
     title: 'Reply',
-    icon: { name: 'arrow-left-bold-outline' },
+    icon: { name: 'arrowshape.left' },
   }),
   createDropdownItem({
     actionKey: 'sticker',
     title: 'Sticker',
-    icon: { name: 'plus-box-outline' },
+    icon: { name: 'plus.app' },
   }),
   createDropdownItem({
     actionKey: 'copy',
     title: 'Copy',
-    icon: { name: 'clipboard-outline' },
+    icon: { name: 'clipboard' },
   }),
 ];
 

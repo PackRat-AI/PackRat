@@ -44,7 +44,7 @@ export default function AppLayout() {
       )}
       <Stack screenOptions={SCREEN_OPTIONS}>
         <Stack.Screen name="(tabs)" options={TABS_OPTIONS} />
-        <Stack.Screen name="modal" options={getModalOptions(t)} />
+        <Stack.Screen name="settings/index" options={getSettingsOptions(t)} />
         <Stack.Screen name="consent-modal" options={CONSENT_MODAL_OPTIONS} />
         <Stack.Screen
           name="pack/[id]/index"
@@ -120,13 +120,22 @@ export default function AppLayout() {
         <Stack.Screen
           name="upcoming-trips"
           options={{
-            headerShown: false,
+            headerShown: true,
+            headerTitle: '',
             presentation: 'modal',
             animation: 'slide_from_bottom',
           }}
         />
         <Stack.Screen
           name="weather-alerts"
+          options={{
+            headerShown: false,
+            presentation: 'card',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="weather-alert-preferences"
           options={{
             headerShown: false,
             presentation: 'modal',
@@ -243,7 +252,7 @@ const TABS_OPTIONS = {
 } as const;
 
 // MODALS - These functions accept translation function t
-const getModalOptions = (t: TranslationFunction) =>
+const getSettingsOptions = (t: TranslationFunction) =>
   ({
     presentation: 'modal',
     animation: 'fade_from_bottom', // for android
@@ -260,7 +269,7 @@ const getTripNewOptions = (t: TranslationFunction) =>
 
 const getTripEditOptions = (t: TranslationFunction) =>
   ({
-    title: t('packs.editPack'),
+    title: t('trips.editTrip'),
     presentation: 'modal',
     animation: 'slide_from_bottom',
   }) as const;

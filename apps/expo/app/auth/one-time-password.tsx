@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text, TextField } from '@packrat/ui/nativewindui';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
@@ -38,7 +38,7 @@ export default function OneTimePasswordScreen() {
   const [codeValues, setCodeValues] = React.useState(Array(NUM_OF_CODE_CHARACTERS).fill(''));
   const [errorIndexes, setErrorIndexes] = React.useState<number[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
-  const alertRef = React.useRef<AlertRef>(null);
+  const alertRef = React.useRef<AlertMethods>(null);
   const headerHeight = useHeaderHeight();
   const params = useLocalSearchParams<{ email: string; mode: string }>();
   const email = params.email || '';

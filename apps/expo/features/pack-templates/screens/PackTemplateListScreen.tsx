@@ -1,24 +1,28 @@
-import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
+import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { PackCategory } from 'expo-app/features/packs/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
+  Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PackTemplateCard } from '../components/PackTemplateCard';
+import TemplateCreationOptions from '../components/TemplateCreationOptions';
 import { usePackTemplates } from '../hooks';
 import { activeTemplateFilterAtom, templateSearchValueAtom } from '../packTemplateListAtoms';
 import type { PackTemplate } from '../types';
@@ -28,14 +32,13 @@ type FilterOption = {
   value: PackCategory | 'all';
 };
 
-function CreateTemplateIconButton() {
+function CreateTemplateIconButton({ onPress }: { onPress: () => void }) {
   const { colors } = useColorScheme();
+
   return (
-    <Link href="/pack-templates/new" asChild>
-      <Pressable>
-        <Icon name="plus" color={colors.foreground} />
-      </Pressable>
-    </Link>
+    <Pressable onPress={onPress}>
+      <Icon name="plus" color={colors.foreground} />
+    </Pressable>
   );
 }
 
@@ -45,10 +48,14 @@ export function PackTemplateListScreen() {
   const [searchValue, setSearchValue] = useAtom(templateSearchValueAtom);
   const [activeFilter, setActiveFilter] = useAtom(activeTemplateFilterAtom);
   const { isAuthenticated } = useAuth();
+  const user = useUser();
+  const _isAdmin = user?.role === 'ADMIN';
   const [selectedTemplateTypeIndex, setSelectedTemplateTypeIndex] = useState(0);
   const { t } = useTranslation();
+  const templateOptionsRef = useRef<BottomSheetModal>(null);
 
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+  const insets = useSafeAreaInsets();
 
   // Filter options with translations
   const filterOptions: FilterOption[] = [
@@ -112,7 +119,10 @@ export function PackTemplateListScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView
+      className="flex-1 "
+      style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+    >
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}
         searchBar={{
@@ -124,12 +134,15 @@ export function PackTemplateListScreen() {
         }}
         rightView={() => (
           <View className="flex-row items-center">
-            <CreateTemplateIconButton />
+            <CreateTemplateIconButton onPress={() => templateOptionsRef.current?.present()} />
           </View>
         )}
       />
 
-      <View className="bg-background gap-2 px-4 pb-2">
+      <View
+        className="bg-background gap-2 px-4 pb-2"
+        style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+      >
         <SegmentedControl
           enabled={isAuthenticated}
           values={[t('packTemplates.all'), t('packTemplates.app'), t('packTemplates.yours')]}
@@ -189,6 +202,7 @@ export function PackTemplateListScreen() {
         }
         // contentContainerStyle={{ flexGrow: 1 }}
       />
+      <TemplateCreationOptions ref={templateOptionsRef} />
     </SafeAreaView>
   );
 }
