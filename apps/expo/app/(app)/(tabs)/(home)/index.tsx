@@ -1,6 +1,6 @@
 'use client';
 
-import type { LargeTitleSearchBarRef, ListDataItem } from '@packrat/ui/nativewindui';
+import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
   LargeTitleHeader,
   List,
@@ -8,7 +8,7 @@ import {
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import Screen from 'expo-app/components/Screen';
+import TabScreen from 'expo-app/components/TabScreen';
 import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
@@ -136,7 +136,7 @@ type TileName = keyof typeof tileInfo;
 function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
-    <Link href="/modal" asChild>
+    <Link href="/settings" asChild>
       <Pressable className="opacity-80">
         {({ pressed }) => (
           <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
@@ -167,7 +167,7 @@ function DemoIcon() {
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const { t } = useTranslation();
 
   const dashboardLayout = useRef([
@@ -212,7 +212,7 @@ export default function DashboardScreen() {
   }, [searchValue, dashboardLayout]);
 
   return (
-    <Screen>
+    <TabScreen>
       <LargeTitleHeader
         title={t('dashboard.title')}
         searchBar={{
@@ -287,8 +287,9 @@ export default function DashboardScreen() {
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
+        ListFooterComponent={<View className="h-12" />}
       />
-    </Screen>
+    </TabScreen>
   );
 }
 

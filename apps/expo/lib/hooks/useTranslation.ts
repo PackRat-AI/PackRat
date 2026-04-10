@@ -1,35 +1,29 @@
-import * as Localization from 'expo-localization';
-import type { TranslateOptions } from 'i18n-js';
-import { useEffect, useState } from 'react';
-import i18n from '../i18n';
-
 /**
- * Custom hook for accessing translations
- * Provides the translate function and current locale
- * Re-renders component when locale changes
+ * Thin wrapper around react-i18next's `useTranslation` hook.
+ *
+ * Because the i18next instance is initialised with `initReactI18next` in
+ * `lib/i18n/index.ts`, and the `CustomTypeOptions` augmentation in
+ * `lib/i18n/i18next.d.ts` wires `en.json` into i18next's type system,
+ * the `t` function returned by this hook is already fully type-safe:
+ * TypeScript will error on any unknown or misspelled translation key.
+ *
+ * A thin wrapper is kept here (rather than re-exporting react-i18next
+ * directly) to preserve a single import path for consumers and to allow
+ * app-specific behaviour (e.g. locale-change side-effects) to be added
+ * without touching callsites.
+ *
+ * Usage:
+ * ```tsx
+ * import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+ *
+ * function MyComponent() {
+ *   const { t } = useTranslation();
+ *   return <Text>{t('common.welcome')}</Text>;
+ * }
+ * ```
  */
+import { useTranslation as useI18nextTranslation } from 'react-i18next';
+
 export function useTranslation() {
-  const [locale, setLocale] = useState(i18n.locale);
-
-  useEffect(() => {
-    // Listen for locale changes (if implemented)
-    const currentLocale = Localization.getLocales()[0]?.languageCode ?? 'en';
-    if (currentLocale !== locale) {
-      i18n.locale = currentLocale;
-      setLocale(currentLocale);
-    }
-  }, [locale]);
-
-  /**
-   * Translate function
-   * @param key - Translation key in dot notation (e.g., 'common.welcome')
-   * @param options - Optional interpolation values
-   * @returns Translated string
-   */
-
-  const t = (key: string, options?: TranslateOptions) => {
-    return i18n.t(key, options);
-  };
-
-  return { t, locale };
+  return useI18nextTranslation();
 }

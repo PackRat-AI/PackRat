@@ -11,9 +11,9 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TikTokImportModal } from './TikTokImportModal';
+import { OnlineContentImportModal } from './OnlineContentImportModal';
 
-type TemplateCreationOptionsProps = Record<string, never>;
+type TemplateCreationOptionsProps = object;
 
 export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
   function TemplateCreationOptions(_props, ref) {
@@ -23,7 +23,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
     const { isAuthenticated } = useAuth();
     const user = useUser();
     const isAdmin = user?.role === 'ADMIN';
-    const [showTikTokModal, setShowTikTokModal] = useState(false);
+    const [showOnlineContentModal, setShowOnlineContentModal] = useState(false);
     const insets = useSafeAreaInsets();
 
     const { run, handleDismiss } = useBottomSheetAction(ref as React.RefObject<BottomSheetModal>);
@@ -34,9 +34,9 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
       });
     };
 
-    const handleImportFromTikTok = () => {
+    const handleImportFromOnlineContent = () => {
       run(() => {
-        setShowTikTokModal(true);
+        setShowOnlineContentModal(true);
       });
     };
 
@@ -83,7 +83,7 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
             {/* Import from TikTok option (only for admins) */}
             {isAdmin && isAuthenticated && (
               <TouchableOpacity
-                onPress={handleImportFromTikTok}
+                onPress={handleImportFromOnlineContent}
                 className="rounded-lg border border-border bg-card p-4 flex-row items-center"
               >
                 <View className="mr-4 rounded-full bg-primary/10 p-3">
@@ -91,10 +91,10 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
                 </View>
                 <View className="flex-1">
                   <Text className="text-base font-semibold text-foreground mb-1">
-                    {t('packTemplates.importFromTikTok')}
+                    {t('packTemplates.importFromOnlineContent')}
                   </Text>
                   <Text className="text-sm text-muted-foreground">
-                    {t('packTemplates.importFromTikTokDescription')}
+                    {t('packTemplates.importFromOnlineContentDescription')}
                   </Text>
                 </View>
                 <Icon name="chevron-right" size={20} color={colors.grey3} />
@@ -103,8 +103,10 @@ export default React.forwardRef<BottomSheetModal, TemplateCreationOptionsProps>(
           </BottomSheetView>
         </Sheet>
 
-        {/* TikTok Import Modal */}
-        <TikTokImportModal visible={showTikTokModal} onClose={() => setShowTikTokModal(false)} />
+        <OnlineContentImportModal
+          visible={showOnlineContentModal}
+          onClose={() => setShowOnlineContentModal(false)}
+        />
       </>
     );
   },

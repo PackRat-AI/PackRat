@@ -20,4 +20,21 @@ export enum TestIds {
   // Packs
   CreatePackButton = 'create-pack-button',
   SubmitPackButton = 'submit-pack-button',
+
+  // Pack detail
+  AskAIButton = 'ask-ai-button',
+  AddItemButton = 'add-item-button',
+  PackMoreActions = 'pack-more-actions',
+
+  // Add item modal
+  AddManuallyOption = 'add-manually-option',
+  ScanFromPhotoOption = 'scan-from-photo-option',
+  AddFromCatalogOption = 'add-from-catalog-option',
+
+  // Profile
+  SignOutButton = 'sign-out-button',
+
+  // Catalog item detail
+  AddToPackButton = 'add-to-pack-button',
+  ViewRetailerButton = 'view-retailer-button',
 }

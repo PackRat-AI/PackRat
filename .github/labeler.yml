@@ -1,0 +1,39 @@
+# Mapping of labels to file path globs that trigger them.
+# https://github.com/actions/labeler
+
+mobile:
+  - changed-files:
+    - any-glob-to-any-file: 'apps/expo/**'
+
+web:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'apps/landing/**'
+      - 'apps/guides/**'
+
+api:
+  - changed-files:
+    - any-glob-to-any-file: 'packages/api/**'
+
+database:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'packages/api/drizzle/**'
+      - 'packages/api/src/db/**'
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'apps/guides/content/**'
+
+ci/cd:
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - '**/package.json'
+      - 'bun.lock'

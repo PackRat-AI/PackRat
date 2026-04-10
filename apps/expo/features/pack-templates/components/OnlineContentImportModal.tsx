@@ -1,5 +1,6 @@
 import { ActivityIndicator, Text, TextField } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import * as Burnt from 'burnt';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
@@ -13,42 +14,41 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
-import { useGenerateTemplateFromTikTok } from '../hooks';
+import { useGenerateTemplateFromOnlineContent } from '../hooks';
 
 interface TikTokImportModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
-export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) {
+export function OnlineContentImportModal({ visible, onClose }: TikTokImportModalProps) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
   const router = useRouter();
-  const [tiktokUrl, setTiktokUrl] = useState('');
+  const [onlineContentUrl, setOnlineContentUrl] = useState('');
 
-  const { mutate: generateTemplate, isPending } = useGenerateTemplateFromTikTok();
+  const { mutate: generateTemplate, isPending } = useGenerateTemplateFromOnlineContent();
 
   const handleGenerate = () => {
-    if (!tiktokUrl.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: t('packTemplates.tiktokUrlRequired'),
+    if (!onlineContentUrl.trim()) {
+      Burnt.toast({
+        title: t('packTemplates.onlineContentUrlRequired'),
+        preset: 'error',
       });
       return;
     }
 
     generateTemplate(
       {
-        tiktokUrl: tiktokUrl.trim(),
+        contentUrl: onlineContentUrl.trim(),
         isAppTemplate: true,
       },
       {
         onSuccess: (template) => {
           onClose();
-          Toast.show({
-            type: 'success',
-            text1: t('packTemplates.tiktokImportSuccess'),
+          Burnt.toast({
+            title: t('packTemplates.onlineContentImportSuccess'),
+            preset: 'done',
           });
           router.push({
             pathname: '/pack-templates/[id]',
@@ -56,10 +56,28 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
           });
         },
         onError: (error) => {
-          console.error('TikTok import error:', error);
-          Toast.show({
-            type: 'error',
-            text1: t('packTemplates.tiktokImportError'),
+          console.error('Online content import error:', error);
+
+          // Handle duplicate template case - navigate to existing template
+          if (error.code === 'DUPLICATE_TEMPLATE' && error.existingTemplateId) {
+            onClose();
+            Burnt.toast({
+              title: t('packTemplates.templateAlreadyExists'),
+              preset: 'none',
+            });
+            router.push({
+              pathname: '/pack-templates/[id]',
+              params: { id: error.existingTemplateId },
+            });
+            return;
+          }
+
+          // Handle other errors
+          const errorMessage = error.message || t('packTemplates.onlineContentImportError');
+          Burnt.toast({
+            title: t('packTemplates.importFailed'),
+            message: errorMessage,
+            preset: 'error',
           });
         },
       },
@@ -67,7 +85,7 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
   };
 
   const handleClose = () => {
-    setTiktokUrl('');
+    setOnlineContentUrl('');
     onClose();
   };
 
@@ -90,7 +108,7 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
                 <Icon name="close" size={24} color={colors.foreground} />
               </TouchableOpacity>
               <Text className="text-lg font-semibold text-foreground">
-                {t('packTemplates.importFromTikTok')}
+                {t('packTemplates.importFromOnlineContent')}
               </Text>
               <View className="w-8" />
             </View>
@@ -99,19 +117,19 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
             <View className="flex-1 px-4 py-6">
               <View className="mb-6">
                 <Text className="text-base text-muted-foreground leading-6 mb-4">
-                  {t('packTemplates.tiktokImportDescription')}
+                  {t('packTemplates.onlineContentImportDescription')}
                 </Text>
               </View>
 
-              {/* TikTok URL Input */}
+              {/* Online Content URL Input */}
               <View className="mb-6">
                 <Text className="mb-3 text-sm font-medium text-foreground">
-                  {t('packTemplates.tiktokUrl')}
+                  {t('packTemplates.onlineContentUrl')}
                 </Text>
                 <TextField
-                  placeholder={t('packTemplates.tiktokUrlPlaceholder')}
-                  value={tiktokUrl}
-                  onChangeText={setTiktokUrl}
+                  placeholder={t('packTemplates.onlineContentUrlPlaceholder')}
+                  value={onlineContentUrl}
+                  onChangeText={setOnlineContentUrl}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"
@@ -132,8 +150,8 @@ export function TikTokImportModal({ visible, onClose }: TikTokImportModalProps) 
                 {isPending && <ActivityIndicator size="small" color="white" />}
                 <Text className="text-base font-semibold text-white">
                   {isPending
-                    ? t('packTemplates.generatingFromTikTok')
-                    : t('packTemplates.generateFromTikTok')}
+                    ? t('packTemplates.generatingFromOnlineContent')
+                    : t('packTemplates.generateFromOnlineContent')}
                 </Text>
               </TouchableOpacity>
             </View>

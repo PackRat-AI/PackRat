@@ -1,33 +1,44 @@
 import * as Localization from 'expo-localization';
-import { I18n, type TranslateOptions } from 'i18n-js';
+import i18next from 'i18next';
+import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 
-// Create i18n instance
-const i18n = new I18n();
-
-// Set the key-value pairs for translations
-i18n.translations = {
-  en,
-};
-
-// Set the locale once at the beginning of your app
-i18n.locale = Localization.getLocales()[0]?.languageCode ?? 'en';
-
-// When a value is missing from a language, it'll fall back to English
-i18n.enableFallback = true;
-
-// Default to lowercase locale tags for consistency
-i18n.defaultLocale = 'en';
+export const defaultNS = 'translation' as const;
 
 /**
- * Translate a key to its localized string
- * @param key - Translation key in dot notation (e.g., 'common.welcome')
- * @param options - Optional interpolation values
- * @returns Translated string
+ * Translation resources keyed by locale then namespace.
+ * Typed `as const` so TypeScript infers the exact shape of every key/value,
+ * which is what the `CustomTypeOptions` module augmentation in `i18next.d.ts`
+ * relies on for full compile-time key safety.
  */
+export const resources = {
+  en: { translation: en },
+} as const;
 
-export const t = (key: string, options?: TranslateOptions) => {
-  return i18n.t(key, options);
-};
+// Guard against re-initialisation on Fast Refresh or multiple module evaluations.
+if (!i18next.isInitialized) {
+  i18next.use(initReactI18next).init({
+    resources,
+    lng: Localization.getLocales()[0]?.languageCode ?? 'en',
+    fallbackLng: 'en',
+    defaultNS,
+    interpolation: {
+      escapeValue: false, // React already escapes values
+    },
+  });
+}
 
-export default i18n;
+/**
+ * Convenience `t` function for use outside of React components (e.g. utility
+ * functions, validation helpers).  It delegates to the configured i18next
+ * instance so initialisation is guaranteed whenever this module is imported.
+ *
+ * Usage:
+ * ```ts
+ * import { t } from 'expo-app/lib/i18n';
+ * const msg = t('errors.somethingWentWrong');
+ * ```
+ */
+export const t = i18next.t.bind(i18next);
+
+export default i18next;

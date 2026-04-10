@@ -16,6 +16,7 @@ on:
       - "apps/expo/**"
       - ".maestro/**"
       - ".github/workflows/e2e-tests.yml"
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -42,6 +43,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.2'
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -148,7 +154,7 @@ jobs:
           maestro --device "$SIMULATOR_UDID" test \
             --format junit \
             --output test-results/maestro-results.xml \
-            .maestro/config.yaml
+            .maestro/
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
@@ -257,10 +263,13 @@ jobs:
           script: |
             mkdir -p test-results
             adb install apps/expo/build/PackRat.apk
+            cp .maestro/config.yaml .maestro/config.yaml.bak
+            cp .maestro/config-android.yaml .maestro/config.yaml
             maestro test \
               --format junit \
               --output test-results/maestro-results.xml \
-              .maestro/config-android.yaml
+              .maestro/
+            mv .maestro/config.yaml.bak .maestro/config.yaml
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}

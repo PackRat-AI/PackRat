@@ -5,8 +5,8 @@ import { packTemplateItemsStore } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
 import type { PackTemplateInStore } from '../types';
 
-export interface GenerateFromTikTokInput {
-  tiktokUrl: string;
+export interface GenerateFromOnlineContentInput {
+  contentUrl: string;
   name?: string;
   category?: string;
   isAppTemplate?: boolean;
@@ -34,18 +34,18 @@ export interface GeneratedTemplate extends PackTemplateInStore {
   }>;
 }
 
-export interface TikTokImportError extends Error {
+export interface ImportError extends Error {
   status?: number;
   code?: string;
   existingTemplateId?: string;
 }
 
-export function useGenerateTemplateFromTikTok() {
-  return useMutation<GeneratedTemplate, TikTokImportError, GenerateFromTikTokInput>({
+export function useGenerateTemplateFromOnlineContent() {
+  return useMutation<GeneratedTemplate, ImportError, GenerateFromOnlineContentInput>({
     mutationFn: async (input) => {
       try {
         const response = await axiosInstance.post(
-          '/api/pack-templates/generate-from-tiktok',
+          '/api/pack-templates/generate-from-online-content',
           input,
           { timeout: 0 },
         );
@@ -59,7 +59,14 @@ export function useGenerateTemplateFromTikTok() {
 
         if (error && typeof error === 'object' && 'response' in error) {
           const errorData = (
-            error as { response?: { data?: { code?: string; existingTemplateId?: string } } }
+            error as {
+              response?: {
+                data?: {
+                  code?: string;
+                  existingTemplateId?: string;
+                };
+              };
+            }
           ).response?.data;
           if (errorData) {
             errorCode = errorData.code;
@@ -67,14 +74,12 @@ export function useGenerateTemplateFromTikTok() {
           }
         }
 
-        const tikTokError = new Error(
-          `Failed to generate template from TikTok: ${message}`,
-        ) as TikTokImportError;
-        tikTokError.status = status;
-        tikTokError.code = errorCode;
-        tikTokError.existingTemplateId = existingTemplateId;
+        const importError = new Error(message) as ImportError;
+        importError.status = status;
+        importError.code = errorCode;
+        importError.existingTemplateId = existingTemplateId;
 
-        throw tikTokError;
+        throw importError;
       }
     },
     onSuccess: (data) => {

@@ -1,225 +1,29 @@
 /**
- * TypeScript type definitions for i18n translation keys
- * This provides autocomplete and type safety when using translations
+ * Convenience re-export of the translation key and function types.
+ *
+ * The authoritative type safety comes from the `i18next.d.ts` module
+ * augmentation in this directory, which wires `en.json` into i18next's
+ * `CustomTypeOptions`.  This means i18next's own `t()` function and the
+ * `useTranslation` hook automatically enforce correct keys — no manual
+ * maintenance required.
+ *
+ * @see https://www.i18next.com/overview/typescript
  */
 
-import type { TranslateOptions } from 'i18n-js';
+import type { ParseKeys, TFunction } from 'i18next';
 
-export type TranslationKeys =
-  // Common
-  | 'common.welcome'
-  | 'common.application'
-  | 'common.continue'
-  | 'common.retry'
-  | 'common.cancel'
-  | 'common.save'
-  | 'common.delete'
-  | 'common.edit'
-  | 'common.create'
-  | 'common.back'
-  | 'common.loading'
-  | 'common.error'
-  | 'common.success'
-  | 'common.yes'
-  | 'common.no'
-  | 'common.ok'
-  | 'common.done'
-  | 'common.close'
-  | 'common.search'
-  | 'common.filter'
-  | 'common.sort'
-  | 'common.name'
-  | 'common.email'
-  | 'common.password'
-  | 'common.username'
-  // Errors
-  | 'errors.somethingWentWrong'
-  | 'errors.notFound'
-  | 'errors.pageNotFound'
-  | 'errors.goToHome'
-  | 'errors.looksLikeError'
-  | 'errors.tryAgain'
-  // Auth
-  | 'auth.signIn'
-  | 'auth.signUp'
-  | 'auth.signOut'
-  | 'auth.logOut'
-  | 'auth.loggedOut'
-  | 'auth.loggedOutMessage'
-  | 'auth.stayLoggedOut'
-  | 'auth.signInAgain'
-  | 'auth.logoutFailed'
-  | 'auth.forgotPassword'
-  | 'auth.resetPassword'
-  // Profile
-  | 'profile.profile'
-  | 'profile.editProfile'
-  | 'profile.accountInformation'
-  | 'profile.memberSince'
-  | 'profile.stats'
-  | 'profile.myPacks'
-  | 'profile.noPacksYet'
-  | 'profile.createNewPack'
-  | 'profile.items'
-  | 'profile.public'
-  | 'profile.notifications'
-  | 'profile.settings'
-  | 'profile.syncInProgress'
-  | 'profile.syncMessage'
-  | 'profile.dangerZone'
-  // Navigation
-  | 'navigation.dashboard'
-  | 'navigation.packs'
-  | 'navigation.trips'
-  | 'navigation.catalog'
-  | 'navigation.profile'
-  | 'navigation.home'
-  // Packs
-  | 'packs.currentPack'
-  | 'packs.gearInventory'
-  | 'packs.packDetails'
-  | 'packs.packCategories'
-  | 'packs.enterNewPackDetails'
-  | 'packs.visibility'
-  | 'packs.deletePack'
-  | 'packs.packDeleted'
-  | 'packs.createPack'
-  | 'packs.editPack'
-  | 'packs.noPacks'
-  | 'packs.packName'
-  | 'packs.packDescription'
-  | 'packs.packWeight'
-  | 'packs.packItems'
-  | 'packs.addItem'
-  | 'packs.removeItem'
-  | 'packs.totalWeight'
-  | 'packs.baseWeight'
-  | 'packs.categoriesLabel'
-  | 'packs.categories'
-  | 'packs.itemsTitleCase'
-  | 'packs.items'
-  | 'packs.itemTitleCase'
-  | 'packs.item'
-  | 'packs.baseWeightLabelUpper'
-  | 'packs.totalWeightLabelUpper'
-  | 'packs.itemsCountLabelUpper'
-  | 'packs.noCategorizedItems'
-  | 'packs.organizeGear'
-  | 'packs.packStats'
-  | 'packs.weightHistory'
-  | 'packs.categoryDistribution'
-  | 'packs.packWeightOverMonths'
-  | 'packs.weightDistribution'
-  | 'packs.packInsights'
-  | 'packs.lighterThanSimilar'
-  | 'packs.basedOnData'
-  | 'packs.reducedWeight'
-  | 'packs.weightReduction'
-  | 'packs.heaviestCategory'
-  | 'packs.considerUltralight'
-  | 'packs.noStatsAvailable'
-  | 'packs.weightAnalysis'
-  | 'packs.consumablesWeight'
-  | 'packs.wornWeight'
-  | 'packs.weightBreakdown'
-  | 'packs.detailedAnalysis'
-  | 'packs.addItemsForBreakdown'
-  // Items
-  | 'items.itemDetails'
-  | 'items.itemName'
-  | 'items.itemCategory'
-  | 'items.itemWeight'
-  | 'items.itemQuantity'
-  | 'items.addToInventory'
-  | 'items.removeFromInventory'
-  | 'items.consumable'
-  | 'items.worn'
-  // Trips
-  | 'trips.myTrips'
-  | 'trips.createTrip'
-  | 'trips.tripDetails'
-  | 'trips.tripName'
-  | 'trips.tripDate'
-  | 'trips.tripLocation'
-  | 'trips.noTrips'
-  | 'trips.notStarted'
-  | 'trips.complete'
-  | 'trips.inProgress'
-  // Catalog
-  | 'catalog.itemsCatalog'
-  | 'catalog.searchItems'
-  | 'catalog.categories'
-  | 'catalog.allCategories'
-  // Welcome
-  | 'welcome.features.profileManagement.title'
-  | 'welcome.features.profileManagement.description'
-  | 'welcome.features.secureMessaging.title'
-  | 'welcome.features.secureMessaging.description'
-  | 'welcome.features.activityTracking.title'
-  | 'welcome.features.activityTracking.description'
-  | 'welcome.byPressingContinue'
-  | 'welcome.termsOfService'
-  | 'welcome.and'
-  | 'welcome.thatYouHaveRead'
-  | 'welcome.privacyPolicy'
-  // AI
-  | 'ai.aiChat'
-  | 'ai.aiAssistant'
-  | 'ai.askQuestion'
-  | 'ai.sendMessage'
-  | 'ai.aiPacks'
-  | 'ai.generating'
-  | 'ai.generationError'
-  | 'ai.askAnythingOutdoors'
-  | 'ai.askAboutItem'
-  | 'ai.askAboutPack'
-  | 'ai.suggestions'
-  // Weather
-  | 'weather.weather'
-  | 'weather.temperature'
-  | 'weather.conditions'
-  | 'weather.forecast'
-  | 'weather.humidity'
-  | 'weather.windSpeed'
-  | 'weather.addLocation'
-  // Location
-  | 'location.location'
-  | 'location.currentLocation'
-  | 'location.selectLocation'
-  | 'location.searchLocation'
-  | 'location.searchForPlace'
-  | 'location.searchButton'
-  | 'location.confirmLocation'
-  | 'location.notFound'
-  | 'location.noLocationFound'
-  | 'location.searchError'
-  | 'location.somethingWentWrong'
-  | 'location.missingApiKey'
-  | 'location.apiKeyNotConfigured'
-  // Shopping
-  | 'shopping.shoppingList'
-  | 'shopping.addToList'
-  | 'shopping.removeFromList'
-  | 'shopping.clearList'
-  // Admin
-  | 'admin.admin'
-  | 'admin.adminPanel'
-  | 'admin.manage'
-  // Seasons
-  | 'seasons.seasonSuggestions'
-  | 'seasons.spring'
-  | 'seasons.summer'
-  | 'seasons.fall'
-  | 'seasons.winter'
-  // Experience
-  | 'experience.beginner'
-  | 'experience.intermediate'
-  | 'experience.advanced'
-  | 'experience.expert';
+/** Union of every valid translation key derived from `en.json`. */
+export type TranslationKeys = ParseKeys;
 
 /**
- * Type-safe translation function
- * Usage: t('common.welcome') - will autocomplete and type-check keys
+ * Type of a `t()` function that accepts only valid translation keys.
+ * Use this to annotate parameters/props that receive `t` from
+ * `useTranslation()` or the named export from `expo-app/lib/i18n`.
+ *
+ * Example:
+ * ```ts
+ * import type { TranslationFunction } from 'expo-app/lib/i18n/types';
+ * function getOptions(t: TranslationFunction) { ... }
+ * ```
  */
-
-export type TranslationFunction = (key: TranslationKeys, options?: TranslateOptions) => string;
+export type TranslationFunction = TFunction;
