@@ -32,6 +32,7 @@ import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
 import { Alert, Platform, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { TestIds } from 'expo-app/lib/testIds';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -240,7 +241,7 @@ function ListFooterComponent() {
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
-        testID="sign-out-button"
+        testID={TestIds.SignOutButton}
         disabled={isSigningOut}
         onPress={() => {
           if (hasUnsyncedChanges()) {
