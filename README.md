@@ -406,7 +406,7 @@ bun expo
 
 ```bash
 # Doctor check for Expo setup
-bun --cwd apps/expo run expo-doctor
+bun --cwd apps/expo expo doctor
 
 # Fix dependencies
 bun --cwd apps/expo run expo install --fix
