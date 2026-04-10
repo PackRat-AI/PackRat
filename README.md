@@ -15,6 +15,7 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 **Build & CI:**
 ![Biome Check](https://github.com/PackRat-AI/PackRat/actions/workflows/biome.yml/badge.svg)
 ![Check Types](https://github.com/PackRat-AI/PackRat/actions/workflows/check-types.yml/badge.svg)
+![API Tests](https://github.com/PackRat-AI/PackRat/actions/workflows/api-tests.yml/badge.svg)
 ![Database Migrations](https://github.com/PackRat-AI/PackRat/actions/workflows/migrations.yml/badge.svg)
 
 **Repository Info:**
@@ -106,6 +107,8 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 
 [![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](/docs/ "Go to project documentation")
 
+[![view - Testing Guide](https://img.shields.io/badge/view-Testing_Guide-green?style=for-the-badge)](/TESTING.md "Go to testing documentation")
+
 </div>
 
 ## Features 🚀
@@ -114,7 +117,12 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 - Map integration: PackRat integrates with Mapbox to provide users with accurate maps and directions to their destinations.
 - Activity suggestions: the app suggests popular outdoor activities based on the location and season of the trip.
 - Packing list: users can create and manage packing lists for their trips to ensure they have everything they need.
+- Pack templates: users can save and reuse pack configurations for common trip types.
 - Weather forecast: PackRat provides up-to-date weather forecasts for the trip location to help users prepare accordingly.
+- Trail conditions: users can report and browse real-time trail condition updates from the community.
+- AI assistant: an AI-powered chat assistant provides gear advice, trip suggestions, and more.
+- Weight analysis: users can analyze their pack weight breakdown by category.
+- Season suggestions: the app recommends gear and activities based on the trip's location and time of year.
 - User authentication: the app uses user authentication to ensure privacy and data security.
 
 ## Technologies used 💻
@@ -325,13 +333,13 @@ cd PackRat
 
 PackRat uses Lefthook for git hooks to ensure code quality. The hooks are automatically installed when you run `bun install`.
 
-- **Pre-push hook**: Runs `bun format` to check code formatting before pushing
+- **Pre-commit hook**: Runs `bun check` on staged files to enforce linting before every commit
 - **Configuration**: See `lefthook.yml` in the root directory
 
 If you need to skip hooks temporarily, use:
 
 ```bash
-git push --no-verify
+git commit --no-verify
 ```
 
 ### Installation & Development
@@ -400,7 +408,7 @@ bun expo
 
 ```bash
 # Doctor check for Expo setup
-bun --cwd apps/expo run expo-doctor
+bun --cwd apps/expo expo doctor
 
 # Fix dependencies
 bun --cwd apps/expo run expo install --fix

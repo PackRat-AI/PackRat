@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
@@ -11,7 +11,7 @@ import { View } from 'react-native';
 export function UpcomingTripsTile() {
   const router = useRouter();
   const { t } = useTranslation();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const [showAlert, setShowAlert] = useState(false);
 
   // ✅ get all trips

@@ -1,1 +1,1 @@
-export { TikTokContainer } from './TikTokContainer';
+export { AppContainer } from './AppContainer';

@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { authMiddleware } from '@packrat/api/middleware';
 import { adminRoutes } from './admin';
+import { aiRoutes } from './ai';
 import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
@@ -29,6 +30,7 @@ protectedRoutes.route('/guides', guidesRoutes);
 protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/trips', tripsRoutes);
 
+protectedRoutes.route('/ai', aiRoutes);
 protectedRoutes.route('/chat', chatRoutes);
 protectedRoutes.route('/weather', weatherRoutes);
 protectedRoutes.route('/pack-templates', packTemplatesRoutes);

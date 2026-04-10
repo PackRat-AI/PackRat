@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   AlertAnchor,
   Button,
@@ -108,7 +108,7 @@ export default function ResetPasswordScreen() {
   const [focusedTextField, setFocusedTextField] = React.useState<
     'password' | 'confirm-password' | null
   >(null);
-  const alertRef = React.useRef<AlertRef>(null);
+  const alertRef = React.useRef<AlertMethods>(null);
 
   // Get data from previous screen
   const params = useLocalSearchParams<{

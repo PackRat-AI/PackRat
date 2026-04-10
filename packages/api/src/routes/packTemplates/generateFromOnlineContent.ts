@@ -1,12 +1,12 @@
-import { createOpenAI } from '@ai-sdk/openai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getContainer } from '@cloudflare/containers';
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packTemplateItems, packTemplates } from '@packrat/api/db/schema';
 import {
   ErrorResponseSchema,
-  GenerateFromTikTokRequestSchema,
-  GenerateFromTikTokResponseSchema,
+  GenerateFromOnlineContentRequestSchema,
+  GenerateFromOnlineContentResponseSchema,
 } from '@packrat/api/schemas/packTemplates';
 import { CatalogService } from '@packrat/api/services/catalogService';
 import type { Env } from '@packrat/api/types/env';
@@ -16,11 +16,12 @@ import { generateObject } from 'ai';
 import { sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { nanoid } from 'nanoid';
+import { fetchTranscript } from 'youtube-transcript';
 import { z } from 'zod';
 
 /**
- * Generate a deterministic content ID from a TikTok URL for duplicate detection
- * when the TikTok service doesn't provide a content ID
+ * Generate a deterministic content ID from a URL for duplicate detection
+ * when the TikTok or YouTube service doesn't provide a content ID
  */
 function generateContentIdFromUrl(url: string): string {
   // Normalize the URL by removing query parameters and converting to lowercase
@@ -37,11 +38,14 @@ function generateContentIdFromUrl(url: string): string {
   return `url_${Math.abs(hash).toString(16)}`;
 }
 
-const SYSTEM_PROMPT = `You are an expert outdoor gear analyst. You will be shown images from a TikTok slideshow featuring packing content (e.g., a gear lay-flat, kit breakdown, or packing list). Your task is to:
+const SYSTEM_PROMPT = `You are an expert outdoor gear analyst. You will be shown content from TikTok or YouTube featuring packing content (e.g., a gear lay-flat, kit breakdown, or packing list). This content may be either images (slideshow), a video or video transcript. Your task is to:
 
-1. Identify every outdoor gear or equipment item visible in the images or mentioned in the caption.
+1. Identify every outdoor gear or equipment item visible in the images/video or mentioned in the caption/transcript.
 2. For each item, provide a specific name, description, category, weight estimate (in grams), quantity, and flags for whether it is consumable or worn.
 3. Also determine an appropriate pack template name and category (one of: hiking, backpacking, camping, climbing, winter, desert, custom, water sports, skiing) for this overall kit.
+
+For video content: Analyze the video frames to identify gear items shown throughout the video. Pay attention to any gear being packed, displayed, or mentioned.
+For slideshow content: Analyze each image to identify all visible gear items.
 
 Focus on items that would realistically appear in an outdoor adventure packing list. Be thorough — identify every item you can see or infer.`;
 
@@ -51,12 +55,12 @@ Focus on items that would realistically appear in an outdoor adventure packing l
 async function fetchTikTokPostData(
   c: Context<{ Bindings: Env; Variables: Variables }>,
   url: string,
-): Promise<{ imageUrls: string[]; caption?: string; contentId?: string }> {
+): Promise<{ imageUrls: string[]; videoUrl?: string; caption?: string; contentId?: string }> {
   try {
-    const { TIKTOK_CONTAINER } = getEnv(c);
+    const { APP_CONTAINER } = getEnv(c);
 
     // Get the container instance using the binding
-    const container = getContainer(TIKTOK_CONTAINER as any);
+    const container = getContainer(APP_CONTAINER as any);
 
     // Make request to the container's /import endpoint
     const response = await container.fetch(
@@ -78,7 +82,7 @@ async function fetchTikTokPostData(
 
     const result = (await response.json()) as {
       success: boolean;
-      data?: { imageUrls: string[]; caption?: string; contentId?: string };
+      data?: { imageUrls: string[]; videoUrl?: string; caption?: string; contentId?: string };
       error?: string;
     };
 
@@ -88,6 +92,7 @@ async function fetchTikTokPostData(
 
     return {
       imageUrls: result.data?.imageUrls || [],
+      videoUrl: result.data?.videoUrl,
       caption: result.data?.caption,
       contentId: result.data?.contentId,
     };
@@ -96,6 +101,44 @@ async function fetchTikTokPostData(
     throw new Error(
       `Failed to fetch TikTok data: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
+  }
+}
+
+/**
+ * Check if a URL is a YouTube URL
+ */
+function isYouTubeUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace('www.', '');
+
+    return hostname === 'youtube.com' || hostname === 'youtu.be';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Extract the YouTube video ID from a URL
+ * @param url The YouTube URL
+ * @returns The video ID or null if not found
+ */
+function getYouTubeId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace('www.', '');
+
+    if (host === 'youtu.be') {
+      return parsed.pathname.slice(1);
+    }
+
+    if (host === 'youtube.com') {
+      return parsed.searchParams.get('v');
+    }
+
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -134,20 +177,19 @@ const analysisSchema = z.object({
     .describe('All gear items identified from the content'),
 });
 
-// POST /pack-templates/generate-from-tiktok
-const generateFromTikTokRoute = createRoute({
+const generateFromOnlineContentRoute = createRoute({
   method: 'post',
-  path: '/generate-from-tiktok',
+  path: '/generate-from-online-content',
   tags: ['Pack Templates'],
-  summary: 'Generate a pack template from a TikTok content URL',
+  summary: 'Generate a pack template from an online content URL',
   description:
-    'Admin-only endpoint that uses TikTok API to fetch slideshow images and captions from a TikTok URL, then analyzes the content with AI (GPT-4o) to build a featured pack template using items from the catalog.',
+    'Admin-only endpoint that retrieves TikTok slideshow images, videos and captions or YouTube video transcripts, then analyzes the content with AI (Gemini-3-Flash-Preview) to build a featured pack template using items from the catalog.',
   security: [{ bearerAuth: [] }],
   request: {
     body: {
       content: {
         'application/json': {
-          schema: GenerateFromTikTokRequestSchema,
+          schema: GenerateFromOnlineContentRequestSchema,
         },
       },
       required: true,
@@ -158,7 +200,7 @@ const generateFromTikTokRoute = createRoute({
       description: 'Pack template generated and created successfully',
       content: {
         'application/json': {
-          schema: GenerateFromTikTokResponseSchema,
+          schema: GenerateFromOnlineContentResponseSchema,
         },
       },
     },
@@ -179,7 +221,7 @@ const generateFromTikTokRoute = createRoute({
       },
     },
     409: {
-      description: 'Conflict - Template already exists for this TikTok content.',
+      description: 'Conflict - Template already exists for this content.',
       content: {
         'application/json': {
           schema: ErrorResponseSchema,
@@ -197,13 +239,13 @@ const generateFromTikTokRoute = createRoute({
   },
 });
 
-const generateFromTikTokRoutes = new OpenAPIHono<{
+const generateFromOnlineContentRoutes = new OpenAPIHono<{
   Bindings: Env;
   Variables: Variables;
 }>();
 
-generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
-  let tiktokUrl: string | undefined;
+generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c) => {
+  let contentUrl: string | undefined;
   try {
     const auth = c.get('user');
 
@@ -213,28 +255,47 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
 
     const body = c.req.valid('json');
     const { isAppTemplate } = body;
-    tiktokUrl = body.tiktokUrl;
+    contentUrl = body.contentUrl;
 
-    const { OPENAI_API_KEY } = getEnv(c);
-    const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
+    const { GOOGLE_GENERATIVE_AI_API_KEY } = getEnv(c);
+    const google = createGoogleGenerativeAI({
+      apiKey: GOOGLE_GENERATIVE_AI_API_KEY,
+    });
 
-    // Fetch TikTok data using API library
-    console.log(`Processing TikTok URL: ${tiktokUrl}`);
+    console.log(`Processing content: ${contentUrl}`);
 
-    let imageUrls: string[];
+    let imageUrls: string[] = [];
+    let videoUrl: string | undefined;
     let caption: string | undefined;
+    let youtubeVideoTranscript: string | undefined;
     let contentId: string | undefined;
+    let contentSource: string | undefined;
 
     try {
-      const data = await fetchTikTokPostData(c, tiktokUrl);
-      imageUrls = data.imageUrls;
-      caption = data.caption;
-      contentId = data.contentId;
+      if (isYouTubeUrl(contentUrl)) {
+        const youtubeId = getYouTubeId(contentUrl);
+        if (!youtubeId) {
+          throw new Error('Invalid YouTube URL');
+        }
+
+        contentId = youtubeId;
+
+        youtubeVideoTranscript = (await fetchTranscript(youtubeId))
+          .reduce((acc, curr) => `${acc} ${curr.text}`, '')
+          .trim();
+
+        contentSource = 'youtube';
+      } else {
+        const data = await fetchTikTokPostData(c, contentUrl);
+        imageUrls = data.imageUrls;
+        videoUrl = data.videoUrl;
+        caption = data.caption;
+        contentId = data.contentId;
+        contentSource = 'tiktok';
+      }
     } catch (apiError) {
       console.error('TikTok service call failed:', apiError);
-      c.get('sentry').captureException(apiError, {
-        extra: { tiktokUrl, errorType: 'tiktok_service_error' },
-      } as any);
+      c.get('sentry').captureException(apiError);
       return c.json(
         {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
@@ -246,7 +307,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
 
     // Ensure we have a contentId for reliable duplicate detection
     // Use TikTok service contentId if available, otherwise generate from URL
-    const finalContentId = contentId || generateContentIdFromUrl(tiktokUrl);
+    const finalContentId = contentId || generateContentIdFromUrl(contentUrl);
 
     // Check for existing template with same content ID to avoid duplication
     const db = createDb(c);
@@ -254,7 +315,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       .select()
       .from(packTemplates)
       .where(
-        sql`${packTemplates.contentSource} = 'tiktok' AND ${packTemplates.contentId} = ${finalContentId} AND ${packTemplates.deleted} = false`,
+        sql`${packTemplates.contentSource} = ${contentSource} AND ${packTemplates.contentId} = ${finalContentId} AND ${packTemplates.deleted} = false`,
       )
       .limit(1);
 
@@ -262,7 +323,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       const existing = existingTemplate[0]!;
       return c.json(
         {
-          error: 'Template already exists for this TikTok content.',
+          error: 'Template already exists for this content.',
           code: 'DUPLICATE_TEMPLATE',
           existingTemplateId: existing.id,
         },
@@ -270,24 +331,39 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
       );
     }
 
-    // Build message content parts for GPT-4o
+    // Build message content parts for Gemini
     type TextPart = { type: 'text'; text: string };
     type ImagePart = { type: 'image'; image: string };
-    const contentParts: Array<TextPart | ImagePart> = [];
+    type FilePart = { type: 'file'; data: string; mediaType: string };
+    const contentParts: Array<TextPart | ImagePart | FilePart> = [];
 
-    const introText = caption
-      ? `Retrieved Caption: ${caption}\n\nPlease analyze the following slideshow images and identify all packing/gear items:`
-      : `Please analyze the following slideshow images and identify all packing/gear items:`;
-
-    contentParts.push({ type: 'text', text: introText });
-
-    for (const imageUrl of imageUrls) {
-      contentParts.push({ type: 'image', image: imageUrl });
+    let introText: string;
+    if (youtubeVideoTranscript) {
+      introText =
+        'Please analyze the YouTube video transcript below and identify all packing/gear items:';
+      contentParts.push({ type: 'text', text: introText });
+      contentParts.push({ type: 'text', text: youtubeVideoTranscript });
+    } else if (videoUrl) {
+      introText = caption
+        ? `Retrieved Caption: ${caption}\n\nPlease analyze the following TikTok video and identify all packing/gear items:`
+        : `Please analyze the following TikTok video and identify all packing/gear items:`;
+      contentParts.push({ type: 'text', text: introText });
+      contentParts.push({ type: 'file', data: videoUrl, mediaType: 'video/mp4' });
+    } else if (imageUrls.length > 0) {
+      introText = caption
+        ? `Retrieved Caption: ${caption}\n\nPlease analyze the following slideshow images and identify all packing/gear items:`
+        : `Please analyze the following slideshow images and identify all packing/gear items:`;
+      contentParts.push({ type: 'text', text: introText });
+      for (const imageUrl of imageUrls) {
+        contentParts.push({ type: 'image', image: imageUrl });
+      }
+    } else {
+      throw new Error('No content found in TikTok post (no images or video)');
     }
 
-    // Analyze images with GPT-4o
+    // Analyze content with Gemini-3-Flash-Preview
     const { object: analysis } = await generateObject({
-      model: openai('gpt-4o'),
+      model: google('gemini-3-flash-preview'),
       schema: analysisSchema,
       system: SYSTEM_PROMPT,
       prompt: [
@@ -327,7 +403,7 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
           tags: [analysis.templateCategory],
           isAppTemplate: isAppTemplate ?? true,
           deleted: false,
-          contentSource: 'tiktok',
+          contentSource,
           contentId: finalContentId,
           localCreatedAt: now,
           localUpdatedAt: now,
@@ -369,15 +445,19 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
 
     return c.json({ ...newTemplate, items: insertedItems }, 201);
   } catch (error) {
-    console.error('Error generating pack template from TikTok:', error);
+    console.error('Error generating pack template:', error);
     c.get('sentry').captureException(error, {
-      extra: { tiktokUrl, errorType: 'template_generation_error' },
+      extra: { contentUrl, errorType: 'template_generation_error' },
     } as any);
 
     // Determine specific error type based on error context
     let errorCode = 'UNKNOWN_ERROR';
     if (error instanceof Error) {
-      if (error.message.includes('OpenAI') || error.message.includes('AI')) {
+      if (
+        error.message.includes('Google') ||
+        error.message.includes('Gemini') ||
+        error.message.includes('AI')
+      ) {
         errorCode = 'AI_ANALYSIS_ERROR';
       } else if (error.message.includes('catalog') || error.message.includes('search')) {
         errorCode = 'CATALOG_SEARCH_ERROR';
@@ -396,4 +476,4 @@ generateFromTikTokRoutes.openapi(generateFromTikTokRoute, async (c) => {
   }
 });
 
-export { generateFromTikTokRoutes };
+export { generateFromOnlineContentRoutes };

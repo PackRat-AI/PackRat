@@ -1,5 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { Alert, type AlertRef, Button } from '@packrat/ui/nativewindui';
+import { Alert, type AlertMethods, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -36,7 +36,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   const deleteTrip = useDeleteTrip();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const insets = useSafeAreaInsets();
 
   const durationDays = getTripDurationDays(trip.startDate, trip.endDate);
