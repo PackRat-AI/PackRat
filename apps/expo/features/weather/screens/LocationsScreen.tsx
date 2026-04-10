@@ -11,15 +11,15 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  Platform,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { searchQueryAtom } from '../atoms/locationsAtoms';
 import { LocationCard } from '../components/LocationCard';
 import { WeatherAuthWall } from '../components/WeatherAuthWall';
@@ -116,11 +116,17 @@ function LocationsScreen() {
   const showSearchResults = isSearchFocused && searchQuery.length > 0;
   const showNoSearchResults = showSearchResults && filteredLocations.length === 0;
   const showLocationsList = filteredLocations.length > 0;
+  const headerPaddingTop = Platform.OS === 'ios' ? 80 : 24;
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, paddingTop: insets.top }}>
       <LargeTitleHeader
         title={t('weather.weather')}
+        leftView={() => (
+          <Pressable onPress={() => router.back()} className="mr-2">
+            <Icon name="arrow-left" color={colors.foreground} size={24} />
+          </Pressable>
+        )}
         rightView={() => (
           <View className="flex-row items-center pr-2">
             <Pressable className="opacity-80" onPress={handleAddLocation}>
@@ -134,7 +140,7 @@ function LocationsScreen() {
         )}
       />
 
-      <View className="p-4">
+      <View className="p-4" style={{ paddingTop: insets.top }}>
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchSavedLocations')}

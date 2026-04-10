@@ -1,4 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
+import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { useCatalogItemsCategories } from '../hooks/useCatalogItemsCategories';
 
@@ -22,7 +23,7 @@ export function CatalogCategoriesFilter({
           activeFilter === filter ? 'text-primary-foreground' : 'text-foreground'
         }`}
       >
-        {filter}
+        {decodeHtmlEntities(filter)}
       </Text>
     </TouchableOpacity>
   );

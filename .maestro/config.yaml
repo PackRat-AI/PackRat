@@ -1,0 +1,46 @@
+# Maestro E2E Test Suite Configuration
+# https://maestro.mobile.dev
+
+appId: com.andrewbierman.packrat
+
+flows:
+  - flows/setup/*.yaml
+  - flows/auth/*.yaml
+  - flows/dashboard/*.yaml
+  - flows/packs/*.yaml
+  - flows/trips/*.yaml
+  - flows/catalog/*.yaml
+  - flows/profile/*.yaml
+  - flows/negative/*.yaml
+
+executionOrder:
+  flowsOrder:
+    # Setup & Auth
+    - flows/setup/clear-state.yaml
+    - flows/auth/login-flow.yaml
+
+    # Dashboard
+    - flows/dashboard/dashboard-tiles-flow.yaml
+
+    # Packs CRUD
+    - flows/packs/create-pack-flow.yaml
+    - flows/packs/pack-detail-flow.yaml
+    - flows/packs/add-item-actions-flow.yaml
+
+    # Trips CRUD
+    - flows/trips/create-trip-flow.yaml
+    - flows/trips/trip-detail-flow.yaml
+
+    # Catalog
+    - flows/catalog/catalog-browse-flow.yaml
+    - flows/catalog/catalog-item-detail-flow.yaml
+
+    # Profile
+    - flows/profile/profile-view-flow.yaml
+
+    # Negative tests
+    - flows/negative/empty-pack-submit-flow.yaml
+    - flows/negative/empty-trip-submit-flow.yaml
+
+    # Logout (last — destroys session)
+    - flows/auth/logout-flow.yaml

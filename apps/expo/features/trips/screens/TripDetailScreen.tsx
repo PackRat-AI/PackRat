@@ -12,8 +12,9 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef } from 'react';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, Share, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
 import { useTripDetailsFromStore } from '../hooks/useTripDetailsFromStore';
 import type { Trip } from '../types';
@@ -43,6 +44,20 @@ export function TripDetailScreen() {
     return new Date(dateString).toISOString().split('T')[0];
   };
 
+  const handleShareTrip = async () => {
+    try {
+      const lines: string[] = [`${trip.name}`];
+      if (trip.location?.name) lines.push(` ${trip.location.name.split(',')[0]}`);
+      if (trip.startDate || trip.endDate) {
+        lines.push(`${formatDate(trip.startDate)} – ${formatDate(trip.endDate)}`);
+      }
+      if (trip.description) lines.push(`\n${trip.description}`);
+      await Share.share({ message: lines.join('\n') });
+    } catch (_e) {
+      // Share cancelled or failed – no action needed
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView
@@ -51,7 +66,17 @@ export function TripDetailScreen() {
       >
         {/* Header Section */}
         <View className="p-4">
-          <Text className="text-3xl font-bold text-foreground mb-3">{trip.name}</Text>
+          <View className="mb-3 flex-row items-start justify-between">
+            <Text className="flex-1 text-3xl font-bold text-foreground">{trip.name}</Text>
+            <Button variant="plain" size="icon" onPress={handleShareTrip}>
+              <Icon
+                materialIcon={{ type: 'MaterialIcons', name: 'share' }}
+                ios={{ name: 'square.and.arrow.up' }}
+                size={22}
+                color={colors.grey2}
+              />
+            </Button>
+          </View>
 
           {/* Trip Dates */}
           <View className="mb-6">
@@ -87,6 +112,14 @@ export function TripDetailScreen() {
               </Text>
             )}
           </View>
+
+          {/* Notes */}
+          {trip.notes ? (
+            <View className="mb-6">
+              <Text className="text-lg font-semibold text-foreground mb-2">{t('trips.notes')}</Text>
+              <Text className="text-sm text-muted-foreground leading-relaxed">{trip.notes}</Text>
+            </View>
+          ) : null}
 
           {/* Location */}
           {trip.location ? (
@@ -124,7 +157,7 @@ export function TripDetailScreen() {
                   </MapView>
                 </View>
 
-                <View className="p-3 flex-row justify-center">
+                <View className="p-3 flex-row justify-center gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -139,20 +172,27 @@ export function TripDetailScreen() {
                     <Icon name="map-marker-outline" size={16} color={colors.primary} />
                     <Text className="text-sm">{t('trips.openInMaps')}</Text>
                   </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => router.push('/weather')}
+                    className="flex-row items-center gap-2"
+                  >
+                    <Icon
+                      materialIcon={{
+                        type: 'MaterialCommunityIcons',
+                        name: 'weather-partly-cloudy',
+                      }}
+                      ios={{ name: 'cloud.sun' }}
+                      size={16}
+                      color={colors.primary}
+                    />
+                    <Text className="text-sm">{t('trips.viewWeather')}</Text>
+                  </Button>
                 </View>
               </Card>
             </View>
           ) : null}
-
-          {/* Notes */}
-          {/* <View className="mb-6">
-            <Text className="text-lg font-semibold text-foreground mb-2">Notes</Text>
-            {trip.notes ? (
-              <Text className="text-sm text-muted-foreground leading-relaxed">{trip.notes}</Text>
-            ) : (
-              <Text className="text-sm text-muted-foreground italic">No notes available.</Text>
-            )}
-          </View> */}
 
           {/* Pack */}
           {pack ? (

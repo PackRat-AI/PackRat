@@ -13,7 +13,8 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Modal, SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGeneratePacks } from '../hooks/useGeneratedPacks';
 
 export function AIPacksScreen() {
@@ -73,11 +74,13 @@ export function AIPacksScreen() {
     });
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1" style={{ paddingTop: insets.top }}>
       <LargeTitleHeader title={t('ai.aiPacksAdmin')} backVisible={true} />
 
-      <View className="px-4 py-6 space-y-6">
+      <View className="px-4 py-6 space-y-6" style={{ paddingTop: insets.top }}>
         {/* Generation Form */}
         <View className="bg-card p-4 rounded-xl">
           <Text className="text-lg font-semibold mb-4">{t('ai.generateNewPacks')}</Text>
