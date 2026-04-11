@@ -1,5 +1,5 @@
+import { cn } from '@packrat/web-ui/lib/utils';
 import { type ButtonProps, buttonVariants } from 'landing-app/components/ui/button';
-import { cn } from 'landing-app/lib/utils';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
 

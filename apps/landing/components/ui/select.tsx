@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import * as SelectPrimitive from '@radix-ui/react-select';
-import { cn } from 'landing-app/lib/utils';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import * as React from 'react';
 

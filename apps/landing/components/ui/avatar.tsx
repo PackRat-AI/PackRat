@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
-import { cn } from 'landing-app/lib/utils';
 import * as React from 'react';
 
 const Avatar = React.forwardRef<

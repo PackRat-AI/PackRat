@@ -1,5 +1,5 @@
+import { cn } from '@packrat/web-ui/lib/utils';
 import { type ButtonProps, buttonVariants } from 'guides-app/components/ui/button';
-import { cn } from 'guides-app/lib/utils';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
 

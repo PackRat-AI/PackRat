@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import { cn } from 'guides-app/lib/utils';
 import * as React from 'react';
 
 const TooltipProvider = TooltipPrimitive.Provider;

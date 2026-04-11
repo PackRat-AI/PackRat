@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from 'guides-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import * as React from 'react';
 import { Drawer as DrawerPrimitive } from 'vaul';
 

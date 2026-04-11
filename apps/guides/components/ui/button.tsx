@@ -1,6 +1,6 @@
+import { cn } from '@packrat/web-ui/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from 'guides-app/lib/utils';
 import * as React from 'react';
 
 const buttonVariants = cva(

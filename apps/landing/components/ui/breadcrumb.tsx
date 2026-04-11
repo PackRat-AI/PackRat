@@ -1,5 +1,5 @@
+import { cn } from '@packrat/web-ui/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
-import { cn } from 'landing-app/lib/utils';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import * as React from 'react';
 

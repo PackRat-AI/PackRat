@@ -1,4 +1,4 @@
-import { cn } from 'guides-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import * as React from 'react';
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(

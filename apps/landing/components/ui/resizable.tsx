@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from 'landing-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import { GripVertical } from 'lucide-react';
 import * as ResizablePrimitive from 'react-resizable-panels';
 

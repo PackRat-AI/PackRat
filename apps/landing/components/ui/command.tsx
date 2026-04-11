@@ -1,9 +1,9 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import type { DialogProps } from '@radix-ui/react-dialog';
 import { Command as CommandPrimitive } from 'cmdk';
 import { Dialog, DialogContent } from 'landing-app/components/ui/dialog';
-import { cn } from 'landing-app/lib/utils';
 import { Search } from 'lucide-react';
 import * as React from 'react';
 

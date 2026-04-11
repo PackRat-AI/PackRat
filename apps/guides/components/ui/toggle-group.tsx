@@ -1,10 +1,9 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import * as ToggleGroupPrimitive from '@radix-ui/react-toggle-group';
 import type { VariantProps } from 'class-variance-authority';
 import { toggleVariants } from 'guides-app/components/ui/toggle';
-
-import { cn } from 'guides-app/lib/utils';
 import * as React from 'react';
 
 const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({

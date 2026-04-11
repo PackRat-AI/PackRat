@@ -1,8 +1,8 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { Button } from 'landing-app/components/ui/button';
-import { cn } from 'landing-app/lib/utils';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import * as React from 'react';
 

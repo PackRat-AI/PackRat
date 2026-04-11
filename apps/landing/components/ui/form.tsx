@@ -1,9 +1,9 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import type * as LabelPrimitive from '@radix-ui/react-label';
 import { Slot } from '@radix-ui/react-slot';
 import { Label } from 'landing-app/components/ui/label';
-import { cn } from 'landing-app/lib/utils';
 import * as React from 'react';
 import {
   Controller,

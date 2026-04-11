@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import * as ScrollAreaPrimitive from '@radix-ui/react-scroll-area';
-import { cn } from 'guides-app/lib/utils';
 import * as React from 'react';
 
 const ScrollArea = React.forwardRef<

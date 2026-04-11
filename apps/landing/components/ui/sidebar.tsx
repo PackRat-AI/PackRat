@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Button } from 'landing-app/components/ui/button';
@@ -14,7 +15,6 @@ import {
   TooltipTrigger,
 } from 'landing-app/components/ui/tooltip';
 import { useIsMobile } from 'landing-app/hooks/use-mobile';
-import { cn } from 'landing-app/lib/utils';
 import { PanelLeft } from 'lucide-react';
 import * as React from 'react';
 

@@ -1,8 +1,8 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import { OTPInput, OTPInputContext } from 'input-otp';
 import { assertDefined } from 'landing-app/lib/typeAssertions';
-import { cn } from 'landing-app/lib/utils';
 import { Dot } from 'lucide-react';
 import * as React from 'react';
 

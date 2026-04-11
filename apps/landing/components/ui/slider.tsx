@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import * as SliderPrimitive from '@radix-ui/react-slider';
-import { cn } from 'landing-app/lib/utils';
 import * as React from 'react';
 
 const Slider = React.forwardRef<
