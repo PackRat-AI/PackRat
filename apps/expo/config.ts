@@ -9,4 +9,5 @@ export const featureFlags = {
   enableFeed: false,
   enableWildlifeIdentification: false,
   enableOfflineMaps: false,
+  enableVoiceCommands: false,
 };
