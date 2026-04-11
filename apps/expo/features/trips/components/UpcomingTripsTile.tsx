@@ -12,7 +12,7 @@ import { View } from 'react-native';
 export function UpcomingTripsTile() {
   const router = useRouter();
   const { t } = useTranslation();
-  const alertRef = useRef<AlertMethods>(null);
+  const _alertRef = useRef<AlertMethods>(null);
   const [showAlert, setShowAlert] = useState(false);
 
   // ✅ get all trips

@@ -7,6 +7,7 @@ export const packingModeStore = observable<Record<string, Record<string, boolean
 
 syncObservable(packingModeStore, {
   persist: {
+    // biome-ignore lint/suspicious/noExplicitAny: legacy type
     plugin: observablePersistSqlite(Storage as any),
     retrySync: true,
     name: 'packingMode',

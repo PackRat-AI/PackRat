@@ -320,6 +320,7 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
       .limit(1);
 
     if (existingTemplate.length > 0) {
+      // biome-ignore lint/style/noNonNullAssertion: array index already checked
       const existing = existingTemplate[0]!;
       return c.json(
         {

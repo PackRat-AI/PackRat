@@ -149,7 +149,7 @@ describe('CatalogService', () => {
       // but we can verify the embedding generation was called correctly
       try {
         await service.vectorSearch('lightweight tent', { limit: 10, offset: 0 });
-      } catch (err) {
+      } catch (_err) {
         // DB query will fail since we don't have a proper mock, but that's OK
         // We're just testing the input validation and embedding call
       }
@@ -211,7 +211,7 @@ describe('CatalogService', () => {
 
       try {
         await service.batchVectorSearch(['tent', 'sleeping bag'], 5);
-      } catch (err) {
+      } catch (_err) {
         // DB query will fail since we don't have a proper mock, but that's OK
       }
 

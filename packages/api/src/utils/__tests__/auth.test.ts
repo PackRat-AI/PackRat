@@ -17,7 +17,7 @@ import {
 // ---------------------------------------------------------------------------
 vi.mock('node:crypto', () => ({
   randomBytes: vi.fn((length: number) => ({
-    toString: (encoding: string) => 'a'.repeat(length * 2),
+    toString: (_encoding: string) => 'a'.repeat(length * 2),
   })),
 }));
 
@@ -29,8 +29,8 @@ vi.mock('bcryptjs', () => ({
 }));
 
 vi.mock('hono/jwt', () => ({
-  sign: vi.fn((payload: any, secret: string) => Promise.resolve('signed_token')),
-  verify: vi.fn((token: string, secret: string) => {
+  sign: vi.fn((_payload: any, _secret: string) => Promise.resolve('signed_token')),
+  verify: vi.fn((token: string, _secret: string) => {
     if (token === 'valid_token') {
       return Promise.resolve({ userId: 1, role: 'USER' });
     }
@@ -142,7 +142,7 @@ describe('auth utilities', () => {
       });
 
       const { sign } = await import('hono/jwt');
-      const callArgs = (sign as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+      const callArgs = (sign as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
 
       expect(callArgs.exp).toBeGreaterThanOrEqual(beforeTime - 5);
       expect(callArgs.exp).toBeLessThanOrEqual(beforeTime + 5);

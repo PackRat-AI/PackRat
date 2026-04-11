@@ -63,6 +63,7 @@ syncObservable(
     updatePartial: true,
     mode: 'merge',
     persist: {
+      // biome-ignore lint/suspicious/noExplicitAny: legacy type
       plugin: observablePersistSqlite(Storage as any),
       retrySync: true,
       name: 'packTemplateItems',

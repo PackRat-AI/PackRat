@@ -43,6 +43,7 @@ aiRoutes.openapi(ragSearchRoute, async (c) => {
     const { q: query, limit } = c.req.valid('query');
     const aiService = new AIService(c);
     const result = await aiService.searchPackratOutdoorGuidesRAG(query, limit);
+    // biome-ignore lint/suspicious/noExplicitAny: legacy type
     return c.json(result as any, 200);
   } catch (error) {
     console.error('RAG search error:', error);

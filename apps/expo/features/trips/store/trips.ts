@@ -50,6 +50,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
+      // biome-ignore lint/suspicious/noExplicitAny: legacy type
       plugin: observablePersistSqlite(Storage as any),
       retrySync: true,
       name: 'trips',

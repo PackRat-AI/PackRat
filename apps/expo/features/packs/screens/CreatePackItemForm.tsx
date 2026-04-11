@@ -31,7 +31,7 @@ const itemFormSchema = z.object({
 });
 
 // Type inference
-type ItemFormValues = z.infer<typeof itemFormSchema>;
+type _ItemFormValues = z.infer<typeof itemFormSchema>;
 
 // Weight units
 const WEIGHT_UNITS: WeightUnit[] = ['g', 'oz', 'kg', 'lb'];

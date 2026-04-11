@@ -42,6 +42,7 @@ syncObservable(
     fieldCreatedAt: 'createdAt',
     mode: 'merge',
     persist: {
+      // biome-ignore lint/suspicious/noExplicitAny: legacy type
       plugin: observablePersistSqlite(Storage as any),
       retrySync: true,
       name: 'packWeigthHistory',

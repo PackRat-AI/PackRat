@@ -12,6 +12,7 @@ export type WeatherAlert = {
   details: string;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: legacy type
 export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
   const locationName = data?.location?.name || activeLocation?.name || 'Unknown';
   const apiAlerts = data?.alerts?.alert;
@@ -20,6 +21,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
 
   // If API provides alerts
   if (apiAlerts && apiAlerts.length > 0) {
+    // biome-ignore lint/suspicious/noExplicitAny: legacy type
     return apiAlerts.map((a: any, index: number) => ({
       id: `${a.event}-${a.effective}-${index}`,
       type: a.event || 'Weather Alert',
@@ -126,6 +128,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
   const todayHours = forecastDays[0]?.hour || [];
 
   // 🌧 Rain coming soon
+  // biome-ignore lint/suspicious/noExplicitAny: legacy type
   const willRain = todayHours.some((h: any) => h.condition?.text?.toLowerCase().includes('rain'));
   if (willRain) {
     alerts.push({
@@ -139,6 +142,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
   }
 
   // 💨 Wind coming
+  // biome-ignore lint/suspicious/noExplicitAny: legacy type
   const highWindComing = todayHours.some((h: any) => h.wind_kph >= 30);
   if (highWindComing) {
     alerts.push({

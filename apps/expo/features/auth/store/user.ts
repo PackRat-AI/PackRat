@@ -12,6 +12,7 @@ syncObservable(
   syncedCrud({
     persist: {
       name: 'user',
+      // biome-ignore lint/suspicious/noExplicitAny: legacy type
       plugin: observablePersistSqlite(Storage as any),
     },
   }),
