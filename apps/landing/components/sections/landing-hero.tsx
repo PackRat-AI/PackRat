@@ -80,7 +80,7 @@ export default function LandingHero() {
               <Link
                 href={siteConfig.cta.primary.href}
                 onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-apple-blue text-white px-8 h-12 text-sm font-medium hover:bg-apple-blue/90 transition-colors"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-apple-blue text-white px-8 h-12 text-sm font-medium hover:bg-apple-blue/90 transition-colors"
               >
                 <Download className="h-4 w-4" />
                 {siteConfig.cta.primary.text}
