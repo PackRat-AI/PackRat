@@ -28,7 +28,7 @@ const waterDifficultyLabels: Record<string, string> = {
 };
 
 export function ConditionCard({ condition }: ConditionCardProps) {
-  const hazards = [];
+  const hazards: string[] = [];
   if (condition.hasFallenTrees) hazards.push('🌲 Fallen Trees');
   if (condition.hasWildlife) hazards.push('🦌 Wildlife');
   if (condition.hasErosion) hazards.push('🏔️ Erosion');

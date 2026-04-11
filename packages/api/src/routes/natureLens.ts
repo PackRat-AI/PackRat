@@ -1,37 +1,17 @@
-import { neon } from '@neondatabase/serverless';
 import { and, desc, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
-import type { Context } from 'hono';
 import { Hono } from 'hono';
-import { getCookie } from 'hono/cookie';
-import { users } from '../db/schema';
+import { createDb } from '../db';
 import { natureIdentifications } from '../drizzle/natureLens';
 import { identifyImage } from '../services/natureLensService';
-import { getEnv } from '../utils/env-validation';
+import type { Env } from '../types/env';
+import type { Variables } from '../types/variables';
 
-const natureLens = new Hono();
-
-// Middleware: Get current user
-const getUser = async (c: Context) => {
-  const sessionToken = getCookie(c, 'session');
-  if (!sessionToken) return null;
-
-  const { NEON_DATABASE_URL } = getEnv(c);
-  const sql = neon(NEON_DATABASE_URL);
-  const db = drizzle(sql);
-
-  const [user] = await db.select().from(users).where(eq(users.sessionToken, sessionToken)).limit(1);
-
-  return user ?? null;
-};
+const natureLens = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // POST /api/nature-lens/identify
 // Identify plant or wildlife from image
 natureLens.post('/identify', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  const { userId } = c.get('user');
 
   const formData = await c.req.parseBody();
   const imageUrl = formData.imageUrl as string;
@@ -45,7 +25,8 @@ natureLens.post('/identify', async (c) => {
   }
 
   try {
-    const { OPENAI_API_KEY, NEON_DATABASE_URL } = getEnv(c);
+    const { OPENAI_API_KEY } = c.env;
+    const db = createDb(c);
 
     // Call AI to identify the image
     const identification = await identifyImage(imageUrl || imageBase64, {
@@ -56,13 +37,10 @@ natureLens.post('/identify', async (c) => {
       apiKey: OPENAI_API_KEY,
     });
 
-    const sql = neon(NEON_DATABASE_URL);
-    const db = drizzle(sql);
-
     const id = crypto.randomUUID();
     await db.insert(natureIdentifications).values({
       id,
-      userId: user.id,
+      userId,
       imageUrl: imageUrl || null,
       speciesName: identification.speciesName,
       speciesCommonName: identification.commonName,
@@ -70,12 +48,12 @@ natureLens.post('/identify', async (c) => {
       category: identification.category,
       description: identification.description,
       habitat: identification.habitat,
-      isEdible: identification.isEdible,
-      isDangerous: identification.isDangerous,
+      isEdible: identification.isEdible ? 1 : 0,
+      isDangerous: identification.isDangerous ? 1 : 0,
       latitude,
       longitude,
       locationName: locationName || null,
-      isOffline: false,
+      isOffline: 0,
     });
 
     const [result] = await db
@@ -94,19 +72,13 @@ natureLens.post('/identify', async (c) => {
 // GET /api/nature-lens/identifications
 // Get user's identification history
 natureLens.get('/identifications', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  const { NEON_DATABASE_URL } = getEnv(c);
-  const sql = neon(NEON_DATABASE_URL);
-  const db = drizzle(sql);
+  const { userId } = c.get('user');
+  const db = createDb(c);
 
   const identifications = await db
     .select()
     .from(natureIdentifications)
-    .where(eq(natureIdentifications.userId, user.id))
+    .where(eq(natureIdentifications.userId, userId))
     .orderBy(desc(natureIdentifications.createdAt))
     .limit(50);
 
@@ -116,20 +88,14 @@ natureLens.get('/identifications', async (c) => {
 // GET /api/nature-lens/:id
 // Get single identification
 natureLens.get('/:id', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
+  const { userId } = c.get('user');
   const id = c.req.param('id');
-  const { NEON_DATABASE_URL } = getEnv(c);
-  const sql = neon(NEON_DATABASE_URL);
-  const db = drizzle(sql);
+  const db = createDb(c);
 
   const [identification] = await db
     .select()
     .from(natureIdentifications)
-    .where(and(eq(natureIdentifications.id, id), eq(natureIdentifications.userId, user.id)))
+    .where(and(eq(natureIdentifications.id, id), eq(natureIdentifications.userId, userId)))
     .limit(1);
 
   if (!identification) {
@@ -142,19 +108,13 @@ natureLens.get('/:id', async (c) => {
 // DELETE /api/nature-lens/:id
 // Delete an identification
 natureLens.delete('/:id', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
+  const { userId } = c.get('user');
   const id = c.req.param('id');
-  const { NEON_DATABASE_URL } = getEnv(c);
-  const sql = neon(NEON_DATABASE_URL);
-  const db = drizzle(sql);
+  const db = createDb(c);
 
   await db
     .delete(natureIdentifications)
-    .where(and(eq(natureIdentifications.id, id), eq(natureIdentifications.userId, user.id)));
+    .where(and(eq(natureIdentifications.id, id), eq(natureIdentifications.userId, userId)));
 
   return c.json({ success: true });
 });

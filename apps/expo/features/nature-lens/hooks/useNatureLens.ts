@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from 'app/lib/api';
+import axiosInstance from 'expo-app/lib/api/client';
 import { useAtom } from 'jotai';
 import {
   currentIdentificationAtom,
@@ -17,9 +17,9 @@ export function useNatureIdentifications() {
   return useQuery({
     queryKey: [NATURE_LENS_QUERY_KEY, 'identifications'],
     queryFn: async () => {
-      const response = await api.get('/nature-lens/identifications');
-      setIdentifications(response.identifications);
-      return response.identifications as NatureIdentification[];
+      const res = await axiosInstance.get('/nature-lens/identifications');
+      setIdentifications(res.data.identifications);
+      return res.data.identifications as NatureIdentification[];
     },
   });
 }
@@ -35,9 +35,9 @@ export function useIdentifyImage() {
       setIsIdentifying(true);
       setError(null);
       try {
-        const response = await api.post('/nature-lens/identify', data);
-        setCurrentIdentification(response.identification);
-        return response.identification as NatureIdentification;
+        const res = await axiosInstance.post('/nature-lens/identify', data);
+        setCurrentIdentification(res.data.identification);
+        return res.data.identification as NatureIdentification;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Identification failed';
         setError(message);
@@ -57,7 +57,7 @@ export function useDeleteIdentification() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/nature-lens/${id}`);
+      await axiosInstance.delete(`/nature-lens/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [NATURE_LENS_QUERY_KEY, 'identifications'] });

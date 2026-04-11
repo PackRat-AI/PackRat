@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { NatureIdentification } from './types';
+import type { NatureIdentification } from '../types';
 
 export const natureIdentificationsAtom = atom<NatureIdentification[]>([]);
 export const currentIdentificationAtom = atom<NatureIdentification | null>(null);

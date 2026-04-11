@@ -1,37 +1,16 @@
-import { neon } from '@neondatabase/serverless';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
-import type { Context } from 'hono';
 import { Hono } from 'hono';
-import { getCookie } from 'hono/cookie';
-import { users } from '../db/schema';
+import { createDb } from '../db';
 import { trailConditions, trailConditionVerifications } from '../drizzle/trailConditions';
-import { getEnv } from '../utils/env-validation';
+import type { Env } from '../types/env';
+import type { Variables } from '../types/variables';
 
-const trailConditionsRoute = new Hono();
-
-// Middleware: Get current user
-const getUser = async (c: Context) => {
-  const sessionToken = getCookie(c, 'session');
-  if (!sessionToken) return null;
-
-  const { NEON_DATABASE_URL } = getEnv(c);
-  const dbSql = neon(NEON_DATABASE_URL);
-  const db = drizzle(dbSql);
-
-  const [user] = await db.select().from(users).where(eq(users.sessionToken, sessionToken)).limit(1);
-
-  return user ?? null;
-};
+const trailConditionsRoute = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // POST /api/trail-conditions
 // Submit a new trail condition report
 trailConditionsRoute.post('/', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
+  const { userId } = c.get('user');
   const body = await c.req.json();
   const {
     trailId,
@@ -58,23 +37,20 @@ trailConditionsRoute.post('/', async (c) => {
   }
 
   try {
-    const { NEON_DATABASE_URL } = getEnv(c);
-    const dbSql = neon(NEON_DATABASE_URL);
-    const db = drizzle(dbSql);
-
+    const db = createDb(c);
     const id = crypto.randomUUID();
 
     // Calculate trust score based on user history
     const [userReportCount] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(trailConditions)
-      .where(eq(trailConditions.userId, user.id));
+      .where(eq(trailConditions.userId, userId));
 
     const trustScore = Math.min(1 + (userReportCount?.count || 0) * 0.1, 5);
 
     await db.insert(trailConditions).values({
       id,
-      userId: user.id,
+      userId,
       trailId: trailId || null,
       trailName,
       latitude: latitude || null,
@@ -82,18 +58,18 @@ trailConditionsRoute.post('/', async (c) => {
       locationName: locationName || null,
       surfaceCondition: surfaceCondition || null,
       difficulty: difficulty || null,
-      hasFallenTrees: hasFallenTrees || false,
-      hasWildlife: hasWildlife || false,
-      hasErosion: hasErosion || false,
-      hasClosures: hasClosures || false,
-      hasWaterCrossings: hasWaterCrossings || false,
+      hasFallenTrees: hasFallenTrees ? 1 : 0,
+      hasWildlife: hasWildlife ? 1 : 0,
+      hasErosion: hasErosion ? 1 : 0,
+      hasClosures: hasClosures ? 1 : 0,
+      hasWaterCrossings: hasWaterCrossings ? 1 : 0,
       waterCrossingCount: waterCrossingCount || null,
       waterDepth: waterDepth || null,
       waterDifficulty: waterDifficulty || null,
       photoUrls: photoUrls || [],
       notes: notes || null,
       trustScore,
-      isOffline: false,
+      isOffline: 0,
     });
 
     const [result] = await db
@@ -112,24 +88,19 @@ trailConditionsRoute.post('/', async (c) => {
 // GET /api/trail-conditions
 // Get recent trail conditions (optionally filtered by trail)
 trailConditionsRoute.get('/', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
+  const { userId: _userId } = c.get('user');
   const trailId = c.req.query('trailId');
   const trailName = c.req.query('trailName');
   const days = parseInt(c.req.query('days') || '30', 10);
 
   try {
-    const { NEON_DATABASE_URL } = getEnv(c);
-    const dbSql = neon(NEON_DATABASE_URL);
-    const db = drizzle(dbSql);
+    const db = createDb(c);
+    const since = sql<Date>`NOW() - INTERVAL '${days} days'`;
 
     let query = db
       .select()
       .from(trailConditions)
-      .where(gte(trailConditions.reportedAt, sql<Date>`NOW() - INTERVAL '${days} days'`))
+      .where(gte(trailConditions.reportedAt, since))
       .orderBy(desc(trailConditions.reportedAt))
       .limit(50);
 
@@ -137,12 +108,7 @@ trailConditionsRoute.get('/', async (c) => {
       query = db
         .select()
         .from(trailConditions)
-        .where(
-          and(
-            eq(trailConditions.trailId, trailId),
-            gte(trailConditions.reportedAt, sql<Date>`NOW() - INTERVAL '${days} days'`),
-          ),
-        )
+        .where(and(eq(trailConditions.trailId, trailId), gte(trailConditions.reportedAt, since)))
         .orderBy(desc(trailConditions.reportedAt))
         .limit(50);
     } else if (trailName) {
@@ -152,7 +118,7 @@ trailConditionsRoute.get('/', async (c) => {
         .where(
           and(
             sql`${trailConditions.trailName} ILIKE ${`%${trailName}%`}`,
-            gte(trailConditions.reportedAt, sql<Date>`NOW() - INTERVAL '${days} days'`),
+            gte(trailConditions.reportedAt, since),
           ),
         )
         .orderBy(desc(trailConditions.reportedAt))
@@ -170,15 +136,9 @@ trailConditionsRoute.get('/', async (c) => {
 // GET /api/trail-conditions/:id
 // Get single trail condition
 trailConditionsRoute.get('/:id', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
+  const { userId: _userId } = c.get('user');
   const id = c.req.param('id');
-  const { NEON_DATABASE_URL } = getEnv(c);
-  const dbSql = neon(NEON_DATABASE_URL);
-  const db = drizzle(dbSql);
+  const db = createDb(c);
 
   const [condition] = await db
     .select()
@@ -202,17 +162,10 @@ trailConditionsRoute.get('/:id', async (c) => {
 // POST /api/trail-conditions/:id/verify
 // Verify a trail condition report
 trailConditionsRoute.post('/:id/verify', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
+  const { userId } = c.get('user');
   const id = c.req.param('id');
   const { isAccurate, notes } = await c.req.json();
-
-  const { NEON_DATABASE_URL } = getEnv(c);
-  const dbSql = neon(NEON_DATABASE_URL);
-  const db = drizzle(dbSql);
+  const db = createDb(c);
 
   // Check if condition exists
   const [condition] = await db
@@ -232,7 +185,7 @@ trailConditionsRoute.post('/:id/verify', async (c) => {
     .where(
       and(
         eq(trailConditionVerifications.conditionId, id),
-        eq(trailConditionVerifications.userId, user.id),
+        eq(trailConditionVerifications.userId, userId),
       ),
     )
     .limit(1);
@@ -245,8 +198,8 @@ trailConditionsRoute.post('/:id/verify', async (c) => {
   await db.insert(trailConditionVerifications).values({
     id: crypto.randomUUID(),
     conditionId: id,
-    userId: user.id,
-    isAccurate,
+    userId,
+    isAccurate: isAccurate ? 1 : 0,
     notes: notes || null,
   });
 
@@ -265,19 +218,13 @@ trailConditionsRoute.post('/:id/verify', async (c) => {
 // DELETE /api/trail-conditions/:id
 // Delete a trail condition report (only by owner)
 trailConditionsRoute.delete('/:id', async (c) => {
-  const user = await getUser(c);
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
+  const { userId } = c.get('user');
   const id = c.req.param('id');
-  const { NEON_DATABASE_URL } = getEnv(c);
-  const dbSql = neon(NEON_DATABASE_URL);
-  const db = drizzle(dbSql);
+  const db = createDb(c);
 
   await db
     .delete(trailConditions)
-    .where(and(eq(trailConditions.id, id), eq(trailConditions.userId, user.id)));
+    .where(and(eq(trailConditions.id, id), eq(trailConditions.userId, userId)));
 
   return c.json({ success: true });
 });
