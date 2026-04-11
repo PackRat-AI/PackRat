@@ -21,17 +21,17 @@ describe('Pack Templates Routes', () => {
   });
   describe('Authentication', () => {
     it('GET /pack-templates requires auth', async () => {
-      const res = await api('/pack-templates', httpMethods.get(''));
+      const res = await api('/pack-templates', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('GET /pack-templates/:id requires auth', async () => {
-      const res = await api('/pack-templates/1', httpMethods.get(''));
+      const res = await api('/pack-templates/1', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('GET /pack-templates/:id/items requires auth', async () => {
-      const res = await api('/pack-templates/1/items', httpMethods.get(''));
+      const res = await api('/pack-templates/1/items', httpMethods.get());
       expectUnauthorized(res);
     });
   });
@@ -84,7 +84,7 @@ describe('Pack Templates Routes', () => {
     it('returns template items list', async () => {
       // Seed a template with items
       const seededTemplate = await seedPackTemplate();
-      await seedPackTemplateItems(seededTemplate.id, 3);
+      await seedPackTemplateItems(seededTemplate.id, { count: 3 });
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}/items`);
 
