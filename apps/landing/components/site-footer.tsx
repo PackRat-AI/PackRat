@@ -3,7 +3,7 @@
 import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
 import GradientText from 'landing-app/components/ui/gradient-text';
 import { siteConfig } from 'landing-app/config/site';
-import { LucideIcon } from 'landing-app/lib/icons';
+import { LucideIcon, TikTokIcon } from 'landing-app/lib/icons';
 import { Backpack } from 'lucide-react';
 import Link from 'next/link';
 import type React from 'react';
@@ -44,7 +44,7 @@ export default function SiteFooter() {
             </p>
             <div className="flex gap-4">
               {siteConfig.social.map((item) => {
-                const Icon = LucideIcon(item.icon);
+                const Icon = item.icon !== 'TikTok' ? LucideIcon(item.icon) : null;
 
                 return (
                   <GradientBorderCard
@@ -57,7 +57,11 @@ export default function SiteFooter() {
                       className="text-muted-foreground hover:text-primary transition-colors"
                     >
                       <span className="sr-only">{item.name}</span>
-                      {Icon && <Icon className="h-5 w-5" />}
+                      {item.icon === 'TikTok' ? (
+                        <TikTokIcon className="h-5 w-5" />
+                      ) : (
+                        Icon && <Icon className="h-5 w-5" />
+                      )}
                     </Link>
                   </GradientBorderCard>
                 );
