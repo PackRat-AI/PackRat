@@ -1,3 +1,4 @@
+import { assertDefined } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
@@ -7,7 +8,6 @@ import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, Text, View } from 'react-native';

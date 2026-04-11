@@ -1,6 +1,6 @@
+import { assertDefined } from '@packrat/guards';
 import { usePackDetailsFromStore } from 'expo-app/features/packs';
 import { PackForm } from 'expo-app/features/packs/components/PackForm';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams } from 'expo-router';
 
 export function EditPackScreen() {

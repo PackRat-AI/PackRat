@@ -1,9 +1,9 @@
+import { assertDefined } from '@packrat/guards';
 import type {
   LocationSearchResult,
   WeatherApiForecastResponse,
 } from 'expo-app/features/weather/types';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**

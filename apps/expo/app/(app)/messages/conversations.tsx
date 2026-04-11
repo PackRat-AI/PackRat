@@ -1,3 +1,4 @@
+import { assertDefined } from '@packrat/guards';
 import {
   Avatar,
   AvatarFallback,
@@ -17,7 +18,6 @@ import {
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as React from 'react';

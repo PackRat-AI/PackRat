@@ -5,7 +5,7 @@ import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { UserSearchQuerySchema } from '@packrat/api/schemas/users';
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { assertAllDefined } from '@packrat/api/utils/typeAssertions';
+import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
@@ -777,7 +777,7 @@ adminRoutes.openapi(getStatsRoute, async (c) => {
       .where(eq(packs.deleted, false));
     const [itemCount] = await db.select({ count: count() }).from(catalogItems);
 
-    assertAllDefined(userCount, packCount, itemCount);
+    assertAllDefined([userCount, packCount, itemCount]);
 
     return c.json(
       {
