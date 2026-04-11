@@ -10,7 +10,23 @@ export type NotificationType =
   | 'pack_progress'
   | 'device_charging';
 
+/** Structured key used to look up a localised message on the client. */
+export type ClientNotificationType =
+  | 'trip_today'
+  | 'trip_tomorrow'
+  | 'trip_upcoming'
+  | 'pack_incomplete'
+  | 'device_charging'
+  | 'week_reminder';
+
 export type NotificationPriority = 'low' | 'medium' | 'high';
+
+/** Variables interpolated into the client-side i18n message template. */
+export interface NotificationVariables {
+  tripName: string;
+  daysUntil?: number;
+  itemCount?: number;
+}
 
 export interface TripNotification {
   tripId: string;
@@ -18,7 +34,13 @@ export interface TripNotification {
   startDate: string | null;
   daysUntilTrip: number | null;
   type: NotificationType;
+  /** Structured type key for client-side i18n lookup. */
+  notificationType: ClientNotificationType;
+  /** Variables to interpolate into the client i18n template. */
+  variables: NotificationVariables;
+  /** English fallback title — prefer i18n when a translation exists. */
   title: string;
+  /** English fallback message — prefer i18n when a translation exists. */
   message: string;
   priority: NotificationPriority;
 }

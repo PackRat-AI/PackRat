@@ -3,7 +3,12 @@ import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
-import type { NotificationPriority, NotificationType, TripNotification } from '../hooks';
+import type {
+  ClientNotificationType,
+  NotificationPriority,
+  NotificationType,
+  TripNotification,
+} from '../hooks';
 
 interface TripNotificationsListProps {
   notifications: TripNotification[];
@@ -11,6 +16,20 @@ interface TripNotificationsListProps {
   error: string | null;
   onRetry?: () => void;
 }
+
+/**
+ * Maps a structured `notificationType` from the API to the i18n key under
+ * `notifications.messages.*`.  Returns `null` when no translation exists so
+ * the caller can fall back to the English `message` string.
+ */
+const NOTIFICATION_TYPE_I18N_KEY: Record<ClientNotificationType, string | null> = {
+  trip_today: 'notifications.messages.tripToday',
+  trip_tomorrow: 'notifications.messages.tripTomorrow',
+  trip_upcoming: 'notifications.messages.tripUpcoming',
+  pack_incomplete: 'notifications.messages.packIncomplete',
+  device_charging: 'notifications.messages.deviceCharging',
+  week_reminder: 'notifications.messages.weekReminder',
+};
 
 const NOTIFICATION_ICON: Record<NotificationType, MaterialIconName> = {
   week_reminder: 'calendar-clock',
@@ -75,46 +94,55 @@ export function TripNotificationsList({
 
   return (
     <View>
-      {notifications.map((notification) => (
-        <Pressable
-          key={`${notification.tripId}-${notification.type}`}
-          onPress={() => router.push(`/trip/${notification.tripId}`)}
-          className="mb-3 rounded-xl border border-border bg-card p-4"
-        >
-          <View className="flex-row items-start gap-3">
-            {/* Icon badge */}
-            <View
-              className={`mt-0.5 h-9 w-9 items-center justify-center rounded-full ${PRIORITY_COLOR[notification.priority]}`}
-            >
-              <Icon name={NOTIFICATION_ICON[notification.type]} size={18} color="white" />
-            </View>
+      {notifications.map((notification) => {
+        // Resolve i18n message: look up the structured type key and interpolate
+        // variables.  Fall back to the English `message` string from the API.
+        const i18nKey = NOTIFICATION_TYPE_I18N_KEY[notification.notificationType];
+        const localizedMessage = i18nKey
+          ? t(i18nKey, notification.variables as Record<string, unknown>)
+          : notification.message;
 
-            {/* Content */}
-            <View className="flex-1">
-              <View className="flex-row items-center justify-between">
-                <Text className="font-semibold" numberOfLines={1}>
-                  {notification.title}
-                </Text>
-                {notification.daysUntilTrip !== null && (
-                  <Text className="text-xs text-muted-foreground">
-                    {notification.daysUntilTrip === 0
-                      ? t('notifications.today')
-                      : notification.daysUntilTrip === 1
-                        ? t('notifications.tomorrow')
-                        : t('notifications.daysAway', { count: notification.daysUntilTrip })}
-                  </Text>
-                )}
+        return (
+          <Pressable
+            key={`${notification.tripId}-${notification.type}`}
+            onPress={() => router.push(`/trip/${notification.tripId}`)}
+            className="mb-3 rounded-xl border border-border bg-card p-4"
+          >
+            <View className="flex-row items-start gap-3">
+              {/* Icon badge */}
+              <View
+                className={`mt-0.5 h-9 w-9 items-center justify-center rounded-full ${PRIORITY_COLOR[notification.priority]}`}
+              >
+                <Icon name={NOTIFICATION_ICON[notification.type]} size={18} color="white" />
               </View>
-              <Text className="mt-1 text-sm text-muted-foreground" numberOfLines={3}>
-                {notification.message}
-              </Text>
-              <Text className="mt-1.5 text-xs font-medium text-primary">
-                {notification.tripName}
-              </Text>
+
+              {/* Content */}
+              <View className="flex-1">
+                <View className="flex-row items-center justify-between">
+                  <Text className="font-semibold" numberOfLines={1}>
+                    {notification.title}
+                  </Text>
+                  {notification.daysUntilTrip !== null && (
+                    <Text className="text-xs text-muted-foreground">
+                      {notification.daysUntilTrip === 0
+                        ? t('notifications.today')
+                        : notification.daysUntilTrip === 1
+                          ? t('notifications.tomorrow')
+                          : t('notifications.daysAway', { count: notification.daysUntilTrip })}
+                    </Text>
+                  )}
+                </View>
+                <Text className="mt-1 text-sm text-muted-foreground" numberOfLines={3}>
+                  {localizedMessage}
+                </Text>
+                <Text className="mt-1.5 text-xs font-medium text-primary">
+                  {notification.tripName}
+                </Text>
+              </View>
             </View>
-          </View>
-        </Pressable>
-      ))}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

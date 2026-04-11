@@ -15,6 +15,14 @@ const notificationsRoutes = new OpenAPIHono<{
 // Schemas
 // ---------------------------------------------------------------------------
 
+const NotificationVariablesSchema = z
+  .object({
+    tripName: z.string(),
+    daysUntil: z.number().optional(),
+    itemCount: z.number().optional(),
+  })
+  .openapi('NotificationVariables');
+
 const TripNotificationSchema = z
   .object({
     tripId: z.string(),
@@ -29,7 +37,25 @@ const TripNotificationSchema = z
       'pack_progress',
       'device_charging',
     ]),
+    /**
+     * Structured key for client-side i18n message lookup.
+     * Clients should use this + `variables` to render a localised message,
+     * falling back to the English `title`/`message` fields when no translation
+     * is available.
+     */
+    notificationType: z.enum([
+      'trip_today',
+      'trip_tomorrow',
+      'trip_upcoming',
+      'pack_incomplete',
+      'device_charging',
+      'week_reminder',
+    ]),
+    /** Variables to interpolate into the client-side i18n template. */
+    variables: NotificationVariablesSchema,
+    /** English fallback title — use client i18n when a translation exists. */
     title: z.string(),
+    /** English fallback message — use client i18n when a translation exists. */
     message: z.string(),
     priority: z.enum(['low', 'medium', 'high']),
   })
@@ -133,6 +159,8 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
           startDate: startDateIso,
           daysUntilTrip: 0,
           type: 'morning_of',
+          notificationType: 'trip_today',
+          variables: { tripName: trip.name, itemCount: packItemCount || undefined },
           title: `Today's the day — ${trip.name}!`,
           message: trip.packId
             ? `Have a great trip! Double-check your ${packItemCount} packed ${packSuffix(packItemCount)} before heading out.`
@@ -147,6 +175,8 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
           startDate: startDateIso,
           daysUntilTrip: 1,
           type: 'day_before',
+          notificationType: 'trip_tomorrow',
+          variables: { tripName: trip.name, itemCount: packItemCount || undefined },
           title: `${trip.name} is tomorrow!`,
           message: trip.packId
             ? `Final pack check — you have ${packItemCount} ${packSuffix(packItemCount)} in your pack. Don't forget to charge your devices tonight!`
@@ -161,6 +191,8 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
           startDate: startDateIso,
           daysUntilTrip: 1,
           type: 'device_charging',
+          notificationType: 'device_charging',
+          variables: { tripName: trip.name },
           title: 'Charge your devices tonight',
           message:
             'Plug in your phone, headlamp, GPS, and power bank before bed so they are ready for tomorrow.',
@@ -174,6 +206,12 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
           startDate: startDateIso,
           daysUntilTrip,
           type: 'three_day_reminder',
+          notificationType: 'trip_upcoming',
+          variables: {
+            tripName: trip.name,
+            daysUntil: daysUntilTrip,
+            itemCount: packItemCount || undefined,
+          },
           title: `${trip.name} starts in ${daysUntilTrip} days`,
           message: trip.packId
             ? `Time to start packing! You have ${packItemCount} ${packSuffix(packItemCount)} in your pack list. Review and start gathering your gear.`
@@ -188,6 +226,12 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
           startDate: startDateIso,
           daysUntilTrip,
           type: 'week_reminder',
+          notificationType: 'week_reminder',
+          variables: {
+            tripName: trip.name,
+            daysUntil: daysUntilTrip,
+            itemCount: packItemCount || undefined,
+          },
           title: `${trip.name} is coming up`,
           message: trip.packId
             ? `Your trip is ${daysUntilTrip} days away. Review your pack list with ${packItemCount} ${packSuffix(packItemCount)} and make sure you have everything.`
@@ -203,6 +247,8 @@ notificationsRoutes.openapi(getTripRemindersRoute, async (c) => {
             startDate: startDateIso,
             daysUntilTrip,
             type: 'pack_progress',
+            notificationType: 'pack_incomplete',
+            variables: { tripName: trip.name, itemCount: packItemCount },
             title: 'Check your packing progress',
             message: `You have ${packItemCount} ${packSuffix(packItemCount)} in your pack for ${trip.name}. Go through your checklist to make sure everything is ready.`,
             priority: 'low',
