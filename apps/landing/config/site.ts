@@ -359,12 +359,7 @@ export const siteConfig = {
       { title: 'Careers', href: '/about#careers' },
       { title: 'Contact', href: 'mailto:hello@packratai.com' },
     ],
-    legal: [
-      { title: 'Terms', href: '#' },
-      { title: 'Privacy', href: '/privacy-policy' },
-      { title: 'Cookies', href: '#' },
-      { title: 'Licenses', href: '#' },
-    ],
+    legal: [{ title: 'Privacy', href: '/privacy-policy' }],
   },
 
   // Social links
