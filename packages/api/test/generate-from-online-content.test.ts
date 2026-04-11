@@ -142,7 +142,7 @@ describe('Generate From Online Content Routes', () => {
     it('requires auth for generate-from-online-content endpoint', async () => {
       const res = await api(
         '/pack-templates/generate-from-online-content',
-        httpMethods.post('', {
+        httpMethods.post({
           contentUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
@@ -154,7 +154,7 @@ describe('Generate From Online Content Routes', () => {
     it('returns 403 for non-admin users', async () => {
       const res = await apiWithAuth(
         '/pack-templates/generate-from-online-content',
-        httpMethods.post('', {
+        httpMethods.post({
           contentUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
@@ -169,7 +169,7 @@ describe('Generate From Online Content Routes', () => {
     it('requires contentUrl field', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-online-content',
-        httpMethods.post('', {}),
+        httpMethods.post({}),
       );
       expectBadRequest(res);
     });
@@ -177,7 +177,7 @@ describe('Generate From Online Content Routes', () => {
     it('requires valid URL format', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-online-content',
-        httpMethods.post('', {
+        httpMethods.post({
           contentUrl: 'invalid-url',
         }),
       );
@@ -201,7 +201,7 @@ describe('Generate From Online Content Routes', () => {
 
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-online-content',
-        httpMethods.post('', {
+        httpMethods.post({
           contentUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
@@ -218,7 +218,7 @@ describe('Generate From Online Content Routes', () => {
     it('successfully generates template from online content URL', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-online-content',
-        httpMethods.post('', {
+        httpMethods.post({
           contentUrl: 'https://www.tiktok.com/@user/video/9999999999',
         }),
       );
@@ -246,7 +246,7 @@ describe('Generate From Online Content Routes', () => {
     it('accepts isAppTemplate flag', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-online-content',
-        httpMethods.post('', {
+        httpMethods.post({
           contentUrl: 'https://www.tiktok.com/@user/video/temp-test',
           isAppTemplate: false,
         }),
@@ -260,7 +260,7 @@ describe('Generate From Online Content Routes', () => {
     it('returns items with matched catalog data when available', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-online-content',
-        httpMethods.post('', {
+        httpMethods.post({
           contentUrl: 'https://www.tiktok.com/@user/video/catalog-test',
         }),
       );

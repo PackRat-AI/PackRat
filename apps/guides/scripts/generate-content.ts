@@ -165,9 +165,9 @@ function getExistingContent(): ContentMetadata[] {
 // Generate topic ideas based on categories and existing content
 async function generateTopicIdeas(
   count: number,
-  categories?: ContentCategory[],
-  existingContent: ContentMetadata[] = [],
+  opts: { categories?: ContentCategory[]; existingContent?: ContentMetadata[] } = {},
 ): Promise<ContentMetadata[]> {
+  const { categories, existingContent = [] } = opts;
   console.log(chalk.blue(`Generating ${count} topic ideas...`));
 
   const categoryPrompt =
@@ -421,7 +421,7 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
     console.log(chalk.blue(`Found ${existingContent.length} existing articles`));
 
     // Generate topic ideas with awareness of existing content
-    const topics = await generateTopicIdeas(count, categories, existingContent);
+    const topics = await generateTopicIdeas(count, { categories, existingContent });
     console.log(chalk.green(`✓ Generated ${topics.length} topic ideas`));
 
     // Generate content for each topic

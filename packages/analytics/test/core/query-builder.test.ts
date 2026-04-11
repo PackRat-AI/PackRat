@@ -247,7 +247,7 @@ describe('QueryBuilder', () => {
     });
 
     it('uses custom days parameter', () => {
-      const sql = qb.trendsQuery('tent', undefined, 30);
+      const sql = qb.trendsQuery('tent', { days: 30 });
       expect(sql).toContain("INTERVAL '30 days'");
     });
   });

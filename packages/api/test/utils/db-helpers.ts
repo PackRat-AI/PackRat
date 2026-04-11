@@ -186,9 +186,9 @@ export async function seedPackTemplateItem(
 
 export async function seedPackTemplateItems(
   packTemplateId: string,
-  count: number,
-  overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,
+  opts: { count: number; overrides?: Partial<InferInsertModel<typeof packTemplateItems>> },
 ) {
+  const { count, overrides } = opts;
   const db = createDb({} as unknown as Context);
 
   const items = Array.from({ length: count }, (_, i) => {
@@ -269,9 +269,9 @@ export async function seedPackItem(
 
 export async function seedPackItems(
   packId: string,
-  count: number,
-  overrides?: Partial<InferInsertModel<typeof packItems>>,
+  opts: { count: number; overrides?: Partial<InferInsertModel<typeof packItems>> },
 ) {
+  const { count, overrides } = opts;
   const db = createDb({} as unknown as Context);
 
   const items = Array.from({ length: count }, (_, i) => {
