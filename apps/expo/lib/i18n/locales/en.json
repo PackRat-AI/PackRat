@@ -968,16 +968,7 @@
     "anErrorOccurred": "An Error Occurred",
     "pleaseTryAgain": "Please try again",
     "featuredPacks": "Featured Packs",
-    "viewAll": "View All",
-    "dayHike": "Day Hike",
-    "overnight": "Overnight",
-    "weekendCamping": "Weekend Camping",
-    "multiDay": "Multi-Day",
-    "winterHiking": "Winter Hiking",
-    "winterCamping": "Winter Camping",
-    "tripDuration": "Trip Duration",
-    "environment": "Environment",
-    "intendedUse": "Intended Use"
+    "viewAll": "View All"
   },
   "guides": {
     "guides": "Guides",
