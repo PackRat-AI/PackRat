@@ -1,8 +1,12 @@
+import { makeEnumGuard } from '@packrat/guards';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import type { PackTemplateItem } from 'expo-app/features/pack-templates';
 import type { PackItem, WeightUnit } from 'expo-app/features/packs';
 
 type Item = CatalogItem | PackItem | PackTemplateItem;
+
+const WEIGHT_UNITS = ['g', 'kg', 'oz', 'lb'] as const satisfies readonly WeightUnit[];
+export const isWeightUnit = makeEnumGuard(WEIGHT_UNITS);
 
 /**
  * Checks if an item is a catalog item
@@ -41,10 +45,6 @@ export function getWeightUnit(item: Item): WeightUnit {
     return 'g'; // default fallback
   }
   return item.weightUnit;
-}
-
-function isWeightUnit(value: string): value is WeightUnit {
-  return ['g', 'oz', 'kg', 'lb'].includes(value);
 }
 
 /** Gets the notes of an item */
