@@ -54,6 +54,8 @@ export default function SiteFooter() {
                   >
                     <Link
                       href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-primary transition-colors"
                     >
                       <span className="sr-only">{item.name}</span>
@@ -121,12 +123,12 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 md:mt-12 border-t pt-6 text-center border-border/50">
-          <GradientBorderCard className="inline-block py-2 px-4 bg-card/80">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
-            </p>
-          </GradientBorderCard>
+        <div className="mt-10 md:mt-12 pt-6 text-center relative">
+          {/* Gradient separator */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
