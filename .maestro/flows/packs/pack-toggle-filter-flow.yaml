@@ -1,0 +1,65 @@
+appId: ${APP_ID}
+---
+# Pack Toggle & Filter Flow: Tests My Packs/All Packs toggle and category filters
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Assert My Packs / All Packs toggle exists
+- assertVisible:
+    text: "My Packs"
+- assertVisible:
+    text: "All Packs"
+
+# Verify category filters
+- assertVisible:
+    text: "All"
+- assertVisible:
+    text: "Hiking"
+
+# Switch to All Packs
+- tapOn:
+    text: "All Packs"
+- waitForAnimationToEnd
+
+# Community packs should be visible
+- extendedWaitUntil:
+    visible:
+      text: "Hiking Pack"
+    timeout: 10000
+
+# Tap a community pack to view details
+- tapOn:
+    text: "Hiking Pack"
+- waitForAnimationToEnd
+
+# Verify community pack detail loaded
+- assertVisible:
+    text: "Pack Details"
+
+# Go back to packs list
+- back
+- waitForAnimationToEnd
+
+# Switch back to My Packs
+- tapOn:
+    text: "My Packs"
+- waitForAnimationToEnd
+
+# Test category filter — tap Hiking
+- tapOn:
+    text: "Hiking"
+- waitForAnimationToEnd
+
+# Tap All to reset filter
+- tapOn:
+    text: "All"
+- waitForAnimationToEnd
+
+# Verify Maestro Test Pack still visible
+- assertVisible:
+    text: "Maestro Test Pack"

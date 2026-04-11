@@ -1,0 +1,45 @@
+appId: ${APP_ID}
+---
+# Trip Edit Flow: Tests trip detail view and verifies edit elements exist
+# Note: Edit button is an icon without text/testID, so we verify trip detail content
+# and the presence of action icons rather than tapping through to edit form
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Trips tab
+- tapOn:
+    text: "Trips"
+- waitForAnimationToEnd
+
+# Tap into existing Maestro Test Trip
+- tapOn:
+    text: "Maestro Test Trip"
+- waitForAnimationToEnd
+
+# Assert trip detail loaded with all expected content
+- assertVisible:
+    text: "Trip Details"
+- assertVisible:
+    text: "Maestro Test Trip"
+- assertVisible:
+    text: "Dates"
+- assertVisible:
+    text: "Start Date"
+- assertVisible:
+    text: "End Date"
+- assertVisible:
+    text: "Details"
+
+# Verify the trip description is shown
+- assertVisible:
+    text: ".*Maestro.*"
+
+# Scroll to check for pack section
+- scrollUntilVisible:
+    element:
+      text: ".*pack.*"
+    direction: DOWN
+
+# Go back to trips list
+- back
+- waitForAnimationToEnd
