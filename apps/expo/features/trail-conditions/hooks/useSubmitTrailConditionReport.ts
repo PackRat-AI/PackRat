@@ -134,7 +134,7 @@ export function useSubmitTrailConditionReport(): SubmitResult {
       if (cancelRef.current) cancelRef.current.cancelled = true;
       cancelRef.current = signal;
 
-      // @ts-expect-error: Safe because Legend-State uses Proxy
+      // @ts-ignore: Safe because Legend-State uses Proxy
       trailConditionReportsStore[id].set(newReport);
 
       // Yield a microtask so Legend-State finishes marking this change as a

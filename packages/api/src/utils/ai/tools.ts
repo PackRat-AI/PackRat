@@ -280,7 +280,7 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, category, limit = 10, minRating }) => {
         try {
-          const searchResult = await catalogService.semanticSearch(query, limit, 0);
+          const searchResult = await catalogService.getCatalogItems({ q: query, limit });
 
           // Filter and format results for guide generation
           const items = searchResult.items

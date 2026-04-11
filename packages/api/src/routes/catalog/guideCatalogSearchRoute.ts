@@ -1,7 +1,6 @@
 import { createRoute, z } from '@hono/zod-openapi';
 import { CatalogService } from '@packrat/api/services';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { authenticateRequest, unauthorizedResponse } from '@packrat/api/utils/api-middleware';
 
 const CatalogItemLinkSchema = z.object({
   id: z.number(),
@@ -49,19 +48,13 @@ export const routeDefinition = createRoute({
 });
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  // Authenticate the request
-  const auth = await authenticateRequest(c);
-  if (!auth) {
-    return unauthorizedResponse();
-  }
-
   const { q: query, limit, category, minRating } = c.req.valid('query');
 
   try {
     const catalogService = new CatalogService(c);
 
-    // Use semantic search for better results
-    const searchResult = await catalogService.semanticSearch(query, limit, 0);
+    // Search catalog items
+    const searchResult = await catalogService.getCatalogItems({ q: query, limit });
 
     // Filter and transform results for guide generation
     const filteredItems = searchResult.items
