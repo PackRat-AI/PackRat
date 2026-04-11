@@ -46,6 +46,28 @@
       }
     }
   },
+  "overrides": [
+    {
+      "includes": [
+        "apps/expo/atoms/atomWith*.ts",
+        "apps/expo/features/weather/atoms/locationsAtoms.ts",
+        "packages/api/src/routes/admin/index.ts",
+        "packages/api/src/services/r2-bucket.ts",
+        "packages/api/src/services/etl/processCatalogEtl.ts",
+        "packages/api/test/guides.test.ts",
+        "packages/api/test/setup.ts",
+        "apps/expo/utils/weight.ts",
+        "packages/api/src/utils/weight.ts"
+      ],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "useMaxParams": "off"
+          }
+        }
+      }
+    }
+  ],
   "css": {
     "parser": {
       "cssModules": false,
