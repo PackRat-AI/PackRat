@@ -104,28 +104,56 @@ jobs:
 
       - name: Boot iOS Simulator
         run: |
+          # Pick the newest available iOS runtime on this runner. GitHub's
+          # macOS images ship different iOS runtimes over time; hard-coding a
+          # specific major version breaks CI every time Apple ships a new one.
           IOS_RUNTIME=$(xcrun simctl list runtimes --json \
             | python3 -c "
-          import sys, json
+          import sys, json, re
           data = json.load(sys.stdin)
-          runtimes = data.get('runtimes', [])
-          available = [r for r in runtimes if r.get('isAvailable', False)]
-          ios26 = [r for r in available if 'iOS 26' in r.get('name','')]
-          if not ios26:
-              print('::error::No iOS 26 runtime found on this runner', file=sys.stderr)
+          runtimes = [r for r in data.get('runtimes', [])
+                      if r.get('isAvailable', False) and 'iOS' in r.get('name','')]
+          if not runtimes:
+              print('::error::No available iOS runtimes found on this runner', file=sys.stderr)
               sys.exit(1)
-          print(ios26[-1]['identifier'])
+          def ver_key(r):
+              m = re.search(r'iOS\s+(\d+)(?:\.(\d+))?', r.get('name',''))
+              return (int(m.group(1)) if m else 0, int(m.group(2) or 0) if m else 0)
+          runtimes.sort(key=ver_key)
+          picked = runtimes[-1]
+          print(f\"Picked runtime: {picked['name']}\", file=sys.stderr)
+          print(picked['identifier'])
           ")
 
+          # Prefer a plain iPhone (no Pro/Plus/Max) from a recent generation.
+          # Fall back through 17 -> 16 -> 15 -> any available plain iPhone so
+          # the workflow survives device-type churn on the runner images.
           DEVICE_TYPE=$(xcrun simctl list devicetypes --json \
             | python3 -c "
-          import sys, json
+          import sys, json, re
           types = json.load(sys.stdin)['devicetypes']
-          iphone16 = [d for d in types if 'iPhone 16' in d.get('name','') and 'Pro' not in d.get('name','') and 'Plus' not in d.get('name','') and 'Max' not in d.get('name','')]
-          if not iphone16:
-              print('::error::No iPhone 16 device type found on this runner', file=sys.stderr)
+          def plain_iphone(name):
+              return ('iPhone' in name
+                      and 'Pro' not in name
+                      and 'Plus' not in name
+                      and 'Max' not in name
+                      and 'mini' not in name
+                      and 'SE' not in name)
+          plain = [d for d in types if plain_iphone(d.get('name',''))]
+          if not plain:
+              print('::error::No plain iPhone device types found on this runner', file=sys.stderr)
               sys.exit(1)
-          print(iphone16[0]['identifier'])
+          def gen(d):
+              m = re.search(r'iPhone\s+(\d+)', d.get('name',''))
+              return int(m.group(1)) if m else 0
+          # Prefer generations 15/16/17 (current sweet spot), then fall back
+          # to whatever plain iPhone is newest.
+          preferred = [d for d in plain if gen(d) in (17, 16, 15)]
+          pool = preferred if preferred else plain
+          pool.sort(key=gen, reverse=True)
+          picked = pool[0]
+          print(f\"Picked device type: {picked['name']}\", file=sys.stderr)
+          print(picked['identifier'])
           ")
 
           echo "Using runtime: $IOS_RUNTIME"
