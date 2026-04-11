@@ -4,7 +4,7 @@ import { trips } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNotNull, lt, gt, sql, count, sum, max } from 'drizzle-orm';
 
 const tripAnalyticsRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -66,104 +66,122 @@ const getAnalyticsRoute = createRoute({
   },
 });
 
+const MONTH_NAMES = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
 tripAnalyticsRoutes.openapi(getAnalyticsRoute, async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
 
   try {
-    const userTrips = await db.query.trips.findMany({
-      where: and(eq(trips.userId, auth.userId), eq(trips.deleted, false)),
-    });
-
     const now = new Date();
     const currentYear = now.getFullYear();
     const lastYear = currentYear - 1;
+    const windowStart = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
-    // ----- Core counts -----
-    const totalTrips = userTrips.length;
-    const completedTrips = userTrips.filter((t) => t.endDate && new Date(t.endDate) < now).length;
-    const upcomingTrips = userTrips.filter(
-      (t) => t.startDate && new Date(t.startDate) > now,
-    ).length;
+    const baseWhere = and(eq(trips.userId, auth.userId), eq(trips.deleted, false));
 
-    // ----- Duration stats -----
-    const tripsWithDuration = userTrips
-      .filter(
-        (t): t is typeof t & { startDate: Date; endDate: Date } =>
-          t.startDate !== null &&
-          t.startDate !== undefined &&
-          t.endDate !== null &&
-          t.endDate !== undefined,
-      )
-      .map((t) => {
-        const start = new Date(t.startDate);
-        const end = new Date(t.endDate);
-        const durationMs = end.getTime() - start.getTime();
-        const durationDays = Math.max(0, Math.round(durationMs / (1000 * 60 * 60 * 24)));
-        return { ...t, durationDays };
-      });
+    // ----- Core counts (pushed to SQL) -----
+    const [coreRow] = await db
+      .select({
+        totalTrips: count(),
+        completedTrips: sql<number>`COUNT(*) FILTER (WHERE ${trips.endDate} IS NOT NULL AND ${trips.endDate} < ${now})`,
+        upcomingTrips: sql<number>`COUNT(*) FILTER (WHERE ${trips.startDate} IS NOT NULL AND ${trips.startDate} > ${now})`,
+        locationsVisited: sql<number>`COUNT(*) FILTER (WHERE ${trips.location} IS NOT NULL)`,
+        currentYearTrips: sql<number>`COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM COALESCE(${trips.startDate}, ${trips.createdAt})) = ${currentYear})`,
+        lastYearTrips: sql<number>`COUNT(*) FILTER (WHERE EXTRACT(YEAR FROM COALESCE(${trips.startDate}, ${trips.createdAt})) = ${lastYear})`,
+      })
+      .from(trips)
+      .where(baseWhere);
 
-    const totalNightsOutdoors = tripsWithDuration.reduce((sum, t) => sum + t.durationDays, 0);
+    // ----- Duration stats (pushed to SQL) -----
+    // Use CEIL so a 1-night trip (< 24h but crosses midnight) counts as 1 day
+    const [durationRow] = await db
+      .select({
+        totalNightsOutdoors: sql<number>`COALESCE(SUM(CEIL(EXTRACT(EPOCH FROM (${trips.endDate} - ${trips.startDate})) / 86400)), 0)`,
+        tripsWithDurationCount: sql<number>`COUNT(*) FILTER (WHERE ${trips.startDate} IS NOT NULL AND ${trips.endDate} IS NOT NULL)`,
+        longestTripDays: sql<number | null>`MAX(CEIL(EXTRACT(EPOCH FROM (${trips.endDate} - ${trips.startDate})) / 86400))`,
+      })
+      .from(trips)
+      .where(and(baseWhere, isNotNull(trips.startDate), isNotNull(trips.endDate)));
+
+    // Fetch the name of the longest trip (need a separate query for the name)
+    const longestTripDays = durationRow?.longestTripDays ? Number(durationRow.longestTripDays) : null;
+
+    let longestTripName: string | null = null;
+    if (longestTripDays !== null && longestTripDays > 0) {
+      const [longestRow] = await db
+        .select({ name: trips.name })
+        .from(trips)
+        .where(
+          and(
+            baseWhere,
+            isNotNull(trips.startDate),
+            isNotNull(trips.endDate),
+            sql`CEIL(EXTRACT(EPOCH FROM (${trips.endDate} - ${trips.startDate})) / 86400) = ${longestTripDays}`,
+          ),
+        )
+        .limit(1);
+      longestTripName = longestRow?.name ?? null;
+    }
+
+    const totalNightsOutdoors = durationRow?.totalNightsOutdoors
+      ? Number(durationRow.totalNightsOutdoors)
+      : 0;
+    const tripsWithDurationCount = durationRow?.tripsWithDurationCount
+      ? Number(durationRow.tripsWithDurationCount)
+      : 0;
 
     const averageTripDurationDays =
-      tripsWithDuration.length > 0
-        ? Math.round(
-            (tripsWithDuration.reduce((sum, t) => sum + t.durationDays, 0) /
-              tripsWithDuration.length) *
-              10,
-          ) / 10
+      tripsWithDurationCount > 0
+        ? Math.round((totalNightsOutdoors / tripsWithDurationCount) * 10) / 10
         : null;
 
-    const longestTrip =
-      tripsWithDuration.length > 0
-        ? tripsWithDuration.reduce((max, t) => (t.durationDays > max.durationDays ? t : max))
-        : null;
+    // ----- Monthly trends (last 12 months) — pushed to SQL -----
+    const monthlyRows = await db
+      .select({
+        yearMonth: sql<string>`TO_CHAR(DATE_TRUNC('month', COALESCE(${trips.startDate}, ${trips.createdAt})), 'YYYY-MM')`,
+        tripCount: count(),
+      })
+      .from(trips)
+      .where(
+        and(
+          baseWhere,
+          sql`COALESCE(${trips.startDate}, ${trips.createdAt}) >= ${windowStart}`,
+          sql`COALESCE(${trips.startDate}, ${trips.createdAt}) < ${now}`,
+        ),
+      )
+      .groupBy(sql`DATE_TRUNC('month', COALESCE(${trips.startDate}, ${trips.createdAt}))`)
+      .orderBy(sql`DATE_TRUNC('month', COALESCE(${trips.startDate}, ${trips.createdAt}))`);
 
-    const longestTripDays = longestTrip?.durationDays ?? null;
-    const longestTripName = longestTrip?.name ?? null;
-
-    // ----- Monthly trends (last 12 months) -----
-    const MONTH_NAMES = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-
-    // Build the set of valid month keys for the last 12 months
+    // Build the full 12-month scaffold and fill in SQL results
     const monthlyCounts: Record<string, number> = {};
-    const validMonthKeys = new Set<string>();
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       monthlyCounts[key] = 0;
-      validMonthKeys.add(key);
     }
-
-    // Only count trips that fall within the last 12 months window
-    const windowStart = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-    for (const trip of userTrips) {
-      const date = trip.startDate ?? trip.createdAt;
-      if (!date) continue;
-      const d = new Date(date);
-      if (d < windowStart) continue;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (validMonthKeys.has(key)) {
-        monthlyCounts[key]++;
+    for (const row of monthlyRows) {
+      if (row.yearMonth in monthlyCounts) {
+        monthlyCounts[row.yearMonth] = Number(row.tripCount);
       }
     }
 
-    const tripsByMonth = Object.entries(monthlyCounts).map(([key, count]) => {
+    const tripsByMonth = Object.entries(monthlyCounts).map(([key, tripCount]) => {
       const [year, month] = key.split('-');
-      return { month: `${MONTH_NAMES[Number(month) - 1]} ${year}`, count };
+      return { month: `${MONTH_NAMES[Number(month) - 1]} ${year}`, count: tripCount };
     });
 
     // ----- Most active month -----
@@ -178,34 +196,25 @@ tripAnalyticsRoutes.openapi(getAnalyticsRoute, async (c) => {
     }
 
     // ----- Geographic stats -----
-    const tripsWithLocation = userTrips.filter((t) => t.location);
-    const locationsVisited = tripsWithLocation.length;
+    // uniqueRegions: extract location.name from JSONB — kept in JS since it's a small set
+    const locationRows = await db
+      .select({ location: trips.location })
+      .from(trips)
+      .where(and(baseWhere, isNotNull(trips.location)));
 
-    // Extract region names from location.name when available
     const regionSet = new Set<string>();
-    for (const trip of tripsWithLocation) {
-      if (trip.location?.name) {
-        regionSet.add(trip.location.name);
+    for (const row of locationRows) {
+      if (row.location?.name) {
+        regionSet.add(row.location.name);
       }
     }
     const uniqueRegions = Array.from(regionSet);
 
-    // ----- Year-over-year -----
-    const currentYearTrips = userTrips.filter((t) => {
-      const date = t.startDate ?? t.createdAt;
-      return date && new Date(date).getFullYear() === currentYear;
-    }).length;
-
-    const lastYearTrips = userTrips.filter((t) => {
-      const date = t.startDate ?? t.createdAt;
-      return date && new Date(date).getFullYear() === lastYear;
-    }).length;
-
     return c.json(
       {
-        totalTrips,
-        completedTrips,
-        upcomingTrips,
+        totalTrips: Number(coreRow?.totalTrips ?? 0),
+        completedTrips: Number(coreRow?.completedTrips ?? 0),
+        upcomingTrips: Number(coreRow?.upcomingTrips ?? 0),
         totalNightsOutdoors,
         averageTripDurationDays,
         longestTripDays,
@@ -213,10 +222,10 @@ tripAnalyticsRoutes.openapi(getAnalyticsRoute, async (c) => {
         mostActiveMonth,
         mostActiveMonthCount,
         tripsByMonth,
-        locationsVisited,
+        locationsVisited: Number(coreRow?.locationsVisited ?? 0),
         uniqueRegions,
-        currentYearTrips,
-        lastYearTrips,
+        currentYearTrips: Number(coreRow?.currentYearTrips ?? 0),
+        lastYearTrips: Number(coreRow?.lastYearTrips ?? 0),
       },
       200,
     );
