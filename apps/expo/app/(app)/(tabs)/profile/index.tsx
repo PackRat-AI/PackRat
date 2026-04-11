@@ -25,6 +25,7 @@ import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
 import { router, Stack } from 'expo-router';
@@ -32,7 +33,6 @@ import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
 import { Alert, Linking, Platform, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TestIds } from 'expo-app/lib/testIds';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
