@@ -135,14 +135,14 @@ export default function AIChat() {
         Authorization: `Bearer ${token}`,
       },
       body: () => ({
-        contextType: context.contextType,
-        itemId: context.itemId,
-        packId: context.packId,
+        contextType: contextRef.current.contextType,
+        itemId: contextRef.current.itemId,
+        packId: contextRef.current.packId,
         location: locationRef.current,
         date: new Date().toLocaleString(),
       }),
     });
-  }, [aiMode, isLocalReady, token, tools, context.contextType, context.itemId, context.packId]);
+  }, [aiMode, isLocalReady, token, tools]);
 
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport,
