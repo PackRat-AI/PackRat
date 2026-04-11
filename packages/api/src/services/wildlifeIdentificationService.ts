@@ -2,7 +2,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
-import type { Context } from 'hono';
 import { z } from 'zod';
 
 const SPECIES_IDENTIFICATION_SYSTEM_PROMPT = `You are an expert naturalist and wildlife biologist specializing in plant and animal identification.
@@ -56,10 +55,12 @@ const identificationResponseSchema = z.object({
 export type SpeciesResult = z.infer<typeof speciesResultSchema>;
 export type IdentificationResponse = z.infer<typeof identificationResponseSchema>;
 
-export class WildlifeIdentificationService {
-  private readonly c: Context;
+type CtxLike = { env?: Record<string, unknown> } | undefined;
 
-  constructor(c: Context) {
+export class WildlifeIdentificationService {
+  private readonly c: CtxLike;
+
+  constructor(c?: CtxLike) {
     this.c = c;
   }
 

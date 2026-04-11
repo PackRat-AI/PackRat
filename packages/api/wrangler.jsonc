@@ -2,7 +2,9 @@
   "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
   "name": "packrat-api",
   "main": "src/index.ts",
-  "compatibility_date": "2024-09-23",
+  // Elysia 1.4+ CloudflareAdapter requires compatibility_date >= 2025-06-01.
+  "compatibility_date": "2025-06-01",
+  // nodejs_compat is kept because other dependencies (bcryptjs, pg) rely on it.
   "compatibility_flags": ["nodejs_compat"],
   "keep_vars": true,
   "logpush": true,

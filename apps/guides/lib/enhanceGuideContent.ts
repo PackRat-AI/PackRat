@@ -1,6 +1,5 @@
 import { openai } from '@ai-sdk/openai';
 import { generateText, tool } from 'ai';
-import axios from 'axios';
 import { z } from 'zod';
 
 // System prompt for contextual content enhancement
@@ -114,15 +113,28 @@ export async function enhanceGuideContent(
                 offset,
               );
 
-              const response = await axios.get(`${apiBaseUrl}/api/catalog/vector-search`, {
-                params: { q: query, limit, offset },
+              const searchUrl = new URL(`${apiBaseUrl}/api/catalog/vector-search`);
+              searchUrl.searchParams.set('q', query);
+              if (limit !== undefined) searchUrl.searchParams.set('limit', String(limit));
+              if (offset !== undefined) searchUrl.searchParams.set('offset', String(offset));
+
+              const response = await fetch(searchUrl.toString(), {
+                method: 'GET',
                 headers: {
                   'X-API-KEY': apiKey,
                   'Content-Type': 'application/json',
+                  Accept: 'application/json',
                 },
               });
+              if (!response.ok) {
+                throw new Error(
+                  `Catalog search failed: ${response.status} ${response.statusText}`,
+                );
+              }
 
-              const searchResults = response.data;
+              const searchResults = (await response.json()) as {
+                items?: Array<{ name: string; productUrl: string; similarity?: number }>;
+              };
 
               // Track products for reporting
               if (searchResults.items) {

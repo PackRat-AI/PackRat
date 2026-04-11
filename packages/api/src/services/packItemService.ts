@@ -1,15 +1,23 @@
 import { createDb } from '@packrat/api/db';
 import { packItems } from '@packrat/api/db/schema';
 import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
+
+type CtxLike = { env?: Record<string, unknown> } | undefined;
 
 export class PackItemService {
   private db;
   private userId: number;
 
-  constructor(c: Context, userId: number) {
+  constructor(cOrUserId: CtxLike | number, maybeUserId?: number) {
+    let c: CtxLike;
+    if (typeof cOrUserId === 'number') {
+      this.userId = cOrUserId;
+      c = undefined;
+    } else {
+      c = cOrUserId;
+      this.userId = maybeUserId ?? 0;
+    }
     this.db = createDb(c);
-    this.userId = userId;
   }
 
   async getPackItemDetails(itemId: string) {

@@ -24,23 +24,46 @@ import {
   type SQL,
   sql,
 } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { getEmbeddingText } from '../utils/embeddingHelper';
 
-const isContext = (contextOrEnv: Context | Env, isContext: boolean): contextOrEnv is Context =>
-  isContext;
+type CatalogCtxLike =
+  | { env?: Record<string, unknown>; req?: unknown }
+  | Env
+  | undefined;
 
 export class CatalogService {
   private db;
   private env: Env;
 
-  constructor(contextOrEnv: Context | Env, isHonoContext: boolean = true) {
-    if (isContext(contextOrEnv, isHonoContext)) {
-      this.db = createDb(contextOrEnv);
-      this.env = getEnv(contextOrEnv);
+  /**
+   * Dual-mode constructor:
+   *  - `new CatalogService()` – Elysia path, uses cached isolate env
+   *  - `new CatalogService(c)` – Hono context (legacy)
+   *  - `new CatalogService(env, false)` – fetch-style env (isHonoContext flag kept
+   *    for legacy call sites that passed an env-only object from the queue handler)
+   */
+  constructor(contextOrEnv?: CatalogCtxLike, isHonoContext: boolean = true) {
+    if (!contextOrEnv) {
+      this.env = getEnv();
+      this.db = createDb();
+      return;
+    }
+
+    const hasReq =
+      typeof contextOrEnv === 'object' && contextOrEnv !== null && 'req' in contextOrEnv;
+
+    if (hasReq) {
+      // Hono Context
+      this.db = createDb(contextOrEnv as { env?: Record<string, unknown> });
+      this.env = getEnv(contextOrEnv as { env?: Record<string, unknown> });
+    } else if (isHonoContext === false) {
+      // Queue handler path: caller passed a raw validated env
+      this.db = createDbClient(contextOrEnv as Env);
+      this.env = contextOrEnv as Env;
     } else {
-      this.db = createDbClient(contextOrEnv);
-      this.env = contextOrEnv;
+      // Treat as validated env for generic usage
+      this.env = contextOrEnv as Env;
+      this.db = createDb(this.env as unknown as { env?: Record<string, unknown> });
     }
   }
 

@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { z } from '@packrat/api/utils/zod-shim';
 
 export const PackItemSchema = z
   .object({

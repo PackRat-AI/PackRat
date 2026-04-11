@@ -1,12 +1,13 @@
 import { sql } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { createReadOnlyDb } from '../db';
+
+type CtxLike = { env?: Record<string, unknown> } | undefined;
 
 interface Params {
   query: string;
   limit: number;
-  c: Context;
   userId: number;
+  c?: CtxLike;
 }
 
 export async function executeSqlAiTool(params: Params) {

@@ -3,7 +3,6 @@ import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateText } from 'ai';
-import type { Context } from 'hono';
 
 interface SearchResult {
   answer: string;
@@ -13,11 +12,13 @@ interface SearchResult {
 const WEB_SEARCH_SYSTEM_PROMPT =
   'You are a helpful research assistant. Provide accurate, up-to-date information with proper citations. Be concise but comprehensive.';
 
+type CtxLike = { env?: Record<string, unknown> } | undefined;
+
 export class AIService {
   private env: Env;
   private guidesRAG: AutoRAG | null = null;
 
-  constructor(c: Context) {
+  constructor(c?: CtxLike) {
     this.env = getEnv(c);
     // Only initialize RAG if AI binding is available (Cloudflare Workers environment)
     if (this.env.AI && typeof this.env.AI.autorag === 'function') {

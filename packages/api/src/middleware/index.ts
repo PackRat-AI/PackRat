@@ -1,5 +1,8 @@
-import { authMiddleware } from './auth';
+// Elysia-native exports
+export { adminAuthPlugin, apiKeyAuthPlugin, authPlugin } from './auth';
+export type { AuthUser } from './auth';
 
-export { authMiddleware };
-
-export { apiKeyAuthMiddleware } from './apiKeyAuth';
+// Legacy Hono middleware exports kept during the staged migration.
+export { authMiddleware } from './auth';
+export { apiKeyAuthMiddleware } from './auth';
+export { adminMiddleware } from './adminMiddleware';

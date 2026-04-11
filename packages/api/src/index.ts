@@ -1,85 +1,75 @@
+/**
+ * Cloudflare Worker entry point.
+ *
+ * This is now an Elysia-based Worker. The outer framework is Elysia (using
+ * `CloudflareAdapter` which is the officially-supported way to run Elysia on
+ * Cloudflare Workers as of Elysia 1.4.x). Legacy Hono routes are mounted via
+ * Elysia's `.mount()` during the staged migration.
+ *
+ * The exported `App` type is consumed by `@elysiajs/eden` Treaty in the Expo
+ * app so that the end-to-end type safety promise of the Elysia ecosystem is
+ * preserved as more routes are ported from Hono to Elysia.
+ */
 import type { MessageBatch } from '@cloudflare/workers-types';
-import { sentry } from '@hono/sentry';
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { cors } from '@elysiajs/cors';
 import { AppContainer } from '@packrat/api/containers';
-import { routes } from '@packrat/api/routes';
+import { honoApp } from '@packrat/api/hono-app';
+import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { configureOpenAPI } from '@packrat/api/utils/openapi';
-import { Scalar } from '@scalar/hono-api-reference';
-import { cors } from 'hono/cors';
-import { HTTPException } from 'hono/http-exception';
-import { logger } from 'hono/logger';
-import { CatalogService } from './services';
+import { setWorkerEnv } from '@packrat/api/utils/env-validation';
+import { packratOpenApi } from '@packrat/api/utils/openapi';
+import { Elysia } from 'elysia';
+import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
-import type { Variables } from './types/variables';
 
-const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
-// Apply global middleware
-app
-  .use((c, next) => {
-    return sentry({
-      environment: getEnv(c).ENVIRONMENT,
-      release: getEnv(c).CF_VERSION_METADATA.id,
-      // Adds request headers and IP for users, for more info visit:
-      // https://docs.sentry.io/platforms/javascript/guides/cloudflare/configuration/options/#sendDefaultPii
-      sendDefaultPii: true,
-
-      // Enable logs to be sent to Sentry
-      _experiments: { enableLogs: true },
-    })(c, next);
+/**
+ * Elysia application root. Exports its own type so that `eden` treaty clients
+ * can infer the full route surface.
+ */
+export const app = new Elysia({ adapter: CloudflareAdapter })
+  .use(cors())
+  .use(packratOpenApi)
+  .get('/', () => 'PackRat API is running!', {
+    detail: { summary: 'Health check', tags: ['Meta'] },
   })
-  .use((c, next) => {
-    const sentry = c.get('sentry');
-    const user = c.get('user');
-    if (user) {
-      sentry.setUser(user);
-    }
-    return next();
+  .get('/health', () => ({ status: 'ok' as const }), {
+    detail: { summary: 'Health status', tags: ['Meta'] },
   })
-  .onError((err, c) => {
-    console.error('Error occurred:', err);
-    if (err instanceof HTTPException) {
-      return err.getResponse();
-    }
-    return c.json({ error: 'Internal server error' }, 500);
-  });
-app.use(logger());
-app.use(cors());
+  // Mount the legacy Hono application. Elysia forwards requests into Hono,
+  // which owns the entire `/api/*` surface area during the staged migration
+  // away from Hono. As individual route groups are ported to Elysia they are
+  // moved out of the Hono sub-app and added natively on this Elysia instance
+  // so Eden Treaty can provide end-to-end types for them.
+  .mount(honoApp.fetch)
+  .compile();
 
-// Mount routes
-app.route('/api', routes);
+/**
+ * End-to-end type exported for the Eden Treaty client (see
+ * `apps/expo/lib/api/client.ts`).
+ */
+export type App = typeof app;
 
-// Configure OpenAPI documentation
-configureOpenAPI(app);
-
-// Scalar UI with enhanced configuration
-app.get(
-  '/scalar',
-  Scalar({
-    url: '/doc',
-    theme: 'purple',
-    pageTitle: 'PackRat API Documentation',
-    defaultHttpClient: {
-      targetKey: 'js',
-      clientKey: 'fetch',
-    },
-  }),
-);
-
-// Health check endpoint
-app.get('/', (c) => {
-  return c.text('PackRat API is running!');
-});
-
-// Export the AppContainer class for Cloudflare Container binding
 export { AppContainer };
 
+type CfFetchFn = (
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+) => Response | Promise<Response>;
+
 export default {
-  fetch: app.fetch,
+  fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
+    // Prime the isolate-level env cache so `getEnv()` works everywhere without
+    // needing to be threaded through the request context.
+    setWorkerEnv(env as unknown as Record<string, unknown>);
+    // Elysia's CloudflareAdapter compiles an app whose `.fetch` is a
+    // Cloudflare Worker exported handler `fetch` compatible function.
+    return (app.fetch as unknown as CfFetchFn)(request, env, ctx);
+  },
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    setWorkerEnv(env as unknown as Record<string, unknown>);
+
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
       if (!env.ETL_QUEUE) {
         throw new Error('ETL_QUEUE is not configured');
@@ -97,4 +87,4 @@ export default {
       throw new Error(`Unknown queue: ${batch.queue}`);
     }
   },
-};
+} satisfies ExportedHandler<Env>;

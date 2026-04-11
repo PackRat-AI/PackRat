@@ -7,17 +7,28 @@ import {
 } from '@packrat/api/services';
 import { executeSqlAiTool } from '@packrat/api/services/executeSqlAiTool';
 import { tool } from 'ai';
-import type { Context } from 'hono';
 import { z } from 'zod';
 
-export function createTools(c: Context, userId: number) {
+type CtxLike = { env?: Record<string, unknown> } | undefined;
+
+// Dual-mode: accepts either `createTools(userId)` (Elysia) or
+// `createTools(c, userId)` (legacy Hono routes).
+export function createTools(cOrUserId: CtxLike | number, maybeUserId?: number) {
+  let c: CtxLike;
+  let userId: number;
+  if (typeof cOrUserId === 'number') {
+    c = undefined;
+    userId = cOrUserId;
+  } else {
+    c = cOrUserId;
+    userId = maybeUserId ?? 0;
+  }
+
   const packService = new PackService(c, userId);
   const packItemService = new PackItemService(c, userId);
   const weatherService = new WeatherService(c);
   const catalogService = new CatalogService(c);
   const aiService = new AIService(c);
-
-  const sentry = c.get('sentry');
 
   return {
     getPackDetails: tool({
@@ -50,9 +61,6 @@ export function createTools(c: Context, userId: number) {
           };
         } catch (error) {
           console.error('getPackDetails tool error', error);
-          sentry.setTag('location', 'ai-tool-call/getPackDetails');
-          sentry.setContext('meta', { packId });
-          sentry.captureException(error);
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get pack details',
@@ -82,9 +90,6 @@ export function createTools(c: Context, userId: number) {
           };
         } catch (error) {
           console.error('getPackItemDetails tool error', error);
-          sentry.setTag('location', 'ai-tool-call/getPackItemDetails');
-          sentry.setContext('meta', { itemId });
-          sentry.captureException(error);
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get item details',
@@ -111,9 +116,6 @@ export function createTools(c: Context, userId: number) {
           };
         } catch (error) {
           console.error('getWeatherForLocation tool error', error);
-          sentry.setTag('location', 'ai-tool-call/getWeatherForLocation');
-          sentry.setContext('meta', { location });
-          sentry.captureException(error);
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get weather data',
@@ -150,9 +152,6 @@ export function createTools(c: Context, userId: number) {
           };
         } catch (error) {
           console.error('getCatalogItems tool error', error);
-          sentry.setTag('location', 'ai-tool-call/getCatalogItems');
-          sentry.setContext('meta', { query, category, limit, offset });
-          sentry.captureException(error);
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to retrieve catalog items',
@@ -185,9 +184,6 @@ export function createTools(c: Context, userId: number) {
           };
         } catch (error) {
           console.error('catalogVectorSearch tool error', error);
-          sentry.setTag('location', 'ai-tool-call/catalogVectorSearch');
-          sentry.setContext('meta', { query });
-          sentry.captureException(error);
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to perform vector search',
@@ -217,9 +213,6 @@ export function createTools(c: Context, userId: number) {
           };
         } catch (error) {
           console.error('searchPackratOutdoorGuidesRAG', error);
-          sentry.setTag('location', 'ai-tool-call/searchPackratOutdoorGuidesRAG');
-          sentry.setContext('meta', { query });
-          sentry.captureException(error);
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to search outdoor guides',
@@ -229,7 +222,7 @@ export function createTools(c: Context, userId: number) {
     }),
 
     webSearchTool: tool({
-      description: `Search the web for current information, news, deals, recommendations, and real-time data. 
+      description: `Search the web for current information, news, deals, recommendations, and real-time data.
         Use this when users ask about:
         - Current events or recent news
         - Product deals, prices, or reviews
@@ -250,9 +243,6 @@ export function createTools(c: Context, userId: number) {
           };
         } catch (error) {
           console.error('webSearchTool', error);
-          sentry.setTag('location', 'ai-tool-call/webSearchTool');
-          sentry.setContext('meta', { query });
-          sentry.captureException(error);
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Search failed',
@@ -278,12 +268,9 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, limit = 100 }) => {
         try {
-          return await executeSqlAiTool({ query, limit, c, userId });
+          return await executeSqlAiTool({ query, limit, userId, c });
         } catch (error) {
           console.error('SQL tool error', error);
-          sentry.setTag('location', 'ai-tool-call/executeSql');
-          sentry.setContext('params', { query, limit });
-          sentry.captureException(error);
           return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred',

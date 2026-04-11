@@ -2,7 +2,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
-import type { Context } from 'hono';
 import { z } from 'zod';
 import type { CatalogItem } from '../db/schema';
 import { CatalogService } from './catalogService';
@@ -45,10 +44,12 @@ export interface DetectedItemWithMatches {
   catalogMatches: Array<Omit<CatalogItem, 'embedding'> & { similarity: number }>;
 }
 
-export class ImageDetectionService {
-  private readonly c: Context;
+type CtxLike = { env?: Record<string, unknown> } | undefined;
 
-  constructor(c: Context) {
+export class ImageDetectionService {
+  private readonly c: CtxLike;
+
+  constructor(c?: CtxLike) {
     this.c = c;
   }
 

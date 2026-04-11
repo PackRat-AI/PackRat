@@ -11,10 +11,11 @@ import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateObject } from 'ai';
 import { and, eq } from 'drizzle-orm';
-import type { Context } from 'hono';
 import { z } from 'zod';
 import { computePackWeights } from '../utils/compute-pack';
 import { CatalogService } from './catalogService';
+
+type CtxLike = { env?: Record<string, unknown> } | undefined;
 
 const PACK_CONCEPTS_SYSTEM_PROMPT = `You are an expert Adventure Planner specializing in real-world outdoor and travel experiences. When given a specific count, generate that exact number of unique, practical adventure concepts that people can actually undertake. Each concept should include a name, a description, category, tags and a list of the logical items needed. Items should be rich descriptions optimized for a vector search against an items catalog to find the most suitable real-world item.`;
 
@@ -41,12 +42,19 @@ type PackItemConceptSchema = z.infer<typeof packItemConceptSchema>;
 export class PackService {
   private db;
   private userId: number;
-  private readonly c: Context;
+  private readonly c: CtxLike;
 
-  constructor(c: Context, userId: number) {
-    this.db = createDb(c);
-    this.userId = userId;
-    this.c = c;
+  constructor(cOrUserId: CtxLike | number, maybeUserId?: number) {
+    // Dual-mode signature: (ctx, userId) for legacy Hono routes, or (userId)
+    // for new Elysia routes.
+    if (typeof cOrUserId === 'number') {
+      this.userId = cOrUserId;
+      this.c = undefined;
+    } else {
+      this.c = cOrUserId;
+      this.userId = maybeUserId ?? 0;
+    }
+    this.db = createDb(this.c);
   }
 
   async getPackDetails(packId: string): Promise<PackWithItems | null> {
@@ -74,10 +82,8 @@ export class PackService {
       throw new Error('Count must be a positive integer');
     }
 
-    // 1. Generate pack concepts
     const concepts = await this.generatePackConcepts(count);
 
-    // 2. Search catalog for items
     const packsResult = await Promise.allSettled(
       concepts.map(async (concept) => {
         const packItems = await this.getItems(concept.items);
@@ -88,7 +94,6 @@ export class PackService {
       }),
     );
 
-    // 3. Save the packs to db
     const createdPacks = await this.db.transaction(async (tx) => {
       const packsToInsert: NewPack[] = [];
       const itemsToInsert: NewPackItem[] = [];
@@ -134,9 +139,7 @@ export class PackService {
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
     const { OPENAI_API_KEY } = getEnv(this.c);
-    const openai = createOpenAI({
-      apiKey: OPENAI_API_KEY,
-    });
+    const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
 
     const { object } = await generateObject({
       model: openai(DEFAULT_MODELS.OPENAI_CHAT),

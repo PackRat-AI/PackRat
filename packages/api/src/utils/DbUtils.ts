@@ -1,10 +1,17 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs } from '@packrat/api/db/schema';
 import { and, arrayOverlaps, eq, inArray, type SQL, sql } from 'drizzle-orm';
-import type { Context } from 'hono';
+
+type CtxLike = { env?: Record<string, unknown> } | undefined;
 
 // Get pack details from the database
-export async function getPackDetails({ packId, c }: { packId: string; c: Context }) {
+export async function getPackDetails({
+  packId,
+  c,
+}: {
+  packId: string;
+  c?: CtxLike;
+}) {
   const db = createDb(c);
 
   const packData = await db.query.packs.findFirst({
@@ -32,18 +39,16 @@ export async function getCatalogItems({
     ids?: number[];
     limit?: number;
   };
-  c: Context;
-}) {
+  c?: CtxLike;
+} = {}) {
   const db = createDb(c);
 
   const filters: SQL[] = [];
 
-  // For categories, use Drizzle's arrayOverlaps operator for JSONB arrays
   if (options?.categories?.length) {
     filters.push(arrayOverlaps(catalogItems.categories, options.categories));
   }
 
-  // For IDs, we can use the standard inArray
   if (options?.ids?.length) {
     filters.push(inArray(catalogItems.id, options.ids));
   }
@@ -60,17 +65,16 @@ export async function getCatalogItems({
   return query;
 }
 
-export async function getSchemaInfo(c: Context) {
+export async function getSchemaInfo(c?: CtxLike) {
   const db = createDb(c);
 
   try {
-    // Execute raw SQL queries directly through the sql function
-    const schemaQuery = `SELECT 
+    const schemaQuery = `SELECT
         t.table_name,
         string_agg(
-          c.column_name || ' ' || 
+          c.column_name || ' ' ||
           UPPER(c.data_type) ||
-          CASE 
+          CASE
             WHEN c.data_type = 'character varying' THEN '(' || c.character_maximum_length || ')'
             WHEN c.data_type = 'numeric' THEN '(' || c.numeric_precision || ', ' || c.numeric_scale || ')'
             ELSE ''

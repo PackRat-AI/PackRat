@@ -1,6 +1,7 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
-import type { Context } from 'hono';
 import { Resend } from 'resend';
+
+type CtxLike = { env?: Record<string, unknown> } | undefined;
 
 export async function sendEmail({
   to,
@@ -11,7 +12,7 @@ export async function sendEmail({
   to: string;
   subject: string;
   html: string;
-  c: Context;
+  c?: CtxLike;
 }): Promise<void> {
   const { RESEND_API_KEY, EMAIL_FROM } = getEnv(c);
   const resendClient = new Resend(RESEND_API_KEY);
@@ -23,16 +24,7 @@ export async function sendEmail({
     html,
   };
 
-  try {
-    await resendClient.emails.send(options);
-  } catch (error) {
-    c.get('sentry').setContext('params', {
-      options,
-      resendApiKey: !!RESEND_API_KEY,
-      emailFrom: EMAIL_FROM,
-    });
-    throw error;
-  }
+  await resendClient.emails.send(options);
 }
 
 // Send a verification code email
@@ -43,7 +35,7 @@ export async function sendVerificationCodeEmail({
 }: {
   to: string;
   code: string;
-  c: Context;
+  c?: CtxLike;
 }): Promise<void> {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -71,7 +63,7 @@ export async function sendPasswordResetEmail({
 }: {
   to: string;
   code: string;
-  c: Context;
+  c?: CtxLike;
 }): Promise<void> {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

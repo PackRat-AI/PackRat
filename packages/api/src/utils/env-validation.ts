@@ -1,6 +1,4 @@
 import type { Container } from '@cloudflare/containers';
-import type { Context } from 'hono';
-import { env } from 'hono/adapter';
 import { z } from 'zod';
 
 // Define the Zod schema for all environment variables
@@ -113,61 +111,109 @@ export type ValidatedEnv = Omit<
   APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
 };
 
-// Cache for validated environments per request
-const envCache = new WeakMap<Context, ValidatedEnv>();
+// Cache for validated environments keyed by the raw env reference so we only
+// validate once per worker isolate (env is identical for every request on a
+// given deployment).
+const envCache = new WeakMap<object, ValidatedEnv>();
 
 // Check if we're in a test environment
 function isTestEnvironment(): boolean {
   return (
     process.env.NODE_ENV === 'test' ||
     process.env.VITEST === 'true' ||
-    (typeof global !== 'undefined' &&
-      (global as unknown as { __vitest__?: unknown }).__vitest__ !== undefined)
+    (typeof globalThis !== 'undefined' &&
+      (globalThis as unknown as { __vitest__?: unknown }).__vitest__ !== undefined)
   );
 }
 
-/**
- * Get and validate environment variables from Hono context
- * Results are cached per request context
- */
-export function getEnv(c: Context): ValidatedEnv {
-  // Check if we already have validated env for this context
-  const cached = envCache.get(c);
-  if (cached) {
-    return cached;
-  }
-
-  // Get raw environment
-  const rawEnv = env<ValidatedEnv>(c);
-
-  // Use relaxed validation for test environments
+function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
   const schema = isTestEnvironment() ? testEnvSchema : apiEnvSchema;
-
-  // Validate all environment variables with Zod
-  // This ensures all required fields exist, including CF bindings
   const validated = schema.safeParse(rawEnv);
   if (!validated.success) {
     throw new Error(`Invalid environment variables: ${validated.error.message}`);
   }
 
-  // Merge validated data with correctly typed Cloudflare bindings from rawEnv
-  const data: ValidatedEnv = {
+  return {
     ...validated.data,
-    CF_VERSION_METADATA: rawEnv.CF_VERSION_METADATA || validated.data.CF_VERSION_METADATA,
-    AI: rawEnv.AI || validated.data.AI,
-    PACKRAT_SCRAPY_BUCKET: rawEnv.PACKRAT_SCRAPY_BUCKET || validated.data.PACKRAT_SCRAPY_BUCKET,
-    PACKRAT_BUCKET: rawEnv.PACKRAT_BUCKET || validated.data.PACKRAT_BUCKET,
-    PACKRAT_GUIDES_BUCKET: rawEnv.PACKRAT_GUIDES_BUCKET || validated.data.PACKRAT_GUIDES_BUCKET,
-    ETL_QUEUE: rawEnv.ETL_QUEUE || validated.data.ETL_QUEUE,
-    LOGS_QUEUE: rawEnv.LOGS_QUEUE || validated.data.LOGS_QUEUE,
-    EMBEDDINGS_QUEUE: rawEnv.EMBEDDINGS_QUEUE || validated.data.EMBEDDINGS_QUEUE,
-    APP_CONTAINER: rawEnv.APP_CONTAINER || validated.data.APP_CONTAINER,
+    CF_VERSION_METADATA: (rawEnv.CF_VERSION_METADATA ??
+      validated.data.CF_VERSION_METADATA) as WorkerVersionMetadata,
+    AI: (rawEnv.AI ?? validated.data.AI) as Ai,
+    PACKRAT_SCRAPY_BUCKET: (rawEnv.PACKRAT_SCRAPY_BUCKET ??
+      validated.data.PACKRAT_SCRAPY_BUCKET) as R2Bucket,
+    PACKRAT_BUCKET: (rawEnv.PACKRAT_BUCKET ?? validated.data.PACKRAT_BUCKET) as R2Bucket,
+    PACKRAT_GUIDES_BUCKET: (rawEnv.PACKRAT_GUIDES_BUCKET ??
+      validated.data.PACKRAT_GUIDES_BUCKET) as R2Bucket,
+    ETL_QUEUE: (rawEnv.ETL_QUEUE ?? validated.data.ETL_QUEUE) as Queue,
+    LOGS_QUEUE: (rawEnv.LOGS_QUEUE ?? validated.data.LOGS_QUEUE) as Queue,
+    EMBEDDINGS_QUEUE: (rawEnv.EMBEDDINGS_QUEUE ?? validated.data.EMBEDDINGS_QUEUE) as Queue,
+    APP_CONTAINER: (rawEnv.APP_CONTAINER ??
+      validated.data.APP_CONTAINER) as DurableObjectNamespace<Container<unknown>>,
   } as ValidatedEnv;
+}
 
-  // Cache the result
-  envCache.set(c, data);
+/**
+ * Module-level cache of the Cloudflare Worker env bindings. Primed by the
+ * entrypoint once per isolate so both Elysia routes and any lingering Hono
+ * routes can look up the env without needing to plumb it through the context.
+ */
+let cachedRawEnv: Record<string, unknown> | undefined;
 
-  return data;
+function getRawEnv(): Record<string, unknown> {
+  if (cachedRawEnv) return cachedRawEnv;
+
+  // Attempt to pull pre-primed env from a global set by the Elysia entrypoint.
+  const primed = (globalThis as Record<string, unknown>).__cfWorkersEnv__;
+  if (primed && typeof primed === 'object') {
+    cachedRawEnv = primed as Record<string, unknown>;
+    return cachedRawEnv;
+  }
+
+  // Test / Node fallback - pull from process.env
+  cachedRawEnv = { ...process.env } as Record<string, unknown>;
+  return cachedRawEnv;
+}
+
+/**
+ * Allow the Cloudflare Worker entrypoint to prime the env cache with the
+ * bindings it received. This is called once per isolate from the fetch/queue
+ * handler before any request is processed.
+ */
+export function setWorkerEnv(rawEnv: Record<string, unknown>): void {
+  cachedRawEnv = rawEnv;
+  (globalThis as Record<string, unknown>).__cfWorkersEnv__ = rawEnv;
+}
+
+type ContextLike = { env?: Record<string, unknown> } | Record<string, unknown>;
+
+/**
+ * Get and validate environment variables.
+ *
+ * Supports three calling conventions:
+ *  - `getEnv()` – returns the isolate's cached env (Elysia path)
+ *  - `getEnv(env)` – explicit env object (queue handler path)
+ *  - `getEnv(c)` – Hono context (legacy path) – reads `c.env` internally
+ */
+export function getEnv(input?: ContextLike): ValidatedEnv {
+  let rawEnv: Record<string, unknown>;
+  if (!input) {
+    rawEnv = getRawEnv();
+  } else if (
+    typeof input === 'object' &&
+    input !== null &&
+    'env' in input &&
+    typeof (input as { env?: unknown }).env === 'object'
+  ) {
+    // Hono Context or Elysia context object with nested `.env`
+    rawEnv = (input as { env: Record<string, unknown> }).env;
+  } else {
+    rawEnv = input as Record<string, unknown>;
+  }
+
+  const cached = envCache.get(rawEnv as object);
+  if (cached) return cached;
+  const validated = validate(rawEnv);
+  envCache.set(rawEnv as object, validated);
+  return validated;
 }
 
 /**
