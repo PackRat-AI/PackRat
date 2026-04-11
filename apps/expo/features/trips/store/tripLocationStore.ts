@@ -6,7 +6,7 @@ import { useCallback } from 'react';
  * Type for the trip location.
  */
 export type TripLocation = {
-  name: string;
+  name?: string;
   latitude: number;
   longitude: number;
 };
