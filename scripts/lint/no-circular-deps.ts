@@ -24,6 +24,9 @@ import { dirname, join, normalize, relative, resolve } from 'node:path';
 
 const ROOT = resolve(join(import.meta.dir, '..', '..'));
 
+// Regex for stripping trailing /* from tsconfig path aliases
+const TRAILING_GLOB_RE = /\/\*$/;
+
 // ---------------------------------------------------------------------------
 // Path-alias map built from tsconfig.json paths + package.json exports
 // ---------------------------------------------------------------------------
@@ -44,8 +47,8 @@ function buildAliasMap(): AliasEntry[] {
     for (const [alias, targets] of Object.entries(paths)) {
       if (!targets[0]) continue;
       // Strip trailing /* from alias and target
-      const aliasClean = alias.replace(/\/\*$/, '');
-      const targetClean = targets[0].replace(/\/\*$/, '');
+      const aliasClean = alias.replace(TRAILING_GLOB_RE, '');
+      const targetClean = targets[0].replace(TRAILING_GLOB_RE, '');
       aliases.push({
         prefix: aliasClean,
         target: resolve(ROOT, targetClean),
