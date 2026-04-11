@@ -1,13 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { obs } from 'expo-app/lib/store';
+import { isWeightUnit } from 'expo-app/lib/utils/itemCalculations';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
-import type { PackTemplateInStore, PackTemplateItem, WeightUnit } from '../types';
-
-const WEIGHT_UNITS: ReadonlySet<WeightUnit> = new Set(['g', 'kg', 'oz', 'lb']);
-const isWeightUnit = (value: string): value is WeightUnit =>
-  (WEIGHT_UNITS as ReadonlySet<string>).has(value);
+import type { PackTemplateInStore, PackTemplateItem } from '../types';
 
 export interface GenerateFromOnlineContentInput {
   contentUrl: string;
