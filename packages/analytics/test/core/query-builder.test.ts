@@ -176,18 +176,18 @@ describe('QueryBuilder', () => {
     });
 
     it('applies site filter', () => {
-      const sql = qb.searchQuery('tent', ['rei']);
+      const sql = qb.searchQuery('tent', { sites: ['rei'] });
       expect(sql).toContain("'rei'");
     });
 
     it('applies price range', () => {
-      const sql = qb.searchQuery('tent', undefined, 50, 200);
+      const sql = qb.searchQuery('tent', { minPrice: 50, maxPrice: 200 });
       expect(sql).toContain('>= 50');
       expect(sql).toContain('<= 200');
     });
 
     it('uses custom limit', () => {
-      const sql = qb.searchQuery('tent', undefined, undefined, undefined, 50);
+      const sql = qb.searchQuery('tent', { limit: 50 });
       expect(sql).toContain('LIMIT 50');
     });
   });
@@ -232,7 +232,7 @@ describe('QueryBuilder', () => {
     });
 
     it('filters by category', () => {
-      const sql = qb.dealsQuery(100, 'tents');
+      const sql = qb.dealsQuery(100, { category: 'tents' });
       expect(sql).toContain("'%tents%'");
     });
   });
