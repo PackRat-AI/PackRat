@@ -21,7 +21,7 @@ function TrailConditionsBanner() {
         <View className="mx-4 mb-2 mt-3 flex-row items-center justify-between rounded-xl bg-violet-500/10 px-4 py-3">
           <View className="flex-row items-center">
             <View className="h-8 w-8 items-center justify-center rounded-full bg-violet-500">
-              <Icon name="terrain" size={18} color="white" />
+              <Icon name="map" size={18} color="white" />
             </View>
             <View className="ml-3">
               <Text className="font-semibold text-foreground">{t('trips.trailConditions')}</Text>
