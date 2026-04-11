@@ -27,7 +27,10 @@ import { Textarea } from 'guides-app/components/ui/textarea';
 import { Toaster } from 'guides-app/components/ui/toaster';
 import { toast } from 'guides-app/components/ui/use-toast';
 import { assertDefined } from 'guides-app/lib/assertDefined';
-import { searchCatalogForGuides } from 'guides-app/lib/catalogSearchClient';
+import {
+  type GuideCatalogSearchResult,
+  searchCatalogForGuides,
+} from 'guides-app/lib/catalogSearchClient';
 import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -53,16 +56,6 @@ type ContentCategory =
   | 'beginner-resources';
 
 type DifficultyLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
-
-interface ContentRequest {
-  title: string;
-  description?: string;
-  categories: ContentCategory[];
-  difficulty?: DifficultyLevel;
-  author?: string;
-  generateFullContent?: boolean;
-  includeCatalogLinks?: boolean;
-}
 
 // Category display names
 const CATEGORY_DISPLAY_NAMES: Record<ContentCategory, string> = {
@@ -99,7 +92,7 @@ export default function GeneratePage() {
   // State for catalog search functionality
   const [includeCatalogLinks, setIncludeCatalogLinks] = useState(false);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
-  const [catalogResults, setCatalogResults] = useState<any[]>([]);
+  const [catalogResults, setCatalogResults] = useState<GuideCatalogSearchResult['items']>([]);
   const [selectedCatalogItems, setSelectedCatalogItems] = useState<Set<number>>(new Set());
   const [catalogSearching, setCatalogSearching] = useState(false);
 
@@ -132,16 +125,18 @@ export default function GeneratePage() {
     setCatalogSearching(true);
     try {
       // Try the local dev endpoint first
-      let result;
+      let result: GuideCatalogSearchResult | undefined;
       try {
-        const response = await fetch(`/api/dev/catalog-search?q=${encodeURIComponent(catalogSearchQuery)}&limit=10&minRating=3.5`);
+        const response = await fetch(
+          `/api/dev/catalog-search?q=${encodeURIComponent(catalogSearchQuery)}&limit=10&minRating=3.5`,
+        );
         if (response.ok) {
           result = await response.json();
         }
-      } catch (localError) {
+      } catch (_localError) {
         console.warn('Local dev endpoint not available, trying direct API call');
       }
-      
+
       // If local dev endpoint failed, try direct API call
       if (!result) {
         result = await searchCatalogForGuides(catalogSearchQuery, {
@@ -149,7 +144,7 @@ export default function GeneratePage() {
           minRating: 3.5,
         });
       }
-      
+
       // If no items found, show mock data to demonstrate the interface
       if (!result.items || result.items.length === 0) {
         setCatalogResults([
@@ -426,7 +421,6 @@ export default function GeneratePage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
                   <Switch
                     id="include-catalog"
                     checked={includeCatalogLinks}
@@ -451,9 +445,9 @@ export default function GeneratePage() {
                             }
                           }}
                         />
-                        <Button 
-                          type="button" 
-                          variant="outline" 
+                        <Button
+                          type="button"
+                          variant="outline"
                           onClick={handleCatalogSearch}
                           disabled={catalogSearching || !catalogSearchQuery.trim()}
                         >
@@ -474,7 +468,10 @@ export default function GeneratePage() {
                         <Label>Select items to include:</Label>
                         <div className="max-h-48 overflow-y-auto space-y-2">
                           {catalogResults.map((item) => (
-                            <div key={item.id} className="flex items-center space-x-2 p-2 border rounded">
+                            <div
+                              key={item.id}
+                              className="flex items-center space-x-2 p-2 border rounded"
+                            >
                               <Checkbox
                                 id={`catalog-item-${item.id}`}
                                 checked={selectedCatalogItems.has(item.id)}
@@ -483,13 +480,21 @@ export default function GeneratePage() {
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2">
                                   <span className="font-medium">{item.name}</span>
-                                  {item.brand && <span className="text-sm text-muted-foreground">({item.brand})</span>}
+                                  {item.brand && (
+                                    <span className="text-sm text-muted-foreground">
+                                      ({item.brand})
+                                    </span>
+                                  )}
                                   {item.ratingValue && (
-                                    <span className="text-sm">⭐ {item.ratingValue.toFixed(1)}</span>
+                                    <span className="text-sm">
+                                      ⭐ {item.ratingValue.toFixed(1)}
+                                    </span>
                                   )}
                                 </div>
                                 {item.price && (
-                                  <div className="text-sm text-muted-foreground">${item.price.toFixed(2)}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    ${item.price.toFixed(2)}
+                                  </div>
                                 )}
                               </div>
                             </div>

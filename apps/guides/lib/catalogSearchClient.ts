@@ -32,7 +32,7 @@ export async function searchCatalogForGuides(
   // Build query parameters
   const params = new URLSearchParams();
   params.append('q', query);
-  
+
   if (options.limit) {
     params.append('limit', options.limit.toString());
   }
@@ -44,7 +44,8 @@ export async function searchCatalogForGuides(
   }
 
   // Get API base URL from environment or default to local
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787';
+  const apiBaseUrl =
+    process.env.NEXT_PUBLIC_API_URL || process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8787';
   const url = `${apiBaseUrl}/api/catalog/guides/search?${params.toString()}`;
 
   try {
@@ -67,7 +68,7 @@ export async function searchCatalogForGuides(
           total: 0,
         };
       }
-      
+
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
 
@@ -75,7 +76,7 @@ export async function searchCatalogForGuides(
     return result;
   } catch (error) {
     console.warn('Error calling catalog search API:', error);
-    
+
     // Return empty results gracefully if API is unavailable
     // This allows development to continue even without the API running
     return {
@@ -94,15 +95,15 @@ export async function batchSearchCatalogForGuides(
   options: CatalogSearchOptions = {},
 ): Promise<Record<string, GuideCatalogSearchResult>> {
   const results: Record<string, GuideCatalogSearchResult> = {};
-  
+
   // Execute searches in parallel for better performance
   const searchPromises = queries.map(async (query) => {
     const result = await searchCatalogForGuides(query, options);
     return { query, result };
   });
-  
+
   const searchResults = await Promise.allSettled(searchPromises);
-  
+
   searchResults.forEach((promiseResult) => {
     if (promiseResult.status === 'fulfilled') {
       const { query, result } = promiseResult.value;
@@ -111,7 +112,7 @@ export async function batchSearchCatalogForGuides(
       console.warn('Batch search failed for a query:', promiseResult.reason);
     }
   });
-  
+
   return results;
 }
 
@@ -121,19 +122,57 @@ export async function batchSearchCatalogForGuides(
 export function extractGearTerms(content: string): string[] {
   const gearKeywords = [
     // Shelter
-    'tent', 'tarp', 'bivy', 'sleeping bag', 'sleeping pad', 'pillow',
+    'tent',
+    'tarp',
+    'bivy',
+    'sleeping bag',
+    'sleeping pad',
+    'pillow',
     // Cooking
-    'stove', 'pot', 'pan', 'mug', 'spork', 'knife', 'water filter', 'water bottle',
+    'stove',
+    'pot',
+    'pan',
+    'mug',
+    'spork',
+    'knife',
+    'water filter',
+    'water bottle',
     // Clothing
-    'jacket', 'pants', 'shirt', 'base layer', 'rain gear', 'boots', 'socks', 'gloves', 'hat',
+    'jacket',
+    'pants',
+    'shirt',
+    'base layer',
+    'rain gear',
+    'boots',
+    'socks',
+    'gloves',
+    'hat',
     // Navigation & Safety
-    'compass', 'map', 'gps', 'headlamp', 'flashlight', 'first aid', 'whistle',
+    'compass',
+    'map',
+    'gps',
+    'headlamp',
+    'flashlight',
+    'first aid',
+    'whistle',
     // Tools
-    'multi-tool', 'axe', 'saw', 'rope', 'carabiner', 'quickdraw',
+    'multi-tool',
+    'axe',
+    'saw',
+    'rope',
+    'carabiner',
+    'quickdraw',
     // Electronics
-    'phone', 'charger', 'power bank', 'camera', 'watch',
+    'phone',
+    'charger',
+    'power bank',
+    'camera',
+    'watch',
     // Personal Care
-    'toothbrush', 'soap', 'sunscreen', 'toilet paper',
+    'toothbrush',
+    'soap',
+    'sunscreen',
+    'toilet paper',
   ];
 
   const foundTerms = new Set<string>();
@@ -155,7 +194,7 @@ export function formatCatalogLink(item: CatalogItemLink, linkText?: string): str
   const displayText = linkText || item.name;
   const brandInfo = item.brand ? ` by ${item.brand}` : '';
   const title = `${item.name}${brandInfo}`;
-  
+
   return `[${displayText}](${item.productUrl} "${title}")`;
 }
 
@@ -163,22 +202,22 @@ export function formatCatalogLink(item: CatalogItemLink, linkText?: string): str
  * Create a formatted list of recommended items for guide content
  */
 export function formatRecommendationsList(
-  items: CatalogItemLink[], 
-  title: string = 'Recommended Gear'
+  items: CatalogItemLink[],
+  title: string = 'Recommended Gear',
 ): string {
   if (items.length === 0) {
     return '';
   }
 
   let markdown = `\n## ${title}\n\n`;
-  
+
   for (const item of items) {
     const brandInfo = item.brand ? ` (${item.brand})` : '';
     const priceInfo = item.price ? ` - $${item.price.toFixed(2)}` : '';
     const ratingInfo = item.ratingValue ? ` ⭐ ${item.ratingValue.toFixed(1)}` : '';
-    
+
     markdown += `- [${item.name}](${item.productUrl})${brandInfo}${priceInfo}${ratingInfo}\n`;
   }
-  
+
   return markdown;
 }

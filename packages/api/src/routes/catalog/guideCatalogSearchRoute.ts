@@ -59,13 +59,13 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   try {
     const catalogService = new CatalogService(c);
-    
+
     // Use semantic search for better results
     const searchResult = await catalogService.semanticSearch(query, limit, 0);
 
     // Filter and transform results for guide generation
     const filteredItems = searchResult.items
-      .filter(item => {
+      .filter((item) => {
         // Filter by category if specified
         if (category && item.categories && !item.categories.includes(category)) {
           return false;
@@ -80,7 +80,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
         }
         return true;
       })
-      .map(item => ({
+      .map((item) => ({
         id: item.id,
         name: item.name,
         productUrl: item.productUrl,
