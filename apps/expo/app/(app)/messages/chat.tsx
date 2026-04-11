@@ -1,3 +1,4 @@
+import { assertDefined } from '@packrat/guards';
 import type { ContextMenuMethods } from '@packrat/ui/nativewindui';
 import {
   Avatar,
@@ -11,7 +12,6 @@ import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
