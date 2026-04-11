@@ -1,4 +1,5 @@
 import type { Observable } from '@legendapp/state';
+import { assertDefined } from 'expo-app/utils/typeAssertions';
 
 /**
  * Type-safe accessor for dynamically-keyed Legend-State observable records.
@@ -18,5 +19,7 @@ import type { Observable } from '@legendapp/state';
  * obs(packItemsStore, id).deleted.set(true);
  */
 export function obs<T>(store: Observable<Record<string, T>>, id: string): Observable<T> {
-  return (store as unknown as Record<string, Observable<T>>)[id];
+  const observable = (store as unknown as Record<string, Observable<T>>)[id];
+  assertDefined(observable);
+  return observable;
 }

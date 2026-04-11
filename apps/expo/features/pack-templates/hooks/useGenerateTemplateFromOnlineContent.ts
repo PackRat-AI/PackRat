@@ -3,7 +3,11 @@ import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { obs } from 'expo-app/lib/store';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
-import type { PackTemplateInStore } from '../types';
+import type { PackTemplateInStore, PackTemplateItem, WeightUnit } from '../types';
+
+const WEIGHT_UNITS: ReadonlySet<WeightUnit> = new Set(['g', 'kg', 'oz', 'lb']);
+const isWeightUnit = (value: string): value is WeightUnit =>
+  (WEIGHT_UNITS as ReadonlySet<string>).has(value);
 
 export interface GenerateFromOnlineContentInput {
   contentUrl: string;
@@ -86,7 +90,29 @@ export function useGenerateTemplateFromOnlineContent() {
       const { items, ...template } = data;
       obs(packTemplatesStore, template.id).set(template);
       for (const item of items) {
-        obs(packTemplateItemsStore, item.id).set(item);
+        if (!isWeightUnit(item.weightUnit)) {
+          throw new Error(`Unsupported weightUnit "${item.weightUnit}" for item ${item.id}`);
+        }
+        const storeItem: PackTemplateItem = {
+          id: item.id,
+          packTemplateId: item.packTemplateId,
+          name: item.name,
+          description: item.description ?? undefined,
+          weight: item.weight,
+          weightUnit: item.weightUnit,
+          quantity: item.quantity,
+          category: item.category ?? '',
+          consumable: item.consumable,
+          worn: item.worn,
+          image: item.image ?? undefined,
+          notes: item.notes ?? undefined,
+          catalogItemId: item.catalogItemId ?? undefined,
+          userId: item.userId,
+          deleted: item.deleted,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        };
+        obs(packTemplateItemsStore, item.id).set(storeItem);
       }
     },
   });

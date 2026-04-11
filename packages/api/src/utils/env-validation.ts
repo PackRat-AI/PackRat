@@ -1,5 +1,4 @@
 import type { Container } from '@cloudflare/containers';
-import type { Ai, DurableObjectNamespace, Queue, R2Bucket } from '@cloudflare/workers-types';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 import { z } from 'zod';

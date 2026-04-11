@@ -446,9 +446,7 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
     return c.json({ ...newTemplate, items: insertedItems }, 201);
   } catch (error) {
     console.error('Error generating pack template:', error);
-    c.get('sentry').captureException(error, {
-      extra: { contentUrl, errorType: 'template_generation_error' },
-    });
+    c.get('sentry').captureException(error);
 
     // Determine specific error type based on error context
     let errorCode = 'UNKNOWN_ERROR';
