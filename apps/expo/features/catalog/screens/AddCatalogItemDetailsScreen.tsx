@@ -1,3 +1,4 @@
+import { assertDefined } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -7,7 +8,6 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import type { WeightUnit } from 'expo-app/types';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {

@@ -53,6 +53,7 @@ So pack your bags, grab your friends, and get ready for your next adventure with
     - [Installation & Development](#installation--development)
     - [Debugging 🐛](#debugging-)
   - [API Architecture](#api-architecture)
+  - [AI-Assisted Development (Compound Engineering) 🤖](#ai-assisted-development-compound-engineering-)
   - [Contributing 🤝](#contributing-)
   - [User Stories:](#user-stories)
   - [User Features:](#user-features)
@@ -471,6 +472,70 @@ The PackRat API is built with:
 - **OpenAI integration** - AI-powered features
 
 See `packages/api/` for the complete API implementation.
+
+## AI-Assisted Development (Compound Engineering) 🤖
+
+PackRat ships a [Compound Engineering](https://compound.engineering) plugin for GitHub Copilot. This gives every contributor access to a set of specialized AI agents and reusable skills that accelerate the full development cycle — from ideation through planning, implementation, review, and documentation.
+
+### How it works
+
+The plugin installs:
+
+| Path | What it contains |
+|------|-----------------|
+| `.github/agents/` | 29 specialist agent personas (security, architecture, performance, etc.) |
+| `.github/skills/` | 45+ reusable slash-command workflows |
+| `.github/copilot-mcp-config.json` | MCP server config (Context7 for live docs lookup) |
+
+### Core workflow
+
+The `/lfg` (Let's F*** Go) command runs the full autonomous engineering cycle in one shot:
+
+```
+/lfg <feature description>
+```
+
+Or run the individual steps manually:
+
+| Command | Description |
+|---------|-------------|
+| `/ce:ideate [area]` | Generate ranked improvement ideas |
+| `/ce:brainstorm <idea>` | Explore requirements and write a feature brief |
+| `/ce:plan <description>` | Transform a brief into a structured implementation plan |
+| `/ce:work <plan file>` | Execute a plan — ship the feature |
+| `/ce:review [PR / branch]` | Multi-agent exhaustive code review |
+| `/ce:compound` | Document a just-solved problem to compound team knowledge |
+| `/ce:compound-refresh` | Refresh stale docs after refactors or upgrades |
+| `/setup` | Interactive wizard to configure which agents run for this project |
+
+### Specialist agents
+
+Agents are invoked automatically based on context, or explicitly:
+
+| Agent | Purpose |
+|-------|---------|
+| `security-sentinel` | OWASP / auth / secrets audits |
+| `architecture-strategist` | Pattern compliance, service boundaries |
+| `performance-oracle` | Latency, bundle size, query optimisation |
+| `data-integrity-guardian` | Migration safety, schema drift |
+| `design-implementation-reviewer` | Figma ↔ code fidelity |
+| `kieran-typescript-reviewer` | TypeScript idioms and type safety |
+| `dhh-rails-reviewer` | Rails conventions |
+| `lint` | Automated linting agent |
+| …and 21 more | See `.github/agents/` |
+
+### Useful one-off skills
+
+```
+/ce:ideate              # What should we build next?
+/reproduce-bug          # Minimal repro from a bug report
+/triage                 # Prioritise an issue backlog
+/changelog              # Generate a changelog entry
+/feature-video          # Record a walkthrough of a feature
+/proof                  # Share a doc via Proof for async review
+```
+
+For the full list run `/ce:help` in Copilot Chat, or browse `.github/skills/`.
 
 ## Contributing 🤝
 

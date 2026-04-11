@@ -1,5 +1,5 @@
 import { use$ } from '@legendapp/state/react';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
+import { assertDefined } from '@packrat/guards';
 import { packWeigthHistoryStore } from '../store/packWeightHistory';
 import type { PackWeightHistoryEntry } from '../types';
 

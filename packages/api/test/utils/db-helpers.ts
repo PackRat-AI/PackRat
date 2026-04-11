@@ -1,5 +1,5 @@
 import { createDb } from '@packrat/api/db';
-import { assertDefined } from '@packrat/api/utils/typeAssertions';
+import { assertDefined } from '@packrat/guards';
 import type { InferInsertModel } from 'drizzle-orm';
 import type { Context } from 'hono';
 import {

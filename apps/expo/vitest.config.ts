@@ -20,15 +20,16 @@ export default defineConfig({
     name: 'expo-unit',
     environment: 'node',
     globals: true,
-    include: [resolve(__dirname, '{utils,lib/utils}/**/*.test.ts')],
+    include: [resolve(__dirname, '{utils,lib/utils,features/**/utils}/**/*.test.ts')],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'json', 'lcov', 'html'],
       reportsDirectory: resolve(__dirname, 'coverage/unit'),
-      include: ['utils/**/*.ts', 'lib/utils/**/*.ts'],
+      include: ['utils/**/*.ts', 'lib/utils/**/*.ts', 'features/**/utils/**/*.ts'],
       exclude: [
         'utils/**/*.test.ts',
         'lib/utils/**/*.test.ts',
+        'features/**/utils/**/*.test.ts',
         'utils/polyfills.ts', // Infrastructure/setup file - no business logic to test
       ],
       thresholds: {

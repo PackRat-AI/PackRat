@@ -1,5 +1,5 @@
+import { assertDefined } from '@packrat/guards';
 import { useTripDetailsFromStore } from 'expo-app/features/trips/hooks/useTripDetailsFromStore';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams } from 'expo-router';
 import { TripForm } from '../components/TripForm';
 

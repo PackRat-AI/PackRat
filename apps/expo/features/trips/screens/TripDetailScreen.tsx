@@ -1,10 +1,10 @@
+import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { appAlert } from 'expo-app/app/_layout';
 import { useLocations } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, Share, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';

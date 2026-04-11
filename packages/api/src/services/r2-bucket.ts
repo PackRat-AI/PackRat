@@ -13,7 +13,7 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
-import { isDate, isNumber, isObject, isString } from 'radash';
+import { isDate, isNumber, isObject, isString } from '@packrat/guards';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
