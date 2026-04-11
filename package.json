@@ -19,9 +19,9 @@
     "format": "biome format --write",
     "lint": "biome check --write",
     "lint-unsafe": "biome check --write --unsafe",
-    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts",
+    "lint:custom": "bun scripts/check-all.ts",
     "check:circular": "bun scripts/lint/no-circular-deps.ts",
-    "lint:strict": "biome check && bun run lint:custom",
+    "lint:strict": "biome check && bun scripts/check-all.ts",
     "check": "biome check --no-errors-on-unmatched",
     "expo": "cd apps/expo && bun start",
     "android": "cd apps/expo && bun android",
@@ -31,7 +31,8 @@
     "test:expo": "vitest run --config apps/expo/vitest.config.ts",
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
-    "bump": "bun .github/scripts/bump.ts"
+    "bump": "bun .github/scripts/bump.ts",
+    "check:all": "bun scripts/check-all.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
