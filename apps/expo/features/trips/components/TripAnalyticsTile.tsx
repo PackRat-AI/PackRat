@@ -27,7 +27,7 @@ export function TripAnalyticsTile() {
       leftView={
         <View className="px-3">
           <View className="h-6 w-6 items-center justify-center rounded-md bg-indigo-500">
-            <Icon name="chart-bar" size={15} color="white" />
+            <Icon name="chart-box-outline" size={15} color="white" />
           </View>
         </View>
       }

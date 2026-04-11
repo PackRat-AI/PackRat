@@ -43,7 +43,7 @@ function StatCard({
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <Text variant="headline" className="font-semibold text-foreground mt-6 mb-2 px-1">
+    <Text variant="heading" className="font-semibold text-foreground mt-6 mb-2 px-1">
       {title}
     </Text>
   );
@@ -70,7 +70,7 @@ export function TripAnalyticsScreen() {
       <View className="flex-1">
         <LargeTitleHeader title={t('analytics.title')} />
         <View className="flex-1 items-center justify-center p-8">
-          <Icon name="alert-circle-outline" size={48} color="#9ca3af" />
+          <Icon name="exclamation" size={48} color="#9ca3af" />
           <Text variant="heading" className="mt-4 text-center text-muted-foreground">
             {t('analytics.errorLoading')}
           </Text>
@@ -121,7 +121,7 @@ export function TripAnalyticsScreen() {
           <StatCard
             label={t('analytics.upcomingTrips')}
             value={analytics.upcomingTrips}
-            iconName="calendar-outline"
+            iconName="calendar-month"
             iconColor="#f97316"
           />
           <StatCard
@@ -272,7 +272,7 @@ export function TripAnalyticsScreen() {
           <StatCard
             label={t('analytics.uniqueRegions')}
             value={analytics.uniqueRegions.length}
-            iconName="earth"
+            iconName="web"
             iconColor="#14b8a6"
           />
         </View>
