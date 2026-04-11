@@ -24,7 +24,7 @@ import { dirname, join, normalize, relative, resolve } from 'node:path';
 
 const ROOT = resolve(join(import.meta.dir, '..', '..'));
 
-// Regex for stripping trailing /* from tsconfig path aliases
+// Top-level regex constants (useTopLevelRegex)
 const TRAILING_GLOB_RE = /\/\*$/;
 
 // ---------------------------------------------------------------------------
@@ -159,19 +159,18 @@ const REQUIRE_RE = /(?:require|import)\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 function extractImports(source: string): string[] {
   const specifiers: string[] = [];
-
   IMPORT_RE.lastIndex = 0;
-  let importMatch = IMPORT_RE.exec(source);
-  while (importMatch !== null) {
-    if (importMatch[1]) specifiers.push(importMatch[1]);
-    importMatch = IMPORT_RE.exec(source);
+  let m = IMPORT_RE.exec(source);
+  while (m !== null) {
+    if (m[1]) specifiers.push(m[1]);
+    m = IMPORT_RE.exec(source);
   }
 
   REQUIRE_RE.lastIndex = 0;
-  let requireMatch = REQUIRE_RE.exec(source);
-  while (requireMatch !== null) {
-    if (requireMatch[1]) specifiers.push(requireMatch[1]);
-    requireMatch = REQUIRE_RE.exec(source);
+  m = REQUIRE_RE.exec(source);
+  while (m !== null) {
+    if (m[1]) specifiers.push(m[1]);
+    m = REQUIRE_RE.exec(source);
   }
 
   return specifiers;
