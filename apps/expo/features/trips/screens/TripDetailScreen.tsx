@@ -37,7 +37,7 @@ export function TripDetailScreen() {
       trip?.location
         ? `map-${trip.location.latitude}-${trip.location.longitude}`
         : 'map-no-location',
-    [trip?.location?.latitude, trip?.location?.longitude],
+    [trip?.location],
   );
 
   if (!trip) {
