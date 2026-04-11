@@ -1,0 +1,8 @@
+/*
+ * Shared globals.css stub for @packrat/web-ui.
+ *
+ * A future PR will move the base layer + theme tokens currently duplicated
+ * between apps/landing/app/globals.css and apps/guides/app/globals.css here,
+ * so both Next.js apps can `@import '@packrat/web-ui/styles/globals.css'`
+ * and only keep app-specific overrides locally.
+ */
