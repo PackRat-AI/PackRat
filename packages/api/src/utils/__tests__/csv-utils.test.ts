@@ -487,7 +487,7 @@ describe('csv-utils', () => {
 
     it('normalizes smart quotes to standard quotes', () => {
       // Test with actual smart quote characters (curly quotes)
-      const inputWithSmartQuotes = String.fromCharCode(8216) + 'hello' + String.fromCharCode(8217);
+      const inputWithSmartQuotes = `${String.fromCharCode(8216)}hello${String.fromCharCode(8217)}`;
       const result = normalizeJsonString(inputWithSmartQuotes);
       expect(result).toContain("'hello'"); // Smart quotes should become regular quotes
       expect(result).not.toContain(String.fromCharCode(8216)); // No more smart quotes

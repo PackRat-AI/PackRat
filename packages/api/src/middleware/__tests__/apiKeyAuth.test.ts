@@ -45,7 +45,7 @@ describe('apiKeyAuthMiddleware', () => {
     mockIsValidApiKey.mockReturnValue(false);
 
     const c = makeMockContext();
-    const result = await apiKeyAuthMiddleware(c, mockNext);
+    const _result = await apiKeyAuthMiddleware(c, mockNext);
 
     expect(mockNext).not.toHaveBeenCalled();
     expect(c.json).toHaveBeenCalledWith({ error: 'Unauthorized' }, 401);
@@ -57,7 +57,7 @@ describe('apiKeyAuthMiddleware', () => {
     mockIsValidApiKey.mockReturnValue(false);
 
     const c = makeMockContext();
-    const result = await apiKeyAuthMiddleware(c, mockNext);
+    const _result = await apiKeyAuthMiddleware(c, mockNext);
 
     expect(mockNext).not.toHaveBeenCalled();
     expect(c.json).toHaveBeenCalledWith({ error: 'Unauthorized' }, 401);
