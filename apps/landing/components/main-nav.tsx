@@ -1,8 +1,6 @@
 'use client';
 
 import { ThemeToggle } from 'landing-app/components/theme-toggle';
-import { Button } from 'landing-app/components/ui/button';
-import GradientText from 'landing-app/components/ui/gradient-text';
 import { Sheet, SheetContent, SheetTrigger } from 'landing-app/components/ui/sheet';
 import { siteConfig } from 'landing-app/config/site';
 import { cn } from 'landing-app/lib/utils';
@@ -16,18 +14,13 @@ export default function MainNav() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  // Handle scroll events to update active section and navbar style
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
 
-      // Find the current active section based on scroll position
       const sections = siteConfig.mainNav.map((item) => item.href.substring(1));
-
-      // Get all section elements
       const sectionElements = sections.map((id) => document.getElementById(id)).filter(Boolean);
 
-      // Find the section that is currently in view
       const currentSection = sectionElements.find((element) => {
         if (!element) return false;
         const rect = element.getBoundingClientRect();
@@ -37,20 +30,18 @@ export default function MainNav() {
       if (currentSection) {
         setActiveSection(`#${currentSection.id}`);
       } else if (window.scrollY < 100) {
-        setActiveSection(''); // At the top of the page
+        setActiveSection('');
       }
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initialize on mount
+    handleScroll();
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Handle smooth scrolling when clicking on navigation links
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (href.startsWith('http')) {
-      // External link → open in a new tab
       e.preventDefault();
       window.open(href, '_blank', 'noopener,noreferrer');
       return;
@@ -70,82 +61,91 @@ export default function MainNav() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 w-full transition-all duration-300',
+        'sticky top-0 z-50 w-full transition-all duration-300',
         isScrolled
-          ? 'bg-background/90 shadow-sm backdrop-blur-xl border-b border-border/40 py-2'
-          : 'bg-transparent py-4',
+          ? 'bg-background/80 backdrop-blur-xl border-b border-border/40 py-2'
+          : 'bg-background py-4',
       )}
     >
-      <div className="container flex items-center justify-between px-4 md:px-8 lg:px-12">
-        <Link href="/" className="flex items-center gap-2 z-10">
-          <div className="relative">
-            <Backpack className="h-8 w-8 text-primary" />
-            <div className="absolute -inset-1.5 rounded-full blur-lg opacity-30 -z-10 bg-primary"></div>
-          </div>
-          <GradientText className="text-xl font-bold">{siteConfig.name}</GradientText>
-        </Link>
+      <div className="container flex h-10 items-center">
+        {/* Logo */}
+        <div className="flex items-center mr-6">
+          <Link href="/" className="flex items-center gap-2">
+            <Backpack className="h-5 w-5 text-apple-blue" />
+            <span className="text-lg font-semibold">{siteConfig.name}</span>
+          </Link>
+        </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          {siteConfig.mainNav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={(e) => scrollToSection(e, item.href)}
-              className={cn(
-                'text-sm font-medium tracking-wide transition-colors hover:text-primary relative pb-0.5',
-                activeSection === item.href
-                  ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-primary'
-                  : 'text-muted-foreground',
-              )}
-            >
-              {item.title}
-            </Link>
-          ))}
+        {/* Desktop navigation – Apple style: centered, rounded-full hover */}
+        <nav className="hidden md:flex flex-1 justify-center">
+          <div className="flex space-x-1">
+            {siteConfig.mainNav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={(e) => scrollToSection(e, item.href)}
+                className={cn(
+                  'px-3 py-2 text-sm font-medium rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors',
+                  activeSection === item.href
+                    ? 'text-apple-blue font-semibold'
+                    : 'text-foreground/80',
+                )}
+              >
+                {item.title}
+              </Link>
+            ))}
+          </div>
         </nav>
 
-        <div className="flex items-center gap-4">
+        {/* Right side: theme toggle + CTA */}
+        <div className="flex items-center gap-2 ml-auto">
           <ThemeToggle />
 
-          <Button asChild className="hidden md:inline-flex" variant="default">
-            <Link
-              href={siteConfig.cta.primary.href}
-              onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
-            >
-              {siteConfig.cta.primary.text}
-            </Link>
-          </Button>
+          <Link
+            href={siteConfig.cta.primary.href}
+            onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
+            className="hidden md:inline-flex items-center gap-1.5 ml-2 px-4 py-1.5 rounded-full bg-apple-blue text-white text-sm font-medium hover:bg-apple-blue/90 transition-colors"
+          >
+            {siteConfig.cta.primary.text}
+          </Link>
 
-          {/* Mobile menu using Sheet component */}
+          {/* Mobile hamburger */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
+              <button
+                type="button"
+                className="md:hidden ml-1 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[80vw] sm:w-[350px] pr-0">
+            <SheetContent side="right" className="w-[280px] sm:w-[350px]">
               <div className="flex flex-col h-full">
-                <div className="flex justify-between items-center mb-8 pr-6">
+                <div className="flex justify-between items-center mb-8">
                   <div className="flex items-center gap-2">
-                    <Backpack className="h-6 w-6 text-primary" />
-                    <GradientText className="text-lg font-bold">{siteConfig.name}</GradientText>
+                    <Backpack className="h-5 w-5 text-apple-blue" />
+                    <span className="text-lg font-semibold">{siteConfig.name}</span>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
+                  <button
+                    type="button"
+                    className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Close menu"
+                  >
                     <X className="h-5 w-5" />
-                    <span className="sr-only">Close menu</span>
-                  </Button>
+                  </button>
                 </div>
 
-                <nav className="flex flex-col gap-6 pr-6">
+                <nav className="flex flex-col gap-2">
                   {siteConfig.mainNav.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={(e) => scrollToSection(e, item.href)}
                       className={cn(
-                        'text-lg font-medium py-2 border-b border-border/20 transition-colors hover:text-primary',
-                        activeSection === item.href && 'text-primary font-semibold',
+                        'px-3 py-2 text-base font-medium rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors',
+                        activeSection === item.href ? 'text-apple-blue font-semibold' : '',
                       )}
                     >
                       {item.title}
@@ -153,15 +153,14 @@ export default function MainNav() {
                   ))}
                 </nav>
 
-                <div className="mt-auto mb-8 pr-6">
-                  <Button asChild className="w-full" variant="default">
-                    <Link
-                      href={siteConfig.cta.primary.href}
-                      onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
-                    >
-                      {siteConfig.cta.primary.text}
-                    </Link>
-                  </Button>
+                <div className="mt-auto mb-6">
+                  <Link
+                    href={siteConfig.cta.primary.href}
+                    onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
+                    className="flex items-center justify-center w-full px-4 py-2.5 rounded-full bg-apple-blue text-white text-sm font-medium hover:bg-apple-blue/90 transition-colors"
+                  >
+                    {siteConfig.cta.primary.text}
+                  </Link>
                 </div>
               </div>
             </SheetContent>

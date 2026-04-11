@@ -2,12 +2,17 @@ import MainNav from 'landing-app/components/main-nav';
 import SiteFooter from 'landing-app/components/site-footer';
 import { ThemeProvider } from 'landing-app/components/theme-provider';
 import { siteConfig } from 'landing-app/config/site';
+import { cn } from 'landing-app/lib/utils';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], display: 'swap' });
+const fontSans = FontSans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  weight: ['400', '500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   title: {
@@ -61,16 +66,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <MainNav />
-          {children}
-          <SiteFooter />
+          <div className="flex min-h-screen flex-col">
+            <MainNav />
+            {children}
+            <SiteFooter />
+          </div>
         </ThemeProvider>
       </body>
     </html>
