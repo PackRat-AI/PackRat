@@ -31,6 +31,8 @@ export default defineConfig({
         'lib/utils/**/*.test.ts',
         'features/**/utils/**/*.test.ts',
         'utils/polyfills.ts', // Infrastructure/setup file - no business logic to test
+        'features/**/utils/index.ts', // Barrel re-export files — no logic to test
+        'features/**/utils/uploadImage.ts', // Requires native expo-file-system — not unit-testable
       ],
       thresholds: {
         statements: 75,
