@@ -10,7 +10,7 @@ import {
 } from '@packrat/api/schemas/packTemplates';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { assertDefined } from '@packrat/api/utils/typeAssertions';
+import { assertDefined } from '@packrat/guards';
 import { and, eq, or } from 'drizzle-orm';
 
 const packTemplateRoutes = new OpenAPIHono<{
