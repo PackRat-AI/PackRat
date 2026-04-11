@@ -1,5 +1,6 @@
 import { Button, Form, FormItem, FormSection, Text, Toggle } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { featureFlags } from 'expo-app/config';
 import { TripNotificationsList } from 'expo-app/features/trips/components/TripNotificationsList';
 import { useTripNotifications } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
@@ -55,7 +56,11 @@ export default function NotificationsScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{ paddingBottom: insets.bottom }}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refresh} />}
+        refreshControl={
+          featureFlags.enablePreTripNotifications ? (
+            <RefreshControl refreshing={isLoading} onRefresh={refresh} />
+          ) : undefined
+        }
       >
         <Form className="gap-5 px-4 pt-8">
           <FormSection
@@ -111,20 +116,22 @@ export default function NotificationsScreen() {
           </FormSection>
 
           {/* Trip Reminders Section */}
-          <FormSection
-            materialIconProps={{ name: 'map-clock-outline' }}
-            ios={{ title: t('notifications.tripReminders') }}
-            footnote={t('notifications.tripRemindersSubtitle')}
-          >
-            <View className="px-2 py-3">
-              <TripNotificationsList
-                notifications={tripNotifications}
-                isLoading={isLoading}
-                error={error}
-                onRetry={refresh}
-              />
-            </View>
-          </FormSection>
+          {featureFlags.enablePreTripNotifications && (
+            <FormSection
+              materialIconProps={{ name: 'map-clock-outline' }}
+              ios={{ title: t('notifications.tripReminders') }}
+              footnote={t('notifications.tripRemindersSubtitle')}
+            >
+              <View className="px-2 py-3">
+                <TripNotificationsList
+                  notifications={tripNotifications}
+                  isLoading={isLoading}
+                  error={error}
+                  onRetry={refresh}
+                />
+              </View>
+            </FormSection>
+          )}
 
           {Platform.OS !== 'ios' && (
             <View className="items-end">
