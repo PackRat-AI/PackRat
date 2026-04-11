@@ -18,23 +18,22 @@ function cacheKey(userId: string, trailName?: string): string {
 /** Persist fetched reports to AsyncStorage for offline / cold-start access. */
 async function writeCachedReports(
   reports: TrailConditionReport[],
-  userId: string,
-  trailName?: string,
+  opts: { userId: string; trailName?: string },
 ) {
   try {
-    await AsyncStorage.setItem(cacheKey(userId, trailName), JSON.stringify(reports));
+    await AsyncStorage.setItem(cacheKey(opts.userId, opts.trailName), JSON.stringify(reports));
   } catch {
     // Best-effort — swallow write errors silently
   }
 }
 
 /** Read previously-cached reports from AsyncStorage. */
-async function readCachedReports(
-  userId: string,
-  trailName?: string,
-): Promise<TrailConditionReport[] | undefined> {
+async function readCachedReports(opts: {
+  userId: string;
+  trailName?: string;
+}): Promise<TrailConditionReport[] | undefined> {
   try {
-    const raw = await AsyncStorage.getItem(cacheKey(userId, trailName));
+    const raw = await AsyncStorage.getItem(cacheKey(opts.userId, opts.trailName));
     if (raw) return JSON.parse(raw) as TrailConditionReport[];
   } catch {
     // Corrupt or missing cache — ignore
@@ -78,7 +77,7 @@ export function useTrailConditionReports(trailName?: string) {
   useEffect(() => {
     let cancelled = false;
     setCachedReports(undefined);
-    readCachedReports(currentUserId, trailName).then((reports) => {
+    readCachedReports({ userId: currentUserId, trailName }).then((reports) => {
       if (!cancelled) setCachedReports(reports);
     });
     return () => {
@@ -106,7 +105,7 @@ export function useTrailConditionReports(trailName?: string) {
   useEffect(() => {
     if (query.data && query.data !== prevDataRef.current && query.isFetched) {
       prevDataRef.current = query.data;
-      writeCachedReports(query.data, currentUserId, trailName);
+      writeCachedReports(query.data, { userId: currentUserId, trailName });
     }
   }, [query.data, query.isFetched, currentUserId, trailName]);
 
