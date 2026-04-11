@@ -8,4 +8,6 @@ export const featureFlags = {
   enableTrailConditions: false,
   enableFeed: false,
   enableWildlifeIdentification: false,
+  enableOfflineMaps: false,
+  enableVoiceCommands: false,
 };

@@ -28,9 +28,9 @@
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
-    "lint-unsafe": "biome check --write --unsafe",
     "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts",
     "lint:strict": "biome check && bun run lint:custom",
+    "lint-unsafe": "biome check --write --unsafe",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
@@ -46,9 +46,6 @@
     "glob": "^11.0.3",
     "lefthook": "^1.11.14",
     "sort-package-json": "^3.6.1"
-  },
-  "patchedDependencies": {
-    "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch"
   },
   "catalog": {
     "ai": "^5.0.136",
@@ -87,6 +84,9 @@
     "@radix-ui/react-toggle": "^1.1.9",
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7"
+  },
+  "patchedDependencies": {
+    "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch"
   },
   "trustedDependencies": [
     "@sentry/cli"

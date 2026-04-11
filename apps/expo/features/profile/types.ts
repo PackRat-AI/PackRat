@@ -1,4 +1,4 @@
-import type { WeightUnit } from '../packs';
+import type { WeightUnit } from '../packs/types';
 
 export interface User {
   id: number;
