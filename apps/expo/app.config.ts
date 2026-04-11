@@ -58,6 +58,16 @@ export default (): ExpoConfig =>
         'expo-web-browser',
         'expo-apple-authentication',
         'expo-localization',
+        [
+          'llama.rn',
+          // optional fields, below are the default values
+          {
+            enableEntitlements: true,
+            entitlementsProfile: 'production',
+            forceCxx20: true,
+            enableOpenCLAndHexagon: true,
+          },
+        ],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
       ],

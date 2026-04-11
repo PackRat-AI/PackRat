@@ -1,0 +1,13 @@
+diff --git a/src/components/List.tsx b/src/components/List.tsx
+index e22bc13..7b6d0e0 100644
+--- a/src/components/List.tsx
++++ b/src/components/List.tsx
+@@ -31,7 +31,7 @@
+ type ListDataItem = string | { title: string; subTitle?: string };
+ type ListVariant = 'insets' | 'full-width';
+ 
+-type ListRef<T extends ListDataItem> = React.Ref<FlashList<T>>;
++type ListRef<T extends ListDataItem> = React.Ref<React.ElementRef<typeof FlashList>>;
+ 
+ type ListRenderItemProps<T extends ListDataItem> = ListRenderItemInfo<T> & {
+   variant?: ListVariant;

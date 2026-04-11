@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
@@ -12,7 +12,7 @@ export function TrailConditionsTile() {
   const router = useRouter();
   const { t } = useTranslation();
 
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
 
   const handlePress = () => {
     // if (!currentPack) return alertRef.current?.show();

@@ -1,1 +1,0 @@
-ALTER TABLE "catalog_items" ADD CONSTRAINT "catalog_items_sku_unique" UNIQUE("sku");
