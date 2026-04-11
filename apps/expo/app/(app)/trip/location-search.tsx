@@ -8,6 +8,9 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
 
+const GOOGLE_MAPS_API_KEY =
+  Constants.expoConfig?.extra?.googleMapsApiKey || process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+
 export default function LocationSearchScreen() {
   const router = useRouter();
   const mapRef = useRef<MapView>(null);
@@ -21,9 +24,6 @@ export default function LocationSearchScreen() {
     longitude: number;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const GOOGLE_MAPS_API_KEY =
-    Constants.expoConfig?.extra?.googleMapsApiKey || process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -67,12 +67,10 @@ export default function LocationSearchScreen() {
           800,
         );
       } else {
-        console.warn('Google Maps response:', data);
         Alert.alert(t('location.notFound'), t('location.noLocationFound'));
         setSelectedLocation(null);
       }
-    } catch (error) {
-      console.error('Error searching location:', error);
+    } catch (_error) {
       Alert.alert(t('location.searchError'), t('location.somethingWentWrong'));
       setSelectedLocation(null);
     } finally {

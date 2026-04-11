@@ -26,7 +26,7 @@ export interface Trip {
   localUpdatedAt?: string;
 }
 
-export type TripInStore = Omit<Trip, 'trips'>;
+export type TripInStore = Trip;
 
 export type TripInput = Omit<
   TripInStore,

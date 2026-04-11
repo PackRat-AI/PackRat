@@ -9,30 +9,38 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { Stack, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
-import { useTripLocation } from '../store/tripLocationStore';
+import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
 import type { Trip } from '../types';
 
-const tripFormSchema = z.object({
-  name: z.string().min(1, 'Trip name is required'),
-  description: z.string().optional(),
-  notes: z.string().optional(),
-  location: z
-    .object({
-      latitude: z.number(),
-      longitude: z.number(),
-      name: z.string().optional(),
-    })
-    .optional(),
-  startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().min(1, 'End date is required'),
-  packId: z.string().optional(),
-});
+const tripFormSchema = z
+  .object({
+    name: z.string().min(1, 'Trip name is required'),
+    description: z.string().optional(),
+    notes: z.string().optional(),
+    location: z
+      .object({
+        latitude: z.number(),
+        longitude: z.number(),
+        name: z.string().optional(),
+      })
+      .optional(),
+    startDate: z.string().min(1, 'Start date is required'),
+    endDate: z.string().min(1, 'End date is required'),
+    packId: z.string().optional(),
+  })
+  .refine(
+    ({ startDate, endDate }) => !startDate || !endDate || new Date(endDate) >= new Date(startDate),
+    {
+      message: 'End date must be after start date',
+      path: ['endDate'],
+    },
+  );
 
 type TripFormValues = z.infer<typeof tripFormSchema>;
 
@@ -52,6 +60,16 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
 
+  // Reset the shared location store on mount (to clear stale state from any
+  // previous edit session) and on unmount (to clean up for future forms), so
+  // that a location selected in one edit session never leaks into the next.
+  useEffect(() => {
+    tripLocationStore.set(null);
+    return () => {
+      tripLocationStore.set(null);
+    };
+  }, []);
+
   const formatDate = (value?: unknown) => {
     if (!value) return '';
     if (value instanceof Date) {
@@ -68,7 +86,10 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       name: trip?.name || '',
       description: trip?.description || '',
       notes: trip?.notes || '',
-      location: location ?? undefined,
+      // Use the trip's own location as the form default, not the global location
+      // store. The store is only updated when the user explicitly picks a new
+      // location via the location-search screen.
+      location: trip?.location ?? undefined,
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
       packId: trip?.packId,
@@ -186,8 +207,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         : t('trips.addLocation')}
                   </Text>
                 </Pressable>
-                {location && (
-                  <Pressable onPress={() => setLocation(null)}>
+                {(location || trip?.location) && (
+                  <Pressable
+                    onPress={() => {
+                      setLocation(null);
+                      form.setFieldValue('location', undefined);
+                    }}
+                  >
                     <Text className="text-red-500 font-semibold px-2">{t('common.clear')}</Text>
                   </Pressable>
                 )}
