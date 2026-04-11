@@ -1,8 +1,9 @@
+import { cn } from '@packrat/web-ui/lib/utils';
+import '@packrat/web-ui/styles/globals.css';
 import MainNav from 'landing-app/components/main-nav';
 import SiteFooter from 'landing-app/components/site-footer';
 import { ThemeProvider } from 'landing-app/components/theme-provider';
 import { siteConfig } from 'landing-app/config/site';
-import { cn } from 'landing-app/lib/utils';
 import type { Metadata } from 'next';
 import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
