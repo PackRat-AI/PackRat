@@ -95,8 +95,9 @@ export function TripAnalyticsScreen() {
     1,
   );
 
-  // Minimum bar height percentage for months with trips, to ensure visibility
-  const MIN_BAR_HEIGHT_PCT = 5;
+  // Fixed pixel height for bar chart (percentage heights resolve to 0 inside ScrollView in RN)
+  const MAX_BAR_HEIGHT = 120;
+  const MIN_BAR_HEIGHT_PX = 4;
 
   return (
     <View className="flex-1">
@@ -199,16 +200,36 @@ export function TripAnalyticsScreen() {
         <View className="rounded-xl bg-card p-4">
           {analytics.tripsByMonth.length > 0 ? (
             <>
-              <View className="h-32 flex-row items-end justify-between gap-0.5">
+              <View
+                style={{
+                  height: MAX_BAR_HEIGHT,
+                  flexDirection: 'row',
+                  alignItems: 'flex-end',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                }}
+              >
                 {analytics.tripsByMonth.map((item) => {
-                  const heightPct = maxMonthCount > 0 ? (item.count / maxMonthCount) * 100 : 0;
+                  const barHeight =
+                    maxMonthCount > 0
+                      ? Math.max(
+                          (item.count / maxMonthCount) * MAX_BAR_HEIGHT,
+                          item.count > 0 ? MIN_BAR_HEIGHT_PX : 0,
+                        )
+                      : 0;
                   return (
-                    <View key={item.month} className="flex-1 items-center">
+                    <View
+                      key={item.month}
+                      style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        height: MAX_BAR_HEIGHT,
+                        justifyContent: 'flex-end',
+                      }}
+                    >
                       <View
                         className="w-full rounded-t-sm bg-primary"
-                        style={{
-                          height: `${Math.max(heightPct, item.count > 0 ? MIN_BAR_HEIGHT_PCT : 0)}%`,
-                        }}
+                        style={{ height: barHeight }}
                       />
                     </View>
                   );
