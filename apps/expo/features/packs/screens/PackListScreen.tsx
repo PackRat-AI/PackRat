@@ -1,4 +1,4 @@
-import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
+import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
   Button,
@@ -66,7 +66,7 @@ export function PackListScreen() {
   );
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const { colors } = useColorScheme();
 

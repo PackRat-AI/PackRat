@@ -37,7 +37,7 @@ export default (): ExpoConfig =>
     {
       name: getAppName(),
       slug: 'packrat',
-      version: '2.0.15',
+      version: '2.0.17',
       scheme: 'packrat',
       web: {
         bundler: 'metro',
@@ -58,6 +58,16 @@ export default (): ExpoConfig =>
         'expo-web-browser',
         'expo-apple-authentication',
         'expo-localization',
+        [
+          'llama.rn',
+          // optional fields, below are the default values
+          {
+            enableEntitlements: true,
+            entitlementsProfile: 'production',
+            forceCxx20: true,
+            enableOpenCLAndHexagon: true,
+          },
+        ],
         '@react-native-community/datetimepicker',
         '@sentry/react-native',
       ],

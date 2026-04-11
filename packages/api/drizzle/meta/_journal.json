@@ -246,6 +246,13 @@
       "when": 1773066716880,
       "tag": "0033_stormy_next_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1774086319275,
+      "tag": "0034_thin_spirit",
+      "breakpoints": true
     }
   ]
 }

@@ -54,7 +54,7 @@ export async function verifyJWT({
 }): Promise<JWTPayload | null> {
   try {
     const { JWT_SECRET } = getEnv(c);
-    return await verify(token, JWT_SECRET);
+    return await verify(token, JWT_SECRET, 'HS256');
   } catch (_error) {
     return null;
   }

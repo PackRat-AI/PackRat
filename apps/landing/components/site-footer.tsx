@@ -3,7 +3,7 @@
 import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
 import GradientText from 'landing-app/components/ui/gradient-text';
 import { siteConfig } from 'landing-app/config/site';
-import { LucideIcon } from 'landing-app/lib/icons';
+import { LucideIcon, TikTokIcon } from 'landing-app/lib/icons';
 import { Backpack } from 'lucide-react';
 import Link from 'next/link';
 import type React from 'react';
@@ -44,7 +44,7 @@ export default function SiteFooter() {
             </p>
             <div className="flex gap-4">
               {siteConfig.social.map((item) => {
-                const Icon = LucideIcon(item.icon);
+                const Icon = item.icon !== 'TikTok' ? LucideIcon(item.icon) : null;
 
                 return (
                   <GradientBorderCard
@@ -54,10 +54,16 @@ export default function SiteFooter() {
                   >
                     <Link
                       href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-primary transition-colors"
                     >
                       <span className="sr-only">{item.name}</span>
-                      {Icon && <Icon className="h-5 w-5" />}
+                      {item.icon === 'TikTok' ? (
+                        <TikTokIcon className="h-5 w-5" />
+                      ) : (
+                        Icon && <Icon className="h-5 w-5" />
+                      )}
                     </Link>
                   </GradientBorderCard>
                 );
@@ -117,12 +123,12 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 md:mt-12 border-t pt-6 text-center border-border/50">
-          <GradientBorderCard className="inline-block py-2 px-4 bg-card/80">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
-            </p>
-          </GradientBorderCard>
+        <div className="mt-10 md:mt-12 pt-6 text-center relative">
+          {/* Gradient separator */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

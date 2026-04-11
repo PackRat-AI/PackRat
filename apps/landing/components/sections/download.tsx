@@ -1,5 +1,3 @@
-'use client';
-
 import AnimatedGradientBorder from 'landing-app/components/ui/animated-gradient-border';
 import { Button } from 'landing-app/components/ui/button';
 import GradientBackground from 'landing-app/components/ui/gradient-background';
@@ -7,20 +5,8 @@ import { siteConfig } from 'landing-app/config/site';
 import { Apple, Check, Store } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type React from 'react';
 
 export default function DownloadSection() {
-  // Handle smooth scrolling when clicking on navigation links
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const targetId = href.substring(1);
-    const element = document.getElementById(targetId);
-
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="download" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
@@ -85,7 +71,8 @@ export default function DownloadSection() {
                   <Button asChild size="lg" className="group relative overflow-hidden">
                     <Link
                       href={siteConfig.download.appStoreLink}
-                      onClick={(e) => scrollToSection(e, siteConfig.download.appStoreLink)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
                       <div className="absolute inset-0 w-full h-full transition-all duration-300 ease-out translate-y-full group-hover:translate-y-0 bg-black/10 dark:bg-white/10"></div>
                       <Apple className="mr-2 h-5 w-5" />
@@ -96,7 +83,8 @@ export default function DownloadSection() {
                   <Button asChild size="lg" variant="outline" className="group">
                     <Link
                       href={siteConfig.download.googlePlayLink}
-                      onClick={(e) => scrollToSection(e, siteConfig.download.googlePlayLink)}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
                       <Store className="mr-2 h-5 w-5" />
                       Google Play

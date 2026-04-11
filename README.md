@@ -15,6 +15,7 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 **Build & CI:**
 ![Biome Check](https://github.com/PackRat-AI/PackRat/actions/workflows/biome.yml/badge.svg)
 ![Check Types](https://github.com/PackRat-AI/PackRat/actions/workflows/check-types.yml/badge.svg)
+![API Tests](https://github.com/PackRat-AI/PackRat/actions/workflows/api-tests.yml/badge.svg)
 ![Database Migrations](https://github.com/PackRat-AI/PackRat/actions/workflows/migrations.yml/badge.svg)
 
 **Repository Info:**
@@ -52,6 +53,7 @@ So pack your bags, grab your friends, and get ready for your next adventure with
     - [Installation & Development](#installation--development)
     - [Debugging 🐛](#debugging-)
   - [API Architecture](#api-architecture)
+  - [AI-Assisted Development (Compound Engineering) 🤖](#ai-assisted-development-compound-engineering-)
   - [Contributing 🤝](#contributing-)
   - [User Stories:](#user-stories)
   - [User Features:](#user-features)
@@ -106,6 +108,8 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 
 [![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](/docs/ "Go to project documentation")
 
+[![view - Testing Guide](https://img.shields.io/badge/view-Testing_Guide-green?style=for-the-badge)](/TESTING.md "Go to testing documentation")
+
 </div>
 
 ## Features 🚀
@@ -114,7 +118,12 @@ So pack your bags, grab your friends, and get ready for your next adventure with
 - Map integration: PackRat integrates with Mapbox to provide users with accurate maps and directions to their destinations.
 - Activity suggestions: the app suggests popular outdoor activities based on the location and season of the trip.
 - Packing list: users can create and manage packing lists for their trips to ensure they have everything they need.
+- Pack templates: users can save and reuse pack configurations for common trip types.
 - Weather forecast: PackRat provides up-to-date weather forecasts for the trip location to help users prepare accordingly.
+- Trail conditions: users can report and browse real-time trail condition updates from the community.
+- AI assistant: an AI-powered chat assistant provides gear advice, trip suggestions, and more.
+- Weight analysis: users can analyze their pack weight breakdown by category.
+- Season suggestions: the app recommends gear and activities based on the trip's location and time of year.
 - User authentication: the app uses user authentication to ensure privacy and data security.
 
 ## Technologies used 💻
@@ -325,13 +334,13 @@ cd PackRat
 
 PackRat uses Lefthook for git hooks to ensure code quality. The hooks are automatically installed when you run `bun install`.
 
-- **Pre-push hook**: Runs `bun format` to check code formatting before pushing
+- **Pre-commit hook**: Runs `bun check` on staged files to enforce linting before every commit
 - **Configuration**: See `lefthook.yml` in the root directory
 
 If you need to skip hooks temporarily, use:
 
 ```bash
-git push --no-verify
+git commit --no-verify
 ```
 
 ### Installation & Development
@@ -400,7 +409,7 @@ bun expo
 
 ```bash
 # Doctor check for Expo setup
-bun --cwd apps/expo run expo-doctor
+bun --cwd apps/expo expo doctor
 
 # Fix dependencies
 bun --cwd apps/expo run expo install --fix
@@ -463,6 +472,70 @@ The PackRat API is built with:
 - **OpenAI integration** - AI-powered features
 
 See `packages/api/` for the complete API implementation.
+
+## AI-Assisted Development (Compound Engineering) 🤖
+
+PackRat ships a [Compound Engineering](https://compound.engineering) plugin for GitHub Copilot. This gives every contributor access to a set of specialized AI agents and reusable skills that accelerate the full development cycle — from ideation through planning, implementation, review, and documentation.
+
+### How it works
+
+The plugin installs:
+
+| Path | What it contains |
+|------|-----------------|
+| `.github/agents/` | 29 specialist agent personas (security, architecture, performance, etc.) |
+| `.github/skills/` | 45+ reusable slash-command workflows |
+| `.github/copilot-mcp-config.json` | MCP server config (Context7 for live docs lookup) |
+
+### Core workflow
+
+The `/lfg` (Let's F*** Go) command runs the full autonomous engineering cycle in one shot:
+
+```
+/lfg <feature description>
+```
+
+Or run the individual steps manually:
+
+| Command | Description |
+|---------|-------------|
+| `/ce:ideate [area]` | Generate ranked improvement ideas |
+| `/ce:brainstorm <idea>` | Explore requirements and write a feature brief |
+| `/ce:plan <description>` | Transform a brief into a structured implementation plan |
+| `/ce:work <plan file>` | Execute a plan — ship the feature |
+| `/ce:review [PR / branch]` | Multi-agent exhaustive code review |
+| `/ce:compound` | Document a just-solved problem to compound team knowledge |
+| `/ce:compound-refresh` | Refresh stale docs after refactors or upgrades |
+| `/setup` | Interactive wizard to configure which agents run for this project |
+
+### Specialist agents
+
+Agents are invoked automatically based on context, or explicitly:
+
+| Agent | Purpose |
+|-------|---------|
+| `security-sentinel` | OWASP / auth / secrets audits |
+| `architecture-strategist` | Pattern compliance, service boundaries |
+| `performance-oracle` | Latency, bundle size, query optimisation |
+| `data-integrity-guardian` | Migration safety, schema drift |
+| `design-implementation-reviewer` | Figma ↔ code fidelity |
+| `kieran-typescript-reviewer` | TypeScript idioms and type safety |
+| `dhh-rails-reviewer` | Rails conventions |
+| `lint` | Automated linting agent |
+| …and 21 more | See `.github/agents/` |
+
+### Useful one-off skills
+
+```
+/ce:ideate              # What should we build next?
+/reproduce-bug          # Minimal repro from a bug report
+/triage                 # Prioritise an issue backlog
+/changelog              # Generate a changelog entry
+/feature-video          # Record a walkthrough of a feature
+/proof                  # Share a doc via Proof for async review
+```
+
+For the full list run `/ce:help` in Copilot Chat, or browse `.github/skills/`.
 
 ## Contributing 🤝
 

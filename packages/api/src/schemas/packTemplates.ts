@@ -311,17 +311,17 @@ export const SuccessResponseSchema = z
   })
   .openapi('SuccessResponse');
 
-export const GenerateFromTikTokRequestSchema = z
+export const GenerateFromOnlineContentRequestSchema = z
   .object({
-    tiktokUrl: z.string().url().openapi({
+    contentUrl: z.string().url().openapi({
       example: 'https://www.tiktok.com/@user/video/1234567890',
-      description: 'The TikTok slideshow URL',
+      description: 'The content URL (supports YouTube and TikTok content)',
     }),
     isAppTemplate: z.boolean().optional().default(true).openapi({
       example: true,
       description: 'Whether this should be a featured template (admin only)',
     }),
   })
-  .openapi('GenerateFromTikTokRequest');
+  .openapi('GenerateFromOnlineContentRequest');
 
-export const GenerateFromTikTokResponseSchema = PackTemplateWithItemsSchema;
+export const GenerateFromOnlineContentResponseSchema = PackTemplateWithItemsSchema;

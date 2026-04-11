@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -6,21 +6,20 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Platform, View } from 'react-native';
+import { useWeatherAlerts } from '../hooks/useWeatherAlert';
 
 export function WeatherAlertsTile() {
   const router = useRouter();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const { t } = useTranslation();
 
+  const { alerts, loading } = useWeatherAlerts();
+
+  const weatherAlertCount = loading ? 0 : alerts.length;
+
   const handlePress = () => {
-    // if (!currentPack) {
-    //   alertRef.current?.show();
-    //   return;
-    // }
     router.push('/weather-alerts');
   };
-
-  const weatherAlertCount = 10;
 
   return (
     <>
@@ -36,7 +35,9 @@ export function WeatherAlertsTile() {
         }
         rightView={
           <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
-            <Text className="mr-2">{t('weather.activeCount', { count: weatherAlertCount })}</Text>
+            <Text className="mr-2">
+              {loading ? '...' : t('weather.activeCount', { count: weatherAlertCount })}
+            </Text>
             <ChevronRight />
           </View>
         }

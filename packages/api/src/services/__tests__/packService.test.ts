@@ -23,7 +23,7 @@ vi.mock('@packrat/api/db', () => ({
 
 // Prevent real AI calls
 vi.mock('@ai-sdk/openai', () => ({
-  createOpenAI: vi.fn(() => ({})),
+  createOpenAI: vi.fn(() => vi.fn((modelName) => ({ name: modelName }))),
 }));
 
 vi.mock('ai', () => ({
@@ -31,9 +31,13 @@ vi.mock('ai', () => ({
 }));
 
 // Prevent real catalog/embedding calls
+const mockVectorSearch = vi.fn().mockResolvedValue({ items: [], totalCount: 0 });
+const mockBatchVectorSearch = vi.fn().mockResolvedValue({ items: [[]] });
+
 vi.mock('@packrat/api/services/catalogService', () => ({
   CatalogService: vi.fn().mockImplementation(() => ({
-    vectorSearch: vi.fn().mockResolvedValue([]),
+    vectorSearch: mockVectorSearch,
+    batchVectorSearch: mockBatchVectorSearch,
   })),
 }));
 

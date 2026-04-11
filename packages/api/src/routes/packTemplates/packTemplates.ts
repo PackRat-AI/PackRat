@@ -10,6 +10,7 @@ import {
 } from '@packrat/api/schemas/packTemplates';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
+import { assertDefined } from '@packrat/api/utils/typeAssertions';
 import { and, eq, or } from 'drizzle-orm';
 
 const packTemplateRoutes = new OpenAPIHono<{
@@ -131,7 +132,15 @@ packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
     })
     .returning();
 
-  return c.json(newTemplate, 201);
+  assertDefined(newTemplate, 'Failed to create pack template');
+
+  // Query the created template with its items to match the response schema
+  const templateWithItems = await db.query.packTemplates.findFirst({
+    where: eq(packTemplates.id, newTemplate.id),
+    with: { items: true },
+  });
+
+  return c.json(templateWithItems, 201);
 });
 
 // Get a specific pack template
