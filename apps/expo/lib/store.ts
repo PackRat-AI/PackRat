@@ -1,5 +1,5 @@
 import type { Observable } from '@legendapp/state';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
+import { assertDefined } from '@packrat/guards';
 
 /**
  * Type-safe accessor for dynamically-keyed Legend-State observable records.
