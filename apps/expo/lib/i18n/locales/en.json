@@ -1064,6 +1064,8 @@
     "galleryPermission": "Please allow access to your photo library.",
     "cameraPermission": "Please allow access to your camera.",
     "postFailed": "Failed to create post. Please try again.",
-    "uploadFailed": "Failed to upload photos. Please try again."
+    "uploadFailed": "Failed to upload photos. Please try again.",
+    "postNotFound": "Post not found",
+    "photoCount": "{{count}} photos"
   }
 }

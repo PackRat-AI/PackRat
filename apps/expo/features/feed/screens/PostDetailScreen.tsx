@@ -40,6 +40,7 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
   const {
     data: commentsData,
     isLoading: isLoadingComments,
+    isRefetching: isRefetchingComments,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -175,7 +176,7 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
           contentContainerStyle={{ paddingBottom: 16 }}
           onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
           onEndReachedThreshold={0.3}
-          refreshing={false}
+          refreshing={isRefetchingComments}
           onRefresh={refetch}
           ItemSeparatorComponent={() => <View className="h-px bg-border/30 mx-4" />}
           ListEmptyComponent={

@@ -1,9 +1,10 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { TouchableOpacity, View } from 'react-native';
 import type { Comment } from '../types';
-import { formatAuthorName, formatRelativeDate } from '../utils';
+import { formatAuthorName } from '../utils';
 
 interface CommentItemProps {
   comment: Comment;
@@ -30,7 +31,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
         <View className="flex-row items-center gap-2 flex-wrap">
           <Text className="font-semibold text-sm">{formatAuthorName(comment)}</Text>
           <Text className="text-xs text-muted-foreground">
-            {formatRelativeDate(comment.createdAt)}
+            {getRelativeTime(comment.createdAt)}
           </Text>
         </View>
         <Text className="text-sm mt-0.5">{comment.content}</Text>

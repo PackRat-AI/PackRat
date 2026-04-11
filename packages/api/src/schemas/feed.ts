@@ -62,7 +62,7 @@ export const CommentSchema = z
 export const CreateCommentRequestSchema = z
   .object({
     content: z.string().min(1).max(1000).openapi({ example: 'Looks amazing!' }),
-    parentCommentId: z.number().int().optional().openapi({ example: null }),
+    parentCommentId: z.number().int().nullable().optional().openapi({ example: null }),
   })
   .openapi('CreateCommentRequest');
 

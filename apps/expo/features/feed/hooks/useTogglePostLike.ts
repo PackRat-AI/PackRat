@@ -10,8 +10,9 @@ export const useTogglePostLike = () => {
       const response = await axiosInstance.post<LikeToggleResponse>(`/api/feed/${postId}/like`);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, postId) => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['feed', postId] });
     },
   });
 };

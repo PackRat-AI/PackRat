@@ -1,6 +1,8 @@
 import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import {
@@ -13,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import type { Post } from '../types';
-import { buildPostImageUrl, formatAuthorName, formatRelativeDate } from '../utils';
+import { buildPostImageUrl, formatAuthorName } from '../utils';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -25,6 +27,7 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, currentUserId }) => {
+  const { t } = useTranslation();
   const { colors } = useColorScheme();
   const router = useRouter();
 
@@ -48,9 +51,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
           </View>
           <View>
             <Text className="font-semibold text-sm">{formatAuthorName(post)}</Text>
-            <Text className="text-xs text-muted-foreground">
-              {formatRelativeDate(post.createdAt)}
-            </Text>
+            <Text className="text-xs text-muted-foreground">{getRelativeTime(post.createdAt)}</Text>
           </View>
         </View>
         {isOwner && onDelete && (
@@ -80,7 +81,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
           </ScrollView>
           {post.images.length > 1 && (
             <View className="absolute bottom-2 right-3 bg-black/50 rounded-full px-2 py-0.5">
-              <Text className="text-white text-xs">{post.images.length} photos</Text>
+              <Text className="text-white text-xs">
+                {t('feed.photoCount', { count: post.images.length })}
+              </Text>
             </View>
           )}
         </Pressable>
