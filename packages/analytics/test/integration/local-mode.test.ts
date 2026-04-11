@@ -70,10 +70,13 @@ describe.skipIf(!canRun)('local mode integration', () => {
   it('getSiteStats returns per-site breakdown', async () => {
     const stats = await cache.getSiteStats();
     expect(stats.length).toBeGreaterThan(0);
-    expect(stats[0]).toHaveProperty('site');
-    expect(stats[0]).toHaveProperty('items');
-    expect(stats[0]).toHaveProperty('brands');
-    expect(Number(stats[0].items)).toBeGreaterThan(0);
+    const first = stats[0];
+    expect(first).toBeDefined();
+    if (first === undefined) return;
+    expect(first).toHaveProperty('site');
+    expect(first).toHaveProperty('items');
+    expect(first).toHaveProperty('brands');
+    expect(Number(first.items)).toBeGreaterThan(0);
   });
 
   it('getMarketSummary returns aggregates', async () => {
@@ -87,9 +90,12 @@ describe.skipIf(!canRun)('local mode integration', () => {
   it('getTopBrands returns brand rankings', async () => {
     const brands = await cache.getTopBrands(5);
     expect(brands.length).toBeGreaterThan(0);
-    expect(brands[0]).toHaveProperty('brand');
-    expect(brands[0]).toHaveProperty('product_count');
-    expect(Number(brands[0].product_count)).toBeGreaterThan(0);
+    const first = brands[0];
+    expect(first).toBeDefined();
+    if (first === undefined) return;
+    expect(first).toHaveProperty('brand');
+    expect(first).toHaveProperty('product_count');
+    expect(Number(first.product_count)).toBeGreaterThan(0);
   });
 
   it('getPriceDistribution returns bucketed counts', async () => {
@@ -113,6 +119,7 @@ describe.skipIf(!canRun)('local mode integration', () => {
     if (stats.sites.length === 0) return;
 
     const site = stats.sites[0];
+    if (site === undefined) return;
     const results = await cache.search('gear', { sites: [site], limit: 10 });
     for (const r of results) {
       expect(r.site).toBe(site);
@@ -123,7 +130,9 @@ describe.skipIf(!canRun)('local mode integration', () => {
     const brands = await cache.getTopBrands(1);
     if (brands.length === 0) return;
 
-    const analysis = await cache.analyzeBrand(brands[0].brand);
+    const firstBrand = brands[0];
+    if (firstBrand === undefined) return;
+    const analysis = await cache.analyzeBrand(firstBrand.brand);
     if (analysis.length > 0) {
       expect(analysis[0]).toHaveProperty('site');
       expect(analysis[0]).toHaveProperty('category');

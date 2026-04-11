@@ -205,7 +205,11 @@ export class Enrichment {
     const columns = result.columnNames();
     return result.getRows().map((row) => {
       const obj: Record<string, unknown> = {};
-      for (let i = 0; i < columns.length; i++) obj[columns[i]] = row[i];
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        if (col === undefined) continue;
+        obj[col] = row[i];
+      }
       return obj as unknown as ProductImage;
     });
   }
@@ -242,7 +246,11 @@ export class Enrichment {
     const columns = result.columnNames();
     return result.getRows().map((row) => {
       const obj: Record<string, unknown> = {};
-      for (let i = 0; i < columns.length; i++) obj[columns[i]] = row[i];
+      for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        if (col === undefined) continue;
+        obj[col] = row[i];
+      }
       return obj as unknown as ProductReview;
     });
   }

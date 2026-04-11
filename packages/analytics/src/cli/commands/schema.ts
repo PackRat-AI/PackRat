@@ -39,12 +39,14 @@ export default defineCommand({
     const rows = result.getRows().map((row) => {
       const obj: Record<string, unknown> = {};
       for (let i = 0; i < columns.length; i++) {
+        const col = columns[i];
+        if (col === undefined) continue;
         const val = row[i];
         // Add % suffix to percentage columns
-        if (columns[i].endsWith('_pct')) {
-          obj[columns[i].replace('_pct', '%')] = `${val}%`;
+        if (col.endsWith('_pct')) {
+          obj[col.replace('_pct', '%')] = `${val}%`;
         } else {
-          obj[columns[i]] = val;
+          obj[col] = val;
         }
       }
       return obj;

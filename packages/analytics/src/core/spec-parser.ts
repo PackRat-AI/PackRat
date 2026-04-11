@@ -89,14 +89,14 @@ function toFahrenheit(value: number, unit: string): number {
 export function parseWeightGrams(text: string): number | null {
   // Try compound first: "2 lbs 3 oz"
   const compound = WEIGHT_COMPOUND.exec(text);
-  if (compound) {
+  if (compound?.[1] !== undefined && compound[2] !== undefined) {
     const lbs = Number.parseFloat(compound[1]);
     const oz = Number.parseFloat(compound[2]);
     return Math.round((lbs * 453.592 + oz * 28.3495) * 100) / 100;
   }
 
   const simple = WEIGHT_SIMPLE.exec(text);
-  if (simple) {
+  if (simple?.[1] !== undefined && simple[2] !== undefined) {
     return toGrams(Number.parseFloat(simple[1]), simple[2]);
   }
   return null;
@@ -104,19 +104,19 @@ export function parseWeightGrams(text: string): number | null {
 
 export function parseCapacityLiters(text: string): number | null {
   const match = CAPACITY.exec(text);
-  return match ? Number.parseFloat(match[1]) : null;
+  return match?.[1] !== undefined ? Number.parseFloat(match[1]) : null;
 }
 
 export function parseTempRatingF(text: string): number | null {
   // Range: take lower bound ("20/30F" → 20F)
   const range = TEMP_RANGE.exec(text);
-  if (range) {
+  if (range?.[1] !== undefined && range[2] !== undefined && range[3] !== undefined) {
     const lower = Math.min(Number.parseInt(range[1]), Number.parseInt(range[2]));
     return toFahrenheit(lower, range[3]);
   }
 
   const single = TEMP_SINGLE.exec(text);
-  if (single) {
+  if (single?.[1] !== undefined && single[2] !== undefined) {
     return toFahrenheit(Number.parseInt(single[1]), single[2]);
   }
   return null;
@@ -124,7 +124,7 @@ export function parseTempRatingF(text: string): number | null {
 
 export function parseFillPower(text: string): number | null {
   const match = FILL_POWER.exec(text);
-  if (match) {
+  if (match?.[1] !== undefined) {
     const val = Number.parseInt(match[1]);
     return val >= 300 && val <= 1200 ? val : null;
   }
@@ -133,8 +133,8 @@ export function parseFillPower(text: string): number | null {
 
 export function parseWaterproofRating(text: string): number | null {
   const match = WATERPROOF.exec(text);
-  if (match) {
-    const raw = Number.parseInt(match[1]!.replace(/,/g, ''));
+  if (match?.[1] !== undefined) {
+    const raw = Number.parseInt(match[1].replace(/,/g, ''));
     // If "k" or "K" prefix was captured in the regex (e.g., "20k mm"), multiply by 1000
     const hasKMultiplier = /(\d[\d,]*)\s*k\s*mm\b/i.exec(text);
     return hasKMultiplier ? raw * 1000 : raw;
@@ -144,7 +144,7 @@ export function parseWaterproofRating(text: string): number | null {
 
 export function parseSeasons(text: string): string | null {
   const match = SEASON.exec(text);
-  return match ? `${match[1]}-season` : null;
+  return match?.[1] !== undefined ? `${match[1]}-season` : null;
 }
 
 function normalizeGender(raw: string): string {
@@ -157,13 +157,13 @@ function normalizeGender(raw: string): string {
 
 export function parseGender(text: string): string | null {
   const match = GENDER.exec(text);
-  return match ? normalizeGender(match[1]) : null;
+  return match?.[1] !== undefined ? normalizeGender(match[1]) : null;
 }
 
 function parseFabric(text: string): string | null {
   for (const pattern of FABRIC_PATTERNS) {
     const match = pattern.exec(text);
-    if (match) return match[1];
+    if (match?.[1] !== undefined) return match[1];
   }
   return null;
 }
@@ -326,8 +326,10 @@ export class SpecParser {
     const conditions: string[] = [];
     if (category)
       conditions.push(`LOWER(category) LIKE '%${SQLFragments.escapeSql(category.toLowerCase())}%'`);
-    if (maxWeightG !== undefined) conditions.push(`weight_grams IS NOT NULL AND weight_grams <= ${maxWeightG}`);
-    if (maxTempF !== undefined) conditions.push(`temp_rating_f IS NOT NULL AND temp_rating_f <= ${maxTempF}`);
+    if (maxWeightG !== undefined)
+      conditions.push(`weight_grams IS NOT NULL AND weight_grams <= ${maxWeightG}`);
+    if (maxTempF !== undefined)
+      conditions.push(`temp_rating_f IS NOT NULL AND temp_rating_f <= ${maxTempF}`);
     if (maxPrice !== undefined) conditions.push(`price <= ${maxPrice}`);
     if (minPrice !== undefined) conditions.push(`price >= ${minPrice}`);
     if (gender) conditions.push(`gender = '${SQLFragments.escapeSql(gender)}'`);

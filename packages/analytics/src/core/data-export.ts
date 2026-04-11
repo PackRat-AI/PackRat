@@ -175,7 +175,11 @@ export class DataExporter {
       json: `COPY (${sql}) TO '${filepath}' (FORMAT JSON, ARRAY true)`,
     };
 
-    await this.conn.run(formatMap[format]);
+    const copyStatement = formatMap[format];
+    if (copyStatement === undefined) {
+      throw new Error(`Unsupported export format: ${format}`);
+    }
+    await this.conn.run(copyStatement);
 
     // Get summary stats
     const statsResult = await this.conn.runAndReadAll(`

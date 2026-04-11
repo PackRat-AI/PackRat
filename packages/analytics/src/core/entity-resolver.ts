@@ -13,6 +13,7 @@ import { createHash } from 'node:crypto';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DBConfig } from './constants';
 import { SQLFragments } from './query-builder';
+import { assertDefined } from './type-assertions';
 
 // ── Confidence Levels ─────────────────────────────────────────────────
 
@@ -79,21 +80,38 @@ function tokenSortRatio(a: string, b: string): number {
 function levenshtein(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array<number>(n + 1).fill(0));
 
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 0; i <= m; i++) {
+    const row = dp[i];
+    assertDefined(row);
+    row[0] = i;
+  }
+  const firstRow = dp[0];
+  assertDefined(firstRow);
+  for (let j = 0; j <= n; j++) firstRow[j] = j;
 
   for (let i = 1; i <= m; i++) {
+    const row = dp[i];
+    const prevRow = dp[i - 1];
+    assertDefined(row);
+    assertDefined(prevRow);
     for (let j = 1; j <= n; j++) {
-      dp[i][j] =
-        a[i - 1] === b[j - 1]
-          ? dp[i - 1][j - 1]
-          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      const diag = prevRow[j - 1];
+      const up = prevRow[j];
+      const left = row[j - 1];
+      assertDefined(diag);
+      assertDefined(up);
+      assertDefined(left);
+      row[j] = a[i - 1] === b[j - 1] ? diag : 1 + Math.min(up, left, diag);
     }
   }
 
-  return dp[m][n];
+  const lastRow = dp[m];
+  assertDefined(lastRow);
+  const result = lastRow[n];
+  assertDefined(result);
+  return result;
 }
 
 // ── Union-Find ────────────────────────────────────────────────────────
@@ -244,6 +262,8 @@ export class EntityResolver {
       for (let j = i + 1; j < block.length; j++) {
         const a = block[i];
         const b = block[j];
+        assertDefined(a);
+        assertDefined(b);
 
         // Skip same-site pairs
         if (a.site === b.site) continue;
@@ -309,10 +329,12 @@ export class EntityResolver {
 
     for (const [root, members] of groups) {
       const rootCandidate = candidates[root];
+      assertDefined(rootCandidate);
       const cid = canonicalId(rootCandidate.brand, rootCandidate.name);
 
       for (const idx of members) {
         const c = candidates[idx];
+        assertDefined(c);
         const match = matchMap.get(idx) ?? { confidence: 1.0, method: 'unique' };
         entities.push({
           canonical_id: cid,

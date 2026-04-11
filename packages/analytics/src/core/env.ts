@@ -24,7 +24,11 @@ const envSchema = z
     ANALYTICS_MODE: raw.ANALYTICS_MODE,
     R2_ACCESS_KEY_ID: raw.R2_ACCESS_KEY_ID ?? '',
     R2_SECRET_ACCESS_KEY: raw.R2_SECRET_ACCESS_KEY ?? '',
-    R2_BUCKET_NAME: raw.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME ?? raw.PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME ?? raw.R2_BUCKET_NAME ?? '',
+    R2_BUCKET_NAME:
+      raw.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME ??
+      raw.PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME ??
+      raw.R2_BUCKET_NAME ??
+      '',
     R2_ENDPOINT_URL:
       raw.R2_ENDPOINT_URL ??
       (raw.CLOUDFLARE_ACCOUNT_ID
@@ -53,7 +57,8 @@ const envSchema = z
       if (!data.R2_BUCKET_NAME) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'R2_BUCKET_NAME (or PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME / PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME) is required for local mode',
+          message:
+            'R2_BUCKET_NAME (or PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME / PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME) is required for local mode',
           path: ['R2_BUCKET_NAME'],
         });
       }
