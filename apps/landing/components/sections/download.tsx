@@ -73,11 +73,10 @@ export default function DownloadSection() {
                   <div className="absolute top-0 left-1/2 z-10 h-4 md:h-6 w-24 md:w-36 -translate-x-1/2 rounded-b-3xl bg-black" />
                   <div className="absolute inset-0 overflow-hidden pt-4 md:pt-5">
                     <Image
-                      width={522}
-                      height={1024}
+                      fill
                       src={siteConfig.download.image || '/placeholder.svg'}
                       alt="PackRat App"
-                      className="object-cover w-full h-full"
+                      className="object-cover object-top"
                     />
                   </div>
                 </div>
