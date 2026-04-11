@@ -1,14 +1,14 @@
 'use client';
 
-import { cn } from '@packrat/web-ui/lib/utils';
-import { useQuery } from '@tanstack/react-query';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from 'guides-app/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from 'guides-app/components/ui/sheet';
+} from '@packrat/web-ui/components/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@packrat/web-ui/components/sheet';
+import { cn } from '@packrat/web-ui/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 import { getAllCategories } from 'guides-app/lib/categories';
 import { navigationConfig, siteConfig } from 'guides-app/lib/config';
 import { Backpack, ChevronDown } from 'lucide-react';
