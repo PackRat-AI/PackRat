@@ -251,7 +251,8 @@ const duplicatePackRoute = createRoute({
   path: '/{packId}/duplicate',
   tags: ['Packs'],
   summary: 'Duplicate pack',
-  description: 'Create a copy of a pack with all its items. The new pack will belong to the current user.',
+  description:
+    'Create a copy of a pack with all its items. The new pack will belong to the current user.',
   security: [{ bearerAuth: [] }],
   request: {
     params: z.object({
