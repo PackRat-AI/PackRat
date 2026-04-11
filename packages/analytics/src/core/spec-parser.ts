@@ -111,13 +111,13 @@ export function parseTempRatingF(text: string): number | null {
   // Range: take lower bound ("20/30F" → 20F)
   const range = TEMP_RANGE.exec(text);
   if (range?.[1] !== undefined && range[2] !== undefined && range[3] !== undefined) {
-    const lower = Math.min(Number.parseInt(range[1]), Number.parseInt(range[2]));
+    const lower = Math.min(Number.parseInt(range[1], 10), Number.parseInt(range[2], 10));
     return toFahrenheit(lower, range[3]);
   }
 
   const single = TEMP_SINGLE.exec(text);
   if (single?.[1] !== undefined && single[2] !== undefined) {
-    return toFahrenheit(Number.parseInt(single[1]), single[2]);
+    return toFahrenheit(Number.parseInt(single[1], 10), single[2]);
   }
   return null;
 }
@@ -125,7 +125,7 @@ export function parseTempRatingF(text: string): number | null {
 export function parseFillPower(text: string): number | null {
   const match = FILL_POWER.exec(text);
   if (match?.[1] !== undefined) {
-    const val = Number.parseInt(match[1]);
+    const val = Number.parseInt(match[1], 10);
     return val >= 300 && val <= 1200 ? val : null;
   }
   return null;
@@ -134,7 +134,7 @@ export function parseFillPower(text: string): number | null {
 export function parseWaterproofRating(text: string): number | null {
   const match = WATERPROOF.exec(text);
   if (match?.[1] !== undefined) {
-    const raw = Number.parseInt(match[1].replace(/,/g, ''));
+    const raw = Number.parseInt(match[1].replace(/,/g, ''), 10);
     // If "k" or "K" prefix was captured in the regex (e.g., "20k mm"), multiply by 1000
     const hasKMultiplier = /(\d[\d,]*)\s*k\s*mm\b/i.exec(text);
     return hasKMultiplier ? raw * 1000 : raw;

@@ -126,7 +126,7 @@ describe('env-validation', () => {
         // ... other required fields
       };
 
-      const result = apiEnvSchema.safeParse(envWithDevEnvironment);
+      const _result = apiEnvSchema.safeParse(envWithDevEnvironment);
       // Will fail because missing required fields, but if we add them it should work
       expect(['development', 'production']).toContain('development');
     });
@@ -308,8 +308,8 @@ describe('env-validation', () => {
 
       vi.mocked(env).mockReturnValue({ JWT_SECRET: 'secret' } as any);
 
-      const result1 = getEnv(c1);
-      const result2 = getEnv(c2);
+      const _result1 = getEnv(c1);
+      const _result2 = getEnv(c2);
 
       expect(env).toHaveBeenCalledTimes(2); // Called twice
       // Results may be different instances

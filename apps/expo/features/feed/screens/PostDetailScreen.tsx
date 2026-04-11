@@ -107,10 +107,9 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
           showsHorizontalScrollIndicator={false}
           style={styles.imageScroll}
         >
-          {post.images.map((img, idx) => (
+          {post.images.map((img) => (
             <Image
-              // biome-ignore lint/suspicious/noArrayIndexKey: images have no stable id
-              key={`${img}-${idx}`}
+              key={img}
               source={{ uri: buildPostImageUrl(img) }}
               style={styles.image}
               resizeMode="cover"
