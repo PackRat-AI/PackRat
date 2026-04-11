@@ -8,6 +8,7 @@ import consola from 'consola';
 import { CatalogCacheManager } from '../core/catalog-cache';
 import { env } from '../core/env';
 import { LocalCacheManager } from '../core/local-cache';
+import { assertDefined } from '../core/type-assertions';
 
 let _cache: LocalCacheManager | null = null;
 
@@ -53,7 +54,8 @@ export function printTable(rows: Record<string, unknown>[], options?: { title?: 
     return;
   }
 
-  const firstRow = rows[0]!;
+  const firstRow = rows[0];
+  assertDefined(firstRow, 'rows[0] must be defined after length check');
   const keys = Object.keys(firstRow);
 
   const table = new Table({

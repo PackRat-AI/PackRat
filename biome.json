@@ -39,7 +39,17 @@
           "options": {
             "max": 3
           }
-        }
+        },
+        "noForEach": "warn"
+      },
+      "correctness": {
+        "noUnusedImports": "error"
+      },
+      "performance": {
+        "useTopLevelRegex": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "error"
       },
       "suspicious": {
         "noUnknownAtRules": "off"

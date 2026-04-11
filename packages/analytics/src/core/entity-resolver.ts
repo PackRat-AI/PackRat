@@ -11,7 +11,6 @@
 
 import { createHash } from 'node:crypto';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { DBConfig } from './constants';
 import { SQLFragments } from './query-builder';
 import { assertDefined } from './type-assertions';
 
@@ -123,12 +122,15 @@ class UnionFind {
     if (!this.parent.has(x)) this.parent.set(x, x);
     let root = x;
     while (this.parent.get(root) !== root) {
-      root = this.parent.get(root)!;
+      const parent = this.parent.get(root);
+      assertDefined(parent, 'Union-Find parent must exist after has-check');
+      root = parent;
     }
     // Path compression
     let curr = x;
     while (curr !== root) {
-      const next = this.parent.get(curr)!;
+      const next = this.parent.get(curr);
+      assertDefined(next, 'Union-Find parent must exist for non-root node');
       this.parent.set(curr, root);
       curr = next;
     }
@@ -146,7 +148,7 @@ class UnionFind {
     for (const key of this.parent.keys()) {
       const root = this.find(key);
       if (!result.has(root)) result.set(root, []);
-      result.get(root)!.push(key);
+      result.get(root)?.push(key);
     }
     return result;
   }
@@ -247,7 +249,7 @@ export class EntityResolver {
     for (const c of candidates) {
       const key = c.normalized_brand || '_unknown_';
       if (!blocks.has(key)) blocks.set(key, []);
-      blocks.get(key)!.push(c);
+      blocks.get(key)?.push(c);
     }
     return blocks;
   }
