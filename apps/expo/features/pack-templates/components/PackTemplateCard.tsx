@@ -1,4 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { isArray } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { appAlert } from 'expo-app/app/_layout';
@@ -6,7 +7,6 @@ import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';
-import { isArray } from 'radash';
 import { Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDeletePackTemplate, usePackTemplateDetails } from '../hooks';

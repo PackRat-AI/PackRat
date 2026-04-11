@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS "trail_condition_reports_trip_id_idx" ON "trail_condition_reports" USING btree ("trip_id") WHERE "trail_condition_reports"."trip_id" IS NOT NULL;

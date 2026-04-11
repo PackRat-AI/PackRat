@@ -1,4 +1,5 @@
-import type { ContextMenuRef } from '@packrat/ui/nativewindui';
+import { assertDefined } from '@packrat/guards';
+import type { ContextMenuMethods } from '@packrat/ui/nativewindui';
 import {
   Avatar,
   AvatarFallback,
@@ -11,7 +12,6 @@ import { Icon } from '@roninoss/icons';
 import { FlashList } from '@shopify/flash-list';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { BlurView } from 'expo-blur';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
@@ -329,17 +329,17 @@ const CONTEXT_MENU_ITEMS = [
   createContextItem({
     actionKey: 'reply',
     title: 'Reply',
-    icon: { name: 'arrow-left-bold-outline' },
+    icon: { name: 'arrowshape.left' },
   }),
   createContextItem({
     actionKey: 'sticker',
     title: 'Sticker',
-    icon: { name: 'plus-box-outline' },
+    icon: { name: 'plus.app' },
   }),
   createContextItem({
     actionKey: 'copy',
     title: 'Copy',
-    icon: { name: 'clipboard-outline' },
+    icon: { name: 'clipboard' },
   }),
 ];
 
@@ -352,8 +352,8 @@ function ChatBubble({
   isSameNextSender: boolean;
   translateX: SharedValue<number>;
 }) {
-  const contextMenuRef = React.useRef<ContextMenuRef>(null);
-  const contextMenuRef2 = React.useRef<ContextMenuRef>(null);
+  const contextMenuRef = React.useRef<ContextMenuMethods>(null);
+  const contextMenuRef2 = React.useRef<ContextMenuMethods>(null);
   const { colors } = useColorScheme();
   const rootStyle = useAnimatedStyle(() => {
     return {

@@ -18,7 +18,7 @@ describe('Chat Routes', () => {
 
   describe('Authentication', () => {
     it('requires auth for chat endpoint', async () => {
-      const res = await api('/chat', httpMethods.post('', {}));
+      const res = await api('/chat', httpMethods.post({}));
       expectUnauthorized(res);
     });
   });
@@ -39,7 +39,7 @@ describe('Chat Routes', () => {
         },
       };
 
-      const res = await apiWithAuth('/chat', httpMethods.post('', chatMessage));
+      const res = await apiWithAuth('/chat', httpMethods.post(chatMessage));
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['response']);
@@ -48,7 +48,7 @@ describe('Chat Routes', () => {
     });
 
     it('requires message field', async () => {
-      const res = await apiWithAuth('/chat', httpMethods.post('', {}));
+      const res = await apiWithAuth('/chat', httpMethods.post({}));
       expectBadRequest(res);
 
       const data = await res.json();
@@ -66,7 +66,7 @@ describe('Chat Routes', () => {
         },
       };
 
-      const res = await apiWithAuth('/chat', httpMethods.post('', chatWithContext));
+      const res = await apiWithAuth('/chat', httpMethods.post(chatWithContext));
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['response']);
@@ -83,7 +83,7 @@ describe('Chat Routes', () => {
         },
       };
 
-      const res = await apiWithAuth('/chat', httpMethods.post('', gearRequest));
+      const res = await apiWithAuth('/chat', httpMethods.post(gearRequest));
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -104,7 +104,7 @@ describe('Chat Routes', () => {
         },
       };
 
-      const res = await apiWithAuth('/chat', httpMethods.post('', packingRequest));
+      const res = await apiWithAuth('/chat', httpMethods.post(packingRequest));
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -126,7 +126,7 @@ describe('Chat Routes', () => {
         },
       };
 
-      const res = await apiWithAuth('/chat', httpMethods.post('', tripRequest));
+      const res = await apiWithAuth('/chat', httpMethods.post(tripRequest));
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res, ['response']);
@@ -139,7 +139,7 @@ describe('Chat Routes', () => {
         conversationId: 'test-conversation-1',
       };
 
-      const res1 = await apiWithAuth('/chat', httpMethods.post('', firstMessage));
+      const res1 = await apiWithAuth('/chat', httpMethods.post(firstMessage));
 
       expect(res1.status).toBe(200);
       const data1 = await res1.json();
@@ -150,7 +150,7 @@ describe('Chat Routes', () => {
         conversationId: data1.conversationId || 'test-conversation-1',
       };
 
-      const res2 = await apiWithAuth('/chat', httpMethods.post('', followupMessage));
+      const res2 = await apiWithAuth('/chat', httpMethods.post(followupMessage));
 
       expect(res2.status).toBe(200);
       await expectJsonResponse(res2, ['response']);
@@ -162,7 +162,7 @@ describe('Chat Routes', () => {
       // Mock AI service failure
       const res = await apiWithAuth(
         '/chat',
-        httpMethods.post('', {
+        httpMethods.post({
           message: 'This might cause an AI error',
         }),
       );
@@ -179,7 +179,7 @@ describe('Chat Routes', () => {
     it('handles malformed requests', async () => {
       const res = await apiWithAuth(
         '/chat',
-        httpMethods.post('', {
+        httpMethods.post({
           invalidField: 'invalid',
         }),
       );
@@ -190,7 +190,7 @@ describe('Chat Routes', () => {
     it('handles empty messages', async () => {
       const res = await apiWithAuth(
         '/chat',
-        httpMethods.post('', {
+        httpMethods.post({
           message: '',
         }),
       );
@@ -203,7 +203,7 @@ describe('Chat Routes', () => {
         message: 'Test with special chars: @#$%^&*()[]{}|\\:";\'<>?,./',
       };
 
-      const res = await apiWithAuth('/chat', httpMethods.post('', specialMessage));
+      const res = await apiWithAuth('/chat', httpMethods.post(specialMessage));
 
       // Should handle gracefully
       expect([200, 400]).toContain(res.status);
@@ -222,7 +222,7 @@ describe('Chat Routes', () => {
         .map((_, i) =>
           apiWithAuth(
             '/chat',
-            httpMethods.post('', {
+            httpMethods.post({
               message: `Test message ${i + 1}`,
             }),
           ),

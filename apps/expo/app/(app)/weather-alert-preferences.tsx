@@ -84,7 +84,7 @@ export default function WeatherAlertPreferencesScreen() {
             <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
               <View className="flex-1 flex-row items-center gap-3">
                 <View className="h-8 w-8 items-center justify-center rounded-lg bg-amber-500">
-                  <Icon name="bell-ring-outline" size={18} color="white" />
+                  <Icon name="bell-outline" size={18} color="white" />
                 </View>
                 <View className="flex-1">
                   <Text className="font-medium">{t('weather.weatherNotifications')}</Text>
@@ -132,7 +132,9 @@ export default function WeatherAlertPreferencesScreen() {
                   <View className="flex-1 flex-row items-center gap-3">
                     <View
                       className="h-8 w-8 items-center justify-center rounded-lg"
-                      style={{ backgroundColor: alertTypesDisabled ? colors.grey3 : iconColor }}
+                      style={{
+                        backgroundColor: alertTypesDisabled ? colors.grey3 : iconColor,
+                      }}
                     >
                       <Icon name={iconName as never} size={18} color="white" />
                     </View>

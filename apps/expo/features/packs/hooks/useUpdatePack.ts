@@ -1,11 +1,11 @@
 import { packsStore } from 'expo-app/features/packs/store';
+import { obs } from 'expo-app/lib/store';
 import { useCallback } from 'react';
 import type { Pack } from '../types';
 
 export function useUpdatePack() {
   const updatePack = useCallback((pack: Pack) => {
-    // @ts-ignore: Safe because Legend-State uses Proxy
-    packsStore[pack.id].set({
+    obs(packsStore, pack.id).set({
       ...pack,
       localUpdatedAt: new Date().toISOString(),
     });

@@ -11,21 +11,21 @@ import {
 describe('Image Detection Routes', () => {
   describe('Authentication', () => {
     it('POST /packs/analyze-image requires auth', async () => {
-      const res = await api('/packs/analyze-image', httpMethods.post('', {}));
+      const res = await api('/packs/analyze-image', httpMethods.post({}));
       expectUnauthorized(res);
     });
   });
 
   describe('POST /packs/analyze-image', () => {
     it('requires image parameter', async () => {
-      const res = await apiWithAuth('/packs/analyze-image', httpMethods.post('', {}));
+      const res = await apiWithAuth('/packs/analyze-image', httpMethods.post({}));
       expect(res.status).toBe(400);
     });
 
     it('requires valid image key format', async () => {
       const res = await apiWithAuth(
         '/packs/analyze-image',
-        httpMethods.post('', {
+        httpMethods.post({
           image: 'not-a-valid-url',
         }),
       );
@@ -35,7 +35,7 @@ describe('Image Detection Routes', () => {
     it('accepts valid request with minimal parameters', async () => {
       const res = await apiWithAuth(
         '/packs/analyze-image',
-        httpMethods.post('', {
+        httpMethods.post({
           image: `${TEST_USER.id}-Ly81kadKndZ1pH2miQu8A.jpg`,
         }),
       );
@@ -49,7 +49,7 @@ describe('Image Detection Routes', () => {
     it('accepts matchLimit parameter', async () => {
       const res = await apiWithAuth(
         '/packs/analyze-image',
-        httpMethods.post('', {
+        httpMethods.post({
           image: `${TEST_USER.id}-Ly81kadKndZ1pH2miQu8A.jpg`,
           matchLimit: 5,
         }),

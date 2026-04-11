@@ -42,9 +42,9 @@ export const getSimilarCatalogItems = async (
 // API function for pack item similar items
 export const getSimilarPackItems = async (
   packId: string,
-  itemId: string,
-  params?: SimilarItemsParams,
+  opts: { itemId: string; params?: SimilarItemsParams },
 ): Promise<{ items: SimilarItem[]; total: number; sourceItem: PackItem }> => {
+  const { itemId, params } = opts;
   try {
     const queryParams = new URLSearchParams();
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -72,12 +72,16 @@ export function useSimilarCatalogItems(id: string, params?: SimilarItemsParams) 
 }
 
 // Hook for pack item similar items
-export function useSimilarPackItems(packId: string, itemId: string, params?: SimilarItemsParams) {
+export function useSimilarPackItems(
+  packId: string,
+  opts: { itemId: string; params?: SimilarItemsParams },
+) {
+  const { itemId, params } = opts;
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
     queryKey: ['similarPackItems', packId, itemId, params],
-    queryFn: () => getSimilarPackItems(packId, itemId, params),
+    queryFn: () => getSimilarPackItems(packId, { itemId, params }),
     enabled: isQueryEnabledWithAccessToken && !!packId && !!itemId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

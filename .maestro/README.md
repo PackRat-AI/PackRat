@@ -6,17 +6,33 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
 
 ```text
 .maestro/
-├── config.yaml                    # Maestro suite configuration & flow order
+├── config.yaml                    # Workspace configuration (test discovery, env vars)
+├── config-android.yaml            # Android-specific workspace configuration 
+├── master-flow.yaml               # Main orchestration flow (iOS)
+├── master-flow-android.yaml       # Android orchestration flow
 └── flows/
     ├── setup/
     │   └── clear-state.yaml       # Clears app state before test suite
     ├── auth/
     │   ├── login-flow.yaml        # Sign in with email and password
     │   └── logout-flow.yaml       # Sign out from the app
+    ├── dashboard/
+    │   └── dashboard-tiles-flow.yaml  # Test dashboard navigation
     ├── trips/
-    │   └── create-trip-flow.yaml  # Create a new trip
-    └── packs/
-        └── create-pack-flow.yaml  # Create a new pack
+    │   ├── create-trip-flow.yaml  # Create a new trip
+    │   └── trip-detail-flow.yaml  # View trip details
+    ├── packs/
+    │   ├── create-pack-flow.yaml  # Create a new pack
+    │   ├── pack-detail-flow.yaml  # View pack details
+    │   └── add-item-actions-flow.yaml  # Add items to packs
+    ├── catalog/
+    │   ├── catalog-browse-flow.yaml   # Browse item catalog
+    │   └── catalog-item-detail-flow.yaml  # View item details
+    ├── profile/
+    │   └── profile-view-flow.yaml     # View user profile
+    └── negative/
+        ├── empty-pack-submit-flow.yaml   # Test validation errors
+        └── empty-trip-submit-flow.yaml   # Test validation errors
 ```
 
 ## Prerequisites
@@ -26,11 +42,10 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
    curl -Ls "https://get.maestro.mobile.dev" | bash
    ```
 
-2. **Set up environment variables** for test credentials:
-   ```bash
-   export TEST_EMAIL="your-test-account@example.com"
-   export TEST_PASSWORD="your-test-password"
-   ```
+2. **Set up test credentials** (will be passed to Maestro via `-e` flags):
+   - TEST_EMAIL: your test account email
+   - TEST_PASSWORD: your test account password  
+   - APP_ID: com.andrewbierman.packrat.preview (iOS) or com.packratai.mobile.preview (Android)
 
 3. **Build and install the app** on a simulator/device (run from `apps/expo/`):
    ```bash
@@ -42,19 +57,48 @@ This directory contains end-to-end tests for the PackRat mobile app using [Maest
 
 ## Running Tests
 
-### Run all flows
+### Run iOS test suite
 ```bash
-maestro test .maestro/config.yaml
+maestro test \
+  -e TEST_EMAIL="your-test-account@example.com" \
+  -e TEST_PASSWORD="your-test-password" \
+  -e APP_ID="com.andrewbierman.packrat.preview" \
+  -e TRIP_NAME="Test-Trip-$(date +%s)" \
+  -e PACK_NAME="Test-Pack-$(date +%s)" \
+  .maestro/master-flow.yaml
+```
+
+### Run Android test suite
+```bash
+maestro test \
+  --config .maestro/config-android.yaml \
+  -e TEST_EMAIL="your-test-account@example.com" \
+  -e TEST_PASSWORD="your-test-password" \
+  -e APP_ID="com.packratai.mobile.preview" \
+  -e TRIP_NAME="Test-Trip-$(date +%s)" \
+  -e PACK_NAME="Test-Pack-$(date +%s)" \
+  .maestro/master-flow-android.yaml
 ```
 
 ### Run a single flow
 ```bash
-maestro test .maestro/flows/auth/login-flow.yaml
+maestro test \
+  -e TEST_EMAIL="your-test-account@example.com" \
+  -e TEST_PASSWORD="your-test-password" \
+  .maestro/flows/auth/login-flow.yaml
 ```
 
 ### Run with JUnit output (for CI)
 ```bash
-maestro test --format junit --output test-results.xml .maestro/config.yaml
+maestro test \
+  --format junit \
+  --output test-results.xml \
+  -e TEST_EMAIL="your-test-account@example.com" \
+  -e TEST_PASSWORD="your-test-password" \
+  -e APP_ID="com.andrewbierman.packrat.preview" \
+  -e TRIP_NAME="Test-Trip-$(date +%s)" \
+  -e PACK_NAME="Test-Pack-$(date +%s)" \
+  .maestro/master-flow.yaml
 ```
 
 ### Run on a specific simulator
@@ -86,11 +130,11 @@ Configure these GitHub repository secrets for CI:
 Flows are standard YAML files following the [Maestro flow syntax](https://maestro.mobile.dev/api-reference/commands).
 
 Key conventions:
-- All flows start with `appId: com.andrewbierman.packrat`
+- All flows start with `appId: ${APP_ID}` (uses environment variable for platform-specific bundle IDs)
 - Prefer `testID` / `accessibilityIdentifier` selectors first (e.g., `tapOn: { id: "submitButton" }`); use `text` to match an element's iOS `accessibilityLabel` or visible text (e.g., `tapOn: { text: "Submit" }`); `accessibilityLabel` is **not** a valid Maestro selector key
 - Use `waitForAnimationToEnd` after navigation actions
 - Use `runFlow: { when: { visible: ... } }` for conditional steps
-- Use environment variables (e.g., `${TRIP_NAME}`) for entity names to keep each test run unique
+- Use environment variables (e.g., `${TRIP_NAME}`, `${TEST_EMAIL}`) passed via `-e` flags to keep tests configurable and unique
 
 ## Troubleshooting
 

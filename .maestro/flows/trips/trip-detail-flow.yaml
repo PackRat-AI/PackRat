@@ -1,3 +1,5 @@
+appId: ${APP_ID}
+---
 # Trip Detail Flow: Navigate to a trip and verify detail screen
 - waitForAnimationToEnd
 

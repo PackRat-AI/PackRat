@@ -15,6 +15,10 @@ export default function TabLayout() {
         <Label>{t('navigation.packs')}</Label>
         <Icon sf="backpack" src={require('../../../assets/tab-icons/backpack.png')} />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="feed" hidden={!featureFlags.enableFeed}>
+        <Label>{t('navigation.feed')}</Label>
+        <Icon sf="photo.on.rectangle.angled" src={require('../../../assets/tab-icons/home.png')} />
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="trips" hidden={!featureFlags.enableTrips}>
         <Label>{t('navigation.trips')}</Label>
         <Icon sf="map.fill" src={require('../../../assets/tab-icons/map.png')} />

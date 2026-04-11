@@ -15,12 +15,12 @@ describe('Upload Routes', () => {
 
   describe('Authentication', () => {
     it('requires auth for presigned URL generation', async () => {
-      const res = await api('/upload/presigned', httpMethods.get(''));
+      const res = await api('/upload/presigned', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('requires auth for direct upload', async () => {
-      const res = await api('/upload', httpMethods.post('', {}));
+      const res = await api('/upload', httpMethods.post({}));
       expectUnauthorized(res);
     });
   });

@@ -1,0 +1,45 @@
+appId: ${APP_ID}
+---
+# AI Chat Pack Flow: Verifies Ask AI button exists on pack detail
+# BUG-8: AI chat shows "Login Required" even when logged in AND destroys the session
+# NOTE: This test intentionally does NOT tap Ask AI to avoid session destruction
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap into Maestro Test Pack
+- tapOn:
+    text: "Maestro Test Pack"
+- waitForAnimationToEnd
+
+# Assert pack detail loaded
+- assertVisible:
+    text: "Pack Details"
+
+# Scroll to verify Ask AI button exists
+- scrollUntilVisible:
+    element:
+      text: "Ask AI"
+    direction: DOWN
+
+# Assert button is present
+- assertVisible:
+    text: "Ask AI"
+
+# Do NOT tap — BUG-8 causes session destruction
+# When BUG-8 is fixed, uncomment to test full AI chat:
+# - tapOn:
+#     text: "Ask AI"
+# - waitForAnimationToEnd
+# - assertVisible:
+#     text: "Maestro Test Pack"
+# - back
+# - waitForAnimationToEnd
+
+# Go back to packs list
+- back
+- waitForAnimationToEnd

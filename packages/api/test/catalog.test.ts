@@ -14,27 +14,27 @@ import {
 describe('Catalog Routes', () => {
   describe('Authentication', () => {
     it('GET /catalog/ requires auth', async () => {
-      const res = await api('/catalog', httpMethods.get(''));
+      const res = await api('/catalog', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('GET /catalog/:id requires auth', async () => {
-      const res = await api('/catalog/1', httpMethods.get(''));
+      const res = await api('/catalog/1', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('POST /catalog/ requires auth', async () => {
-      const res = await api('/catalog', httpMethods.post('', {}));
+      const res = await api('/catalog', httpMethods.post({}));
       expectUnauthorized(res);
     });
 
     it('PUT /catalog/:id requires auth', async () => {
-      const res = await api('/catalog/1', httpMethods.put('', {}));
+      const res = await api('/catalog/1', httpMethods.put({}));
       expectUnauthorized(res);
     });
 
     it('DELETE /catalog/:id requires auth', async () => {
-      const res = await api('/catalog/1', httpMethods.delete(''));
+      const res = await api('/catalog/1', httpMethods.delete());
       expectUnauthorized(res);
     });
   });
@@ -132,7 +132,7 @@ describe('Catalog Routes', () => {
         price: 299.99,
       };
 
-      const res = await apiWithAuth('/catalog', httpMethods.post('', newItem));
+      const res = await apiWithAuth('/catalog', httpMethods.post(newItem));
 
       expect([201, 200]).toContain(res.status);
       const data = await expectJsonResponse(res, ['id']);
@@ -140,14 +140,14 @@ describe('Catalog Routes', () => {
     });
 
     it('validates required fields', async () => {
-      const res = await apiWithAuth('/catalog', httpMethods.post('', {}));
+      const res = await apiWithAuth('/catalog', httpMethods.post({}));
       expectBadRequest(res);
     });
 
     it('validates name field', async () => {
       const res = await apiWithAuth(
         '/catalog',
-        httpMethods.post('', {
+        httpMethods.post({
           productUrl: 'https://example.com/tent',
           sku: 'TEST-123',
           weight: 1200,
@@ -160,7 +160,7 @@ describe('Catalog Routes', () => {
     it('validates weight field', async () => {
       const res = await apiWithAuth(
         '/catalog',
-        httpMethods.post('', {
+        httpMethods.post({
           name: 'Test Item',
           productUrl: 'https://example.com/tent',
           sku: 'TEST-123',
@@ -182,7 +182,7 @@ describe('Catalog Routes', () => {
         weight: 1500,
       };
 
-      const res = await apiWithAuth(`/catalog/${seededItem.id}`, httpMethods.put('', updateData));
+      const res = await apiWithAuth(`/catalog/${seededItem.id}`, httpMethods.put(updateData));
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -192,7 +192,7 @@ describe('Catalog Routes', () => {
     it('returns 404 for non-existent item', async () => {
       const res = await apiWithAuth(
         '/catalog/999999',
-        httpMethods.put('', {
+        httpMethods.put({
           name: 'Updated Item',
         }),
       );
@@ -205,7 +205,7 @@ describe('Catalog Routes', () => {
 
       const res = await apiWithAuth(
         `/catalog/${seededItem.id}`,
-        httpMethods.put('', {
+        httpMethods.put({
           weight: -1, // Invalid weight
         }),
       );
@@ -218,13 +218,13 @@ describe('Catalog Routes', () => {
       // Seed a catalog item first
       const seededItem = await seedCatalogItem({ name: 'Item to Delete' });
 
-      const res = await apiWithAuth(`/catalog/${seededItem.id}`, httpMethods.delete(''));
+      const res = await apiWithAuth(`/catalog/${seededItem.id}`, httpMethods.delete());
 
       expect(res.status).toBeOneOf([200, 204]);
     });
 
     it('returns 404 for non-existent item', async () => {
-      const res = await apiWithAuth('/catalog/999999', httpMethods.delete(''));
+      const res = await apiWithAuth('/catalog/999999', httpMethods.delete());
       expectNotFound(res);
     });
   });
@@ -233,7 +233,7 @@ describe('Catalog Routes', () => {
     it('queues ETL job', async () => {
       const res = await apiWithApiKey(
         '/catalog/etl',
-        httpMethods.post('', {
+        httpMethods.post({
           filename: 'test.csv',
           chunks: ['chunk1.csv'],
           source: 'test-source',
@@ -248,7 +248,7 @@ describe('Catalog Routes', () => {
     it('regular users cannot queue ETL without API key', async () => {
       const res = await apiWithAuth(
         '/catalog/etl',
-        httpMethods.post('', {
+        httpMethods.post({
           filename: 'test.csv',
           chunks: ['chunk1.csv'],
           source: 'test-source',
@@ -261,14 +261,14 @@ describe('Catalog Routes', () => {
 
   describe('POST /catalog/backfill-embeddings', () => {
     it('backfills embeddings', async () => {
-      const res = await apiWithApiKey('/catalog/backfill-embeddings', httpMethods.post('', {}));
+      const res = await apiWithApiKey('/catalog/backfill-embeddings', httpMethods.post({}));
 
       expect(res.status).toBe(200);
       await expectJsonResponse(res);
     });
 
     it('regular users cannot backfill embeddings without API key', async () => {
-      const res = await apiWithAuth('/catalog/backfill-embeddings', httpMethods.post('', {}));
+      const res = await apiWithAuth('/catalog/backfill-embeddings', httpMethods.post({}));
       expect(res.status).toBe(401);
     });
   });
