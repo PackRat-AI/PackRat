@@ -7,7 +7,7 @@
  * Run with:  cd apps/expo && bun test features/voice
  */
 
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from 'bun:test';
+import { describe, expect, it, mock } from 'bun:test';
 
 // ---------------------------------------------------------------------------
 // Mock Expo and React Native modules before importing the module under test.
@@ -148,7 +148,7 @@ describe('startListening timer cleanup (Issue 2)', () => {
     const originalClearTimeout = globalThis.clearTimeout;
 
     // Install spies
-    (globalThis as any).setTimeout = (fn: () => void, ms: number) => {
+    (globalThis as any).setTimeout = (_fn: () => void, _ms: number) => {
       const id = ++idCounter as unknown as ReturnType<typeof setTimeout>;
       scheduledIds.push(id);
       return id;
@@ -192,7 +192,7 @@ describe('processTranscript timer cleanup (Issue 3)', () => {
     const originalSetTimeout = globalThis.setTimeout;
     const originalClearTimeout = globalThis.clearTimeout;
 
-    (globalThis as any).setTimeout = (fn: () => void, ms: number) => {
+    (globalThis as any).setTimeout = (_fn: () => void, _ms: number) => {
       const id = ++idCounter as unknown as ReturnType<typeof setTimeout>;
       scheduledIds.push(id);
       return id;
@@ -220,7 +220,7 @@ describe('processTranscript timer cleanup (Issue 3)', () => {
     }
 
     simulateStartListening();
-    const autoTimeoutId = scheduledIds[0]!;
+    const autoTimeoutId = scheduledIds[0];
     expect(clearedIds).toHaveLength(0);
 
     // Transcript arrives — the auto-timeout must be cancelled
