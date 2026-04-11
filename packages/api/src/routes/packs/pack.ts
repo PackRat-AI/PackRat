@@ -20,6 +20,7 @@ import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
 const packRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -243,6 +244,177 @@ packRoutes.openapi(deletePackRoute, async (c) => {
 
   await db.delete(packs).where(and(eq(packs.id, packId), eq(packs.userId, auth.userId)));
   return c.json({ success: true }, 200);
+});
+
+// Duplicate a pack
+const duplicatePackRoute = createRoute({
+  method: 'post',
+  path: '/{packId}/duplicate',
+  tags: ['Packs'],
+  summary: 'Duplicate pack',
+  description:
+    'Create a copy of a pack with all its items. The new pack will belong to the current user.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: z.object({
+            name: z.string().optional().openapi({
+              example: 'My Copied Pack',
+              description: 'Optional name for the new pack. Defaults to "{original_name} (Copy)"',
+            }),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Pack duplicated successfully',
+      content: {
+        'application/json': {
+          schema: PackWithWeightsSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden - pack is private and not owned by the current user',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+packRoutes.openapi(duplicatePackRoute, async (c) => {
+  const db = createDb(c);
+  const auth = c.get('user');
+  const packId = c.req.param('packId');
+  const { name: customName } = await c.req.json().catch(() => ({}));
+
+  try {
+    // Get the source pack with items
+    const sourcePack = await db.query.packs.findFirst({
+      where: eq(packs.id, packId),
+      with: {
+        items: {
+          where: eq(packItems.deleted, false),
+        },
+      },
+    });
+
+    if (!sourcePack) {
+      return c.json({ error: 'Pack not found' }, 404);
+    }
+
+    // Prevent duplicating deleted packs
+    if (sourcePack.deleted) {
+      return c.json({ error: 'Pack not found' }, 404);
+    }
+
+    // Only allow duplication if the user owns the pack or it is public
+    const isOwner = sourcePack.userId === auth.userId;
+    if (!isOwner && !sourcePack.isPublic) {
+      return c.json({ error: 'Forbidden' }, 403);
+    }
+
+    // Generate new IDs using cryptographically secure randomUUID
+    const newPackId = `p_${randomUUID()}`;
+    const now = new Date();
+
+    // Wrap pack creation + items insertion in a transaction so a partial
+    // failure cannot leave an orphaned pack row behind.
+    const packWithItems = await db.transaction(async (tx) => {
+      // Create the new pack
+      await tx
+        .insert(packs)
+        .values({
+          id: newPackId,
+          name: customName || `${sourcePack.name} (Copy)`,
+          description: sourcePack.description,
+          category: sourcePack.category,
+          userId: auth.userId,
+          isPublic: false, // Duplicated packs are private by default
+          image: sourcePack.image,
+          tags: sourcePack.tags,
+          deleted: false,
+          isAIGenerated: false,
+          localCreatedAt: now,
+          localUpdatedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+      // Copy all items from source pack to new pack
+      if (sourcePack.items && sourcePack.items.length > 0) {
+        const newItems = sourcePack.items.map((item) => ({
+          id: `pi_${randomUUID()}`,
+          name: item.name,
+          description: item.description,
+          weight: item.weight,
+          weightUnit: item.weightUnit,
+          quantity: item.quantity,
+          category: item.category,
+          consumable: item.consumable,
+          worn: item.worn,
+          image: item.image,
+          notes: item.notes,
+          packId: newPackId,
+          catalogItemId: item.catalogItemId,
+          userId: auth.userId,
+          deleted: false,
+          isAIGenerated: item.isAIGenerated,
+          templateItemId: item.templateItemId,
+          embedding: item.embedding,
+          createdAt: now,
+          updatedAt: now,
+        }));
+
+        await tx.insert(packItems).values(newItems);
+      }
+
+      // Fetch the complete new pack with items within the transaction
+      return tx.query.packs.findFirst({
+        where: eq(packs.id, newPackId),
+        with: {
+          items: {
+            where: eq(packItems.deleted, false),
+          },
+        },
+      });
+    });
+
+    if (!packWithItems) {
+      return c.json({ error: 'Failed to retrieve duplicated pack' }, 500);
+    }
+
+    return c.json(computePackWeights(packWithItems), 200);
+  } catch (error) {
+    console.error('Error duplicating pack:', error);
+    return c.json({ error: 'Failed to duplicate pack' }, 500);
+  }
 });
 
 const itemSuggestionsRoute = createRoute({
