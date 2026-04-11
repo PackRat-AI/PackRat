@@ -10,7 +10,7 @@ import { useSpeech } from './useSpeech';
  * enabling future integration with any speech-to-text backend
  * (Vosk, Picovoice, Whisper, Web Speech API, etc.).
  */
-const VOICE_COMMANDS: VoiceCommand[] = [
+export const VOICE_COMMANDS: VoiceCommand[] = [
   {
     name: 'start_tracking',
     patterns: ['start tracking', 'begin tracking', 'start gps', 'track me'],
@@ -54,8 +54,9 @@ const NAVIGATE_TO_PREFIXES = ['directions to', 'navigate to', 'take me to', 'go 
 
 /**
  * Match a transcript against registered command patterns.
+ * Exported for testing purposes.
  */
-function matchCommand(transcript: string): VoiceCommand | null {
+export function matchCommand(transcript: string): VoiceCommand | null {
   const lower = transcript.toLowerCase().trim();
   for (const cmd of VOICE_COMMANDS) {
     if (cmd.patterns.some((p) => lower.includes(p))) {
@@ -68,8 +69,9 @@ function matchCommand(transcript: string): VoiceCommand | null {
 /**
  * Extract the destination noun phrase from a navigate_to transcript.
  * Strips the first matching command prefix for reliable extraction (#8).
+ * Exported for testing purposes.
  */
-function extractNavigationTarget(transcript: string): string {
+export function extractNavigationTarget(transcript: string): string {
   const lower = transcript.toLowerCase();
   for (const prefix of NAVIGATE_TO_PREFIXES) {
     const idx = lower.indexOf(prefix);
@@ -269,6 +271,7 @@ export function useVoiceCommands() {
     // Clear any previously scheduled timeout before starting a new one
     if (listeningTimeoutRef.current) {
       clearTimeout(listeningTimeoutRef.current);
+      listeningTimeoutRef.current = null;
     }
 
     try {
