@@ -8,14 +8,16 @@
  */
 
 import { DuckDBInstance } from '@duckdb/node-api';
+import { getNodeEnv } from '@packrat/env/node';
 
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
-const R2_ENDPOINT_URL = process.env.R2_ENDPOINT_URL;
+const env = getNodeEnv();
+const R2_ACCESS_KEY_ID = env.R2_ACCESS_KEY_ID;
+const R2_SECRET_ACCESS_KEY = env.R2_SECRET_ACCESS_KEY;
+const R2_ENDPOINT_URL = env.R2_ENDPOINT_URL;
 const R2_BUCKET_NAME =
-  process.env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME ??
-  process.env.PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME ??
-  process.env.R2_BUCKET_NAME ??
+  env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME ??
+  env.PACKRAT_ITEMS_BUCKET_R2_BUCKET_NAME ??
+  env.R2_BUCKET_NAME ??
   'packrat-scrapy-bucket';
 
 function escapeSql(value: string): string {

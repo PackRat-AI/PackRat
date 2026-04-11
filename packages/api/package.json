@@ -26,6 +26,7 @@
     "@hono/zod-validator": "^0.4.3",
     "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "^1.0.0",
+    "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@scalar/hono-api-reference": "^0.8.0",
     "@types/nodemailer": "^6.4.17",
