@@ -1,6 +1,6 @@
 import { makeEnumGuard } from '@packrat/guards';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
-import type { PackTemplateItem } from 'expo-app/features/pack-templates/types';
+import type { PackTemplateItem } from 'expo-app/features/pack-templates';
 import type { PackItem, WeightUnit } from 'expo-app/features/packs';
 
 type Item = CatalogItem | PackItem | PackTemplateItem;
