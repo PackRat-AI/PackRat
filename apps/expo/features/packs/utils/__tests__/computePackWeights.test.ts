@@ -348,8 +348,8 @@ describe('computePackWeights', () => {
       const pack = {
         id: '1',
         name: 'Empty Pack',
-        items: [],
-      } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
+        items: [] as PackItem[],
+      } as unknown as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
       const result = computePackWeights(pack);
 
@@ -408,8 +408,8 @@ describe('computePackWeights', () => {
         id: '1',
         name: 'Test Pack',
         description: 'A test pack',
-        items: [],
-      } as Omit<Pack, 'baseWeight' | 'totalWeight'>;
+        items: [] as PackItem[],
+      } as unknown as Omit<Pack, 'baseWeight' | 'totalWeight'>;
 
       const result = computePackWeights(pack);
 
