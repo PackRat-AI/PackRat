@@ -28,9 +28,9 @@ export const makeEnumGuard =
  */
 export function assertEnum<T extends string>(
   value: unknown,
-  members: readonly T[],
-  name = 'value',
+  opts: { members: readonly T[]; name?: string },
 ): asserts value is T {
+  const { members, name = 'value' } = opts;
   if (typeof value !== 'string' || !(members as readonly string[]).includes(value)) {
     throw new Error(`Invalid ${name}: expected one of ${members.join(', ')}, got ${String(value)}`);
   }

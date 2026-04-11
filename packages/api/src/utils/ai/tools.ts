@@ -175,7 +175,10 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, limit, offset }) => {
         try {
-          const data = await catalogService.vectorSearch(query, limit || 10, offset || 0);
+          const data = await catalogService.vectorSearch(query, {
+            limit: limit || 10,
+            offset: offset || 0,
+          });
           return {
             success: true,
             data,

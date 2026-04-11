@@ -400,7 +400,8 @@ export class QueryBuilder {
         `;
   }
 
-  trendsQuery(keyword: string, sites?: string[], days = 90): string {
+  trendsQuery(keyword: string, opts: { sites?: string[]; days?: number } = {}): string {
+    const { sites, days = 90 } = opts;
     const source = SQLFragments.readCsvSource(this.bucketPath);
     const kw = SQLFragments.escapeSql(keyword.toLowerCase());
 

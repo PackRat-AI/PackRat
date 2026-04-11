@@ -114,8 +114,9 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
     });
 
     // Generate the presigned URL
-    const presignedUrl = await getPresignedUrl(c, command, {
-      expiresIn: 3600,
+    const presignedUrl = await getPresignedUrl(c, {
+      command,
+      signOptions: { expiresIn: 3600 },
     });
 
     return c.json(

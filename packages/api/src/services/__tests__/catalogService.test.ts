@@ -93,7 +93,7 @@ describe('CatalogService', () => {
     });
 
     it('returns empty result for empty query string', async () => {
-      const result = await service.vectorSearch('', 10, 0);
+      const result = await service.vectorSearch('', { limit: 10, offset: 0 });
 
       expect(result).toEqual({
         items: [],
@@ -106,7 +106,7 @@ describe('CatalogService', () => {
     });
 
     it('returns empty result for whitespace-only query', async () => {
-      const result = await service.vectorSearch('   ', 10, 0);
+      const result = await service.vectorSearch('   ', { limit: 10, offset: 0 });
 
       expect(result).toEqual({
         items: [],
@@ -121,7 +121,7 @@ describe('CatalogService', () => {
     it('returns empty result when embedding generation fails', async () => {
       vi.mocked(embeddingService.generateEmbedding).mockResolvedValueOnce(null);
 
-      const result = await service.vectorSearch('tent', 10, 0);
+      const result = await service.vectorSearch('tent', { limit: 10, offset: 0 });
 
       expect(result).toEqual({
         items: [],
@@ -148,7 +148,7 @@ describe('CatalogService', () => {
       // We can't fully test the DB query without a real/mocked database,
       // but we can verify the embedding generation was called correctly
       try {
-        await service.vectorSearch('lightweight tent', 10, 0);
+        await service.vectorSearch('lightweight tent', { limit: 10, offset: 0 });
       } catch (err) {
         // DB query will fail since we don't have a proper mock, but that's OK
         // We're just testing the input validation and embedding call
