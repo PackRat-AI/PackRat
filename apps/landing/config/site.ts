@@ -246,7 +246,7 @@ export const siteConfig = {
         color: '#EF4444',
         features: ['SOS Alerts', 'Contact Sharing', 'GPS Location'],
       },
-    ] as Integration[],
+    ] satisfies Integration[],
   },
 
   // Testimonials section
