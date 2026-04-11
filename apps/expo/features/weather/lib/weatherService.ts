@@ -1,9 +1,9 @@
+import { assertDefined } from '@packrat/guards';
 import type {
   LocationSearchResult,
   WeatherApiForecastResponse,
 } from 'expo-app/features/weather/types';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { getWeatherIconName as getIconNameFromCode } from './weatherIcons';
 
 /**
@@ -26,6 +26,7 @@ export async function searchLocations(query: string): Promise<LocationSearchResu
 /**
  * Search for locations by coordinates
  */
+
 export async function searchLocationsByCoordinates(
   latitude: number,
   longitude: number,
@@ -155,6 +156,7 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
 /**
  * Get background gradient colors based on weather condition
  */
+
 export function getWeatherBackgroundColors(
   code: number,
   isNight: boolean,

@@ -168,22 +168,22 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
 describe('Guides Routes', () => {
   describe('Authentication', () => {
     it('GET /guides requires auth', async () => {
-      const res = await api('/guides', httpMethods.get(''));
+      const res = await api('/guides', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('GET /guides/categories requires auth', async () => {
-      const res = await api('/guides/categories', httpMethods.get(''));
+      const res = await api('/guides/categories', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('GET /guides/search requires auth', async () => {
-      const res = await api('/guides/search', httpMethods.get(''));
+      const res = await api('/guides/search', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('GET /guides/:id requires auth', async () => {
-      const res = await api('/guides/1', httpMethods.get(''));
+      const res = await api('/guides/1', httpMethods.get());
       expectUnauthorized(res);
     });
   });

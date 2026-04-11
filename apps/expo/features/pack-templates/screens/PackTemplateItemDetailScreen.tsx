@@ -1,3 +1,4 @@
+import { assertDefined } from '@packrat/guards';
 import { Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
@@ -13,7 +14,6 @@ import {
   isWorn,
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

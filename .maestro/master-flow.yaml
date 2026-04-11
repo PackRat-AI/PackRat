@@ -1,0 +1,34 @@
+appId: ${APP_ID}
+---
+# PackRat E2E Test Suite - iOS Master Flow
+# This flow orchestrates all test flows in the correct order
+
+# Setup & Authentication
+- runFlow: flows/setup/clear-state.yaml
+- runFlow: flows/auth/login-flow.yaml
+
+# Dashboard
+- runFlow: flows/dashboard/dashboard-tiles-flow.yaml
+
+# Packs CRUD
+- runFlow: flows/packs/create-pack-flow.yaml
+- runFlow: flows/packs/pack-detail-flow.yaml
+- runFlow: flows/packs/add-item-actions-flow.yaml
+
+# Trips CRUD
+- runFlow: flows/trips/create-trip-flow.yaml
+- runFlow: flows/trips/trip-detail-flow.yaml
+
+# Catalog
+- runFlow: flows/catalog/catalog-browse-flow.yaml
+- runFlow: flows/catalog/catalog-item-detail-flow.yaml
+
+# Profile
+- runFlow: flows/profile/profile-view-flow.yaml
+
+# Negative tests
+- runFlow: flows/negative/empty-pack-submit-flow.yaml
+- runFlow: flows/negative/empty-trip-submit-flow.yaml
+
+# Logout (destroys session - must be last)
+- runFlow: flows/auth/logout-flow.yaml

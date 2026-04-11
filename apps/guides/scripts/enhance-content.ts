@@ -137,11 +137,12 @@ function parseContentFile(filePath: string): {
 /**
  * Write enhanced content back to file
  */
+
 function writeEnhancedContent(
   filePath: string,
-  metadata: Record<string, unknown>,
-  enhancedContent: string,
+  opts: { metadata: Record<string, unknown>; enhancedContent: string },
 ): void {
+  const { metadata, enhancedContent } = opts;
   const newFileContent = matter.stringify(enhancedContent, metadata);
   fs.writeFileSync(filePath, newFileContent, 'utf8');
 }
@@ -149,15 +150,16 @@ function writeEnhancedContent(
 /**
  * Enhance a single content file
  */
+
 async function enhanceFile(
   filePath: string,
-  options: CliOptions,
-  enhancementOptions: ContentEnhancementOptions,
+  opts: { cliOptions: CliOptions; enhancementOptions: ContentEnhancementOptions },
 ): Promise<{
   enhanced: boolean;
   productsAdded: number;
   error?: string;
 }> {
+  const { cliOptions: options, enhancementOptions } = opts;
   try {
     const fileName = path.basename(filePath);
 
@@ -210,7 +212,7 @@ async function enhanceFile(
     }
 
     // Write enhanced content
-    writeEnhancedContent(filePath, metadata, result.content);
+    writeEnhancedContent(filePath, { metadata, enhancedContent: result.content });
 
     console.log(
       chalk.green(`  ✅ Enhanced ${fileName} with ${result.productsUsed.length} product links`),
@@ -280,7 +282,7 @@ async function enhanceContent(cliOptions: CliOptions): Promise<void> {
   for (const filePath of filesToProcess) {
     stats.processed++;
 
-    const result = await enhanceFile(filePath, cliOptions, enhancementOptions);
+    const result = await enhanceFile(filePath, { cliOptions, enhancementOptions });
 
     if (result.error) {
       stats.errors++;
@@ -351,7 +353,7 @@ function parseArgs(): CliOptions {
         break;
       case '--max-files':
       case '-n':
-        options.maxFiles = Number.parseInt(args[++i] || '0') || undefined;
+        options.maxFiles = Number.parseInt(args[++i] || '0', 10) || undefined;
         break;
       case '--api-url':
       case '-u':

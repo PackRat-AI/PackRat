@@ -186,8 +186,7 @@ export class CatalogService {
 
   async vectorSearch(
     q: string,
-    limit: number = 10,
-    offset: number = 0,
+    opts: { limit?: number; offset?: number } = {},
   ): Promise<{
     items: (Omit<CatalogItem, 'embedding'> & { similarity: number })[];
     total: number;
@@ -195,6 +194,7 @@ export class CatalogService {
     offset: number;
     nextOffset: number;
   }> {
+    const { limit = 10, offset = 0 } = opts;
     if (!q || q.trim() === '') {
       return {
         items: [],

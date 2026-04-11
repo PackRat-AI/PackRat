@@ -13,7 +13,7 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
-import { isString } from 'radash';
+import { isDate, isNumber, isObject, isString } from '@packrat/guards';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -159,7 +159,7 @@ interface R2BucketConfig {
   bucketName?: string;
 }
 
-type BucketType = 'guides' | 'catalog' | 'general';
+type BucketType = 'guides' | 'catalog' | 'general' | 'images';
 
 export class R2BucketService {
   private s3Client: S3Client;
@@ -192,6 +192,9 @@ export class R2BucketService {
           break;
         case 'general':
           this.bucketName = env.PACKRAT_BUCKET_R2_BUCKET_NAME;
+          break;
+        case 'images':
+          this.bucketName = env.PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME;
           break;
       }
     }
@@ -333,7 +336,8 @@ export class R2BucketService {
         },
         blob: async () => {
           assertStreamNotConsumed();
-          return new globalThis.Blob([await consumeStream()]);
+          const data = await consumeStream();
+          return new globalThis.Blob([data.buffer as ArrayBuffer]);
         },
       };
 
@@ -582,39 +586,53 @@ export class R2BucketService {
   }
 
   private createR2Object(key: string, response: Record<string, unknown>): R2Object {
-    const r2Object = {
+    const toUploaded = (v: unknown): Date => {
+      if (isDate(v)) return v;
+      if (isString(v) || isNumber(v)) return new Date(v);
+      return new Date();
+    };
+    const toExpiry = (v: unknown): Date | undefined => {
+      if (isDate(v)) return v;
+      if (isString(v) || isNumber(v)) return new Date(v);
+      return undefined;
+    };
+    const toStringRecord = (v: unknown): Record<string, string> => {
+      if (!isObject(v)) return {};
+      const out: Record<string, string> = {};
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+        if (isString(val)) out[k] = val;
+      }
+      return out;
+    };
+
+    const { ContentType, ContentLanguage, ContentDisposition, ContentEncoding, CacheControl } =
+      response;
+
+    const r2Object: R2Object = {
       key,
-      version: response.VersionId || '',
-      size: response.ContentLength || 0,
+      version: isString(response.VersionId) ? response.VersionId : '',
+      size: isNumber(response.ContentLength) ? response.ContentLength : 0,
       etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
-      httpEtag: response.ETag || '',
+      httpEtag: isString(response.ETag) ? response.ETag : '',
       checksums: this.createChecksums(response),
-      uploaded: new Date(String(response.LastModified) || new Date()),
+      uploaded: toUploaded(response.LastModified),
       httpMetadata: {
-        contentType: response.ContentType,
-        contentLanguage: response.ContentLanguage,
-        contentDisposition: response.ContentDisposition,
-        contentEncoding: response.ContentEncoding,
-        cacheControl: response.CacheControl,
-        cacheExpiry: response.Expires,
+        contentType: isString(ContentType) ? ContentType : undefined,
+        contentLanguage: isString(ContentLanguage) ? ContentLanguage : undefined,
+        contentDisposition: isString(ContentDisposition) ? ContentDisposition : undefined,
+        contentEncoding: isString(ContentEncoding) ? ContentEncoding : undefined,
+        cacheControl: isString(CacheControl) ? CacheControl : undefined,
+        cacheExpiry: toExpiry(response.Expires),
       },
-      customMetadata: response.Metadata || {},
-      storageClass: response.StorageClass || 'STANDARD',
+      customMetadata: toStringRecord(response.Metadata),
+      storageClass: isString(response.StorageClass) ? response.StorageClass : 'STANDARD',
+      range: undefined,
       writeHttpMetadata: (_headers: Record<string, string>) => {
         // This is a no-op in our implementation
       },
     };
 
-    // Add range if present
-    if (response.ContentRange) {
-      // @ts-ignore - ignore
-      r2Object.range = response.ContentRange; // Assign the value if it exists
-    } else {
-      // @ts-ignore - ignore
-      r2Object.range = undefined; // Explicitly set to undefined if not present
-    }
-
-    return r2Object as R2Object;
+    return r2Object;
   }
 
   private createChecksums(response: Record<string, unknown>): R2Checksums {

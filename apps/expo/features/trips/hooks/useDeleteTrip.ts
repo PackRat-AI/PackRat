@@ -1,12 +1,13 @@
 import { tripsStore } from 'expo-app/features/trips/store/trips';
+import { obs } from 'expo-app/lib/store';
 import { useCallback } from 'react';
 
 export function useDeleteTrip() {
   const deleteTrip = useCallback((id: string) => {
     // Soft delete by setting deleted flag
-    // @ts-ignore: Safe because Legend-State uses Proxy
-    if (tripsStore[id]) {
-      tripsStore[id].deleted.set(true);
+    const tripObs = obs(tripsStore, id);
+    if (tripObs) {
+      tripObs.deleted.set(true);
     }
   }, []);
 

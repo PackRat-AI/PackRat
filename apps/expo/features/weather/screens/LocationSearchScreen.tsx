@@ -1,4 +1,4 @@
-import { SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
+import { SearchInput, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
@@ -6,7 +6,6 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,11 +14,13 @@ import {
   Keyboard,
   Linking,
   Platform,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDebouncedCallback } from 'use-debounce';
 import { useLocationSearch } from '../hooks';
 import type { LocationSearchResult } from '../types';
 
@@ -32,7 +33,7 @@ export default function LocationSearchScreen() {
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
-  const searchInputRef: SearchInputRef = useRef(null);
+  const searchInputRef = useRef<TextInput>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<number | null>(null);
@@ -88,11 +89,9 @@ export default function LocationSearchScreen() {
   };
 
   // Create a debounced search function
-  const debouncedSearch = useRef(
-    debounce((text: string) => {
-      search(text);
-    }, 500),
-  ).current;
+  const debouncedSearch = useDebouncedCallback((text: string) => {
+    search(text);
+  }, 500);
 
   // Handle search input change
   const handleSearchChange = (text: string) => {

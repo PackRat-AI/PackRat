@@ -6,6 +6,7 @@ export * from './useDeletePackTemplate';
 export * from './useDeletePackTemplateItem';
 export * from './useGenerateTemplateFromOnlineContent';
 export * from './usePackTemplateItem';
+export * from './usePackTemplateSummary';
 export * from './usePackTemplates';
 export * from './usePackTemplatesDetails';
 export * from './useUpdatePackTemplateItem';

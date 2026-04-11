@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import app from '../src/index';
 import {
   apiWithAuth,
+  apiWithAuthAs,
   expectBadRequest,
   expectUnauthorized,
   httpMethods,
@@ -21,7 +22,7 @@ describe('Auth Routes', () => {
 
   describe('POST /auth/login', () => {
     it('requires email and password', async () => {
-      const res = await authApi('/login', httpMethods.post('', {}));
+      const res = await authApi('/login', httpMethods.post({}));
       expectBadRequest(res);
 
       const data = await res.json();
@@ -29,19 +30,19 @@ describe('Auth Routes', () => {
     });
 
     it('requires email field', async () => {
-      const res = await authApi('/login', httpMethods.post('', { password: 'test123' }));
+      const res = await authApi('/login', httpMethods.post({ password: 'test123' }));
       expectBadRequest(res);
     });
 
     it('requires password field', async () => {
-      const res = await authApi('/login', httpMethods.post('', { email: 'test@example.com' }));
+      const res = await authApi('/login', httpMethods.post({ email: 'test@example.com' }));
       expectBadRequest(res);
     });
 
     it('returns error for non-existent user', async () => {
       const res = await authApi(
         '/login',
-        httpMethods.post('', {
+        httpMethods.post({
           email: 'nonexistent@example.com',
           password: 'password123',
         }),
@@ -56,7 +57,7 @@ describe('Auth Routes', () => {
       const user = await createTestUser({ email: 'login-test@example.com' });
       const res = await authApi(
         '/login',
-        httpMethods.post('', {
+        httpMethods.post({
           email: user.email,
           password: 'wrong-password',
         }),
@@ -70,7 +71,7 @@ describe('Auth Routes', () => {
       const user = await createTestUser({ email: 'login-success@example.com' });
       const res = await authApi(
         '/login',
-        httpMethods.post('', {
+        httpMethods.post({
           email: user.email,
           password: user.password,
         }),
@@ -91,7 +92,7 @@ describe('Auth Routes', () => {
       });
       const res = await authApi(
         '/login',
-        httpMethods.post('', {
+        httpMethods.post({
           email: user.email,
           password: user.password,
         }),
@@ -104,7 +105,7 @@ describe('Auth Routes', () => {
 
   describe('POST /auth/register', () => {
     it('requires email and password', async () => {
-      const res = await authApi('/register', httpMethods.post('', {}));
+      const res = await authApi('/register', httpMethods.post({}));
       expectBadRequest(res);
 
       const data = await res.json();
@@ -114,7 +115,7 @@ describe('Auth Routes', () => {
     it('validates email format', async () => {
       const res = await authApi(
         '/register',
-        httpMethods.post('', {
+        httpMethods.post({
           email: 'invalid-email',
           password: 'Password123!',
         }),
@@ -128,7 +129,7 @@ describe('Auth Routes', () => {
     it('validates password strength', async () => {
       const res = await authApi(
         '/register',
-        httpMethods.post('', {
+        httpMethods.post({
           email: 'test@example.com',
           password: '123', // Too weak
         }),
@@ -142,7 +143,7 @@ describe('Auth Routes', () => {
     it('accepts valid registration data', async () => {
       const res = await authApi(
         '/register',
-        httpMethods.post('', {
+        httpMethods.post({
           email: 'newuser@example.com',
           password: 'Password123!',
           firstName: 'Test',
@@ -163,7 +164,7 @@ describe('Auth Routes', () => {
       await createTestUser({ email: 'existing@example.com' });
       const res = await authApi(
         '/register',
-        httpMethods.post('', {
+        httpMethods.post({
           email: 'existing@example.com',
           password: 'Password123!',
         }),
@@ -176,7 +177,7 @@ describe('Auth Routes', () => {
 
   describe('POST /auth/verify-email', () => {
     it('requires email and code', async () => {
-      const res = await authApi('/verify-email', httpMethods.post('', {}));
+      const res = await authApi('/verify-email', httpMethods.post({}));
       expectBadRequest(res);
 
       const data = await res.json();
@@ -184,29 +185,26 @@ describe('Auth Routes', () => {
     });
 
     it('requires email field', async () => {
-      const res = await authApi('/verify-email', httpMethods.post('', { code: '12345' }));
+      const res = await authApi('/verify-email', httpMethods.post({ code: '12345' }));
       expectBadRequest(res);
     });
 
     it('requires code field', async () => {
-      const res = await authApi(
-        '/verify-email',
-        httpMethods.post('', { email: 'test@example.com' }),
-      );
+      const res = await authApi('/verify-email', httpMethods.post({ email: 'test@example.com' }));
       expectBadRequest(res);
     });
   });
 
   describe('POST /auth/resend-verification', () => {
     it('requires email', async () => {
-      const res = await authApi('/resend-verification', httpMethods.post('', {}));
+      const res = await authApi('/resend-verification', httpMethods.post({}));
       expectBadRequest(res);
     });
 
     it('validates email format', async () => {
       const res = await authApi(
         '/resend-verification',
-        httpMethods.post('', {
+        httpMethods.post({
           email: 'invalid-email',
         }),
       );
@@ -216,14 +214,14 @@ describe('Auth Routes', () => {
 
   describe('POST /auth/forgot-password', () => {
     it('requires email', async () => {
-      const res = await authApi('/forgot-password', httpMethods.post('', {}));
+      const res = await authApi('/forgot-password', httpMethods.post({}));
       expectBadRequest(res);
     });
 
     it('validates email format', async () => {
       const res = await authApi(
         '/forgot-password',
-        httpMethods.post('', {
+        httpMethods.post({
           email: 'invalid-email',
         }),
       );
@@ -233,7 +231,7 @@ describe('Auth Routes', () => {
 
   describe('POST /auth/reset-password', () => {
     it('requires email, code, and new password', async () => {
-      const res = await authApi('/reset-password', httpMethods.post('', {}));
+      const res = await authApi('/reset-password', httpMethods.post({}));
       expect(res.status).toBe(400);
 
       const data = await res.json();
@@ -243,7 +241,7 @@ describe('Auth Routes', () => {
     it('validates new password strength', async () => {
       const res = await authApi(
         '/reset-password',
-        httpMethods.post('', {
+        httpMethods.post({
           email: 'test@example.com',
           code: '12345',
           newPassword: '123', // Too weak
@@ -261,7 +259,7 @@ describe('Auth Routes', () => {
 
     it('returns user data when authenticated', async () => {
       const testUser = await createTestUser();
-      const res = await apiWithAuth('/auth/me', undefined, testUser as typeof TEST_USER);
+      const res = await apiWithAuthAs('/auth/me', { user: testUser as typeof TEST_USER });
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.success).toBe(true);
@@ -272,14 +270,14 @@ describe('Auth Routes', () => {
 
   describe('POST /auth/refresh', () => {
     it('requires refresh token', async () => {
-      const res = await authApi('/refresh', httpMethods.post('', {}));
+      const res = await authApi('/refresh', httpMethods.post({}));
       expectBadRequest(res);
     });
   });
 
   describe('DELETE /auth/', () => {
     it('requires authentication', async () => {
-      const res = await authApi('', httpMethods.delete(''));
+      const res = await authApi('', httpMethods.delete());
       expectUnauthorized(res);
     });
 
@@ -299,14 +297,14 @@ describe('Auth Routes', () => {
 
   describe('POST /auth/apple', () => {
     it('requires identity token and authorization code', async () => {
-      const res = await authApi('/apple', httpMethods.post('', {}));
+      const res = await authApi('/apple', httpMethods.post({}));
       expectBadRequest(res);
     });
 
     it('validates identity token format', async () => {
       const res = await authApi(
         '/apple',
-        httpMethods.post('', {
+        httpMethods.post({
           identityToken: 'invalid-token',
           authorizationCode: 'auth-code',
         }),
@@ -317,7 +315,7 @@ describe('Auth Routes', () => {
     it('handles invalid apple token', async () => {
       const res = await authApi(
         '/apple',
-        httpMethods.post('', {
+        httpMethods.post({
           identityToken: 'invalid-token',
         }),
       );
@@ -327,7 +325,7 @@ describe('Auth Routes', () => {
 
   describe('POST /auth/google', () => {
     it('requires ID token', async () => {
-      const res = await authApi('/google', httpMethods.post('', {}));
+      const res = await authApi('/google', httpMethods.post({}));
       expect(res.status).toBe(400);
 
       const data = await res.json();
@@ -337,7 +335,7 @@ describe('Auth Routes', () => {
     it('validates Google ID token and returns user', async () => {
       const res = await authApi(
         '/google',
-        httpMethods.post('', {
+        httpMethods.post({
           idToken: 'mock-google-token',
         }),
       );
@@ -354,7 +352,7 @@ describe('Auth Routes', () => {
       // First login creates the user
       await authApi(
         '/google',
-        httpMethods.post('', {
+        httpMethods.post({
           idToken: 'mock-google-token',
         }),
       );
@@ -362,7 +360,7 @@ describe('Auth Routes', () => {
       // Second login should find the existing user
       const res = await authApi(
         '/google',
-        httpMethods.post('', {
+        httpMethods.post({
           idToken: 'mock-google-token',
         }),
       );

@@ -1,191 +1,216 @@
-import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { cn } from 'expo-app/lib/cn';
-import { ScrollView, View } from 'react-native';
+import { ActivityIndicator, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { featureFlags } from 'expo-app/config';
+import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
+import { TrailConditionReportCard } from 'expo-app/features/trail-conditions/components/TrailConditionReportCard';
+import { useTrailConditionReports } from 'expo-app/features/trail-conditions/hooks/useTrailConditionReports';
+import type { TrailConditionReport, TrailSurface } from 'expo-app/features/trail-conditions/types';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { useMemo, useState } from 'react';
+import { FlatList, Modal, Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Mock data for trail conditions
-const TRAIL_CONDITIONS = [
-  {
-    id: '1',
-    section: 'Springer Mountain to Neels Gap',
-    state: 'GA',
-    lastUpdated: '2 days ago',
-    condition: 'Good',
-    details:
-      'Trail is well maintained with clear blazes. Some muddy sections after recent rain but passable. Water sources are flowing well.',
-    reports: [
-      {
-        user: 'HikerJohn',
-        date: 'May 10',
-        text: 'Trail in great shape. Saw some trail maintenance crews working near Blood Mountain.',
-      },
-      {
-        user: 'MountainGoat',
-        date: 'May 8',
-        text: 'Muddy near stream crossings but otherwise good. All water sources flowing.',
-      },
-    ],
-  },
-  {
-    id: '2',
-    section: 'Neels Gap to Unicoi Gap',
-    state: 'GA',
-    lastUpdated: '5 days ago',
-    condition: 'Fair',
-    details:
-      'Some blowdowns reported between Low Gap and Blue Mountain shelters. Rocky sections can be slippery when wet. Moderate difficulty.',
-    reports: [
-      {
-        user: 'TrailAngel22',
-        date: 'May 7',
-        text: 'Three large trees down about 2 miles north of Low Gap shelter. Passable but difficult.',
-      },
-      {
-        user: 'ThruHiker2024',
-        date: 'May 5',
-        text: 'Rocky sections are challenging in rain. Trekking poles recommended.',
-      },
-    ],
-  },
-  {
-    id: '3',
-    section: 'Unicoi Gap to Tray Mountain',
-    state: 'GA',
-    lastUpdated: '1 week ago',
-    condition: 'Excellent',
-    details:
-      'Recently maintained trail with clear path and blazes. Some steep sections but well-graded. All water sources reliable.',
-    reports: [
-      {
-        user: 'MountainLover',
-        date: 'May 4',
-        text: 'Trail is in excellent condition. Views from Rocky Mountain are spectacular!',
-      },
-      {
-        user: 'GearTester',
-        date: 'May 2',
-        text: 'Easy to follow trail with good camping spots near Tray Mountain shelter.',
-      },
-    ],
-  },
-  {
-    id: '4',
-    section: "Tray Mountain to Dick's Creek Gap",
-    state: 'GA',
-    lastUpdated: '10 days ago',
-    condition: 'Poor',
-    details:
-      'Multiple blowdowns and washouts reported after recent storms. Some trail reroutes in effect. Check with local rangers for updates.',
-    reports: [
-      {
-        user: 'SectionHiker',
-        date: 'April 30',
-        text: 'Difficult hiking with many obstacles. Several trees down across trail.',
-      },
-      {
-        user: 'TrailRunner',
-        date: 'April 28',
-        text: 'Trail badly eroded in places. Slow going and requires careful navigation.',
-      },
-    ],
-  },
-];
+type SurfaceFilter = TrailSurface | 'all';
 
-function ConditionBadge({ condition }: { condition: string }) {
-  const getColor = () => {
-    switch (condition) {
-      case 'Excellent':
-        return 'bg-green-500';
-      case 'Good':
-        return 'bg-blue-500';
-      case 'Fair':
-        return 'bg-amber-500';
-      case 'Poor':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  return (
-    <View className={cn('rounded-full px-2 py-1', getColor())}>
-      <Text variant="caption2" className="font-medium text-white">
-        {condition}
-      </Text>
-    </View>
-  );
+interface FilterItem {
+  value: SurfaceFilter;
+  label: string;
 }
 
-function TrailConditionCard({ trail }: { trail: (typeof TRAIL_CONDITIONS)[0] }) {
-  return (
-    <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
-      <View className="border-b border-border p-4">
-        <View className="flex-row items-center justify-between">
-          <Text variant="heading" className="flex-1 font-semibold">
-            {trail.section}
-          </Text>
-          <ConditionBadge condition={trail.condition} />
-        </View>
-        <Text variant="subhead" className="mt-1 text-muted-foreground">
-          {trail.state} • Updated {trail.lastUpdated}
-        </Text>
-      </View>
-
-      <View className="p-4">
-        <Text variant="body" className="mb-3">
-          {trail.details}
-        </Text>
-
-        <View className="mt-2">
-          <Text variant="subhead" className="mb-2 font-medium">
-            Recent Reports:
-          </Text>
-          {trail.reports.map((report) => (
-            <View key={report.text} className="mb-2 rounded-md bg-muted p-3 dark:bg-gray-50/10">
-              <View className="flex-row items-center justify-between">
-                <Text variant="footnote" className="font-medium">
-                  {report.user}
-                </Text>
-                <Text variant="caption1" className="text-muted-foreground">
-                  {report.date}
-                </Text>
-              </View>
-              <Text variant="footnote" className="mt-1">
-                {report.text}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </View>
-    </View>
-  );
+function getSurfaceBadgeColor(surface: TrailSurface): string {
+  switch (surface) {
+    case 'paved':
+      return 'bg-blue-500';
+    case 'gravel':
+      return 'bg-amber-500';
+    case 'dirt':
+      return 'bg-yellow-700';
+    case 'rocky':
+      return 'bg-gray-500';
+    case 'snow':
+      return 'bg-sky-300';
+    case 'mud':
+      return 'bg-stone-600';
+    default:
+      return 'bg-gray-400';
+  }
 }
 
 export default function TrailConditionsScreen() {
-  return (
-    <>
-      <LargeTitleHeader title="Trail Conditions" />
-      <ScrollView className="flex-1">
-        <View className="p-4">
-          <Text variant="subhead" className="mb-2 text-muted-foreground">
-            Current trail conditions from recent hiker reports
-          </Text>
-        </View>
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [selectedSurface, setSelectedSurface] = useState<SurfaceFilter>('all');
+  const { data: reports, isLoading, error } = useTrailConditionReports();
+  const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
-        <View className="pb-4">
-          {TRAIL_CONDITIONS.map((trail) => (
-            <TrailConditionCard key={trail.id} trail={trail} />
-          ))}
-        </View>
+  const SURFACE_FILTERS: FilterItem[] = useMemo(
+    () => [
+      { value: 'all', label: t('trailConditions.filters.all') },
+      { value: 'paved', label: t('trailConditions.filters.paved') },
+      { value: 'gravel', label: t('trailConditions.filters.gravel') },
+      { value: 'dirt', label: t('trailConditions.filters.dirt') },
+      { value: 'rocky', label: t('trailConditions.filters.rocky') },
+      { value: 'snow', label: t('trailConditions.filters.snow') },
+      { value: 'mud', label: t('trailConditions.filters.mud') },
+    ],
+    [t],
+  );
 
-        <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
-          <View className="rounded-md bg-muted p-3 dark:bg-gray-50/10">
-            <Text variant="footnote" className="text-muted-foreground">
-              Trail conditions are crowdsourced from hikers and may not reflect current situations.
-              Always check with local authorities for official trail status.
+  const filteredReports = useMemo(() => {
+    if (!reports) return [];
+    if (selectedSurface === 'all') return reports;
+    return reports.filter((r) => r.surface === selectedSurface);
+  }, [reports, selectedSurface]);
+
+  if (!featureFlags.enableTrailConditions) return null;
+
+  const filterBar = (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerClassName="flex-row gap-2 px-4 py-3"
+    >
+      {SURFACE_FILTERS.map((filter) => {
+        const isSelected = selectedSurface === filter.value;
+        const colorClass =
+          filter.value !== 'all' && isSelected
+            ? getSurfaceBadgeColor(filter.value)
+            : isSelected
+              ? 'bg-primary'
+              : 'bg-card';
+        return (
+          <Pressable
+            key={filter.value}
+            onPress={() => setSelectedSurface(filter.value)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            accessibilityLabel={filter.label}
+            className={`rounded-full border px-3 py-1.5 ${
+              isSelected ? 'border-transparent' : 'border-border'
+            } ${colorClass}`}
+          >
+            <Text
+              variant="footnote"
+              className={isSelected ? 'font-semibold text-white' : 'text-foreground'}
+            >
+              {filter.label}
             </Text>
-          </View>
-        </View>
-      </ScrollView>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+
+  const listHeader = (
+    <>
+      <View className="p-4 pb-0">
+        <Text variant="subhead" className="mb-2 text-muted-foreground">
+          {t('trailConditions.subtitle')}
+        </Text>
+      </View>
+      {filterBar}
     </>
+  );
+
+  const listFooter = (
+    <View className="mx-4 my-2 mb-6 rounded-lg bg-card p-4">
+      <View className="rounded-md bg-muted p-3 dark:bg-gray-50/10">
+        <Text variant="footnote" className="text-muted-foreground">
+          {t('trailConditions.disclaimer')}
+        </Text>
+      </View>
+    </View>
+  );
+
+  const renderItem = ({ item }: { item: TrailConditionReport }) => (
+    <TrailConditionReportCard report={item} />
+  );
+
+  const listEmptyComponent = isLoading ? (
+    <View className="flex-1 items-center justify-center py-12">
+      <ActivityIndicator />
+    </View>
+  ) : error ? (
+    <View className="mx-4 mb-3 rounded-xl bg-card p-4">
+      <Text variant="body" className="text-center text-muted-foreground">
+        {t('trailConditions.loadError')}
+      </Text>
+    </View>
+  ) : selectedSurface !== 'all' ? (
+    <View className="mx-4 mb-3 rounded-xl bg-card p-8">
+      <Text variant="body" className="text-center text-muted-foreground">
+        {t('trailConditions.noResults')}
+      </Text>
+    </View>
+  ) : (
+    <View className="mx-4 mb-3 rounded-xl bg-card p-8">
+      <Text variant="body" className="text-center text-muted-foreground">
+        {t('trailConditions.noReports')}
+      </Text>
+      <Pressable
+        onPress={() => setShowSubmitForm(true)}
+        className="mt-4 rounded-lg bg-primary px-4 py-3"
+        accessibilityLabel={t('trailConditions.submitReport')}
+        accessibilityRole="button"
+      >
+        <Text className="text-center font-semibold text-primary-foreground">
+          {t('trailConditions.submitReport')}
+        </Text>
+      </Pressable>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={{ flex: 1, paddingTop: insets.top }}>
+      <LargeTitleHeader
+        title={t('trailConditions.title')}
+        rightView={() => (
+          <Pressable
+            onPress={() => setShowSubmitForm(true)}
+            className="mr-2 rounded-full bg-primary px-3 py-1.5"
+            accessibilityLabel={t('trailConditions.reportConditionsTitle')}
+            accessibilityRole="button"
+          >
+            <Text variant="footnote" className="font-semibold text-primary-foreground">
+              {t('trailConditions.reportButton')}
+            </Text>
+          </Pressable>
+        )}
+      />
+
+      <FlatList<TrailConditionReport>
+        className="flex-1"
+        data={filteredReports}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
+        ListEmptyComponent={listEmptyComponent}
+        contentContainerClassName="pb-4"
+      />
+
+      {/* Submit Report Modal */}
+      <Modal
+        visible={showSubmitForm}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSubmitForm(false)}
+      >
+        <View className="flex-1 bg-background">
+          <View className="flex-row items-center justify-between border-b border-border px-4 py-3">
+            <Text variant="heading" className="font-semibold">
+              {t('trailConditions.reportConditionsTitle')}
+            </Text>
+            <Pressable
+              onPress={() => setShowSubmitForm(false)}
+              accessibilityLabel={t('common.cancel')}
+              accessibilityRole="button"
+            >
+              <Text className="font-semibold text-primary">{t('common.cancel')}</Text>
+            </Pressable>
+          </View>
+          <SubmitConditionReportForm onSuccess={() => setShowSubmitForm(false)} />
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }

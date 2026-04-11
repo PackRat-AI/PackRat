@@ -10,7 +10,6 @@ import Link from 'next/link';
 
 export default function FeatureSection() {
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="features" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background decorations */}
       <GradientBackground variant="mesh" />
@@ -66,10 +65,10 @@ export default function FeatureSection() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
                     {siteConfig.features[0].title}
                   </h3>
-                  <p className="text-base md:text-lg text-muted-foreground">
+                  <p className="text-base md:text-lg leading-relaxed text-muted-foreground">
                     {siteConfig.features[0].description}
                   </p>
                   <ul className="space-y-2">
@@ -90,7 +89,7 @@ export default function FeatureSection() {
               </div>
               <div className="order-1 md:order-2 flex justify-center">
                 <DeviceMockup
-                  image="/feature-my-packs.png"
+                  image="/images/features/my-packs.png"
                   alt="Smart Packing Lists"
                   showReflection
                 />
@@ -107,7 +106,7 @@ export default function FeatureSection() {
             <div className="grid gap-8 md:grid-cols-2 items-center p-6 md:p-8">
               <div className="flex justify-center">
                 <DeviceMockup
-                  image="/feature-weather-forecast-check.png"
+                  image="/images/features/weather-forecast.png"
                   alt="Trail Maps & Navigation"
                   showReflection
                 />
@@ -130,10 +129,10 @@ export default function FeatureSection() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
                     {siteConfig.features[1].title}
                   </h3>
-                  <p className="text-base md:text-lg text-muted-foreground">
+                  <p className="text-base md:text-lg leading-relaxed text-muted-foreground">
                     {siteConfig.features[1].description}
                   </p>
                   <ul className="space-y-2">
@@ -179,10 +178,10 @@ export default function FeatureSection() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
                     {siteConfig.features[2]?.title}
                   </h3>
-                  <p className="text-base md:text-lg text-muted-foreground">
+                  <p className="text-base md:text-lg leading-relaxed text-muted-foreground">
                     {siteConfig.features[2]?.description}
                   </p>
                   <ul className="space-y-2">
@@ -210,7 +209,7 @@ export default function FeatureSection() {
                 </div>
               </div>
               <div className="order-1 md:order-2 flex justify-center">
-                <DeviceMockup image="/feature-guides-ios.png" alt="Guides" showReflection />
+                <DeviceMockup image="/images/features/guides-ios.png" alt="Guides" showReflection />
               </div>
             </div>
           </GradientBorderCard>

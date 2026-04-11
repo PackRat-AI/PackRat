@@ -1,8 +1,8 @@
+import { assertDefined } from '@packrat/guards';
 import { Alert, Button, useColorScheme } from '@packrat-ai/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useDeletePackTemplateItem, usePackTemplateItem } from '../hooks';

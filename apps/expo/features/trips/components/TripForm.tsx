@@ -1,38 +1,47 @@
+import { assertDefined } from '@packrat/guards';
 import { Form, FormItem, FormSection, TextField } from '@packrat/ui/nativewindui';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import * as Burnt from 'burnt';
 import { usePacks } from 'expo-app/features/packs/hooks/usePacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { Stack, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 import { useCreateTrip, useUpdateTrip } from '../hooks';
-import { useTripLocation } from '../store/tripLocationStore';
+import { tripLocationStore, useTripLocation } from '../store/tripLocationStore';
 import type { Trip } from '../types';
 
-const tripFormSchema = z.object({
-  name: z.string().min(1, 'Trip name is required'),
-  description: z.string().optional(),
-  notes: z.string().optional(),
-  location: z
-    .object({
-      latitude: z.number(),
-      longitude: z.number(),
-      name: z.string().optional(),
-    })
-    .optional(),
-  startDate: z.string().min(1, 'Start date is required'),
-  endDate: z.string().min(1, 'End date is required'),
-  packId: z.string().optional(),
-});
+const tripFormSchema = z
+  .object({
+    name: z.string().min(1, 'Trip name is required'),
+    description: z.string().optional(),
+    notes: z.string().optional(),
+    location: z
+      .object({
+        latitude: z.number(),
+        longitude: z.number(),
+        name: z.string().optional(),
+      })
+      .optional(),
+    startDate: z.string().min(1, 'Start date is required'),
+    endDate: z.string().min(1, 'End date is required'),
+    packId: z.string().optional(),
+  })
+  .refine(
+    ({ startDate, endDate }) => !startDate || !endDate || new Date(endDate) >= new Date(startDate),
+    {
+      message: 'End date must be after start date',
+      path: ['endDate'],
+    },
+  );
 
 type TripFormValues = z.infer<typeof tripFormSchema>;
 
@@ -48,9 +57,35 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const { location, setLocation } = useTripLocation();
   const packs = usePacks();
 
+  // Initialize location store with trip's location when component mounts or
+  // trip ID changes. We intentionally depend only on trip?.id (not trip?.location)
+  // so that after the user picks a new location via location-search, a
+  // re-render of the same trip object does not overwrite their selection in
+  // the store.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — see comment above; reseeding on trip?.location would stomp user-picked values
+  useEffect(() => {
+    // Set location from trip, or null if trip has no location
+    setLocation(trip?.location ?? null);
+
+    // Cleanup: clear location when component unmounts
+    return () => {
+      setLocation(null);
+    };
+  }, [trip?.id, setLocation]);
+
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
+
+  // Reset the shared location store on mount (to clear stale state from any
+  // previous edit session) and on unmount (to clean up for future forms), so
+  // that a location selected in one edit session never leaks into the next.
+  useEffect(() => {
+    tripLocationStore.set(null);
+    return () => {
+      tripLocationStore.set(null);
+    };
+  }, []);
 
   const formatDate = (value?: unknown) => {
     if (!value) return '';
@@ -68,7 +103,10 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       name: trip?.name || '',
       description: trip?.description || '',
       notes: trip?.notes || '',
-      location: location ?? undefined,
+      // Use the trip's own location as the form default, not the global location
+      // store. The store is only updated when the user explicitly picks a new
+      // location via the location-search screen.
+      location: trip?.location ?? undefined,
       startDate: formatDate(trip?.startDate || ''),
       endDate: formatDate(trip?.endDate || ''),
       packId: trip?.packId,
@@ -79,14 +117,23 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
       try {
         if (isEditingExistingTrip) {
           await updateTrip({ ...trip, ...submitData });
-          Alert.alert(t('common.success'), t('trips.tripUpdatedSuccess'));
+          Burnt.toast({
+            title: t('trips.tripUpdatedSuccess'),
+            preset: 'done',
+          });
         } else {
           await createTrip(submitData);
-          Alert.alert(t('common.success'), t('trips.tripCreatedSuccess'));
+          Burnt.toast({
+            title: t('trips.tripCreatedSuccess'),
+            preset: 'done',
+          });
         }
         router.back();
       } catch (_e) {
-        Alert.alert(t('common.error'), t('errors.tryAgain'));
+        Burnt.toast({
+          title: t('errors.tryAgain'),
+          preset: 'error',
+        });
       }
     },
   });
@@ -186,8 +233,13 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
                         : t('trips.addLocation')}
                   </Text>
                 </Pressable>
-                {location && (
-                  <Pressable onPress={() => setLocation(null)}>
+                {(location || trip?.location) && (
+                  <Pressable
+                    onPress={() => {
+                      setLocation(null);
+                      form.setFieldValue('location', undefined);
+                    }}
+                  >
                     <Text className="text-red-500 font-semibold px-2">{t('common.clear')}</Text>
                   </Pressable>
                 )}
