@@ -1,5 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { generateFromTikTokRoutes } from './generateFromTikTok';
+import { generateFromOnlineContentRoutes } from './generateFromOnlineContent';
 import { packTemplateItemsRoutes } from './packTemplateItems';
 import { packTemplateRoutes } from './packTemplates';
 
@@ -7,6 +7,6 @@ const packTemplatesRoutes = new OpenAPIHono();
 
 packTemplatesRoutes.route('/', packTemplateRoutes);
 packTemplatesRoutes.route('/', packTemplateItemsRoutes);
-packTemplatesRoutes.route('/', generateFromTikTokRoutes);
+packTemplatesRoutes.route('/', generateFromOnlineContentRoutes);
 
 export { packTemplatesRoutes };
