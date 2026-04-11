@@ -1,17 +1,22 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { authMiddleware } from '@packrat/api/middleware';
 import { adminRoutes } from './admin';
+import { aiRoutes } from './ai';
 import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
+import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
+import natureLensRoutes from './natureLens';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
+import trailConditionsRoutes from './trailConditions';
 import { tripsRoutes } from './trips';
 import { uploadRoutes } from './upload';
 import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
+import { wildlifeRoutes } from './wildlife';
 
 const publicRoutes = new OpenAPIHono();
 
@@ -26,15 +31,20 @@ protectedRoutes.use(authMiddleware);
 // Mount protected routes
 protectedRoutes.route('/catalog', catalogRoutes);
 protectedRoutes.route('/guides', guidesRoutes);
+protectedRoutes.route('/feed', feedRoutes);
 protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/trips', tripsRoutes);
+protectedRoutes.route('/nature-lens', natureLensRoutes);
+protectedRoutes.route('/trail-conditions', trailConditionsRoutes);
 
+protectedRoutes.route('/ai', aiRoutes);
 protectedRoutes.route('/chat', chatRoutes);
 protectedRoutes.route('/weather', weatherRoutes);
 protectedRoutes.route('/pack-templates', packTemplatesRoutes);
 protectedRoutes.route('/season-suggestions', seasonSuggestionsRoutes);
 protectedRoutes.route('/user', userRoutes);
 protectedRoutes.route('/upload', uploadRoutes);
+protectedRoutes.route('/wildlife', wildlifeRoutes);
 
 const routes = new OpenAPIHono();
 

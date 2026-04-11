@@ -1,5 +1,5 @@
 import { createDb } from '@packrat/api/db';
-import { assertDefined } from '@packrat/api/utils/typeAssertions';
+import { assertDefined } from '@packrat/guards';
 import type { InferInsertModel } from 'drizzle-orm';
 import type { Context } from 'hono';
 import {
@@ -91,6 +91,7 @@ export async function seedCatalogItem(overrides?: Partial<InferInsertModel<typeo
  * Seeds multiple catalog items into the test database
  * @returns Array of created catalog items with ids
  */
+
 export async function seedCatalogItems(
   count: number,
   overrides?: Partial<InferInsertModel<typeof catalogItems>>,
@@ -139,6 +140,7 @@ export async function seedPackTemplate(
  * Seeds multiple pack templates into the test database
  * @returns Array of created pack templates with ids
  */
+
 export async function seedPackTemplates(
   count: number,
   overrides?: Partial<InferInsertModel<typeof packTemplates>>,
@@ -161,6 +163,7 @@ export async function seedPackTemplates(
  * Seeds a pack template item into the test database
  * @returns The created pack template item with id
  */
+
 export async function seedPackTemplateItem(
   packTemplateId: string,
   overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,
@@ -180,11 +183,12 @@ export async function seedPackTemplateItem(
  * Seeds multiple pack template items into the test database
  * @returns Array of created pack template items with ids
  */
+
 export async function seedPackTemplateItems(
   packTemplateId: string,
-  count: number,
-  overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,
+  opts: { count: number; overrides?: Partial<InferInsertModel<typeof packTemplateItems>> },
 ) {
+  const { count, overrides } = opts;
   const db = createDb({} as unknown as Context);
 
   const items = Array.from({ length: count }, (_, i) => {
@@ -219,6 +223,7 @@ export async function seedPack(overrides?: Partial<InferInsertModel<typeof packs
  * Seeds multiple packs into the test database
  * @returns Array of created packs with ids
  */
+
 export async function seedPacks(
   count: number,
   overrides?: Partial<InferInsertModel<typeof packs>>,
@@ -241,6 +246,7 @@ export async function seedPacks(
  * Seeds a pack item into the test database
  * @returns The created pack item with id
  */
+
 export async function seedPackItem(
   packId: string,
   overrides?: Partial<InferInsertModel<typeof packItems>>,
@@ -260,11 +266,12 @@ export async function seedPackItem(
  * Seeds multiple pack items into the test database
  * @returns Array of created pack items with ids
  */
+
 export async function seedPackItems(
   packId: string,
-  count: number,
-  overrides?: Partial<InferInsertModel<typeof packItems>>,
+  opts: { count: number; overrides?: Partial<InferInsertModel<typeof packItems>> },
 ) {
+  const { count, overrides } = opts;
   const db = createDb({} as unknown as Context);
 
   const items = Array.from({ length: count }, (_, i) => {

@@ -95,7 +95,7 @@ export default function ReportedContentScreen() {
                     {t(
                       reportReasonTranslationKeys[
                         item.reason as keyof typeof reportReasonTranslationKeys
-                      ] || item.reason,
+                      ],
                     )}
                   </Text>
                 </View>

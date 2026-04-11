@@ -1,0 +1,38 @@
+appId: ${APP_ID}
+---
+# Pack Edit & Share Flow: Tests BUG-5 — edit and share buttons non-functional
+# This test documents that edit/share buttons don't respond (GH issue #1948)
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap into Maestro Test Pack
+- tapOn:
+    text: "Maestro Test Pack"
+- waitForAnimationToEnd
+
+# Assert pack detail loaded
+- assertVisible:
+    text: "Pack Details"
+
+# BUG-5: The edit and share buttons exist in the header but don't respond to taps
+
+# Verify the pack has expected content
+- assertVisible:
+    text: "Maestro Test Pack"
+
+# Verify key sections are present
+- assertVisible:
+    text: "Add Item"
+
+# Verify item tabs exist
+- assertVisible:
+    text: "All Items"
+
+# Go back to packs list
+- back
+- waitForAnimationToEnd

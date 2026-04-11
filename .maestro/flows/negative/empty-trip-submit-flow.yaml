@@ -1,3 +1,5 @@
+appId: ${APP_ID}
+---
 # Empty Trip Submit Flow: Verify form validation prevents empty trip creation
 - waitForAnimationToEnd
 

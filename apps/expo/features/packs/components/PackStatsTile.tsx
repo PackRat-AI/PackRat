@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -15,7 +15,7 @@ export function PackStatsTile() {
   const packs = usePacks();
   const currentPack = packs[0];
 
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
 
   const route: Href | null = currentPack ? `/pack-stats/${currentPack.id}` : null;
 

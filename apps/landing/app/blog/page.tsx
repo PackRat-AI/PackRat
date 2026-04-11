@@ -59,6 +59,8 @@ export default function BlogPage() {
                 <Link
                   key={cat.title}
                   href={cat.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="group space-y-3 p-6 rounded-xl border border-border bg-card/50 hover:border-primary/50 transition-colors"
                 >
                   <Icon className="h-8 w-8 text-primary" />
@@ -76,7 +78,7 @@ export default function BlogPage() {
           </div>
           <div className="pt-2">
             <Button asChild size="lg">
-              <Link href="https://guides.packratai.com/">
+              <Link href="https://guides.packratai.com/" target="_blank" rel="noopener noreferrer">
                 Visit the Guides Site
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

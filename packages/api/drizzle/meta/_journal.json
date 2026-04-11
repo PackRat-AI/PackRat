@@ -253,6 +253,20 @@
       "when": 1774086319275,
       "tag": "0034_thin_spirit",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1775882436595,
+      "tag": "0035_trail_conditions",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1775883868581,
+      "tag": "0036_typical_zuras",
+      "breakpoints": true
     }
   ]
 }

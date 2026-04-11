@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   AlertAnchor,
   Button,
@@ -13,6 +13,7 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -77,7 +78,7 @@ const getPasswordStrength = (password: string) => {
     strength++;
   }
 
-  let labelKey = 'auth.veryWeak';
+  let labelKey: TranslationKeys = 'auth.veryWeak';
   let color = 'bg-red-500';
 
   if (strength === 1) {
@@ -109,7 +110,7 @@ export default function CredentialsScreen() {
   const [focusedTextField, setFocusedTextField] = React.useState<
     'email' | 'password' | 'confirm-password' | null
   >(null);
-  const alertRef = React.useRef<AlertRef>(null);
+  const alertRef = React.useRef<AlertMethods>(null);
 
   // Get data from previous screen
   const params = useLocalSearchParams<{
@@ -139,7 +140,12 @@ export default function CredentialsScreen() {
         };
 
         // Call signup function with all user data
-        await signUp(userData.email, userData.password, userData.firstName, userData.lastName);
+        await signUp({
+          email: userData.email,
+          password: userData.password,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+        });
 
         // Navigate to verification code screen
         router.push({

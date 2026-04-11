@@ -1,18 +1,19 @@
-# Maestro E2E Test Suite Configuration – Android
-# https://maestro.mobile.dev
-
-appId: com.packratai.mobile
+# Maestro Workspace Configuration - Android
+# https://docs.maestro.dev/maestro-flows/workspace-management/project-configuration
 
 flows:
-  - flows/setup/*.yaml
-  - flows/auth/*.yaml
-  - flows/trips/*.yaml
-  - flows/packs/*.yaml
+  - "flows/setup/*.yaml"
+  - "flows/auth/*.yaml" 
+  - "flows/packs/*.yaml"
+  - "flows/trips/*.yaml"
+  - "master-flow-android.yaml"  # Include master flow
 
-executionOrder:
-  flowsOrder:
-    - flows/setup/clear-state.yaml
-    - flows/auth/login-flow.yaml
-    - flows/trips/create-trip-flow.yaml
-    - flows/packs/create-pack-flow.yaml
-    - flows/auth/logout-flow.yaml
+# Platform-specific settings
+platform:
+  android:
+    disableAnimations: true
+
+# Environment variables available to all flows
+env:
+  TRIP_NAME: "E2E-Trip-${GITHUB_RUN_ID:-12345}"
+  PACK_NAME: "E2E-Pack-${GITHUB_RUN_ID:-12345}"

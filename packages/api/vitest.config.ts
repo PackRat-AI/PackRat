@@ -17,6 +17,8 @@ export default defineWorkersConfig({
         wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
       },
     },
+    // Only include integration tests from /test directory
+    include: [resolve(__dirname, 'test/**/*.test.ts')],
     // Run tests sequentially to avoid database deadlocks
     fileParallelism: false,
     // Also disable parallel execution within test files

@@ -1,3 +1,5 @@
+import type { TranslationKeys } from 'expo-app/lib/i18n/types';
+
 export const reportReasons = [
   'inappropriate_content',
   'harmful_advice',
@@ -11,7 +13,7 @@ export type ReportReason = (typeof reportReasons)[number];
 
 // Translation keys for report reasons
 // These map to ai.reportReasons.* in the i18n translations
-export const reportReasonTranslationKeys: Record<ReportReason, string> = {
+export const reportReasonTranslationKeys: Record<ReportReason, TranslationKeys> = {
   inappropriate_content: 'ai.reportReasons.inappropriateContent',
   harmful_advice: 'ai.reportReasons.harmfulAdvice',
   inaccurate_information: 'ai.reportReasons.inaccurateInformation',

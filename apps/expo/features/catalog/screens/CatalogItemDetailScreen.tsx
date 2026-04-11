@@ -8,6 +8,7 @@ import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
 import { SimilarItems } from 'expo-app/features/catalog/components/SimilarItems';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
@@ -186,13 +187,13 @@ export function CatalogItemDetailScreen() {
 
           <View className="mb-4 gap-2 flex-row justify-between">
             <View>
-              <Button testID="add-to-pack-button" onPress={handleAddToPack}>
+              <Button testID={TestIds.AddToPackButton} onPress={handleAddToPack}>
                 <Text>{t('catalog.addToPack')}</Text>
               </Button>
             </View>
             <View>
               <Button
-                testID="view-retailer-button"
+                testID={TestIds.ViewRetailerButton}
                 variant="secondary"
                 onPress={() => Linking.openURL(item.productUrl as string)}
               >

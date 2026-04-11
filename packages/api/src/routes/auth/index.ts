@@ -44,7 +44,7 @@ import {
 } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { assertDefined } from '@packrat/api/utils/typeAssertions';
+import { assertDefined } from '@packrat/guards';
 import { and, eq, getTableColumns, gt, isNull } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 

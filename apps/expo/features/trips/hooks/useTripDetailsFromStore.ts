@@ -1,5 +1,6 @@
 import { use$ } from '@legendapp/state/react';
 import { tripsStore } from 'expo-app/features/trips/store/trips';
+import { obs } from 'expo-app/lib/store';
 
 /**
  * Retrieves a trip from the store.
@@ -10,8 +11,7 @@ import { tripsStore } from 'expo-app/features/trips/store/trips';
  */
 export function useTripDetailsFromStore(id: string) {
   const trip = use$(() => {
-    // @ts-ignore: Safe because Legend-State uses Proxy
-    const trip_ = tripsStore[id].get();
+    const trip_ = obs(tripsStore, id).get();
 
     return trip_;
   });

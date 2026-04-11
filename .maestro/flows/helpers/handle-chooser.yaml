@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+---
+# Helper: Handle Android "Open with" chooser when two builds are installed
+# This flow handles the app chooser that appears when opening deep links
+- runFlow:
+    when:
+      visible:
+        text: "Open with"
+    commands:
+      - tapOn:
+          text: "PackRat"
+          index: 1
+      - runFlow:
+          when:
+            visible:
+              text: "Just once"
+          commands:
+            - tapOn:
+                text: "Just once"

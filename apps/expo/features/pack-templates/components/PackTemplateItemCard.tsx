@@ -98,54 +98,50 @@ export function PackTemplateItemCard({
   };
 
   return (
-    <>
-      <TouchableWithoutFeedback key={item.id} onPress={() => onPress(item)}>
-        <View className="rounded-lg flex-row gap-3 border p-4 border-border bg-card">
-          {/* Image */}
-          <PackTemplateItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />
+    <TouchableWithoutFeedback key={item.id} onPress={() => onPress(item)}>
+      <View className="rounded-lg flex-row gap-3 border p-4 border-border bg-card">
+        {/* Image */}
+        <PackTemplateItemImage item={item} className="h-16 w-16 rounded-md" resizeMode="cover" />
 
-          {/* Content */}
-          <View className="flex-1">
-            <View className="flex-row gap-2 justify-between items-start">
-              <Text className="flex-1 font-medium text-foreground" numberOfLines={2}>
-                {item.name}
-              </Text>
-              <Pressable onPress={handleActionsPress}>
-                <Icon name="dots-horizontal" size={20} color={colors.grey2} />
-              </Pressable>
-            </View>
-            <Text className="text-sm text-muted-foreground mb-2">{item.category}</Text>
+        {/* Content */}
+        <View className="flex-1">
+          <View className="flex-row gap-2 justify-between items-start">
+            <Text className="flex-1 font-medium text-foreground" numberOfLines={2}>
+              {item.name}
+            </Text>
+            <Pressable onPress={handleActionsPress}>
+              <Icon name="dots-horizontal" size={20} color={colors.grey2} />
+            </Pressable>
+          </View>
+          <Text className="text-sm text-muted-foreground mb-2">{item.category}</Text>
 
-            <View className="flex-row items-center gap-4 flex-wrap">
-              {item.consumable && (
-                <View className={cn('rounded-full px-2 py-0.5', 'bg-amber-100')}>
-                  <Text className={cn('text-xs', 'text-amber-600')}>
-                    {t('packTemplates.consumable')}
-                  </Text>
-                </View>
-              )}
+          <View className="flex-row items-center gap-4 flex-wrap">
+            {item.consumable && (
+              <View className={cn('rounded-full px-2 py-0.5', 'bg-amber-100')}>
+                <Text className={cn('text-xs', 'text-amber-600')}>
+                  {t('packTemplates.consumable')}
+                </Text>
+              </View>
+            )}
 
-              {item.worn && (
-                <View className={cn('rounded-full px-2 py-0.5', 'bg-emerald-100')}>
-                  <Text className={cn('text-xs', 'text-emerald-600')}>
-                    {t('packTemplates.worn')}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <View className="mt-2 flex-row items-center gap-4 flex-wrap">
-              <Text className="text-sm font-medium text-foreground">
-                {item.weight}
-                {item.weightUnit}
-              </Text>
+            {item.worn && (
+              <View className={cn('rounded-full px-2 py-0.5', 'bg-emerald-100')}>
+                <Text className={cn('text-xs', 'text-emerald-600')}>{t('packTemplates.worn')}</Text>
+              </View>
+            )}
+          </View>
+          <View className="mt-2 flex-row items-center gap-4 flex-wrap">
+            <Text className="text-sm font-medium text-foreground">
+              {item.weight}
+              {item.weightUnit}
+            </Text>
 
-              <Text className="text-sm text-muted-foreground">
-                {item.quantity} {t('packTemplates.qty')}
-              </Text>
-            </View>
+            <Text className="text-sm text-muted-foreground">
+              {item.quantity} {t('packTemplates.qty')}
+            </Text>
           </View>
         </View>
-      </TouchableWithoutFeedback>
-    </>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
