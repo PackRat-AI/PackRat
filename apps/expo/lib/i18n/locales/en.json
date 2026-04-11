@@ -188,7 +188,8 @@
     "trips": "Trips",
     "catalog": "Catalog",
     "profile": "Profile",
-    "home": "Home"
+    "home": "Home",
+    "feed": "Feed"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1033,5 +1034,27 @@
     "hazardIce": "Ice",
     "hazardFlooding": "Flooding",
     "hazardLooseRock": "Loose Rock"
+  },
+  "feed": {
+    "feed": "Feed",
+    "noPosts": "No posts yet",
+    "beTheFirst": "Be the first to share a moment!",
+    "sharePhoto": "Share a Photo",
+    "viewFeed": "View feed",
+    "shareMoments": "Share your outdoor moments",
+    "comments": "Comments",
+    "noComments": "No comments yet",
+    "addComment": "Add a comment...",
+    "post": "Post",
+    "captionPlaceholder": "Write a caption...",
+    "gallery": "Gallery",
+    "camera": "Camera",
+    "noPhotos": "No photos selected",
+    "addAtLeastOnePhoto": "Please add at least one photo to your post.",
+    "permissionRequired": "Permission Required",
+    "galleryPermission": "Please allow access to your photo library.",
+    "cameraPermission": "Please allow access to your camera.",
+    "postFailed": "Failed to create post. Please try again.",
+    "uploadFailed": "Failed to upload photos. Please try again."
   }
 }

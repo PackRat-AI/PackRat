@@ -6,4 +6,5 @@ export const featureFlags = {
   enableSharedPacks: false,
   enablePackTemplates: true,
   enableTrailConditions: false,
+  enableFeed: false,
 };

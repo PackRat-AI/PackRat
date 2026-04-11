@@ -5,6 +5,7 @@ import { aiRoutes } from './ai';
 import { authRoutes } from './auth';
 import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
+import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
@@ -28,6 +29,7 @@ protectedRoutes.use(authMiddleware);
 // Mount protected routes
 protectedRoutes.route('/catalog', catalogRoutes);
 protectedRoutes.route('/guides', guidesRoutes);
+protectedRoutes.route('/feed', feedRoutes);
 protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/trips', tripsRoutes);
 

@@ -10,6 +10,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
   vector,
 } from 'drizzle-orm/pg-core';
@@ -563,3 +564,130 @@ export type NewTrip = InferInsertModel<typeof trips>;
 export type PackTemplateWithItems = PackTemplate & {
   items: PackTemplateItem[];
 };
+
+// Social Feed tables
+
+// Posts table
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  caption: text('caption'),
+  images: jsonb('images').$type<string[]>().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Post likes table
+export const postLikes = pgTable(
+  'post_likes',
+  {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id')
+      .references(() => posts.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniquePostUser: unique('post_likes_post_id_user_id_unique').on(table.postId, table.userId),
+  }),
+);
+
+// Post comments table
+export const postComments = pgTable('post_comments', {
+  id: serial('id').primaryKey(),
+  postId: integer('post_id')
+    .references(() => posts.id, { onDelete: 'cascade' })
+    .notNull(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  content: text('content').notNull(),
+  parentCommentId: integer('parent_comment_id').references(() => postComments.id, {
+    onDelete: 'cascade',
+  }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Comment likes table
+export const commentLikes = pgTable(
+  'comment_likes',
+  {
+    id: serial('id').primaryKey(),
+    commentId: integer('comment_id')
+      .references(() => postComments.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueCommentUser: unique('comment_likes_comment_id_user_id_unique').on(
+      table.commentId,
+      table.userId,
+    ),
+  }),
+);
+
+// Relations
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [posts.userId],
+    references: [users.id],
+  }),
+  likes: many(postLikes),
+  comments: many(postComments),
+}));
+
+export const postLikesRelations = relations(postLikes, ({ one }) => ({
+  post: one(posts, {
+    fields: [postLikes.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postCommentsRelations = relations(postComments, ({ one, many }) => ({
+  post: one(posts, {
+    fields: [postComments.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postComments.userId],
+    references: [users.id],
+  }),
+  likes: many(commentLikes),
+}));
+
+export const commentLikesRelations = relations(commentLikes, ({ one }) => ({
+  comment: one(postComments, {
+    fields: [commentLikes.commentId],
+    references: [postComments.id],
+  }),
+  user: one(users, {
+    fields: [commentLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+// Infer types for social feed
+export type Post = InferSelectModel<typeof posts>;
+export type NewPost = InferInsertModel<typeof posts>;
+
+export type PostLike = InferSelectModel<typeof postLikes>;
+export type NewPostLike = InferInsertModel<typeof postLikes>;
+
+export type PostComment = InferSelectModel<typeof postComments>;
+export type NewPostComment = InferInsertModel<typeof postComments>;
+
+export type CommentLike = InferSelectModel<typeof commentLikes>;
+export type NewCommentLike = InferInsertModel<typeof commentLikes>;
