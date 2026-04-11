@@ -50,7 +50,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           </TouchableOpacity>
           {isOwner && onDelete && (
             <TouchableOpacity onPress={() => onDelete(comment.id)}>
-              <Icon name="delete" size={16} color={colors.grey2} />
+              <Icon name="trash-can-outline" size={16} color={colors.grey2} />
             </TouchableOpacity>
           )}
         </View>

@@ -55,7 +55,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
         </View>
         {isOwner && onDelete && (
           <TouchableOpacity onPress={() => onDelete(post.id)} hitSlop={8}>
-            <Icon name="delete" size={20} color={colors.grey2} />
+            <Icon name="trash-can-outline" size={20} color={colors.grey2} />
           </TouchableOpacity>
         )}
       </View>
@@ -70,8 +70,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
             style={styles.imageScroll}
           >
             {post.images.map((img, idx) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: images have no stable id
               <Image
+                // biome-ignore lint/suspicious/noArrayIndexKey: images have no stable id
                 key={`${img}-${idx}`}
                 source={{ uri: buildPostImageUrl(img) }}
                 style={[styles.image, { width: SCREEN_WIDTH - 32 }]}
