@@ -5,7 +5,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity } from 'react-native';
 import { aiModeAtom, localModelStatusAtom } from '../atoms/aiModeAtoms';
 import { AIModeSheet } from './AIModeSheet';
 
