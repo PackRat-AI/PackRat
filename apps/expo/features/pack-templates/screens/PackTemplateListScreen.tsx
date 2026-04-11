@@ -21,6 +21,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FeaturedPacksSection } from '../components/FeaturedPacksSection';
 import { PackTemplateCard } from '../components/PackTemplateCard';
 import TemplateCreationOptions from '../components/TemplateCreationOptions';
 import { usePackTemplates } from '../hooks';
@@ -167,13 +168,16 @@ export function PackTemplateListScreen() {
         stickyHeaderHiddenOnScroll
         ListHeaderComponent={
           selectedTemplateTypeIndex === 0 ? (
-            <View className="bg-background px-4 pb-2">
-              <Text className="text-muted-foreground">
-                {filteredTemplates.length}{' '}
-                {filteredTemplates.length === 1
-                  ? t('packTemplates.template')
-                  : t('packTemplates.templates')}
-              </Text>
+            <View className="bg-background">
+              <FeaturedPacksSection onTemplatePress={handleTemplatePress} />
+              <View className="px-4 pb-2">
+                <Text className="text-muted-foreground">
+                  {filteredTemplates.length}{' '}
+                  {filteredTemplates.length === 1
+                    ? t('packTemplates.template')
+                    : t('packTemplates.templates')}
+                </Text>
+              </View>
             </View>
           ) : undefined
         }
