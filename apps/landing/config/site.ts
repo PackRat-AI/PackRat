@@ -403,9 +403,9 @@ export const siteConfig = {
       icon: 'Instagram',
     },
     {
-      name: 'Facebook',
-      href: 'https://www.facebook.com/packratai',
-      icon: 'Facebook',
+      name: 'TikTok',
+      href: 'https://www.tiktok.com/@packratai',
+      icon: 'Music2',
     },
   ] as SocialLink[],
 };
