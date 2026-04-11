@@ -100,7 +100,7 @@ export function TripNotificationsList({
         // variables.  Fall back to the English `message` string from the API.
         const i18nKey = NOTIFICATION_TYPE_I18N_KEY[notification.notificationType];
         const localizedMessage = i18nKey
-          ? t(i18nKey, notification.variables as Record<string, unknown>)
+          ? t(i18nKey, notification.variables)
           : notification.message;
 
         return (
