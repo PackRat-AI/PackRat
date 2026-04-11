@@ -7,7 +7,6 @@ import { Star } from 'lucide-react';
 
 export default function TestimonialsSection() {
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section
       id="testimonials"
       className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted/50"

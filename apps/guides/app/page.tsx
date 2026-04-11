@@ -104,7 +104,6 @@ function HomeContent() {
       )}
 
       {/* All Guides - Apple style */}
-      {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
       <section id="guides" className="py-20">
         <div className="container">
           <h2 className="mb-10 text-3xl font-semibold tracking-tight text-center">{pageTitle}</h2>

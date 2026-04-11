@@ -547,7 +547,7 @@ if (require.main === module) {
     process.exit(0);
   }
 
-  const count = (args[0] && Number.parseInt(args[0])) || 5;
+  const count = (args[0] && Number.parseInt(args[0], 10)) || 5;
   const categoryArgs = args.slice(1) as ContentCategory[];
 
   console.log(chalk.blue(`Starting content generation: ${count} posts`));

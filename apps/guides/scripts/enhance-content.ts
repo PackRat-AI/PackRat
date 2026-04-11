@@ -137,6 +137,7 @@ function parseContentFile(filePath: string): {
 /**
  * Write enhanced content back to file
  */
+
 function writeEnhancedContent(
   filePath: string,
   metadata: Record<string, unknown>,
@@ -149,6 +150,7 @@ function writeEnhancedContent(
 /**
  * Enhance a single content file
  */
+
 async function enhanceFile(
   filePath: string,
   options: CliOptions,
@@ -351,7 +353,7 @@ function parseArgs(): CliOptions {
         break;
       case '--max-files':
       case '-n':
-        options.maxFiles = Number.parseInt(args[++i] || '0') || undefined;
+        options.maxFiles = Number.parseInt(args[++i] || '0', 10) || undefined;
         break;
       case '--api-url':
       case '-u':

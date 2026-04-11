@@ -1,3 +1,4 @@
+/// <reference types="@cloudflare/workers-types" />
 import 'typed-htmx';
 
 // A demo of how to augment foreign types with htmx attributes.

@@ -8,7 +8,6 @@ import Link from 'next/link';
 
 export default function DownloadSection() {
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="download" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 -z-10 bg-primary/5 dark:bg-primary/10"></div>

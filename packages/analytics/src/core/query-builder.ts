@@ -77,7 +77,11 @@ export class SQLFragments {
   }
 
   /** Safe float extraction from FIELD_MAPPINGS with optional range check. */
-  static safeFloat(field: string, alias?: string, minVal?: number, maxVal?: number): string {
+  static safeFloat(
+    field: string,
+    opts: { alias?: string; minVal?: number; maxVal?: number } = {},
+  ): string {
+    const { alias, minVal, maxVal } = opts;
     const a = alias ?? field;
     const variations = FIELD_MAPPINGS[field] ?? [field];
     const digits = DBConfig.PRICE_ROUND_DIGITS;
@@ -169,10 +173,10 @@ export class SQLFragments {
       SQLFragments.safeCoalesce('product_url'),
       SQLFragments.safeCoalesce('image_url'),
       // V2 fields
-      SQLFragments.safeFloat('compare_at_price', undefined, 0, DBConfig.MAX_VALID_PRICE),
-      SQLFragments.safeFloat('rating_value', undefined, 0, 5),
+      SQLFragments.safeFloat('compare_at_price', { minVal: 0, maxVal: DBConfig.MAX_VALID_PRICE }),
+      SQLFragments.safeFloat('rating_value', { minVal: 0, maxVal: 5 }),
       SQLFragments.safeInt('review_count'),
-      SQLFragments.safeFloat('weight', undefined, -1),
+      SQLFragments.safeFloat('weight', { minVal: -1 }),
       SQLFragments.safeCoalesce('weight_unit', "''"),
       SQLFragments.safeCoalesce('color'),
       SQLFragments.safeCoalesce('size'),
@@ -254,11 +258,9 @@ export class QueryBuilder {
 
   searchQuery(
     keyword: string,
-    sites?: string[],
-    minPrice?: number,
-    maxPrice?: number,
-    limit: number = DBConfig.DEFAULT_LIMIT,
+    opts: { sites?: string[]; minPrice?: number; maxPrice?: number; limit?: number } = {},
   ): string {
+    const { sites, minPrice, maxPrice, limit = DBConfig.DEFAULT_LIMIT } = opts;
     const select = SQLFragments.selectFields().join(',\n            ');
     const source = SQLFragments.readCsvSource(this.bucketPath);
 
@@ -373,10 +375,9 @@ export class QueryBuilder {
 
   dealsQuery(
     maxPrice: number,
-    category?: string,
-    sites?: string[],
-    limit: number = DBConfig.DEFAULT_LIMIT,
+    opts: { category?: string; sites?: string[]; limit?: number } = {},
   ): string {
+    const { category, sites, limit = DBConfig.DEFAULT_LIMIT } = opts;
     const select = SQLFragments.selectFields().join(',\n            ');
     const source = SQLFragments.readCsvSource(this.bucketPath);
 

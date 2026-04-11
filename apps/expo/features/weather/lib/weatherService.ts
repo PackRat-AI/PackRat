@@ -26,6 +26,7 @@ export async function searchLocations(query: string): Promise<LocationSearchResu
 /**
  * Search for locations by coordinates
  */
+
 export async function searchLocationsByCoordinates(
   latitude: number,
   longitude: number,
@@ -155,6 +156,7 @@ export function formatWeatherData(data: WeatherApiForecastResponse) {
 /**
  * Get background gradient colors based on weather condition
  */
+
 export function getWeatherBackgroundColors(
   code: number,
   isNight: boolean,

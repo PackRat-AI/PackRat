@@ -191,7 +191,17 @@ export function useAuthActions() {
     }
   };
 
-  const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
+  const signUp = async ({
+    email,
+    password,
+    firstName,
+    lastName,
+  }: {
+    email: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+  }) => {
     setIsLoading(true);
     try {
       const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/register`, {

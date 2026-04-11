@@ -60,7 +60,7 @@ async function fetchTikTokPostData(
     const { APP_CONTAINER } = getEnv(c);
 
     // Get the container instance using the binding
-    const container = getContainer(APP_CONTAINER as any);
+    const container = getContainer(APP_CONTAINER);
 
     // Make request to the container's /import endpoint
     const response = await container.fetch(
@@ -446,9 +446,7 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
     return c.json({ ...newTemplate, items: insertedItems }, 201);
   } catch (error) {
     console.error('Error generating pack template:', error);
-    c.get('sentry').captureException(error, {
-      extra: { contentUrl, errorType: 'template_generation_error' },
-    } as any);
+    c.get('sentry').captureException(error);
 
     // Determine specific error type based on error context
     let errorCode = 'UNKNOWN_ERROR';

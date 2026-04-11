@@ -1,4 +1,5 @@
 import { tripsStore } from 'expo-app/features/trips/store/trips';
+import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid/non-secure';
 import { useCallback } from 'react';
 import type { TripInput, TripInStore } from '../types';
@@ -16,8 +17,7 @@ export function useCreateTrip() {
       localUpdatedAt: timestamp,
       deleted: false,
     };
-    // @ts-ignore: Safe because Legend-State uses Proxy
-    tripsStore[id].set(newTrip);
+    obs(tripsStore, id).set(newTrip);
 
     return id;
   }, []);

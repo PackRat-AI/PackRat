@@ -39,6 +39,7 @@ export class ImageCacheManager {
   /**
    * Download and cache an image
    */
+
   public async cacheRemoteImage(fileName: string, remoteUrl: string): Promise<string> {
     await this.initCacheDirectory();
 
