@@ -51,6 +51,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { fetch as expoFetch } from 'expo/fetch';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 const _dimensions = Dimensions.get('window');
@@ -128,9 +129,11 @@ export default function AIChat() {
       }
     }
     return new DefaultChatTransport({
-      fetch: undefined,
+      fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       body: () => ({
         contextType: contextRef.current.contextType,
         itemId: contextRef.current.itemId,
