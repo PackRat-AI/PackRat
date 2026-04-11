@@ -20,6 +20,7 @@ import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
 const packRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -280,6 +281,14 @@ const duplicatePackRoute = createRoute({
         },
       },
     },
+    403: {
+      description: 'Forbidden - pack is private and not owned by the current user',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
     404: {
       description: 'Pack not found',
       content: {
@@ -320,67 +329,81 @@ packRoutes.openapi(duplicatePackRoute, async (c) => {
       return c.json({ error: 'Pack not found' }, 404);
     }
 
-    // Generate new pack ID
-    const newPackId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const now = new Date();
-
-    // Create the new pack
-    const [newPack] = await db
-      .insert(packs)
-      .values({
-        id: newPackId,
-        name: customName || `${sourcePack.name} (Copy)`,
-        description: sourcePack.description,
-        category: sourcePack.category,
-        userId: auth.userId,
-        isPublic: false, // Duplicated packs are private by default
-        image: sourcePack.image,
-        tags: sourcePack.tags,
-        deleted: false,
-        isAIGenerated: false,
-        localCreatedAt: now,
-        localUpdatedAt: now,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-
-    // Copy all items from source pack to new pack
-    if (sourcePack.items && sourcePack.items.length > 0) {
-      const newItems = sourcePack.items.map((item) => ({
-        id: `pi_${Date.now()}_${Math.random().toString(36).substring(2, 9)}_${Math.random().toString(36).substring(2, 5)}`,
-        name: item.name,
-        description: item.description,
-        weight: item.weight,
-        weightUnit: item.weightUnit,
-        quantity: item.quantity,
-        category: item.category,
-        consumable: item.consumable,
-        worn: item.worn,
-        image: item.image,
-        notes: item.notes,
-        packId: newPackId,
-        catalogItemId: item.catalogItemId,
-        userId: auth.userId,
-        deleted: false,
-        isAIGenerated: item.isAIGenerated,
-        templateItemId: item.templateItemId,
-        embedding: item.embedding,
-        createdAt: now,
-        updatedAt: now,
-      }));
-
-      await db.insert(packItems).values(newItems);
+    // Prevent duplicating deleted packs
+    if (sourcePack.deleted) {
+      return c.json({ error: 'Pack not found' }, 404);
     }
 
-    // Fetch the complete new pack with items
-    const packWithItems = await db.query.packs.findFirst({
-      where: eq(packs.id, newPackId),
-      with: {
-        items: {
-          where: eq(packItems.deleted, false),
+    // Only allow duplication if the user owns the pack or it is public
+    const isOwner = sourcePack.userId === auth.userId;
+    if (!isOwner && !sourcePack.isPublic) {
+      return c.json({ error: 'Forbidden' }, 403);
+    }
+
+    // Generate new IDs using cryptographically secure randomUUID
+    const newPackId = `p_${randomUUID()}`;
+    const now = new Date();
+
+    // Wrap pack creation + items insertion in a transaction so a partial
+    // failure cannot leave an orphaned pack row behind.
+    const packWithItems = await db.transaction(async (tx) => {
+      // Create the new pack
+      await tx
+        .insert(packs)
+        .values({
+          id: newPackId,
+          name: customName || `${sourcePack.name} (Copy)`,
+          description: sourcePack.description,
+          category: sourcePack.category,
+          userId: auth.userId,
+          isPublic: false, // Duplicated packs are private by default
+          image: sourcePack.image,
+          tags: sourcePack.tags,
+          deleted: false,
+          isAIGenerated: false,
+          localCreatedAt: now,
+          localUpdatedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+      // Copy all items from source pack to new pack
+      if (sourcePack.items && sourcePack.items.length > 0) {
+        const newItems = sourcePack.items.map((item) => ({
+          id: `pi_${randomUUID()}`,
+          name: item.name,
+          description: item.description,
+          weight: item.weight,
+          weightUnit: item.weightUnit,
+          quantity: item.quantity,
+          category: item.category,
+          consumable: item.consumable,
+          worn: item.worn,
+          image: item.image,
+          notes: item.notes,
+          packId: newPackId,
+          catalogItemId: item.catalogItemId,
+          userId: auth.userId,
+          deleted: false,
+          isAIGenerated: item.isAIGenerated,
+          templateItemId: item.templateItemId,
+          embedding: item.embedding,
+          createdAt: now,
+          updatedAt: now,
+        }));
+
+        await tx.insert(packItems).values(newItems);
+      }
+
+      // Fetch the complete new pack with items within the transaction
+      return tx.query.packs.findFirst({
+        where: eq(packs.id, newPackId),
+        with: {
+          items: {
+            where: eq(packItems.deleted, false),
+          },
         },
-      },
+      });
     });
 
     if (!packWithItems) {
