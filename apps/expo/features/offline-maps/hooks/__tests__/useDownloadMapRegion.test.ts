@@ -7,7 +7,9 @@
  * functions, so unit-testing the underlying behaviour is sufficient.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+const NO_DOUBLE_COUNT_RE = /\d+\s+\d+/;
 
 // Inline the constants to avoid importing expo-file-system (pulls in React Native)
 const ERR_DUPLICATE_DOWNLOAD = 'duplicate_download';
@@ -52,6 +54,7 @@ const storeData: Record<string, OfflineMapRegion> = {};
 interface RunDownloadOptions {
   estimatedSize: number;
   signal: { cancelled: boolean };
+  setFn: (id: string, updater: (prev: OfflineMapRegion) => OfflineMapRegion) => void;
   /** Overridable sleep implementation – defaults to real setTimeout */
   sleep?: (ms: number) => Promise<void>;
 }
@@ -64,12 +67,13 @@ interface RunDownloadOptions {
  * immediately after `await sleep(...)` prevents phantom store writes when the
  * download is cancelled while the sleep is in progress.
  */
-async function runDownloadInBackground(
-  id: string,
-  opts: RunDownloadOptions,
-  setFn: (id: string, updater: (prev: OfflineMapRegion) => OfflineMapRegion) => void,
-): Promise<void> {
-  const { estimatedSize, signal, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = opts;
+async function runDownloadInBackground(id: string, opts: RunDownloadOptions): Promise<void> {
+  const {
+    estimatedSize,
+    signal,
+    setFn,
+    sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
+  } = opts;
   const TICK_MS = 300;
   const MB = estimatedSize / (1024 * 1024);
   const TOTAL_TICKS = Math.min(60, Math.max(10, Math.round((MB / 10) * 20)));
@@ -137,15 +141,16 @@ describe('useDownloadMapRegion – core logic', () => {
         });
 
       const signal = { cancelled: false };
-      const downloadPromise = runDownloadInBackground(
-        'test-region-race',
-        { estimatedSize: 1024 * 1024, signal, sleep: controllableSleep },
+      const downloadPromise = runDownloadInBackground('test-region-race', {
+        estimatedSize: 1024 * 1024,
+        signal,
         setFn,
-      );
+        sleep: controllableSleep,
+      });
 
       // Release the FIRST tick's sleep — this should produce one store write
       expect(sleepResolvers.length).toBeGreaterThanOrEqual(1);
-      sleepResolvers[0]!();
+      sleepResolvers[0]?.();
 
       // Give the microtask queue a chance to process
       await Promise.resolve();
@@ -186,11 +191,12 @@ describe('useDownloadMapRegion – core logic', () => {
         });
 
       const signal = { cancelled: false };
-      const downloadPromise = runDownloadInBackground(
-        'region-pre-cancel',
-        { estimatedSize: 1024 * 1024, signal, sleep: controllableSleep },
+      const downloadPromise = runDownloadInBackground('region-pre-cancel', {
+        estimatedSize: 1024 * 1024,
+        signal,
         setFn,
-      );
+        sleep: controllableSleep,
+      });
 
       // Cancel BEFORE releasing any sleep (signal set before first tick finishes)
       signal.cancelled = true;
@@ -372,7 +378,7 @@ describe('useDownloadMapRegion – core logic', () => {
 
       expect(bannerFragment).toBe(' · 2 downloading');
       expect(bannerFragment).not.toContain('2 2');
-      expect(bannerFragment).not.toMatch(/\d+\s+\d+/); // no "N N" pattern
+      expect(bannerFragment).not.toMatch(NO_DOUBLE_COUNT_RE); // no "N N" pattern
     });
 
     it('count appears exactly once in the downloading fragment', () => {
