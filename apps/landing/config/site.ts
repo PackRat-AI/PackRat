@@ -28,31 +28,6 @@ export const siteConfig = {
     'outdoor planning',
   ],
 
-  // Color scheme
-  colors: {
-    primary: '#0F766E', // Teal
-    primaryLight: '#14B8A6', // Light teal
-    primaryDark: '#0D9488', // Dark teal
-    secondary: '#F97316', // Orange
-    secondaryLight: '#FB923C', // Light orange
-    secondaryDark: '#EA580C', // Dark orange
-    tertiary: '#8B5CF6', // Purple
-    tertiaryLight: '#A78BFA', // Light purple
-    dark: '#1E293B', // Slate 800
-    darkAlt: '#0F172A', // Slate 900
-    light: '#F8FAFC', // Slate 50
-    lightAlt: '#F1F5F9', // Slate 100
-    textPrimary: '#0F172A', // Slate 900
-    textSecondary: '#475569', // Slate 600
-    textTertiary: '#94A3B8', // Slate 400
-    gradientPrimary: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-    gradientSecondary: 'linear-gradient(135deg, #F97316 0%, #FB923C 100%)',
-    gradientTertiary: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
-    gradientDark: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
-    gradientMesh:
-      'radial-gradient(at 67% 33%, hsla(162, 77%, 40%, 0.15) 0px, transparent 50%), radial-gradient(at 33% 67%, hsla(23, 100%, 50%, 0.15) 0px, transparent 50%), radial-gradient(at 80% 80%, hsla(242, 100%, 70%, 0.15) 0px, transparent 50%), radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 0.15) 0px, transparent 50%)',
-  },
-
   // Navigation
   mainNav: [
     {
@@ -101,6 +76,8 @@ export const siteConfig = {
   hero: {
     badge: '100% Free · AI-Powered Packing Lists',
     title: 'Stop overpacking. Start adventuring.',
+    titleLine1: 'Stop overpacking.',
+    titleLine2: 'Start adventuring.',
     subtitle:
       "PackRat's AI builds your perfect packing list based on your trip, the weather, and your gear — so you carry exactly what you need and nothing you don't.",
     image: '/hero-app-preview.png',
@@ -405,7 +382,7 @@ export const siteConfig = {
     {
       name: 'TikTok',
       href: 'https://www.tiktok.com/@packratai',
-      icon: 'Music2',
+      icon: 'TikTok',
     },
   ] as SocialLink[],
 };

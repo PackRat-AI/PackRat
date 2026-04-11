@@ -54,6 +54,8 @@ export default function SiteFooter() {
                   >
                     <Link
                       href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-primary transition-colors"
                     >
                       <span className="sr-only">{item.name}</span>
