@@ -135,6 +135,10 @@ const addCommentRoute = createRoute({
       description: 'Comment created successfully',
       content: { 'application/json': { schema: CommentSchema } },
     },
+    400: {
+      description: 'Failed to create comment',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
     404: {
       description: 'Post not found',
       content: { 'application/json': { schema: ErrorResponseSchema } },

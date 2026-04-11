@@ -1,5 +1,6 @@
 'use client';
 
+import { assertIsString } from '@packrat/guards';
 import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
   LargeTitleHeader,
@@ -35,7 +36,6 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
