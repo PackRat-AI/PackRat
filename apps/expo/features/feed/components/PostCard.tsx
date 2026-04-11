@@ -69,10 +69,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
             showsHorizontalScrollIndicator={false}
             style={styles.imageScroll}
           >
-            {post.images.map((img, idx) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: images have no stable id
+            {post.images.map((img) => (
               <Image
-                key={`${img}-${idx}`}
+                key={img}
                 source={{ uri: buildPostImageUrl(img) }}
                 style={[styles.image, { width: SCREEN_WIDTH - 32 }]}
                 resizeMode="cover"
