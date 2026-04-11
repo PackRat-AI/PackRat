@@ -5,7 +5,7 @@ import { trailConditionReports } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { and, desc, eq, gte, type SQL } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, type SQL } from 'drizzle-orm';
 
 const trailConditionRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -106,7 +106,15 @@ trailConditionRoutes.openapi(listReportsRoute, async (c) => {
   try {
     const conditions = [eq(trailConditionReports.deleted, false)];
     if (trailName) {
-      conditions.push(eq(trailConditionReports.trailName, trailName));
+      // Use case-insensitive substring match so client-supplied trail names
+      // (which often come from trip.location.name, possibly with extra region
+      // suffixes or whitespace differences) surface relevant community reports.
+      // Escape LIKE metacharacters to prevent pattern injection by users.
+      const normalized = trailName.trim();
+      if (normalized.length > 0) {
+        const escaped = normalized.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+        conditions.push(ilike(trailConditionReports.trailName, `%${escaped}%`));
+      }
     }
 
     const reports = await db
