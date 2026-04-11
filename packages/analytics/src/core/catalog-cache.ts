@@ -7,12 +7,13 @@
  * which resolves to the Iceberg table via `USE packrat.default`.
  */
 
-import type { DuckDBConnection } from '@duckdb/node-api';
+import type { DuckDBConnection, DuckDBInstance } from '@duckdb/node-api';
 import consola from 'consola';
 import { createCatalogConnection } from './connection';
 import { LocalCacheManager } from './local-cache';
 
 export class CatalogCacheManager extends LocalCacheManager {
+  private catalogInstance: DuckDBInstance | null = null;
   private catalogConn: DuckDBConnection | null = null;
 
   constructor() {

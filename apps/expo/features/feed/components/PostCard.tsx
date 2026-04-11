@@ -55,7 +55,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onLike, onDelete, curr
         </View>
         {isOwner && onDelete && (
           <TouchableOpacity onPress={() => onDelete(post.id)} hitSlop={8}>
-            <Icon name="delete" size={20} color={colors.grey2} />
+            <Icon name="trash-can-outline" size={20} color={colors.grey2} />
           </TouchableOpacity>
         )}
       </View>
