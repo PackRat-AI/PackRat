@@ -1058,7 +1058,16 @@
     "hazardClosure": "Closure",
     "hazardIce": "Ice",
     "hazardFlooding": "Flooding",
-    "hazardLooseRock": "Loose Rock"
+    "hazardLooseRock": "Loose Rock",
+    "filters": {
+      "all": "All",
+      "paved": "Paved",
+      "gravel": "Gravel",
+      "dirt": "Dirt",
+      "rocky": "Rocky",
+      "snow": "Snow",
+      "mud": "Mud"
+    }
   },
   "feed": {
     "feed": "Feed",
