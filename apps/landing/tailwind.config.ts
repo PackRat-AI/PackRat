@@ -1,7 +1,7 @@
-const preset = require('@packrat/web-ui/tailwind/preset').default;
+import preset from '@packrat/web-ui/tailwind/preset';
+import type { Config } from 'tailwindcss';
 
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
   presets: [preset],
   content: [
     './pages/**/*.{ts,tsx}',
@@ -25,4 +25,6 @@ module.exports = {
       },
     },
   },
-};
+} satisfies Config;
+
+export default config;
