@@ -57,13 +57,16 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const { location, setLocation } = useTripLocation();
   const packs = usePacks();
 
-  // Initialize location store with trip's location when component mounts or trip ID changes
-  // Note: We intentionally don't include trip?.location in dependencies to avoid
-  // overriding the user's selection when the trip object is re-created by the store
+  // Initialize location store with trip's location when component mounts or
+  // trip ID changes. We intentionally depend only on trip?.id (not trip?.location)
+  // so that after the user picks a new location via location-search, a
+  // re-render of the same trip object does not overwrite their selection in
+  // the store.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — see comment above; reseeding on trip?.location would stomp user-picked values
   useEffect(() => {
     // Set location from trip, or null if trip has no location
     setLocation(trip?.location ?? null);
-    
+
     // Cleanup: clear location when component unmounts
     return () => {
       setLocation(null);
