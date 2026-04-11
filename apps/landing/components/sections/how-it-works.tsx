@@ -23,8 +23,8 @@ export default function HowItWorksSection() {
 
         {/* Step cards */}
         <div className="relative">
-          {/* Connector line – visible on large screens */}
-          <div className="absolute left-1/2 top-12 h-[calc(100%-5rem)] w-[2px] -translate-x-1/2 bg-gradient-to-b from-apple-blue/30 via-apple-blue/20 to-transparent lg:left-1/2 lg:top-1/2 lg:h-[2px] lg:w-[calc(100%-15rem)] lg:-translate-y-1/2 lg:bg-gradient-to-r hidden md:block" />
+          {/* Connector line – visible on large screens only (when 3-col grid is active) */}
+          <div className="absolute left-[16.67%] right-[16.67%] top-8 h-[2px] bg-gradient-to-r from-apple-blue/40 via-apple-blue/20 to-apple-blue/40 hidden lg:block" />
 
           <div className="grid gap-8 md:gap-12 lg:gap-16 lg:grid-cols-3">
             {siteConfig.howItWorks.steps.map((step, index) => {

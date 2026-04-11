@@ -190,14 +190,13 @@ export default function FeatureSection() {
           {/* Other features grid */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {siteConfig.features.slice(3).map((feature) => (
-              <div key={feature.id} className="apple-card">
-                <FeatureCard
-                  title={feature.title}
-                  description={feature.description}
-                  icon={feature.icon}
-                  color={feature.color}
-                />
-              </div>
+              <FeatureCard
+                key={feature.id}
+                title={feature.title}
+                description={feature.description}
+                icon={feature.icon}
+                color={feature.color}
+              />
             ))}
           </div>
         </div>

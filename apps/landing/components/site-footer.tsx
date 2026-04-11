@@ -51,7 +51,7 @@ export default function SiteFooter() {
           </div>
 
           {/* Product links */}
-          <div className="lg:ml-auto">
+          <div>
             <h3 className="text-sm font-semibold mb-4">Product</h3>
             <ul className="space-y-3">
               {siteConfig.footerLinks.product.map((item) => (

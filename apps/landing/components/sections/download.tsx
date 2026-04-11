@@ -1,21 +1,9 @@
-'use client';
-
 import { siteConfig } from 'landing-app/config/site';
 import { Apple, Check, Store } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type React from 'react';
 
 export default function DownloadSection() {
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    const targetId = href.substring(1);
-    const element = document.getElementById(targetId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   return (
     <section id="download" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
       {/* Subtle Apple-style background gradient */}
@@ -25,8 +13,8 @@ export default function DownloadSection() {
         <div className="apple-card overflow-hidden">
           <div className="grid lg:grid-cols-2 items-center gap-8 md:gap-12 p-6 md:p-8 lg:p-12">
             {/* Text content */}
-            <div className="space-y-4 md:space-y-6 max-w-xl">
-              <div className="apple-badge">
+            <div className="space-y-4 md:space-y-6 max-w-xl mx-auto lg:mx-0 text-center lg:text-left">
+              <div className="apple-badge mx-auto lg:mx-0 w-fit">
                 <span className="mr-1.5 h-2 w-2 rounded-full animate-pulse bg-apple-blue inline-block" />
                 Get Started Today
               </div>
@@ -39,7 +27,7 @@ export default function DownloadSection() {
                 {siteConfig.download.subtitle}
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-left">
                 {['Free to use', 'Offline access', 'Regular updates', 'Community support'].map(
                   (item) => (
                     <div key={item} className="flex items-start gap-2">
@@ -52,10 +40,11 @@ export default function DownloadSection() {
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3 pt-4">
                 <Link
                   href={siteConfig.download.appStoreLink}
-                  onClick={(e) => scrollToSection(e, siteConfig.download.appStoreLink)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-apple-blue text-white px-8 h-12 text-sm font-medium hover:bg-apple-blue/90 transition-colors"
                 >
                   <Apple className="h-5 w-5" />
@@ -64,7 +53,8 @@ export default function DownloadSection() {
 
                 <Link
                   href={siteConfig.download.googlePlayLink}
-                  onClick={(e) => scrollToSection(e, siteConfig.download.googlePlayLink)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-8 h-12 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                 >
                   <Store className="h-5 w-5" />
