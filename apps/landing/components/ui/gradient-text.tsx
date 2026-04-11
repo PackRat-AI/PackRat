@@ -1,4 +1,4 @@
-import { cn } from 'landing-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import type React from 'react';
 
 interface GradientTextProps {

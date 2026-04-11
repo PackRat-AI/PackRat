@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from 'landing-app/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@packrat/web-ui/components/avatar';
 import { siteConfig } from 'landing-app/config/site';
 import { QuoteIcon } from 'lucide-react';
 

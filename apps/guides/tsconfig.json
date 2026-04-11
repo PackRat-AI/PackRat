@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "guides-app/*": ["./*"]
+      "guides-app/*": ["./*"],
+      "@packrat/web-ui": ["../../packages/web-ui/src"],
+      "@packrat/web-ui/*": ["../../packages/web-ui/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

@@ -3,7 +3,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from 'landing-app/components/ui/accordion';
+} from '@packrat/web-ui/components/accordion';
 import { siteConfig } from 'landing-app/config/site';
 
 export default function FaqSection() {
