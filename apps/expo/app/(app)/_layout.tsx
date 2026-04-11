@@ -237,6 +237,13 @@ export default function AppLayout() {
             getPackTemplateItemDetailOptions((route.params as { id: string })?.id)
           }
         />
+        <Stack.Screen
+          name="voice-commands/index"
+          options={{
+            title: 'Voice Commands',
+            headerLargeTitle: true,
+          }}
+        />
       </Stack>
     </>
   );

@@ -1142,5 +1142,27 @@
       "fish": "fish",
       "other": "other"
     }
+  },
+  "voice": {
+    "voiceCommands": "Voice Commands",
+    "handsFreeNavigation": "Hands-free trail navigation",
+    "screenDescription": "Control navigation hands-free using your voice.",
+    "offlineCapable": "Works Offline",
+    "offlineDescription": "No internet required",
+    "holdToSpeak": "Hold to Speak",
+    "holdMicDescription": "Hold the button and speak a command",
+    "startListening": "Start listening",
+    "stopListening": "Stop listening",
+    "listening": "Listening…",
+    "processing": "Processing…",
+    "error": "Error",
+    "trackingActive": "GPS Tracking Active",
+    "trackingInactive": "GPS Tracking Off",
+    "waypointsCount": "{{count}} waypoints",
+    "lastHeard": "Last heard",
+    "executedCommand": "Executed: {{command}}",
+    "availableCommands": "Available Commands",
+    "tapCommandToTest": "Tap a command to test it",
+    "testCommand": "Test command"
   }
 }

@@ -29,6 +29,7 @@ import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingLis
 import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
 import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailConditionsTile';
 import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
+import { VoiceCommandsTile } from 'expo-app/features/voice/components/VoiceCommandsTile';
 import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
@@ -154,6 +155,11 @@ const tileInfo = {
     ],
     component: WildlifeTile,
   },
+  'voice-commands': {
+    title: 'Voice Commands',
+    keywords: ['voice', 'microphone', 'hands-free', 'navigation', 'gps', 'speak', 'commands'],
+    component: VoiceCommandsTile,
+  },
 };
 
 type TileName = keyof typeof tileInfo;
@@ -246,6 +252,7 @@ export default function DashboardScreen() {
     'gap 4',
     'guides',
     ...(featureFlags.enableWildlifeIdentification ? ['wildlife'] : []),
+    ...(featureFlags.enableVoiceCommands ? ['voice-commands'] : []),
   ]).current;
 
   const filteredTiles = useMemo(() => {
