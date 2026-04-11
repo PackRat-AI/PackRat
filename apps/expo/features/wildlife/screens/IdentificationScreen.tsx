@@ -87,7 +87,7 @@ export function IdentificationScreen() {
           } catch (err) {
             console.warn('Failed to persist image locally, using original URI:', err);
           }
-          await addIdentification(persistedUri, identificationResults);
+          await addIdentification({ imageUri: persistedUri, results: identificationResults });
         },
       },
     );

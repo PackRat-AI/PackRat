@@ -67,12 +67,31 @@
         "packages/api/test/guides.test.ts",
         "packages/api/test/setup.ts",
         "apps/expo/utils/weight.ts",
-        "packages/api/src/utils/weight.ts"
+        "packages/api/src/utils/weight.ts",
+        "scripts/lint/**",
+        ".github/scripts/**"
       ],
       "linter": {
         "rules": {
           "complexity": {
             "useMaxParams": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/__tests__/**",
+        "**/test/**",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
           }
         }
       }
@@ -97,24 +116,5 @@
         "organizeImports": "on"
       }
     }
-  },
-  "overrides": [
-    {
-      "includes": [
-        "**/__tests__/**",
-        "**/test/**",
-        "**/*.test.ts",
-        "**/*.test.tsx",
-        "**/*.spec.ts",
-        "**/*.spec.tsx"
-      ],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noExplicitAny": "off"
-          }
-        }
-      }
-    }
-  ]
+  }
 }

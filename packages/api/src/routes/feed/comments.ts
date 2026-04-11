@@ -3,8 +3,8 @@ import { createDb } from '@packrat/api/db';
 import { commentLikes, postComments, posts, users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import {
-  CommentsResponseSchema,
   CommentSchema,
+  CommentsResponseSchema,
   CreateCommentRequestSchema,
   LikeToggleResponseSchema,
 } from '@packrat/api/schemas/feed';
@@ -54,10 +54,7 @@ commentsRoutes.openapi(listCommentsRoute, async (c) => {
   const offset = (page - 1) * limit;
 
   const [totalResult, items] = await Promise.all([
-    db
-      .select({ count: count() })
-      .from(postComments)
-      .where(eq(postComments.postId, postId)),
+    db.select({ count: count() }).from(postComments).where(eq(postComments.postId, postId)),
     db
       .select({
         id: postComments.id,

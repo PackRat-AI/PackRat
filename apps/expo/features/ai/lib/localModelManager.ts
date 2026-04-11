@@ -50,6 +50,7 @@ async function _isLlamaModelAvailable(): Promise<boolean> {
 
 // ─── Apple Dynamic Import ───────────────────────────────────────────────────
 
+// biome-ignore lint/suspicious/noExplicitAny: dynamic import type unknown
 let appleModule: any = null;
 
 function getAppleModule() {
@@ -66,9 +67,9 @@ function getAppleModule() {
 // ─── Singletons ─────────────────────────────────────────────────────────────
 
 let llamaModel: LlamaLanguageModel | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Apple module type unknown
 let appleModel: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: download task type unknown
 let activeDownloadTask: any = null;
 let _isCancellingDownload = false;
 

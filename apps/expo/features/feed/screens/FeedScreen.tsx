@@ -16,15 +16,8 @@ export const FeedScreen = () => {
   const router = useRouter();
   const currentUserId = userStore.id.peek() as number | undefined;
 
-  const {
-    data,
-    isLoading,
-    isRefetching,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useFeed();
+  const { data, isLoading, isRefetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useFeed();
 
   const { mutate: toggleLike } = useTogglePostLike();
   const { mutate: deletePost } = useDeletePost();
@@ -113,9 +106,7 @@ export const FeedScreen = () => {
           renderItem={renderItem}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 }}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-          }
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}
           ListFooterComponent={renderFooter}
