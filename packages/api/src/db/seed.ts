@@ -18,8 +18,8 @@
 
 import { neon, neonConfig } from '@neondatabase/serverless';
 import { and, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
-import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
+import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import WebSocket from 'ws';
 import * as schema from './schema';
@@ -1841,7 +1841,9 @@ async function seed() {
   }
   const argUserId = argUserIdRaw;
 
-  let db: ReturnType<typeof drizzlePg> | ReturnType<typeof drizzle>;
+  type SeedDatabase = NodePgDatabase<typeof schema> | NeonHttpDatabase<typeof schema>;
+
+  let db: SeedDatabase;
   let pgClient: Client | undefined;
 
   if (isStandardPostgresUrl(dbUrl)) {
@@ -1856,8 +1858,7 @@ async function seed() {
   }
 
   try {
-    // Use a typed reference to avoid repeating the type cast
-    const seedDb = db as ReturnType<typeof drizzlePg>;
+    const seedDb = db;
 
     // Resolve admin user ID
     let adminUserId: number;
