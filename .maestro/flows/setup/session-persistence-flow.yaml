@@ -1,0 +1,32 @@
+appId: ${APP_ID}
+---
+# Session Persistence Flow: Tests that login persists after app force-kill
+# Must run after login-flow.yaml
+- launchApp
+- waitForAnimationToEnd
+
+# Verify we're logged in first
+- assertVisible:
+    text: "Dashboard"
+
+# Force stop and relaunch the app (without clearing state)
+- stopApp
+- launchApp
+- waitForAnimationToEnd
+
+# After relaunch, app should NOT show login screen
+# It should go straight to the main app (Dashboard)
+- extendedWaitUntil:
+    visible:
+      text: "Dashboard"
+    timeout: 15000
+
+# Verify bottom nav tabs are visible (confirms logged-in state)
+- assertVisible:
+    text: "Packs"
+- assertVisible:
+    text: "Trips"
+- assertVisible:
+    text: "Catalog"
+- assertVisible:
+    text: "Profile"

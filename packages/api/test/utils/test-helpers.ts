@@ -19,7 +19,7 @@ export const TEST_USER = {
   email: 'test@example.com',
   firstName: 'Test',
   lastName: 'User',
-  role: 'user' as const,
+  role: 'USER' as const,
 };
 
 export const TEST_ADMIN = {
@@ -27,19 +27,19 @@ export const TEST_ADMIN = {
   email: 'admin@example.com',
   firstName: 'Admin',
   lastName: 'User',
-  role: 'admin' as const,
+  role: 'ADMIN' as const,
 };
 
 // Helper to create authenticated API requests
 export const api = (path: string, init?: RequestInit) =>
   app.fetch(new Request(`http://localhost/api${path}`, init));
 
-// Helper to create requests with authentication token
-export const apiWithAuth = async (
+// Internal: shared fetch with auth token for a specific user
+const fetchWithUser = async (
   path: string,
-  init?: RequestInit,
-  user: typeof TEST_USER | typeof TEST_ADMIN = TEST_USER,
+  opts: { user: typeof TEST_USER | typeof TEST_ADMIN; init?: RequestInit },
 ) => {
+  const { user, init } = opts;
   const token = await sign({ userId: user.id, role: user.role }, 'secret');
   return app.fetch(
     new Request(`http://localhost/api${path}`, {
@@ -53,16 +53,25 @@ export const apiWithAuth = async (
   );
 };
 
+// Helper to create requests with authentication token (as TEST_USER by default)
+export const apiWithAuth = async (path: string, init?: RequestInit) =>
+  fetchWithUser(path, { user: TEST_USER, init });
+
+// Helper to create requests authenticated as a specific user
+export const apiWithAuthAs = async (
+  path: string,
+  opts: { user: typeof TEST_USER | typeof TEST_ADMIN; init?: RequestInit },
+) => fetchWithUser(path, opts);
+
 // Helper to create admin authenticated requests
-export const apiWithAdmin = async (path: string, init?: RequestInit) => {
-  return apiWithAuth(path, init, TEST_ADMIN);
-};
+export const apiWithAdmin = async (path: string, init?: RequestInit) =>
+  fetchWithUser(path, { user: TEST_ADMIN, init });
 
 // Helper for basic auth (admin routes)
 export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
   const credentials = btoa('admin:admin-password');
   return app.fetch(
-    new Request(`http://localhost/api${path}`, {
+    new Request(`http://localhost/api/admin${path}`, {
       ...init,
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -81,23 +90,23 @@ export const createTestRequestBody = (data: unknown) => ({
 
 // Helper to test common HTTP methods
 export const httpMethods = {
-  get: (_url: string, options?: RequestInit) => ({ method: 'GET', ...options }),
-  post: (_url: string, body?: unknown, options?: RequestInit) => ({
+  get: (options?: RequestInit) => ({ method: 'GET', ...options }),
+  post: (body?: unknown, options?: RequestInit) => ({
     method: 'POST',
     ...createTestRequestBody(body),
     ...options,
   }),
-  put: (_url: string, body?: unknown, options?: RequestInit) => ({
+  put: (body?: unknown, options?: RequestInit) => ({
     method: 'PUT',
     ...createTestRequestBody(body),
     ...options,
   }),
-  patch: (_url: string, body?: unknown, options?: RequestInit) => ({
+  patch: (body?: unknown, options?: RequestInit) => ({
     method: 'PATCH',
     ...createTestRequestBody(body),
     ...options,
   }),
-  delete: (_url: string, options?: RequestInit) => ({ method: 'DELETE', ...options }),
+  delete: (options?: RequestInit) => ({ method: 'DELETE', ...options }),
 };
 
 // Common test scenarios
@@ -131,4 +140,18 @@ export const expectJsonResponse = async (response: Response, expectedFields?: st
   }
 
   return data;
+};
+
+// Helper to create API request with API key authentication
+export const apiWithApiKey = (path: string, init?: RequestInit) => {
+  return app.fetch(
+    new Request(`http://localhost/api${path}`, {
+      ...init,
+      headers: {
+        'X-API-Key': 'test-api-key',
+        'Content-Type': 'application/json',
+        ...init?.headers,
+      },
+    }),
+  );
 };

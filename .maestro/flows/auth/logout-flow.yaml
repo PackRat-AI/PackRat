@@ -1,0 +1,51 @@
+appId: ${APP_ID}
+---
+# Logout Flow: Navigate to profile and sign out
+- waitForAnimationToEnd
+
+# Navigate to the Profile tab
+- tapOn:
+    text: "Profile"
+
+- waitForAnimationToEnd
+
+# Scroll down to find the log out button if needed
+- scrollUntilVisible:
+    element:
+      text: "Log Out"
+    direction: DOWN
+
+# Tap Log Out
+- tapOn:
+    text: "Log Out"
+
+- waitForAnimationToEnd
+
+# Handle sync-conflict confirmation dialog if present (only appears when there are unsynced changes)
+# The dialog button also reads "Log Out", so use index 1 to select the dialog button
+# (index 0 is the original row behind the dialog).
+- runFlow:
+    when:
+      visible:
+        text: "Sync in progress"
+    commands:
+      - tapOn:
+          text: "Log Out"
+          index: 1
+
+- waitForAnimationToEnd
+
+# Handle post-logout dialog - choose to Sign-in again
+- runFlow:
+    when:
+      visible:
+        text: "Sign-in again"
+    commands:
+      - tapOn:
+          text: "Sign-in again"
+
+- waitForAnimationToEnd
+
+# Assert we are back on the auth screen
+- assertVisible:
+    text: "Sign In"

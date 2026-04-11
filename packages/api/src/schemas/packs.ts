@@ -17,6 +17,7 @@ export const PackItemSchema = z
     catalogItemId: z.number().int().nullable().openapi({ example: 12345 }),
     userId: z.number().int().openapi({ example: 1 }),
     deleted: z.boolean().openapi({ example: false }),
+    isAIGenerated: z.boolean().openapi({ example: false }),
     templateItemId: z.string().nullable().openapi({ example: 'pti_123456' }),
     createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
     updatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
@@ -40,6 +41,7 @@ export const PackSchema = z
       .nullable()
       .openapi({ example: ['backpacking', 'summer', 'mountains'] }),
     deleted: z.boolean().openapi({ example: false }),
+    isAIGenerated: z.boolean().openapi({ example: false }),
     createdAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
     updatedAt: z.string().datetime().openapi({ example: '2024-01-01T00:00:00Z' }),
     items: z.array(PackItemSchema).optional(),
@@ -51,12 +53,6 @@ export const PackWithWeightsSchema = PackSchema.extend({
   baseWeight: z
     .number()
     .openapi({ example: 4000, description: 'Base weight (excluding consumables) in grams' }),
-  wornWeight: z.number().openapi({ example: 1000, description: 'Weight of worn items in grams' }),
-  packWeight: z
-    .number()
-    .openapi({ example: 4500, description: 'Pack weight (excluding worn items) in grams' }),
-  foodWeight: z.number().openapi({ example: 500, description: 'Food weight in grams' }),
-  waterWeight: z.number().openapi({ example: 1000, description: 'Water weight in grams' }),
 }).openapi('PackWithWeights');
 
 export const CreatePackRequestSchema = z
@@ -65,7 +61,7 @@ export const CreatePackRequestSchema = z
     description: z.string().optional().openapi({ example: 'Pack for 2-day backpacking trip' }),
     category: z.string().optional().openapi({ example: 'Backpacking' }),
     isPublic: z.boolean().optional().default(false).openapi({ example: false }),
-    image: z.string().url().optional().openapi({ example: 'https://example.com/pack-image.jpg' }),
+    image: z.string().nullish().openapi({ example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg' }),
     tags: z
       .array(z.string())
       .optional()
@@ -79,7 +75,7 @@ export const UpdatePackRequestSchema = z
     description: z.string().optional(),
     category: z.string().optional(),
     isPublic: z.boolean().optional(),
-    image: z.string().url().optional(),
+    image: z.string().nullish(),
     tags: z.array(z.string()).optional(),
     deleted: z.boolean().optional(),
   })
@@ -95,9 +91,9 @@ export const CreatePackItemRequestSchema = z
     category: z.string().optional().openapi({ example: 'Sleep System' }),
     consumable: z.boolean().optional().default(false).openapi({ example: false }),
     worn: z.boolean().optional().default(false).openapi({ example: false }),
-    image: z.string().url().optional().openapi({ example: 'https://example.com/image.jpg' }),
+    image: z.string().nullish().openapi({ example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg' }),
     notes: z.string().optional().openapi({ example: 'Great for cold weather' }),
-    catalogItemId: z.number().int().optional().openapi({ example: 12345 }),
+    catalogItemId: z.number().int().nullish().openapi({ example: 12345 }),
   })
   .openapi('CreatePackItemRequest');
 
@@ -111,9 +107,9 @@ export const UpdatePackItemRequestSchema = z
     category: z.string().optional(),
     consumable: z.boolean().optional(),
     worn: z.boolean().optional(),
-    image: z.string().url().optional(),
+    image: z.string().nullish(),
     notes: z.string().optional(),
-    catalogItemId: z.number().int().optional(),
+    catalogItemId: z.number().int().nullish(),
     deleted: z.boolean().optional(),
   })
   .openapi('UpdatePackItemRequest');
@@ -127,15 +123,6 @@ export const PackListResponseSchema = z
     totalPages: z.number().openapi({ example: 3 }),
   })
   .openapi('PackListResponse');
-
-export const ItemSuggestionsRequestSchema = z
-  .object({
-    packDescription: z.string().openapi({
-      example: 'Weekend backpacking trip in summer mountains',
-      description: 'Description of the pack to get suggestions for',
-    }),
-  })
-  .openapi('ItemSuggestionsRequest');
 
 export const ItemSuggestionsResponseSchema = z
   .object({
@@ -153,3 +140,70 @@ export const ItemSuggestionsResponseSchema = z
     ),
   })
   .openapi('ItemSuggestionsResponse');
+
+export const GapAnalysisRequestSchema = z
+  .object({
+    destination: z.string().optional().openapi({
+      example: 'Half Dome trail',
+      description: 'Optional destination for more specific recommendations',
+    }),
+    tripType: z.string().optional().openapi({
+      example: 'Day hike',
+      description: 'Type of trip (e.g., day hike, backpacking, car camping)',
+    }),
+    duration: z.string().optional().openapi({
+      example: '3 days',
+      description: 'Trip duration for context',
+    }),
+    startDate: z.string().optional().openapi({
+      example: '2024-07-15',
+      description: 'Planned start date of the trip (YYYY-MM-DD)',
+    }),
+    endDate: z.string().optional().openapi({
+      example: '2024-07-18',
+      description: 'Planned end date of the trip (YYYY-MM-DD)',
+    }),
+  })
+  .openapi('GapAnalysisRequest');
+
+export const GapAnalysisItemSchema = z
+  .object({
+    suggestion: z.string().openapi({
+      example: 'Sleeping pad',
+      description: 'Name of the missing gear item',
+    }),
+    reason: z.string().openapi({
+      example: 'You have a sleeping bag but no insulation from the ground',
+      description: 'Explanation of why this item is recommended',
+    }),
+    consumable: z.boolean().openapi({
+      example: false,
+      description: 'Indicates if the item is consumable',
+    }),
+    worn: z.boolean().openapi({
+      example: false,
+      description: 'Indicates if the item is typically worn',
+    }),
+    category: z.string().optional().openapi({
+      example: 'Sleep System',
+      description: 'Category of the missing item',
+    }),
+    priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional().openapi({
+      example: 'must-have',
+      description: 'Priority level of the missing item',
+    }),
+  })
+  .openapi('GapAnalysisItem');
+
+export const GapAnalysisResponseSchema = z
+  .object({
+    gaps: z.array(GapAnalysisItemSchema).openapi({
+      description: 'List of identified gaps in the pack',
+    }),
+    summary: z.string().optional().openapi({
+      example:
+        'Your pack looks well-prepared for day hiking, but you might want to consider a few additions for safety and comfort.',
+      description: 'Overall summary of the gap analysis',
+    }),
+  })
+  .openapi('GapAnalysisResponse');

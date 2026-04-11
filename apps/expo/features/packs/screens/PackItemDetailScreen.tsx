@@ -1,8 +1,9 @@
-import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
+import { ActivityIndicator, Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import {
   calculateTotalWeight,
   getNotes,
@@ -13,8 +14,10 @@ import {
   shouldShowQuantity,
 } from 'expo-app/lib/utils/itemCalculations';
 import { router, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PackItemImage } from '../components/PackItemImage';
+import { SimilarItemsForPackItem } from '../components/SimilarItemsForPackItem';
 import {
   usePackItemDetailsFromApi,
   usePackItemDetailsFromStore,
@@ -23,6 +26,7 @@ import {
 import type { PackItem } from '../types';
 
 export function ItemDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const isOwnedByUser = usePackItemOwnershipCheck(id as string);
 
@@ -38,12 +42,14 @@ export function ItemDetailScreen() {
     enabled: !isOwnedByUser,
   }); // Fetch non user owned items from api
 
+  const { colors } = useColorScheme();
+
   const item = (isOwnedByUser ? itemFromStore : itemFromApi) as PackItem;
 
   // Loading state for non-owned items
   if (!isOwnedByUser && isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1">
         <View className="flex-1 items-center justify-center p-4">
           <ActivityIndicator />
         </View>
@@ -54,23 +60,23 @@ export function ItemDetailScreen() {
   // Error state for non-owned packs
   if (!isOwnedByUser && isError) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1">
         <View className="flex-1 items-center justify-center p-8">
           <View className="mb-4 rounded-full bg-destructive/10 p-4">
             <Icon name="exclamation" size={32} color="text-destructive" />
           </View>
           <Text className="mb-2 text-lg font-medium text-foreground">
-            Failed to load item details
+            {t('packs.failedToLoadItemDetails')}
           </Text>
           <Text className="mb-6 text-center text-muted-foreground">
-            {error?.message || 'Something went wrong. Please try again.'}
+            {error?.message || t('packs.pleaseTryAgain')}
           </Text>
           <View className="flex-row justify-center gap-2">
             <Button variant="primary" onPress={() => refetch()}>
-              <Text>Try Again</Text>
+              <Text>{t('packs.tryAgain')}</Text>
             </Button>
             <Button variant="secondary" onPress={router.back}>
-              <Text>Go Back</Text>
+              <Text>{t('packs.goBack')}</Text>
             </Button>
           </View>
         </View>
@@ -118,11 +124,11 @@ export function ItemDetailScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1">
       <ScrollView>
         <PackItemImage item={item} className="h-64 w-full" resizeMode="contain" />
 
-        <View className="mb-4 bg-card p-4">
+        <View className="p-4">
           <Text className="mb-1 text-2xl font-bold text-foreground">{item.name}</Text>
           <Text className="mb-3 text-muted-foreground">{item.category}</Text>
 
@@ -132,13 +138,17 @@ export function ItemDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">WEIGHT (EACH)</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.weightEach')}
+              </Text>
               <WeightBadge weight={item.weight} unit={item.weightUnit} />
             </View>
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">QUANTITY</Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                  {t('packs.quantityLabel')}
+                </Text>
                 <Chip textClassName="text-center text-xs" variant="secondary">
                   {quantity}
                 </Chip>
@@ -147,7 +157,9 @@ export function ItemDetailScreen() {
 
             {showQuantity && (
               <View>
-                <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+                <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                  {t('packs.totalWeight')}
+                </Text>
                 <WeightBadge weight={totalWeight} unit={weightUnit} />
               </View>
             )}
@@ -157,7 +169,7 @@ export function ItemDetailScreen() {
             {isItemConsumable && (
               <View className="flex-row items-center">
                 <Chip textClassName="text-center text-xs" variant="consumable">
-                  Consumable
+                  {t('packs.consumable')}
                 </Chip>
               </View>
             )}
@@ -165,31 +177,43 @@ export function ItemDetailScreen() {
             {isItemWorn && (
               <View className="flex-row items-center">
                 <Chip textClassName="text-center text-xs" variant="worn">
-                  Worn
+                  {t('packs.worn')}
                 </Chip>
               </View>
             )}
           </View>
 
-          {itemHasNotes && (
+          {itemHasNotes && itemNotes && (
             <View className="mt-2">
-              <Text className="mb-1 text-xs text-muted-foreground">NOTES</Text>
-              <Text className="text-foreground">{itemNotes}</Text>
+              <Text className="mb-1 text-xs text-muted-foreground">{t('packs.notes')}</Text>
+              <Text style={{ color: colors.foreground }}>{itemNotes}</Text>
             </View>
           )}
         </View>
+
         {isOwnedByUser && (
-          <View className="mb-8 mt-6 px-4">
+          <View className="mt-2 px-4">
             <Button
-              variant="primary"
+              variant="secondary"
               onPress={navigateToChat}
-              className="flex-row items-center justify-center rounded-full bg-primary px-4 py-3"
+              className="flex-row items-center justify-center rounded-full  px-4 py-3"
             >
-              <Icon name="message" size={20} color="white" />
-              <Text className="font-semibold text-white">Ask AI About This Item</Text>
+              <Icon name="message-outline" size={20} color={colors.foreground} />
+              <Text style={{ color: colors.foreground }}>{t('packs.askAIAboutItem')}</Text>
             </Button>
           </View>
         )}
+
+        {/* Similar Items Section */}
+        <SimilarItemsForPackItem
+          packId={item.packId}
+          itemId={item.id}
+          itemName={item.name}
+          limit={5}
+          threshold={0.1}
+        />
+
+        <View className="mt-8" />
       </ScrollView>
     </SafeAreaView>
   );

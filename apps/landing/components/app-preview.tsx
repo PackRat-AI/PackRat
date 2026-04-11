@@ -27,7 +27,7 @@ export default function AppPreview() {
       setCurrentScreen((prev) => (prev + 1) % screens.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [screens.length]);
 
   assertDefined(screens[currentScreen]);
 

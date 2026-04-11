@@ -40,6 +40,10 @@ export const UserSchema = z
       example: '2024-01-15T10:30:00Z',
       description: 'User account last update timestamp',
     }),
+    avatarUrl: z.string().nullable().optional().openapi({
+      example: 'https://example.com/avatar.jpg',
+      description: 'User profile avatar URL',
+    }),
   })
   .openapi('User');
 
@@ -65,6 +69,10 @@ export const UpdateUserRequestSchema = z
     email: z.string().email().optional().openapi({
       example: 'newemail@example.com',
       description: 'Updated email address (requires re-verification)',
+    }),
+    avatarUrl: z.string().nullable().optional().openapi({
+      example: 'https://example.com/avatar.jpg',
+      description: 'Updated profile avatar URL',
     }),
   })
   .openapi('UpdateUserRequest');
@@ -161,11 +169,11 @@ export const UserItemsResponseSchema = z
           id: z.number().openapi({ example: 12345 }),
           name: z.string().openapi({ example: 'Merrell Hiking Boots' }),
           brand: z.string().nullable().openapi({ example: 'Merrell' }),
-          category: z.string().nullable().openapi({ example: 'Footwear' }),
+          categories: z.array(z.string().openapi({ example: 'Footwear' })).nullable(),
           description: z.string().nullable(),
           price: z.number().nullable().openapi({ example: 129.99 }),
           weight: z.number().nullable().openapi({ example: 850 }),
-          image: z.string().nullable(),
+          images: z.array(z.string()).nullable(),
         })
         .nullable()
         .openapi({

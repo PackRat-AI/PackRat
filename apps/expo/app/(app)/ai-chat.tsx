@@ -1,27 +1,37 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { FlashList } from '@shopify/flash-list';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
-import { fetch as expoFetch } from 'expo/fetch';
+import * as Burnt from 'burnt';
+import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
+import {
+  clearChatMessages,
+  loadChatMessages,
+  saveChatMessages,
+} from 'expo-app/features/ai/atoms/chatStorageAtoms';
 import { ChatBubble } from 'expo-app/features/ai/components/ChatBubble';
 import { ErrorState } from 'expo-app/features/ai/components/ErrorState';
+import { LocationContext } from 'expo-app/features/ai/components/LocationContext';
+import { CustomChatTransport } from 'expo-app/features/ai/lib/CustomChatTransport';
+import { getLocalModel, initLocalModel } from 'expo-app/features/ai/lib/localModelManager';
+import { createLocalTools } from 'expo-app/features/ai/lib/tools';
 import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
-import { LocationSelector } from 'expo-app/features/weather/components/LocationSelector';
 import { useActiveLocation } from 'expo-app/features/weather/hooks';
+import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getContextualGreeting, getContextualSuggestions } from 'expo-app/utils/chatContextHelpers';
 import { BlurView } from 'expo-blur';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useAtomValue } from 'jotai';
 import * as React from 'react';
-import { useEffect } from 'react';
 import {
   Dimensions,
-  Keyboard,
   type NativeSyntheticEvent,
   Platform,
+  ScrollView,
   TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
@@ -50,23 +60,6 @@ const ROOT_STYLE: ViewStyle = {
   minHeight: 2,
 };
 
-const _SPRING_CONFIG = {
-  damping: 15,
-  stiffness: 150,
-  mass: 0.5,
-  overshootClamping: false,
-  restDisplacementThreshold: 0.01,
-  restSpeedThreshold: 0.01,
-};
-
-const _HEADER_POSITION_STYLE: ViewStyle = {
-  position: 'absolute',
-  zIndex: 50,
-  top: 0,
-  left: 0,
-  right: 0,
-};
-
 export default function AIChat() {
   const { colors, isDarkColorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
@@ -74,17 +67,24 @@ export default function AIChat() {
   const textInputHeight = useSharedValue(17);
   const params = useLocalSearchParams();
   const { activeLocation } = useActiveLocation();
-  const listRef = React.useRef<FlashList<UIMessage>>(null);
+  const [location, setLocation] = React.useState<WeatherLocation | null>(activeLocation);
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const { t } = useTranslation();
 
-  // Extract context from params
-  const context = {
-    itemId: params.itemId as string,
-    itemName: params.itemName as string,
-    packId: params.packId as string,
-    packName: params.packName as string,
-    contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
-    location: activeLocation ? activeLocation.name : undefined,
-  };
+  const aiMode = useAtomValue(aiModeAtom);
+  const modelStatus = useAtomValue(localModelStatusAtom);
+
+  const context = React.useMemo(
+    () => ({
+      itemId: params.itemId as string,
+      itemName: params.itemName as string,
+      packId: params.packId as string,
+      packName: params.packName as string,
+      contextType: (params.contextType as 'item' | 'pack' | 'general') || 'general',
+      location: location ? location.name : undefined,
+    }),
+    [params.itemId, params.itemName, params.packId, params.packName, params.contextType, location],
+  );
   const locationRef = React.useRef(context.location);
   locationRef.current = context.location;
 
@@ -92,44 +92,136 @@ export default function AIChat() {
   const [input, setInput] = React.useState('');
   const [lastUserMessage, setLastUserMessage] = React.useState('');
   const [previousMessages, setPreviousMessages] = React.useState<UIMessage[]>([]);
-  const { messages, setMessages, error, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({
-      fetch: expoFetch as unknown as typeof globalThis.fetch,
-      api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: () => ({
-        contextType: context.contextType,
-        itemId: context.itemId,
-        packId: context.packId,
-        location: locationRef.current,
-      }),
-    }),
-    onError: (error: Error) => console.log(error, 'ERROR'),
-    messages: [
+  const [isArrowButtonVisible, setIsArrowButtonVisible] = React.useState(false);
+  const isLoadingPersistedRef = React.useRef(false);
+
+  const initialMessages = React.useMemo<UIMessage[]>(
+    () => [
       {
         id: '1',
         role: 'assistant',
         parts: [{ type: 'text', text: getContextualGreeting(context) }],
       } as UIMessage,
     ],
+    [context],
+  );
+
+  // Kick off model init check on mount (prepares already-downloaded models)
+  React.useEffect(() => {
+    initLocalModel();
+  }, []);
+
+  // Keep a ref for context body values so the transport closure stays fresh
+  const contextRef = React.useRef(context);
+  contextRef.current = context;
+
+  // Build the right transport based on current AI mode.
+  // Recreated when aiMode or modelStatus changes (modelStatus drives local readiness).
+  const isLocalReady = modelStatus === 'ready';
+  const tools = React.useMemo(() => createLocalTools(), []);
+
+  const transport = React.useMemo(() => {
+    if (aiMode === 'local' && isLocalReady) {
+      const model = getLocalModel();
+      if (model) {
+        return new CustomChatTransport(model, tools);
+      }
+    }
+    return new DefaultChatTransport({
+      fetch: undefined,
+      api: `${clientEnvs.EXPO_PUBLIC_API_URL}/api/chat`,
+      headers: { Authorization: `Bearer ${token}` },
+      body: () => ({
+        contextType: contextRef.current.contextType,
+        itemId: contextRef.current.itemId,
+        packId: contextRef.current.packId,
+        location: locationRef.current,
+        date: new Date().toLocaleString(),
+      }),
+    });
+  }, [aiMode, isLocalReady, token, tools]);
+
+  const { messages, setMessages, error, sendMessage, stop, status } = useChat({
+    transport,
+    onError: (error: Error) => console.log(error, 'ERROR'),
+    experimental_throttle: 200,
+    messages: initialMessages,
   });
+
+  // Load persisted messages on mount and when context changes
+  React.useEffect(() => {
+    let isMounted = true;
+    isLoadingPersistedRef.current = true;
+
+    loadChatMessages(context)
+      .then((persisted) => {
+        if (isMounted && persisted && persisted.length > 0) {
+          setMessages(persisted);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load persisted messages:', error);
+      })
+      .finally(() => {
+        if (isMounted) {
+          isLoadingPersistedRef.current = false;
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [context, setMessages]);
+
+  // Save messages whenever they change with debouncing to reduce storage I/O
+  React.useEffect(() => {
+    if (isLoadingPersistedRef.current || messages.length === 0) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      saveChatMessages(context, messages);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [messages, context]);
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
+  const scrollToBottom = React.useCallback(() => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd();
+    }, 100);
+  }, []);
+
   const handleSubmit = (text?: string) => {
     const messageText = text || input;
+
+    // Guard: local mode but model not ready
+    if (aiMode === 'local' && modelStatus !== 'ready') {
+      Burnt.toast({
+        title: t('ai.modelNotReady'),
+        preset: 'error',
+      });
+      return;
+    }
+
     setLastUserMessage(messageText);
     setPreviousMessages(messages);
     sendMessage({ text: messageText });
     setInput('');
+    scrollToBottom();
   };
 
   const handleRetry = () => {
     setMessages(previousMessages);
     sendMessage({ text: lastUserMessage });
   };
+
+  const handleClear = React.useCallback(async () => {
+    await clearChatMessages(context);
+    setMessages(initialMessages);
+  }, [context, initialMessages, setMessages]);
 
   const toolbarHeightStyle = useAnimatedStyle(() => ({
     height: interpolate(
@@ -139,23 +231,41 @@ export default function AIChat() {
     ),
   }));
 
-  useEffect(() => {
-    const scrollToBottom = () => {
-      listRef.current?.scrollToOffset({ offset: 999999, animated: true });
-    };
+  const listLayoutRef = React.useRef({
+    offset: 0,
+    containerHeight: 0,
+    contentHeight: 0,
+  });
 
-    scrollToBottom();
-
-    const keyboardListener = Keyboard.addListener('keyboardDidShow', scrollToBottom);
-
-    return () => {
-      keyboardListener.remove();
-    };
-  }, []);
+  const onScroll = (e: { nativeEvent: { contentOffset: { y: number } } }) => {
+    listLayoutRef.current.offset = e.nativeEvent.contentOffset.y;
+    setIsArrowButtonVisible(
+      listLayoutRef.current.contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
+  const onLayout = (e: { nativeEvent: { layout: { height: number } } }) => {
+    listLayoutRef.current.containerHeight = e.nativeEvent.layout.height;
+    setIsArrowButtonVisible(
+      listLayoutRef.current.contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
+  const onContentSizeChange = (_contentWidth: number, contentHeight: number) => {
+    listLayoutRef.current.contentHeight = contentHeight;
+    setIsArrowButtonVisible(
+      contentHeight >
+        listLayoutRef.current.containerHeight + listLayoutRef.current?.offset + HEADER_HEIGHT + 5,
+    );
+  };
 
   return (
     <>
-      <Stack.Screen />
+      <Stack.Screen
+        options={{
+          header: () => <AiChatHeader onClear={handleClear} />,
+        }}
+      />
       <KeyboardAvoidingView
         style={[
           ROOT_STYLE,
@@ -165,87 +275,102 @@ export default function AIChat() {
         ]}
         behavior="padding"
       >
-        <FlashList
-          ref={listRef}
-          estimatedItemSize={70}
-          ListHeaderComponent={
-            <View>
-              <View style={{ height: HEADER_HEIGHT + insets.top }} />
-              <LocationSelector />
-              <DateSeparator
-                date={new Date().toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              />
-            </View>
-          }
-          ListFooterComponent={
-            <>
-              {messages.length < 2 && (
-                <View className="px-4 py-4">
-                  <Text className="mb-2 text-xs text-muted-foreground">SUGGESTIONS</Text>
-                  <View className="flex-row flex-wrap gap-2">
-                    {getContextualSuggestions(context).map((suggestion) => (
-                      <TouchableOpacity
-                        key={suggestion}
-                        onPress={() => handleSubmit(suggestion)}
-                        className="mb-2 rounded-full border border-border bg-card px-3 py-2"
-                      >
-                        <Text className="text-sm text-foreground">{suggestion}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              )}
-              {status === 'submitted' && (
-                <ActivityIndicator
-                  size="small"
-                  color={colors.primary}
-                  className="self-start ml-4 mb-8"
-                />
-              )}
-              {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
-              <Animated.View style={toolbarHeightStyle} />
-            </>
-          }
-          keyboardDismissMode="on-drag"
-          keyboardShouldPersistTaps="handled"
+        <ScrollView
+          ref={scrollViewRef}
+          onLayout={onLayout}
+          onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
           scrollIndicatorInsets={{
             bottom: HEADER_HEIGHT + 10,
             top: insets.bottom + 2,
           }}
-          data={messages}
-          renderItem={({ item, index }) => {
-            // Get the user query for this AI response
+        >
+          <View>
+            <View style={{ height: HEADER_HEIGHT + insets.top }} />
+            <LocationContext location={location} onSetLocation={setLocation} />
+            <DateSeparator
+              date={new Date().toLocaleDateString('en-US', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })}
+            />
+          </View>
+
+          {messages.map((item, index) => {
             let userQuery: TextUIPart['text'] | undefined;
             if (item.role === 'assistant' && index > 1) {
               const userMessage = messages[index - 1];
               userQuery = userMessage?.parts.find((p) => p.type === 'text')?.text;
             }
 
-            return <ChatBubble item={item} userQuery={userQuery} />;
-          }}
-        />
+            return (
+              <ChatBubble
+                key={item.id}
+                item={item}
+                userQuery={userQuery}
+                isLast={index === messages.length - 1}
+                status={status}
+              />
+            );
+          })}
+
+          {status === 'submitted' && (
+            <ActivityIndicator
+              size="small"
+              color={colors.primary}
+              className="self-start ml-4 mb-8"
+            />
+          )}
+          {status === 'error' && <ErrorState error={error} onRetry={() => handleRetry()} />}
+          {messages.length < 2 && (
+            <View className="pl-4 pr-16">
+              <Text className="mb-2 text-xs text-muted-foreground mt-0">{t('ai.suggestions')}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {getContextualSuggestions(context).map((suggestion) => (
+                  <TouchableOpacity
+                    key={suggestion}
+                    onPress={() => handleSubmit(suggestion)}
+                    className="mb-2 rounded-3xl border border-border bg-card px-3 py-2"
+                  >
+                    <Text className="text-sm text-foreground">{suggestion}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+          <Animated.View style={[toolbarHeightStyle, { marginBottom: 20 }]} />
+        </ScrollView>
       </KeyboardAvoidingView>
+
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <Composer
           textInputHeight={textInputHeight}
           input={input}
-          handleInputChange={setInput} // Pass the setter directly.
+          handleInputChange={setInput}
           handleSubmit={() => {
             handleSubmit();
           }}
+          stop={stop}
           isLoading={isLoading}
           placeholder={
             context.contextType === 'general'
-              ? 'Ask anything outdoors'
-              : `Ask about this ${context.contextType === 'item' ? 'item' : 'pack'}...`
+              ? t('ai.askAnythingOutdoors')
+              : context.contextType === 'item'
+                ? t('ai.askAboutItem')
+                : t('ai.askAboutPack')
           }
         />
       </KeyboardStickyView>
+      {isArrowButtonVisible && status === 'ready' && (
+        <TouchableOpacity
+          onPress={scrollToBottom}
+          className="absolute bottom-20 right-4 rounded-full bg-gray-200 p-3 mb-5 shadow-lg"
+        >
+          <Icon name="arrow-down" size={20} color="black" />
+        </TouchableOpacity>
+      )}
     </>
   );
 }
@@ -282,6 +407,7 @@ function Composer({
   input,
   handleInputChange,
   handleSubmit,
+  stop,
   isLoading,
   placeholder,
 }: {
@@ -289,6 +415,7 @@ function Composer({
   input: string;
   handleInputChange: (text: string) => void;
   handleSubmit: () => void;
+  stop: () => void;
   isLoading: boolean;
   placeholder: string;
 }) {
@@ -326,26 +453,20 @@ function Composer({
           onContentSizeChange={onContentSizeChange}
           onChangeText={handleInputChange}
           value={input}
-          editable={!isLoading}
         />
         <View className="absolute bottom-3 right-5">
           {isLoading ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : input.length > 0 ? (
+            <Button onPress={stop} size="icon" variant="primary" className="h-7 w-7 rounded-full">
+              <Icon name="stop" size={18} color="white" />
+            </Button>
+          ) : (
             <Button
               onPress={handleSubmit}
+              disabled={!input.length}
               size="icon"
               className="ios:rounded-full h-7 w-7 rounded-full"
             >
               <Icon name="arrow-up" size={18} color="white" />
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              variant="plain"
-              className="ios:rounded-full h-7 w-7 rounded-full opacity-40"
-            >
-              <Icon name="arrow-up" size={20} color={colors.foreground} />
             </Button>
           )}
         </View>

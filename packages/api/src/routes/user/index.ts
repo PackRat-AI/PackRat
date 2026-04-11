@@ -10,7 +10,6 @@ import {
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { eq } from 'drizzle-orm';
-import { userItemsRoutes } from './items';
 
 const userRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -64,6 +63,7 @@ userRoutes.openapi(getUserProfileRoute, async (c) => {
         email: users.email,
         firstName: users.firstName,
         lastName: users.lastName,
+        avatarUrl: users.avatarUrl,
         role: users.role,
         emailVerified: users.emailVerified,
         createdAt: users.createdAt,
@@ -77,14 +77,17 @@ userRoutes.openapi(getUserProfileRoute, async (c) => {
       return c.json({ error: 'User not found', code: 'USER_NOT_FOUND' }, 404);
     }
 
-    return c.json({
-      success: true,
-      user: {
-        ...user,
-        createdAt: user.createdAt?.toISOString() || null,
-        updatedAt: user.updatedAt?.toISOString() || null,
+    return c.json(
+      {
+        success: true,
+        user: {
+          ...user,
+          createdAt: user.createdAt?.toISOString() || null,
+          updatedAt: user.updatedAt?.toISOString() || null,
+        },
       },
-    });
+      200,
+    );
   } catch (error) {
     console.error('Error fetching user profile:', error);
     return c.json(
@@ -163,7 +166,7 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
   try {
     const auth = c.get('user');
 
-    const { firstName, lastName, email } = c.req.valid('json');
+    const { firstName, lastName, email, avatarUrl } = c.req.valid('json');
     const db = createDb(c);
 
     // If email is being updated, check if it's already in use
@@ -189,6 +192,7 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
 
     if (firstName !== undefined) updateData.firstName = firstName;
     if (lastName !== undefined) updateData.lastName = lastName;
+    if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
     if (email !== undefined) {
       updateData.email = email.toLowerCase();
       updateData.emailVerified = false; // Reset verification if email changes
@@ -199,16 +203,7 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
       .update(users)
       .set(updateData)
       .where(eq(users.id, auth.userId))
-      .returning({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        emailVerified: users.emailVerified,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-      });
+      .returning();
 
     if (!updatedUser) {
       return c.json({ error: 'User not found', code: 'USER_NOT_FOUND' }, 404);
@@ -218,15 +213,24 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
       ? 'Profile updated successfully. Please verify your new email address.'
       : 'Profile updated successfully';
 
-    return c.json({
-      success: true,
-      message,
-      user: {
-        ...updatedUser,
-        createdAt: updatedUser.createdAt?.toISOString() || null,
-        updatedAt: updatedUser.updatedAt?.toISOString() || null,
+    return c.json(
+      {
+        success: true,
+        message,
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          avatarUrl: updatedUser.avatarUrl,
+          role: updatedUser.role,
+          emailVerified: updatedUser.emailVerified,
+          createdAt: updatedUser.createdAt?.toISOString() || null,
+          updatedAt: updatedUser.updatedAt?.toISOString() || null,
+        },
       },
-    });
+      200,
+    );
   } catch (error) {
     console.error('Error updating user profile:', error);
     return c.json(
@@ -238,7 +242,5 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
     );
   }
 });
-
-userRoutes.route('/', userItemsRoutes);
 
 export { userRoutes };

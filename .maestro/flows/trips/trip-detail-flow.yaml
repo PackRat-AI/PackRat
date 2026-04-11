@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+---
+# Trip Detail Flow: Navigate to a trip and verify detail screen
+- waitForAnimationToEnd
+
+# Navigate to Trips tab
+- tapOn:
+    text: "Trips"
+- waitForAnimationToEnd
+
+# Tap the test trip
+- tapOn:
+    text: ${TRIP_NAME}
+- waitForAnimationToEnd
+
+# Verify trip name is shown
+- assertVisible:
+    text: ${TRIP_NAME}
+
+# Go back to trips list
+- back
+- waitForAnimationToEnd

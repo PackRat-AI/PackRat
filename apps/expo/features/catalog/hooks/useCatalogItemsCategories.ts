@@ -9,7 +9,7 @@ const getCategories = async (): Promise<string[]> => {
   } catch (error) {
     const { message } = handleApiError(error);
     console.error(`Failed to fetch catalog categories: ${message}`);
-    return [];
+    throw error;
   }
 };
 

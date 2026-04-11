@@ -45,26 +45,10 @@ const chatRoute = createRoute({
     200: {
       description: 'Streaming AI response',
       content: {
-        'text/plain': {
+        'text/event-stream': {
           schema: z.string().openapi({
             description: 'Streaming text response from the AI',
           }),
-        },
-      },
-    },
-    400: {
-      description: 'Bad request - Invalid message format',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
-        },
-      },
-    },
-    500: {
-      description: 'Internal server error',
-      content: {
-        'application/json': {
-          schema: ErrorResponseSchema,
         },
       },
     },
@@ -80,11 +64,14 @@ chatRoutes.openapi(chatRoute, async (c) => {
     itemId?: string;
     packId?: string;
     location?: string;
-  } = {};
+    date: string;
+  } = {
+    date: new Date().toISOString(),
+  };
 
   try {
     body = await c.req.json();
-    const { messages, contextType, itemId, packId, location } = body;
+    const { messages, contextType, itemId, packId, location, date } = body;
 
     const tools = createTools(c, auth.userId);
 
@@ -107,7 +94,8 @@ chatRoutes.openapi(chatRoute, async (c) => {
       ${schemaInfo}
 
       Context:
-      - User id is ${auth.userId}`;
+      - User id is ${auth.userId}
+      - Current date is ${date}`;
 
     // Add context-specific information
     if (contextType === 'pack' && packId) {
@@ -370,7 +358,7 @@ chatRoutes.openapi(updateReportRoute, async (c) => {
     return c.json({ error: 'Unauthorized' }, 403);
   }
 
-  const id = Number.parseInt(c.req.param('id'));
+  const id = Number.parseInt(c.req.param('id'), 10);
   const { status } = await c.req.json();
 
   await db

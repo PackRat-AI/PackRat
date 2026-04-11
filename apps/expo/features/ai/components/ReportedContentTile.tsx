@@ -2,6 +2,7 @@ import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { type Href, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import { useReportedContentCount } from '../hooks/useReportedContent';
@@ -10,6 +11,7 @@ export function ReportedContentTile() {
   const router = useRouter();
   const user = useUser();
   const { data, isLoading } = useReportedContentCount();
+  const { t } = useTranslation();
 
   if (user?.role !== 'ADMIN') {
     return null; // Don't render if user is not an admin
@@ -38,18 +40,18 @@ export function ReportedContentTile() {
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
           {isLoading ? (
             <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-              Loading...
+              {t('ai.reportedContent.loading')}
             </Text>
           ) : (
             <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-              {data?.count || 0} pending
+              {t('ai.reportedContent.pendingCount', { count: data?.count || 0 })}
             </Text>
           )}
           <ChevronRight />
         </View>
       }
       item={{
-        title: 'Reported Content',
+        title: t('ai.reportedContent.title'),
       }}
       onPress={handlePress}
       target="Cell"

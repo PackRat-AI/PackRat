@@ -1,18 +1,23 @@
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { etlJobs } from '@packrat/api/db/schema';
-import { authMiddleware } from '@packrat/api/middleware';
+import { apiKeyAuthMiddleware, authMiddleware } from '@packrat/api/middleware';
 import { queueCatalogETL } from '@packrat/api/services/etl/queue';
-import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 
+export const queueCatalogEtlRoute = new OpenAPIHono<{ Bindings: Env }>();
+
 const catalogETLSchema = z.object({
-  objectKey: z.string().min(1, 'R2 object key is required'),
+  filename: z.string().min(1, 'Filename is required'),
+  chunks: z.array(z.string()).min(1, 'At least one object key is required'),
   source: z.string().min(1, 'Source name is required'),
   scraperRevision: z.string().min(1, 'Scraper revision ID is required'),
 });
+
+queueCatalogEtlRoute.use('*', apiKeyAuthMiddleware);
 
 export const routeDefinition = createRoute({
   method: 'post',
@@ -52,13 +57,12 @@ export const routeDefinition = createRoute({
     },
   },
   tags: ['Catalog'],
-  summary: 'Queue catalog ETL job from R2 CSV file',
-  description: 'Initiates serverless ETL processing of catalog data from R2 object storage',
+  summary: 'Queue catalog ETL job from R2 CSV chunk files',
+  description: 'Initiates serverless ETL processing of catalog data from multiple R2 chunk files',
 });
 
-export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
-  const { objectKey, source, scraperRevision } = c.req.valid('json');
-  const userId = c.get('jwtPayload')?.userId;
+queueCatalogEtlRoute.openapi(routeDefinition, async (c) => {
+  const { filename, chunks, source, scraperRevision } = c.req.valid('json');
   const db = createDb(c);
 
   if (!getEnv(c).ETL_QUEUE) {
@@ -73,19 +77,19 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     id: jobId,
     status: 'running',
     source,
-    objectKey,
+    filename,
     scraperRevision,
     startedAt: new Date(),
   });
 
+  // Queue each chunk file as part of the same job
   await queueCatalogETL({
     queue: getEnv(c).ETL_QUEUE,
-    objectKey,
-    userId,
-    source,
-    scraperRevision,
+    objectKeys: chunks,
     jobId,
   });
+
+  console.log(`🚀 Initiated ETL job ${jobId} with ${chunks.length} files for source ${source}`);
 
   return c.json(
     {
@@ -95,4 +99,4 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     },
     200,
   );
-};
+});

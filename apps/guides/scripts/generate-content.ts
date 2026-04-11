@@ -7,6 +7,7 @@ import matter from 'gray-matter';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import path from 'path';
 import slugify from 'slugify';
+import { enhanceGuideContent } from '../lib/enhanceGuideContent';
 
 // Types
 type ContentCategory =
@@ -164,9 +165,9 @@ function getExistingContent(): ContentMetadata[] {
 // Generate topic ideas based on categories and existing content
 async function generateTopicIdeas(
   count: number,
-  categories?: ContentCategory[],
-  existingContent: ContentMetadata[] = [],
+  opts: { categories?: ContentCategory[]; existingContent?: ContentMetadata[] } = {},
 ): Promise<ContentMetadata[]> {
+  const { categories, existingContent = [] } = opts;
   console.log(chalk.blue(`Generating ${count} topic ideas...`));
 
   const categoryPrompt =
@@ -353,20 +354,6 @@ async function generateMdxContent(
   return text;
 }
 
-// Create frontmatter for MDX file
-function createFrontmatter(metadata: ContentMetadata): string {
-  return `---
-title: "${metadata.title}"
-description: "${metadata.description}"
-date: ${metadata.date}
-categories: [${metadata.categories.map((c) => `"${c}"`).join(', ')}]
-author: "${metadata.author}"
-readingTime: "${metadata.readingTime}"
-difficulty: "${metadata.difficulty}"
-coverImage: "${metadata.coverImage}"
----`;
-}
-
 // Generate a single post
 async function generatePost(
   request: ContentRequest,
@@ -390,13 +377,29 @@ async function generatePost(
     let content = '';
     if (request.generateFullContent) {
       content = await generateMdxContent(metadata, existingContent);
+
+      try {
+        console.log(chalk.blue(`🔗 Enhancing ${metadata.title} with catalog items...`));
+        const enhancementResult = await enhanceGuideContent(content);
+        content = enhancementResult.content;
+
+        if (enhancementResult.productsUsed.length > 0) {
+          console.log(
+            chalk.green(`✨ Embedded ${enhancementResult.productsUsed.length} catalog items`),
+          );
+        }
+      } catch (enhanceError) {
+        console.error(
+          chalk.yellow(`⚠️ Content enhancement failed for ${metadata.title}:`, enhanceError),
+        );
+        // Continue with unenhanced content
+      }
     } else {
       content = `# ${metadata.title}\n\n${metadata.description}\n\n## Introduction\n\nThis is a placeholder for the full article content.`;
     }
 
     // Combine frontmatter and content
-    const frontmatter = createFrontmatter(metadata);
-    const mdxContent = `${frontmatter}\n\n${content}`;
+    const mdxContent = matter.stringify(content, metadata);
 
     // Write to file
     const filePath = path.join(OUTPUT_DIR, `${metadata.slug}.mdx`);
@@ -418,7 +421,7 @@ async function generatePosts(count: number, categories?: ContentCategory[]): Pro
     console.log(chalk.blue(`Found ${existingContent.length} existing articles`));
 
     // Generate topic ideas with awareness of existing content
-    const topics = await generateTopicIdeas(count, categories, existingContent);
+    const topics = await generateTopicIdeas(count, { categories, existingContent });
     console.log(chalk.green(`✓ Generated ${topics.length} topic ideas`));
 
     // Generate content for each topic
@@ -544,7 +547,7 @@ if (require.main === module) {
     process.exit(0);
   }
 
-  const count = (args[0] && Number.parseInt(args[0])) || 5;
+  const count = (args[0] && Number.parseInt(args[0], 10)) || 5;
   const categoryArgs = args.slice(1) as ContentCategory[];
 
   console.log(chalk.blue(`Starting content generation: ${count} posts`));

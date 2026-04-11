@@ -1,0 +1,59 @@
+appId: ${APP_ID}
+---
+# Login Flow: Navigate to auth screen and sign in with email and password
+- launchApp
+
+# Wait for the auth entry screen to appear
+- waitForAnimationToEnd
+
+# Tap the "Sign In" (email) button to navigate to the email login screen
+- tapOn:
+    id: "sign-in-email-button"
+
+# Wait for login form to appear
+- waitForAnimationToEnd
+
+# Fill in the email field
+- tapOn:
+    id: "email-input"
+- inputText: "${TEST_EMAIL}"
+
+# Fill in the password field
+- tapOn:
+    id: "password-input"
+- inputText: ${TEST_PASSWORD}
+
+# Dismiss the keyboard before submitting
+- hideKeyboard
+
+# Submit login form via the continue button
+- tapOn:
+    id: "continue-button"
+
+# Wait for navigation to complete — login can take a few seconds
+- waitForAnimationToEnd
+
+# iOS only: dismiss the system "Save Password?" Keychain prompt that appears
+# after submitting any form with a password field (textContentType="password").
+# This prompt is a blocking OS-level dialog and would intercept subsequent taps
+# if not handled. Real users can choose to save — in CI we always skip it.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Not Now"
+          optional: true
+          label: "Dismiss iOS Save Password prompt"
+
+- extendedWaitUntil:
+    visible:
+      text: "Packs"
+    timeout: 15000
+
+# Assert we are now logged in by navigating to Packs and verifying a stable testID
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "create-pack-button"

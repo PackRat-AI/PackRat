@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+---
+# Add Item Actions Flow: Verify the add-item bottom sheet options
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap the test pack
+- tapOn:
+    text: ${PACK_NAME}
+- waitForAnimationToEnd
+
+# Tap Add Item button
+- tapOn:
+    id: "add-item-button"
+- waitForAnimationToEnd
+
+# Assert all three add-item options are visible
+- assertVisible:
+    id: "add-manually-option"
+- assertVisible:
+    id: "scan-from-photo-option"
+- assertVisible:
+    id: "add-from-catalog-option"
+
+# Dismiss the bottom sheet
+- back
+- waitForAnimationToEnd
+
+# Go back to packs list
+- back
+- waitForAnimationToEnd

@@ -4,12 +4,14 @@ import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { usePackWeightHistory } from 'expo-app/features/packs/hooks/usePackWeightHistory';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
 import { ScrollView, View } from 'react-native';
 
 export default function PackStatsScreen() {
   const params = useLocalSearchParams();
   const packId = params.id;
+  const { t } = useTranslation();
 
   const pack = usePackDetailsFromStore(params.id as string);
   const weightHistory = usePackWeightHistory(packId as string);
@@ -29,14 +31,14 @@ export default function PackStatsScreen() {
 
   return (
     <View className="flex-1">
-      <LargeTitleHeader title="Pack Stats" />
+      <LargeTitleHeader title={t('packs.packStats')} />
       {weightHistory || CATEGORY_DISTRIBUTION ? (
         <ScrollView className="flex-1 px-4">
           {/* Weight History Section */}
           {WEIGHT_HISTORY && (
             <View className="my-4 rounded-lg bg-card p-4">
               <Text variant="heading" className="mb-12 font-semibold">
-                Weight History
+                {t('packs.weightHistory')}
               </Text>
 
               <View className="mb-2 h-40 flex-row items-end justify-between">
@@ -73,7 +75,7 @@ export default function PackStatsScreen() {
               </View>
 
               <Text variant="footnote" className="mt-2 text-center text-muted-foreground">
-                Pack weight over the last 6 months (g)
+                {t('packs.packWeightOverMonths')}
               </Text>
             </View>
           )}
@@ -82,7 +84,7 @@ export default function PackStatsScreen() {
           {CATEGORY_DISTRIBUTION && (
             <View className="my-4 rounded-lg bg-card p-4">
               <Text variant="heading" className="mb-4 font-semibold">
-                Category Distribution
+                {t('packs.categoryDistribution')}
               </Text>
 
               <View className="mb-4">
@@ -109,7 +111,7 @@ export default function PackStatsScreen() {
               </View>
 
               <Text variant="footnote" className="mt-2 text-center text-muted-foreground">
-                Weight distribution by category
+                {t('packs.weightDistribution')}
               </Text>
             </View>
           )}
@@ -118,33 +120,33 @@ export default function PackStatsScreen() {
           {featureFlags.enablePackInsights && (
             <View className="my-4 mb-8 rounded-lg bg-card p-4">
               <Text variant="heading" className="mb-4 font-semibold">
-                Pack Insights
+                {t('packs.packInsights')}
               </Text>
 
               <View className="mb-3 rounded-md bg-muted p-3 dark:bg-gray-100/5">
                 <Text variant="subhead" className="font-medium">
-                  Your pack is lighter than 78% of similar hikers
+                  {t('packs.lighterThanSimilar')}
                 </Text>
                 <Text variant="footnote" className="mt-1 text-muted-foreground">
-                  Based on data from 1,245 Appalachian Trail hikers
+                  {t('packs.basedOnData')}
                 </Text>
               </View>
 
               <View className="mb-3 rounded-md bg-muted p-3 dark:bg-gray-100/5">
                 <Text variant="subhead" className="font-medium">
-                  You've reduced your pack weight by 12% this year
+                  {t('packs.reducedWeight')}
                 </Text>
                 <Text variant="footnote" className="mt-1 text-muted-foreground">
-                  From 14.2 lbs in January to 12.4 lbs now
+                  {t('packs.weightReduction')}
                 </Text>
               </View>
 
               <View className="rounded-md bg-muted p-3 dark:bg-gray-100/5">
                 <Text variant="subhead" className="font-medium">
-                  Your heaviest category is Shelter (18.5% of total)
+                  {t('packs.heaviestCategory')}
                 </Text>
                 <Text variant="footnote" className="mt-1 text-muted-foreground">
-                  Consider ultralight alternatives to reduce weight
+                  {t('packs.considerUltralight')}
                 </Text>
               </View>
             </View>
@@ -152,7 +154,7 @@ export default function PackStatsScreen() {
         </ScrollView>
       ) : (
         <View className="flex-1 items-center justify-center">
-          <Text>No stats available for this pack yet.</Text>
+          <Text>{t('packs.noStatsAvailable')}</Text>
         </View>
       )}
     </View>

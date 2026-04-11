@@ -1,0 +1,30 @@
+appId: ${APP_ID}
+---
+# Catalog Item Detail Flow: Tap a catalog item and verify detail page
+- waitForAnimationToEnd
+
+# Navigate to Catalog tab
+- tapOn:
+    text: "Catalog"
+- waitForAnimationToEnd
+
+# Scroll to find an item and tap it
+- scrollUntilVisible:
+    element:
+      text: ".*\\$.*"
+    direction: DOWN
+
+# Tap the first visible priced item
+- tapOn:
+    text: ".*\\$.*"
+- waitForAnimationToEnd
+
+# Assert item detail elements via testIDs
+- assertVisible:
+    id: "add-to-pack-button"
+- assertVisible:
+    id: "view-retailer-button"
+
+# Go back
+- back
+- waitForAnimationToEnd

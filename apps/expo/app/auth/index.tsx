@@ -1,11 +1,13 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { ActivityIndicator, AlertAnchor, Button, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { featureFlags } from 'expo-app/config';
-import { redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { needsReauthAtom, redirectToAtom } from 'expo-app/features/auth/atoms/authAtoms';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,12 +26,15 @@ type RouteParams = {
 
 export default function AuthIndexScreen() {
   const { signInWithGoogle, signInWithApple, isLoading } = useAuth();
-  const alertRef = React.useRef<AlertRef>(null);
+  const { t } = useTranslation();
+  const alertRef = React.useRef<AlertMethods>(null);
   const {
     redirectTo = '/',
     showSignInCopy,
     showSkipLoginBtn,
   } = useLocalSearchParams<RouteParams>();
+  const needsReauth = useAtomValue(needsReauthAtom);
+
   const handleSkipLogin = async () => {
     await AsyncStorage.setItem('skipped_login', 'true');
     router.replace('/');
@@ -63,29 +68,35 @@ export default function AuthIndexScreen() {
           <View className="ios:pb-5 ios:pt-2 pb-2">
             {showSignInCopy === 'true' ? (
               <Text className="ios:font-extrabold text-center text-3xl font-medium">
-                Login Required
+                {t('auth.loginRequired')}
+              </Text>
+            ) : needsReauth ? (
+              <Text className="ios:font-extrabold text-center text-3xl font-medium">
+                {t('auth.resumeSync')}
               </Text>
             ) : (
               <>
                 <Text className="ios:font-extrabold text-center text-3xl font-medium">
-                  Brace Yourself
+                  {t('auth.braceYourself')}
                 </Text>
                 <Text className="ios:font-extrabold text-center text-3xl font-medium">
-                  for What's Next
+                  {t('auth.forWhatsNext')}
                 </Text>
               </>
             )}
             {showSignInCopy && (
               <Text className="pt-4 text-center text-muted-foreground">
-                Sign in to unlock cloud sync and access all features
+                {t('auth.signInMessage')}
               </Text>
             )}
           </View>
-          <Link href="/auth/(create-account)" asChild>
-            <Button size={Platform.select({ ios: 'lg', default: 'md' })}>
-              <Text>Sign up free</Text>
-            </Button>
-          </Link>
+          {!needsReauth && (
+            <Link href="/auth/(create-account)" asChild>
+              <Button size={Platform.select({ ios: 'lg', default: 'md' })}>
+                <Text>{t('auth.signUpFree')}</Text>
+              </Button>
+            </Link>
+          )}
           {featureFlags.enableOAuth && (
             <>
               <Button
@@ -99,7 +110,7 @@ export default function AuthIndexScreen() {
                   className="absolute left-4 h-4 w-4"
                   resizeMode="contain"
                 />
-                <Text className="ios:text-foreground">Continue with Google</Text>
+                <Text className="ios:text-foreground">{t('auth.continueWithGoogle')}</Text>
               </Button>
               {Platform.OS === 'ios' && (
                 <Button
@@ -109,17 +120,20 @@ export default function AuthIndexScreen() {
                   onPress={signInWithApple}
                 >
                   <Text className="ios:text-foreground absolute left-4 text-[22px]"></Text>
-                  <Text className="ios:text-foreground">Continue with Apple</Text>
+                  <Text className="ios:text-foreground">{t('auth.continueWithApple')}</Text>
                 </Button>
               )}
             </>
           )}
           <Link href={'/auth/(login)'} asChild>
             <Button
+              testID={TestIds.SignInEmailButton}
               variant={showSkipLoginBtn === 'true' ? 'tonal' : 'plain'}
               size={Platform.select({ ios: 'lg', default: 'md' })}
             >
-              <Text className="text-primary">Log in</Text>
+              <Text className="text-primary">
+                {needsReauth ? t('auth.signInWithEmail') : t('auth.signIn')}
+              </Text>
             </Button>
           </Link>
 
@@ -130,7 +144,7 @@ export default function AuthIndexScreen() {
               onPress={handleSkipLogin}
               className="mt-2"
             >
-              <Text>Continue without logging in</Text>
+              <Text>{t('auth.continueWithout')}</Text>
             </Button>
           )}
         </View>

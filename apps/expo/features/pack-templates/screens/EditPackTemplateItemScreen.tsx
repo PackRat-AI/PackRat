@@ -1,3 +1,4 @@
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
 import { useLocalSearchParams } from 'expo-router';
 import { usePackTemplateItem } from '../hooks/usePackTemplateItem';
@@ -8,6 +9,7 @@ export function EditPackTemplateItemScreen() {
     id: string;
     packTemplateId: string;
   }>();
+  const { t } = useTranslation();
 
   const effectiveItemId = Array.isArray(id) ? id[0] : id;
   const effectivePackTemplateId = Array.isArray(packTemplateId)
@@ -23,9 +25,9 @@ export function EditPackTemplateItemScreen() {
   if (item === null) {
     return (
       <NotFoundScreen
-        title="Item not found"
-        message="The item you're looking for doesn't exist or has been moved."
-        backButtonLabel="Go Back"
+        title={t('packTemplates.itemNotFound')}
+        message={t('packTemplates.itemNotFoundMessage')}
+        backButtonLabel={t('packTemplates.goBack')}
       />
     );
   }

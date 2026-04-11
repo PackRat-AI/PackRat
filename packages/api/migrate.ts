@@ -6,10 +6,10 @@ import { migrate } from 'drizzle-orm/neon-http/migrator';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
 import { migrate as migratePg } from 'drizzle-orm/node-postgres/migrator';
 import { Client } from 'pg';
-import * as ws from 'ws';
+import WebSocket from 'ws';
 
 // Required for Neon serverless driver to work in Node.js
-neonConfig.webSocketConstructor = ws;
+neonConfig.webSocketConstructor = WebSocket;
 
 // Get the directory where this script is located
 const __filename = fileURLToPath(import.meta.url);
@@ -40,7 +40,6 @@ async function runMigrations() {
   console.log('Running migrations...');
 
   const url = process.env.NEON_DATABASE_URL;
-
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL
     console.log('Using PostgreSQL migrations...');

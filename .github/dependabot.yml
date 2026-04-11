@@ -1,0 +1,97 @@
+version: 2
+
+updates:
+  # GitHub Actions
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'ci/cd'
+    commit-message:
+      prefix: 'chore(ci)'
+
+  # npm / Bun workspaces — root
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+    ignore:
+      # Avoid major version bumps for heavy cross-platform deps — review manually
+      - dependency-name: 'react'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'react-native'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'expo'
+        update-types: ['version-update:semver-major']
+    commit-message:
+      prefix: 'chore(deps)'
+    groups:
+      expo-sdk:
+        patterns:
+          - 'expo*'
+          - '@expo/*'
+      react-query:
+        patterns:
+          - '@tanstack/*'
+      hono:
+        patterns:
+          - 'hono'
+          - '@hono/*'
+      drizzle:
+        patterns:
+          - 'drizzle-orm'
+          - 'drizzle-kit'
+
+  # npm — API package
+  - package-ecosystem: 'npm'
+    directory: '/packages/api'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'api'
+    commit-message:
+      prefix: 'chore(deps/api)'
+
+  # npm — Expo app
+  - package-ecosystem: 'npm'
+    directory: '/apps/expo'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'mobile'
+    commit-message:
+      prefix: 'chore(deps/expo)'
+
+  # npm — Landing page
+  - package-ecosystem: 'npm'
+    directory: '/apps/landing'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'web'
+    commit-message:
+      prefix: 'chore(deps/landing)'
+
+  # npm — Guides site
+  - package-ecosystem: 'npm'
+    directory: '/apps/guides'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    labels:
+      - 'dependencies'
+      - 'web'
+    commit-message:
+      prefix: 'chore(deps/guides)'

@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+---
+# Profile View Flow: Navigate to profile and verify account info
+- waitForAnimationToEnd
+
+# Navigate to Profile tab
+- tapOn:
+    text: "Profile"
+- waitForAnimationToEnd
+
+# Assert sign-out button is visible via testID
+- scrollUntilVisible:
+    element:
+      id: "sign-out-button"
+    direction: DOWN
+- assertVisible:
+    id: "sign-out-button"
+
+# Go back to stable tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd

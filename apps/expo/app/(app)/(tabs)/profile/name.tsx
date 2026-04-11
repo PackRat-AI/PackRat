@@ -1,50 +1,71 @@
 import { Button, Form, FormItem, FormSection, Text, TextField } from '@packrat/ui/nativewindui';
+import { useUser } from 'expo-app/features/auth/hooks/useUser';
+import { useUpdateProfile } from 'expo-app/features/profile/hooks/useUpdateProfile';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, Stack } from 'expo-router';
 import * as React from 'react';
-import { Platform, View } from 'react-native';
-import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboard-controller';
+import { Alert, Platform, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function NameScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const user = useUser();
+  const { updateProfile, isLoading } = useUpdateProfile();
+
+  const initialFirst = React.useRef(user?.firstName || '');
+  const initialLast = React.useRef(user?.lastName || '');
+
   const [form, setForm] = React.useState({
-    first: 'Zach',
-    middle: 'Danger',
-    last: 'Nugent',
+    first: initialFirst.current,
+    last: initialLast.current,
   });
 
-  function onChangeText(type: 'first' | 'middle' | 'last') {
+  function onChangeText(type: 'first' | 'last') {
     return (text: string) => {
       setForm((prev) => ({ ...prev, [type]: text }));
     };
   }
 
-  function focusNext() {
-    KeyboardController.setFocusTo('next');
-  }
+  const trimmedFirst = React.useMemo(() => form.first.trim(), [form.first]);
+  const trimmedLast = React.useMemo(() => form.last.trim(), [form.last]);
 
   const canSave =
-    (form.first !== 'Zach' || form.middle !== 'Danger' || form.last !== 'Nugent') &&
-    !!form.first &&
-    !!form.last;
+    (trimmedFirst !== initialFirst.current.trim() || trimmedLast !== initialLast.current.trim()) &&
+    !!trimmedFirst &&
+    !!trimmedLast;
+
+  async function handleSave() {
+    if (!canSave || isLoading) return;
+    const success = await updateProfile({
+      firstName: trimmedFirst,
+      lastName: trimmedLast,
+    });
+    if (success) {
+      router.back();
+    } else {
+      Alert.alert(t('errors.somethingWentWrong'), t('errors.tryAgain'));
+    }
+  }
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'Name',
+          title: t('profile.nameScreenTitle'),
           headerTransparent: Platform.OS === 'ios',
           headerBlurEffect: 'systemMaterial',
           headerRight: Platform.select({
             ios: () => (
               <Button
                 className="ios:px-0"
-                disabled={!canSave}
+                disabled={!canSave || isLoading}
                 variant="plain"
-                onPress={router.back}
+                onPress={handleSave}
               >
-                <Text className={cn(canSave && 'text-primary')}>Save</Text>
+                <Text className={cn(canSave && 'text-primary')}>{t('common.save')}</Text>
               </Button>
             ),
           }),
@@ -59,36 +80,19 @@ export default function NameScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom }}
       >
         <Form className="gap-5 px-4 pt-8">
-          <FormSection materialIconProps={{ name: 'person-outline' }}>
+          <FormSection materialIconProps={{ name: 'account-outline' }}>
             <FormItem>
               <TextField
                 textContentType="givenName"
                 autoFocus
                 autoComplete="name-given"
-                label={Platform.select({ ios: undefined, default: 'First' })}
+                label={Platform.select({ ios: undefined, default: t('profile.firstNameLabel') })}
                 leftView={Platform.select({
-                  ios: <LeftLabel>First</LeftLabel>,
+                  ios: <LeftLabel>{t('profile.firstNameLabel')}</LeftLabel>,
                 })}
-                placeholder="required"
+                placeholder={t('profile.requiredPlaceholder')}
                 value={form.first}
                 onChangeText={onChangeText('first')}
-                onSubmitEditing={focusNext}
-                submitBehavior="submit"
-                enterKeyHint="next"
-              />
-            </FormItem>
-            <FormItem>
-              <TextField
-                textContentType="middleName"
-                autoComplete="name-middle"
-                label={Platform.select({ ios: undefined, default: 'Middle' })}
-                leftView={Platform.select({
-                  ios: <LeftLabel>Middle</LeftLabel>,
-                })}
-                placeholder="optional"
-                value={form.middle}
-                onChangeText={onChangeText('middle')}
-                onSubmitEditing={focusNext}
                 submitBehavior="submit"
                 enterKeyHint="next"
               />
@@ -97,12 +101,14 @@ export default function NameScreen() {
               <TextField
                 textContentType="familyName"
                 autoComplete="name-family"
-                label={Platform.select({ ios: undefined, default: 'Last' })}
-                leftView={Platform.select({ ios: <LeftLabel>Last</LeftLabel> })}
-                placeholder="required"
+                label={Platform.select({ ios: undefined, default: t('profile.lastNameLabel') })}
+                leftView={Platform.select({
+                  ios: <LeftLabel>{t('profile.lastNameLabel')}</LeftLabel>,
+                })}
+                placeholder={t('profile.requiredPlaceholder')}
                 value={form.last}
                 onChangeText={onChangeText('last')}
-                onSubmitEditing={router.back}
+                onSubmitEditing={handleSave}
                 enterKeyHint="done"
               />
             </FormItem>
@@ -110,11 +116,11 @@ export default function NameScreen() {
           {Platform.OS !== 'ios' && (
             <View className="items-end">
               <Button
-                className={cn('px-6', !canSave && 'bg-muted')}
-                disabled={!canSave}
-                onPress={router.back}
+                // className={cn('px-6', !canSave && 'bg-muted')}
+                disabled={!canSave || isLoading}
+                onPress={handleSave}
               >
-                <Text>Save</Text>
+                <Text>{t('common.save')}</Text>
               </Button>
             </View>
           )}

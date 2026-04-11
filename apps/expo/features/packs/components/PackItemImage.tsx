@@ -1,5 +1,7 @@
-import { Text } from '@packrat-ai/nativewindui';
-import { buildPackItemImageUrl } from 'expo-app/lib/utils/buildPackItemImageUrl';
+import { useColorScheme } from '@packrat/ui/nativewindui';
+import { Icon } from '@roninoss/icons';
+import { CatalogItemImage } from 'expo-app/features/catalog/components/CatalogItemImage';
+import { buildImageUrl } from 'expo-app/lib/utils/buildImageUrl';
 import { Image, type ImageProps, View } from 'react-native';
 import { usePackItemOwnershipCheck } from '../hooks';
 import type { PackItem } from '../types';
@@ -11,15 +13,22 @@ interface PackItemImageProps extends Omit<ImageProps, 'source'> {
 
 export function PackItemImage({ item, ...imageProps }: PackItemImageProps) {
   const isItemOwnedByUser = usePackItemOwnershipCheck(item.id);
+  const { colors } = useColorScheme();
+
+  if (item.isAIGenerated) {
+    return <CatalogItemImage imageUrl={item.image} {...imageProps} />;
+  }
 
   if (!item.image)
     return (
-      <View className={`items-center justify-center bg-muted px-2 ${imageProps.className}`}>
-        <Text className="text-muted-foreground">No image</Text>
+      <View
+        className={`items-center justify-center bg-neutral-300 dark:bg-neutral-600 ${imageProps.className}`}
+      >
+        <Icon name="image" size={24} color={colors.grey} />
       </View>
     );
 
-  const imageUrl = buildPackItemImageUrl(item);
+  const imageUrl = buildImageUrl(item);
 
   if (isItemOwnedByUser) {
     return <CachedImage imageObjectKey={item.image} imageRemoteUrl={imageUrl} {...imageProps} />;

@@ -1,0 +1,15 @@
+appId: ${APP_ID}
+---
+# PackRat E2E Test Suite - Android Master Flow
+# This flow orchestrates key test flows for Android
+
+# Setup & Authentication
+- runFlow: flows/setup/clear-state.yaml
+- runFlow: flows/auth/login-flow.yaml
+
+# Core functionality tests
+- runFlow: flows/trips/create-trip-flow.yaml
+- runFlow: flows/packs/create-pack-flow.yaml
+
+# Logout (destroys session - must be last)
+- runFlow: flows/auth/logout-flow.yaml

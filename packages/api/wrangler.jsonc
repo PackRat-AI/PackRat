@@ -13,6 +13,9 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  "limits": {
+    "cpu_ms": 300000 // 300,000 milliseconds = 5 minutes
+  },
   // Environment variables are managed via:
   // - Production: Cloudflare dashboard
   // - Local development: .dev.vars file (not committed to git)
@@ -40,10 +43,6 @@
         "binding": "ETL_QUEUE"
       },
       {
-        "queue": "packrat-logs-queue",
-        "binding": "LOGS_QUEUE"
-      },
-      {
         "queue": "packrat-embeddings-queue",
         "binding": "EMBEDDINGS_QUEUE"
       }
@@ -52,12 +51,8 @@
       {
         "queue": "packrat-etl-queue",
         "max_batch_size": 1,
-        "max_batch_timeout": 5
-      },
-      {
-        "queue": "packrat-logs-queue",
-        "max_batch_size": 10,
-        "max_batch_timeout": 5
+        "max_batch_timeout": 5,
+        "max_concurrency": 1
       },
       {
         "queue": "packrat-embeddings-queue",
@@ -69,6 +64,38 @@
   "ai": {
     "binding": "AI"
   },
+  // App Container configuration - runs Node.js TikTok API service
+  "containers": [
+    {
+      "class_name": "AppContainer",
+      "image": "./Dockerfile",
+      "max_instances": 5
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "AppContainer",
+        "name": "APP_CONTAINER"
+      }
+    ]
+  },
+  // Migrations for Durable Objects (including App Container)
+  "migrations": [
+    {
+      "new_sqlite_classes": ["TikTokContainer"],
+      "tag": "v1"
+    },
+    {
+      "tag": "v2",
+      "renamed_classes": [
+        {
+          "from": "TikTokContainer",
+          "to": "AppContainer"
+        }
+      ]
+    }
+  ],
   "env": {
     "dev": {
       "version_metadata": {
@@ -109,8 +136,9 @@
         "consumers": [
           {
             "queue": "packrat-etl-queue-dev",
-            "max_batch_size": 10,
-            "max_batch_timeout": 5
+            "max_batch_size": 1,
+            "max_batch_timeout": 5,
+            "max_concurrency": 1
           },
           {
             "queue": "packrat-logs-queue-dev",
@@ -126,7 +154,38 @@
       },
       "ai": {
         "binding": "AI"
-      }
+      },
+      "containers": [
+        {
+          "name": "packrat-api-container-dev",
+          "class_name": "AppContainer",
+          "image": "./Dockerfile",
+          "max_instances": 5
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "class_name": "AppContainer",
+            "name": "APP_CONTAINER"
+          }
+        ]
+      },
+      // Migrations for Durable Objects (including App Container)
+      "migrations": [
+        {
+          "new_sqlite_classes": ["TikTokContainer"],
+          "tag": "v1"
+        },
+        {
+          "new_sqlite_classes": ["AppContainer"],
+          "tag": "v2"
+        },
+        {
+          "deleted_classes": ["TikTokContainer"],
+          "tag": "v3"
+        }
+      ]
     }
   }
 }

@@ -1,0 +1,313 @@
+name: E2E Tests (Maestro)
+
+on:
+  push:
+    branches: [main, development]
+    paths:
+      - "apps/expo/**"
+      - ".maestro/**"
+      - ".github/workflows/e2e-tests.yml"
+  # Note: Using `pull_request` (not `pull_request_target`) so forked PRs get
+  # CI feedback on their own code.  Secrets are unavailable for forks, so
+  # the job is skipped via the `if` condition on the job below.
+  pull_request:
+    branches: [main, development]
+    paths:
+      - "apps/expo/**"
+      - ".maestro/**"
+      - ".github/workflows/e2e-tests.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  MAESTRO_VERSION: 2.3.0
+
+jobs:
+  ios-e2e:
+    name: iOS E2E Tests
+    runs-on: macos-15
+    timeout-minutes: 120
+    # Skip on forked PRs — secrets are not available in forks
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    env:
+      TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.2'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build iOS app for simulator
+        run: |
+          cd apps/expo
+          mkdir -p build
+          eas build \
+            --platform ios \
+            --profile e2e \
+            --non-interactive \
+            --local \
+            --output ./build/PackRat-sim.tar.gz
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+
+      - name: Install Maestro CLI
+        run: |
+          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Extract iOS simulator build
+        run: |
+          mkdir -p apps/expo/build/extracted
+          tar -xzf apps/expo/build/PackRat-sim.tar.gz -C apps/expo/build/extracted
+          APP_PATH=$(find apps/expo/build/extracted -name "*.app" -maxdepth 3 | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::No .app bundle found in simulator build archive"
+            exit 1
+          fi
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Boot iOS Simulator
+        run: |
+          # Pick the newest available iOS runtime on this runner. GitHub's
+          # macOS images ship different iOS runtimes over time; hard-coding a
+          # specific major version breaks CI every time Apple ships a new one.
+          IOS_RUNTIME=$(xcrun simctl list runtimes --json \
+            | python3 -c "
+          import sys, json, re
+          data = json.load(sys.stdin)
+          runtimes = [r for r in data.get('runtimes', [])
+                      if r.get('isAvailable', False) and 'iOS' in r.get('name','')]
+          if not runtimes:
+              print('::error::No available iOS runtimes found on this runner', file=sys.stderr)
+              sys.exit(1)
+          def ver_key(r):
+              m = re.search(r'iOS\s+(\d+)(?:\.(\d+))?', r.get('name',''))
+              return (int(m.group(1)) if m else 0, int(m.group(2) or 0) if m else 0)
+          runtimes.sort(key=ver_key)
+          picked = runtimes[-1]
+          print(f\"Picked runtime: {picked['name']}\", file=sys.stderr)
+          print(picked['identifier'])
+          ")
+
+          # Prefer a plain iPhone (no Pro/Plus/Max) from a recent generation.
+          # Fall back through 17 -> 16 -> 15 -> any available plain iPhone so
+          # the workflow survives device-type churn on the runner images.
+          DEVICE_TYPE=$(xcrun simctl list devicetypes --json \
+            | python3 -c "
+          import sys, json, re
+          types = json.load(sys.stdin)['devicetypes']
+          def plain_iphone(name):
+              return ('iPhone' in name
+                      and 'Pro' not in name
+                      and 'Plus' not in name
+                      and 'Max' not in name
+                      and 'mini' not in name
+                      and 'SE' not in name)
+          plain = [d for d in types if plain_iphone(d.get('name',''))]
+          if not plain:
+              print('::error::No plain iPhone device types found on this runner', file=sys.stderr)
+              sys.exit(1)
+          def gen(d):
+              m = re.search(r'iPhone\s+(\d+)', d.get('name',''))
+              return int(m.group(1)) if m else 0
+          # Prefer generations 15/16/17 (current sweet spot), then fall back
+          # to whatever plain iPhone is newest.
+          preferred = [d for d in plain if gen(d) in (17, 16, 15)]
+          pool = preferred if preferred else plain
+          pool.sort(key=gen, reverse=True)
+          picked = pool[0]
+          print(f\"Picked device type: {picked['name']}\", file=sys.stderr)
+          print(picked['identifier'])
+          ")
+
+          echo "Using runtime: $IOS_RUNTIME"
+          echo "Using device type: $DEVICE_TYPE"
+          DEVICE_ID=$(xcrun simctl create "PackRat-E2E" "$DEVICE_TYPE" "$IOS_RUNTIME")
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          echo "SIMULATOR_UDID=$DEVICE_ID" >> "$GITHUB_ENV"
+
+      - name: Install app on simulator
+        run: |
+          xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
+
+      - name: Run Maestro E2E tests
+        run: |
+          mkdir -p test-results
+          bun test:e2e:ios --device "$SIMULATOR_UDID" --format junit --output test-results/maestro-results.xml
+        env:
+          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          TRIP_NAME: E2E-Trip-${{ github.run_id }}
+          PACK_NAME: E2E-Pack-${{ github.run_id }}
+          APP_ID: com.andrewbierman.packrat
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-e2e-results
+          path: test-results/
+          retention-days: 30
+
+      - name: Upload Maestro screenshots and videos on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-e2e-failure-artifacts
+          path: ~/.maestro/tests/
+          retention-days: 7
+
+      - name: Shutdown simulator
+        if: always()
+        run: |
+          xcrun simctl shutdown "$SIMULATOR_UDID" || true
+          xcrun simctl delete "$SIMULATOR_UDID" || true
+
+  android-e2e:
+    name: Android E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    # Skip on forked PRs — secrets are not available in forks
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    env:
+      TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Maestro CLI
+        run: |
+          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Build Android APK for emulator
+        run: |
+          cd apps/expo
+          mkdir -p build
+          eas build \
+            --platform android \
+            --profile e2e \
+            --non-interactive \
+            --local \
+            --output ./build/PackRat.apk
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+
+      - name: Enable KVM for hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Maestro E2E tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2.34.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          avd-name: PackRat-E2E
+          force-avd-creation: false
+          emulator-options: >-
+            -no-snapshot-save -no-window -gpu swiftshader_indirect
+            -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            mkdir -p test-results
+            adb shell pm disable-user com.android.launcher3 || true
+            adb shell pm disable-user com.google.android.apps.nexuslauncher || true
+            adb install apps/expo/build/PackRat.apk
+            cp .maestro/config.yaml .maestro/config.yaml.bak
+            cp .maestro/config-android.yaml .maestro/config.yaml
+            maestro test \
+              --format junit \
+              --output test-results/maestro-results.xml \
+              .maestro/
+            mv .maestro/config.yaml.bak .maestro/config.yaml
+        env:
+          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          TRIP_NAME: E2E-Trip-${{ github.run_id }}
+          PACK_NAME: E2E-Pack-${{ github.run_id }}
+          APP_ID: com.packratai.mobile
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-e2e-results
+          path: test-results/
+          retention-days: 30
+
+      - name: Upload Maestro screenshots and videos on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-e2e-failure-artifacts
+          path: ~/.maestro/tests/
+          retention-days: 7

@@ -49,6 +49,13 @@ export default function MainNav() {
 
   // Handle smooth scrolling when clicking on navigation links
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('http')) {
+      // External link → open in a new tab
+      e.preventDefault();
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     e.preventDefault();
     const targetId = href.substring(1);
     const element = document.getElementById(targetId);
@@ -56,7 +63,7 @@ export default function MainNav() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
       setActiveSection(href);
-      setIsOpen(false); // Close mobile menu after clicking
+      setIsOpen(false);
     }
   };
 
@@ -64,7 +71,9 @@ export default function MainNav() {
     <header
       className={cn(
         'sticky top-0 z-40 w-full transition-all duration-300',
-        isScrolled ? 'bg-background/80 shadow-sm backdrop-blur-md py-2' : 'bg-transparent py-4',
+        isScrolled
+          ? 'bg-background/90 shadow-sm backdrop-blur-xl border-b border-border/40 py-2'
+          : 'bg-transparent py-4',
       )}
     >
       <div className="container flex items-center justify-between px-4 md:px-8 lg:px-12">
@@ -84,8 +93,10 @@ export default function MainNav() {
               href={item.href}
               onClick={(e) => scrollToSection(e, item.href)}
               className={cn(
-                'text-sm font-medium tracking-wide transition-colors hover:text-primary',
-                activeSection === item.href && 'text-primary font-semibold',
+                'text-sm font-medium tracking-wide transition-colors hover:text-primary relative pb-0.5',
+                activeSection === item.href
+                  ? 'text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-primary'
+                  : 'text-muted-foreground',
               )}
             >
               {item.title}

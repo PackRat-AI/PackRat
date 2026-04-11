@@ -1,0 +1,6 @@
+appId: ${APP_ID}
+---
+# Clear app state before running tests to ensure a clean environment
+- launchApp:
+    clearState: true
+    stopApp: true

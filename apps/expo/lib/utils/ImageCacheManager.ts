@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { IMAGES_DIR } from '../constants';
 
 export class ImageCacheManager {
@@ -39,6 +39,7 @@ export class ImageCacheManager {
   /**
    * Download and cache an image
    */
+
   public async cacheRemoteImage(fileName: string, remoteUrl: string): Promise<string> {
     await this.initCacheDirectory();
 

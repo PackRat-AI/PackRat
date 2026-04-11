@@ -4,6 +4,8 @@ import {
   authProviders,
   oneTimePasswords,
   packs,
+  packTemplateItems,
+  packTemplates,
   refreshTokens,
   users,
 } from '@packrat/api/db/schema';
@@ -42,14 +44,17 @@ import {
 } from '@packrat/api/utils/auth';
 import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
 import { getEnv } from '@packrat/api/utils/env-validation';
-import { assertDefined } from '@packrat/api/utils/typeAssertions';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { assertDefined } from '@packrat/guards';
+import { and, eq, getTableColumns, gt, isNull } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 
 const authRoutes = new OpenAPIHono<{
   Bindings: Env;
   Variables: Variables;
 }>();
+
+const { passwordHash: _, ...userWithoutPassword } = getTableColumns(users);
+
 // Login route
 const loginRoute = createRoute({
   method: 'post',
@@ -151,23 +156,20 @@ authRoutes.openapi(loginRoute, async (c) => {
   const accessToken = await generateJWT({
     payload: {
       userId: userRecord.id,
+      role: userRecord.role,
       exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days
     },
     c,
   });
+
+  const { passwordHash: _, ...userWithoutPassword } = userRecord;
 
   return c.json(
     {
       success: true,
       accessToken,
       refreshToken,
-      user: {
-        id: userRecord.id,
-        email: userRecord.email,
-        firstName: userRecord.firstName,
-        lastName: userRecord.lastName,
-        emailVerified: userRecord.emailVerified,
-      },
+      user: userWithoutPassword,
     },
     200,
   );
@@ -382,7 +384,11 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
   }
 
   // Update user as verified
-  await db.update(users).set({ emailVerified: true }).where(eq(users.id, userId));
+  const [finalUser] = await db
+    .update(users)
+    .set({ emailVerified: true })
+    .where(eq(users.id, userId))
+    .returning();
 
   // Delete the verification code
   await db.delete(oneTimePasswords).where(eq(oneTimePasswords.userId, userId));
@@ -406,19 +412,16 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     c,
   });
 
+  assertDefined(finalUser);
+  const { passwordHash: _passwordHash, ...userWithoutPassword } = finalUser;
+
   return c.json(
     {
       success: true,
       message: 'Email verified successfully',
       accessToken,
       refreshToken,
-      user: {
-        id: userRecord.id,
-        email: userRecord.email,
-        firstName: userRecord.firstName,
-        lastName: userRecord.lastName,
-        emailVerified: true,
-      },
+      user: userWithoutPassword,
     },
     200,
   );
@@ -840,14 +843,7 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
 
     // Get user info
     const [user] = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        emailVerified: users.emailVerified,
-        role: users.role,
-      })
+      .select(userWithoutPassword)
       .from(users)
       .where(eq(users.id, token.userId))
       .limit(1);
@@ -870,14 +866,7 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
         success: true,
         accessToken,
         refreshToken: newRefreshToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          emailVerified: user.emailVerified,
-          role: user.role,
-        },
+        user,
       },
       200,
     );
@@ -986,55 +975,43 @@ const meRoute = createRoute({
 });
 
 authRoutes.openapi(meRoute, async (c) => {
-  try {
-    // Extract JWT from Authorization header
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    const token = authHeader.substring(7);
-    const auth = await verifyJWT({ token, c });
-    const db = createDb(c);
-
-    if (!auth) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
-
-    // Find user
-    const userId = Number(auth.userId);
-    const user = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        emailVerified: users.emailVerified,
-      })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    if (user.length === 0) {
-      return c.json({ error: 'User not found' }, 404);
-    }
-
-    const userRecord = user[0];
-    if (!userRecord) {
-      return c.json({ error: 'User not found' }, 404);
-    }
-
-    return c.json(
-      {
-        success: true,
-        user: userRecord,
-      },
-      200,
-    );
-  } catch (error) {
-    console.error('Get user info error:', error);
-    return c.json({ error: 'An error occurred' }, 401);
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Unauthorized' }, 401);
   }
+
+  const token = authHeader.substring(7);
+  const auth = await verifyJWT({ token, c });
+  const db = createDb(c);
+
+  if (!auth) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  // Find user
+  const userId = Number(auth.userId);
+  const user = await db
+    .select(userWithoutPassword)
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (user.length === 0) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const userRecord = user[0];
+  if (!userRecord) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  return c.json(
+    {
+      success: true,
+      user: userRecord,
+    },
+    200,
+  );
 });
 
 // Delete account route
@@ -1091,6 +1068,12 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
   // Delete auth providers
   await db.delete(authProviders).where(eq(authProviders.userId, userId));
 
+  // Delete pack template items (must be deleted before pack templates)
+  await db.delete(packTemplateItems).where(eq(packTemplateItems.userId, userId));
+
+  // Delete pack templates
+  await db.delete(packTemplates).where(eq(packTemplates.userId, userId));
+
   // Delete all user's packs (cascade will delete pack items)
   await db.delete(packs).where(eq(packs.userId, userId));
 
@@ -1141,7 +1124,12 @@ authRoutes.openapi(appleRoute, async (c) => {
   const db = createDb(c);
 
   // Decode the identity token (JWT)
-  const payload = JSON.parse(Buffer.from(identityToken.split('.')[1], 'base64').toString());
+  let payload: { sub: string; email: string; email_verified: boolean };
+  try {
+    payload = JSON.parse(Buffer.from(identityToken.split('.')[1], 'base64').toString());
+  } catch {
+    return c.json({ error: 'Invalid Apple token' }, 400);
+  }
 
   const { sub, email, email_verified } = payload;
   if (!sub || !email) {
@@ -1183,17 +1171,12 @@ authRoutes.openapi(appleRoute, async (c) => {
   }
 
   const [user] = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      emailVerified: users.emailVerified,
-      role: users.role,
-    })
+    .select(userWithoutPassword)
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
+
+  assertDefined(user);
 
   const refreshToken = generateRefreshToken();
   await db.insert(refreshTokens).values({
@@ -1335,14 +1318,7 @@ authRoutes.openapi(googleRoute, async (c) => {
 
   // Get user info
   const [user] = await db
-    .select({
-      id: users.id,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      emailVerified: users.emailVerified,
-      role: users.role,
-    })
+    .select(userWithoutPassword)
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);

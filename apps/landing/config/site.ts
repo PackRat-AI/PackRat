@@ -15,7 +15,7 @@ export const siteConfig = {
   url: 'https://getpackrat.com',
   ogImage: '/og-image.jpg',
   author: 'PackRat Team',
-  twitterHandle: '@getpackrat',
+  twitterHandle: '@packratai',
   keywords: [
     'outdoor',
     'adventure',
@@ -28,36 +28,15 @@ export const siteConfig = {
     'outdoor planning',
   ],
 
-  // Color scheme
-  colors: {
-    primary: '#0F766E', // Teal
-    primaryLight: '#14B8A6', // Light teal
-    primaryDark: '#0D9488', // Dark teal
-    secondary: '#F97316', // Orange
-    secondaryLight: '#FB923C', // Light orange
-    secondaryDark: '#EA580C', // Dark orange
-    tertiary: '#8B5CF6', // Purple
-    tertiaryLight: '#A78BFA', // Light purple
-    dark: '#1E293B', // Slate 800
-    darkAlt: '#0F172A', // Slate 900
-    light: '#F8FAFC', // Slate 50
-    lightAlt: '#F1F5F9', // Slate 100
-    textPrimary: '#0F172A', // Slate 900
-    textSecondary: '#475569', // Slate 600
-    textTertiary: '#94A3B8', // Slate 400
-    gradientPrimary: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-    gradientSecondary: 'linear-gradient(135deg, #F97316 0%, #FB923C 100%)',
-    gradientTertiary: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
-    gradientDark: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
-    gradientMesh:
-      'radial-gradient(at 67% 33%, hsla(162, 77%, 40%, 0.15) 0px, transparent 50%), radial-gradient(at 33% 67%, hsla(23, 100%, 50%, 0.15) 0px, transparent 50%), radial-gradient(at 80% 80%, hsla(242, 100%, 70%, 0.15) 0px, transparent 50%), radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 0.15) 0px, transparent 50%)',
-  },
-
   // Navigation
   mainNav: [
     {
       title: 'Features',
       href: '#features',
+    },
+    {
+      title: 'Guides',
+      href: 'https://guides.packratai.com/',
     },
     {
       title: 'How It Works',
@@ -80,34 +59,41 @@ export const siteConfig = {
   // CTAs
   cta: {
     primary: {
-      text: 'Download Now',
+      text: 'Download Free',
       href: '#download',
     },
     secondary: {
-      text: 'Learn More',
-      href: '#features',
+      text: 'See How It Works',
+      href: '#how-it-works',
+    },
+    tertiary: {
+      text: 'Explore Guides',
+      href: 'https://guides.packratai.com/',
     },
   },
 
   // Hero section
   hero: {
-    badge: 'Your outdoor adventure companion',
-    title: 'Pack smarter. Adventure further.',
+    badge: '100% Free · AI-Powered Packing Lists',
+    title: 'Stop overpacking. Start adventuring.',
+    titleLine1: 'Stop overpacking.',
+    titleLine2: 'Start adventuring.',
     subtitle:
-      'Never forget essential gear again. PackRat helps you plan, organize, and track your outdoor adventures with ease.',
+      "PackRat's AI builds your perfect packing list based on your trip, the weather, and your gear — so you carry exactly what you need and nothing you don't.",
     image: '/hero-app-preview.png',
+    socialProof: 'Trusted by 10,000+ outdoor enthusiasts · 4.8★ rating · Works offline',
     stats: [
       {
         value: '10K+',
         label: 'Active Users',
       },
       {
-        value: '4.8',
-        label: 'App Store Rating',
+        value: '4.8★',
+        label: 'App Rating',
       },
       {
-        value: '500+',
-        label: 'Trails Mapped',
+        value: '100%',
+        label: 'Free Forever',
       },
     ],
   },
@@ -118,7 +104,7 @@ export const siteConfig = {
       id: 'packing-lists',
       title: 'Smart Packing Lists',
       description:
-        'Create and customize packing lists based on trip type, duration, and weather conditions.',
+        "Never forget essential gear — or carry stuff you don't need. PackRat's AI tailors your list to your exact trip.",
       icon: 'CheckSquare',
       color: '#0F766E',
       image: '/feature-packing-list.png',
@@ -127,16 +113,25 @@ export const siteConfig = {
       id: 'trail-maps',
       title: 'Trail Maps & Navigation',
       description:
-        'Access offline trail maps and navigation to stay on track even without cell service.',
+        'Find your trail and navigate it offline. Download maps before you go and stay on track even with no signal.',
       icon: 'Map',
       color: '#F97316',
       image: '/feature-trail-maps.png',
     },
     {
+      id: 'guides',
+      title: 'Guides',
+      description:
+        'Browse practical guides on trip planning, gear selection, and survival strategies for every adventure.',
+      icon: 'Book',
+      color: '#14B8A6',
+      image: '/images/features/guides-ios.png',
+    },
+    {
       id: 'trip-planning',
       title: 'Trip Planning',
       description:
-        'Plan routes, set waypoints, and estimate hiking times with our advanced planning tools.',
+        'Plan your perfect route from start to finish — set waypoints, estimate hiking times, and share with your group.',
       icon: 'Compass',
       color: '#8B5CF6',
       image: '/feature-trip-planning.png',
@@ -145,7 +140,7 @@ export const siteConfig = {
       id: 'recommendations',
       title: 'Trail Recommendations',
       description:
-        'Discover new trails and adventures based on your preferences and experience level.',
+        'Discover trails matched to your fitness level and experience — no more guessing if a trail is right for you.',
       icon: 'Mountain',
       color: '#EC4899',
       image: '/feature-recommendations.png',
@@ -154,7 +149,7 @@ export const siteConfig = {
       id: 'weather',
       title: 'Weather Integration',
       description:
-        'Get real-time weather forecasts for your planned routes to prepare accordingly.',
+        "Pack for the weather you'll actually get. Real-time forecasts for your exact route and dates.",
       icon: 'Cloud',
       color: '#3B82F6',
       image: '/feature-weather.png',
@@ -162,7 +157,8 @@ export const siteConfig = {
     {
       id: 'offline',
       title: 'Offline Access',
-      description: "Access all your trip information offline when you're out in the wilderness.",
+      description:
+        'Your packing lists, maps, and trip details are always available — even deep in the backcountry without signal.',
       icon: 'Download',
       color: '#10B981',
       image: '/feature-offline.png',
@@ -198,9 +194,9 @@ export const siteConfig = {
 
   // Integrations section
   integrations: {
-    title: 'Seamless Integrations',
+    title: 'Connects With the Tools You Already Use',
     subtitle:
-      'PackRat connects with your favorite outdoor and weather services for a complete experience.',
+      'PackRat works with your favorite outdoor and weather services so everything is in one place.',
     items: [
       {
         id: 'weather',
@@ -208,6 +204,7 @@ export const siteConfig = {
         description: 'Real-time weather data from multiple providers',
         icon: 'Cloud',
         color: '#3B82F6',
+        features: ['Real-time Data', 'Hourly Forecasts', 'Weather Alerts'],
       },
       {
         id: 'maps',
@@ -215,6 +212,7 @@ export const siteConfig = {
         description: 'Access thousands of trails and routes',
         icon: 'Map',
         color: '#F97316',
+        features: ['10,000+ Trails', 'Difficulty Ratings', 'User Reviews'],
       },
       {
         id: 'health',
@@ -222,6 +220,7 @@ export const siteConfig = {
         description: 'Sync with Apple Health and Google Fit',
         icon: 'Heart',
         color: '#EC4899',
+        features: ['Step Tracking', 'Heart Rate', 'Fitness Stats'],
       },
       {
         id: 'calendar',
@@ -229,6 +228,7 @@ export const siteConfig = {
         description: 'Sync trips with your calendar',
         icon: 'Calendar',
         color: '#8B5CF6',
+        features: ['Trip Sync', 'Reminders', 'Shared Calendars'],
       },
       {
         id: 'sharing',
@@ -236,6 +236,7 @@ export const siteConfig = {
         description: 'Share trips and routes with friends',
         icon: 'Share2',
         color: '#10B981',
+        features: ['Share Routes', 'Group Trips', 'Community'],
       },
       {
         id: 'emergency',
@@ -243,8 +244,9 @@ export const siteConfig = {
         description: 'Quick access to emergency contacts',
         icon: 'AlertTriangle',
         color: '#EF4444',
+        features: ['SOS Alerts', 'Contact Sharing', 'GPS Location'],
       },
-    ] as Integration[],
+    ] satisfies Integration[],
   },
 
   // Testimonials section
@@ -257,7 +259,7 @@ export const siteConfig = {
         name: 'Mike Thompson',
         role: 'Backpacker',
         content:
-          'PackRat has completely changed how I prepare for hikes. I used to always forget something important, but not anymore! The weather integration is particularly useful for planning multi-day trips.',
+          'PackRat has completely changed how I prepare for hikes. I used to always forget something important, but not anymore! The AI packing list is spot-on every single time.',
         initials: 'MT',
         avatar: '/avatar-mike.jpg',
         rating: 5,
@@ -265,9 +267,9 @@ export const siteConfig = {
       {
         id: 2,
         name: 'Sarah Linden',
-        role: 'Trail Runner',
+        role: 'Thru-Hiker · PCT 2024',
         content:
-          'The offline maps feature saved me when I lost cell service on a remote trail. This app is a must-have for any outdoor enthusiast. I love how I can track my routes and share them with friends.',
+          "I used PackRat for my entire PCT thru-hike. The offline maps saved me multiple times in remote sections with zero signal. Absolutely essential gear — and it's free!",
         initials: 'SL',
         avatar: '/avatar-sarah.jpg',
         rating: 5,
@@ -277,17 +279,17 @@ export const siteConfig = {
         name: 'James Rodriguez',
         role: 'Weekend Camper',
         content:
-          'As someone who camps occasionally, the smart packing lists are perfect. They suggest exactly what I need without overwhelming me. The interface is intuitive and the recommendations are spot-on.',
+          'As someone who camps with the family a few times a year, the smart packing lists are perfect. No more frantic last-minute checks — PackRat has everything covered.',
         initials: 'JR',
         avatar: '/avatar-james.jpg',
-        rating: 4,
+        rating: 5,
       },
       {
         id: 4,
         name: 'Emily Chen',
         role: 'Hiking Guide',
         content:
-          'I use PackRat to plan trips for my guided hiking groups. The ability to share packing lists and routes with clients beforehand has made my job so much easier. Highly recommended for professionals!',
+          'I use PackRat to plan trips for my guided hiking groups. Sharing packing lists with clients beforehand has made my job so much easier. Highly recommend for professionals!',
         initials: 'EC',
         avatar: '/avatar-emily.jpg',
         rating: 5,
@@ -299,14 +301,14 @@ export const siteConfig = {
   download: {
     title: 'Ready for your next adventure?',
     subtitle: 'Download PackRat today and start planning your outdoor journeys with confidence.',
-    appStoreLink: 'https://apps.apple.com/ru/app/packrat-ai/id6499243187?l=en-GB',
+    appStoreLink: 'https://apps.apple.com/us/app/packrat-ai/id6499243187',
     googlePlayLink: 'https://play.google.com/store/apps/details?id=com.packratai.mobile&pli=1',
-    image: '/download-now-ios-image.png',
+    image: '/images/app/download-ios.png',
     features: [
-      'Free basic version',
-      'Premium features from $4.99/month',
-      '7-day free trial',
-      'Cancel anytime',
+      'Free — no hidden fees',
+      'Works offline',
+      'AI-powered packing lists',
+      'Regular updates',
     ],
   },
 
@@ -315,7 +317,7 @@ export const siteConfig = {
     {
       question: 'Is PackRat free to use?',
       answer:
-        'PackRat offers a free version with basic features. Premium features are available with a subscription for $4.99/month or $39.99/year.',
+        'Yes — PackRat is completely free. No subscriptions, no in-app purchases, no ads. We are focused on growing our community of outdoor enthusiasts.',
     },
     {
       question: 'Does PackRat work offline?',
@@ -347,39 +349,35 @@ export const siteConfig = {
   footerLinks: {
     product: [
       { title: 'Features', href: '#features' },
+      { title: 'Pricing', href: '/pricing' },
+      { title: 'Guides', href: 'https://guides.packratai.com/' },
       { title: 'Integrations', href: '#integrations' },
-      { title: 'Updates', href: '#' },
     ],
     company: [
-      { title: 'About', href: '#' },
-      { title: 'Blog', href: '#' },
-      { title: 'Careers', href: '#' },
-      { title: 'Contact', href: '#' },
+      { title: 'About', href: '/about' },
+      { title: 'Blog', href: '/blog' },
+      { title: 'Careers', href: '/about#careers' },
+      { title: 'Contact', href: 'mailto:hello@packratai.com' },
     ],
-    legal: [
-      { title: 'Terms', href: '#' },
-      { title: 'Privacy', href: '/privacy-policy' },
-      { title: 'Cookies', href: '#' },
-      { title: 'Licenses', href: '#' },
-    ],
+    legal: [{ title: 'Privacy', href: '/privacy-policy' }],
   },
 
   // Social links
   social: [
     {
       name: 'Twitter',
-      href: '#',
+      href: 'https://x.com/packratai',
       icon: 'Twitter',
     },
     {
       name: 'Instagram',
-      href: '#',
+      href: 'https://www.instagram.com/packratai',
       icon: 'Instagram',
     },
     {
-      name: 'Facebook',
-      href: '#',
-      icon: 'Facebook',
+      name: 'TikTok',
+      href: 'https://www.tiktok.com/@packratai',
+      icon: 'TikTok',
     },
   ] as SocialLink[],
 };

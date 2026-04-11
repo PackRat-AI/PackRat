@@ -164,7 +164,7 @@ export const CreateCatalogItemRequestSchema = z
     name: z.string().min(1).max(255).openapi({ example: 'MSR Hubba Hubba NX 2-Person Tent' }),
     productUrl: z.string().url().openapi({ example: 'https://example.com/product/tent' }),
     sku: z.string().openapi({ example: 'MSR-123' }),
-    weight: z.number().openapi({ example: 1720 }),
+    weight: z.number().positive().openapi({ example: 1720 }),
     weightUnit: z.string().openapi({ example: 'g' }),
     description: z.string().optional(),
     categories: z.array(z.string()).optional(),
@@ -250,7 +250,7 @@ export const UpdateCatalogItemRequestSchema = z
     name: z.string().min(1).max(255).optional(),
     productUrl: z.string().url().optional(),
     sku: z.string().optional(),
-    weight: z.number().optional(),
+    weight: z.number().positive().optional(),
     weightUnit: z.string().optional(),
     description: z.string().optional(),
     categories: z.array(z.string()).optional(),
@@ -334,3 +334,37 @@ export const UpdateCatalogItemRequestSchema = z
 export const CatalogCategoriesResponseSchema = z
   .array(z.string().openapi({ example: 'Tents' }))
   .openapi('CatalogCategoriesResponse');
+
+export const VectorSearchQuerySchema = z
+  .object({
+    q: z.string().min(1).openapi({
+      example: 'lightweight tent for backpacking',
+      description: 'Search query string',
+    }),
+    limit: z.coerce.number().int().min(1).max(50).optional().default(10).openapi({
+      example: 10,
+      description: 'Maximum number of results to return',
+    }),
+    offset: z.coerce.number().int().min(0).optional().default(0).openapi({
+      example: 0,
+      description: 'Number of results to skip for pagination',
+    }),
+  })
+  .openapi('VectorSearchQuery');
+
+export const SimilarItemSchema = CatalogItemSchema.extend({
+  similarity: z.number().min(0).max(1).openapi({
+    example: 0.85,
+    description: 'Similarity score between 0 and 1',
+  }),
+}).openapi('SimilarItem');
+
+export const VectorSearchResponseSchema = z
+  .object({
+    items: z.array(SimilarItemSchema),
+    total: z.number().openapi({ example: 150 }),
+    limit: z.number().openapi({ example: 10 }),
+    offset: z.number().openapi({ example: 0 }),
+    nextOffset: z.number().openapi({ example: 10 }),
+  })
+  .openapi('VectorSearchResponse');

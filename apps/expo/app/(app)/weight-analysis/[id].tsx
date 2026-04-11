@@ -4,8 +4,10 @@ import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackWeightAnalysis } from 'expo-app/features/packs/hooks/usePackWeightAnalysis';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function WeightCard({
   title,
@@ -38,33 +40,42 @@ function WeightCard({
 export default function WeightAnalysisScreen() {
   const params = useLocalSearchParams();
   const packId = params.id;
+  const { t } = useTranslation();
 
   const { data, items } = usePackWeightAnalysis(packId as string);
 
   const preferredWeightUnit = userStore.preferredWeightUnit.peek() ?? 'g';
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView className="flex-1">
-      <LargeTitleHeader title="Weight Analysis" />
+    <SafeAreaView className="flex-1" style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
+      <LargeTitleHeader title={t('packs.weightAnalysis')} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         removeClippedSubviews={false}
       >
-        <View className="grid grid-cols-2 gap-3 p-4">
-          <WeightCard title="Base Weight" weight={`${data.baseWeight} g`} className="col-span-1" />
+        <View
+          className="grid grid-cols-2 gap-3 p-4"
+          style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+        >
           <WeightCard
-            title="Consumables Weight"
+            title={t('packs.baseWeight')}
+            weight={`${data.baseWeight} g`}
+            className="col-span-1"
+          />
+          <WeightCard
+            title={t('packs.consumablesWeight')}
             weight={`${data.consumableWeight} ${preferredWeightUnit}`}
             className="col-span-1"
           />
           <WeightCard
-            title="Worn Weight"
+            title={t('packs.wornWeight')}
             weight={`${data.wornWeight} ${preferredWeightUnit}`}
             className="col-span-1"
           />
           <WeightCard
-            title="Total Weight"
+            title={t('packs.totalWeight')}
             weight={`${data.totalWeight} ${preferredWeightUnit}`}
             className="col-span-1"
           />
@@ -72,14 +83,14 @@ export default function WeightAnalysisScreen() {
 
         <View className="mb-4 px-4">
           <Text variant="heading" className="mb-2 font-semibold">
-            Weight Breakdown
+            {t('packs.weightBreakdown')}
           </Text>
           <Text variant="subhead" className="mb-4 text-muted-foreground">
-            Detailed analysis of your pack weight by category
+            {t('packs.detailedAnalysis')}
           </Text>
         </View>
 
-        {data.categories.map((category, categoryIndex) => (
+        {data.categories.map((category, _categoryIndex) => (
           <View key={category.name} className="mx-4 mb-4 rounded-lg bg-card">
             {/* Category Header */}
             <View className="border-border/25 dark:border-border/80 flex-row items-center justify-between border-b p-4">
@@ -99,7 +110,7 @@ export default function WeightAnalysisScreen() {
                 .filter((item) => item.category.trim() === category.name.trim())
                 .map((item, itemIndex) => (
                   <View
-                    key={`${categoryIndex}-${item.id}`}
+                    key={`${category.name}-${item.id}`}
                     className={cn(
                       'flex-row items-center justify-between p-4',
                       itemIndex > 0 ? 'border-border/25 dark:border-border/80 border-t' : '',
@@ -123,9 +134,7 @@ export default function WeightAnalysisScreen() {
         ))}
 
         {!data.categories.length && (
-          <Text className="px-8 text-center">
-            Add items and categorize them for weight breakdown.
-          </Text>
+          <Text className="px-8 text-center">{t('packs.addItemsForBreakdown')}</Text>
         )}
       </ScrollView>
     </SafeAreaView>

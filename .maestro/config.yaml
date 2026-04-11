@@ -1,0 +1,16 @@
+# Maestro Workspace Configuration
+# https://docs.maestro.dev/maestro-flows/workspace-management/project-configuration
+
+flows:
+  - "flows/**/*.yaml"
+  - "master-flow.yaml"  # Root-level iOS master flow (config*.yaml intentionally excluded)
+
+# Platform-specific settings
+platform:
+  ios:
+    snapshotKeyHonorModalViews: false
+
+# Environment variables available to all flows
+env:
+  TRIP_NAME: "E2E-Trip-${GITHUB_RUN_ID:-12345}"
+  PACK_NAME: "E2E-Pack-${GITHUB_RUN_ID:-12345}"

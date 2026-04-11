@@ -37,11 +37,13 @@ export default function AnimatedGradientBorder({
     element.style.backgroundImage = gradientText;
     element.style.backgroundSize = `${colors.length * 200}% 100%`;
 
-    // Create the animation
-    element.animate([{ backgroundPosition: '0% 0%' }, { backgroundPosition: '100% 0%' }], {
-      duration: duration * 1000,
-      iterations: Number.POSITIVE_INFINITY,
-    });
+    // Create the animation — store return value so we can cancel on cleanup
+    const anim = element.animate(
+      [{ backgroundPosition: '0% 0%' }, { backgroundPosition: '100% 0%' }],
+      { duration: duration * 1000, iterations: Number.POSITIVE_INFINITY, easing: 'linear' },
+    );
+
+    return () => anim.cancel();
   }, [colors, duration]);
 
   return (
@@ -49,11 +51,13 @@ export default function AnimatedGradientBorder({
       <div
         ref={borderRef}
         className={cn('absolute inset-0 rounded-xl', className)}
-        style={{ padding: borderWidth }}
+        style={{ padding: `${borderWidth}px` }}
       >
         <div className="absolute inset-0 rounded-xl bg-background" />
       </div>
-      <div className={cn('relative z-10 rounded-xl', `p-[${borderWidth}px]`)}>{children}</div>
+      <div className="relative z-10 rounded-xl" style={{ padding: `${borderWidth}px` }}>
+        {children}
+      </div>
     </div>
   );
 }

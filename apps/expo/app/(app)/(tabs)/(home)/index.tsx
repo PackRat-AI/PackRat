@@ -1,19 +1,21 @@
 'use client';
 
-import type { LargeTitleSearchBarRef, ListDataItem } from '@packrat/ui/nativewindui';
+import { assertIsString } from '@packrat/guards';
+import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
-  ESTIMATED_ITEM_HEIGHT,
   LargeTitleHeader,
   List,
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import TabScreen from 'expo-app/components/TabScreen';
 import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
 import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';
+import { FeedTile } from 'expo-app/features/feed/components/FeedTile';
 import { GuidesTile } from 'expo-app/features/guides/components/GuidesTile';
 import { PackTemplatesTile } from 'expo-app/features/pack-templates/components/PackTemplatesTile';
 import { CurrentPackTile } from 'expo-app/features/packs/components/CurrentPackTile';
@@ -21,6 +23,7 @@ import { GearInventoryTile } from 'expo-app/features/packs/components/GearInvent
 import { PackCategoriesTile } from 'expo-app/features/packs/components/PackCategoriesTile';
 import { PackStatsTile } from 'expo-app/features/packs/components/PackStatsTile';
 import { RecentPacksTile } from 'expo-app/features/packs/components/RecentPacksTile';
+import { SeasonSuggestionsTile } from 'expo-app/features/packs/components/SeasonSuggestionsTile';
 import { SharedPacksTile } from 'expo-app/features/packs/components/SharedPacksTile';
 import { ShoppingListTile } from 'expo-app/features/packs/components/ShoppingListTile';
 import { WeightAnalysisTile } from 'expo-app/features/packs/components/WeightAnalysisTile';
@@ -28,10 +31,11 @@ import { TrailConditionsTile } from 'expo-app/features/trips/components/TrailCon
 import { UpcomingTripsTile } from 'expo-app/features/trips/components/UpcomingTripsTile';
 import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherAlertsTile';
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
+import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
@@ -46,6 +50,11 @@ const tileInfo = {
     title: 'Recent Packs',
     keywords: ['recent', 'packs', 'history'],
     component: RecentPacksTile,
+  },
+  'season-suggestions': {
+    title: 'Season Suggestions',
+    keywords: ['season', 'suggestions', 'ai', 'seasonal', 'weather', 'recommendations'],
+    component: SeasonSuggestionsTile,
   },
   'ask-packrat-ai': {
     title: 'Ask PackRat AI',
@@ -122,6 +131,29 @@ const tileInfo = {
     keywords: ['guides', 'help', 'tutorial', 'documentation', 'learn'],
     component: GuidesTile,
   },
+  feed: {
+    title: 'Feed',
+    keywords: ['feed', 'photos', 'social', 'share', 'posts'],
+    component: FeedTile,
+  },
+  wildlife: {
+    // Placeholder: title/keywords are overridden with locale-reactive values inside DashboardScreen
+    title: 'Wildlife',
+    keywords: [
+      'wildlife',
+      'identify',
+      'plant',
+      'flower',
+      'tree',
+      'bird',
+      'mammal',
+      'species',
+      'nature',
+      'animal',
+      'offline',
+    ],
+    component: WildlifeTile,
+  },
 };
 
 type TileName = keyof typeof tileInfo;
@@ -129,7 +161,7 @@ type TileName = keyof typeof tileInfo;
 function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
-    <Link href="/modal" asChild>
+    <Link href="/settings" asChild>
       <Pressable className="opacity-80">
         {({ pressed }) => (
           <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
@@ -160,11 +192,37 @@ function DemoIcon() {
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
+  const { t } = useTranslation();
+
+  const localizedTileInfo = useMemo(
+    () => ({
+      ...tileInfo,
+      wildlife: {
+        ...tileInfo.wildlife,
+        title: t('wildlife.wildlife'),
+        keywords: [
+          t('wildlife.wildlife').toLowerCase(),
+          t('wildlife.identify').toLowerCase(),
+          t('wildlife.category.plant'),
+          t('wildlife.category.flower'),
+          t('wildlife.category.tree'),
+          t('wildlife.category.bird'),
+          t('wildlife.category.mammal'),
+          'species',
+          'nature',
+          'animal',
+          'offline',
+        ],
+      },
+    }),
+    [t],
+  );
 
   const dashboardLayout = useRef([
     'current-pack',
     'recent-packs',
+    'season-suggestions',
     'gap 1',
     'ask-packrat-ai',
     'reported-ai-content',
@@ -173,7 +231,9 @@ export default function DashboardScreen() {
     'pack-stats',
     'weight-analysis',
     'pack-categories',
-    ...(featureFlags.enableTrips ? ['gap 2', 'upcoming-trips', 'trail-conditions'] : []),
+    ...(featureFlags.enableTrips || featureFlags.enableTrailConditions ? ['gap 2'] : []),
+    ...(featureFlags.enableTrips ? ['upcoming-trips'] : []),
+    ...(featureFlags.enableTrailConditions ? ['trail-conditions'] : []),
     'gap 2.5',
     'weather',
     ...(featureFlags.enableTrips ? ['weather-alerts'] : []),
@@ -182,8 +242,10 @@ export default function DashboardScreen() {
     ...(featureFlags.enableShoppingList ? ['shopping-list'] : []),
     ...(featureFlags.enableSharedPacks ? ['shared-packs'] : []),
     ...(featureFlags.enablePackTemplates ? ['pack-templates'] : []),
+    ...(featureFlags.enableFeed ? ['feed'] : []),
     'gap 4',
     'guides',
+    ...(featureFlags.enableWildlifeIdentification ? ['wildlife'] : []),
   ]).current;
 
   const filteredTiles = useMemo(() => {
@@ -192,7 +254,7 @@ export default function DashboardScreen() {
     const searchLower = searchValue.toLowerCase();
     return dashboardLayout.filter((item) => {
       if (!item.startsWith('gap')) {
-        const info = tileInfo[item as TileName];
+        const info = localizedTileInfo[item as TileName];
         return (
           info.title.toLowerCase().includes(searchLower) ||
           info.keywords.some((k) => k.toLowerCase().includes(searchLower))
@@ -200,12 +262,12 @@ export default function DashboardScreen() {
       }
       return false;
     });
-  }, [searchValue, dashboardLayout]);
+  }, [searchValue, dashboardLayout, localizedTileInfo]);
 
   return (
-    <View className="flex-1">
+    <TabScreen>
       <LargeTitleHeader
-        title="Dashboard"
+        title={t('dashboard.title')}
         searchBar={{
           ref: asNonNullableRef(searchBarRef),
           iosHideWhenScrolling: true,
@@ -247,17 +309,17 @@ export default function DashboardScreen() {
                   <Icon name="file-search-outline" size={48} color="#9ca3af" />
                   <View className="h-4" />
                   <Text className="text-lg font-medium text-muted-foreground">
-                    No matching tiles found
+                    {t('dashboard.noResults')}
                   </Text>
                   <Text className="mt-1 text-center text-sm text-muted-foreground">
-                    Try different keywords or clear your search
+                    {t('dashboard.tryDifferent')}
                   </Text>
                 </View>
               )}
             />
           ) : (
             <View className="flex-1 items-center justify-center p-4">
-              <Text className="text-muted-foreground">Search dashboard</Text>
+              <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
             </View>
           ),
         }}
@@ -275,13 +337,12 @@ export default function DashboardScreen() {
         contentInsetAdjustmentBehavior="automatic"
         variant="insets"
         data={dashboardLayout}
-        estimatedItemSize={ESTIMATED_ITEM_HEIGHT.titleOnly}
         renderItem={renderDashboardItem}
         keyExtractor={keyExtractor}
         sectionHeaderAsGap
-        ListFooterComponent={<View className="h-12" />} // 👈 Add margin below last item
+        ListFooterComponent={<View className="h-12" />}
       />
-    </View>
+    </TabScreen>
   );
 }
 

@@ -1,8 +1,8 @@
 {
   "name": "@packrat/ui",
-  "version": "2.0.4",
+  "version": "2.0.17",
   "private": true,
   "dependencies": {
-    "@packrat-ai/nativewindui": "1.0.8"
+    "@packrat-ai/nativewindui": "^2.0.1-alpha.0"
   }
 }

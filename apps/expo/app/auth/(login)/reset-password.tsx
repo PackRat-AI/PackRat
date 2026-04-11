@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   AlertAnchor,
   Button,
@@ -11,6 +11,9 @@ import {
 } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -74,43 +77,46 @@ const getPasswordStrength = (password: string) => {
     strength++;
   }
 
-  let label = 'Very Weak';
+  let labelKey: TranslationKeys = 'auth.veryWeak';
   let color = 'bg-red-500';
 
   if (strength === 1) {
-    label = 'Weak';
+    labelKey = 'auth.weak';
     color = 'bg-red-500';
   } else if (strength === 2) {
-    label = 'Fair';
+    labelKey = 'auth.fair';
     color = 'bg-orange-500';
   } else if (strength === 3) {
-    label = 'Good';
+    labelKey = 'auth.good';
     color = 'bg-yellow-500';
   } else if (strength === 4) {
-    label = 'Strong';
+    labelKey = 'auth.strong';
     color = 'bg-green-500';
   } else if (strength === 5) {
-    label = 'Very Strong';
+    labelKey = 'auth.veryStrong';
     color = 'bg-green-700';
   }
 
-  return { strength, label, color };
+  return { strength, labelKey, color };
 };
 
 export default function ResetPasswordScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = React.useState(false);
   const [passwordVisible, setPasswordVisible] = React.useState(false);
   const [focusedTextField, setFocusedTextField] = React.useState<
     'password' | 'confirm-password' | null
   >(null);
-  const alertRef = React.useRef<AlertRef>(null);
+  const alertRef = React.useRef<AlertMethods>(null);
 
   // Get data from previous screen
   const params = useLocalSearchParams<{
     email: string;
     code: string;
   }>();
+
+  const { resetPassword } = useAuthActions();
 
   const form = useForm({
     defaultValues: {
@@ -125,32 +131,21 @@ export default function ResetPasswordScreen() {
         setIsLoading(true);
 
         // Call the API to reset the password
-        const response = await fetch('/api/auth/reset-password', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: params.email,
-            code: params.code,
-            newPassword: value.password,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to reset password');
-        }
+        await resetPassword(params.email, { code: params.code, newPassword: value.password });
 
         // Show success message and navigate to login
-        Alert.alert('Success', 'Your password has been reset successfully', [
+        Alert.alert(t('common.success'), t('auth.resetPasswordSuccess'), [
           {
-            text: 'Login',
+            text: t('auth.login'),
             onPress: () => router.replace('/auth'),
           },
         ]);
       } catch (error) {
-        Alert.alert('Error', error instanceof Error ? error.message : 'Failed to reset password');
+        console.log('Reset password error:', error);
+        Alert.alert(
+          t('common.error'),
+          error instanceof Error ? error.message : t('auth.resetPasswordFailed'),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -161,7 +156,7 @@ export default function ResetPasswordScreen() {
     <View className="ios:bg-card flex-1" style={{ paddingBottom: insets.bottom }}>
       <Stack.Screen
         options={{
-          title: 'Reset Password',
+          title: t('auth.resetPassword'),
           headerShadowVisible: false,
         }}
       />
@@ -180,10 +175,10 @@ export default function ResetPasswordScreen() {
               resizeMode="contain"
             />
             <Text variant="title1" className="ios:font-bold pb-1 pt-4 text-center">
-              Create New Password
+              {t('auth.createNewPassword')}
             </Text>
             <Text className="px-4 pt-2 text-center text-muted-foreground">
-              Your new password must be different from previously used passwords.
+              {t('auth.newPasswordDifferent')}
             </Text>
           </View>
           <View className="ios:pt-4 pt-6">
@@ -197,12 +192,12 @@ export default function ResetPasswordScreen() {
                         <View>
                           <TextField
                             placeholder={Platform.select({
-                              ios: 'New Password',
+                              ios: t('auth.newPassword'),
                               default: '',
                             })}
                             label={Platform.select({
                               ios: undefined,
-                              default: 'New Password',
+                              default: t('auth.newPassword'),
                             })}
                             onSubmitEditing={() => KeyboardController.setFocusTo('next')}
                             onFocus={() => setFocusedTextField('password')}
@@ -223,9 +218,11 @@ export default function ResetPasswordScreen() {
                           {field.state.value ? (
                             <View className="mt-2 px-1">
                               <View className="mb-1 flex-row justify-between">
-                                <Text className="text-xs text-gray-500">Password strength:</Text>
+                                <Text className="text-xs text-gray-500">
+                                  {t('auth.passwordStrength')}
+                                </Text>
                                 <Text className="text-xs font-medium">
-                                  {passwordStrength.label}
+                                  {t(passwordStrength.labelKey)}
                                 </Text>
                               </View>
                               <View className="h-1 overflow-hidden rounded-full bg-gray-200">
@@ -246,7 +243,7 @@ export default function ResetPasswordScreen() {
                                     color={field.state.value.length >= 8 ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 8 characters
+                                    {t('auth.atLeast8Characters')}
                                   </Text>
                                 </View>
                                 <View className="flex-row items-center">
@@ -258,7 +255,7 @@ export default function ResetPasswordScreen() {
                                     color={/[A-Z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 1 uppercase letter
+                                    {t('auth.atLeast1Uppercase')}
                                   </Text>
                                 </View>
                                 <View className="flex-row items-center">
@@ -270,7 +267,7 @@ export default function ResetPasswordScreen() {
                                     color={/[a-z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 1 lowercase letter
+                                    {t('auth.atLeast1Lowercase')}
                                   </Text>
                                 </View>
                                 <View className="flex-row items-center">
@@ -282,7 +279,7 @@ export default function ResetPasswordScreen() {
                                     color={/[0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 1 number
+                                    {t('auth.atLeast1Number')}
                                   </Text>
                                 </View>
                                 <View className="flex-row items-center">
@@ -298,7 +295,7 @@ export default function ResetPasswordScreen() {
                                     }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
-                                    At least 1 special character
+                                    {t('auth.atLeast1Special')}
                                   </Text>
                                 </View>
                               </View>
@@ -314,12 +311,12 @@ export default function ResetPasswordScreen() {
                     {(field) => (
                       <TextField
                         placeholder={Platform.select({
-                          ios: 'Confirm password',
+                          ios: t('auth.confirmPassword'),
                           default: '',
                         })}
                         label={Platform.select({
                           ios: undefined,
-                          default: 'Confirm password',
+                          default: t('auth.confirmPassword'),
                         })}
                         onFocus={() => setFocusedTextField('confirm-password')}
                         onBlur={() => {
@@ -341,7 +338,7 @@ export default function ResetPasswordScreen() {
                 {/* Password visibility checkbox */}
                 <View className="mb-4 mt-2 flex-row items-center">
                   <Checkbox checked={passwordVisible} onCheckedChange={setPasswordVisible} />
-                  <Text className="ml-2 text-sm text-gray-700">Show password</Text>
+                  <Text className="ml-2 text-sm text-gray-700">{t('auth.showPassword')}</Text>
                 </View>
               </FormSection>
             </Form>
@@ -358,7 +355,7 @@ export default function ResetPasswordScreen() {
                   disabled={!canSubmit || isLoading}
                   onPress={() => form.handleSubmit()}
                 >
-                  <Text>{isLoading ? 'Resetting...' : 'Reset Password'}</Text>
+                  <Text>{isLoading ? t('auth.resetting') : t('auth.resetPassword')}</Text>
                 </Button>
               )}
             </form.Subscribe>
@@ -380,10 +377,10 @@ export default function ResetPasswordScreen() {
                 >
                   <Text className="text-sm">
                     {isLoading
-                      ? 'Resetting...'
+                      ? t('auth.resetting')
                       : focusedTextField !== 'confirm-password'
-                        ? 'Next'
-                        : 'Reset Password'}
+                        ? t('auth.next')
+                        : t('auth.resetPassword')}
                   </Text>
                 </Button>
               )}

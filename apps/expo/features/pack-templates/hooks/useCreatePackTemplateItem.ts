@@ -1,5 +1,6 @@
 // useCreatePackTemplateItem.ts
 
+import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid/non-secure';
 import { useCallback } from 'react';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
@@ -18,10 +19,8 @@ export function useCreatePackTemplateItem() {
         deleted: false,
       };
 
-      // @ts-ignore: Safe because Legend-State uses Proxy
-      packTemplateItemsStore[id].set(newItem);
-      // @ts-ignore: Safe because Legend-State uses Proxy
-      packTemplatesStore[packTemplateId].localUpdatedAt.set(new Date().toISOString());
+      obs(packTemplateItemsStore, id).set(newItem);
+      obs(packTemplatesStore, packTemplateId).localUpdatedAt.set(new Date().toISOString());
     },
     [],
   );

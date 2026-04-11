@@ -43,7 +43,7 @@ export function createTools(c: Context, userId: number) {
 
           return {
             success: true,
-            pack: {
+            data: {
               ...pack,
               categories,
             },
@@ -78,7 +78,7 @@ export function createTools(c: Context, userId: number) {
           }
           return {
             success: true,
-            item,
+            data: item,
           };
         } catch (error) {
           console.error('getPackItemDetails tool error', error);
@@ -105,7 +105,9 @@ export function createTools(c: Context, userId: number) {
           const weatherData = await weatherService.getWeatherForLocation(location);
           return {
             success: true,
-            ...weatherData,
+            data: {
+              ...weatherData,
+            },
           };
         } catch (error) {
           console.error('getWeatherForLocation tool error', error);
@@ -159,8 +161,8 @@ export function createTools(c: Context, userId: number) {
       },
     }),
 
-    semanticCatalogSearch: tool({
-      description: 'Search the comprehensive gear database using semantic search.',
+    catalogVectorSearch: tool({
+      description: 'Search the comprehensive gear database using vector search.',
       inputSchema: z.object({
         query: z.string().min(1).describe('Search query to find catalog items'),
         limit: z
@@ -173,19 +175,22 @@ export function createTools(c: Context, userId: number) {
       }),
       execute: async ({ query, limit, offset }) => {
         try {
-          const items = await catalogService.semanticSearch(query, limit || 10, offset || 0);
+          const data = await catalogService.vectorSearch(query, {
+            limit: limit || 10,
+            offset: offset || 0,
+          });
           return {
             success: true,
-            items,
+            data,
           };
         } catch (error) {
-          console.error('semanticCatalogSearch tool error', error);
-          sentry.setTag('location', 'ai-tool-call/semanticCatalogSearch');
+          console.error('catalogVectorSearch tool error', error);
+          sentry.setTag('location', 'ai-tool-call/catalogVectorSearch');
           sentry.setContext('meta', { query });
           sentry.captureException(error);
           return {
             success: false,
-            error: error instanceof Error ? error.message : 'Failed to perform semantic search',
+            error: error instanceof Error ? error.message : 'Failed to perform vector search',
           };
         }
       },
@@ -208,7 +213,7 @@ export function createTools(c: Context, userId: number) {
           const results = await aiService.searchPackratOutdoorGuidesRAG(query, limit || 5);
           return {
             success: true,
-            results,
+            data: results,
           };
         } catch (error) {
           console.error('searchPackratOutdoorGuidesRAG', error);
@@ -240,7 +245,7 @@ export function createTools(c: Context, userId: number) {
           const result = await aiService.perplexitySearch(query);
 
           return {
-            ...result,
+            data: result,
             success: true,
           };
         } catch (error) {

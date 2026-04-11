@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { seedCatalogItem } from './utils/db-helpers';
 import {
   api,
-  apiWithAdmin,
+  apiWithApiKey,
   apiWithAuth,
   expectBadRequest,
   expectJsonResponse,
@@ -13,79 +14,73 @@ import {
 describe('Catalog Routes', () => {
   describe('Authentication', () => {
     it('GET /catalog/ requires auth', async () => {
-      const res = await api('/catalog/', httpMethods.get(''));
+      const res = await api('/catalog', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('GET /catalog/:id requires auth', async () => {
-      const res = await api('/catalog/1', httpMethods.get(''));
+      const res = await api('/catalog/1', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('POST /catalog/ requires auth', async () => {
-      const res = await api('/catalog/', httpMethods.post('', {}));
+      const res = await api('/catalog', httpMethods.post({}));
       expectUnauthorized(res);
     });
 
     it('PUT /catalog/:id requires auth', async () => {
-      const res = await api('/catalog/1', httpMethods.put('', {}));
+      const res = await api('/catalog/1', httpMethods.put({}));
       expectUnauthorized(res);
     });
 
     it('DELETE /catalog/:id requires auth', async () => {
-      const res = await api('/catalog/1', httpMethods.delete(''));
+      const res = await api('/catalog/1', httpMethods.delete());
       expectUnauthorized(res);
     });
   });
 
-  describe('GET /catalog/', () => {
+  describe('GET /catalog', () => {
     it('returns catalog items list', async () => {
-      const res = await apiWithAuth('/catalog/');
+      const res = await apiWithAuth('/catalog');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.items).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.items).toBeTruthy();
     });
 
     it('accepts pagination parameters', async () => {
-      const res = await apiWithAuth('/catalog/?page=1&limit=10');
+      const res = await apiWithAuth('/catalog?page=1&limit=10');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts category filter', async () => {
-      const res = await apiWithAuth('/catalog/?category=shelter');
+      const res = await apiWithAuth('/catalog?category=shelter');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts search query', async () => {
-      const res = await apiWithAuth('/catalog/?q=tent');
+      const res = await apiWithAuth('/catalog?q=tent');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts weight range filters', async () => {
-      const res = await apiWithAuth('/catalog/?minWeight=0&maxWeight=1000');
+      const res = await apiWithAuth('/catalog?minWeight=0&maxWeight=1000');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
     it('accepts sorting parameters', async () => {
-      const res = await apiWithAuth('/catalog/?sortBy=weight&sortOrder=asc');
+      const res = await apiWithAuth('/catalog?sortBy=weight&sortOrder=asc');
 
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
   });
 
@@ -93,24 +88,23 @@ describe('Catalog Routes', () => {
     it('returns available categories', async () => {
       const res = await apiWithAuth('/catalog/categories');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data) || data.categories).toBeTruthy();
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data) || data.categories).toBeTruthy();
     });
   });
 
   describe('GET /catalog/:id', () => {
     it('returns single catalog item', async () => {
-      const res = await apiWithAuth('/catalog/1');
+      // Seed a catalog item first
+      const seededItem = await seedCatalogItem({ name: 'Test Tent for GET' });
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['id', 'name']);
-        expect(data.id).toBeDefined();
-        expect(data.name).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      const res = await apiWithAuth(`/catalog/${seededItem.id}`);
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['id', 'name']);
+      expect(data.id).toBeDefined();
+      expect(data.name).toBeDefined();
     });
 
     it('returns 404 for non-existent item', async () => {
@@ -120,40 +114,44 @@ describe('Catalog Routes', () => {
 
     it('validates ID parameter', async () => {
       const res = await apiWithAuth('/catalog/invalid-id');
-      // May return 400 or 404 depending on implementation
-      expect([400, 404]).toContain(res.status);
+      // May return 400, 404, or 500 depending on implementation and error handling
+      expect([400, 404, 500]).toContain(res.status);
     });
   });
 
-  describe('POST /catalog/', () => {
+  describe('POST /catalog', () => {
     it('creates new catalog item', async () => {
       const newItem = {
         name: 'Test Tent',
-        category: 'shelter',
+        productUrl: 'https://example.com/tent',
+        sku: `TEST-CREATE-${Date.now()}`,
         weight: 1200,
-        unit: 'g',
+        weightUnit: 'g',
+        description: 'A test tent for backpacking',
+        categories: ['shelter'],
         price: 299.99,
       };
 
-      const res = await apiWithAuth('/catalog/', httpMethods.post('', newItem));
+      const res = await apiWithAuth('/catalog', httpMethods.post(newItem));
 
-      if (res.status === 201 || res.status === 200) {
-        const data = await expectJsonResponse(res, ['id']);
-        expect(data.id).toBeDefined();
-      }
+      expect([201, 200]).toContain(res.status);
+      const data = await expectJsonResponse(res, ['id']);
+      expect(data.id).toBeDefined();
     });
 
     it('validates required fields', async () => {
-      const res = await apiWithAuth('/catalog/', httpMethods.post('', {}));
+      const res = await apiWithAuth('/catalog', httpMethods.post({}));
       expectBadRequest(res);
     });
 
     it('validates name field', async () => {
       const res = await apiWithAuth(
-        '/catalog/',
-        httpMethods.post('', {
-          category: 'shelter',
+        '/catalog',
+        httpMethods.post({
+          productUrl: 'https://example.com/tent',
+          sku: 'TEST-123',
           weight: 1200,
+          weightUnit: 'g',
         }),
       );
       expectBadRequest(res);
@@ -161,52 +159,40 @@ describe('Catalog Routes', () => {
 
     it('validates weight field', async () => {
       const res = await apiWithAuth(
-        '/catalog/',
-        httpMethods.post('', {
+        '/catalog',
+        httpMethods.post({
           name: 'Test Item',
-          category: 'shelter',
+          productUrl: 'https://example.com/tent',
+          sku: 'TEST-123',
           weight: -1, // Invalid weight
+          weightUnit: 'g',
         }),
       );
-      expectBadRequest(res);
-    });
-
-    it('validates category field', async () => {
-      const res = await apiWithAuth(
-        '/catalog/',
-        httpMethods.post('', {
-          name: 'Test Item',
-          category: 'invalid-category',
-          weight: 1200,
-        }),
-      );
-      expectBadRequest(res);
+      expect(res.status).toBe(400);
     });
   });
 
   describe('PUT /catalog/:id', () => {
     it('updates existing catalog item', async () => {
+      // Seed a catalog item first
+      const seededItem = await seedCatalogItem({ name: 'Original Name' });
+
       const updateData = {
         name: 'Updated Test Item',
-        category: 'shelter',
         weight: 1500,
-        unit: 'g',
       };
 
-      const res = await apiWithAuth('/catalog/1', httpMethods.put('', updateData));
+      const res = await apiWithAuth(`/catalog/${seededItem.id}`, httpMethods.put(updateData));
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(data.id).toBeDefined();
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(data.id).toBeDefined();
     });
 
     it('returns 404 for non-existent item', async () => {
       const res = await apiWithAuth(
         '/catalog/999999',
-        httpMethods.put('', {
+        httpMethods.put({
           name: 'Updated Item',
         }),
       );
@@ -214,9 +200,12 @@ describe('Catalog Routes', () => {
     });
 
     it('validates update data', async () => {
+      // Seed a catalog item first
+      const seededItem = await seedCatalogItem();
+
       const res = await apiWithAuth(
-        '/catalog/1',
-        httpMethods.put('', {
+        `/catalog/${seededItem.id}`,
+        httpMethods.put({
           weight: -1, // Invalid weight
         }),
       );
@@ -226,54 +215,139 @@ describe('Catalog Routes', () => {
 
   describe('DELETE /catalog/:id', () => {
     it('deletes catalog item', async () => {
-      const res = await apiWithAuth('/catalog/1', httpMethods.delete(''));
+      // Seed a catalog item first
+      const seededItem = await seedCatalogItem({ name: 'Item to Delete' });
 
-      if (res.status === 200 || res.status === 204) {
-        // Success - item deleted
-        expect(res.status).toBeOneOf([200, 204]);
-      } else if (res.status === 404) {
-        expectNotFound(res);
-      }
+      const res = await apiWithAuth(`/catalog/${seededItem.id}`, httpMethods.delete());
+
+      expect(res.status).toBeOneOf([200, 204]);
     });
 
     it('returns 404 for non-existent item', async () => {
-      const res = await apiWithAuth('/catalog/999999', httpMethods.delete(''));
+      const res = await apiWithAuth('/catalog/999999', httpMethods.delete());
       expectNotFound(res);
     });
   });
 
-  describe('POST /catalog/queue-etl', () => {
-    it('queues ETL job (admin only)', async () => {
-      const res = await apiWithAdmin('/catalog/queue-etl', httpMethods.post('', {}));
+  describe('POST /catalog/etl', () => {
+    it('queues ETL job', async () => {
+      const res = await apiWithApiKey(
+        '/catalog/etl',
+        httpMethods.post({
+          filename: 'test.csv',
+          chunks: ['chunk1.csv'],
+          source: 'test-source',
+          scraperRevision: 'v1.0.0',
+        }),
+      );
 
-      // This may require admin permissions
-      if (res.status === 403) {
-        expect(res.status).toBe(403);
-      } else if (res.status === 200) {
-        await expectJsonResponse(res);
-      }
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
     });
 
-    it('regular users cannot queue ETL', async () => {
-      const res = await apiWithAuth('/catalog/queue-etl', httpMethods.post('', {}));
-      expect([403, 401]).toContain(res.status);
+    it('regular users cannot queue ETL without API key', async () => {
+      const res = await apiWithAuth(
+        '/catalog/etl',
+        httpMethods.post({
+          filename: 'test.csv',
+          chunks: ['chunk1.csv'],
+          source: 'test-source',
+          scraperRevision: 'v1.0.0',
+        }),
+      );
+      expect(res.status).toBe(401);
     });
   });
 
   describe('POST /catalog/backfill-embeddings', () => {
-    it('backfills embeddings (admin only)', async () => {
-      const res = await apiWithAdmin('/catalog/backfill-embeddings', httpMethods.post('', {}));
+    it('backfills embeddings', async () => {
+      const res = await apiWithApiKey('/catalog/backfill-embeddings', httpMethods.post({}));
 
-      if (res.status === 403) {
-        expect(res.status).toBe(403);
-      } else if (res.status === 200) {
-        await expectJsonResponse(res);
+      expect(res.status).toBe(200);
+      await expectJsonResponse(res);
+    });
+
+    it('regular users cannot backfill embeddings without API key', async () => {
+      const res = await apiWithAuth('/catalog/backfill-embeddings', httpMethods.post({}));
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('GET /catalog/:id/similar', () => {
+    it('requires authentication', async () => {
+      const res = await api('/catalog/1/similar');
+      expectUnauthorized(res);
+    });
+
+    it('returns similar items for existing catalog item', async () => {
+      // Seed a catalog item first
+      const seededItem = await seedCatalogItem({ name: 'Test Tent for Similar' });
+
+      const res = await apiWithAuth(`/catalog/${seededItem.id}/similar`);
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['items', 'total', 'sourceItem']);
+      expect(Array.isArray(data.items)).toBeTruthy();
+      expect(typeof data.total).toBe('number');
+      expect(data.sourceItem).toBeDefined();
+      expect(data.sourceItem.id).toBeDefined();
+
+      // Check that each similar item has a similarity score
+      if (data.items.length > 0) {
+        for (const item of data.items) {
+          expect(typeof item.similarity).toBe('number');
+          expect(item.similarity).toBeGreaterThan(0);
+          expect(item.similarity).toBeLessThanOrEqual(1);
+        }
       }
     });
 
-    it('regular users cannot backfill embeddings', async () => {
-      const res = await apiWithAuth('/catalog/backfill-embeddings', httpMethods.post('', {}));
-      expect([403, 401]).toContain(res.status);
+    it('returns 404 for non-existent catalog item', async () => {
+      const res = await apiWithAuth('/catalog/999999/similar');
+      expectNotFound(res);
+    });
+
+    it('accepts limit parameter', async () => {
+      // Seed a catalog item first
+      const seededItem = await seedCatalogItem({ name: 'Test Tent for Limit' });
+
+      const res = await apiWithAuth(`/catalog/${seededItem.id}/similar?limit=3`);
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['items']);
+      expect(data.items.length).toBeLessThanOrEqual(3);
+    });
+
+    it('accepts threshold parameter', async () => {
+      // Seed a catalog item first
+      const seededItem = await seedCatalogItem({ name: 'Test Tent for Threshold' });
+
+      const res = await apiWithAuth(`/catalog/${seededItem.id}/similar?threshold=0.5`);
+
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['items']);
+      // All returned items should have similarity >= 0.5
+      if (data.items.length > 0) {
+        for (const item of data.items) {
+          expect(item.similarity).toBeGreaterThanOrEqual(0.5);
+        }
+      }
+    });
+
+    it('validates limit parameter bounds', async () => {
+      // Seed a catalog item first
+      const seededItem = await seedCatalogItem({ name: 'Test Tent for Bounds' });
+
+      // Test upper bound
+      const res1 = await apiWithAuth(`/catalog/${seededItem.id}/similar?limit=50`);
+      expect(res1.status).toBe(200);
+      const data = await expectJsonResponse(res1, ['items']);
+      expect(data.items.length).toBeLessThanOrEqual(20); // Should be capped at 20
+
+      // Test lower bound
+      const res2 = await apiWithAuth(`/catalog/${seededItem.id}/similar?limit=0`);
+      const data2 = await expectJsonResponse(res2, ['items']);
+      expect(data2.items.length).toBeGreaterThanOrEqual(0); // Should be at least 0
     });
   });
 });

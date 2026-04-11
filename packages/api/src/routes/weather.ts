@@ -7,6 +7,7 @@ import {
   type WeatherAPISearchResponse,
   WeatherCoordinateQuerySchema,
   WeatherForecastSchema,
+  WeatherLocationIdSchema,
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
 import type { Env } from '@packrat/api/types/env';
@@ -179,16 +180,19 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
       if (currentData?.location) {
         // Create a single result from the current conditions response
-        return c.json([
-          {
-            id: currentData.location.id,
-            name: currentData.location.name,
-            region: currentData.location.region,
-            country: currentData.location.country,
-            lat: Number.parseFloat(String(currentData.location.lat)),
-            lon: Number.parseFloat(String(currentData.location.lon)),
-          },
-        ]);
+        return c.json(
+          [
+            {
+              id: currentData.location.id,
+              name: currentData.location.name,
+              region: currentData.location.region,
+              country: currentData.location.country,
+              lat: Number.parseFloat(String(currentData.location.lat)),
+              lon: Number.parseFloat(String(currentData.location.lon)),
+            },
+          ],
+          200,
+        );
       }
     }
 
@@ -225,7 +229,7 @@ const forecastRoute = createRoute({
     'Retrieve detailed weather forecast data including current conditions, daily forecasts, and alerts',
   security: [{ bearerAuth: [] }],
   request: {
-    query: WeatherCoordinateQuerySchema,
+    query: WeatherLocationIdSchema,
   },
   responses: {
     200: {

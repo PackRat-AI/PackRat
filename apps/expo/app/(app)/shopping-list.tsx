@@ -4,6 +4,8 @@ import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
@@ -75,6 +77,7 @@ const SHOPPING_LIST = [
 ];
 
 function PriorityBadge({ priority }: { priority: string }) {
+  const { t } = useTranslation();
   const getColor = () => {
     switch (priority) {
       case 'High':
@@ -88,16 +91,30 @@ function PriorityBadge({ priority }: { priority: string }) {
     }
   };
 
+  const getPriorityKey = (): TranslationKeys => {
+    switch (priority) {
+      case 'High':
+        return 'shopping.high';
+      case 'Medium':
+        return 'shopping.medium';
+      case 'Low':
+        return 'shopping.low';
+      default:
+        return 'shopping.low';
+    }
+  };
+
   return (
     <View className={cn('rounded-full px-2 py-1', getColor())}>
       <Text variant="caption2" className="font-medium text-white">
-        {priority}
+        {t(getPriorityKey())}
       </Text>
     </View>
   );
 }
 
 function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
+  const { t } = useTranslation();
   const { colors } = useColorScheme();
 
   return (
@@ -130,7 +147,7 @@ function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
           <View className="mt-3 flex-row items-center gap-1">
             <Icon name="check-circle" size={16} color={colors.green} />
             <Text variant="footnote" className="text-green-500">
-              Purchased
+              {t('shopping.purchased')}
             </Text>
           </View>
         )}
@@ -140,6 +157,7 @@ function ShoppingItemCard({ item }: { item: (typeof SHOPPING_LIST)[0] }) {
 }
 
 export default function ShoppingListScreen() {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<'all' | 'pending' | 'purchased'>('pending');
 
   const filteredItems = SHOPPING_LIST.filter((item) => {
@@ -151,12 +169,14 @@ export default function ShoppingListScreen() {
 
   return (
     <>
-      <LargeTitleHeader title="Shopping List" />
+      <LargeTitleHeader title={t('shopping.shoppingList')} />
       <ScrollView className="flex-1">
         <View className="p-4">
           <View className="mb-4 flex-row items-center justify-between">
             <Text variant="subhead" className="text-muted-foreground">
-              {SHOPPING_LIST.filter((item) => !item.purchased).length} items to purchase
+              {t('shopping.itemsToPurchase', {
+                count: SHOPPING_LIST.filter((item) => !item.purchased).length,
+              })}
             </Text>
             <View className="flex-row overflow-hidden rounded-lg bg-card">
               <Pressable
@@ -172,7 +192,7 @@ export default function ShoppingListScreen() {
                     filter === 'pending' ? 'text-primary-foreground' : 'text-muted-foreground'
                   }
                 >
-                  To Buy
+                  {t('shopping.toBuy')}
                 </Text>
               </Pressable>
               <Pressable
@@ -188,7 +208,7 @@ export default function ShoppingListScreen() {
                     filter === 'purchased' ? 'text-primary-foreground' : 'text-muted-foreground'
                   }
                 >
-                  Purchased
+                  {t('shopping.purchased')}
                 </Text>
               </Pressable>
               <Pressable
@@ -199,7 +219,7 @@ export default function ShoppingListScreen() {
                   variant="subhead"
                   className={filter === 'all' ? 'text-primary-foreground' : 'text-muted-foreground'}
                 >
-                  All
+                  {t('shopping.all')}
                 </Text>
               </Pressable>
             </View>

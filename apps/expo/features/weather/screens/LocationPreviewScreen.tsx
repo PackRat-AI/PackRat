@@ -6,6 +6,7 @@ import {
   getWeatherData,
 } from 'expo-app/features/weather/lib/weatherService';
 import { cn } from 'expo-app/lib/cn';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 // import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -25,6 +26,7 @@ import type { WeatherLocation } from '../types';
 
 export default function LocationPreviewScreen() {
   const params = useLocalSearchParams();
+  const { t } = useTranslation();
   // const { colors, colorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
   const { addLocation } = useLocations();
@@ -63,11 +65,11 @@ export default function LocationPreviewScreen() {
           setGradientColors(getWeatherBackgroundColors(weatherCode, isNight));
         }
       } else {
-        setError('Failed to load weather data');
+        setError(t('weather.failedToLoadWeather'));
       }
     } catch (err) {
       console.error('Error loading weather data:', err);
-      setError('An error occurred while loading weather data');
+      setError(t('weather.errorLoadingWeather'));
     } finally {
       setIsLoading(false);
     }
@@ -87,19 +89,23 @@ export default function LocationPreviewScreen() {
     try {
       addLocation(weatherData);
 
-      Alert.alert('Location Saved', `${weatherData.name} has been added to your saved locations.`, [
-        {
-          text: 'View All Locations',
-          onPress: () => router.replace('/weather'),
-        },
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
+      Alert.alert(
+        t('weather.locationSaved'),
+        t('weather.locationSavedMessage', { name: weatherData.name }),
+        [
+          {
+            text: t('weather.viewAllLocations'),
+            onPress: () => router.replace('/weather'),
+          },
+          {
+            text: t('common.ok'),
+            onPress: () => router.back(),
+          },
+        ],
+      );
     } catch (err) {
       console.error('Error saving location:', err);
-      Alert.alert('Error', 'Failed to save location. Please try again.');
+      Alert.alert(t('common.error'), t('weather.errorSavingLocation'));
     } finally {
       setIsSaving(false);
     }
@@ -139,7 +145,7 @@ export default function LocationPreviewScreen() {
               {isSaving ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text className="text-white">Save Location</Text>
+                <Text className="text-white">{t('weather.saveLocation')}</Text>
               )}
             </TouchableOpacity>
           )}
@@ -156,7 +162,7 @@ export default function LocationPreviewScreen() {
             {isLoading ? (
               <View className="items-center justify-center py-20">
                 <ActivityIndicator size="large" color="white" />
-                <Text className="mt-4 text-white">Loading weather data...</Text>
+                <Text className="mt-4 text-white">{t('weather.loadingWeather')}</Text>
               </View>
             ) : error ? (
               <View className="items-center justify-center py-20">
@@ -166,7 +172,7 @@ export default function LocationPreviewScreen() {
                   className="mt-4 rounded-full bg-white/20 px-4 py-2"
                   onPress={loadWeatherData}
                 >
-                  <Text className="text-white">Try Again</Text>
+                  <Text className="text-white">{t('weather.tryAgain')}</Text>
                 </TouchableOpacity>
               </View>
             ) : weatherData ? (
@@ -192,7 +198,9 @@ export default function LocationPreviewScreen() {
                     disabled={isLoading}
                   >
                     <Icon name="restart" color="white" size={20} />
-                    <Text className="text-white">{isLoading ? 'Refreshing...' : 'Refresh'}</Text>
+                    <Text className="text-white">
+                      {isLoading ? t('weather.refreshing') : t('weather.refresh')}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -202,7 +210,9 @@ export default function LocationPreviewScreen() {
                     {weatherData.hourlyForecast ? (
                       weatherData.hourlyForecast.map((hour, index) => (
                         <View key={hour.time} className="mr-4 min-w-[50px] items-center">
-                          <Text className="text-white">{index === 0 ? 'Now' : hour.time}</Text>
+                          <Text className="text-white">
+                            {index === 0 ? t('weather.now') : hour.time}
+                          </Text>
                           <WeatherIcon
                             code={hour.weatherCode}
                             isDay={hour.isDay}
@@ -215,7 +225,9 @@ export default function LocationPreviewScreen() {
                       ))
                     ) : (
                       <View className="w-full items-center justify-center py-4">
-                        <Text className="text-white/80">Hourly forecast not available</Text>
+                        <Text className="text-white/80">
+                          {t('weather.hourlyForecastNotAvailable')}
+                        </Text>
                       </View>
                     )}
                   </ScrollView>
@@ -225,9 +237,8 @@ export default function LocationPreviewScreen() {
                 <View className="mt-4 rounded-xl bg-white/10 p-4">
                   <Text className="mb-2 font-medium text-white">
                     {weatherData.dailyForecast
-                      ? `${weatherData.dailyForecast.length}-DAY`
-                      : 'DAILY'}{' '}
-                    FORECAST
+                      ? t('weather.dayForecast', { count: weatherData.dailyForecast.length })
+                      : t('weather.dailyForecast')}
                   </Text>
                   {weatherData.dailyForecast ? (
                     weatherData.dailyForecast.map((day, index) => (
@@ -258,44 +269,46 @@ export default function LocationPreviewScreen() {
                     ))
                   ) : (
                     <View className="items-center justify-center py-4">
-                      <Text className="text-white/80">Daily forecast not available</Text>
+                      <Text className="text-white/80">
+                        {t('weather.dailyForecastNotAvailable')}
+                      </Text>
                     </View>
                   )}
                 </View>
 
                 {/* Weather details */}
                 <View className="mb-6 mt-4 rounded-xl bg-white/10 p-4">
-                  <Text className="mb-2 font-medium text-white">DETAILS</Text>
+                  <Text className="mb-2 font-medium text-white">{t('weather.details')}</Text>
                   <View className="flex-row flex-wrap">
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">Feels Like</Text>
+                      <Text className="text-white/70">{t('weather.feelsLike')}</Text>
                       <Text className="text-xl text-white">
                         {weatherData.details?.feelsLike || weatherData.temperature}°
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">Humidity</Text>
+                      <Text className="text-white/70">{t('weather.humidity')}</Text>
                       <Text className="text-xl text-white">
                         {weatherData.details?.humidity || '62'}%
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">Visibility</Text>
+                      <Text className="text-white/70">{t('weather.visibility')}</Text>
                       <Text className="text-xl text-white">
                         {weatherData.details?.visibility || '10'} mi
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">UV Index</Text>
+                      <Text className="text-white/70">{t('weather.uvIndex')}</Text>
                       <Text className="text-xl text-white">
                         {weatherData.details?.uvIndex || '6'}{' '}
                         {weatherData.details?.uvIndex && weatherData.details.uvIndex > 5
-                          ? '(High)'
+                          ? t('weather.high')
                           : ''}
                       </Text>
                     </View>
                     <View className="w-1/2 p-2">
-                      <Text className="text-white/70">Wind</Text>
+                      <Text className="text-white/70">{t('weather.wind')}</Text>
                       <Text className="text-xl text-white">
                         {weatherData.details?.windSpeed || '5'} mph
                       </Text>

@@ -35,10 +35,9 @@ export default function LandingHero() {
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 20 },
     visible: {
       y: 0,
-      opacity: 1,
       transition: {
         type: 'spring' as const,
         stiffness: 100,
@@ -76,12 +75,12 @@ export default function LandingHero() {
               className="text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl xl:text-6xl max-w-screen-sm"
               variants={itemVariants}
             >
-              <span className="block text-foreground">{siteConfig.hero.title.split('.')[0]}.</span>
+              <span className="block text-foreground">{siteConfig.hero.titleLine1}</span>
               <GradientText
                 className="block mt-1"
                 gradient="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient"
               >
-                {siteConfig.hero.title.split('.')[1]}.
+                {siteConfig.hero.titleLine2}
               </GradientText>
             </motion.h1>
 
@@ -116,19 +115,27 @@ export default function LandingHero() {
               </Button>
             </motion.div>
 
+            {siteConfig.hero.socialProof && (
+              <motion.p
+                className="text-xs text-muted-foreground flex items-center gap-1"
+                variants={itemVariants}
+              >
+                <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
+                {siteConfig.hero.socialProof}
+              </motion.p>
+            )}
+
             <motion.div
               className="flex flex-col sm:flex-row items-center gap-6 pt-4"
               variants={itemVariants}
             >
               <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
+                {siteConfig.testimonials.items.slice(0, 4).map((user) => (
                   <div
-                    key={i}
+                    key={user.id}
                     className="w-10 h-10 rounded-full border-2 border-background flex items-center justify-center overflow-hidden bg-primary/20"
                   >
-                    <span className="text-xs font-bold text-primary">
-                      {String.fromCharCode(64 + i)}
-                    </span>
+                    <span className="text-xs font-bold text-primary">{user.initials}</span>
                   </div>
                 ))}
               </div>
@@ -146,12 +153,12 @@ export default function LandingHero() {
 
           <motion.div
             className="relative mx-auto lg:mx-0"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ scale: 0.95 }}
+            animate={{ scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <DeviceMockup
-              image="/feature-app-dashboard.png"
+              image="/images/app/dashboard.png"
               alt="PackRat App"
               priority
               showReflection
@@ -161,8 +168,8 @@ export default function LandingHero() {
             {/* Floating UI elements - only show on larger screens */}
             <motion.div
               className="absolute top-[10%] -left-16 hidden lg:block"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ x: -20 }}
+              animate={{ x: 0 }}
               transition={{ duration: 0.5, delay: 0.6 }}
             >
               <GlassCard className="p-3 shadow-lg">
@@ -184,8 +191,8 @@ export default function LandingHero() {
 
             <motion.div
               className="absolute bottom-[15%] -right-10 hidden lg:block"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ x: 20 }}
+              animate={{ x: 0 }}
               transition={{ duration: 0.5, delay: 0.8 }}
             >
               <GlassCard className="p-3 shadow-lg">

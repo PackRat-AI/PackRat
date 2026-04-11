@@ -25,8 +25,6 @@ export const CachedImage: React.FC<CachedImageProps> = ({
   const [imageLocalUri, setImageLocalUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  console.log(imageLocalUri);
-
   useEffect(() => {
     if (!imageObjectKey) return;
     const loadImage = async () => {

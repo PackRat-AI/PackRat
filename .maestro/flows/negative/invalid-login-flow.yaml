@@ -1,0 +1,62 @@
+appId: ${APP_ID}
+---
+# Invalid Login Flow: Tests error handling for wrong credentials
+# Verifies the app shows an error dialog and stays on the login form
+- launchApp:
+    clearState: true
+    stopApp: true
+- waitForAnimationToEnd
+
+# Navigate to Sign In
+- extendedWaitUntil:
+    visible:
+      text: "Sign In"
+    timeout: 10000
+
+- tapOn:
+    text: "Sign In"
+- waitForAnimationToEnd
+
+# Handle possible multi-step auth screens
+- runFlow:
+    when:
+      notVisible:
+        text: "Email"
+    commands:
+      - tapOn:
+          text: "Sign In"
+      - waitForAnimationToEnd
+
+# Fill in invalid credentials
+- tapOn:
+    text: "Email"
+- inputText: "invalid@nonexistent.com"
+
+- tapOn:
+    text: "Password"
+- inputText: "wrongpassword123"
+
+- hideKeyboard
+
+# Submit
+- tapOn:
+    text: "Submit"
+- waitForAnimationToEnd
+
+# Should show Login Failed error dialog
+- extendedWaitUntil:
+    visible:
+      text: "Login Failed"
+    timeout: 10000
+
+- assertVisible:
+    text: "Invalid email or password"
+
+# Dismiss the error dialog
+- tapOn:
+    text: "OK"
+- waitForAnimationToEnd
+
+# Should still be on login form
+- assertVisible:
+    text: "Email"

@@ -1,0 +1,1 @@
+ALTER TABLE "etl_jobs" RENAME COLUMN "total_processed" TO "total_count";

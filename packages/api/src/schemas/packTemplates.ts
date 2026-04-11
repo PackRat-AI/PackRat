@@ -8,6 +8,9 @@ export const ErrorResponseSchema = z
     code: z.string().optional().openapi({
       description: 'Error code for programmatic handling',
     }),
+    existingTemplateId: z.string().optional().openapi({
+      description: 'ID of existing template when there is a conflict (409 errors)',
+    }),
   })
   .openapi('ErrorResponse');
 
@@ -59,6 +62,14 @@ export const PackTemplateSchema = z
     updatedAt: z.string().datetime().openapi({
       example: '2024-01-01T12:00:00Z',
       description: 'When the template was last updated on the server',
+    }),
+    contentSource: z.string().nullable().openapi({
+      example: 'tiktok',
+      description: 'Source platform where this template was imported from',
+    }),
+    contentId: z.string().nullable().openapi({
+      example: '1234567890',
+      description: 'ID of the content from the source platform',
     }),
   })
   .openapi('PackTemplate');
@@ -171,7 +182,7 @@ export const UpdatePackTemplateRequestSchema = z
       example: 'Weekend Backpacking Template',
       description: 'Template name',
     }),
-    description: z.string().optional().openapi({
+    description: z.string().nullable().openapi({
       example: 'Essential gear for a 2-3 day backpacking trip',
       description: 'Template description',
     }),
@@ -179,13 +190,13 @@ export const UpdatePackTemplateRequestSchema = z
       example: 'Backpacking',
       description: 'Template category',
     }),
-    image: z.string().url().optional().openapi({
+    image: z.string().url().nullable().openapi({
       example: 'https://example.com/template-image.jpg',
       description: 'Template image URL',
     }),
     tags: z
       .array(z.string())
-      .optional()
+      .nullable()
       .openapi({
         example: ['backpacking', 'weekend', 'hiking'],
         description: 'Template tags for categorization',
@@ -237,10 +248,7 @@ export const CreatePackTemplateItemRequestSchema = z
       example: false,
       description: 'Whether this item is worn (not carried)',
     }),
-    image: z.string().url().optional().openapi({
-      example: 'https://example.com/tent.jpg',
-      description: 'Item image URL',
-    }),
+    image: z.string().nullish().openapi({ example: '35-Ly81kdLKn1Z1pHpmiQu8A.jpg' }),
     notes: z.string().optional().openapi({
       example: 'Great for summer conditions',
       description: 'Additional notes about the item',
@@ -302,3 +310,18 @@ export const SuccessResponseSchema = z
     }),
   })
   .openapi('SuccessResponse');
+
+export const GenerateFromOnlineContentRequestSchema = z
+  .object({
+    contentUrl: z.string().url().openapi({
+      example: 'https://www.tiktok.com/@user/video/1234567890',
+      description: 'The content URL (supports YouTube and TikTok content)',
+    }),
+    isAppTemplate: z.boolean().optional().default(true).openapi({
+      example: true,
+      description: 'Whether this should be a featured template (admin only)',
+    }),
+  })
+  .openapi('GenerateFromOnlineContentRequest');
+
+export const GenerateFromOnlineContentResponseSchema = PackTemplateWithItemsSchema;

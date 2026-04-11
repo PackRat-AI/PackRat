@@ -1,0 +1,27 @@
+appId: ${APP_ID}
+---
+# Empty Pack Submit Flow: Verify form validation prevents empty pack creation
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap create pack button
+- tapOn:
+    id: "create-pack-button"
+- waitForAnimationToEnd
+
+# Try to submit without filling any fields
+- tapOn:
+    id: "submit-pack-button"
+- waitForAnimationToEnd
+
+# Should still be on the form (submit button still visible = didn't navigate away)
+- assertVisible:
+    id: "submit-pack-button"
+
+# Go back
+- back
+- waitForAnimationToEnd

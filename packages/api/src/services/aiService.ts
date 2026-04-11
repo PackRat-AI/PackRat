@@ -1,5 +1,4 @@
 import { createPerplexity } from '@ai-sdk/perplexity';
-import type { AutoRAG } from '@cloudflare/workers-types';
 import type { Env } from '@packrat/api/types/env';
 import { DEFAULT_MODELS } from '@packrat/api/utils/ai/models';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -16,11 +15,14 @@ const WEB_SEARCH_SYSTEM_PROMPT =
 
 export class AIService {
   private env: Env;
-  private guidesRAG: AutoRAG;
+  private guidesRAG: AutoRAG | null = null;
 
   constructor(c: Context) {
     this.env = getEnv(c);
-    this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);
+    // Only initialize RAG if AI binding is available (Cloudflare Workers environment)
+    if (this.env.AI && typeof this.env.AI.autorag === 'function') {
+      this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);
+    }
   }
 
   async perplexitySearch(query: string): Promise<SearchResult> {
@@ -51,6 +53,17 @@ export class AIService {
       data: (AutoRagSearchResponse['data'][0] & { url: string })[];
     }
   > {
+    // Return empty results if AI binding is not available (e.g., in test environment)
+    if (!this.guidesRAG) {
+      return {
+        object: 'vector_store.search_results.page' as const,
+        search_query: query,
+        has_more: false,
+        next_page: null,
+        data: [],
+      };
+    }
+
     const response = await this.guidesRAG.search({
       query,
       max_num_results: limit,

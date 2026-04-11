@@ -1,4 +1,5 @@
 import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
+import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid/non-secure';
 import { useCallback } from 'react';
 import { recordPackWeight } from '../store/packWeightHistory';
@@ -11,16 +12,24 @@ export function useCreatePackItem() {
 
       const newItem: PackItem = {
         id,
-        ...itemData,
+        name: itemData.name,
+        description: itemData.description,
+        weight: itemData.weight,
+        weightUnit: itemData.weightUnit,
+        quantity: itemData.quantity,
         category: itemData.category || 'general',
+        consumable: itemData.consumable,
+        worn: itemData.worn,
+        notes: itemData.notes,
+        image: itemData.image,
+        catalogItemId: itemData.catalogItemId,
         packId,
+        isAIGenerated: false,
         deleted: false,
       };
 
-      // @ts-ignore: Safe because Legend-State uses Proxy
-      packItemsStore[id].set(newItem);
-      // @ts-ignore: Safe because Legend-State uses Proxy
-      packsStore[packId].localUpdatedAt.set(new Date().toISOString());
+      obs(packItemsStore, id).set(newItem);
+      obs(packsStore, packId).localUpdatedAt.set(new Date().toISOString());
       recordPackWeight(packId);
     },
     [],

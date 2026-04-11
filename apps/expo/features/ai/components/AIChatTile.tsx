@@ -1,12 +1,13 @@
 import { ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { isAuthed } from 'expo-app/features/auth/store';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { type Href, useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
 
 export function AIChatTile() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const route: Href = {
     pathname: '/ai-chat',
@@ -15,17 +16,6 @@ export function AIChatTile() {
     },
   };
   const handlePress = () => {
-    if (!isAuthed.peek()) {
-      // AI featuer is protected. Redirect user to the auth page if not authenticated.
-      return router.push({
-        pathname: '/auth',
-        params: {
-          redirectTo: JSON.stringify(route), // stringifying to pass along parameters
-          showSignInCopy: 'true',
-        },
-      });
-    }
-
     router.push(route);
   };
 
@@ -43,13 +33,13 @@ export function AIChatTile() {
       rightView={
         <View className="flex-1 flex-row items-center justify-center gap-2 px-4">
           <Text variant="callout" className="ios:px-0 px-2 text-muted-foreground">
-            Anything outdoors...
+            {t('ai.anythingOutdoors')}
           </Text>
           <ChevronRight />
         </View>
       }
       item={{
-        title: 'PackRat AI',
+        title: t('ai.packratAI'),
       }}
       onPress={handlePress}
       target="Cell"

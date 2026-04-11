@@ -1,0 +1,54 @@
+appId: ${APP_ID}
+---
+# Create Pack Flow: Navigate to packs tab and create a new pack
+- waitForAnimationToEnd
+
+# Navigate to the Packs tab
+- tapOn:
+    text: "Packs"
+
+- waitForAnimationToEnd
+
+# Tap the header "+" button (testID: create-pack-button) to open the pack creation form
+- tapOn:
+    id: "create-pack-button"
+
+- waitForAnimationToEnd
+
+# Fill in Pack Name
+- tapOn:
+    text: "Pack Name"
+- inputText: ${PACK_NAME}
+
+# Fill in Description
+- tapOn:
+    text: "Description"
+- inputText: "Created by Maestro E2E test"
+
+# Dismiss the keyboard before submitting
+- hideKeyboard
+
+# Submit the form via the submit button (testID: submit-pack-button)
+- tapOn:
+    id: "submit-pack-button"
+
+- waitForAnimationToEnd
+
+# Wait until the submit button disappears, confirming navigation away from the form
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-pack-button"
+    timeout: 15000
+
+# Assert the pack was created - we should see the pack name in the list/details
+# Also confirm we are on the packs list by checking for the create button
+- assertVisible:
+    id: "create-pack-button"
+- scrollUntilVisible:
+    element:
+      text: ${PACK_NAME}
+    direction: DOWN
+    timeout: 60000
+    speed: 99
+- assertVisible:
+    text: ${PACK_NAME}

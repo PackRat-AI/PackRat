@@ -1,22 +1,28 @@
 import {
   ActivityIndicator,
   Alert,
-  type AlertRef,
+  type AlertMethods,
   Button,
   LargeTitleHeader,
   Text,
 } from '@packrat/ui/nativewindui';
+import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { PackCard } from 'expo-app/features/packs/components/PackCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { SafeAreaView, TextInput, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Modal, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGeneratePacks } from '../hooks/useGeneratedPacks';
 
 export function AIPacksScreen() {
   const { colors } = useColorScheme();
-  const alertRef = useRef<AlertRef>(null);
-  const generatePacksMutation = useGeneratePacks();
+  const { t } = useTranslation();
+  const alertRef = useRef<AlertMethods>(null);
+  const { mutateAsync: generatePacks, isPending, generatedPacksFromStore } = useGeneratePacks();
+  const [packsModalVisible, setPacksModalVisible] = useState(false);
   const router = useRouter();
 
   const form = useForm({
@@ -25,27 +31,27 @@ export function AIPacksScreen() {
     },
     onSubmit: async ({ value }) => {
       try {
-        const packs = await generatePacksMutation.mutateAsync(value);
+        const packs = await generatePacks(value);
         alertRef.current?.alert({
-          title: 'Packs Generated',
-          message: `Successfully generated ${packs.length} packs.`,
-          materialIcon: { name: 'backpack', color: colors.green },
+          title: t('ai.packsGenerated'),
+          message: t('ai.successfullyGenerated', { count: packs.length }),
+          materialIcon: { name: 'bag-personal', color: colors.green },
           buttons: [
-            { text: 'Return', onPress: () => {} },
+            { text: t('ai.return'), onPress: () => {} },
             {
-              text: 'Go to Packs',
+              text: t('ai.view'),
               onPress: () => {
-                router.push({ pathname: '/packs', params: { view: 'all' } });
+                setPacksModalVisible(true);
               },
             },
           ],
         });
       } catch (error) {
         alertRef.current?.alert({
-          title: 'Error',
-          message: 'Failed to generate packs. Please try again.',
+          title: t('common.error'),
+          message: t('ai.failedToGenerate'),
           materialIcon: { name: 'exclamation', color: colors.destructive },
-          buttons: [{ text: 'OK', onPress: () => {} }],
+          buttons: [{ text: t('common.ok'), onPress: () => {} }],
         });
         console.error('Error generating packs:', error);
       }
@@ -54,13 +60,13 @@ export function AIPacksScreen() {
 
   const handleGeneratePacks = () => {
     alertRef.current?.alert({
-      title: 'Generate Packs',
-      message: `Are you sure you want to generate ${form.getFieldValue('count')} packs?`,
+      title: t('ai.generatePacksButton'),
+      message: t('ai.generatePacksConfirm', { count: form.getFieldValue('count') }),
       materialIcon: { name: 'information-outline', color: colors.primary },
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Generate',
+          text: t('ai.generatePacksButton'),
           onPress: () => form.handleSubmit(),
           style: 'default',
         },
@@ -68,14 +74,19 @@ export function AIPacksScreen() {
     });
   };
 
-  return (
-    <SafeAreaView className="flex-1">
-      <LargeTitleHeader title="AI Packs Admin" backVisible={true} />
+  const insets = useSafeAreaInsets();
 
-      <View className="px-4 py-6 space-y-6">
+  return (
+    <SafeAreaView className="flex-1" style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
+      <LargeTitleHeader title={t('ai.aiPacksAdmin')} backVisible={true} />
+
+      <View
+        className="px-4 py-6 space-y-6"
+        style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+      >
         {/* Generation Form */}
         <View className="bg-card p-4 rounded-xl">
-          <Text className="text-lg font-semibold mb-4">Generate New Packs</Text>
+          <Text className="text-lg font-semibold mb-4">{t('ai.generateNewPacks')}</Text>
 
           <form.Field name="count">
             {(field) => (
@@ -83,28 +94,24 @@ export function AIPacksScreen() {
                 <TextInput
                   className="border border-border rounded-lg px-3 py-2 text-foreground bg-background"
                   value={field.state.value.toString()}
-                  onChangeText={(text) => field.handleChange(Number.parseInt(text) || 1)}
+                  onChangeText={(text) => field.handleChange(Number.parseInt(text, 10) || 1)}
                   keyboardType="numeric"
-                  placeholder="Enter count"
+                  placeholder={t('ai.enterCount')}
                 />
-                <Text variant="caption2">Number of packs to generate</Text>
+                <Text variant="caption2">{t('ai.numberOfPacksToGenerate')}</Text>
               </View>
             )}
           </form.Field>
 
           <View className="mt-4">
-            <Button
-              onPress={handleGeneratePacks}
-              disabled={generatePacksMutation.isPending}
-              className="w-full"
-            >
-              {generatePacksMutation.isPending ? (
+            <Button onPress={handleGeneratePacks} disabled={isPending} className="w-full">
+              {isPending ? (
                 <View className="flex-row items-center space-x-2">
                   <ActivityIndicator size="small" />
-                  <Text>Generating...</Text>
+                  <Text>{t('ai.generating')}</Text>
                 </View>
               ) : (
-                <Text>Generate Packs</Text>
+                <Text>{t('ai.generatePacksButton')}</Text>
               )}
             </Button>
           </View>
@@ -112,12 +119,49 @@ export function AIPacksScreen() {
       </View>
 
       <View className="items-center justify-center p-8">
-        <Text className="text-center text-muted-foreground mt-2">
-          Use the form above to generate packs with AI
-        </Text>
+        <Text className="text-center text-muted-foreground mt-2">{t('ai.useFormAbove')}</Text>
       </View>
 
       <Alert title="" buttons={[]} ref={alertRef} />
+
+      <Modal
+        visible={packsModalVisible}
+        animationType="slide"
+        onRequestClose={() => setPacksModalVisible(false)}
+      >
+        <SafeAreaView className="flex-1 bg-background">
+          <View className="flex-row items-center justify-between border-b border-border p-4">
+            <View className="flex-row items-center">
+              <Text>{t('ai.generatedPacks')}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setPacksModalVisible(false)}>
+              <Icon name="close" size={24} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView className="flex-1 gap-2 px-4 py-6">
+            {generatedPacksFromStore.every((pack) => !!pack) ? (
+              generatedPacksFromStore.map((pack) => (
+                <PackCard
+                  key={pack.id}
+                  pack={pack}
+                  onPress={(pack) => {
+                    router.push({
+                      pathname: '/pack/[id]',
+                      params: { id: pack.id },
+                    });
+                  }}
+                />
+              ))
+            ) : (
+              <View className="flex-1 items-center justify-center p-8">
+                <Text className="text-center text-muted-foreground mt-2">
+                  {t('ai.waitingForSync')}
+                </Text>
+              </View>
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

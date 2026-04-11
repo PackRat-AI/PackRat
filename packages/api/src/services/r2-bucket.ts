@@ -13,7 +13,7 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
-import { isString } from 'radash';
+import { isDate, isNumber, isObject, isString } from '@packrat/guards';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -247,47 +247,98 @@ export class R2BucketService {
       });
 
       const response = await this.s3Client.send(command);
+      const body = response.Body;
 
-      if (!response.Body) {
+      if (!body) {
         return null;
       }
 
-      const stream = response.Body as Readable;
-      const chunks: Uint8Array[] = [];
-
-      // Collect all chunks
-      for await (const chunk of stream) {
-        chunks.push(chunk);
-      }
-
-      const bodyArray = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
-      let offset = 0;
-      for (const chunk of chunks) {
-        bodyArray.set(chunk, offset);
-        offset += chunk.length;
-      }
-
       const r2Object = this.createR2Object(key, { ...response });
+
+      let streamConsumed = false;
+      let webStream: ReadableStream<Uint8Array>;
+
+      const getStream = () => {
+        if (webStream) {
+          return webStream;
+        }
+
+        // Check if it's a Node.js stream (like in a local Node environment)
+        if ('on' in body && typeof body.on === 'function') {
+          const nodeStream = body as Readable;
+          webStream = new globalThis.ReadableStream({
+            start(controller) {
+              nodeStream.on('data', (chunk) => controller.enqueue(chunk));
+              nodeStream.on('end', () => controller.close());
+              nodeStream.on('error', (err) => controller.error(err));
+            },
+            cancel() {
+              nodeStream.destroy();
+            },
+          });
+        } else {
+          // Assume it's a web stream (like in Cloudflare Workers)
+          webStream = body as ReadableStream<Uint8Array>;
+        }
+        return webStream;
+      };
+
+      const consumeStream = async (): Promise<Uint8Array> => {
+        const reader = getStream().getReader();
+        const chunks: Uint8Array[] = [];
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+
+        const bodyArray = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+        let offset = 0;
+        for (const chunk of chunks) {
+          bodyArray.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return bodyArray;
+      };
+
+      const assertStreamNotConsumed = () => {
+        if (streamConsumed) {
+          throw new Error('Body already used');
+        }
+        streamConsumed = true;
+      };
 
       // Create a proper R2ObjectBody
       const objectBody: R2ObjectBody = {
         ...r2Object,
         get body(): ReadableStream {
-          return new globalThis.ReadableStream({
-            start(controller) {
-              controller.enqueue(bodyArray);
-              controller.close();
-            },
-          });
+          assertStreamNotConsumed();
+          return getStream();
         },
         get bodyUsed(): boolean {
-          return false;
+          return streamConsumed;
         },
-        arrayBuffer: async () => bodyArray.buffer,
-        bytes: async () => bodyArray,
-        text: async () => new TextDecoder().decode(bodyArray),
-        json: async <T>() => JSON.parse(new TextDecoder().decode(bodyArray)) as T,
-        blob: async () => new globalThis.Blob([bodyArray]),
+        arrayBuffer: async () => {
+          assertStreamNotConsumed();
+          return (await consumeStream()).buffer as ArrayBuffer;
+        },
+        bytes: async () => {
+          assertStreamNotConsumed();
+          return consumeStream();
+        },
+        text: async () => {
+          assertStreamNotConsumed();
+          return new TextDecoder().decode(await consumeStream());
+        },
+        json: async <T>() => {
+          assertStreamNotConsumed();
+          return JSON.parse(new TextDecoder().decode(await consumeStream())) as T;
+        },
+        blob: async () => {
+          assertStreamNotConsumed();
+          const data = await consumeStream();
+          return new globalThis.Blob([data.buffer as ArrayBuffer]);
+        },
       };
 
       return objectBody;
@@ -368,29 +419,7 @@ export class R2BucketService {
         throw new Error('Cannot put null value');
       }
 
-      let body: Buffer | Uint8Array | string;
-
-      if (value instanceof globalThis.ReadableStream) {
-        const reader = value.getReader();
-        const chunks: Uint8Array[] = [];
-        while (true) {
-          const { done, value: chunk } = await reader.read();
-          if (done) break;
-          chunks.push(chunk);
-        }
-        body = Buffer.concat(chunks);
-      } else if (value instanceof ArrayBuffer) {
-        body = new Uint8Array(value);
-      } else if (ArrayBuffer.isView(value)) {
-        body = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-      } else if (typeof value === 'string') {
-        body = value;
-      } else if (value instanceof globalThis.Blob) {
-        body = new Uint8Array(await value.arrayBuffer());
-      } else {
-        throw new Error('Unsupported value type');
-      }
-
+      const body = await this.convertBodyToUploadable(value);
       const httpMetadata = this.extractHttpMetadata(options?.httpMetadata);
 
       const command = new PutObjectCommand({
@@ -483,28 +512,7 @@ export class R2BucketService {
         value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
         _options?: R2UploadPartOptions,
       ) => {
-        let body: Buffer | Uint8Array | string;
-
-        if (value instanceof globalThis.ReadableStream) {
-          const reader = value.getReader();
-          const chunks: Uint8Array[] = [];
-          while (true) {
-            const { done, value: chunk } = await reader.read();
-            if (done) break;
-            chunks.push(chunk);
-          }
-          body = Buffer.concat(chunks);
-        } else if (value instanceof ArrayBuffer) {
-          body = new Uint8Array(value);
-        } else if (ArrayBuffer.isView(value)) {
-          body = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-        } else if (typeof value === 'string') {
-          body = value;
-        } else if (value instanceof globalThis.Blob) {
-          body = new Uint8Array(await value.arrayBuffer());
-        } else {
-          throw new Error('Unsupported value type');
-        }
+        const body = await this.convertBodyToUploadable(value);
 
         const uploadCommand = new UploadPartCommand({
           Bucket: this.bucketName,
@@ -549,40 +557,82 @@ export class R2BucketService {
     };
   }
 
+  private async convertBodyToUploadable(
+    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | Blob,
+  ): Promise<Buffer | Uint8Array | string> {
+    if (value instanceof globalThis.ReadableStream) {
+      const reader = value.getReader();
+      const chunks: Uint8Array[] = [];
+      while (true) {
+        const { done, value: chunk } = await reader.read();
+        if (done) break;
+        chunks.push(chunk);
+      }
+      return Buffer.concat(chunks);
+    }
+    if (value instanceof ArrayBuffer) {
+      return new Uint8Array(value);
+    }
+    if (ArrayBuffer.isView(value)) {
+      return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+    }
+    if (typeof value === 'string') {
+      return value;
+    }
+    if (value instanceof globalThis.Blob) {
+      return new Uint8Array(await value.arrayBuffer());
+    }
+    throw new Error('Unsupported value type');
+  }
+
   private createR2Object(key: string, response: Record<string, unknown>): R2Object {
-    const r2Object = {
+    const toUploaded = (v: unknown): Date => {
+      if (isDate(v)) return v;
+      if (isString(v) || isNumber(v)) return new Date(v);
+      return new Date();
+    };
+    const toExpiry = (v: unknown): Date | undefined => {
+      if (isDate(v)) return v;
+      if (isString(v) || isNumber(v)) return new Date(v);
+      return undefined;
+    };
+    const toStringRecord = (v: unknown): Record<string, string> => {
+      if (!isObject(v)) return {};
+      const out: Record<string, string> = {};
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+        if (isString(val)) out[k] = val;
+      }
+      return out;
+    };
+
+    const { ContentType, ContentLanguage, ContentDisposition, ContentEncoding, CacheControl } =
+      response;
+
+    const r2Object: R2Object = {
       key,
-      version: response.VersionId || '',
-      size: response.ContentLength || 0,
+      version: isString(response.VersionId) ? response.VersionId : '',
+      size: isNumber(response.ContentLength) ? response.ContentLength : 0,
       etag: isString(response.ETag) ? response.ETag.replace(/"/g, '') : '',
-      httpEtag: response.ETag || '',
+      httpEtag: isString(response.ETag) ? response.ETag : '',
       checksums: this.createChecksums(response),
-      uploaded: new Date(String(response.LastModified) || new Date()),
+      uploaded: toUploaded(response.LastModified),
       httpMetadata: {
-        contentType: response.ContentType,
-        contentLanguage: response.ContentLanguage,
-        contentDisposition: response.ContentDisposition,
-        contentEncoding: response.ContentEncoding,
-        cacheControl: response.CacheControl,
-        cacheExpiry: response.Expires,
+        contentType: isString(ContentType) ? ContentType : undefined,
+        contentLanguage: isString(ContentLanguage) ? ContentLanguage : undefined,
+        contentDisposition: isString(ContentDisposition) ? ContentDisposition : undefined,
+        contentEncoding: isString(ContentEncoding) ? ContentEncoding : undefined,
+        cacheControl: isString(CacheControl) ? CacheControl : undefined,
+        cacheExpiry: toExpiry(response.Expires),
       },
-      customMetadata: response.Metadata || {},
-      storageClass: response.StorageClass || 'STANDARD',
+      customMetadata: toStringRecord(response.Metadata),
+      storageClass: isString(response.StorageClass) ? response.StorageClass : 'STANDARD',
+      range: undefined,
       writeHttpMetadata: (_headers: Record<string, string>) => {
         // This is a no-op in our implementation
       },
     };
 
-    // Add range if present
-    if (response.ContentRange) {
-      // @ts-ignore - ignore
-      r2Object.range = response.ContentRange; // Assign the value if it exists
-    } else {
-      // @ts-ignore - ignore
-      r2Object.range = undefined; // Explicitly set to undefined if not present
-    }
-
-    return r2Object as R2Object;
+    return r2Object;
   }
 
   private createChecksums(response: Record<string, unknown>): R2Checksums {

@@ -10,11 +10,13 @@ import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDe
 import { type CategorySummary, computeCategorySummaries } from 'expo-app/features/packs/utils';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import type { PackItem } from 'expo-app/types';
 import { useLocalSearchParams } from 'expo-router';
 import type React from 'react';
-import { SafeAreaView, ScrollView, View } from 'react-native';
+import { Platform, ScrollView, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function WeightCard({
   title,
@@ -56,7 +58,8 @@ function CustomList({
 }
 function CategoryItem({ category, index }: { category: CategorySummary; index: number }) {
   const { colors } = useColorScheme();
-  const itemLabel = category.items === 1 ? 'item' : 'items';
+  const { t } = useTranslation();
+  const itemLabel = category.items === 1 ? t('packs.item') : t('packs.items');
 
   return (
     <View
@@ -85,6 +88,8 @@ function CategoryItem({ category, index }: { category: CategorySummary; index: n
 }
 
 function ItemRow({ item, index }: { item: PackItem; index: number }) {
+  const { t } = useTranslation();
+
   return (
     <View
       className={cn(
@@ -102,14 +107,14 @@ function ItemRow({ item, index }: { item: PackItem; index: number }) {
         {item.consumable && (
           <View className="mr-2 rounded-full bg-blue-100 px-2 py-0.5">
             <Text variant="caption2" className="text-blue-800">
-              Consumable
+              {t('items.consumable')}
             </Text>
           </View>
         )}
         {item.worn && (
           <View className="mr-2 rounded-full bg-green-100 px-2 py-0.5">
             <Text variant="caption2" className="text-green-800">
-              Worn
+              {t('items.worn')}
             </Text>
           </View>
         )}
@@ -123,19 +128,24 @@ function ItemRow({ item, index }: { item: PackItem; index: number }) {
 
 export default function CurrentPackScreen() {
   const params = useLocalSearchParams();
+  const { t } = useTranslation();
 
   const pack = usePackDetailsFromStore(params.id as string);
   const uniqueCategories = computeCategorySummaries(pack);
+  const insets = useSafeAreaInsets();
 
   return (
-    <SafeAreaView className="flex-1">
-      <LargeTitleHeader title="Current Pack" />
+    <SafeAreaView className="flex-1" style={{ paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
+      <LargeTitleHeader title={t('packs.currentPack')} />
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         removeClippedSubviews={false}
       >
-        <View className="flex-row items-center p-4">
+        <View
+          className="flex-row items-center p-4"
+          style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+        >
           <Avatar className="mr-4 h-16 w-16" alt="">
             <AvatarImage source={{ uri: pack.image }} />
             <AvatarFallback>
@@ -147,21 +157,21 @@ export default function CurrentPackScreen() {
               {pack.name}
             </Text>
             <Text variant="subhead" className="mt-1 text-muted-foreground">
-              Last updated: {getRelativeTime(pack.localUpdatedAt)}
+              {t('packs.lastUpdated', { time: getRelativeTime(pack.localUpdatedAt) })}
             </Text>
           </View>
         </View>
 
         <View className="mb-4 flex-row gap-3 px-4">
-          <WeightCard title="Total Weight" weight={pack?.totalWeight ?? 0} />
-          <WeightCard title="Base Weight" weight={pack?.baseWeight ?? 0} />
+          <WeightCard title={t('packs.totalWeight')} weight={pack?.totalWeight ?? 0} />
+          <WeightCard title={t('packs.baseWeight')} weight={pack?.baseWeight ?? 0} />
         </View>
 
         {/* Categories Section */}
         <View className="mx-4 mb-6 rounded-lg bg-card">
           <View className="border-border/25 dark:border-border/80 border-b p-4">
             <Text variant="heading" className="font-semibold">
-              Categories
+              {t('packs.categoriesLabel')}
             </Text>
           </View>
 
@@ -178,7 +188,7 @@ export default function CurrentPackScreen() {
         <View className="mx-4 mb-8 mt-4 rounded-lg bg-card">
           <View className="border-border/25 dark:border-border/80 border-b p-4">
             <Text variant="heading" className="font-semibold">
-              Items
+              {t('packs.itemsTitleCase')}
             </Text>
           </View>
 

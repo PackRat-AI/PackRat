@@ -1,8 +1,9 @@
-import { LargeTitleHeader, SearchInput, Text } from '@packrat/ui/nativewindui';
+import { Button, LargeTitleHeader, SearchInput, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router, useNavigation } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -10,15 +11,15 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  Platform,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { searchQueryAtom } from '../atoms/locationsAtoms';
 import { LocationCard } from '../components/LocationCard';
 import { WeatherAuthWall } from '../components/WeatherAuthWall';
@@ -28,6 +29,7 @@ function LocationsScreen() {
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useAtom(searchQueryAtom);
   const { locationsState } = useLocations();
   const { setActiveLocation } = useActiveLocation();
@@ -91,9 +93,9 @@ function LocationsScreen() {
     const location = locations.find((loc) => loc.id === locationId);
     if (location) {
       Alert.alert(
-        'Location Set',
-        `${location.name} is now your active location.`,
-        [{ text: 'OK' }],
+        t('weather.locationSet'),
+        t('weather.locationSetMessage', { name: location.name }),
+        [{ text: t('common.ok') }],
         {
           cancelable: true,
         },
@@ -116,9 +118,14 @@ function LocationsScreen() {
   const showLocationsList = filteredLocations.length > 0;
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
       <LargeTitleHeader
-        title="Weather"
+        title={t('weather.weather')}
+        leftView={() => (
+          <Pressable onPress={() => router.back()} className="mr-2">
+            <Icon name="arrow-left" color={colors.foreground} size={24} />
+          </Pressable>
+        )}
         rightView={() => (
           <View className="flex-row items-center pr-2">
             <Pressable className="opacity-80" onPress={handleAddLocation}>
@@ -132,13 +139,13 @@ function LocationsScreen() {
         )}
       />
 
-      <View className="px-4 py-2">
+      <View className="p-4" style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}>
         <SearchInput
           ref={searchInputRef}
-          placeholder="Search saved locations"
+          placeholder={t('weather.searchSavedLocations')}
           value={searchQuery}
           onChangeText={handleSearchChange}
-          containerClassName="bg-muted"
+          containerClassName="border border-border"
           onFocus={() => setIsSearchFocused(true)}
           onBlur={() => {
             // Only unfocus if search is empty
@@ -155,22 +162,26 @@ function LocationsScreen() {
           exiting={FadeOut.duration(200)}
           className="px-4 py-2"
         >
-          <Text className="mb-2 text-xs uppercase text-muted-foreground">SEARCH RESULTS</Text>
+          <Text className="mb-2 text-xs uppercase text-muted-foreground">
+            {t('weather.searchResults')}
+          </Text>
           <View className="bg-muted/30 items-center rounded-lg p-4">
             <Icon name="magnify-minus-outline" size={24} color={colors.grey2} />
-            <Text className="mt-2 text-muted-foreground">No locations match "{searchQuery}"</Text>
+            <Text className="mt-2 text-muted-foreground">
+              {t('weather.noLocationsMatch', { query: searchQuery })}
+            </Text>
             <View className="mt-4 flex-row">
               <TouchableOpacity
                 className="bg-primary/10 mr-2 rounded-full px-4 py-2"
                 onPress={clearSearch}
               >
-                <Text className="text-primary">Clear Search</Text>
+                <Text className="text-primary">{t('weather.clearSearch')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="rounded-full bg-primary px-4 py-2"
                 onPress={handleAddLocation}
               >
-                <Text className="text-white">Add New Location</Text>
+                <Text className="text-white">{t('weather.addNewLocation')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -180,7 +191,7 @@ function LocationsScreen() {
       {isLoading ? (
         <View className="flex-1 items-center justify-center py-12">
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text className="mt-4 text-muted-foreground">Loading weather data...</Text>
+          <Text className="mt-4 text-muted-foreground">{t('weather.loadingWeatherData')}</Text>
         </View>
       ) : (
         <ScrollView
@@ -206,14 +217,14 @@ function LocationsScreen() {
                 <View className="mb-2">
                   <Text className="text-xs uppercase text-muted-foreground">
                     {filteredLocations.length}{' '}
-                    {filteredLocations.length === 1 ? 'RESULT' : 'RESULTS'}
+                    {filteredLocations.length === 1 ? t('weather.result') : t('weather.results')}
                   </Text>
                 </View>
               )}
 
               <View className="mb-2">
                 <Text className="text-xs text-muted-foreground">
-                  Long press on a location for options
+                  {t('weather.longPressForOptions')}
                 </Text>
               </View>
 
@@ -230,22 +241,17 @@ function LocationsScreen() {
           )}
 
           {showEmptyState && (
-            <View className="flex-1 items-center justify-center">
+            <View className="flex-1 items-center mt-16">
               <Icon name="map-marker-radius-outline" size={64} color={colors.grey2} />
-              <Text className="mt-4 text-center text-lg font-medium">No saved locations</Text>
+              <Text className="mt-4 text-center text-lg font-medium">
+                {t('weather.noSavedLocations')}
+              </Text>
               <Text className="mb-4 mt-2 px-8 text-center text-sm text-muted-foreground">
-                Add locations to track weather conditions for your hiking trips and get personalized
-                recommendations
+                {t('weather.noSavedLocationsDesc')}
               </Text>
-              <TouchableOpacity
-                className="mt-2 rounded-full bg-primary px-6 py-3"
-                onPress={handleAddLocation}
-              >
-                <Text className="font-medium text-white">Add Your First Location</Text>
-              </TouchableOpacity>
-              <Text className="mt-4 text-xs text-muted-foreground">
-                Location data helps PackRat AI provide better advice
-              </Text>
+              <Button variant="primary" onPress={handleAddLocation}>
+                <Text className="font-medium text-white">{t('weather.addLocation')}</Text>
+              </Button>
             </View>
           )}
         </ScrollView>

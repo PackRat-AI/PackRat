@@ -1,55 +1,31 @@
 // hooks/useCreatePackFromTemplate.ts
 
-import { packTemplateItemsStore } from 'expo-app/features/pack-templates/store';
-import { packItemsStore, packsStore } from 'expo-app/features/packs/store';
-import { recordPackWeight } from 'expo-app/features/packs/store/packWeightHistory';
-import type { PackInput, PackInStore } from 'expo-app/features/packs/types';
-import { nanoid } from 'nanoid/non-secure';
+import { getTemplateItems } from 'expo-app/features/pack-templates/store';
+import { useCreatePack, useCreatePackItem } from 'expo-app/features/packs';
+import type { PackInput } from 'expo-app/features/packs/types';
 import { useCallback } from 'react';
 
 export function useCreatePackFromTemplate() {
-  const createPackFromTemplate = useCallback((packTemplateId: string, packData: PackInput) => {
-    const newPackId = nanoid();
-    const timestamp = new Date().toISOString();
+  const createPack = useCreatePack();
+  const createPackItem = useCreatePackItem();
 
-    // Create the new pack
-    const newPack: PackInStore = {
-      id: newPackId,
-      ...packData,
-      localCreatedAt: timestamp,
-      localUpdatedAt: timestamp,
-      deleted: false,
-    };
+  const createPackFromTemplate = useCallback(
+    (packTemplateId: string, packData: PackInput) => {
+      const packId = createPack(packData);
 
-    // @ts-ignore: Safe because Legend-State uses Proxy
-    packsStore[newPackId].set(newPack);
+      const templateItems = getTemplateItems(packTemplateId);
 
-    // Copy each item
-    const allTemplateItems = Object.values(packTemplateItemsStore).map((item) => item.get());
-    const templateItems = allTemplateItems.filter(
-      (item) => item.packTemplateId === packTemplateId && !item.deleted,
-    );
+      for (const itemData of templateItems) {
+        createPackItem({
+          packId,
+          itemData,
+        });
+      }
 
-    for (const item of templateItems) {
-      // biome-ignore lint/correctness/noUnusedVariables: aim is to remove `packTemplateId`
-      const { packTemplateId, ...restItem } = item;
-      const newItemId = nanoid();
-      const newItem = {
-        ...restItem,
-        id: newItemId,
-        packId: newPackId,
-        deleted: false,
-      };
-
-      // @ts-ignore: Safe because Legend-State uses Proxy
-      packItemsStore[newItemId].set(newItem);
-    }
-
-    // Recalculate pack weight
-    recordPackWeight(newPackId);
-
-    return newPackId;
-  }, []);
+      return packId;
+    },
+    [createPack, createPackItem],
+  );
 
   return createPackFromTemplate;
 }

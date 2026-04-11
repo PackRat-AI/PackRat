@@ -1,0 +1,109 @@
+appId: ${APP_ID}
+---
+# Create Trip Flow: Navigate to trips tab and create a new trip
+- waitForAnimationToEnd
+
+# Navigate to the Trips tab
+- tapOn:
+    text: "Trips"
+
+- waitForAnimationToEnd
+
+# Tap the header "+" button (testID: create-trip-button) to open the trip creation form
+- tapOn:
+    id: "create-trip-button"
+
+- waitForAnimationToEnd
+
+# Fill in the Trip Name field
+- tapOn:
+    text: "Trip Name"
+- inputText: ${TRIP_NAME}
+
+# Fill in the Description field
+- tapOn:
+    text: "Description"
+- inputText: "Created by Maestro E2E test"
+
+# Dismiss the keyboard before submitting
+- hideKeyboard
+
+# --- Start Date ---
+- tapOn:
+    text: "Start Date"
+- waitForAnimationToEnd
+
+- repeat:
+    times: ${START_TAPS}
+    commands:
+      - tapOn: "Next Month"
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "${START_DAY} ${START_MONTH} ${START_YEAR}"
+      - tapOn: "OK"
+
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "${START_MONTH} ${START_DAY}"
+      - tapOn:
+          point: "5%,5%"
+
+- waitForAnimationToEnd
+
+# --- End Date ---
+- tapOn:
+    text: "End Date"
+- waitForAnimationToEnd
+
+- repeat:
+    times: ${END_TAPS}
+    commands:
+      - tapOn: "Next Month"
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "${END_DAY} ${END_MONTH} ${END_YEAR}"
+      - tapOn: "OK"
+
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "${END_MONTH} ${END_DAY}"
+      - tapOn:
+          point: "5%,5%"
+
+- waitForAnimationToEnd
+
+# --- Submit ---
+- tapOn:
+    id: "submit-trip-button"
+
+- waitForAnimationToEnd
+
+# Wait until the submit button disappears, confirming navigation away from the form
+- extendedWaitUntil:
+    notVisible:
+      id: "submit-trip-button"
+    timeout: 15000
+
+# Assert we are back on the trips list (not still on the form) by checking
+# for the header create button, then verify the new trip appears
+- assertVisible:
+    id: "create-trip-button"
+- scrollUntilVisible:
+    element:
+      text: ${TRIP_NAME}
+    direction: DOWN
+    timeout: 60000
+    speed: 99
+- assertVisible:
+    text: ${TRIP_NAME}
+

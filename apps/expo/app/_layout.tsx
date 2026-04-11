@@ -1,14 +1,18 @@
+import '../polyfills';
+
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import 'expo-dev-client';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
+import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
+import { useRef } from 'react';
 
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -27,25 +31,29 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
+export let appAlert: React.RefObject<AlertMethods | null>;
+
 function RootLayout() {
   useInitialAndroidBarSync();
+
+  appAlert = useRef<AlertMethods>(null);
+
   const { colorScheme, isDarkColorScheme } = useColorScheme();
 
   return (
-    <>
+    <Providers>
       <StatusBar
         key={`root-status-bar-${isDarkColorScheme ? 'light' : 'dark'}`}
         style={isDarkColorScheme ? 'light' : 'dark'}
       />
-      <Providers>
-        <NavThemeProvider value={NAV_THEME[colorScheme]}>
-          <Stack screenOptions={SCREEN_OPTIONS}>
-            <Stack.Screen name="(app)" />
-            <Stack.Screen name="auth" />
-          </Stack>
-        </NavThemeProvider>
-      </Providers>
-    </>
+      <NavThemeProvider value={NAV_THEME[colorScheme]}>
+        <Stack screenOptions={SCREEN_OPTIONS}>
+          <Stack.Screen name="(app)" />
+          <Stack.Screen name="auth" />
+        </Stack>
+        <Alert title="" buttons={[]} ref={appAlert} />
+      </NavThemeProvider>
+    </Providers>
   );
 }
 

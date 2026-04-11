@@ -5,22 +5,26 @@ import { Chip } from 'expo-app/components/initial/Chip';
 import { ExpandableText } from 'expo-app/components/initial/ExpandableText';
 import { ItemLinks } from 'expo-app/features/catalog/components/ItemLinks';
 import { ItemReviews } from 'expo-app/features/catalog/components/ItemReviews';
+import { SimilarItems } from 'expo-app/features/catalog/components/SimilarItems';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
+import { decodeHtmlEntities } from 'expo-app/lib/utils/decodeHtmlEntities';
 import { ErrorScreen } from 'expo-app/screens/ErrorScreen';
 import { LoadingSpinnerScreen } from 'expo-app/screens/LoadingSpinnerScreen';
 import { NotFoundScreen } from 'expo-app/screens/NotFoundScreen';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Linking, Platform, SafeAreaView, ScrollView, View } from 'react-native';
+import { Linking, Text as RNText, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { CatalogItemImage } from '../components/CatalogItemImage';
 import { useCatalogItemDetails } from '../hooks';
-
-const fallbackImage = require('expo-app/assets/image-not-available.png');
 
 export function CatalogItemDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { data: item, isLoading, isError, refetch } = useCatalogItemDetails(id as string);
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const MATERIAL_LENGTH_THRESHOLD = 60;
 
   const handleAddToPack = () => {
@@ -37,8 +41,8 @@ export function CatalogItemDetailScreen() {
   if (isError) {
     return (
       <ErrorScreen
-        title="Error loading item"
-        message="Please try again later."
+        title={t('catalog.errorLoadingItem')}
+        message={t('catalog.pleaseTryAgainLater')}
         onRetry={refetch}
         variant="destructive"
       />
@@ -48,7 +52,10 @@ export function CatalogItemDetailScreen() {
   if (!item) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center">
-        <NotFoundScreen title="Item not found" message="Please try again later." />
+        <NotFoundScreen
+          title={t('catalog.itemNotFound')}
+          message={t('catalog.pleaseTryAgainLater')}
+        />
       </SafeAreaView>
     );
   }
@@ -56,33 +63,13 @@ export function CatalogItemDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView>
-        <View className="h-64 w-full">
-          <Image
-            source={
-              item.images?.[0]
-                ? {
-                    uri: item.images?.[0],
-                    ...(Platform.OS === 'android'
-                      ? {
-                          headers: {
-                            'User-Agent':
-                              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36',
-                            Accept: 'image/webp,image/apng,image/*,*/*;q=0.8',
-                          },
-                        }
-                      : {}),
-                  }
-                : fallbackImage
-            }
-            contentFit="contain"
-            transition={200}
-            style={{
-              flex: 1,
-            }}
-          />
-        </View>
+        <CatalogItemImage
+          imageUrl={item.images?.[0]}
+          resizeMode="contain"
+          className="h-64 w-full"
+        />
 
-        <View className="bg-card p-4">
+        <View className="bg-background p-4">
           <View className="mb-2">
             <View className="flex-row items-baseline justify-between">
               <View className="flex-1">
@@ -108,11 +95,13 @@ export function CatalogItemDetailScreen() {
 
           {item.categories && item.categories.length > 0 && (
             <View className="mb-4">
-              <Text className="mb-2 text-xs uppercase text-muted-foreground">CATEGORIES</Text>
+              <Text className="mb-2 text-xs uppercase text-muted-foreground">
+                {t('catalog.categoriesLabel')}
+              </Text>
               <View className="flex-row flex-wrap gap-2">
                 {item.categories.map((category) => (
                   <Chip key={category} textClassName="text-xs" variant="outline">
-                    <Text> {category}</Text>
+                    <Text> {decodeHtmlEntities(category)}</Text>
                   </Chip>
                 ))}
               </View>
@@ -125,24 +114,26 @@ export function CatalogItemDetailScreen() {
 
           <View className="mb-4 flex-row flex-wrap gap-1">
             <View className="mb-2 mr-4">
-              <Text className="text-xs uppercase text-muted-foreground">WEIGHT</Text>
-              <Chip textClassName="text-center text-xs" variant="secondary">
-                {item.weight !== undefined && item.weightUnit ? (
-                  <Text>
-                    {item.weight} {item.weightUnit}
-                  </Text>
-                ) : (
-                  <Text>Not specified</Text>
-                )}
+              <Text className="text-xs uppercase text-muted-foreground">
+                {t('catalog.weightLabel')}
+              </Text>
+              <Chip textClassName="text-center" variant="secondary">
+                <RNText>
+                  {item.weight !== undefined && item.weightUnit
+                    ? `${item.weight} ${item.weightUnit}`
+                    : t('catalog.notSpecified')}
+                </RNText>
               </Chip>
             </View>
 
             {item.material && (
               <View className="mb-2 mr-4">
-                <Text className="text-xs uppercase text-muted-foreground">MATERIAL</Text>
+                <Text className="text-xs uppercase text-muted-foreground">
+                  {t('catalog.materialLabel')}
+                </Text>
                 {item.material.length < MATERIAL_LENGTH_THRESHOLD ? (
-                  <Chip textClassName="text-center text-xs" variant="secondary">
-                    {item.material}
+                  <Chip textClassName="text-center" variant="secondary">
+                    <RNText>{item.material}</RNText>
                   </Chip>
                 ) : (
                   <ExpandableText text={item.material} />
@@ -152,11 +143,14 @@ export function CatalogItemDetailScreen() {
 
             {item.usageCount && item.usageCount > 0 ? (
               <View className="mb-2">
-                <Text className="text-xs uppercase text-muted-foreground">USED IN</Text>
-                <Chip textClassName="text-center text-xs" variant="secondary">
-                  <Text>
-                    {item.usageCount} {item.usageCount === 1 ? 'pack' : 'packs'}
-                  </Text>
+                <Text className="text-xs uppercase text-muted-foreground">
+                  {t('catalog.usedInLabel')}
+                </Text>
+                <Chip textClassName="text-center" variant="secondary">
+                  <RNText>
+                    {item.usageCount}{' '}
+                    {item.usageCount === 1 ? t('catalog.pack') : t('catalog.packs')}
+                  </RNText>
                 </Chip>
               </View>
             ) : null}
@@ -183,24 +177,41 @@ export function CatalogItemDetailScreen() {
               />
               <Text className="ml-1 text-sm text-foreground">
                 {item.availability === 'in_stock'
-                  ? 'In Stock'
+                  ? t('catalog.inStock')
                   : item.availability === 'out_of_stock'
-                    ? 'Out of Stock'
-                    : 'Pre-order'}
+                    ? t('catalog.outOfStock')
+                    : t('catalog.preorder')}
               </Text>
             </View>
           )}
 
+          <View className="mb-4 gap-2 flex-row justify-between">
+            <View>
+              <Button testID={TestIds.AddToPackButton} onPress={handleAddToPack}>
+                <Text>{t('catalog.addToPack')}</Text>
+              </Button>
+            </View>
+            <View>
+              <Button
+                testID={TestIds.ViewRetailerButton}
+                variant="secondary"
+                onPress={() => Linking.openURL(item.productUrl as string)}
+              >
+                <Text className="text-foreground">{t('catalog.viewOnRetailerSite')}</Text>
+              </Button>
+            </View>
+          </View>
+
           {item.techs && Object.keys(item.techs).length > 0 && (
             <View className="mt-8">
               <Text variant="callout" className="mb-2">
-                Specifications
+                {t('catalog.specifications')}
               </Text>
               <View className="rounded-lg p-3 gap-4">
                 {Object.entries(item.techs).map(([key, value]) => (
                   <View key={key} className="gap-1">
-                    <Text className="text-sm text-muted-foreground">{key}</Text>
-                    <Text className="text-base font-medium text-foreground">{value}</Text>
+                    <Text className="text-xs text-muted-foreground uppercase">{key}</Text>
+                    <Text className="font-medium text-foreground">{value}</Text>
                   </View>
                 ))}
               </View>
@@ -217,17 +228,13 @@ export function CatalogItemDetailScreen() {
             </View>
           )}
 
-          <View className="mt-4">
-            <Button variant="secondary" onPress={() => Linking.openURL(item.productUrl as string)}>
-              <Text className="text-foreground">View on Retailer Site</Text>
-            </Button>
-          </View>
-
-          <View className="mt-2">
-            <Button onPress={handleAddToPack}>
-              <Text>Add to Pack</Text>
-            </Button>
-          </View>
+          {/* Similar Items Section */}
+          <SimilarItems
+            catalogItemId={item.id.toString()}
+            itemName={item.name}
+            limit={5}
+            threshold={0.1}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>

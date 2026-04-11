@@ -57,13 +57,18 @@ function HomeContent() {
           <p className="mx-auto mb-8 max-w-2xl text-xl text-gray-600 dark:text-gray-300 font-medium">
             Expert advice for your next outdoor adventure
           </p>
-          <Button
-            asChild
-            size="lg"
-            className="rounded-full bg-apple-blue hover:bg-apple-blue/90 text-white px-8 h-12"
-          >
-            <Link href="#guides">Explore Guides</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              asChild
+              size="lg"
+              className="rounded-full bg-apple-blue hover:bg-apple-blue/90 text-white px-8 h-12"
+            >
+              <Link href="#guides">Explore Guides</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg" className="rounded-full px-8 h-12">
+              <Link href="https://packratai.com/#download">Download Free App</Link>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -99,7 +104,6 @@ function HomeContent() {
       )}
 
       {/* All Guides - Apple style */}
-      {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
       <section id="guides" className="py-20">
         <div className="container">
           <h2 className="mb-10 text-3xl font-semibold tracking-tight text-center">{pageTitle}</h2>

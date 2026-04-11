@@ -1,4 +1,5 @@
 import { packsStore } from 'expo-app/features/packs/store';
+import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid/non-secure';
 import { useCallback } from 'react';
 import type { PackInput, PackInStore } from '../types';
@@ -17,8 +18,9 @@ export function useCreatePack() {
       deleted: false,
     };
 
-    // @ts-ignore: Safe because Legend-State uses Proxy
-    packsStore[id].set(newPack);
+    obs(packsStore, id).set(newPack);
+
+    return id;
   }, []);
 
   return createPack;

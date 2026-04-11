@@ -1,29 +1,58 @@
-import { ActivityIndicator, Alert, Button, Text } from '@packrat/ui/nativewindui';
+import { BottomSheetView } from '@gorhom/bottom-sheet';
+import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
-import { CategoryBadge } from 'expo-app/components/initial/CategoryBadge';
+import * as Burnt from 'burnt';
+import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
-import { PackItemSuggestions } from 'expo-app/features/packs/components/PackItemSuggestions';
+import { LocationPicker } from 'expo-app/features/weather/components';
+import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { cn } from 'expo-app/lib/cn';
+import { useBottomSheetAction } from 'expo-app/lib/hooks/useBottomSheetAction';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { obs } from 'expo-app/lib/store';
+import { TestIds } from 'expo-app/lib/testIds';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Image, SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
-import { useDeletePack, usePackDetailsFromApi, usePackDetailsFromStore } from '../hooks';
+import { useMemo, useState } from 'react';
+import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import AddPackItemActions from '../components/AddPackItemActions';
+import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
+import { packingModeStore } from '../store/packingMode';
 import type { Pack, PackItem } from '../types';
 
 export function PackDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
   const isOwnedByUser = usePackOwnershipCheck(id as string);
 
-  const [activeTab, setActiveTab] = useState('all');
+  const DEFAULT_TAB = 'all';
+  const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
+  const [isPackingMode, setIsPackingMode] = useState(false);
+  const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
+    obs(packingModeStore, id as string).get() || {},
+  );
 
-  const packFromStore = usePackDetailsFromStore(id as string); // Using user owned pack from store to ensure component updates when user modifies it
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
+
+  const [location, setLocation] = useState<WeatherLocation>();
+
+  const {
+    mutate: analyzeGaps,
+    data: gapAnalysis,
+    isPending: isAnalyzing,
+    reset: resetAnalysis,
+  } = usePackGapAnalysis();
+
+  const packFromStore = usePackDetailsFromStore(id as string);
   const {
     pack: packFromApi,
     isLoading,
@@ -33,12 +62,18 @@ export function PackDetailScreen() {
   } = usePackDetailsFromApi({
     id: id as string,
     enabled: !isOwnedByUser,
-  }); // Fetch non user owned packs from api
+  });
 
   const pack = (isOwnedByUser ? packFromStore : packFromApi) as Pack;
 
-  const deletePack = useDeletePack();
   const { colors } = useColorScheme();
+  const insets = useSafeAreaInsets();
+
+  const bottomSheetRef = useSheetRef();
+  const addItemActionsRef = useSheetRef();
+
+  const { run: runBottomSheetAction, handleDismiss: handleBottomSheetDismiss } =
+    useBottomSheetAction(bottomSheetRef);
 
   const handleItemPress = (item: PackItem) => {
     if (!item.id) return;
@@ -48,17 +83,162 @@ export function PackDetailScreen() {
     });
   };
 
+  const handleItemSelect = (item: PackItem) => {
+    if (!item.id) return;
+    setPackedItems((prev) => ({
+      ...prev,
+      [item.id]: !prev[item.id],
+    }));
+  };
+
+  const handleResetPackingMode = () => {
+    setPackedItems({});
+  };
+
+  const handleSavePackingMode = () => {
+    obs(packingModeStore, id as string).set({ ...packedItems });
+    setIsPackingMode(false);
+    setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+    Burnt.toast({
+      title: 'Packing state saved',
+      preset: 'done',
+    });
+  };
+
+  const handleExitPackingMode = () => {
+    const exitPackingMode = () => {
+      setIsPackingMode(!isPackingMode);
+      setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
+      setPackedItems(obs(packingModeStore, id as string).get() || {});
+    };
+
+    const packingState = obs(packingModeStore, id as string).get() || {};
+
+    if (
+      Object.entries(packedItems).every(([key, val]) =>
+        packingState[key] ? packingState[key] === val : val === false,
+      )
+    )
+      // Skip confirmation if nothing has changed
+      return exitPackingMode();
+
+    appAlert.current?.alert({
+      title: t('packs.exitPackingMode'),
+      message: t('packs.ifYouDont'),
+      buttons: [
+        {
+          text: t('packs.exitWithoutSaving'),
+          style: 'destructive',
+          onPress: exitPackingMode,
+        },
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.save'),
+          style: 'default',
+          onPress() {
+            handleSavePackingMode();
+          },
+        },
+      ],
+    });
+  };
+
+  const handleTogglePackingMode = () => {
+    if (isPackingMode) return handleExitPackingMode();
+    setIsPackingMode(true);
+  };
+
+  const PROGRESS_LOW_THRESHOLD = 33;
+  const PROGRESS_MID_THRESHOLD = 67;
+
+  const packingProgress = useMemo(() => {
+    const totalItems = pack?.items?.length || 0;
+    const packedCount = Object.values(packedItems).filter(Boolean).length;
+    const percentage = totalItems > 0 ? Math.round((packedCount / totalItems) * 100) : 0;
+    return { packed: packedCount, total: totalItems, percentage };
+  }, [pack?.items?.length, packedItems]);
+
+  const getProgressBarColor = (percentage: number) => {
+    if (percentage < PROGRESS_LOW_THRESHOLD) return 'bg-destructive';
+    if (percentage < PROGRESS_MID_THRESHOLD) return 'bg-amber-500';
+    return 'bg-green-500';
+  };
+
+  const getProgressTextColor = (percentage: number) => {
+    if (percentage < PROGRESS_LOW_THRESHOLD) return 'text-destructive';
+    if (percentage < PROGRESS_MID_THRESHOLD) return 'text-amber-500';
+    return 'text-green-500';
+  };
+
+  const handleAnalyzeGapsPress = () => {
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: `/pack/${pack.id}`,
+          showSignInCopy: 'true',
+        },
+      });
+    }
+
+    setIsLocationPickerOpen(true);
+  };
+
+  const handleLocationSelect = (location?: WeatherLocation) => {
+    setLocation(location);
+    setIsLocationPickerOpen(false);
+    resetAnalysis();
+    setIsGapAnalysisModalVisible(true);
+    analyzeGaps({
+      packId: id as string,
+      context: {
+        destination: location?.name,
+        tripType: pack.category,
+        startDate: new Date().toISOString().split('T')[0],
+      },
+    });
+  };
+
+  const handleRetryAnalysis = () => {
+    resetAnalysis();
+    analyzeGaps({
+      packId: id as string,
+      context: {
+        destination: location?.name,
+        tripType: pack.category,
+        startDate: new Date().toISOString().split('T')[0],
+      },
+    });
+  };
+
   const getFilteredItems = () => {
     if (!pack?.items) return [];
 
-    switch (activeTab) {
-      case 'worn':
-        return pack.items.filter((item) => item.worn);
-      case 'consumable':
-        return pack.items.filter((item) => item.consumable);
-      default:
-        return pack.items;
+    if (isPackingMode) {
+      // In packing mode, filter by packing status
+      switch (activeTab) {
+        case 'unpacked':
+          return pack.items.filter((item) => !packedItems[item.id]);
+        case 'packed':
+          return pack.items.filter((item) => packedItems[item.id]);
+        default:
+          return pack.items;
+      }
+    } else {
+      // Regular mode, filter by item properties
+      switch (activeTab) {
+        case 'worn':
+          return pack.items.filter((item) => item.worn);
+        case 'consumable':
+          return pack.items.filter((item) => item.consumable);
+        default:
+          return pack.items;
+      }
     }
+  };
+
+  const handleMoreActionsPress = () => {
+    bottomSheetRef.current?.present();
   };
 
   const filteredItems = getFilteredItems();
@@ -69,7 +249,121 @@ export function PackDetailScreen() {
   const getTabTextStyle = (tab: string) =>
     cn(activeTab === tab ? 'text-primary' : 'text-muted-foreground');
 
-  // Loading state for non-owned packs
+  const handleAskAI = () => {
+    if (!isAuthed.peek()) {
+      return router.push({
+        pathname: '/auth',
+        params: {
+          redirectTo: JSON.stringify({
+            pathname: '/ai-chat',
+            params: {
+              packId: id,
+              packName: pack.name,
+              contextType: 'pack',
+            },
+          }),
+          showSignInCopy: 'true',
+        },
+      });
+    }
+    router.push({
+      pathname: '/ai-chat',
+      params: {
+        packId: id,
+        packName: pack.name,
+        contextType: 'pack',
+      },
+    });
+  };
+
+  const handleAddItem = () => {
+    addItemActionsRef.current?.present();
+  };
+
+  // Prepare bottom sheet actions with consistent structure
+  const actions = [
+    {
+      key: 'ask-ai',
+      label: 'Ask AI',
+      icon: <Icon size={20} name="message-outline" color={colors.foreground} />,
+      onPress: handleAskAI,
+      show: true,
+      variant: 'secondary' as const,
+      disabled: false,
+    },
+    {
+      key: 'add-item',
+      label: 'Add Item',
+      icon: (
+        <Icon
+          size={20}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'cube-outline' }}
+          ios={{ name: 'backpack' }}
+          color={colors.foreground}
+        />
+      ),
+      onPress: handleAddItem,
+      show: isOwnedByUser,
+      variant: 'secondary' as const,
+      disabled: false,
+    },
+    {
+      key: 'packing',
+      label: isPackingMode ? 'Done Packing' : 'Start Packing',
+      icon: (
+        <Icon
+          size={20}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'bag-personal-outline' }}
+          ios={{ name: 'backpack' }}
+          color={isPackingMode ? '#fff' : colors.foreground}
+        />
+      ),
+      onPress: handleTogglePackingMode,
+      show: isOwnedByUser,
+      variant: isPackingMode ? ('primary' as const) : ('secondary' as const),
+      disabled: false,
+    },
+    {
+      key: 'analyze',
+      label: isAnalyzing ? 'Analyzing...' : 'Analyze Gaps',
+      icon: (
+        <Icon
+          size={20}
+          ios={{ name: 'text.viewfinder' }}
+          materialIcon={{ type: 'MaterialCommunityIcons', name: 'magnify-scan' }}
+          color={colors.foreground}
+        />
+      ),
+      onPress: handleAnalyzeGapsPress,
+      show: isOwnedByUser,
+      variant: 'secondary' as const,
+      disabled: isAnalyzing,
+    },
+  ];
+
+  type ActionItem = {
+    key: string;
+    label: string;
+    icon: React.ReactNode;
+    onPress: () => void;
+    show: boolean;
+    variant: 'primary' | 'secondary';
+    disabled: boolean;
+  };
+
+  type PlaceholderItem = {
+    key: string;
+    placeholder: true;
+  };
+
+  const visibleActions = actions.filter((a) => a.show);
+  const normalizedActions: (ActionItem | PlaceholderItem)[] = [...visibleActions];
+  if (normalizedActions.length % 2 === 1) {
+    normalizedActions.push({ key: '__placeholder__', placeholder: true });
+  }
+
+  const actionBtnClass = 'w-full h-14 flex-row items-center justify-start gap-2';
+
   if (!isOwnedByUser && isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background">
@@ -80,7 +374,6 @@ export function PackDetailScreen() {
     );
   }
 
-  // Error state for non-owned packs
   if (!isOwnedByUser && isError) {
     return (
       <SafeAreaView className="flex-1 bg-background">
@@ -108,16 +401,17 @@ export function PackDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView>
+    <SafeAreaView className="flex-1">
+      <ScrollView stickyHeaderIndices={[2]} contentContainerClassName="pb-24">
         {pack.image && (
           <Image source={{ uri: pack.image }} className="h-48 w-full" resizeMode="cover" />
         )}
 
-        <View className="mb-4 bg-card p-4">
-          <View className="mb-2 flex-row items-center justify-between">
+        {/* Header */}
+        <View className="mb-4 p-4">
+          <View className="mb-2">
             <Text className="text-2xl font-bold text-foreground">{pack.name}</Text>
-            {pack.category && <CategoryBadge category={pack.category} />}
+            {pack.category && <Text variant="footnote">{pack.category}</Text>}
           </View>
 
           {pack.description && (
@@ -126,148 +420,280 @@ export function PackDetailScreen() {
 
           <View className="mb-4 flex-row justify-between">
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">BASE WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.baseWeightLabelUpper')}
+              </Text>
               <WeightBadge weight={pack.baseWeight || 0} unit="g" type="base" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">TOTAL WEIGHT</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.totalWeightLabelUpper')}
+              </Text>
               <WeightBadge weight={pack.totalWeight || 0} unit="g" type="total" />
             </View>
             <View>
-              <Text className="mb-1 text-xs uppercase text-muted-foreground">ITEMS</Text>
+              <Text className="mb-1 text-xs uppercase text-muted-foreground">
+                {t('packs.itemsCountLabelUpper')}
+              </Text>
               <Chip textClassName="text-center text-xs" variant="secondary">
                 {pack.items?.length || 0}
               </Chip>
             </View>
           </View>
 
-          <View className="flex-row justify-between">
-            {pack.tags && pack.tags.length > 0 && (
-              <View className="flex-row flex-wrap">
-                {pack.tags.map((tag) => (
-                  <Chip
-                    key={tag}
-                    className="mb-1 mr-2"
-                    textClassName="text-xs text-center"
-                    variant="outline"
-                  >
-                    #{tag}
-                  </Chip>
-                ))}
-              </View>
-            )}
-            {isOwnedByUser && (
-              <View className="ml-auto">
-                <Alert
-                  title="Delete pack?"
-                  message="Are you sure you want to delete this pack? This action cannot be undone."
-                  buttons={[
-                    {
-                      text: 'Cancel',
-                      style: 'cancel',
-                    },
-                    {
-                      text: 'OK',
-                      onPress: () => {
-                        deletePack(pack.id);
-                        if (router.canGoBack()) {
-                          router.back();
-                        }
-                      },
-                    },
-                  ]}
+          {pack.tags && pack.tags.length > 0 && (
+            <View className="flex-row flex-wrap">
+              {pack.tags.map((tag) => (
+                <Chip
+                  key={tag}
+                  className="mb-1 mr-2"
+                  textClassName="text-xs text-center"
+                  variant="outline"
                 >
-                  <Button variant="plain" size="icon">
-                    <Icon name="trash-can" color={colors.grey2} size={21} />
-                  </Button>
-                </Alert>
+                  #{tag}
+                </Chip>
+              ))}
+            </View>
+          )}
+
+          {/* Packing Progress Summary (visible when not in packing mode and progress exists) */}
+          {!isPackingMode && packingProgress.packed > 0 && (
+            <View className="mt-4 rounded-lg border border-border bg-card p-3">
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text variant="subhead" className="font-medium">
+                  Packing Progress
+                </Text>
+                <Text
+                  variant="footnote"
+                  className={getProgressTextColor(packingProgress.percentage)}
+                >
+                  {packingProgress.packed}/{packingProgress.total} items ·{' '}
+                  {packingProgress.percentage}%
+                </Text>
               </View>
-            )}
-          </View>
+              <View className="h-2 overflow-hidden rounded-full bg-muted">
+                <View
+                  className={cn(
+                    'h-full rounded-full',
+                    getProgressBarColor(packingProgress.percentage),
+                  )}
+                  style={{ width: `${packingProgress.percentage}%` }}
+                />
+              </View>
+            </View>
+          )}
         </View>
 
-        <View className="bg-card">
-          <View className="p-4">
+        {/* Actions */}
+        <View className="p-4">
+          <View className="gap-4 flex-row items-center">
             <Button
               variant="secondary"
-              onPress={() => {
-                if (!isAuthed.peek()) {
-                  return router.push({
-                    pathname: '/auth',
-                    params: {
-                      redirectTo: JSON.stringify({
-                        pathname: '/ai-chat',
-                        params: {
-                          packId: id,
-                          packName: pack.name,
-                          contextType: 'pack',
-                        },
-                      }),
-                      showSignInCopy: 'true',
-                    },
-                  });
-                }
-
-                router.push({
-                  pathname: '/ai-chat',
-                  params: {
-                    packId: id,
-                    packName: pack.name,
-                    contextType: 'pack',
-                  },
-                });
-              }}
+              onPress={handleAskAI}
+              className="flex-1"
+              testID={TestIds.AskAIButton}
             >
-              <Icon name="message-outline" color={colors.foreground} />
               <Text>Ask AI</Text>
             </Button>
+
+            {isOwnedByUser && (
+              <Button variant="secondary" onPress={handleAddItem} testID={TestIds.AddItemButton}>
+                <Text>Add Item</Text>
+              </Button>
+            )}
+
+            {isOwnedByUser && (
+              <Button
+                variant="secondary"
+                size="icon"
+                onPress={handleMoreActionsPress}
+                testID={TestIds.PackMoreActions}
+              >
+                <Icon name="dots-horizontal" size={20} color={colors.grey2} />
+              </Button>
+            )}
           </View>
 
-          <View className="flex-row border-b border-border">
-            <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
-              <Text className={getTabTextStyle('all')}>All Items</Text>
-            </TouchableOpacity>
-            <TouchableOpacity className={getTabStyle('worn')} onPress={() => setActiveTab('worn')}>
-              <Text className={getTabTextStyle('worn')}>Worn</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={getTabStyle('consumable')}
-              onPress={() => setActiveTab('consumable')}
+          {/* Start Packing inline button */}
+          {isOwnedByUser && !isPackingMode && (
+            <Button
+              variant="secondary"
+              onPress={handleTogglePackingMode}
+              className="mt-3 w-full flex-row items-center gap-2"
             >
-              <Text className={getTabTextStyle('consumable')}>Consumable</Text>
-            </TouchableOpacity>
-          </View>
+              <Icon
+                size={18}
+                materialIcon={{ type: 'MaterialCommunityIcons', name: 'bag-personal-outline' }}
+                ios={{ name: 'backpack' }}
+                color={colors.foreground}
+              />
+              <Text>Start Packing</Text>
+            </Button>
+          )}
+        </View>
 
+        {/* Tabs */}
+        <View className="flex-row bg-background border-b border-border">
+          {isPackingMode ? (
+            <>
+              <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+                <Text className={getTabTextStyle('all')}>All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('unpacked')}
+                onPress={() => setActiveTab('unpacked')}
+              >
+                <Text className={getTabTextStyle('unpacked')}>Unpacked</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('packed')}
+                onPress={() => setActiveTab('packed')}
+              >
+                <Text className={getTabTextStyle('packed')}>Packed</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity className={getTabStyle('all')} onPress={() => setActiveTab('all')}>
+                <Text className={getTabTextStyle('all')}>All Items</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('worn')}
+                onPress={() => setActiveTab('worn')}
+              >
+                <Text className={getTabTextStyle('worn')}>Worn</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={getTabStyle('consumable')}
+                onPress={() => setActiveTab('consumable')}
+              >
+                <Text className={getTabTextStyle('consumable')}>Consumable</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {/* Content */}
+        <View>
           {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
-              <View key={item.id} className="px-4 pt-3">
-                <PackItemCard item={item} onPress={handleItemPress} />
-              </View>
-            ))
+            <View className="p-4">
+              {filteredItems.map((item) => (
+                <PackItemCard
+                  key={item.id}
+                  item={item}
+                  dimOnSelect={isPackingMode && !!packedItems[item.id]}
+                  {...(isPackingMode
+                    ? { onSelect: handleItemSelect, selected: !!packedItems[item.id] }
+                    : { onPress: handleItemPress })}
+                />
+              ))}
+            </View>
           ) : (
             <View className="items-center justify-center p-4">
               <Text className="text-muted-foreground">No items found</Text>
             </View>
           )}
-
-          {/* AI Suggestions Section */}
-          {isOwnedByUser && !!filteredItems.length && <PackItemSuggestions packId={pack.id} />}
-
-          {isOwnedByUser && (
-            <Button
-              className="m-4"
-              onPress={() =>
-                router.push({
-                  pathname: '/item/new',
-                  params: { packId: pack.id },
-                })
-              }
-            >
-              <Text>Add New Item</Text>
-            </Button>
-          )}
         </View>
       </ScrollView>
+
+      {/* Packing Mode Toolbar */}
+      {isPackingMode && (
+        <View className="absolute border border-t-border bottom-0 left-0 right-0 px-4 py-3 bg-card border-b border-border">
+          {/* Progress Bar */}
+          <View className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted">
+            <View
+              className={cn('h-full rounded-full', getProgressBarColor(packingProgress.percentage))}
+              style={{ width: `${packingProgress.percentage}%` }}
+            />
+          </View>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              {/* Close Button */}
+              <Button variant="plain" size="icon" onPress={handleExitPackingMode}>
+                <Icon name="close" size={20} color={colors.grey2} />
+              </Button>
+              {/* Progress Text */}
+              <Text variant="subhead" className="text-muted-foreground">
+                {packingProgress.packed}/{packingProgress.total} packed ·{' '}
+                <Text
+                  variant="subhead"
+                  className={getProgressTextColor(packingProgress.percentage)}
+                >
+                  {packingProgress.percentage}%
+                </Text>
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              {/* Reset Button */}
+              <Button variant="plain" size="sm" onPress={handleResetPackingMode}>
+                <Text>Reset</Text>
+              </Button>
+              {/* Save Button */}
+              <Button variant="plain" size="sm" onPress={handleSavePackingMode}>
+                <Text>Save</Text>
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Bottom Sheet for More Actions */}
+      <Sheet
+        ref={bottomSheetRef}
+        enableDynamicSizing
+        enablePanDownToClose
+        backgroundStyle={{ backgroundColor: colors.card }}
+        handleIndicatorStyle={{ backgroundColor: colors.grey2 }}
+        bottomInset={insets.bottom}
+        onDismiss={handleBottomSheetDismiss}
+      >
+        <BottomSheetView className="flex-1 px-4" style={{ flex: 1 }}>
+          {/* Revamped consistent 2-column action layout */}
+          <View className="flex-row flex-wrap -mx-1">
+            {normalizedActions.map((action) => (
+              <View key={action.key} className="w-1/2 px-1 mb-3">
+                {'placeholder' in action ? (
+                  <View className={actionBtnClass} />
+                ) : (
+                  <Button
+                    variant={action.variant}
+                    onPress={() => runBottomSheetAction(action.onPress)}
+                    disabled={action.disabled}
+                    className={actionBtnClass}
+                  >
+                    {action.icon}
+                    <Text className="text-sm font-normal pr-8">{action.label}</Text>
+                  </Button>
+                )}
+              </View>
+            ))}
+          </View>
+        </BottomSheetView>
+      </Sheet>
+
+      {/* Add Item Options Sheet */}
+      <AddPackItemActions ref={addItemActionsRef} packId={pack.id} />
+
+      {/* Gap Analysis Flow*/}
+      <LocationPicker
+        subtitle="Get enhanced analysis with weather and terrain data."
+        title="Select Location"
+        open={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        skipText="Skip"
+        onSkip={handleLocationSelect}
+        selectText="Continue"
+        onSelect={handleLocationSelect}
+      />
+      <GapAnalysisModal
+        visible={isGapAnalysisModalVisible}
+        onClose={() => setIsGapAnalysisModalVisible(false)}
+        pack={pack}
+        location={location?.name}
+        analysis={gapAnalysis || null}
+        isLoading={isAnalyzing}
+        onRetry={handleRetryAnalysis}
+      />
     </SafeAreaView>
   );
 }

@@ -11,6 +11,7 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { PackCategory } from 'expo-app/types';
 import { useRouter } from 'expo-router';
 import {
@@ -27,46 +28,46 @@ import { useCreatePackTemplate } from '../hooks/useCreatePackTemplate';
 import { useUpdatePackTemplate } from '../hooks/useUpdatePacktemplate';
 import type { PackTemplate } from '../types';
 
-// Schema
-const templateFormSchema = z.object({
-  name: z.string().min(1, 'Template name is required'),
-  description: z.string(),
-  category: z.enum([
-    'hiking',
-    'backpacking',
-    'camping',
-    'climbing',
-    'winter',
-    'desert',
-    'custom',
-    'water sports',
-    'skiing',
-  ]),
-  isAppTemplate: z.boolean(),
-  tags: z.array(z.string()),
-});
-
-// type TemplateFormValues = z.infer<typeof templateFormSchema>;
-
-const CATEGORIES = [
-  { value: 'hiking', label: 'Hiking' },
-  { value: 'backpacking', label: 'Backpacking' },
-  { value: 'camping', label: 'Camping' },
-  { value: 'climbing', label: 'Climbing' },
-  { value: 'winter', label: 'Winter' },
-  { value: 'desert', label: 'Desert' },
-  { value: 'custom', label: 'Custom' },
-  { value: 'water sports', label: 'Water Sports' },
-  { value: 'skiing', label: 'Skiing' },
-];
-
 export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
   const router = useRouter();
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
   const createTemplate = useCreatePackTemplate();
   const updateTemplate = useUpdatePackTemplate();
   const user = useUser();
   const isEditing = !!template;
+
+  // Schema
+  const templateFormSchema = z.object({
+    name: z.string().min(1, t('packTemplates.templateNameRequired')),
+    description: z.string(),
+    category: z.enum([
+      'hiking',
+      'backpacking',
+      'camping',
+      'climbing',
+      'winter',
+      'desert',
+      'custom',
+      'water sports',
+      'skiing',
+    ]),
+    isAppTemplate: z.boolean(),
+    tags: z.array(z.string()),
+  });
+
+  // Categories with translations
+  const CATEGORIES = [
+    { value: 'hiking', label: t('packTemplates.hiking') },
+    { value: 'backpacking', label: t('packTemplates.backpacking') },
+    { value: 'camping', label: t('packTemplates.camping') },
+    { value: 'climbing', label: t('packTemplates.climbing') },
+    { value: 'winter', label: t('packTemplates.winter') },
+    { value: 'desert', label: t('packTemplates.desert') },
+    { value: 'custom', label: t('packTemplates.custom') },
+    { value: 'water sports', label: t('packTemplates.waterSports') },
+    { value: 'skiing', label: t('packTemplates.skiing') },
+  ];
 
   const form = useForm({
     defaultValues: {
@@ -100,14 +101,14 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
       <ScrollView contentContainerClassName="p-8">
         <Form>
           <FormSection
-            ios={{ title: 'Template Details' }}
-            footnote="Enter the basic information for this template"
+            ios={{ title: t('packTemplates.templateDetails') }}
+            footnote={t('packTemplates.enterBasicInfo')}
           >
             <form.Field name="name">
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Template Name"
+                    placeholder={t('packTemplates.templateName')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -126,7 +127,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
               {(field) => (
                 <FormItem>
                   <TextField
-                    placeholder="Description"
+                    placeholder={t('packTemplates.description')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChangeText={field.handleChange}
@@ -160,7 +161,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
                     <Button className="my-2 w-full" variant="plain">
                       <View className="w-full flex-row items-center justify-between capitalize">
                         <Text className="text-zinc-800 dark:text-zinc-200">
-                          {field.state.value || 'Select Category'}
+                          {field.state.value || t('packTemplates.selectCategory')}
                         </Text>
 
                         <Icon name="chevron-down" size={16} color={colors.grey2} />
@@ -173,8 +174,8 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
           </FormSection>
           {user?.role === 'ADMIN' && (
             <FormSection
-              ios={{ title: 'Type' }}
-              footnote="App templates are shown to all users. Option is only available to admins."
+              ios={{ title: t('packTemplates.type') }}
+              footnote={t('packTemplates.appTemplateFootnote')}
             >
               <form.Field name="isAppTemplate">
                 {(field) => (
@@ -182,7 +183,7 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
                     <View className="flex-row items-center justify-between p-4">
                       <View className="flex-row items-center">
                         <Text className="ml-2 font-medium text-foreground">
-                          Mark as App Template
+                          {t('packTemplates.markAsAppTemplate')}
                         </Text>
                       </View>
                       <Switch
@@ -214,11 +215,11 @@ export const PackTemplateForm = ({ template }: { template?: PackTemplate }) => {
               <Text className="text-center text-base font-semibold text-primary-foreground">
                 {isSubmitting
                   ? isEditing
-                    ? 'Updating...'
-                    : 'Creating...'
+                    ? t('packTemplates.updating')
+                    : t('packTemplates.creating')
                   : isEditing
-                    ? 'Update Template'
-                    : 'Create Template'}
+                    ? t('packTemplates.updateTemplate')
+                    : t('packTemplates.createTemplate')}
               </Text>
             </Pressable>
           )}

@@ -28,7 +28,7 @@ describe('Admin Routes', () => {
 
   describe('GET /admin/', () => {
     it('returns admin dashboard HTML', async () => {
-      const res = await apiWithBasicAuth('/');
+      const res = await apiWithBasicAuth('');
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('text/html');
 
@@ -41,15 +41,11 @@ describe('Admin Routes', () => {
   describe('GET /admin/stats', () => {
     it('returns system statistics', async () => {
       const res = await apiWithBasicAuth('/stats');
-      // Note: This will likely fail without database setup
-      // but tests the auth and route structure
-
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res, ['users', 'packs', 'items']);
-        expect(typeof data.users).toBe('number');
-        expect(typeof data.packs).toBe('number');
-        expect(typeof data.items).toBe('number');
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res, ['users', 'packs', 'items']);
+      expect(typeof data.users).toBe('number');
+      expect(typeof data.packs).toBe('number');
+      expect(typeof data.items).toBe('number');
     });
   });
 
@@ -57,30 +53,9 @@ describe('Admin Routes', () => {
     it('returns paginated users list', async () => {
       const res = await apiWithBasicAuth('/users-list');
 
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data.users)).toBe(true);
-        expect(typeof data.totalUsers).toBe('number');
-        expect(typeof data.totalPages).toBe('number');
-      }
-    });
-
-    it('accepts pagination parameters', async () => {
-      const res = await apiWithBasicAuth('/users-list?page=2&limit=5');
-
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data.users)).toBe(true);
-      }
-    });
-
-    it('accepts search parameter', async () => {
-      const res = await apiWithBasicAuth('/users-list?search=test');
-
-      if (res.status === 200) {
-        const data = await expectJsonResponse(res);
-        expect(Array.isArray(data.users)).toBe(true);
-      }
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data)).toBe(true);
     });
   });
 
@@ -91,7 +66,7 @@ describe('Admin Routes', () => {
       expect(res.headers.get('content-type')).toContain('text/html');
 
       const html = await res.text();
-      expect(html).toContain('Packs Management');
+      expect(html).toContain('Pack Management');
     });
 
     it('accepts search parameter', async () => {

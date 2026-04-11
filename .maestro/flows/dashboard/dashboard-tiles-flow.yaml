@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+---
+# Dashboard Tiles Flow: Verify dashboard loads with key tiles
+- waitForAnimationToEnd
+
+# Navigate to Dashboard (home tab)
+- tapOn:
+    text: "Home"
+- waitForAnimationToEnd
+
+# Verify key dashboard tiles are present
+- scrollUntilVisible:
+    element:
+      text: "PackRat AI"
+    direction: DOWN
+- assertVisible:
+    text: "PackRat AI"
+
+# Scroll to check more tiles
+- scrollUntilVisible:
+    element:
+      text: ".*Pack.*"
+    direction: DOWN
+
+# Return to stable state
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd

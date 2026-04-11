@@ -1,3 +1,6 @@
+import type { CatalogItem } from 'expo-app/features/catalog/types';
+import type { PackTemplateItem } from 'expo-app/features/pack-templates/types';
+
 export type WeightUnit = 'g' | 'kg' | 'oz' | 'lb';
 
 export interface PackItem {
@@ -13,9 +16,14 @@ export interface PackItem {
   notes?: string;
   image?: string | null;
   packId: string;
+  pack?: Pack | null;
+  templateItemId?: string | null;
+  templateItem?: PackTemplateItem | null;
   catalogItemId?: number;
+  catalogItem?: CatalogItem | null;
   userId?: number;
   deleted: boolean;
+  isAIGenerated: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

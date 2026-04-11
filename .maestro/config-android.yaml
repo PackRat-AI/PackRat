@@ -1,0 +1,19 @@
+# Maestro Workspace Configuration - Android
+# https://docs.maestro.dev/maestro-flows/workspace-management/project-configuration
+
+flows:
+  - "flows/setup/*.yaml"
+  - "flows/auth/*.yaml" 
+  - "flows/packs/*.yaml"
+  - "flows/trips/*.yaml"
+  - "master-flow-android.yaml"  # Include master flow
+
+# Platform-specific settings
+platform:
+  android:
+    disableAnimations: true
+
+# Environment variables available to all flows
+env:
+  TRIP_NAME: "E2E-Trip-${GITHUB_RUN_ID:-12345}"
+  PACK_NAME: "E2E-Pack-${GITHUB_RUN_ID:-12345}"

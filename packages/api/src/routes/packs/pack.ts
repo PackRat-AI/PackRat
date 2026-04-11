@@ -10,7 +10,8 @@ import {
 } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import {
-  ItemSuggestionsRequestSchema,
+  GapAnalysisRequestSchema,
+  GapAnalysisResponseSchema,
   PackWithWeightsSchema,
   UpdatePackRequestSchema,
 } from '@packrat/api/schemas/packs';
@@ -82,7 +83,7 @@ packRoutes.openapi(getPackRoute, async (c) => {
     if (!pack) {
       return c.json({ error: 'Pack not found' }, 404);
     }
-    return c.json(pack, 200);
+    return c.json(computePackWeights(pack), 200);
   } catch (error) {
     console.error('Error fetching pack:', error);
     return c.json({ error: 'Failed to fetch pack' }, 500);
@@ -208,6 +209,14 @@ const deletePackRoute = createRoute({
         },
       },
     },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
     500: {
       description: 'Internal server error',
       content: {
@@ -221,14 +230,19 @@ const deletePackRoute = createRoute({
 
 packRoutes.openapi(deletePackRoute, async (c) => {
   const db = createDb(c);
-  try {
-    const packId = c.req.param('packId');
-    await db.delete(packs).where(eq(packs.id, packId));
-    return c.json({ success: true }, 200);
-  } catch (error) {
-    console.error('Error deleting pack:', error);
-    return c.json({ error: 'Failed to delete pack' }, 500);
+  const auth = c.get('user');
+  const packId = c.req.param('packId');
+
+  const pack = await db.query.packs.findFirst({
+    where: and(eq(packs.id, packId), eq(packs.userId, auth.userId)),
+  });
+
+  if (!pack) {
+    return c.json({ error: 'Pack not found' }, 404);
   }
+
+  await db.delete(packs).where(and(eq(packs.id, packId), eq(packs.userId, auth.userId)));
+  return c.json({ success: true }, 200);
 });
 
 const itemSuggestionsRoute = createRoute({
@@ -246,7 +260,12 @@ const itemSuggestionsRoute = createRoute({
     body: {
       content: {
         'application/json': {
-          schema: ItemSuggestionsRequestSchema,
+          schema: z.object({
+            existingCatalogItemIds: z.array(z.number()).openapi({
+              example: [101, 202, 303],
+              description: 'Array of existing catalog item IDs in the pack to avoid duplicates',
+            }),
+          }),
         },
       },
       required: true,
@@ -259,10 +278,12 @@ const itemSuggestionsRoute = createRoute({
         'application/json': {
           schema: z.array(
             z.object({
-              id: z.string(),
+              id: z.number(),
               name: z.string(),
-              image: z.string().nullable(),
-              category: z.string().nullable(),
+              weight: z.number().nullable(),
+              weightUnit: z.string().nullable(),
+              images: z.array(z.string()).nullable(),
+              categories: z.array(z.string()).nullable(),
               similarity: z.number(),
             }),
           ),
@@ -291,6 +312,7 @@ const itemSuggestionsRoute = createRoute({
 packRoutes.openapi(itemSuggestionsRoute, async (c) => {
   const db = createDb(c);
   const packId = c.req.param('packId');
+  const { existingCatalogItemIds } = await c.req.json();
 
   const pack = await getPackDetails({ packId, c });
   if (!pack) {
@@ -318,13 +340,9 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
 
   const similarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, avgEmbedding)})`;
 
-  const existingCatalogIds = pack.items
-    .map((item) => item.catalogItemId)
-    .filter((id): id is number => typeof id === 'number');
-
   const whereConditions = [gt(similarity, 0.1)];
-  if (existingCatalogIds.length > 0) {
-    whereConditions.push(notInArray(catalogItems.id, existingCatalogIds));
+  if (existingCatalogItemIds.length > 0) {
+    whereConditions.push(notInArray(catalogItems.id, existingCatalogItemIds));
   }
 
   const similarItems = await db
@@ -333,6 +351,8 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
       name: catalogItems.name,
       images: catalogItems.images,
       categories: catalogItems.categories,
+      weight: catalogItems.weight,
+      weightUnit: catalogItems.weightUnit,
       similarity,
     })
     .from(catalogItems)
@@ -340,16 +360,7 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     .orderBy(desc(similarity))
     .limit(5);
 
-  // Transform to match expected schema (singular image/category instead of arrays)
-  const transformedItems = similarItems.map((item) => ({
-    id: item.id.toString(),
-    name: item.name,
-    image: item.images?.[0] ?? null,
-    category: item.categories?.[0] ?? null,
-    similarity: item.similarity,
-  }));
-
-  return c.json(transformedItems, 200);
+  return c.json(similarItems, 200);
 });
 
 const weightHistoryRoute = createRoute({
@@ -439,3 +450,214 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
 });
 
 export { packRoutes };
+
+const gapAnalysisRoute = createRoute({
+  method: 'post',
+  path: '/{packId}/gap-analysis',
+  tags: ['Packs'],
+  summary: 'Analyze gear gaps in pack',
+  description:
+    'Use AI to analyze the pack contents and identify missing gear based on trip context and destination',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: z.object({
+      packId: z.string().openapi({ example: 'p_123456' }),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: GapAnalysisRequestSchema,
+        },
+      },
+      required: false,
+    },
+  },
+  responses: {
+    200: {
+      description: 'Gap analysis completed successfully',
+      content: {
+        'application/json': {
+          schema: GapAnalysisResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: 'Bad request - invalid pack or insufficient data',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'Pack not found',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    403: {
+      description: 'Forbidden',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: 'Internal server error',
+      content: {
+        'application/json': {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+packRoutes.openapi(gapAnalysisRoute, async (c) => {
+  const auth = c.get('user');
+  const packId = c.req.param('packId');
+  const { WeatherService } = await import('@packrat/api/services/weatherService');
+  const weatherService = new WeatherService(c);
+
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    const { destination, tripType, duration, startDate, endDate } = body;
+
+    // Get pack details with items
+    const packDetails = await getPackDetails({ packId, c });
+    if (!packDetails) {
+      return c.json({ error: 'Pack not found' }, 404);
+    }
+
+    const pack = computePackWeights(packDetails);
+
+    // Check if pack belongs to user
+    const isOwned = pack.userId === auth.userId;
+    if (!isOwned) {
+      return c.json({ error: 'Forbidden' }, 403);
+    }
+
+    if (!pack.items || pack.items.length === 0) {
+      return c.json({ error: 'Pack has no items to analyze' }, 400);
+    }
+
+    // Build context for AI analysis - context data to be used in prompt
+    // Data is embedded directly in the prompt below
+
+    // Get weather context if location provided
+    let weatherContext = '';
+    if (destination) {
+      try {
+        const weatherResult = await weatherService.getWeatherForLocation(destination);
+        weatherContext = `Current weather in ${destination}: ${JSON.stringify(weatherResult)}`;
+      } catch (error) {
+        console.warn('Weather lookup failed:', error);
+      }
+    }
+
+    // Prepare the gap analysis prompt
+    const gapAnalysisPrompt = `
+You are analyzing a hiking pack for gear gaps. Based on the pack contents and context, identify missing items that could improve safety, comfort, or preparedness.
+
+Pack Details:
+- Name: ${pack.name}
+- Category: ${pack.category || 'General'}
+- Description: ${pack.description || 'No description'}
+- Tags: ${pack.tags?.join(', ') || 'None'}
+- Total Weight: ${pack.totalWeight || 0}g
+- Base Weight: ${pack.baseWeight || 0}g
+- Item Count: ${pack.items.length}
+
+Trip Context:
+- Destination: ${destination || 'Not specified'} 
+- Trip Type: ${tripType || 'Not specified'}
+- Duration: ${duration || 'Not specified'}
+- Start Date: ${startDate || 'Not specified'}
+- End Date: ${endDate || 'Not specified'}
+
+${weatherContext}
+
+Current Items in Pack:
+${pack.items
+  .map(
+    (item) =>
+      `- ${item.name} (${item.category || 'Uncategorized'}, ${item.weight}g, qty: ${item.quantity}${item.worn ? ', worn' : ''}${item.consumable ? ', consumable' : ''})`,
+  )
+  .join('\n')}
+
+Categories represented: ${Array.from(new Set(pack.items.map((item) => item.category).filter(Boolean))).join(', ')}
+
+Analyze this pack and return a JSON response with the following structure:
+{
+  "gaps": [
+    {
+      "suggestion": "Item name",
+      "reason": "Detailed explanation of why this item is recommended",
+      "consumable": true|false,
+      "worn": true|false,
+      "priority": "must-have|nice-to-have|optional"
+    }
+  ],
+  "summary": "Brief overall assessment of the pack's preparedness"
+}
+
+Focus on:
+1. Safety essentials (first aid, navigation, emergency shelter)
+2. Weather protection appropriate for the conditions and season 
+3. Basic comfort items for the trip duration
+4. Food and water considerations 
+5. Trip-specific gear based on destination and activity type
+
+Limit to maximum 6 recommendations, prioritizing the most important gaps. Only suggest items that are truly missing or inadequate for the described conditions.`;
+
+    // Call the AI for gap analysis
+    const { createAIProvider } = await import('@packrat/api/utils/ai/provider');
+    const { generateObject } = await import('ai');
+    const { getEnv } = await import('@packrat/api/utils/env-validation');
+    const { DEFAULT_MODELS } = await import('@packrat/api/utils/ai/models');
+
+    const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
+      getEnv(c);
+
+    const aiProvider = createAIProvider({
+      openAiApiKey: OPENAI_API_KEY,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareAiBinding: AI,
+    });
+
+    if (!aiProvider) {
+      return c.json({ error: 'AI provider not configured' }, 500);
+    }
+
+    const result = await generateObject({
+      model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
+      prompt: gapAnalysisPrompt,
+      schema: z.object({
+        gaps: z.array(
+          z.object({
+            suggestion: z.string(),
+            reason: z.string(),
+            consumable: z.boolean(),
+            worn: z.boolean(),
+            priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional(),
+          }),
+        ),
+        summary: z.string().optional(),
+      }),
+      temperature: 0.3, // Lower temperature for more consistent analysis
+    });
+
+    return c.json(result.object, 200);
+  } catch (error) {
+    console.error('Gap analysis error:', error);
+    c.get('sentry')?.setTag('location', 'gap-analysis');
+    c.get('sentry')?.setContext('meta', { packId });
+    c.get('sentry')?.captureException(error);
+    throw error;
+  }
+});

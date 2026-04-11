@@ -2,6 +2,7 @@ import { Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { Linking, TouchableOpacity, View } from 'react-native';
 
 type ItemLinksProps = {
@@ -10,6 +11,7 @@ type ItemLinksProps = {
 
 export function ItemLinks({ links }: ItemLinksProps) {
   const { colors } = useColorScheme();
+  const { t } = useTranslation();
 
   if (!links || links.length === 0) return null;
 
@@ -25,7 +27,7 @@ export function ItemLinks({ links }: ItemLinksProps) {
   return (
     <View className="my-8">
       <Text variant="callout" className="mb-2">
-        Links
+        {t('catalog.links')}
       </Text>
       <View className="rounded-lg">
         {links.map((link) => (

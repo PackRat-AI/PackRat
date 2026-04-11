@@ -1,4 +1,6 @@
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
+import { getImageExtension } from 'expo-app/lib/utils/imageUtils';
+import { nanoid } from 'nanoid/non-secure';
 
 export async function cacheCatalogItemImage(imageUrl?: string): Promise<string | null> {
   if (!imageUrl) {
@@ -6,9 +8,9 @@ export async function cacheCatalogItemImage(imageUrl?: string): Promise<string |
   }
 
   try {
-    // Generate a filename from the URL
-    const fileName = imageUrl.split('/').pop() || `image_${Date.now()}.jpg`;
-    const filename = await ImageCacheManager.cacheRemoteImage(fileName, imageUrl);
+    const extension = await getImageExtension(imageUrl);
+    const filename = `${nanoid()}.${extension}`;
+    await ImageCacheManager.cacheRemoteImage(filename, imageUrl);
     return filename;
   } catch (err) {
     console.log('caching remote image failed', err);

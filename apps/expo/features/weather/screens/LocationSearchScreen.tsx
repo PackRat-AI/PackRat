@@ -1,11 +1,11 @@
-import { SearchInput, type SearchInputRef, Text } from '@packrat/ui/nativewindui';
+import { SearchInput, Text } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
+import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,11 +14,13 @@ import {
   Keyboard,
   Linking,
   Platform,
+  type TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDebouncedCallback } from 'use-debounce';
 import { useLocationSearch } from '../hooks';
 import type { LocationSearchResult } from '../types';
 
@@ -27,11 +29,11 @@ const RECENT_SEARCHES_KEY = 'packrat_recent_location_searches';
 
 export default function LocationSearchScreen() {
   const { colors } = useColorScheme();
-  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const { isLoading, results, error, search, addSearchResult, searchByCoordinates } =
     useLocationSearch();
-  const searchInputRef = useRef<SearchInputRef>(null);
+  const searchInputRef = useRef<TextInput>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [addingLocationId, setAddingLocationId] = useState<number | null>(null);
@@ -42,7 +44,7 @@ export default function LocationSearchScreen() {
   useEffect(() => {
     setTimeout(() => {
       searchInputRef.current?.focus();
-    }, 300);
+    }, 600);
   }, []);
 
   // Load recent searches from AsyncStorage
@@ -87,11 +89,9 @@ export default function LocationSearchScreen() {
   };
 
   // Create a debounced search function
-  const debouncedSearch = useRef(
-    debounce((text: string) => {
-      search(text);
-    }, 500),
-  ).current;
+  const debouncedSearch = useDebouncedCallback((text: string) => {
+    search(text);
+  }, 500);
 
   // Handle search input change
   const handleSearchChange = (text: string) => {
@@ -112,15 +112,15 @@ export default function LocationSearchScreen() {
 
         // Show success message
         Alert.alert(
-          'Location Added',
-          `${location.name} has been added to your locations.`,
+          t('weather.locationAdded'),
+          t('weather.locationAddedMessage', { name: location.name }),
           [
             {
-              text: 'View All Locations',
+              text: t('weather.viewAllLocations'),
               onPress: () => router.back(),
             },
             {
-              text: 'Add Another',
+              text: t('weather.addAnother'),
               onPress: () => {
                 setQuery('');
                 searchInputRef.current?.focus();
@@ -130,11 +130,11 @@ export default function LocationSearchScreen() {
           { cancelable: false },
         );
       } else {
-        Alert.alert('Error', 'Failed to add location. Please try again.');
+        Alert.alert(t('common.error'), t('weather.errorAddingLocation'));
       }
     } catch (err) {
       console.error('Error adding location:', err);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      Alert.alert(t('common.error'), t('weather.unexpectedError'));
     } finally {
       setIsAdding(false);
       setAddingLocationId(null);
@@ -177,23 +177,19 @@ export default function LocationSearchScreen() {
 
       if (status !== 'granted') {
         setLocationPermissionDenied(true);
-        Alert.alert(
-          'Permission Denied',
-          'We need location permissions to get your current location.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Open Settings',
-              onPress: () => {
-                if (Platform.OS === 'ios') {
-                  Linking.openURL('app-settings:');
-                } else {
-                  Linking.openSettings();
-                }
-              },
+        Alert.alert(t('weather.permissionDenied'), t('weather.permissionDeniedMessage'), [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('weather.openSettings'),
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Linking.openURL('app-settings:');
+              } else {
+                Linking.openSettings();
+              }
             },
-          ],
-        );
+          },
+        ]);
         return;
       }
 
@@ -223,17 +219,13 @@ export default function LocationSearchScreen() {
 
       // Provide more specific error messages
       if (err instanceof Error && err.message === 'Location request timed out') {
-        Alert.alert(
-          'Location Timeout',
-          'Unable to get your location in time. Please try again or search manually.',
-          [{ text: 'OK' }],
-        );
+        Alert.alert(t('weather.locationTimeout'), t('weather.locationTimeoutMessage'), [
+          { text: t('common.ok') },
+        ]);
       } else {
-        Alert.alert(
-          'Location Error',
-          'Unable to get your current location. Please try again or search manually.',
-          [{ text: 'OK' }],
-        );
+        Alert.alert(t('weather.locationError'), t('weather.locationErrorMessage'), [
+          { text: t('common.ok') },
+        ]);
       }
     } finally {
       setIsGettingLocation(false);
@@ -269,7 +261,7 @@ export default function LocationSearchScreen() {
             className="bg-primary/10 mr-2 rounded-full px-3 py-1.5"
             onPress={() => handleViewLocationDetails(item)}
           >
-            <Text className="text-sm font-medium text-primary">View</Text>
+            <Text className="text-sm font-medium text-primary">{t('weather.view')}</Text>
           </TouchableOpacity>
 
           {/* Add Button */}
@@ -281,7 +273,7 @@ export default function LocationSearchScreen() {
             {isAdding && addingLocationId === item.id ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text className="text-sm font-medium text-white">Add</Text>
+              <Text className="text-sm font-medium text-white">{t('weather.add')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -300,7 +292,7 @@ export default function LocationSearchScreen() {
             className="mt-6 rounded-full bg-primary px-4 py-2"
             onPress={() => (query.length > 0 ? debouncedSearch(query) : handleUseDeviceLocation())}
           >
-            <Text className="text-white">Try Again</Text>
+            <Text className="text-white">{t('weather.tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -311,10 +303,10 @@ export default function LocationSearchScreen() {
         <View className="flex-1 items-center justify-center p-8">
           <Icon name="magnify-minus-outline" size={48} color={colors.grey2} />
           <Text className="mt-4 text-center text-muted-foreground">
-            No locations found for "{query}"
+            {t('weather.noLocationsFound', { query })}
           </Text>
           <Text className="mt-1 text-center text-sm text-muted-foreground">
-            Try a different search term or check your spelling
+            {t('weather.tryDifferentSearch')}
           </Text>
         </View>
       );
@@ -334,24 +326,28 @@ export default function LocationSearchScreen() {
           {isGettingLocation ? (
             <>
               <ActivityIndicator size="small" color={colors.primary} />
-              <Text className="font-medium text-primary">Getting your location...</Text>
+              <Text className="font-medium text-primary">{t('weather.gettingLocation')}</Text>
             </>
           ) : locationPermissionDenied ? (
             <>
               <Icon name="bell-outline" size={20} color={colors.destructive} />
-              <Text className="font-medium text-destructive">Location permission required</Text>
+              <Text className="font-medium text-destructive">
+                {t('weather.locationPermissionRequired')}
+              </Text>
             </>
           ) : (
             <>
               <Icon name="map-marker-radius-outline" size={20} color={colors.primary} />
-              <Text className="font-medium text-primary">Use my current location</Text>
+              <Text className="font-medium text-primary">{t('weather.useCurrentLocation')}</Text>
             </>
           )}
         </TouchableOpacity>
 
         {recentSearches.length > 0 && (
           <>
-            <Text className="mb-2 text-xs uppercase text-muted-foreground">RECENT SEARCHES</Text>
+            <Text className="mb-2 text-xs uppercase text-muted-foreground">
+              {t('weather.recentSearches')}
+            </Text>
             <View className="mb-6">
               {recentSearches.map((search) => (
                 <TouchableOpacity
@@ -367,7 +363,9 @@ export default function LocationSearchScreen() {
           </>
         )}
 
-        <Text className="mb-2 text-xs uppercase text-muted-foreground">POPULAR CITIES</Text>
+        <Text className="mb-2 text-xs uppercase text-muted-foreground">
+          {t('weather.popularCities')}
+        </Text>
         <View>
           {POPULAR_CITIES.map((city) => (
             <TouchableOpacity
@@ -383,29 +381,20 @@ export default function LocationSearchScreen() {
             </TouchableOpacity>
           ))}
         </View>
-
-        <View className="border-border/30 mt-8 items-center border-t pt-6">
-          <Text className="text-center text-sm font-medium">First time adding a location?</Text>
-          <Text className="mt-1 px-4 text-center text-xs text-muted-foreground">
-            Search for your city above or select from popular cities to add your first weather
-            location
-          </Text>
-        </View>
       </View>
     );
   };
 
   return (
-    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+    <SafeAreaView className="flex-1 bg-background">
       {/* Search Input */}
-      <View className="px-4 py-2">
+      <View className="px-4">
         <SearchInput
           ref={searchInputRef}
-          placeholder="Search for a city"
+          placeholder={t('weather.searchForCity')}
           value={query}
           onChangeText={handleSearchChange}
-          containerClassName="bg-muted"
-          autoFocus
+          containerClassName="border border-border"
           clearButtonMode="while-editing"
         />
       </View>
@@ -418,7 +407,7 @@ export default function LocationSearchScreen() {
           className="flex-1 items-center justify-center"
         >
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text className="mt-4 text-muted-foreground">Searching for locations...</Text>
+          <Text className="mt-4 text-muted-foreground">{t('weather.searchingForLocations')}</Text>
         </Animated.View>
       ) : (
         <FlatList
@@ -430,6 +419,6 @@ export default function LocationSearchScreen() {
           keyboardShouldPersistTaps="handled"
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
