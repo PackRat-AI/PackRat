@@ -1,9 +1,11 @@
 import { List, ListItem, Text } from '@packrat/ui/nativewindui';
 import { format } from 'date-fns';
+import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
+import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
@@ -102,6 +104,14 @@ function PackStatus({ status, completion }: { status: string; completion: number
 // }
 
 export default function UpcomingTripsScreen() {
+  // Gate deep links behind the trips feature flag. `featureFlags` is a build-
+  // time constant, so this branch is stable across renders and does not break
+  // the rules of hooks.
+  if (!featureFlags.enableTrips) return <Redirect href="/" />;
+  return <UpcomingTripsScreenInner />;
+}
+
+function UpcomingTripsScreenInner() {
   const { t } = useTranslation();
   const trips = useTrips();
   const packs = useDetailedPacks();
