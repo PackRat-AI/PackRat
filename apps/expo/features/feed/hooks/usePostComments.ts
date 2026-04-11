@@ -6,10 +6,9 @@ export const usePostComments = (postId: number) => {
   return useInfiniteQuery({
     queryKey: ['feed', postId, 'comments'],
     queryFn: async ({ pageParam = 1 }) => {
-      const response = await axiosInstance.get<CommentsResponse>(
-        `/api/feed/${postId}/comments`,
-        { params: { page: pageParam, limit: 20 } },
-      );
+      const response = await axiosInstance.get<CommentsResponse>(`/api/feed/${postId}/comments`, {
+        params: { page: pageParam, limit: 20 },
+      });
       return response.data;
     },
     getNextPageParam: (lastPage) => {

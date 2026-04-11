@@ -10,11 +10,12 @@ export function useWildlifeHistory() {
   const [, setHistory] = useAtom(baseWildlifeHistoryAtom);
 
   const addIdentification = useCallback(
-    async (
-      imageUri: string,
-      results: IdentificationResult[],
-      location?: WildlifeIdentification['location'],
-    ) => {
+    async (opts: {
+      imageUri: string;
+      results: IdentificationResult[];
+      location?: WildlifeIdentification['location'];
+    }) => {
+      const { imageUri, results, location } = opts;
       const entry: WildlifeIdentification = {
         id: nanoid(),
         imageUri,

@@ -76,10 +76,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
         const asset = result.assets[0];
         if (asset) {
           setPhotos((prev) =>
-            [
-              ...prev,
-              { uri: asset.uri, fileName: `camera_${Date.now()}.jpg` },
-            ].slice(0, 10),
+            [...prev, { uri: asset.uri, fileName: `camera_${Date.now()}.jpg` }].slice(0, 10),
           );
         }
       }
@@ -104,7 +101,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       const results = await Promise.all(
         photos.map(async (photo) => {
           const ext = photo.fileName.includes('.')
-            ? photo.fileName.split('.').pop()?.toLowerCase() ?? 'jpg'
+            ? (photo.fileName.split('.').pop()?.toLowerCase() ?? 'jpg')
             : 'jpg';
           const uniqueName = `${nanoid()}.${ext}`;
           return uploadImage(uniqueName, photo.uri);
@@ -148,6 +145,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       {/* Photo grid */}
       <View className="flex-row flex-wrap gap-2 mb-4">
         {photos.map((photo, idx) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: photos have no stable id
           <View key={`${photo.uri}-${idx}`} className="relative">
             <Image
               source={{ uri: photo.uri }}
@@ -196,9 +194,7 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
           className="text-foreground text-sm min-h-[80px]"
           style={{ color: colors.foreground }}
         />
-        <Text className="text-xs text-muted-foreground text-right mt-1">
-          {caption.length}/2000
-        </Text>
+        <Text className="text-xs text-muted-foreground text-right mt-1">{caption.length}/2000</Text>
       </View>
 
       {/* Submit */}
