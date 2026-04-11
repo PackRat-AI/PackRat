@@ -1,6 +1,5 @@
 'use client';
 
-import { assertIsString } from '@packrat/guards';
 import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
   LargeTitleHeader,
