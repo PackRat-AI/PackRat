@@ -3,26 +3,39 @@ import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { isArray } from 'radash';
+import { useMemo } from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { usePackTemplates } from '../hooks';
-import { usePackTemplateDetails } from '../hooks/usePackTemplatesDetails';
-import type { PackTemplate } from '../types';
+import { usePackTemplateSummaries } from '../hooks/usePackTemplateSummary';
+import type { PackTemplate, PackTemplateInStore } from '../types';
 
 type FeaturedPackCardProps = {
-  templateId: string;
+  template: PackTemplateInStore;
+  itemCount: number;
+  baseWeight: number;
+  totalWeight: number;
   onPress: (template: PackTemplate) => void;
 };
 
-function FeaturedPackCard({ templateId, onPress }: FeaturedPackCardProps) {
-  const template = usePackTemplateDetails(templateId);
+function FeaturedPackCard({
+  template,
+  itemCount,
+  baseWeight,
+  totalWeight,
+  onPress,
+}: FeaturedPackCardProps) {
   const { t } = useTranslation();
 
-  if (!template) return null;
+  const handlePress = () => {
+    // The consumer only reads `id` from the template, but we materialise the
+    // minimum `PackTemplate` shape to keep the callback type strict.
+    onPress({ ...template, items: [], baseWeight, totalWeight });
+  };
 
   return (
     <Pressable
       className="mr-4 w-64 overflow-hidden rounded-xl bg-card shadow-sm"
-      onPress={() => onPress(template)}
+      onPress={handlePress}
       style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}
     >
       {template.image ? (
@@ -61,12 +74,10 @@ function FeaturedPackCard({ templateId, onPress }: FeaturedPackCardProps) {
 
         <View className="flex-row items-center justify-between">
           <View className="flex-row gap-1">
-            <WeightBadge weight={template.baseWeight ?? 0} unit="g" type="base" />
+            <WeightBadge weight={baseWeight} unit="g" type="base" />
           </View>
           <Text className="text-xs text-muted-foreground">
-            {template.items && isArray(template.items)
-              ? `${template.items.length} ${t('packTemplates.items')}`
-              : `0 ${t('packTemplates.items')}`}
+            {`${itemCount} ${t('packTemplates.items')}`}
           </Text>
         </View>
       </View>
@@ -83,7 +94,17 @@ export function FeaturedPacksSection({ onTemplatePress }: FeaturedPacksSectionPr
   const { t } = useTranslation();
   const router = useRouter();
 
-  const featuredTemplates = templates.filter((template) => template.isAppTemplate);
+  const featuredTemplates = useMemo(
+    () => templates.filter((template) => template.isAppTemplate),
+    [templates],
+  );
+
+  const featuredIds = useMemo(() => featuredTemplates.map((t) => t.id), [featuredTemplates]);
+
+  // Single pass over the items store computes item count + base weight for all
+  // featured templates at once, instead of each card subscribing to the full
+  // details hook and iterating every item in the store on its own.
+  const summaries = usePackTemplateSummaries(featuredIds);
 
   if (featuredTemplates.length === 0) return null;
 
@@ -103,9 +124,19 @@ export function FeaturedPacksSection({ onTemplatePress }: FeaturedPacksSectionPr
         contentContainerStyle={{ paddingLeft: 16, paddingRight: 8 }}
         className="pb-2"
       >
-        {featuredTemplates.map((template) => (
-          <FeaturedPackCard key={template.id} templateId={template.id} onPress={onTemplatePress} />
-        ))}
+        {featuredTemplates.map((template) => {
+          const summary = summaries[template.id];
+          return (
+            <FeaturedPackCard
+              key={template.id}
+              template={template}
+              itemCount={summary?.itemCount ?? 0}
+              baseWeight={summary?.baseWeight ?? 0}
+              totalWeight={summary?.totalWeight ?? 0}
+              onPress={onTemplatePress}
+            />
+          );
+        })}
       </ScrollView>
     </View>
   );
