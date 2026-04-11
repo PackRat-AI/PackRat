@@ -84,17 +84,16 @@ export const PREDEFINED_REGIONS: PredefinedRegion[] = [
   },
 ];
 
+export type TileBounds = { minLat: number; maxLat: number; minLon: number; maxLon: number };
+export type ZoomRange = { minZoom: number; maxZoom: number };
+
 /**
  * Estimate tile count for a given bounding box and zoom range.
  * Formula: sum over zooms of (tiles_x * tiles_y) where each tile = 256×256 px.
  */
-export function estimateTileCount(
-  bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number },
-  minZoom: number,
-  maxZoom: number,
-): number {
+export function estimateTileCount(bounds: TileBounds, zoomRange: ZoomRange): number {
   let total = 0;
-  for (let z = minZoom; z <= maxZoom; z++) {
+  for (let z = zoomRange.minZoom; z <= zoomRange.maxZoom; z++) {
     const factor = 2 ** z;
     const xMin = Math.floor(((bounds.minLon + 180) / 360) * factor);
     const xMax = Math.floor(((bounds.maxLon + 180) / 360) * factor);
@@ -121,12 +120,8 @@ const BYTES_PER_TILE = 7_500;
 /**
  * Estimate download size in bytes.
  */
-export function estimateDownloadSize(
-  bounds: { minLat: number; maxLat: number; minLon: number; maxLon: number },
-  minZoom: number,
-  maxZoom: number,
-): number {
-  return estimateTileCount(bounds, minZoom, maxZoom) * BYTES_PER_TILE;
+export function estimateDownloadSize(bounds: TileBounds, zoomRange: ZoomRange): number {
+  return estimateTileCount(bounds, zoomRange) * BYTES_PER_TILE;
 }
 
 /** Format bytes to a human-readable string */

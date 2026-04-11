@@ -228,7 +228,10 @@ function AddRegionModal({
   visible: boolean;
   onClose: () => void;
   /** Called with the selected region and zoom levels; hook lifecycle lives in parent */
-  onStartDownload: (region: PredefinedRegion, minZoom: number, maxZoom: number) => Promise<void>;
+  onStartDownload: (
+    region: PredefinedRegion,
+    zoomRange: { minZoom: number; maxZoom: number },
+  ) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const { colors } = useColorScheme();
@@ -246,7 +249,7 @@ function AddRegionModal({
       // Validation (storage check, duplicate guard) happens inside onStartDownload.
       // We await it BEFORE closing so errors can be shown inline in the modal.
       // The actual tile simulation runs in the background, so this returns quickly.
-      await onStartDownload(selected, minZoom, maxZoom);
+      await onStartDownload(selected, { minZoom, maxZoom });
       onClose();
     } catch (error) {
       const isDuplicate = error instanceof Error && error.message === ERR_DUPLICATE_DOWNLOAD;
@@ -264,7 +267,7 @@ function AddRegionModal({
     }
   };
 
-  const estimatedSize = selected ? estimateDownloadSize(selected.bounds, minZoom, maxZoom) : 0;
+  const estimatedSize = selected ? estimateDownloadSize(selected.bounds, { minZoom, maxZoom }) : 0;
 
   const sizeLabelForCategory = (cat: PredefinedRegion['sizeCategory']) => {
     if (cat === 'state-park') return t('offlineMaps.sizeCategoryStatePark');

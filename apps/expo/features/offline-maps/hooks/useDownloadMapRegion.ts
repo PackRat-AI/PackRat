@@ -5,12 +5,14 @@ import { offlineMapsStore } from '../store/offlineMaps';
 import type { OfflineMapRegion, PredefinedRegion } from '../types';
 import { estimateDownloadSize } from '../utils/regions';
 
+interface RunDownloadOptions {
+  estimatedSize: number;
+  signal: { cancelled: boolean };
+}
+
 /** Runs tile download simulation in the background without blocking the caller */
-async function runDownloadInBackground(
-  id: string,
-  estimatedSize: number,
-  signal: { cancelled: boolean },
-): Promise<void> {
+async function runDownloadInBackground(id: string, opts: RunDownloadOptions): Promise<void> {
+  const { estimatedSize, signal } = opts;
   const TICK_MS = 300;
   // Scale ticks with size: ~20 ticks per 10 MB, clamped between 10 and 60.
   const MB = estimatedSize / (1024 * 1024);
@@ -24,7 +26,7 @@ async function runDownloadInBackground(
       if (signal.cancelled) return;
       const progress = Math.round((tick / TOTAL_TICKS) * 100);
       const downloadedSize = Math.round((tick / TOTAL_TICKS) * estimatedSize);
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       offlineMapsStore[id].set((prev) => ({
         ...prev,
         progress,
@@ -35,7 +37,7 @@ async function runDownloadInBackground(
     }
 
     if (!signal.cancelled) {
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       offlineMapsStore[id].set((prev) => ({
         ...prev,
         progress: 100,
@@ -46,7 +48,7 @@ async function runDownloadInBackground(
     }
   } catch (error) {
     console.error(`[OfflineMaps] Download simulation failed for entry "${id}":`, error);
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     offlineMapsStore[id].set((prev) => ({
       ...prev,
       status: 'failed',
@@ -74,7 +76,8 @@ export function useDownloadMapRegion() {
    * before closing any modal.
    */
   const downloadRegion = useCallback(
-    async (region: PredefinedRegion, minZoom: number, maxZoom: number) => {
+    async (region: PredefinedRegion, zoomRange: { minZoom: number; maxZoom: number }) => {
+      const { minZoom, maxZoom } = zoomRange;
       // Guard: prevent duplicate downloads for the same region
       const existingEntries = Object.values(offlineMapsStore.get());
       const alreadyActive = existingEntries.some(
@@ -84,7 +87,7 @@ export function useDownloadMapRegion() {
         throw new Error(ERR_DUPLICATE_DOWNLOAD);
       }
 
-      const estimatedSize = estimateDownloadSize(region.bounds, minZoom, maxZoom);
+      const estimatedSize = estimateDownloadSize(region.bounds, { minZoom, maxZoom });
 
       // Check available disk space before starting — throw so caller can show inline error
       const freeSpace = await FileSystem.getFreeDiskStorageAsync();
@@ -110,7 +113,7 @@ export function useDownloadMapRegion() {
         updatedAt: now,
       };
 
-      // @ts-ignore: Safe because Legend-State uses Proxy
+      // @ts-expect-error: Safe because Legend-State uses Proxy
       offlineMapsStore[id].set(entry);
 
       // Ensure directory exists
@@ -123,7 +126,7 @@ export function useDownloadMapRegion() {
       cancelRefs.current[id] = signal;
 
       // Fire-and-forget: download runs in background so the modal can close immediately
-      runDownloadInBackground(id, estimatedSize, signal).finally(() => {
+      runDownloadInBackground(id, { estimatedSize, signal }).finally(() => {
         delete cancelRefs.current[id];
       });
     },
@@ -135,7 +138,7 @@ export function useDownloadMapRegion() {
       cancelRefs.current[id].cancelled = true;
     }
     // Remove the entry entirely rather than leaving an orphaned 'idle' record
-    // @ts-ignore: Safe because Legend-State uses Proxy
+    // @ts-expect-error: Safe because Legend-State uses Proxy
     offlineMapsStore[id].delete();
   }, []);
 
