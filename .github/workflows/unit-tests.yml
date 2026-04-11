@@ -13,7 +13,8 @@ on:
       - "apps/expo/vitest.config.ts"
       - "apps/expo/utils/**"
       - "apps/expo/lib/utils/**"
-      - "apps/expo/features/packs/utils/**"
+      - "apps/expo/features/**/utils/**"
+      - ".github/workflows/unit-tests.yml"
   pull_request:
     branches: ["**"]
     paths:
@@ -26,7 +27,8 @@ on:
       - "apps/expo/vitest.config.ts"
       - "apps/expo/utils/**"
       - "apps/expo/lib/utils/**"
-      - "apps/expo/features/packs/utils/**"
+      - "apps/expo/features/**/utils/**"
+      - ".github/workflows/unit-tests.yml"
 
 permissions:
   contents: read
