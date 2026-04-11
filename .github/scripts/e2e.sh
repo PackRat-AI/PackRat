@@ -4,6 +4,13 @@ set -e
 PLATFORM=$1  # "ios" or "android"
 shift  # Remove first argument so $@ contains only the additional options
 
+# Require test credentials to be supplied via env (CI secrets or local .env.local).
+# Never fall back to baked-in defaults.
+if [ -z "${TEST_EMAIL:-}" ] || [ -z "${TEST_PASSWORD:-}" ]; then
+  echo "ERROR: TEST_EMAIL and TEST_PASSWORD must be set (via CI secrets or a gitignored .env.local)" >&2
+  exit 1
+fi
+
 # Generate unique ID for this test run
 UNIQUE_ID=$(date +%s)
 
@@ -32,9 +39,9 @@ START_TAPS=$(( ($(get_year "$START_DATE") - CURRENT_YEAR) * 12 + ($(get_month_nu
 END_TAPS=$(( ($(get_year "$END_DATE") - CURRENT_YEAR) * 12 + ($(get_month_num "$END_DATE") - CURRENT_MONTH) ))
 
 if [ "$PLATFORM" = "ios" ]; then
-  maestro test --config .maestro/config.yaml $@ \
-    -e TEST_EMAIL="${TEST_EMAIL:-qa1.admin@packratai.com}" \
-    -e TEST_PASSWORD="${TEST_PASSWORD:-Ab12345.}" \
+  maestro test --config .maestro/config.yaml "$@" \
+    -e TEST_EMAIL="$TEST_EMAIL" \
+    -e TEST_PASSWORD="$TEST_PASSWORD" \
     -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
     -e PACK_NAME="${PACK_NAME:-E2E-Pack-$UNIQUE_ID}" \
     -e APP_ID="${APP_ID:-com.andrewbierman.packrat.preview}" \
@@ -48,9 +55,9 @@ if [ "$PLATFORM" = "ios" ]; then
     -e END_TAPS="$END_TAPS" \
     .maestro/master-flow.yaml
 else
-  maestro test --config .maestro/config-android.yaml $@ \
-    -e TEST_EMAIL="${TEST_EMAIL:-qa1.admin@packratai.com}" \
-    -e TEST_PASSWORD="${TEST_PASSWORD:-Ab12345.}" \
+  maestro test --config .maestro/config-android.yaml "$@" \
+    -e TEST_EMAIL="$TEST_EMAIL" \
+    -e TEST_PASSWORD="$TEST_PASSWORD" \
     -e TRIP_NAME="${TRIP_NAME:-E2E-Trip-$UNIQUE_ID}" \
     -e PACK_NAME="${PACK_NAME:-E2E-Pack-$UNIQUE_ID}" \
     -e APP_ID="${APP_ID:-com.packratai.mobile.preview}" \

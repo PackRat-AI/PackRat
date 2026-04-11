@@ -3,7 +3,7 @@
 
 flows:
   - "flows/**/*.yaml"
-  - "*.yaml"  # Include root-level flows like master-flow.yaml
+  - "master-flow.yaml"  # Root-level iOS master flow (config*.yaml intentionally excluded)
 
 # Platform-specific settings
 platform:
