@@ -41,7 +41,7 @@ const getIconName = (iconStr: string): MaterialIconName => {
     web: 'web',
     database: 'database',
   };
-  return iconMap[iconStr] || 'tool';
+  return iconMap[iconStr] ?? 'wrench';
 };
 
 const handleToolPress = (tool: ToolInfo) => {
@@ -68,10 +68,12 @@ export function AvailableToolsGenerativeUI({ tools, totalCount }: AvailableTools
   // Group tools by category
   const toolsByCategory = tools.reduce(
     (acc, tool) => {
-      if (!acc[tool.category]) {
-        acc[tool.category] = [];
+      const bucket = acc[tool.category];
+      if (bucket) {
+        bucket.push(tool);
+      } else {
+        acc[tool.category] = [tool];
       }
-      acc[tool.category].push(tool);
       return acc;
     },
     {} as Record<string, ToolInfo[]>,
@@ -84,7 +86,7 @@ export function AvailableToolsGenerativeUI({ tools, totalCount }: AvailableTools
       {/* Header */}
       <View className="bg-muted/30 border-b border-border px-4 py-3">
         <View className="flex-row items-center gap-2">
-          <Icon name="tool" size={16} color={colors.foreground} />
+          <Icon name="wrench" size={16} color={colors.foreground} />
           <Text className="text-sm text-foreground" color="secondary">
             Available AI Tools
           </Text>
@@ -119,7 +121,7 @@ export function AvailableToolsGenerativeUI({ tools, totalCount }: AvailableTools
 
             {/* Tools in Category */}
             <View className="gap-2">
-              {toolsByCategory[category].map((tool) => (
+              {(toolsByCategory[category] ?? []).map((tool) => (
                 <Pressable
                   key={tool.name}
                   onPress={() => handleToolPress(tool)}
@@ -146,7 +148,7 @@ export function AvailableToolsGenerativeUI({ tools, totalCount }: AvailableTools
                       </Text>
                     </View>
 
-                    <Icon name="chevron-right" size={16} color={colors.muted} />
+                    <Icon name="chevron-right" size={16} color={colors.grey2} />
                   </View>
                 </Pressable>
               ))}
