@@ -59,7 +59,7 @@ describe('authMiddleware', () => {
 
     it('should reject when token is missing in Authorization header', async () => {
       const c = makeMockContext('Bearer ');
-      const result = await authMiddleware(c, mockNext);
+      const _result = await authMiddleware(c, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(c.json).toHaveBeenCalledWith({ error: 'No token provided' }, 401);
@@ -71,7 +71,7 @@ describe('authMiddleware', () => {
       mockVerify.mockRejectedValue(new Error('Invalid token'));
 
       const c = makeMockContext('Bearer invalid-token');
-      const result = await authMiddleware(c, mockNext);
+      const _result = await authMiddleware(c, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(c.json).toHaveBeenCalledWith({ error: 'Invalid token' }, 401);
@@ -108,7 +108,7 @@ describe('authMiddleware', () => {
       mockIsValidApiKey.mockReturnValue(false);
 
       const c = makeMockContext();
-      const result = await authMiddleware(c, mockNext);
+      const _result = await authMiddleware(c, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(c.json).toHaveBeenCalledWith({ error: 'Unauthorized' }, 401);
