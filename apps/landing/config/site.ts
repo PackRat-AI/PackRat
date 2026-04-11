@@ -125,7 +125,7 @@ export const siteConfig = {
         'Browse practical guides on trip planning, gear selection, and survival strategies for every adventure.',
       icon: 'Book',
       color: '#14B8A6',
-      image: '/feature-guides-ios.png',
+      image: '/images/features/guides-ios.png',
     },
     {
       id: 'trip-planning',
@@ -303,7 +303,7 @@ export const siteConfig = {
     subtitle: 'Download PackRat today and start planning your outdoor journeys with confidence.',
     appStoreLink: 'https://apps.apple.com/us/app/packrat-ai/id6499243187',
     googlePlayLink: 'https://play.google.com/store/apps/details?id=com.packratai.mobile&pli=1',
-    image: '/download-now-ios-image.png',
+    image: '/images/app/download-ios.png',
     features: [
       'Free — no hidden fees',
       'Works offline',

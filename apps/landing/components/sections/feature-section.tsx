@@ -90,7 +90,7 @@ export default function FeatureSection() {
               </div>
               <div className="order-1 md:order-2 flex justify-center">
                 <DeviceMockup
-                  image="/feature-my-packs.png"
+                  image="/images/features/my-packs.png"
                   alt="Smart Packing Lists"
                   showReflection
                 />
@@ -107,7 +107,7 @@ export default function FeatureSection() {
             <div className="grid gap-8 md:grid-cols-2 items-center p-6 md:p-8">
               <div className="flex justify-center">
                 <DeviceMockup
-                  image="/feature-weather-forecast-check.png"
+                  image="/images/features/weather-forecast.png"
                   alt="Trail Maps & Navigation"
                   showReflection
                 />
@@ -210,7 +210,7 @@ export default function FeatureSection() {
                 </div>
               </div>
               <div className="order-1 md:order-2 flex justify-center">
-                <DeviceMockup image="/feature-guides-ios.png" alt="Guides" showReflection />
+                <DeviceMockup image="/images/features/guides-ios.png" alt="Guides" showReflection />
               </div>
             </div>
           </GradientBorderCard>
