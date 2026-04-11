@@ -1,7 +1,7 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { neon, neonConfig } from '@neondatabase/serverless';
-import { requireNodeEnv } from '@packrat/env/node';
+import { env } from '@packrat/env/node';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { migrate } from 'drizzle-orm/neon-http/migrator';
 import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
@@ -34,11 +34,10 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 async function runMigrations() {
-  const env = requireNodeEnv(['NEON_DATABASE_URL']);
+  const url = env.NEON_DATABASE_URL;
+  if (!url) throw new Error('NEON_DATABASE_URL is required');
 
   console.log('Running migrations...');
-
-  const url = env.NEON_DATABASE_URL;
   if (isStandardPostgresUrl(url)) {
     // Use node-postgres for standard PostgreSQL
     console.log('Using PostgreSQL migrations...');

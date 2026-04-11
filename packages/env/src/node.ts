@@ -1,21 +1,16 @@
 /**
- * Node-runtime environment shim.
- *
- * Use this from Node/Bun scripts (analytics CLI, API scripts,
- * .github/scripts) instead of reaching into `process.env.*` directly.
- *
- * Guarantees:
- * - One parse of `process.env` per process, cached.
- * - Aggregated, human-readable error on invalid/missing required vars.
- * - Typed `env.FOO` access — no `string | undefined` surprises.
+ * Node-runtime environment shim for Node/Bun scripts (analytics CLI,
+ * API scripts). Parses `process.env` once at module load using Zod and
+ * exports the typed result as `env`.
  *
  * NOTE: this shim is intentionally scoped to Node/Bun scripts. It does
  * NOT cover:
  * - The Cloudflare Worker API (see
  *   `packages/api/src/utils/env-validation.ts` — that uses `c.env` via
  *   Hono, not `process.env`).
- * - The Expo client (EXPO_PUBLIC_* only, build-time injection).
- * - Next.js (landing, guides) — Next has its own env typing story.
+ * - Bootstrap/preinstall scripts (e.g. `.github/scripts/configure-deps.ts`)
+ *   that run before workspace packages are available — those must read
+ *   `process.env` directly.
  *
  * Adding a new variable: declare it on `nodeEnvSchema`, mark it
  * `.optional()` unless every caller genuinely requires it, and prefer
@@ -64,54 +59,8 @@ export const nodeEnvSchema = z.object({
 
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
 
-let cached: NodeEnv | undefined;
-
 /**
- * Parse `process.env` against `nodeEnvSchema` exactly once per process.
- *
- * Throws an aggregated `Error` that lists every invalid/missing var
- * and why — never silently returns `undefined`.
+ * Typed env parsed from `process.env` at module load. Throws a Zod
+ * validation error if any value fails its schema constraint.
  */
-export function getNodeEnv(): NodeEnv {
-  if (cached) return cached;
-  const result = nodeEnvSchema.safeParse(process.env);
-  if (!result.success) {
-    const issues = result.error.issues
-      .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
-      .join('\n');
-    throw new Error(`Invalid Node environment configuration:\n${issues}`);
-  }
-  cached = result.data;
-  return cached;
-}
-
-/**
- * Assert that the given variables are present (non-empty) on the
- * parsed env, returning a narrowed object where those keys are
- * guaranteed defined. Throws an aggregated error listing every
- * missing key — preferred over hand-rolled `if (!env.FOO) throw ...`
- * chains at call sites that need several vars at once.
- */
-export function requireNodeEnv<K extends keyof NodeEnv>(
-  keys: readonly K[],
-): NodeEnv & { [P in K]-?: NonNullable<NodeEnv[P]> } {
-  const env = getNodeEnv();
-  const missing = keys.filter((key) => {
-    const value = env[key];
-    return value === undefined || value === null || value === '';
-  });
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables:\n${missing.map((k) => `  - ${String(k)}`).join('\n')}`,
-    );
-  }
-  return env as NodeEnv & { [P in K]-?: NonNullable<NodeEnv[P]> };
-}
-
-/**
- * Reset the cached parse. Intended for tests only — production code
- * should never need to call this.
- */
-export function __resetNodeEnvCacheForTests(): void {
-  cached = undefined;
-}
+export const env = nodeEnvSchema.parse(process.env);

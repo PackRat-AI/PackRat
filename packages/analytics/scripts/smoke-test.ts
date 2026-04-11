@@ -8,9 +8,8 @@
  */
 
 import { DuckDBInstance } from '@duckdb/node-api';
-import { getNodeEnv } from '@packrat/env/node';
+import { env } from '@packrat/env/node';
 
-const env = getNodeEnv();
 const R2_ACCESS_KEY_ID = env.R2_ACCESS_KEY_ID;
 const R2_SECRET_ACCESS_KEY = env.R2_SECRET_ACCESS_KEY;
 const R2_ENDPOINT_URL = env.R2_ENDPOINT_URL;

@@ -8,9 +8,9 @@
  *
  * Not yet covered here:
  * - Cloudflare Worker API — see `packages/api/src/utils/env-validation.ts`
- * - Expo client (EXPO_PUBLIC_*)
+ * - Expo client (EXPO_PUBLIC_*) — see `apps/expo/env/`
  * - Next.js (apps/landing, apps/guides)
  */
 
 export type { NodeEnv } from './node';
-export { __resetNodeEnvCacheForTests, getNodeEnv, nodeEnvSchema, requireNodeEnv } from './node';
+export { env, nodeEnvSchema } from './node';
