@@ -215,7 +215,11 @@ export function PackListScreen() {
         stickyHeaderIndices={[0]}
         renderItem={({ item: pack }) => (
           <View className="px-4 pt-4">
-            <PackCard pack={pack} onPress={handlePackPress} />
+            <PackCard
+              pack={pack}
+              onPress={handlePackPress}
+              showDuplicateButton={selectedTypeIndex === ALL_PACKS_INDEX}
+            />
           </View>
         )}
         refreshControl={
