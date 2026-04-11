@@ -31,12 +31,16 @@ export const fetchTripAnalytics = async (): Promise<TripAnalytics> => {
 
 const ANALYTICS_STALE_TIME_MS = 5 * 60 * 1000; // 5 minutes
 
-export function useTripAnalytics() {
+interface UseTripAnalyticsOptions {
+  enabled?: boolean;
+}
+
+export function useTripAnalytics({ enabled = true }: UseTripAnalyticsOptions = {}) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
   return useQuery({
     queryKey: ['tripAnalytics'],
-    enabled: isQueryEnabledWithAccessToken,
+    enabled: enabled && isQueryEnabledWithAccessToken,
     queryFn: fetchTripAnalytics,
     staleTime: ANALYTICS_STALE_TIME_MS,
     refetchOnWindowFocus: false,

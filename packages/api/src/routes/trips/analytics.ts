@@ -24,7 +24,7 @@ const TripAnalyticsSchema = z
     averageTripDurationDays: z.number().nullable().openapi({ example: 4.5 }),
     longestTripDays: z.number().nullable().openapi({ example: 14 }),
     longestTripName: z.string().nullable().openapi({ example: 'PCT Section J' }),
-    mostActiveMonth: z.string().nullable().openapi({ example: 'July' }),
+    mostActiveMonth: z.string().nullable().openapi({ example: 'Jul 2026' }),
     mostActiveMonthCount: z.number().nullable().openapi({ example: 3 }),
     tripsByMonth: z
       .array(

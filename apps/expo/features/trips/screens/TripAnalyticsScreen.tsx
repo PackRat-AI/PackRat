@@ -198,7 +198,7 @@ export function TripAnalyticsScreen() {
         {/* Monthly activity chart */}
         <SectionHeader title={t('analytics.monthlyActivity')} />
         <View className="rounded-xl bg-card p-4">
-          {analytics.tripsByMonth.length > 0 ? (
+          {analytics.tripsByMonth.some((m) => m.count > 0) ? (
             <>
               <View
                 style={{

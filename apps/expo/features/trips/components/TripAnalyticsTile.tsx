@@ -10,7 +10,9 @@ import { useTripAnalytics } from '../hooks/useTripAnalytics';
 export function TripAnalyticsTile() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data: analytics } = useTripAnalytics();
+  const { data: analytics } = useTripAnalytics({
+    enabled: featureFlags.enableTripAnalytics && featureFlags.enableTrips,
+  });
 
   const handlePress = () => {
     router.push('/trip-analytics');
