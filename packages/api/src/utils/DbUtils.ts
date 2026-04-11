@@ -2,17 +2,9 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems, packs } from '@packrat/api/db/schema';
 import { and, arrayOverlaps, eq, inArray, type SQL, sql } from 'drizzle-orm';
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 // Get pack details from the database
-export async function getPackDetails({
-  packId,
-  c,
-}: {
-  packId: string;
-  c?: CtxLike;
-}) {
-  const db = createDb(c);
+export async function getPackDetails({ packId }: { packId: string }) {
+  const db = createDb();
 
   const packData = await db.query.packs.findFirst({
     where: eq(packs.id, packId),
@@ -32,16 +24,14 @@ export async function getPackDetails({
 // Get catalog items from the database
 export async function getCatalogItems({
   options,
-  c,
 }: {
   options?: {
     categories?: string[];
     ids?: number[];
     limit?: number;
   };
-  c?: CtxLike;
 } = {}) {
-  const db = createDb(c);
+  const db = createDb();
 
   const filters: SQL[] = [];
 
@@ -65,8 +55,8 @@ export async function getCatalogItems({
   return query;
 }
 
-export async function getSchemaInfo(c?: CtxLike) {
-  const db = createDb(c);
+export async function getSchemaInfo() {
+  const db = createDb();
 
   try {
     const schemaQuery = `SELECT

@@ -12,14 +12,12 @@ interface SearchResult {
 const WEB_SEARCH_SYSTEM_PROMPT =
   'You are a helpful research assistant. Provide accurate, up-to-date information with proper citations. Be concise but comprehensive.';
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 export class AIService {
   private env: Env;
   private guidesRAG: AutoRAG | null = null;
 
-  constructor(c?: CtxLike) {
-    this.env = getEnv(c);
+  constructor() {
+    this.env = getEnv();
     // Only initialize RAG if AI binding is available (Cloudflare Workers environment)
     if (this.env.AI && typeof this.env.AI.autorag === 'function') {
       this.guidesRAG = this.env.AI.autorag(this.env.PACKRAT_GUIDES_RAG_NAME);

@@ -2,7 +2,6 @@ import { createDb } from '@packrat/api/db';
 import { users } from '@packrat/api/db/schema';
 import { hashPassword } from '@packrat/api/utils/auth';
 import type { InferInsertModel } from 'drizzle-orm';
-import type { Context } from 'hono';
 
 /**
  * Creates a test user in the database.
@@ -12,7 +11,7 @@ import type { Context } from 'hono';
 export async function createTestUser(
   overrides: Partial<InferInsertModel<typeof users>> & { password?: string } = {},
 ) {
-  const db = createDb({} as unknown as Context);
+  const db = createDb();
 
   const { password = 'Password123!', ...userData } = overrides;
 

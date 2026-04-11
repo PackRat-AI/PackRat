@@ -1,41 +1,33 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { Resend } from 'resend';
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 export async function sendEmail({
   to,
   subject,
   html,
-  c,
 }: {
   to: string;
   subject: string;
   html: string;
-  c?: CtxLike;
 }): Promise<void> {
-  const { RESEND_API_KEY, EMAIL_FROM } = getEnv(c);
+  const { RESEND_API_KEY, EMAIL_FROM } = getEnv();
   const resendClient = new Resend(RESEND_API_KEY);
 
-  const options = {
+  await resendClient.emails.send({
     from: `PackRat <${EMAIL_FROM}>`,
     to,
     subject,
     html,
-  };
-
-  await resendClient.emails.send(options);
+  });
 }
 
 // Send a verification code email
 export async function sendVerificationCodeEmail({
   to,
   code,
-  c,
 }: {
   to: string;
   code: string;
-  c?: CtxLike;
 }): Promise<void> {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -52,18 +44,16 @@ export async function sendVerificationCodeEmail({
     </div>
   `;
 
-  await sendEmail({ to, subject: 'Verify Your PackRat Account', html, c });
+  await sendEmail({ to, subject: 'Verify Your PackRat Account', html });
 }
 
 // Send a password reset email
 export async function sendPasswordResetEmail({
   to,
   code,
-  c,
 }: {
   to: string;
   code: string;
-  c?: CtxLike;
 }): Promise<void> {
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -80,5 +70,5 @@ export async function sendPasswordResetEmail({
     </div>
   `;
 
-  await sendEmail({ to, subject: 'Reset Your PackRat Password', html, c });
+  await sendEmail({ to, subject: 'Reset Your PackRat Password', html });
 }

@@ -15,8 +15,6 @@ import { z } from 'zod';
 import { computePackWeights } from '../utils/compute-pack';
 import { CatalogService } from './catalogService';
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 const PACK_CONCEPTS_SYSTEM_PROMPT = `You are an expert Adventure Planner specializing in real-world outdoor and travel experiences. When given a specific count, generate that exact number of unique, practical adventure concepts that people can actually undertake. Each concept should include a name, a description, category, tags and a list of the logical items needed. Items should be rich descriptions optimized for a vector search against an items catalog to find the most suitable real-world item.`;
 
 const packItemConceptSchema = z.object({
@@ -42,19 +40,10 @@ type PackItemConceptSchema = z.infer<typeof packItemConceptSchema>;
 export class PackService {
   private db;
   private userId: number;
-  private readonly c: CtxLike;
 
-  constructor(cOrUserId: CtxLike | number, maybeUserId?: number) {
-    // Dual-mode signature: (ctx, userId) for legacy Hono routes, or (userId)
-    // for new Elysia routes.
-    if (typeof cOrUserId === 'number') {
-      this.userId = cOrUserId;
-      this.c = undefined;
-    } else {
-      this.c = cOrUserId;
-      this.userId = maybeUserId ?? 0;
-    }
-    this.db = createDb(this.c);
+  constructor(userId: number) {
+    this.userId = userId;
+    this.db = createDb();
   }
 
   async getPackDetails(packId: string): Promise<PackWithItems | null> {
@@ -70,27 +59,19 @@ export class PackService {
       },
     });
 
-    if (!pack) {
-      return null;
-    }
-
+    if (!pack) return null;
     return computePackWeights(pack);
   }
 
   async generatePacks(count: number) {
-    if (count < 1) {
-      throw new Error('Count must be a positive integer');
-    }
+    if (count < 1) throw new Error('Count must be a positive integer');
 
     const concepts = await this.generatePackConcepts(count);
 
     const packsResult = await Promise.allSettled(
       concepts.map(async (concept) => {
         const packItems = await this.getItems(concept.items);
-        return {
-          ...concept,
-          items: packItems,
-        };
+        return { ...concept, items: packItems };
       }),
     );
 
@@ -98,9 +79,7 @@ export class PackService {
       const packsToInsert: NewPack[] = [];
       const itemsToInsert: NewPackItem[] = [];
       for (const packResult of packsResult) {
-        if (packResult.status === 'rejected') {
-          continue;
-        }
+        if (packResult.status === 'rejected') continue;
         const pack = packResult.value;
         const packId = crypto.randomUUID();
         packsToInsert.push({
@@ -128,9 +107,7 @@ export class PackService {
       }
 
       const createdPacks = await tx.insert(packs).values(packsToInsert).returning();
-
       await tx.insert(packItems).values(itemsToInsert);
-
       return createdPacks;
     });
 
@@ -138,7 +115,7 @@ export class PackService {
   }
 
   private async generatePackConcepts(count: number): Promise<PackConcept[]> {
-    const { OPENAI_API_KEY } = getEnv(this.c);
+    const { OPENAI_API_KEY } = getEnv();
     const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
 
     const { object } = await generateObject({
@@ -156,7 +133,7 @@ export class PackService {
   private async getItems(
     packItemConcepts: PackItemConceptSchema[],
   ): Promise<Omit<NewPackItem, 'id' | 'userId' | 'packId'>[]> {
-    const catalogService = new CatalogService(this.c);
+    const catalogService = new CatalogService();
     const searchResults = await catalogService.batchVectorSearch(
       packItemConcepts.map((item) => item.item),
       1,
@@ -165,9 +142,7 @@ export class PackService {
     return packItemConcepts
       .map((item, idx) => {
         const catalogItem = searchResults.items[idx]?.[0];
-        if (!catalogItem) {
-          return null;
-        }
+        if (!catalogItem) return null;
 
         return {
           ...item,

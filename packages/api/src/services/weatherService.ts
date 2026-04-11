@@ -1,7 +1,5 @@
 import { getEnv } from '@packrat/api/utils/env-validation';
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 type WeatherData = {
   location: string;
   temperature: number;
@@ -13,8 +11,8 @@ type WeatherData = {
 export class WeatherService {
   private env: ReturnType<typeof getEnv>;
 
-  constructor(c?: CtxLike) {
-    this.env = getEnv(c);
+  constructor() {
+    this.env = getEnv();
   }
 
   async getWeatherForLocation(location: string): Promise<WeatherData> {
@@ -24,9 +22,7 @@ export class WeatherService {
       )}&units=imperial&appid=${this.env.OPENWEATHER_KEY}`,
     );
 
-    if (!response.ok) {
-      throw new Error('Weather API request failed');
-    }
+    if (!response.ok) throw new Error('Weather API request failed');
 
     const data = (await response.json()) as {
       main: { temp: number; humidity: number };

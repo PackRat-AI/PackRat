@@ -1,5 +1,4 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { authMiddleware } from '@packrat/api/middleware';
+import { Elysia } from 'elysia';
 import { adminRoutes } from './admin';
 import { aiRoutes } from './ai';
 import { authRoutes } from './auth';
@@ -7,8 +6,9 @@ import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
-import { packsRoutes } from './packs';
+import { knowledgeBaseRoutes } from './knowledgeBase';
 import { packTemplatesRoutes } from './packTemplates';
+import { packsRoutes } from './packs';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
 import { trailConditionsRoutes } from './trailConditions';
 import { tripsRoutes } from './trips';
@@ -17,36 +17,26 @@ import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
 import { wildlifeRoutes } from './wildlife';
 
-const publicRoutes = new OpenAPIHono();
-
-// Mount public routes
-publicRoutes.route('/auth', authRoutes);
-publicRoutes.route('/admin', adminRoutes);
-
-const protectedRoutes = new OpenAPIHono();
-
-protectedRoutes.use(authMiddleware);
-
-// Mount protected routes
-protectedRoutes.route('/catalog', catalogRoutes);
-protectedRoutes.route('/guides', guidesRoutes);
-protectedRoutes.route('/feed', feedRoutes);
-protectedRoutes.route('/packs', packsRoutes);
-protectedRoutes.route('/trips', tripsRoutes);
-
-protectedRoutes.route('/ai', aiRoutes);
-protectedRoutes.route('/chat', chatRoutes);
-protectedRoutes.route('/weather', weatherRoutes);
-protectedRoutes.route('/pack-templates', packTemplatesRoutes);
-protectedRoutes.route('/season-suggestions', seasonSuggestionsRoutes);
-protectedRoutes.route('/user', userRoutes);
-protectedRoutes.route('/upload', uploadRoutes);
-protectedRoutes.route('/trail-conditions', trailConditionsRoutes);
-protectedRoutes.route('/wildlife', wildlifeRoutes);
-
-const routes = new OpenAPIHono();
-
-routes.route('/', publicRoutes);
-routes.route('/', protectedRoutes);
-
-export { routes };
+/**
+ * Aggregated `/api` routes – a single Elysia instance that composes every
+ * route group. The exported instance carries the full type graph used by the
+ * Eden Treaty client for end-to-end type safety.
+ */
+export const routes = new Elysia({ prefix: '/api' })
+  .use(authRoutes)
+  .use(adminRoutes)
+  .use(catalogRoutes)
+  .use(guidesRoutes)
+  .use(feedRoutes)
+  .use(packsRoutes)
+  .use(tripsRoutes)
+  .use(aiRoutes)
+  .use(chatRoutes)
+  .use(weatherRoutes)
+  .use(packTemplatesRoutes)
+  .use(seasonSuggestionsRoutes)
+  .use(userRoutes)
+  .use(uploadRoutes)
+  .use(trailConditionsRoutes)
+  .use(wildlifeRoutes)
+  .use(knowledgeBaseRoutes);

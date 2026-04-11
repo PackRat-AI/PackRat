@@ -44,20 +44,12 @@ export interface DetectedItemWithMatches {
   catalogMatches: Array<Omit<CatalogItem, 'embedding'> & { similarity: number }>;
 }
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 export class ImageDetectionService {
-  private readonly c: CtxLike;
-
-  constructor(c?: CtxLike) {
-    this.c = c;
-  }
-
   /**
    * Analyze an image to detect outdoor gear items
    */
   async analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
-    const { OPENAI_API_KEY } = getEnv(this.c);
+    const { OPENAI_API_KEY } = getEnv();
     const openai = createOpenAI({
       apiKey: OPENAI_API_KEY,
     });
@@ -108,7 +100,7 @@ export class ImageDetectionService {
       const highConfidenceItems = analysis.items.filter((item) => item.confidence >= 0.5);
 
       // Find catalog matches for each detected item
-      const catalogService = new CatalogService(this.c);
+      const catalogService = new CatalogService();
 
       const searchQueries = highConfidenceItems.map((detected) =>
         `${detected.name} ${detected.description}`.trim(),

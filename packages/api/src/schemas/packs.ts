@@ -1,4 +1,5 @@
-import { z } from '@packrat/api/utils/zod-shim';
+import '@packrat/api/utils/zod-shim';
+import { z } from 'zod';
 
 export const PackItemSchema = z
   .object({

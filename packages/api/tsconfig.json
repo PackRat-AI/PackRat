@@ -1,11 +1,15 @@
 {
   "compilerOptions": {
     "strict": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
     "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@packrat/api": ["src/index.ts"],
       "@packrat/api/*": ["src/*"]
     }
   }

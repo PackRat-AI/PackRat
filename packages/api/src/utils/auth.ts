@@ -36,18 +36,15 @@ function secretKey(secret: string): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-// Generate a JWT token. The optional `c` parameter exists for backwards
-// compatibility with legacy Hono routes that still pass a Context.
+// Generate a JWT token
 export async function generateJWT({
   payload,
-  c,
   expiresIn = '7d',
 }: {
   payload: Omit<JWTPayload, 'iat' | 'exp'> & { exp?: number };
-  c?: { env?: Record<string, unknown> };
   expiresIn?: string;
 }): Promise<string> {
-  const { JWT_SECRET } = getEnv(c);
+  const { JWT_SECRET } = getEnv();
   const jwt = new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt();
@@ -61,16 +58,10 @@ export async function generateJWT({
   return jwt.sign(secretKey(JWT_SECRET));
 }
 
-// Verify a JWT token. The optional `c` is accepted for backwards compatibility.
-export async function verifyJWT({
-  token,
-  c,
-}: {
-  token: string;
-  c?: { env?: Record<string, unknown> };
-}): Promise<JWTPayload | null> {
+// Verify a JWT token
+export async function verifyJWT({ token }: { token: string }): Promise<JWTPayload | null> {
   try {
-    const { JWT_SECRET } = getEnv(c);
+    const { JWT_SECRET } = getEnv();
     const { payload } = await jwtVerify(token, secretKey(JWT_SECRET), {
       algorithms: ['HS256'],
     });
@@ -91,33 +82,17 @@ export function validatePassword(password: string): {
   message?: string;
 } {
   if (password.length < 8) {
-    return {
-      valid: false,
-      message: 'Password must be at least 8 characters long',
-    };
+    return { valid: false, message: 'Password must be at least 8 characters long' };
   }
-
   if (!/[A-Z]/.test(password)) {
-    return {
-      valid: false,
-      message: 'Password must contain at least one uppercase letter',
-    };
+    return { valid: false, message: 'Password must contain at least one uppercase letter' };
   }
-
   if (!/[a-z]/.test(password)) {
-    return {
-      valid: false,
-      message: 'Password must contain at least one lowercase letter',
-    };
+    return { valid: false, message: 'Password must contain at least one lowercase letter' };
   }
-
   if (!/[0-9]/.test(password)) {
-    return {
-      valid: false,
-      message: 'Password must contain at least one number',
-    };
+    return { valid: false, message: 'Password must contain at least one number' };
   }
-
   return { valid: true };
 }
 
@@ -127,39 +102,19 @@ export function validateEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
-type HonoContextLike = {
-  req: { header: (name: string) => string | undefined };
-  env?: Record<string, unknown>;
-};
-
-// Validate API key – accepts Headers (Elysia path), raw header map, or
-// Hono Context (legacy routes).
-export function isValidApiKey(
-  input: Record<string, string | undefined> | Headers | HonoContextLike,
-): boolean {
+/**
+ * Validate API key from either a `Headers` instance (Elysia path) or a raw
+ * header map.
+ */
+export function isValidApiKey(headers: Headers | Record<string, string | undefined>): boolean {
   let apiKeyHeader: string | undefined | null;
-
-  if (input instanceof Headers) {
-    apiKeyHeader = input.get('x-api-key');
-  } else if (
-    typeof input === 'object' &&
-    input !== null &&
-    'req' in input &&
-    typeof (input as HonoContextLike).req?.header === 'function'
-  ) {
-    // Hono Context
-    apiKeyHeader = (input as HonoContextLike).req.header('X-API-Key');
+  if (headers instanceof Headers) {
+    apiKeyHeader = headers.get('x-api-key');
   } else {
-    const headers = input as Record<string, string | undefined>;
     apiKeyHeader = headers['x-api-key'] ?? headers['X-API-Key'];
   }
-
   if (!apiKeyHeader) return false;
-  const envForKey =
-    typeof input === 'object' && input !== null && 'env' in input
-      ? getEnv(input as { env?: Record<string, unknown> })
-      : getEnv();
-  const { PACKRAT_API_KEY } = envForKey;
+  const { PACKRAT_API_KEY } = getEnv();
   if (!PACKRAT_API_KEY) return false;
   return apiKeyHeader === PACKRAT_API_KEY;
 }

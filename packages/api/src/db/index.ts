@@ -20,7 +20,6 @@ const isStandardPostgresUrl = (url: string) => {
   }
 };
 
-// Create database connection based on URL type
 const createConnection = (url: string, useNeonHttp?: boolean) => {
   if (isStandardPostgresUrl(url)) {
     const pool = new Pool({ connectionString: url });
@@ -34,32 +33,26 @@ const createConnection = (url: string, useNeonHttp?: boolean) => {
   return drizzleServerless(neonPool, { schema });
 };
 
-type ContextLike = { env?: Record<string, unknown> } | Record<string, unknown> | undefined;
-
 /**
- * Create a read/write SQL client.
- *
- * Accepts:
- *  - nothing (Elysia / isolate-level env from cache)
- *  - a Hono Context (legacy routes)
- *  - an Elysia context object with `.env`
- *  - a validated `ValidatedEnv`
+ * Create a read/write SQL client using the validated isolate env (primed via
+ * `setWorkerEnv` at the worker entry point).
  */
-export const createDb = (input?: ContextLike) => {
-  const { NEON_DATABASE_URL } = getEnv(input);
+export const createDb = () => {
+  const { NEON_DATABASE_URL } = getEnv();
   return createConnection(NEON_DATABASE_URL);
 };
 
 /**
  * Create a read-only SQL client.
  */
-export const createReadOnlyDb = (input?: ContextLike) => {
-  const { NEON_DATABASE_URL_READONLY } = getEnv(input);
+export const createReadOnlyDb = () => {
+  const { NEON_DATABASE_URL_READONLY } = getEnv();
   return createConnection(NEON_DATABASE_URL_READONLY);
 };
 
 /**
  * Create SQL client tuned for queue workers (HTTP driver, no pool).
+ * Used from the queue handler which has direct access to the validated env.
  */
 export const createDbClient = (env: ValidatedEnv) => {
   return createConnection(env.NEON_DATABASE_URL, true);

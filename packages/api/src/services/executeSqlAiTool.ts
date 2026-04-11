@@ -1,43 +1,30 @@
 import { sql } from 'drizzle-orm';
 import { createReadOnlyDb } from '../db';
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 interface Params {
   query: string;
   limit: number;
   userId: number;
-  c?: CtxLike;
 }
 
 export async function executeSqlAiTool(params: Params) {
-  const db = createReadOnlyDb(params.c);
+  const db = createReadOnlyDb();
   const { query, limit = 100 } = params;
 
-  // Validate read-only
   if (!isReadOnlyQuery(query)) {
-    return {
-      error: 'Only SELECT queries are allowed',
-      query,
-    };
+    return { error: 'Only SELECT queries are allowed', query };
   }
 
-  // Validate complexity
   const complexityCheck = validateQueryComplexity(query);
   if (!complexityCheck.valid) {
-    return {
-      error: complexityCheck.error,
-      query,
-    };
+    return { error: complexityCheck.error, query };
   }
 
-  // Add LIMIT if not already present
   let finalQuery = query.trim();
   if (!finalQuery.toLowerCase().includes('limit')) {
     finalQuery += ` LIMIT ${Math.min(limit, 1000)}`;
   }
 
-  // Execute with timeout
   const startTime = Date.now();
   const timeoutPromise = new Promise((_, reject) =>
     setTimeout(() => reject(new Error('Query timeout')), 30000),
@@ -50,10 +37,7 @@ export async function executeSqlAiTool(params: Params) {
     result = await Promise.race([queryPromise, timeoutPromise]);
   } catch (err) {
     if (err instanceof Error && err.message === 'Query timeout') {
-      return {
-        error: 'Query timeout',
-        query: finalQuery,
-      };
+      return { error: 'Query timeout', query: finalQuery };
     }
     throw err;
   }
@@ -69,16 +53,10 @@ export async function executeSqlAiTool(params: Params) {
   };
 }
 
-// Validation helpers
 function isReadOnlyQuery(query: string): boolean {
   const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery.startsWith('select')) return false;
 
-  // Must start with SELECT
-  if (!normalizedQuery.startsWith('select')) {
-    return false;
-  }
-
-  // Check for forbidden keywords
   const forbiddenKeywords = [
     'insert',
     'update',
@@ -98,17 +76,12 @@ function isReadOnlyQuery(query: string): boolean {
 
 function validateQueryComplexity(query: string): { valid: boolean; error?: string } {
   const normalizedQuery = query.toLowerCase();
-
-  // Count joins (basic complexity check)
   const joinCount = (normalizedQuery.match(/\bjoin\b/g) || []).length;
   if (joinCount > 5) {
     return { valid: false, error: 'Query too complex: maximum 5 joins allowed' };
   }
-
-  // Check for potentially expensive operations
   if (normalizedQuery.includes('cross join')) {
     return { valid: false, error: 'CROSS JOIN operations are not allowed' };
   }
-
   return { valid: true };
 }

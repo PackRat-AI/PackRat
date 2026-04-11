@@ -2,22 +2,13 @@ import { createDb } from '@packrat/api/db';
 import { packItems } from '@packrat/api/db/schema';
 import { and, eq } from 'drizzle-orm';
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 export class PackItemService {
   private db;
   private userId: number;
 
-  constructor(cOrUserId: CtxLike | number, maybeUserId?: number) {
-    let c: CtxLike;
-    if (typeof cOrUserId === 'number') {
-      this.userId = cOrUserId;
-      c = undefined;
-    } else {
-      c = cOrUserId;
-      this.userId = maybeUserId ?? 0;
-    }
-    this.db = createDb(c);
+  constructor(userId: number) {
+    this.userId = userId;
+    this.db = createDb();
   }
 
   async getPackItemDetails(itemId: string) {
@@ -33,10 +24,6 @@ export class PackItemService {
       },
     });
 
-    if (!item) {
-      return null;
-    }
-
-    return item;
+    return item ?? null;
   }
 }

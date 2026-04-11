@@ -26,44 +26,26 @@ import {
 } from 'drizzle-orm';
 import { getEmbeddingText } from '../utils/embeddingHelper';
 
-type CatalogCtxLike =
-  | { env?: Record<string, unknown>; req?: unknown }
-  | Env
-  | undefined;
-
 export class CatalogService {
   private db;
   private env: Env;
 
   /**
-   * Dual-mode constructor:
-   *  - `new CatalogService()` – Elysia path, uses cached isolate env
-   *  - `new CatalogService(c)` – Hono context (legacy)
-   *  - `new CatalogService(env, false)` – fetch-style env (isHonoContext flag kept
-   *    for legacy call sites that passed an env-only object from the queue handler)
+   * - `new CatalogService()` – reads the isolate-level env (Elysia routes).
+   * - `new CatalogService(env, true)` – queue handler path: caller passes the
+   *   raw validated env, and we use the HTTP-only Neon driver (which is
+   *   better suited for short-lived queue workers).
    */
-  constructor(contextOrEnv?: CatalogCtxLike, isHonoContext: boolean = true) {
-    if (!contextOrEnv) {
+  constructor(explicitEnv?: Env, useHttpDriver: boolean = false) {
+    if (explicitEnv && useHttpDriver) {
+      this.env = explicitEnv;
+      this.db = createDbClient(explicitEnv);
+    } else if (explicitEnv) {
+      this.env = explicitEnv;
+      this.db = createDb();
+    } else {
       this.env = getEnv();
       this.db = createDb();
-      return;
-    }
-
-    const hasReq =
-      typeof contextOrEnv === 'object' && contextOrEnv !== null && 'req' in contextOrEnv;
-
-    if (hasReq) {
-      // Hono Context
-      this.db = createDb(contextOrEnv as { env?: Record<string, unknown> });
-      this.env = getEnv(contextOrEnv as { env?: Record<string, unknown> });
-    } else if (isHonoContext === false) {
-      // Queue handler path: caller passed a raw validated env
-      this.db = createDbClient(contextOrEnv as Env);
-      this.env = contextOrEnv as Env;
-    } else {
-      // Treat as validated env for generic usage
-      this.env = contextOrEnv as Env;
-      this.db = createDb(this.env as unknown as { env?: Record<string, unknown> });
     }
   }
 

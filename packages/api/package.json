@@ -49,11 +49,8 @@
     "elysia": "^1.4.0",
     "google-auth-library": "^10.1.0",
     "gray-matter": "^4.0.3",
-    "hono": "^4.7.5",
-    "@hono/zod-openapi": "^0.19.2",
-    "@hono/zod-validator": "^0.4.3",
-    "@hono/sentry": "^1.2.2",
     "jose": "^5.9.6",
+    "nanoid": "^5.0.0",
     "linkedom": "^0.18.11",
     "nodemailer": "^6.10.0",
     "pg": "^8.16.3",
@@ -72,7 +69,6 @@
     "@vitest/coverage-v8": "~3.1.0",
     "concurrently": "^8.2.2",
     "drizzle-orm": "^0.44.4",
-    "typed-htmx": "^0.3.1",
     "vitest": "~3.1.0",
     "wrangler": "^4.21.2"
   }

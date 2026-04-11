@@ -51,18 +51,6 @@ vi.mock('@packrat/api/utils/env-validation', () => ({
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-function makeMockContext() {
-  return {
-    get: vi.fn((key: string) => {
-      if (key === 'user') return { userId: 1 };
-      return undefined;
-    }),
-    req: { json: vi.fn() },
-    json: vi.fn(),
-    env: {},
-  } as unknown as ConstructorParameters<typeof PackService>[0];
-}
-
 function makePackRow(overrides: Record<string, unknown> = {}) {
   return {
     id: 'pack-1',
@@ -90,12 +78,10 @@ function makePackRow(overrides: Record<string, unknown> = {}) {
 // ---------------------------------------------------------------------------
 describe('PackService', () => {
   let service: PackService;
-  let mockContext: ReturnType<typeof makeMockContext>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockContext = makeMockContext();
-    service = new PackService(mockContext, 1);
+    service = new PackService(1);
   });
 
   // -------------------------------------------------------------------------

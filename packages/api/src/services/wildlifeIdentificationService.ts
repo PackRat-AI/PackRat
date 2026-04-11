@@ -55,17 +55,9 @@ const identificationResponseSchema = z.object({
 export type SpeciesResult = z.infer<typeof speciesResultSchema>;
 export type IdentificationResponse = z.infer<typeof identificationResponseSchema>;
 
-type CtxLike = { env?: Record<string, unknown> } | undefined;
-
 export class WildlifeIdentificationService {
-  private readonly c: CtxLike;
-
-  constructor(c?: CtxLike) {
-    this.c = c;
-  }
-
   async identifySpecies(imageUrl: string): Promise<IdentificationResponse> {
-    const { OPENAI_API_KEY } = getEnv(this.c);
+    const { OPENAI_API_KEY } = getEnv();
     const openai = createOpenAI({ apiKey: OPENAI_API_KEY });
 
     try {

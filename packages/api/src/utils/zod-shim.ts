@@ -1,12 +1,15 @@
 /**
- * Zod shim that exposes the plain `zod` export but keeps the legacy
- * `@hono/zod-openapi` API surface (`.openapi(metadata)`) working as a
- * no-op so existing schemas keep compiling while we migrate away from
- * Hono. Elysia 1.4+ consumes Zod schemas directly via Standard Schema,
- * so the OpenAPI metadata attached via `.openapi()` is safely ignored
- * at runtime – the schema reference is returned unchanged for chaining.
+ * Zod prototype extension that preserves the `.openapi()` metadata surface the
+ * codebase inherited from `@hono/zod-openapi`. The schemas are authored with
+ * chained `.openapi({ example, description })` calls, but Elysia's OpenAPI
+ * plugin consumes Zod schemas directly via Standard Schema and does not look
+ * at this metadata. Keeping the method as a no-op that returns the schema
+ * allows every existing schema file to keep compiling without a rewrite.
+ *
+ * Import this module once – it is side-effectful. It is pulled in by
+ * `src/index.ts` before any route modules that depend on `zod` are evaluated.
  */
-import { z as zBase, ZodType } from 'zod';
+import { ZodType } from 'zod';
 
 type OpenApiMeta = Record<string, unknown> | string;
 
@@ -21,10 +24,11 @@ const proto = ZodType.prototype as ZodType & {
 };
 
 if (!proto.openapi) {
-  proto.openapi = function openapi(this: ZodType, meta: OpenApiMeta, alt?: Record<string, unknown>) {
-    // Store the metadata on the schema so Elysia's OpenAPI plugin can inspect
-    // it if desired, but otherwise return the schema unchanged so chaining
-    // keeps working in existing code paths.
+  proto.openapi = function openapi(
+    this: ZodType,
+    meta: OpenApiMeta,
+    alt?: Record<string, unknown>,
+  ) {
     const target = this as unknown as { _openapi?: unknown };
     if (typeof meta === 'string') {
       target._openapi = { ...(alt ?? {}), ref: meta };
@@ -35,5 +39,4 @@ if (!proto.openapi) {
   };
 }
 
-export { zBase as z };
-export type * from 'zod';
+export {};

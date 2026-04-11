@@ -1,6 +1,16 @@
-import { sign } from 'hono/jwt';
+import { SignJWT } from 'jose';
 import { expect } from 'vitest';
 import app from '../../src/index';
+
+const secret = new TextEncoder().encode('secret');
+
+async function sign(payload: Record<string, unknown>, _secret: string): Promise<string> {
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(secret);
+}
 
 // Extend expect with custom matchers
 expect.extend({

@@ -1,6 +1,5 @@
 import { isValidApiKey, verifyJWT } from '@packrat/api/utils/auth';
 import { Elysia, status } from 'elysia';
-import { honoAdminMiddleware, honoApiKeyAuthMiddleware, honoAuthMiddleware } from './hono-auth';
 
 /**
  * User payload injected into protected routes by the auth plugin.
@@ -18,9 +17,9 @@ export type AuthUser = {
  * ```ts
  * import { authPlugin } from '@packrat/api/middleware/auth';
  *
- * new Elysia().use(authPlugin).get('/me', ({ user }) => user, {
- *   isAuthenticated: true,
- * });
+ * new Elysia()
+ *   .use(authPlugin)
+ *   .get('/me', ({ user }) => user, { isAuthenticated: true });
  * ```
  *
  * The macro accepts either a Bearer JWT (verified via `verifyJWT`) or the
@@ -100,9 +99,3 @@ export const apiKeyAuthPlugin = new Elysia({ name: 'packrat-api-key-auth' }).mac
     },
   },
 });
-
-// Legacy Hono exports - kept for the staged migration so existing Hono route
-// modules continue to compile during the transition.
-export const authMiddleware = honoAuthMiddleware;
-export const apiKeyAuthMiddleware = honoApiKeyAuthMiddleware;
-export const adminMiddleware = honoAdminMiddleware;
