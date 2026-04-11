@@ -15,7 +15,7 @@ import {
   varchar,
   vector,
 } from 'drizzle-orm/pg-core';
-import type { ValidationError } from '../types/etl';
+import type { ValidationError } from '../types/validation';
 
 const availabilityEnum = pgEnum('availability', ['in_stock', 'out_of_stock', 'preorder']);
 

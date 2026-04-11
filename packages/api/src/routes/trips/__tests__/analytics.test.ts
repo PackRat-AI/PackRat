@@ -21,8 +21,18 @@ function calcDurationDays(startDate: Date, endDate: Date): number {
 }
 
 const MONTH_NAMES = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 interface MonthCount {
@@ -113,6 +123,7 @@ describe('hasAnyActivity — empty-state check', () => {
       month: `${MONTH_NAMES[i]} 2025`,
       count: 0,
     }));
+    // biome-ignore lint/style/noNonNullAssertion: index 6 always exists in 12-element array
     tripsByMonth[6]!.count = 3; // July has 3 trips
     expect(hasAnyActivity(tripsByMonth)).toBe(true);
   });
@@ -145,7 +156,7 @@ describe('hasAnyActivity — empty-state check', () => {
     // The old bug: tripsByMonth.length > 0 is always true even with no data
     const oldCheck = tripsByMonth.length > 0;
     const newCheck = tripsByMonth.some((m) => m.count > 0);
-    expect(oldCheck).toBe(true);  // this was the bug — shown truthy despite no data
+    expect(oldCheck).toBe(true); // this was the bug — shown truthy despite no data
     expect(newCheck).toBe(false); // correct behaviour
   });
 });

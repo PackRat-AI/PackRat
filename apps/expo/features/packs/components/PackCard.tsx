@@ -145,10 +145,14 @@ export function PackCard({
                 size="icon"
                 disabled={isDuplicating}
                 onPress={() =>
-                  Alert.alert('Duplicate pack?', 'This will create a copy of this pack in your collection.', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Duplicate', onPress: () => duplicatePack(pack.id) },
-                  ])
+                  Alert.alert(
+                    'Duplicate pack?',
+                    'This will create a copy of this pack in your collection.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Duplicate', onPress: () => duplicatePack(pack.id) },
+                    ],
+                  )
                 }
               >
                 {isDuplicating ? (
@@ -165,10 +169,14 @@ export function PackCard({
                 variant="plain"
                 size="icon"
                 onPress={() =>
-                  Alert.alert('Delete pack?', 'Are you sure you want to delete this pack? This action cannot be undone.', [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'OK', style: 'destructive', onPress: () => deletePack(pack.id) },
-                  ])
+                  Alert.alert(
+                    'Delete pack?',
+                    'Are you sure you want to delete this pack? This action cannot be undone.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'OK', style: 'destructive', onPress: () => deletePack(pack.id) },
+                    ],
+                  )
                 }
               >
                 <Icon name="trash-can" size={21} color={colors.grey2} />

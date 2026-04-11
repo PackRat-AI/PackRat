@@ -4,7 +4,7 @@ import { trips } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { and, eq, isNotNull, lt, gt, sql, count, sum, max } from 'drizzle-orm';
+import { and, count, eq, isNotNull, sql } from 'drizzle-orm';
 
 const tripAnalyticsRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -112,13 +112,17 @@ tripAnalyticsRoutes.openapi(getAnalyticsRoute, async (c) => {
       .select({
         totalNightsOutdoors: sql<number>`COALESCE(SUM(CEIL(EXTRACT(EPOCH FROM (${trips.endDate} - ${trips.startDate})) / 86400)), 0)`,
         tripsWithDurationCount: sql<number>`COUNT(*) FILTER (WHERE ${trips.startDate} IS NOT NULL AND ${trips.endDate} IS NOT NULL)`,
-        longestTripDays: sql<number | null>`MAX(CEIL(EXTRACT(EPOCH FROM (${trips.endDate} - ${trips.startDate})) / 86400))`,
+        longestTripDays: sql<
+          number | null
+        >`MAX(CEIL(EXTRACT(EPOCH FROM (${trips.endDate} - ${trips.startDate})) / 86400))`,
       })
       .from(trips)
       .where(and(baseWhere, isNotNull(trips.startDate), isNotNull(trips.endDate)));
 
     // Fetch the name of the longest trip (need a separate query for the name)
-    const longestTripDays = durationRow?.longestTripDays ? Number(durationRow.longestTripDays) : null;
+    const longestTripDays = durationRow?.longestTripDays
+      ? Number(durationRow.longestTripDays)
+      : null;
 
     let longestTripName: string | null = null;
     if (longestTripDays !== null && longestTripDays > 0) {
