@@ -30,6 +30,13 @@ import { join } from 'node:path';
 
 const ROOT = join(import.meta.dir, '..');
 
+// Top-level regex constants for extractSummary patterns
+const RE_FOUND_N = /found \d+/i;
+const RE_N_CYCLE = /\d+ cycle/i;
+const RE_N_VIOLATION = /\d+ violation/i;
+const RE_N_FILE_OUT_OF_ORDER = /\d+ file.*out of order/i;
+const RE_N_ERROR = /\d+ error/i;
+
 // ---------------------------------------------------------------------------
 // Check definitions
 // ---------------------------------------------------------------------------
@@ -83,7 +90,7 @@ interface CheckResult {
 // ---------------------------------------------------------------------------
 
 function extractSummary(stdout: string, stderr: string): string {
-  const combined = (stdout + '\n' + stderr).trim();
+  const combined = `${stdout}\n${stderr}`.trim();
   if (!combined) return '';
 
   // Look for lines that have useful counts/summaries
@@ -92,16 +99,16 @@ function extractSummary(stdout: string, stderr: string): string {
   // Patterns that often appear as the key summary line
   for (const line of lines) {
     const l = line.trim();
-    if (/found \d+/i.test(l)) return l;
-    if (/\d+ cycle/i.test(l)) return l;
-    if (/\d+ violation/i.test(l)) return l;
-    if (/\d+ file.*out of order/i.test(l)) return l;
-    if (/\d+ error/i.test(l)) return l;
+    if (RE_FOUND_N.test(l)) return l;
+    if (RE_N_CYCLE.test(l)) return l;
+    if (RE_N_VIOLATION.test(l)) return l;
+    if (RE_N_FILE_OUT_OF_ORDER.test(l)) return l;
+    if (RE_N_ERROR.test(l)) return l;
   }
 
   // Fall back to first non-empty line, truncated
   const first = lines[0] ?? '';
-  return first.length > 60 ? first.slice(0, 57) + '…' : first;
+  return first.length > 60 ? `${first.slice(0, 57)}…` : first;
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +165,7 @@ function padRight(str: string, width: number): string {
 }
 
 function formatDuration(ms: number): string {
-  return (ms / 1000).toFixed(1) + 's';
+  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 function renderRow(result: CheckResult): string {
