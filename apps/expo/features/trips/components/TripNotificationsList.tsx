@@ -9,6 +9,7 @@ import type {
   NotificationType,
   TripNotification,
 } from '../hooks';
+import { getTripNavigationParams } from '../utils/getTripNavigationParams';
 
 interface TripNotificationsListProps {
   notifications: TripNotification[];
@@ -105,7 +106,7 @@ export function TripNotificationsList({
         return (
           <Pressable
             key={`${notification.tripId}-${notification.type}`}
-            onPress={() => router.push({ pathname: '/trip/[id]', params: { id: notification.tripId } })}
+            onPress={() => router.push(getTripNavigationParams(notification.tripId))}
             className="mb-3 rounded-xl border border-border bg-card p-4"
           >
             <View className="flex-row items-start gap-3">
