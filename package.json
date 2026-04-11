@@ -6,33 +6,35 @@
     "packages/*"
   ],
   "scripts": {
-    "configure:deps": "bun run .github/scripts/configure-deps.ts",
-    "clean": "bun run .github/scripts/clean.ts",
-    "env": "bun run .github/scripts/env.ts",
-    "lefthook": "lefthook install",
-    "preinstall": "bun run configure:deps",
-    "postinstall": "bun run lefthook && bun run env",
+    "android": "cd apps/expo && bun android",
+    "api": "bun run --cwd packages/api dev",
+    "bump": "bun .github/scripts/bump.ts",
+    "check": "biome check --no-errors-on-unmatched",
+    "check:catalog": "bun scripts/lint/no-duplicate-deps.ts",
+    "check:circular": "bun scripts/lint/no-circular-deps.ts",
     "check:deps": "manypkg check",
-    "fix:deps": "bun manypkg fix",
+    "check:package-json": "bun scripts/format/sort-package-json.ts --check",
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
+    "clean": "bun run .github/scripts/clean.ts",
+    "configure:deps": "bun run .github/scripts/configure-deps.ts",
+    "env": "bun run .github/scripts/env.ts",
+    "expo": "cd apps/expo && bun start",
+    "fix:deps": "bun manypkg fix",
     "format": "biome format --write",
+    "format:package-json": "bun scripts/format/sort-package-json.ts",
+    "preinstall": "bun run configure:deps",
+    "postinstall": "bun run lefthook && bun run env",
+    "ios": "cd apps/expo && bun ios",
+    "lefthook": "lefthook install",
     "lint": "biome check --write",
     "lint-unsafe": "biome check --write --unsafe",
-    "lint:custom": "bun scripts/check-all.ts",
-    "check:circular": "bun scripts/lint/no-circular-deps.ts",
-    "lint:strict": "biome check && bun scripts/check-all.ts",
-    "check": "biome check --no-errors-on-unmatched",
-    "expo": "cd apps/expo && bun start",
-    "android": "cd apps/expo && bun android",
-    "ios": "cd apps/expo && bun ios",
-    "api": "bun run --cwd packages/api dev",
+    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts",
+    "lint:strict": "biome check && bun run lint:custom",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
-    "test:expo": "vitest run --config apps/expo/vitest.config.ts",
-    "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
-    "bump": "bun .github/scripts/bump.ts",
-    "check:all": "bun scripts/check-all.ts"
+    "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
+    "test:expo": "vitest run --config apps/expo/vitest.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
@@ -42,12 +44,13 @@
     "@types/glob": "^9.0.0",
     "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
-    "lefthook": "^1.11.14"
+    "lefthook": "^1.11.14",
+    "sort-package-json": "^3.6.1"
+  },
+  "patchedDependencies": {
+    "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch"
   },
   "trustedDependencies": [
     "@sentry/cli"
-  ],
-  "patchedDependencies": {
-    "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch"
-  }
+  ]
 }
