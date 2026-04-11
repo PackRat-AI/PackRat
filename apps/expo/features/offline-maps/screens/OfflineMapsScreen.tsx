@@ -1,4 +1,4 @@
-import { Alert, type AlertRef, Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
+import { Alert, type AlertMethods, Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -554,7 +554,7 @@ export function OfflineMapsScreen() {
   const { downloadRegion, cancelDownload } = useDownloadMapRegion();
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [viewRegion, setViewRegion] = useState<OfflineMapRegion | null>(null);
-  const deleteAlertRef = useRef<AlertRef>(null);
+  const deleteAlertRef = useRef<AlertMethods>(null);
   const pendingDeleteRef = useRef<string | null>(null);
 
   const handleDeletePress = (id: string) => {

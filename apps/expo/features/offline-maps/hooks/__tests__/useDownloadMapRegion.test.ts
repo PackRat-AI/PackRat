@@ -145,7 +145,7 @@ describe('useDownloadMapRegion – core logic', () => {
 
       // Release the FIRST tick's sleep — this should produce one store write
       expect(sleepResolvers.length).toBeGreaterThanOrEqual(1);
-      sleepResolvers[0]();
+      sleepResolvers[0]!();
 
       // Give the microtask queue a chance to process
       await Promise.resolve();
