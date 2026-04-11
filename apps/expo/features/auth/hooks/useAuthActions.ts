@@ -280,7 +280,8 @@ export function useAuthActions() {
     }
   };
 
-  const resetPassword = async (email: string, code: string, newPassword: string) => {
+  const resetPassword = async (email: string, opts: { code: string; newPassword: string }) => {
+    const { code, newPassword } = opts;
     try {
       const response = await fetch(`${clientEnvs.EXPO_PUBLIC_API_URL}/api/auth/reset-password`, {
         method: 'POST',

@@ -81,9 +81,9 @@ export const SimilarItemsForPackItem: React.FC<SimilarItemsForPackItemProps> = (
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { data, isLoading, isError } = useSimilarPackItems(packId, itemId, {
-    limit,
-    threshold,
+  const { data, isLoading, isError } = useSimilarPackItems(packId, {
+    itemId,
+    params: { limit, threshold },
   });
 
   const handleItemPress = (catalogItemId: string) => {
