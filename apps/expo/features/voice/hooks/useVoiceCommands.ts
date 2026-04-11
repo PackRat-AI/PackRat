@@ -1,3 +1,4 @@
+import { Audio } from 'expo-av';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VoiceCommand, VoiceCommandName, VoiceListeningState } from '../types';
 import { useGPSTracking } from './useGPSTracking';
@@ -119,12 +120,19 @@ export function useVoiceCommands() {
   const [lastCommand, setLastCommand] = useState<VoiceCommandName | null>(null);
   const [lastTranscript, setLastTranscript] = useState('');
   const listeningTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  // Stable ref so startListening's timeout can call stopListening without a dep
+  const stopListeningRef = useRef<(() => Promise<void>) | null>(null);
 
-  // Clear the auto-timeout when the hook unmounts (#4)
+  // Clear the auto-timeout and any active recording when the hook unmounts (#4)
   useEffect(() => {
     return () => {
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
+      }
+      if (recordingRef.current) {
+        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+        recordingRef.current = null;
       }
     };
   }, []);
@@ -254,29 +262,76 @@ export function useVoiceCommands() {
   );
 
   /** Called when user presses the microphone button to start recording. */
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
+    // Bail out if already recording to avoid a second subscription (#3 pattern)
+    if (recordingRef.current) return;
+
     // Clear any previously scheduled timeout before starting a new one
     if (listeningTimeoutRef.current) {
       clearTimeout(listeningTimeoutRef.current);
     }
+
+    try {
+      // Request mic permission and configure the audio session
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        speak('Microphone permission is required for voice commands.');
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
+      );
+      recordingRef.current = recording;
+    } catch (err) {
+      console.warn('[useVoiceCommands] Failed to start recording:', err);
+      speak('Unable to start microphone. Please try again.');
+      return;
+    }
+
     setListeningState('listening');
 
     // Auto-timeout after 10 seconds if no transcript arrives
     listeningTimeoutRef.current = setTimeout(() => {
-      setListeningState('idle');
+      stopListeningRef.current?.();
       speak('Listening timed out. Please try again.');
     }, 10000);
   }, [speak]);
 
   /** Called when user releases the microphone button or recording ends. */
-  const stopListening = useCallback(() => {
+  const stopListening = useCallback(async () => {
     if (listeningTimeoutRef.current) {
       clearTimeout(listeningTimeoutRef.current);
       listeningTimeoutRef.current = null;
     }
     // Use functional update to avoid stale closure on listeningState (#5)
     setListeningState((prev) => (prev === 'listening' ? 'idle' : prev));
+
+    if (recordingRef.current) {
+      try {
+        await recordingRef.current.stopAndUnloadAsync();
+        // The URI of the recorded audio file (for STT transcription)
+        const uri = recordingRef.current.getURI();
+        recordingRef.current = null;
+
+        // TODO: wire to real STT backend (e.g., OpenAI Whisper, Google Speech-to-Text)
+        // Send `uri` to the STT service and call processTranscript() with the result.
+        // Example: const transcript = await transcribeAudio(uri);
+        //          if (transcript) processTranscript(transcript);
+        console.debug('[useVoiceCommands] Recording saved to:', uri);
+      } catch (err) {
+        console.warn('[useVoiceCommands] Failed to stop recording:', err);
+        recordingRef.current = null;
+      }
+    }
   }, []);
+  // Keep ref in sync so startListening's timeout can call stopListening without a circular dep
+  stopListeningRef.current = stopListening;
 
   return {
     // State
