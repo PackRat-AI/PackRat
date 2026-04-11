@@ -17,7 +17,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { obs } from 'expo-app/lib/store';
 import { TestIds } from 'expo-app/lib/testIds';
-import type { PackCategory } from 'expo-app/types';
+import type { PackCategory } from '../types';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, ScrollView, TouchableOpacity, View } from 'react-native';

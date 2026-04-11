@@ -33,8 +33,11 @@ function isExcludedPath(relPath: string): boolean {
   return relPath === 'packages/guards' || relPath.startsWith('packages/guards/');
 }
 
+const TS_EXT_RE = /\.(ts|tsx|cts|mts)$/;
+const TS_TEST_EXT_RE = /\.(test|spec)\.(ts|tsx|cts|mts)$/;
+
 function isTargetFile(name: string): boolean {
-  return /\.(ts|tsx|cts|mts)$/.test(name) && !/\.(test|spec)\.(ts|tsx|cts|mts)$/.test(name);
+  return TS_EXT_RE.test(name) && !TS_TEST_EXT_RE.test(name);
 }
 
 interface Violation {

@@ -46,6 +46,29 @@ const claudeDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');
 const projectsDir = join(claudeDir, 'projects');
 const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
 
+// ── Top-level regex constants ──────────────────────────────────────────────
+const BASH_RULE_RE = /^Bash\((.+)\)$/;
+const COLON_GLOB_RE = /:(\*)$/;
+const COMPOUND_CHAIN_RE = /^(.+?)\s*(&&|\|\||;)\s*(.+)$/;
+const PIPE_RE = /^(.+?)\s*\|\s*(.+)$/;
+const SHELL_PIPE_RE = /\|\s*(sh|bash|zsh)\b/;
+const WHITESPACE_RE = /\s+/;
+const RISK_FLAG_RE = /^-[a-zA-Z]*[rf][a-zA-Z]*$/;
+const SUDO_RE = /^sudo\s/;
+const PNPM_FILTER_RE = /^pnpm\s+--filter\s+\S+\s+(\S+)/;
+const SED_RE = /^sed\s/;
+const SED_INPLACE_RE = /\s-i\b/;
+const SED_FLAG_RE = /^sed\s+(-[a-zA-Z])\s/;
+const AST_GREP_RE = /^(ast-grep|sg)\s/;
+const AST_GREP_REWRITE_RE = /\s--rewrite\b/;
+const FIND_RE = /^find\s/;
+const FIND_DELETE_RE = /\s-delete\b/;
+const FIND_EXEC_RE = /\s-exec\s/;
+const FIND_FLAG_RE = /\s(-(?:name|type|path|iname))\s/;
+const GIT_C_RE = /^git\s+-C\s+\S+\s+(.+)$/;
+const REDIRECT_RE = /\s*[12]?>>?\s*\S+\s*$/;
+const REDIRECT_STDERR_RE = /\s*2>&1\s*$/;
+
 // ── Allowlist loading ──────────────────────────────────────────────────────
 
 const allowPatterns = [];
@@ -56,7 +79,7 @@ async function loadAllowlist(filePath) {
     const settings = JSON.parse(content);
     const allow = settings?.permissions?.allow || [];
     for (const rule of allow) {
-      const match = rule.match(/^Bash\((.+)\)$/);
+      const match = rule.match(BASH_RULE_RE);
       if (match) {
         allowPatterns.push(match[1]);
       } else if (rule === 'Bash' || rule === 'Bash(*)') {
@@ -87,7 +110,7 @@ function isAllowed(command) {
 }
 
 function matchGlob(pattern, command) {
-  const normalized = pattern.replace(/:(\*)$/, ' $1');
+  const normalized = pattern.replace(COLON_GLOB_RE, ' $1');
   let regexStr;
   if (normalized.endsWith(' *')) {
     const base = normalized.slice(0, -2);
@@ -326,10 +349,10 @@ function classify(command) {
   // Extract the first command from compound chains (&&, ||, ;) and pipes
   // so that `cd /dir && git branch -D feat` classifies as green (cd),
   // not red (git branch -D). This matches what normalize() does.
-  const compoundMatch = command.match(/^(.+?)\s*(&&|\|\||;)\s*(.+)$/);
+  const compoundMatch = command.match(COMPOUND_CHAIN_RE);
   if (compoundMatch) return classify(compoundMatch[1].trim());
-  const pipeMatch = command.match(/^(.+?)\s*\|\s*(.+)$/);
-  if (pipeMatch && !/\|\s*(sh|bash|zsh)\b/.test(command)) {
+  const pipeMatch = command.match(PIPE_RE);
+  if (pipeMatch && !SHELL_PIPE_RE.test(command)) {
     return classify(pipeMatch[1].trim());
   }
 
@@ -339,7 +362,7 @@ function classify(command) {
   }
 
   // GREEN checks
-  const baseCmd = command.split(/\s+/)[0];
+  const baseCmd = command.split(WHITESPACE_RE)[0];
   if (GREEN_BASES.has(baseCmd)) return { tier: 'green' };
   for (const re of GREEN_COMPOUND) {
     if (re.test(command)) return { tier: 'green' };
@@ -390,68 +413,68 @@ function isRiskFlag(token, base) {
   const contexts = CONTEXTUAL_RISK_FLAGS[token];
   if (contexts && base && contexts.has(base)) return true;
   // Combined short flags containing risk chars: -rf, -fr, -fR, etc.
-  if (/^-[a-zA-Z]*[rf][a-zA-Z]*$/.test(token) && token.length <= 4) return true;
+  if (RISK_FLAG_RE.test(token) && token.length <= 4) return true;
   return false;
 }
 
 function normalize(command) {
   // Don't normalize shell injection patterns
-  if (/\|\s*(sh|bash|zsh)\b/.test(command)) return command;
+  if (SHELL_PIPE_RE.test(command)) return command;
   // Don't normalize sudo -- keep as-is
-  if (/^sudo\s/.test(command)) return 'sudo *';
+  if (SUDO_RE.test(command)) return 'sudo *';
 
   // Handle pnpm --filter <pkg> <subcommand> specially
-  const pnpmFilter = command.match(/^pnpm\s+--filter\s+\S+\s+(\S+)/);
+  const pnpmFilter = command.match(PNPM_FILTER_RE);
   if (pnpmFilter) return `pnpm --filter * ${pnpmFilter[1]} *`;
 
   // Handle sed specially -- preserve the mode flag to keep safe patterns narrow.
   // sed -i (in-place) is destructive; sed -n, sed -e, bare sed are read-only.
-  if (/^sed\s/.test(command)) {
-    if (/\s-i\b/.test(command)) return 'sed -i *';
-    const sedFlag = command.match(/^sed\s+(-[a-zA-Z])\s/);
+  if (SED_RE.test(command)) {
+    if (SED_INPLACE_RE.test(command)) return 'sed -i *';
+    const sedFlag = command.match(SED_FLAG_RE);
     return sedFlag ? `sed ${sedFlag[1]} *` : 'sed *';
   }
 
   // Handle ast-grep specially -- preserve --rewrite flag.
-  if (/^(ast-grep|sg)\s/.test(command)) {
+  if (AST_GREP_RE.test(command)) {
     const base = command.startsWith('sg') ? 'sg' : 'ast-grep';
-    return /\s--rewrite\b/.test(command) ? `${base} --rewrite *` : `${base} *`;
+    return AST_GREP_REWRITE_RE.test(command) ? `${base} --rewrite *` : `${base} *`;
   }
 
   // Handle find specially -- preserve key action flags.
   // find -delete and find -exec rm are destructive; find -name/-type are safe.
-  if (/^find\s/.test(command)) {
-    if (/\s-delete\b/.test(command)) return 'find -delete *';
-    if (/\s-exec\s/.test(command)) return 'find -exec *';
+  if (FIND_RE.test(command)) {
+    if (FIND_DELETE_RE.test(command)) return 'find -delete *';
+    if (FIND_EXEC_RE.test(command)) return 'find -exec *';
     // Extract the first predicate flag for a narrower safe pattern
-    const findFlag = command.match(/\s(-(?:name|type|path|iname))\s/);
+    const findFlag = command.match(FIND_FLAG_RE);
     return findFlag ? `find ${findFlag[1]} *` : 'find *';
   }
 
   // Handle git -C <dir> <subcommand> -- strip the -C <dir> and normalize the git subcommand
-  const gitC = command.match(/^git\s+-C\s+\S+\s+(.+)$/);
+  const gitC = command.match(GIT_C_RE);
   if (gitC) return normalize(`git ${gitC[1]}`);
 
   // Split on compound operators -- normalize the first command only
-  const compoundMatch = command.match(/^(.+?)\s*(&&|\|\||;)\s*(.+)$/);
+  const compoundMatch = command.match(COMPOUND_CHAIN_RE);
   if (compoundMatch) {
     return normalize(compoundMatch[1].trim());
   }
 
   // Strip trailing pipe chains for normalization (e.g., `cmd | tail -5`)
   // but preserve pipe-to-shell (already handled by shell injection check above)
-  const pipeMatch = command.match(/^(.+?)\s*\|\s*(.+)$/);
+  const pipeMatch = command.match(PIPE_RE);
   if (pipeMatch) {
     return normalize(pipeMatch[1].trim());
   }
 
   // Strip trailing redirections (2>&1, > file, >> file)
   const cleaned = command
-    .replace(/\s*[12]?>>?\s*\S+\s*$/, '')
-    .replace(/\s*2>&1\s*$/, '')
+    .replace(REDIRECT_RE, '')
+    .replace(REDIRECT_STDERR_RE, '')
     .trim();
 
-  const parts = cleaned.split(/\s+/);
+  const parts = cleaned.split(WHITESPACE_RE);
   if (parts.length === 0) return command;
 
   const base = parts[0];

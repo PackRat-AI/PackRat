@@ -44,8 +44,11 @@ const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build']);
 // The reference implementation is allowed to use raw regex
 const EXCLUDED_FILES = new Set(['packages/analytics/src/core/enrichment.ts']);
 
+const TS_EXT_RE = /\.(ts|tsx|cts|mts)$/;
+const TS_TEST_EXT_RE = /\.(test|spec)\.(ts|tsx|cts|mts)$/;
+
 function isTargetFile(name: string): boolean {
-  return /\.(ts|tsx|cts|mts)$/.test(name) && !/\.(test|spec)\.(ts|tsx|cts|mts)$/.test(name);
+  return TS_EXT_RE.test(name) && !TS_TEST_EXT_RE.test(name);
 }
 
 interface Violation {
