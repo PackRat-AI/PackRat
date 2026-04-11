@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
+import { tokenAtom } from 'expo-app/features/auth/atoms/authAtoms';
+import { useAtomValue } from 'jotai';
 import { useRouter } from 'expo-router';
 
 export function useDuplicatePack() {
-  const { token } = useAuth();
+  const token = useAtomValue(tokenAtom);
   const queryClient = useQueryClient();
   const router = useRouter();
 
