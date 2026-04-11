@@ -1,18 +1,42 @@
 # Internationalization (i18n) Setup
 
-This app uses `expo-localization` and `i18n-js` to provide localization support following Expo's best practices: https://docs.expo.dev/versions/latest/sdk/localization/
+This app uses `expo-localization`, `i18next`, and `react-i18next` to provide localization support with full compile-time TypeScript type safety.
+
+TypeScript types are set up following the official i18next documentation:
+https://www.i18next.com/overview/typescript
 
 ## Structure
 
 ```
 apps/expo/lib/
 ├── i18n/
-│   ├── index.ts           # i18n configuration
+│   ├── index.ts           # i18next configuration + `resources as const`
+│   ├── i18next.d.ts       # TypeScript module augmentation (CustomTypeOptions)
+│   ├── types.ts           # Re-exports TranslationKeys convenience type
 │   └── locales/
 │       └── en.json        # English translations
 └── hooks/
-    └── useTranslation.ts  # Translation hook
+    └── useTranslation.ts  # Re-exports useTranslation from react-i18next
 ```
+
+## How Type Safety Works
+
+The `i18next.d.ts` file augments the `i18next` module with `CustomTypeOptions`:
+
+```ts
+declare module 'i18next' {
+  interface CustomTypeOptions {
+    defaultNS: typeof defaultNS;
+    resources: (typeof resources)['en'];
+  }
+}
+```
+
+This wires the exact shape of `en.json` into i18next's type system.  The
+`t()` function — from `useTranslation()` or `i18next.t()` directly — will
+**only accept keys that exist in `en.json`** and will report a compile-time
+error for any unknown or misspelled key.  No manual maintenance of a key list
+is required.
 
 ## Usage
 
@@ -48,13 +72,15 @@ const { t } = useTranslation();
 
 ### Direct Translation (without hook)
 
-For use outside of React components:
+For use outside of React components (utility functions, validation helpers, etc.):
 
 ```tsx
 import { t } from 'expo-app/lib/i18n';
 
 const message = t('errors.somethingWentWrong');
 ```
+
+This uses the configured i18next instance exported from `lib/i18n/index.ts`, which guarantees the instance is always initialised before `t` is called.
 
 ## Translation Keys
 
@@ -83,6 +109,9 @@ All translation keys are organized into logical sections in `lib/i18n/locales/en
 1. Add the English text to `lib/i18n/locales/en.json` in the appropriate section
 2. Use the translation key in your component with `t('section.key')`
 
+The TypeScript types update automatically — no changes to `types.ts` or any
+declaration file are needed.
+
 Example:
 ```json
 // In en.json
@@ -107,14 +136,14 @@ When ready to add support for other languages:
 
 1. Create a new JSON file in `lib/i18n/locales/` (e.g., `es.json` for Spanish)
 2. Copy the structure from `en.json` and translate the values
-3. Import the new locale in `lib/i18n/index.ts`:
+3. Import the new locale in `lib/i18n/index.ts` and add it to `resources`:
    ```typescript
    import es from './locales/es.json';
-   
-   i18n.translations = {
-     en,
-     es,
-   };
+
+   export const resources = {
+     en: { translation: en },
+     es: { translation: es },
+   } as const;
    ```
 
 The app will automatically use the device's language if available, falling back to English otherwise.
@@ -161,3 +190,4 @@ Several files have been updated to demonstrate proper i18n usage:
 - `features/ai/components/ErrorState.tsx` - AI error state
 
 Review these files to see patterns for implementing translations in your own components.
+

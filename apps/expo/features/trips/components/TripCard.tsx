@@ -1,5 +1,5 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { Alert, type AlertRef, Button } from '@packrat/ui/nativewindui';
+import { Alert, type AlertMethods, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -15,14 +15,31 @@ interface TripCardProps {
   onPress?: (trip: Trip) => void;
 }
 
+function getTripDurationDays(startDate?: string, endDate?: string): number | null {
+  if (!startDate || !endDate) return null;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffMs = end.getTime() - start.getTime();
+  if (diffMs < 0) return null;
+  return Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1;
+}
+
+function formatShortDate(isoString?: string): string {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 export function TripCard({ trip, onPress }: TripCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const deleteTrip = useDeleteTrip();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const insets = useSafeAreaInsets();
+
+  const durationDays = getTripDurationDays(trip.startDate, trip.endDate);
 
   const handleActionsPress = () => {
     const options = [
@@ -105,6 +122,46 @@ export function TripCard({ trip, onPress }: TripCardProps) {
           <Text className="text-sm text-muted-foreground mt-2" numberOfLines={2}>
             {trip.description}
           </Text>
+        )}
+
+        {/* Dates & Duration */}
+        {(trip.startDate || trip.endDate) && (
+          <View className="mt-3 flex-row items-center flex-wrap gap-3">
+            {trip.startDate && trip.endDate ? (
+              <View className="flex-row items-center">
+                <Icon
+                  materialIcon={{ type: 'MaterialIcons', name: 'calendar-today' }}
+                  ios={{ name: 'calendar' }}
+                  size={13}
+                  color={colors.grey2}
+                />
+                <Text className="ml-1 text-xs text-muted-foreground">
+                  {formatShortDate(trip.startDate)} – {formatShortDate(trip.endDate)}
+                </Text>
+              </View>
+            ) : trip.startDate ? (
+              <View className="flex-row items-center">
+                <Icon
+                  materialIcon={{ type: 'MaterialIcons', name: 'calendar-today' }}
+                  ios={{ name: 'calendar' }}
+                  size={13}
+                  color={colors.grey2}
+                />
+                <Text className="ml-1 text-xs text-muted-foreground">
+                  {t('trips.startDate')}: {formatShortDate(trip.startDate)}
+                </Text>
+              </View>
+            ) : null}
+
+            {durationDays !== null && (
+              <View className="flex-row items-center">
+                <Icon name="clock-outline" size={13} color={colors.grey2} />
+                <Text className="ml-1 text-xs text-muted-foreground">
+                  {t('trips.days', { count: durationDays })}
+                </Text>
+              </View>
+            )}
+          </View>
         )}
 
         {/* Alert */}

@@ -333,7 +333,8 @@ export class R2BucketService {
         },
         blob: async () => {
           assertStreamNotConsumed();
-          return new globalThis.Blob([await consumeStream()]);
+          const data = await consumeStream();
+          return new globalThis.Blob([data.buffer as ArrayBuffer]);
         },
       };
 
