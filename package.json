@@ -41,10 +41,6 @@
   "trustedDependencies": [
     "@sentry/cli"
   ],
-  "overrides": {
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
-  },
   "patchedDependencies": {
     "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch"
   }
