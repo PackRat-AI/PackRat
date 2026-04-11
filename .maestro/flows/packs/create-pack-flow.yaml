@@ -46,9 +46,9 @@ appId: ${APP_ID}
     id: "create-pack-button"
 - scrollUntilVisible:
     element:
-      text: ${PACK_NAME}
+      id: "pack-row-${PACK_NAME}"
     direction: DOWN
     timeout: 60000
     speed: 99
 - assertVisible:
-    text: ${PACK_NAME}
+    id: "pack-row-${PACK_NAME}"

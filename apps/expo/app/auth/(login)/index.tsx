@@ -116,36 +116,38 @@ export default function LoginScreen() {
                 accessible={Platform.OS === 'ios' ? false : undefined}
               >
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
-                  <form.Field name="email">
-                    {(field) => (
-                      <TextField
-                        testID={TestIds.EmailInput}
-                        accessible={Platform.OS === 'ios' ? true : undefined}
-                        placeholder={Platform.select({
-                          ios: 'Email',
-                          default: '',
-                        })}
-                        label={Platform.select({
-                          ios: undefined,
-                          default: 'Email',
-                        })}
-                        onSubmitEditing={() => KeyboardController.setFocusTo('next')}
-                        submitBehavior="submit"
-                        autoFocus
-                        onFocus={() => setFocusedTextField('email')}
-                        onBlur={() => {
-                          setFocusedTextField(null);
-                          field.handleBlur();
-                        }}
-                        keyboardType="email-address"
-                        textContentType="emailAddress"
-                        returnKeyType="next"
-                        value={field.state.value}
-                        onChangeText={field.handleChange}
-                        errorMessage={field.state.meta.errors[0]?.message}
-                      />
-                    )}
-                  </form.Field>
+                  <View testID={TestIds.EmailInput}>
+                    <form.Field name="email">
+                      {(field) => (
+                        <TextField
+                          testID={TestIds.EmailInput}
+                          accessible={Platform.OS === 'ios' ? true : undefined}
+                          placeholder={Platform.select({
+                            ios: 'Email',
+                            default: '',
+                          })}
+                          label={Platform.select({
+                            ios: undefined,
+                            default: 'Email',
+                          })}
+                          onSubmitEditing={() => KeyboardController.setFocusTo('next')}
+                          submitBehavior="submit"
+                          autoFocus
+                          onFocus={() => setFocusedTextField('email')}
+                          onBlur={() => {
+                            setFocusedTextField(null);
+                            field.handleBlur();
+                          }}
+                          keyboardType="email-address"
+                          textContentType="emailAddress"
+                          returnKeyType="next"
+                          value={field.state.value}
+                          onChangeText={field.handleChange}
+                          errorMessage={field.state.meta.errors[0]?.message}
+                        />
+                      )}
+                    </form.Field>
+                  </View>
                 </FormItem>
                 <FormItem accessible={Platform.OS === 'ios' ? false : undefined}>
                   <form.Field name="password">

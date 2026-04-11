@@ -10,7 +10,7 @@ appId: ${APP_ID}
 
 # Tap the test pack
 - tapOn:
-    text: ${PACK_NAME}
+    id: "pack-row-${PACK_NAME}"
 - waitForAnimationToEnd
 
 # Assert pack detail elements via testIDs
@@ -25,6 +25,16 @@ appId: ${APP_ID}
 - assertVisible:
     text: ${PACK_NAME}
 
-# Go back to packs list
-- back
+# Go back to packs list - platform specific
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: ".*Back.*"
 - waitForAnimationToEnd

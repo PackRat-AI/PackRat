@@ -13,13 +13,23 @@ export enum TestIds {
   PasswordInput = 'password-input',
   ContinueButton = 'continue-button',
 
+  //Dashboard
+  DashboardTilePackratAI = 'dashboard-tile-packrat-ai',
+
   // Trips
   CreateTripButton = 'create-trip-button',
   SubmitTripButton = 'submit-trip-button',
 
+  // Trip form
+  StartDateInput = 'start-date-input',
+  EndDateInput = 'end-date-input',
+
   // Packs
   CreatePackButton = 'create-pack-button',
   SubmitPackButton = 'submit-pack-button',
+
+  // Packs list rows
+  PackRow = 'pack-row-',
 
   // Pack detail
   AskAIButton = 'ask-ai-button',
