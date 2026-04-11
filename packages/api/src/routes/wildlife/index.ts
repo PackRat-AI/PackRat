@@ -104,7 +104,10 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
     Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
     Key: image,
   });
-  const imageUrl = await getPresignedUrl(c, command, { expiresIn: 3600 });
+  const imageUrl = await getPresignedUrl(c, {
+    command,
+    signOptions: { expiresIn: 3600 },
+  });
 
   const service = new WildlifeIdentificationService(c);
   let identification: Awaited<ReturnType<typeof service.identifySpecies>>;
