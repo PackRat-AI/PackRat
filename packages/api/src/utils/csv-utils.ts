@@ -26,7 +26,7 @@ export function mapCsvRowToItem({
 
   const reviewCountStr =
     fieldMap.reviewCount !== undefined ? values[fieldMap.reviewCount] : undefined;
-  item.reviewCount = reviewCountStr ? parseInt(reviewCountStr) || 0 : 0;
+  item.reviewCount = reviewCountStr ? parseInt(reviewCountStr, 10) || 0 : 0;
 
   if (fieldMap.categories !== undefined && values[fieldMap.categories]) {
     const val = values[fieldMap.categories]?.trim();

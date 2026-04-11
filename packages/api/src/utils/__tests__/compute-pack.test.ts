@@ -165,7 +165,7 @@ describe('computePacksWeights', () => {
       }),
     ];
     const results = computePacksWeights(packs);
-    expect(results[0]!.totalWeight).toBe(500);
-    expect(results[1]!.totalWeight).toBe(1000);
+    expect(results[0]?.totalWeight).toBe(500);
+    expect(results[1]?.totalWeight).toBe(1000);
   });
 });

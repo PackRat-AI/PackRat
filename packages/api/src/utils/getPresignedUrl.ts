@@ -5,9 +5,12 @@ import { getEnv } from './env-validation';
 
 export async function getPresignedUrl(
   c: Context,
-  command: GetObjectCommand | PutObjectCommand,
-  options: Parameters<typeof getSignedUrl>[2],
+  opts: {
+    command: GetObjectCommand | PutObjectCommand;
+    signOptions: Parameters<typeof getSignedUrl>[2];
+  },
 ): Promise<string> {
+  const { command, signOptions } = opts;
   const { R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, CLOUDFLARE_ACCOUNT_ID } = getEnv(c);
 
   // Initialize S3 client for R2
@@ -21,7 +24,7 @@ export async function getPresignedUrl(
   }); // Using S3Client because R2 binding doesn't seem to support presigned URLs directly
 
   // Generate the presigned URL
-  const presignedUrl = await getSignedUrl(s3Client, command, options);
+  const presignedUrl = await getSignedUrl(s3Client, command, signOptions);
 
   return presignedUrl;
 }

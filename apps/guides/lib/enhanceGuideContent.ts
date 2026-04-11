@@ -35,6 +35,7 @@ export interface EnhancedContentResult {
  * Enhance guide content by contextually integrating relevant catalog items
  * This is the main programmatic API for content enhancement
  */
+
 export async function enhanceGuideContent(
   content: string,
   options: ContentEnhancementOptions = {},
@@ -172,6 +173,7 @@ export async function enhanceGuideContent(
 /**
  * Batch enhance multiple content pieces
  */
+
 export async function batchEnhanceContent(
   contentPieces: Array<{ id: string; content: string }>,
   options: ContentEnhancementOptions = {},

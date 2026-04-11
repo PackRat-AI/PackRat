@@ -1,4 +1,4 @@
-import type { Ai, DurableObjectNamespace, Queue, R2Bucket } from '@cloudflare/workers-types';
+import type { Container } from '@cloudflare/containers';
 import type { Context } from 'hono';
 import { env } from 'hono/adapter';
 import { z } from 'zod';
@@ -110,7 +110,7 @@ export type ValidatedEnv = Omit<
   LOGS_QUEUE: Queue;
   EMBEDDINGS_QUEUE: Queue;
   // AppContainer Durable Object binding (APP_CONTAINER)
-  APP_CONTAINER: DurableObjectNamespace;
+  APP_CONTAINER: DurableObjectNamespace<Container<unknown>>;
 };
 
 // Cache for validated environments per request

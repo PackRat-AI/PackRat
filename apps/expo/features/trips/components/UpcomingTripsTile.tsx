@@ -1,9 +1,10 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { parseLocalDate } from 'expo-app/lib/utils/dateUtils';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
@@ -11,15 +12,24 @@ import { View } from 'react-native';
 export function UpcomingTripsTile() {
   const router = useRouter();
   const { t } = useTranslation();
-  const alertRef = useRef<AlertRef>(null);
+  const _alertRef = useRef<AlertMethods>(null);
   const [showAlert, setShowAlert] = useState(false);
 
   // ✅ get all trips
   const trips = useTrips();
 
-  // ✅ derive upcoming trips (in future)
+  // ✅ derive upcoming trips (today or in future)
   const upcomingTrips = useMemo(
-    () => trips.filter((t) => t.startDate && new Date(t.startDate) > new Date()),
+    () =>
+      trips.filter((t) => {
+        if (!t.startDate) return false;
+        const parsed = parseLocalDate(t.startDate);
+        if (parsed == null) return false;
+        // Compare against start-of-today so same-day trips are included
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        return parsed >= startOfToday;
+      }),
     [trips],
   );
 

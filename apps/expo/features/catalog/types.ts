@@ -1,5 +1,5 @@
 import type { WeightUnit } from 'expo-app/types';
-import type { PackItemInput } from '../packs';
+import type { PackItemInput } from '../packs/input';
 
 export interface CatalogItemLink {
   id: string;

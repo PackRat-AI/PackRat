@@ -1,9 +1,11 @@
 import { List, ListItem, Text } from '@packrat/ui/nativewindui';
 import { format } from 'date-fns';
+import { featureFlags } from 'expo-app/config';
 import { useTrips } from 'expo-app/features/trips/hooks';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import type { TranslationFunction } from 'expo-app/lib/i18n/types';
+import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
@@ -102,6 +104,14 @@ function PackStatus({ status, completion }: { status: string; completion: number
 // }
 
 export default function UpcomingTripsScreen() {
+  // Gate deep links behind the trips feature flag. `featureFlags` is a build-
+  // time constant, so this branch is stable across renders and does not break
+  // the rules of hooks.
+  if (!featureFlags.enableTrips) return <Redirect href="/" />;
+  return <UpcomingTripsScreenInner />;
+}
+
+function UpcomingTripsScreenInner() {
   const { t } = useTranslation();
   const trips = useTrips();
   const packs = useDetailedPacks();
@@ -142,83 +152,79 @@ export default function UpcomingTripsScreen() {
   const selectedPack = selectedTrip ? packs.find((p) => p.id === selectedTrip.packId) : undefined;
 
   return (
-    <>
-      <ScrollView className="flex-1">
-        <View className="p-4">
-          <Text variant="subhead" className="mb-2 text-muted-foreground">
-            {t('trips.plannedAdventures')}
-          </Text>
-        </View>
+    <ScrollView className="flex-1">
+      <View className="p-4">
+        <Text variant="subhead" className="mb-2 text-muted-foreground">
+          {t('trips.plannedAdventures')}
+        </Text>
+      </View>
 
-        {/* Trip List */}
-        <List
-          data={upcomingTrips.map((trip) => ({
-            id: trip.id,
-            trip,
-            title: trip.name,
-            subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
-              trip.startDate,
-            )} to ${formatDate(trip.endDate)}`,
-          }))}
-          extraData={selectedTripId}
-          keyExtractor={(item) => item.id}
-          renderItem={(info) => {
-            const { trip } = info.item;
-            const { status, completion } = getTripStatus(trip, t);
+      {/* Trip List */}
+      <List
+        data={upcomingTrips.map((trip) => ({
+          id: trip.id,
+          trip,
+          title: trip.name,
+          subTitle: `${trip.location?.name ?? t('trips.unknown')} • ${formatDate(
+            trip.startDate,
+          )} to ${formatDate(trip.endDate)}`,
+        }))}
+        extraData={selectedTripId}
+        keyExtractor={(item) => item.id}
+        renderItem={(info) => {
+          const { trip } = info.item;
+          const { status, completion } = getTripStatus(trip, t);
 
-            return (
-              <ListItem
-                {...info}
-                // leftView={<TripImage uri={trip.imageUrl} />}
-                rightView={
-                  <View className="flex-row items-center">
-                    <PackStatus status={status} completion={completion} />
-                  </View>
-                }
-                onPress={() => setSelectedTripId(trip.id)}
-                className={
-                  selectedTripId === trip.id
-                    ? 'bg-muted/50 dark:bg-slate-950'
-                    : 'dark:bg-transparent'
-                }
-              />
-            );
-          }}
-        />
+          return (
+            <ListItem
+              {...info}
+              // leftView={<TripImage uri={trip.imageUrl} />}
+              rightView={
+                <View className="flex-row items-center">
+                  <PackStatus status={status} completion={completion} />
+                </View>
+              }
+              onPress={() => setSelectedTripId(trip.id)}
+              className={
+                selectedTripId === trip.id ? 'bg-muted/50 dark:bg-slate-950' : 'dark:bg-transparent'
+              }
+            />
+          );
+        }}
+      />
 
-        {/* Trip Summary */}
-        {selectedTrip && (
-          <View className="mx-4 my-4 rounded-lg bg-card">
-            <View className="border-border/25 dark:border-border/80 border-b p-4">
-              <Text variant="heading" className="font-semibold">
-                {selectedTrip.name}
+      {/* Trip Summary */}
+      {selectedTrip && (
+        <View className="mx-4 my-4 rounded-lg bg-card">
+          <View className="border-border/25 dark:border-border/80 border-b p-4">
+            <Text variant="heading" className="font-semibold">
+              {selectedTrip.name}
+            </Text>
+            <Text variant="subhead" className="mt-1 text-muted-foreground">
+              {selectedTrip.location?.name ?? 'No location'}
+            </Text>
+          </View>
+
+          <View className="flex-row justify-between p-4">
+            <View className="flex-1">
+              <Text variant="footnote" className="text-muted-foreground">
+                DATES
               </Text>
-              <Text variant="subhead" className="mt-1 text-muted-foreground">
-                {selectedTrip.location?.name ?? 'No location'}
+              <Text variant="subhead" className="mt-1">
+                {formatDate(selectedTrip.startDate)} - {formatDate(selectedTrip.endDate)}
               </Text>
             </View>
-
-            <View className="flex-row justify-between p-4">
-              <View className="flex-1">
-                <Text variant="footnote" className="text-muted-foreground">
-                  DATES
-                </Text>
-                <Text variant="subhead" className="mt-1">
-                  {formatDate(selectedTrip.startDate)} - {formatDate(selectedTrip.endDate)}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text variant="footnote" className="text-muted-foreground">
-                  PACK
-                </Text>
-                <Text variant="subhead" className="mt-1">
-                  {selectedPack ? `${selectedPack.items.length} items` : 'No pack assigned'}
-                </Text>
-              </View>
+            <View className="flex-1">
+              <Text variant="footnote" className="text-muted-foreground">
+                PACK
+              </Text>
+              <Text variant="subhead" className="mt-1">
+                {selectedPack ? `${selectedPack.items.length} items` : 'No pack assigned'}
+              </Text>
             </View>
           </View>
-        )}
-      </ScrollView>
-    </>
+        </View>
+      )}
+    </ScrollView>
   );
 }

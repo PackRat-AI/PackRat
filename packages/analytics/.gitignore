@@ -1,0 +1,5 @@
+# Local DuckDB cache and metadata
+data/cache/
+
+# Exported datasets
+data/exports/

@@ -358,7 +358,7 @@ chatRoutes.openapi(updateReportRoute, async (c) => {
     return c.json({ error: 'Unauthorized' }, 403);
   }
 
-  const id = Number.parseInt(c.req.param('id'));
+  const id = Number.parseInt(c.req.param('id'), 10);
   const { status } = await c.req.json();
 
   await db

@@ -68,5 +68,5 @@ export function isWorn(item: CatalogItem | PackItem): boolean {
  * Check if the item has a notes field
  */
 export function hasNotes(item: CatalogItem | PackItem): boolean {
-  return 'notes' in item && item.notes !== undefined;
+  return 'notes' in item && item.notes !== undefined && item.notes !== '';
 }
