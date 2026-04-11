@@ -25,6 +25,7 @@ import { cn } from 'expo-app/lib/cn';
 import { hasUnsyncedChanges } from 'expo-app/lib/hasUnsyncedChanges';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { TestIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
 import { router, Stack } from 'expo-router';
@@ -240,7 +241,7 @@ function ListFooterComponent() {
   return (
     <View className="ios:px-0 px-4 pt-8">
       <Button
-        testID="sign-out-button"
+        testID={TestIds.SignOutButton}
         disabled={isSigningOut}
         onPress={() => {
           if (hasUnsyncedChanges()) {

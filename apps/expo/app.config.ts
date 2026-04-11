@@ -65,7 +65,7 @@ export default (): ExpoConfig =>
             enableEntitlements: true,
             entitlementsProfile: 'production',
             forceCxx20: true,
-            enableOpenCLAndHexagon: true,
+            enableOpenCLAndHexagon: false,
           },
         ],
         '@react-native-community/datetimepicker',

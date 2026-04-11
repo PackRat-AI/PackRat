@@ -26,7 +26,7 @@ permissions:
   contents: read
 
 env:
-  MAESTRO_VERSION: 1.40.0
+  MAESTRO_VERSION: 2.3.0
 
 jobs:
   ios-e2e:
@@ -71,12 +71,6 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Maestro CLI
-        run: |
-          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
-          curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
-
       - name: Build iOS app for simulator
         run: |
           cd apps/expo
@@ -91,6 +85,12 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
+      - name: Install Maestro CLI
+        run: |
+          export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
       - name: Extract iOS simulator build
         run: |
           mkdir -p apps/expo/build/extracted
@@ -104,43 +104,34 @@ jobs:
 
       - name: Boot iOS Simulator
         run: |
-          # Find the latest available iOS runtime (prefer 18, fall back to 17, then any available iOS runtime)
           IOS_RUNTIME=$(xcrun simctl list runtimes --json \
             | python3 -c "
           import sys, json
           data = json.load(sys.stdin)
           runtimes = data.get('runtimes', [])
-          available = [r for r in runtimes if r.get('isAvailable', False) and r.get('platform', r.get('name','')).startswith('iOS')]
-          # Fallback: also match by name containing 'iOS' in case 'platform' key is absent
-          if not available:
-              available = [r for r in runtimes if r.get('isAvailable', False) and 'iOS' in r.get('name','')]
-          ios18 = [r for r in available if 'iOS 18' in r.get('name','')]
-          ios17 = [r for r in available if 'iOS 17' in r.get('name','')]
-          chosen = ios18 or ios17 or available
-          if not chosen:
-              print('', file=sys.stderr)
+          available = [r for r in runtimes if r.get('isAvailable', False)]
+          ios26 = [r for r in available if 'iOS 26' in r.get('name','')]
+          if not ios26:
+              print('::error::No iOS 26 runtime found on this runner', file=sys.stderr)
               sys.exit(1)
-          print(chosen[-1]['identifier'])
+          print(ios26[-1]['identifier'])
           ")
-          if [ -z "$IOS_RUNTIME" ]; then
-            echo "::error::No available iOS runtime found on this runner"
-            exit 1
-          fi
-          # Find iPhone 15 device type (base or Pro)
+
           DEVICE_TYPE=$(xcrun simctl list devicetypes --json \
             | python3 -c "
           import sys, json
           types = json.load(sys.stdin)['devicetypes']
-          iphone15 = [d for d in types if 'iPhone 15' in d.get('name','') and 'Pro' not in d.get('name','') and 'Plus' not in d.get('name','') and 'Max' not in d.get('name','')]
-          fallback = [d for d in types if 'iPhone 15' in d.get('name','')]
-          chosen = (iphone15 or fallback)
-          print(chosen[0]['identifier'] if chosen else 'com.apple.CoreSimulator.SimDeviceType.iPhone-15')
+          iphone16 = [d for d in types if 'iPhone 16' in d.get('name','') and 'Pro' not in d.get('name','') and 'Plus' not in d.get('name','') and 'Max' not in d.get('name','')]
+          if not iphone16:
+              print('::error::No iPhone 16 device type found on this runner', file=sys.stderr)
+              sys.exit(1)
+          print(iphone16[0]['identifier'])
           ")
+
           echo "Using runtime: $IOS_RUNTIME"
           echo "Using device type: $DEVICE_TYPE"
           DEVICE_ID=$(xcrun simctl create "PackRat-E2E" "$DEVICE_TYPE" "$IOS_RUNTIME")
           xcrun simctl boot "$DEVICE_ID"
-          # Wait for the simulator to be fully booted before continuing
           xcrun simctl bootstatus "$DEVICE_ID" -b
           echo "SIMULATOR_UDID=$DEVICE_ID" >> "$GITHUB_ENV"
 
@@ -151,15 +142,13 @@ jobs:
       - name: Run Maestro E2E tests
         run: |
           mkdir -p test-results
-          maestro --device "$SIMULATOR_UDID" test \
-            --format junit \
-            --output test-results/maestro-results.xml \
-            .maestro/
+          bun test:e2e:ios --device "$SIMULATOR_UDID" --format junit --output test-results/maestro-results.xml
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
+          APP_ID: com.andrewbierman.packrat.preview
 
       - name: Upload test results
         if: always()
@@ -262,19 +251,15 @@ jobs:
           disable-animations: true
           script: |
             mkdir -p test-results
+            adb shell pm disable-user com.android.launcher3 || true
+            adb shell pm disable-user com.google.android.apps.nexuslauncher || true
             adb install apps/expo/build/PackRat.apk
-            cp .maestro/config.yaml .maestro/config.yaml.bak
-            cp .maestro/config-android.yaml .maestro/config.yaml
-            maestro test \
-              --format junit \
-              --output test-results/maestro-results.xml \
-              .maestro/
-            mv .maestro/config.yaml.bak .maestro/config.yaml
-        env:
-          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
-          TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-          TRIP_NAME: E2E-Trip-${{ github.run_id }}
-          PACK_NAME: E2E-Pack-${{ github.run_id }}
+            export TEST_EMAIL="${{ secrets.E2E_TEST_EMAIL }}"
+            export TEST_PASSWORD="${{ secrets.E2E_TEST_PASSWORD }}"
+            export TRIP_NAME="E2E-Trip-${{ github.run_id }}"
+            export PACK_NAME="E2E-Pack-${{ github.run_id }}"
+            export APP_ID="com.packratai.mobile.preview"
+            bun test:e2e:android --format junit --output test-results/maestro-results.xml
 
       - name: Upload test results
         if: always()

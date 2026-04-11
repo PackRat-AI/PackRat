@@ -1,3 +1,5 @@
+appId: ${APP_ID}
+---
 # Catalog Browse Flow: Verify catalog tab loads items and categories
 - waitForAnimationToEnd
 
