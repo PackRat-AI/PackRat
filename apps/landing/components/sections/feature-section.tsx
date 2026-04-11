@@ -66,10 +66,10 @@ export default function FeatureSection() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
                     {siteConfig.features[0].title}
                   </h3>
-                  <p className="text-base md:text-lg text-muted-foreground">
+                  <p className="text-base md:text-lg leading-relaxed text-muted-foreground">
                     {siteConfig.features[0].description}
                   </p>
                   <ul className="space-y-2">
@@ -130,10 +130,10 @@ export default function FeatureSection() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
                     {siteConfig.features[1].title}
                   </h3>
-                  <p className="text-base md:text-lg text-muted-foreground">
+                  <p className="text-base md:text-lg leading-relaxed text-muted-foreground">
                     {siteConfig.features[1].description}
                   </p>
                   <ul className="space-y-2">
@@ -179,10 +179,10 @@ export default function FeatureSection() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
                     {siteConfig.features[2]?.title}
                   </h3>
-                  <p className="text-base md:text-lg text-muted-foreground">
+                  <p className="text-base md:text-lg leading-relaxed text-muted-foreground">
                     {siteConfig.features[2]?.description}
                   </p>
                   <ul className="space-y-2">
