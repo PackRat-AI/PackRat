@@ -7,6 +7,7 @@ import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
+import { notificationsRoutes } from './notifications';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
@@ -31,6 +32,7 @@ protectedRoutes.use(authMiddleware);
 protectedRoutes.route('/catalog', catalogRoutes);
 protectedRoutes.route('/guides', guidesRoutes);
 protectedRoutes.route('/feed', feedRoutes);
+protectedRoutes.route('/notifications', notificationsRoutes);
 protectedRoutes.route('/packs', packsRoutes);
 protectedRoutes.route('/trips', tripsRoutes);
 
