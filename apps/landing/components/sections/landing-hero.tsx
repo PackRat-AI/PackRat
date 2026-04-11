@@ -43,14 +43,14 @@ export default function LandingHero() {
         <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
           {/* Text column */}
           <motion.div
-            className="space-y-6 max-w-2xl"
+            className="space-y-6 max-w-2xl mx-auto lg:mx-0 text-center lg:text-left"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
             {/* Badge */}
             <motion.div variants={itemVariants}>
-              <div className="apple-badge">
+              <div className="apple-badge mx-auto lg:mx-0 w-fit">
                 <span className="mr-1.5 h-2 w-2 rounded-full bg-apple-blue animate-pulse inline-block" />
                 {siteConfig.hero.badge}
               </div>
@@ -69,14 +69,17 @@ export default function LandingHero() {
 
             {/* Subtitle */}
             <motion.p
-              className="text-xl text-muted-foreground font-medium max-w-xl"
+              className="text-xl text-muted-foreground font-medium max-w-xl mx-auto lg:mx-0"
               variants={itemVariants}
             >
               {siteConfig.hero.subtitle}
             </motion.p>
 
             {/* CTA buttons */}
-            <motion.div className="flex flex-col sm:flex-row gap-3" variants={itemVariants}>
+            <motion.div
+              className="flex flex-col sm:flex-row justify-center lg:justify-start gap-3"
+              variants={itemVariants}
+            >
               <Link
                 href={siteConfig.cta.primary.href}
                 onClick={(e) => scrollToSection(e, siteConfig.cta.primary.href)}
@@ -99,7 +102,7 @@ export default function LandingHero() {
             {/* Social proof */}
             {siteConfig.hero.socialProof && (
               <motion.p
-                className="text-xs text-muted-foreground flex items-center gap-1"
+                className="text-xs text-muted-foreground flex items-center justify-center lg:justify-start gap-1"
                 variants={itemVariants}
               >
                 <Star className="w-3 h-3 text-amber-400 fill-amber-400 flex-shrink-0" />
@@ -109,7 +112,7 @@ export default function LandingHero() {
 
             {/* Stats */}
             <motion.div
-              className="flex flex-col sm:flex-row items-center gap-6 pt-4"
+              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6 pt-4"
               variants={itemVariants}
             >
               <div className="flex -space-x-2">
