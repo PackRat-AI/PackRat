@@ -1,5 +1,4 @@
 import { cn } from '@packrat/web-ui/lib/utils';
-import '@packrat/web-ui/styles/globals.css';
 import MainNav from 'landing-app/components/main-nav';
 import SiteFooter from 'landing-app/components/site-footer';
 import { ThemeProvider } from 'landing-app/components/theme-provider';

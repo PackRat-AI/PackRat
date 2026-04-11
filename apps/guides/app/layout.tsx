@@ -1,5 +1,4 @@
 import { cn } from '@packrat/web-ui/lib/utils';
-import '@packrat/web-ui/styles/globals.css';
 import Footer from 'guides-app/components/footer';
 import Header from 'guides-app/components/header';
 import { QueryProvider } from 'guides-app/components/providers/query-provider';

@@ -1,8 +1,11 @@
 /*
  * Guides-only globals. Shared Apple-style tokens, base layer, and apple-*
- * utility classes live in @packrat/web-ui/styles/globals.css and are
- * imported from apps/guides/app/layout.tsx before this file.
+ * utility classes come from @packrat/web-ui/styles/globals.css, which is
+ * inlined below by postcss-import before tailwindcss processes this file
+ * (so `@tailwind base` and our `@layer base` end up in the same unit).
  */
+
+@import "../../../packages/web-ui/src/styles/globals.css";
 
 @layer base {
   body {
