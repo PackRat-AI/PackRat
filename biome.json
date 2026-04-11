@@ -20,7 +20,8 @@
       "!**/.wrangler",
       "!**/*.gen.ts",
       "!**/vite.config.ts.timestamp-*.mjs",
-      "!**/src/codegen"
+      "!**/src/codegen",
+      "!.github/skills/**"
     ]
   },
   "formatter": {
