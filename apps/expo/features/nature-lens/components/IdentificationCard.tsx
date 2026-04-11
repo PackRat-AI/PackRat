@@ -1,8 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
+import type { NatureIdentification } from '../types';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { SafetyBadge } from './SafetyBadge';
-import type { NatureIdentification } from '../types';
 
 interface IdentificationCardProps {
   identification: NatureIdentification;
@@ -23,7 +22,7 @@ export function IdentificationCard({ identification }: IdentificationCardProps) 
       {identification.imageUrl && (
         <Image source={{ uri: identification.imageUrl }} style={styles.image} />
       )}
-      
+
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.emoji}>{categoryEmoji[identification.category]}</Text>
@@ -34,11 +33,8 @@ export function IdentificationCard({ identification }: IdentificationCardProps) 
         </View>
 
         <ConfidenceBadge confidence={identification.confidence} />
-        
-        <SafetyBadge 
-          isEdible={identification.isEdible} 
-          isDangerous={identification.isDangerous} 
-        />
+
+        <SafetyBadge isEdible={identification.isEdible} isDangerous={identification.isDangerous} />
 
         {identification.description && (
           <View style={styles.section}>

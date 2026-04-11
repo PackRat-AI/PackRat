@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAtom } from 'jotai';
 import { api } from 'app/lib/api';
-import { 
-  trailConditionsAtom,
+import { useAtom } from 'jotai';
+import {
+  conditionErrorAtom,
   currentTrailConditionAtom,
   isSubmittingConditionAtom,
-  conditionErrorAtom,
+  trailConditionsAtom,
 } from '../atoms/trailConditionsAtoms';
 import type { CreateTrailConditionRequest, TrailCondition } from '../types';
 
@@ -13,14 +13,14 @@ const TRAIL_CONDITIONS_QUERY_KEY = 'trail-conditions';
 
 export function useTrailConditions(trailId?: string, trailName?: string) {
   const [, setConditions] = useAtom(trailConditionsAtom);
-  
+
   return useQuery({
     queryKey: [TRAIL_CONDITIONS_QUERY_KEY, trailId, trailName],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (trailId) params.append('trailId', trailId);
       if (trailName) params.append('trailName', trailName);
-      
+
       const response = await api.get(`/trail-conditions?${params.toString()}`);
       setConditions(response.conditions);
       return response.conditions as TrailCondition[];
@@ -30,7 +30,7 @@ export function useTrailConditions(trailId?: string, trailName?: string) {
 
 export function useTrailCondition(id: string) {
   const [, setCurrent] = useAtom(currentTrailConditionAtom);
-  
+
   return useQuery({
     queryKey: [TRAIL_CONDITIONS_QUERY_KEY, id],
     queryFn: async () => {
@@ -72,7 +72,15 @@ export function useVerifyTrailCondition() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, isAccurate, notes }: { id: string; isAccurate: boolean; notes?: string }) => {
+    mutationFn: async ({
+      id,
+      isAccurate,
+      notes,
+    }: {
+      id: string;
+      isAccurate: boolean;
+      notes?: string;
+    }) => {
       await api.post(`/trail-conditions/${id}/verify`, { isAccurate, notes });
     },
     onSuccess: (_, { id }) => {

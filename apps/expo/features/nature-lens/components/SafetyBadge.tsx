@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface SafetyBadgeProps {
   isEdible?: boolean;
@@ -9,7 +8,7 @@ interface SafetyBadgeProps {
 export function SafetyBadge({ isEdible, isDangerous }: SafetyBadgeProps) {
   if (isDangerous) {
     return (
-      <View style={[styles.badge, styles.dangerous]} >
+      <View style={[styles.badge, styles.dangerous]}>
         <Text style={styles.text}>⚠️ Dangerous/Poisonous</Text>
       </View>
     );
@@ -17,7 +16,7 @@ export function SafetyBadge({ isEdible, isDangerous }: SafetyBadgeProps) {
 
   if (isEdible === true) {
     return (
-      <View style={[styles.badge, styles.edible]} >
+      <View style={[styles.badge, styles.edible]}>
         <Text style={styles.text}>✓ Edible</Text>
       </View>
     );
@@ -25,7 +24,7 @@ export function SafetyBadge({ isEdible, isDangerous }: SafetyBadgeProps) {
 
   if (isEdible === false) {
     return (
-      <View style={[styles.badge, styles.notEdible]} >
+      <View style={[styles.badge, styles.notEdible]}>
         <Text style={styles.text}>Not Edible</Text>
       </View>
     );

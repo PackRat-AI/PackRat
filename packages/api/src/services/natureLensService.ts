@@ -26,14 +26,21 @@ Always prioritize safety: clearly mark dangerous/poisonous species.`;
 const identificationSchema = z.object({
   speciesName: z.string().describe('Scientific name of the identified species'),
   commonName: z.string().describe('Common name of the species'),
-  category: z.enum(['plant', 'animal', 'bird', 'insect', 'fungus', 'other']).describe('Category of the species'),
+  category: z
+    .enum(['plant', 'animal', 'bird', 'insect', 'fungus', 'other'])
+    .describe('Category of the species'),
   confidence: z.number().min(0).max(1).describe('Confidence level in the identification (0-1)'),
   description: z.string().describe('Detailed description of identifying features'),
   habitat: z.string().describe('Typical habitat where this species is found'),
-  isEdible: z.boolean().nullable().describe('Whether the species is edible (null if unknown or not applicable)'),
+  isEdible: z
+    .boolean()
+    .nullable()
+    .describe('Whether the species is edible (null if unknown or not applicable)'),
   isDangerous: z.boolean().describe('Whether the species is dangerous or poisonous'),
   warnings: z.string().nullable().describe('Any warnings about handling or consumption'),
-  similarSpecies: z.array(z.string()).describe('Similar species that might be confused with this one'),
+  similarSpecies: z
+    .array(z.string())
+    .describe('Similar species that might be confused with this one'),
 });
 
 export type NatureIdentificationResult = z.infer<typeof identificationSchema>;
@@ -43,13 +50,14 @@ export interface IdentifyImageOptions {
   includeHabitat?: boolean;
   includeEdibleInfo?: boolean;
   includeDangerInfo?: boolean;
+  apiKey: string;
 }
 
 export async function identifyImage(
   imageUrlOrBase64: string,
-  options: IdentifyImageOptions = {},
-  apiKey: string
+  options: IdentifyImageOptions,
 ): Promise<NatureIdentificationResult> {
+  const { apiKey } = options;
   const openai = createOpenAI({ apiKey });
 
   const { object } = await generateObject({

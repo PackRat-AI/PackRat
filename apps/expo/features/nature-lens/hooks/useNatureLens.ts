@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAtom } from 'jotai';
 import { api } from 'app/lib/api';
-import { 
-  natureIdentificationsAtom, 
+import { useAtom } from 'jotai';
+import {
   currentIdentificationAtom,
+  identificationErrorAtom,
   isIdentifyingAtom,
-  identificationErrorAtom 
+  natureIdentificationsAtom,
 } from '../atoms/natureLensAtoms';
 import type { IdentifyImageRequest, NatureIdentification } from '../types';
 
@@ -13,7 +13,7 @@ const NATURE_LENS_QUERY_KEY = 'nature-lens';
 
 export function useNatureIdentifications() {
   const [, setIdentifications] = useAtom(natureIdentificationsAtom);
-  
+
   return useQuery({
     queryKey: [NATURE_LENS_QUERY_KEY, 'identifications'],
     queryFn: async () => {

@@ -1,15 +1,7 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTrailConditions } from '../hooks/useTrailConditions';
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ConditionCard } from '../components/ConditionCard';
+import { useTrailConditions } from '../hooks/useTrailConditions';
 
 export function TrailConditionsScreen() {
   const router = useRouter();
@@ -18,9 +10,7 @@ export function TrailConditionsScreen() {
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={isLoading} onRefresh={refetch} />
-      }
+      refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} />}
     >
       <View style={styles.header}>
         <Text style={styles.title}>🥾 Trail Conditions</Text>
@@ -38,7 +28,7 @@ export function TrailConditionsScreen() {
         {conditions?.map((condition) => (
           <ConditionCard key={condition.id} condition={condition} />
         ))}
-        
+
         {conditions?.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>No trail reports yet</Text>

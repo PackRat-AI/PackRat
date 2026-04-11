@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  ScrollView,
-  Alert,
-} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useIdentifyImage, useNatureIdentifications } from '../hooks/useNatureLens';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { IdentificationCard } from '../components/IdentificationCard';
+import { useIdentifyImage, useNatureIdentifications } from '../hooks/useNatureLens';
 
 export function NatureLensScreen() {
   const router = useRouter();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [_selectedImage, setSelectedImage] = useState<string | null>(null);
   const { mutate: identifyImage, isPending, data: identification } = useIdentifyImage();
-  const { data: history, isLoading: isLoadingHistory } = useNatureIdentifications();
+  const { data: history } = useNatureIdentifications();
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();

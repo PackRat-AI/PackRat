@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface TrustBadgeProps {
   trustScore: number;
@@ -9,7 +8,7 @@ interface TrustBadgeProps {
 export function TrustBadge({ trustScore, verifiedCount }: TrustBadgeProps) {
   let color = '#ef4444';
   let label = 'New';
-  
+
   if (trustScore >= 4) {
     color = '#22c55e';
     label = 'Verified';
@@ -20,12 +19,10 @@ export function TrustBadge({ trustScore, verifiedCount }: TrustBadgeProps) {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.badge, { backgroundColor: color }]} >
+      <View style={[styles.badge, { backgroundColor: color }]}>
         <Text style={styles.text}>{label}</Text>
       </View>
-      {verifiedCount > 0 && (
-        <Text style={styles.verifiedText}>✓ {verifiedCount} verified</Text>
-      )}
+      {verifiedCount > 0 && <Text style={styles.verifiedText}>✓ {verifiedCount} verified</Text>}
     </View>
   );
 }

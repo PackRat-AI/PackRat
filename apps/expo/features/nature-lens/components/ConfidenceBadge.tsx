@@ -1,5 +1,4 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface ConfidenceBadgeProps {
   confidence: number;
@@ -8,7 +7,7 @@ interface ConfidenceBadgeProps {
 export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
   let color = '#ef4444'; // red
   let label = 'Low';
-  
+
   if (confidence >= 0.8) {
     color = '#22c55e'; // green
     label = 'High';
@@ -18,8 +17,10 @@ export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
   }
 
   return (
-    <View style={[styles.badge, { backgroundColor: color }]} >
-      <Text style={styles.text}>{label} Confidence ({Math.round(confidence * 100)}%)</Text>
+    <View style={[styles.badge, { backgroundColor: color }]}>
+      <Text style={styles.text}>
+        {label} Confidence ({Math.round(confidence * 100)}%)
+      </Text>
     </View>
   );
 }

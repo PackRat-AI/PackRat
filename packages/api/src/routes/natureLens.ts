@@ -1,30 +1,28 @@
-import { Hono } from 'hono';
-import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
-import { eq, desc, and } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/neon-http';
+import type { Context } from 'hono';
+import { Hono } from 'hono';
 import { getCookie } from 'hono/cookie';
-import { natureIdentifications } from '../drizzle/natureLens';
 import { users } from '../db/schema';
+import { natureIdentifications } from '../drizzle/natureLens';
 import { identifyImage } from '../services/natureLensService';
 import { getEnv } from '../utils/env-validation';
 
 const natureLens = new Hono();
 
 // Middleware: Get current user
-const getUser = async (c: any) => {
+const getUser = async (c: Context) => {
   const sessionToken = getCookie(c, 'session');
   if (!sessionToken) return null;
-  
-  const sql = neon(process.env.DATABASE_URL!);
+
+  const { NEON_DATABASE_URL } = getEnv(c);
+  const sql = neon(NEON_DATABASE_URL);
   const db = drizzle(sql);
-  
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.sessionToken, sessionToken))
-    .limit(1);
-    
-  return user || null;
+
+  const [user] = await db.select().from(users).where(eq(users.sessionToken, sessionToken)).limit(1);
+
+  return user ?? null;
 };
 
 // POST /api/nature-lens/identify
@@ -47,17 +45,18 @@ natureLens.post('/identify', async (c) => {
   }
 
   try {
-    const { OPENAI_API_KEY } = getEnv(c);
-    
+    const { OPENAI_API_KEY, NEON_DATABASE_URL } = getEnv(c);
+
     // Call AI to identify the image
-    const identification = await identifyImage(imageUrl || imageBase64!, {
+    const identification = await identifyImage(imageUrl || imageBase64, {
       includeDescription: true,
       includeHabitat: true,
       includeEdibleInfo: true,
       includeDangerInfo: true,
-    }, OPENAI_API_KEY);
+      apiKey: OPENAI_API_KEY,
+    });
 
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = neon(NEON_DATABASE_URL);
     const db = drizzle(sql);
 
     const id = crypto.randomUUID();
@@ -100,7 +99,8 @@ natureLens.get('/identifications', async (c) => {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  const sql = neon(process.env.DATABASE_URL!);
+  const { NEON_DATABASE_URL } = getEnv(c);
+  const sql = neon(NEON_DATABASE_URL);
   const db = drizzle(sql);
 
   const identifications = await db
@@ -122,16 +122,14 @@ natureLens.get('/:id', async (c) => {
   }
 
   const id = c.req.param('id');
-  const sql = neon(process.env.DATABASE_URL!);
+  const { NEON_DATABASE_URL } = getEnv(c);
+  const sql = neon(NEON_DATABASE_URL);
   const db = drizzle(sql);
 
   const [identification] = await db
     .select()
     .from(natureIdentifications)
-    .where(and(
-      eq(natureIdentifications.id, id),
-      eq(natureIdentifications.userId, user.id)
-    ))
+    .where(and(eq(natureIdentifications.id, id), eq(natureIdentifications.userId, user.id)))
     .limit(1);
 
   if (!identification) {
@@ -150,15 +148,13 @@ natureLens.delete('/:id', async (c) => {
   }
 
   const id = c.req.param('id');
-  const sql = neon(process.env.DATABASE_URL!);
+  const { NEON_DATABASE_URL } = getEnv(c);
+  const sql = neon(NEON_DATABASE_URL);
   const db = drizzle(sql);
 
   await db
     .delete(natureIdentifications)
-    .where(and(
-      eq(natureIdentifications.id, id),
-      eq(natureIdentifications.userId, user.id)
-    ));
+    .where(and(eq(natureIdentifications.id, id), eq(natureIdentifications.userId, user.id)));
 
   return c.json({ success: true });
 });

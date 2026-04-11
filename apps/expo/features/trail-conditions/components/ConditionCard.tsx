@@ -1,7 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { TrustBadge } from './TrustBadge';
+import { StyleSheet, Text, View } from 'react-native';
 import type { TrailCondition } from '../types';
+import { TrustBadge } from './TrustBadge';
 
 interface ConditionCardProps {
   condition: TrailCondition;
@@ -45,8 +44,8 @@ export function ConditionCard({ condition }: ConditionCardProps) {
             <Text style={styles.location}>📍 {condition.locationName}</Text>
           )}
         </View>
-        <TrustBadge 
-          trustScore={condition.trustScore || 1} 
+        <TrustBadge
+          trustScore={condition.trustScore || 1}
           verifiedCount={condition.verifiedCount || 0}
         />
       </View>
@@ -54,7 +53,9 @@ export function ConditionCard({ condition }: ConditionCardProps) {
       {condition.surfaceCondition && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Surface</Text>
-          <Text style={styles.sectionText}>{surfaceLabels[condition.surfaceCondition] || condition.surfaceCondition}</Text>
+          <Text style={styles.sectionText}>
+            {surfaceLabels[condition.surfaceCondition] || condition.surfaceCondition}
+          </Text>
         </View>
       )}
 

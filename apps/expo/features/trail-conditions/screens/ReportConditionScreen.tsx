@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Switch,
   ActivityIndicator,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useCreateTrailCondition } from '../hooks/useTrailConditions';
 
 const SURFACE_OPTIONS = [
@@ -45,27 +45,30 @@ export function ReportConditionScreen() {
       return;
     }
 
-    submitReport({
-      trailName: trailName.trim(),
-      surfaceCondition: surfaceCondition || undefined,
-      difficulty: difficulty || undefined,
-      hasFallenTrees,
-      hasWildlife,
-      hasErosion,
-      hasClosures,
-      hasWaterCrossings,
-      waterCrossingCount: waterCrossingCount ? parseInt(waterCrossingCount) : undefined,
-      notes: notes || undefined,
-    }, {
-      onSuccess: () => {
-        Alert.alert('Success', 'Trail condition reported!', [
-          { text: 'OK', onPress: () => router.back() }
-        ]);
+    submitReport(
+      {
+        trailName: trailName.trim(),
+        surfaceCondition: surfaceCondition || undefined,
+        difficulty: difficulty || undefined,
+        hasFallenTrees,
+        hasWildlife,
+        hasErosion,
+        hasClosures,
+        hasWaterCrossings,
+        waterCrossingCount: waterCrossingCount ? parseInt(waterCrossingCount, 10) : undefined,
+        notes: notes || undefined,
       },
-      onError: (error) => {
-        Alert.alert('Error', error instanceof Error ? error.message : 'Failed to submit report');
+      {
+        onSuccess: () => {
+          Alert.alert('Success', 'Trail condition reported!', [
+            { text: 'OK', onPress: () => router.back() },
+          ]);
+        },
+        onError: (error) => {
+          Alert.alert('Error', error instanceof Error ? error.message : 'Failed to submit report');
+        },
       },
-    });
+    );
   };
 
   return (
@@ -95,14 +98,18 @@ export function ReportConditionScreen() {
                 key={option.value}
                 style={[
                   styles.optionButton,
-                  surfaceCondition === option.value && styles.optionButtonActive
+                  surfaceCondition === option.value && styles.optionButtonActive,
                 ]}
                 onPress={() => setSurfaceCondition(option.value)}
               >
-                <Text style={[
-                  styles.optionText,
-                  surfaceCondition === option.value && styles.optionTextActive
-                ]}>{option.label}</Text>
+                <Text
+                  style={[
+                    styles.optionText,
+                    surfaceCondition === option.value && styles.optionTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -116,14 +123,18 @@ export function ReportConditionScreen() {
                 key={level}
                 style={[
                   styles.difficultyButton,
-                  difficulty === level && styles.difficultyButtonActive
+                  difficulty === level && styles.difficultyButtonActive,
                 ]}
                 onPress={() => setDifficulty(level)}
               >
-                <Text style={[
-                  styles.difficultyText,
-                  difficulty === level && styles.difficultyTextActive
-                ]}>{'⭐'.repeat(level)}</Text>
+                <Text
+                  style={[
+                    styles.difficultyText,
+                    difficulty === level && styles.difficultyTextActive,
+                  ]}
+                >
+                  {'⭐'.repeat(level)}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -131,7 +142,7 @@ export function ReportConditionScreen() {
 
         <View style={styles.field}>
           <Text style={styles.label}>Hazards</Text>
-          
+
           <View style={styles.switchRow}>
             <Text style={styles.switchLabel}>🌲 Fallen Trees</Text>
             <Switch value={hasFallenTrees} onValueChange={setHasFallenTrees} />
