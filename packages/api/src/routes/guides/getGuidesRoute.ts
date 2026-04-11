@@ -7,8 +7,8 @@ import {
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { isArray } from '@packrat/guards';
 import matter from 'gray-matter';
-import { isArray } from 'radash';
 
 export const routeDefinition = createRoute({
   method: 'get',
