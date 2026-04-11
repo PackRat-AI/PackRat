@@ -66,7 +66,6 @@ export function GapAnalysisModal({
               )}
             </View>
           </View>
-        </View>
           <TouchableOpacity onPress={onClose} className="p-1">
             <Icon name="close" size={24} color={colors.foreground} />
           </TouchableOpacity>
