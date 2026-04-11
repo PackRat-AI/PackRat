@@ -21,3 +21,5 @@ jobs:
         run: bun install
       - name: Run Biome check
         run: bun biome check
+      - name: Check circular dependencies
+        run: bun scripts/lint/no-circular-deps.ts

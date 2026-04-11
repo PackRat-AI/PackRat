@@ -20,6 +20,7 @@
     "lint": "biome check --write",
     "lint-unsafe": "biome check --write --unsafe",
     "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts",
+    "check:circular": "bun scripts/lint/no-circular-deps.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "check": "biome check --no-errors-on-unmatched",
     "expo": "cd apps/expo && bun start",
