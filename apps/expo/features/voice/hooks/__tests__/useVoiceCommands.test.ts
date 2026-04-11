@@ -220,7 +220,7 @@ describe('processTranscript timer cleanup (Issue 3)', () => {
     }
 
     simulateStartListening();
-    const autoTimeoutId = scheduledIds[0];
+    const autoTimeoutId = scheduledIds[0]!;
     expect(clearedIds).toHaveLength(0);
 
     // Transcript arrives — the auto-timeout must be cancelled

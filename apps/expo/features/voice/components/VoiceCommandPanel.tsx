@@ -63,7 +63,7 @@ export function VoiceCommandPanel({
           {isTracking ? t('voice.trackingActive') : t('voice.trackingInactive')}
         </Text>
         <View className="ml-auto flex-row items-center gap-1">
-          <Icon name="map-marker" size={14} color="#6b7280" />
+          <Icon name="map-marker-outline" size={14} color="#6b7280" />
           <Text className="text-sm text-muted-foreground">
             {t('voice.waypointsCount', { count: waypointCount })}
           </Text>
@@ -78,7 +78,7 @@ export function VoiceCommandPanel({
           className={`h-24 w-24 items-center justify-center rounded-full ${micBgClass}`}
           accessibilityRole="button"
           accessibilityLabel={isListening ? t('voice.stopListening') : t('voice.startListening')}
-          accessibilityState={{ pressed: isListening }}
+          accessibilityState={{ selected: isListening }}
         >
           <Icon name={micIcon} size={40} color="white" />
         </Pressable>
