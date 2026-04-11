@@ -19,8 +19,8 @@
 //   0 — no cycles found
 //   1 — one or more cycles found
 
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
-import { join, resolve, dirname, relative, extname, normalize } from 'node:path';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { dirname, join, normalize, relative, resolve } from 'node:path';
 
 const ROOT = resolve(join(import.meta.dir, '..', '..'));
 
@@ -86,7 +86,15 @@ function buildAliasMap(): AliasEntry[] {
 // File collection
 // ---------------------------------------------------------------------------
 
-const SKIP_DIRS = new Set(['node_modules', '.expo', 'dist', 'build', 'coverage', '.next', '.turbo']);
+const SKIP_DIRS = new Set([
+  'node_modules',
+  '.expo',
+  'dist',
+  'build',
+  'coverage',
+  '.next',
+  '.turbo',
+]);
 
 const SOURCE_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs'];
 
@@ -143,21 +151,24 @@ function collectFiles(): string[] {
 // ---------------------------------------------------------------------------
 
 // Matches static import/export … from '…' and require('…') / import('…')
-const IMPORT_RE =
-  /(?:import|export)\s+(?:[^'"]*\s+from\s+)?['"]([^'"]+)['"]/g;
+const IMPORT_RE = /(?:import|export)\s+(?:[^'"]*\s+from\s+)?['"]([^'"]+)['"]/g;
 const REQUIRE_RE = /(?:require|import)\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 function extractImports(source: string): string[] {
   const specifiers: string[] = [];
-  let m: RegExpExecArray | null;
 
   IMPORT_RE.lastIndex = 0;
-  while ((m = IMPORT_RE.exec(source)) !== null) {
-    if (m[1]) specifiers.push(m[1]);
+  let importMatch = IMPORT_RE.exec(source);
+  while (importMatch !== null) {
+    if (importMatch[1]) specifiers.push(importMatch[1]);
+    importMatch = IMPORT_RE.exec(source);
   }
+
   REQUIRE_RE.lastIndex = 0;
-  while ((m = REQUIRE_RE.exec(source)) !== null) {
-    if (m[1]) specifiers.push(m[1]);
+  let requireMatch = REQUIRE_RE.exec(source);
+  while (requireMatch !== null) {
+    if (requireMatch[1]) specifiers.push(requireMatch[1]);
+    requireMatch = REQUIRE_RE.exec(source);
   }
 
   return specifiers;
@@ -193,7 +204,7 @@ function resolveSpecifier(
       if (specifier === alias.prefix) {
         return tryResolveFile(alias.target);
       }
-      if (alias.stripSlash && specifier.startsWith(alias.prefix + '/')) {
+      if (alias.stripSlash && specifier.startsWith(`${alias.prefix}/`)) {
         const rest = specifier.slice(alias.prefix.length + 1);
         return tryResolveFile(join(alias.target, rest));
       }
@@ -203,9 +214,7 @@ function resolveSpecifier(
   }
 
   // Relative or absolute
-  const base = specifier.startsWith('/')
-    ? specifier
-    : resolve(dirname(fromFile), specifier);
+  const base = specifier.startsWith('/') ? specifier : resolve(dirname(fromFile), specifier);
 
   return tryResolveFile(base);
 }
@@ -238,7 +247,7 @@ function buildGraph(files: string[], aliases: AliasEntry[]): Graph {
       if (!resolved) continue;
       const norm = normalize(resolved);
       if (fileSet.has(norm)) {
-        graph.get(file)!.add(norm);
+        graph.get(file)?.add(norm);
       }
     }
   }
