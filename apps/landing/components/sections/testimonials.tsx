@@ -27,7 +27,6 @@ export default function TestimonialsSection() {
               <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
                 <Avatar className="h-12 w-12 md:h-14 md:w-14 border-2 border-border/20">
                   <AvatarFallback className="bg-blue-100 dark:bg-blue-900/30 text-apple-blue font-bold text-sm md:text-base">
-
                     {testimonial.initials}
                   </AvatarFallback>
                 </Avatar>
