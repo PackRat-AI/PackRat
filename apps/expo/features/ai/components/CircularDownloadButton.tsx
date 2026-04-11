@@ -1,6 +1,5 @@
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import * as React from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
 type Props = {

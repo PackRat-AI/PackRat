@@ -12,6 +12,7 @@ import { CatalogService } from '@packrat/api/services/catalogService';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { assertDefined } from '@packrat/guards';
 import { generateObject } from 'ai';
 import { sql } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -320,7 +321,8 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
       .limit(1);
 
     if (existingTemplate.length > 0) {
-      const existing = existingTemplate[0]!;
+      const existing = existingTemplate[0];
+      assertDefined(existing, 'existingTemplate[0] must be defined after length check');
       return c.json(
         {
           error: 'Template already exists for this content.',
