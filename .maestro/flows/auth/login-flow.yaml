@@ -32,6 +32,20 @@ appId: ${APP_ID}
 
 # Wait for navigation to complete — login can take a few seconds
 - waitForAnimationToEnd
+
+# iOS only: dismiss the system "Save Password?" Keychain prompt that appears
+# after submitting any form with a password field (textContentType="password").
+# This prompt is a blocking OS-level dialog and would intercept subsequent taps
+# if not handled. Real users can choose to save — in CI we always skip it.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Not Now"
+          optional: true
+          label: "Dismiss iOS Save Password prompt"
+
 - extendedWaitUntil:
     visible:
       text: "Packs"
