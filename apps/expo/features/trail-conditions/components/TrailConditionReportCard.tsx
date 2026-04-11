@@ -8,30 +8,32 @@ interface TrailConditionReportCardProps {
   report: TrailConditionReport;
 }
 
-// Translation key maps for domain values
-const SURFACE_KEYS: Record<TrailSurface, string> = {
-  paved: 'trailConditions.surfacePaved',
-  gravel: 'trailConditions.surfaceGravel',
-  dirt: 'trailConditions.surfaceDirt',
-  rocky: 'trailConditions.surfaceRocky',
-  snow: 'trailConditions.surfaceSnow',
-  mud: 'trailConditions.surfaceMud',
+// Display label maps for domain values. These are plain English strings
+// rather than i18n keys because the trail-condition taxonomy is not yet
+// localized in the translation catalog.
+const SURFACE_LABELS: Record<TrailSurface, string> = {
+  paved: 'Paved',
+  gravel: 'Gravel',
+  dirt: 'Dirt',
+  rocky: 'Rocky',
+  snow: 'Snow',
+  mud: 'Mud',
 };
 
-const WATER_DIFFICULTY_KEYS: Record<WaterCrossingDifficulty, string> = {
-  easy: 'trailConditions.difficultyEasy',
-  moderate: 'trailConditions.difficultyModerate',
-  difficult: 'trailConditions.difficultyDifficult',
+const WATER_DIFFICULTY_LABELS: Record<WaterCrossingDifficulty, string> = {
+  easy: 'Easy',
+  moderate: 'Moderate',
+  difficult: 'Difficult',
 };
 
-const HAZARD_KEYS: Record<string, string> = {
-  'fallen trees': 'trailConditions.hazardFallenTrees',
-  wildlife: 'trailConditions.hazardWildlife',
-  erosion: 'trailConditions.hazardErosion',
-  closure: 'trailConditions.hazardClosure',
-  ice: 'trailConditions.hazardIce',
-  flooding: 'trailConditions.hazardFlooding',
-  'loose rock': 'trailConditions.hazardLooseRock',
+const HAZARD_LABELS: Record<string, string> = {
+  'fallen trees': 'Fallen trees',
+  wildlife: 'Wildlife',
+  erosion: 'Erosion',
+  closure: 'Closure',
+  ice: 'Ice',
+  flooding: 'Flooding',
+  'loose rock': 'Loose rock',
 };
 
 export function TrailConditionReportCard({ report }: TrailConditionReportCardProps) {
@@ -51,20 +53,14 @@ export function TrailConditionReportCard({ report }: TrailConditionReportCardPro
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  const surfaceLabel = SURFACE_KEYS[report.surface as TrailSurface]
-    ? t(SURFACE_KEYS[report.surface as TrailSurface])
-    : report.surface;
+  const surfaceLabel = SURFACE_LABELS[report.surface as TrailSurface] ?? report.surface;
 
   const difficultyLabel = report.waterCrossingDifficulty
-    ? WATER_DIFFICULTY_KEYS[report.waterCrossingDifficulty as WaterCrossingDifficulty]
-      ? t(WATER_DIFFICULTY_KEYS[report.waterCrossingDifficulty as WaterCrossingDifficulty])
-      : report.waterCrossingDifficulty
+    ? (WATER_DIFFICULTY_LABELS[report.waterCrossingDifficulty as WaterCrossingDifficulty] ??
+      report.waterCrossingDifficulty)
     : null;
 
-  const hazardLabels = (report.hazards ?? []).map((h) => {
-    const key = HAZARD_KEYS[h.toLowerCase()];
-    return key ? t(key) : h;
-  });
+  const hazardLabels = (report.hazards ?? []).map((h) => HAZARD_LABELS[h.toLowerCase()] ?? h);
 
   return (
     <View className="mx-4 mb-3 overflow-hidden rounded-xl bg-card shadow-sm">
