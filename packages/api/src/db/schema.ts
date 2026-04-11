@@ -1,4 +1,4 @@
-import { type InferInsertModel, type InferSelectModel, relations } from 'drizzle-orm';
+import { type InferInsertModel, type InferSelectModel, relations, sql } from 'drizzle-orm';
 import {
   boolean,
   index,
@@ -311,6 +311,11 @@ export const trailConditionReports = pgTable(
       table.createdAt.desc(),
     ),
     trailNameIdx: index('trail_condition_reports_trail_name_idx').on(table.trailName),
+    // Partial index used to keep trip deletes (ON DELETE SET NULL) fast by
+    // avoiding a sequential scan on trail_condition_reports.
+    tripIdIdx: index('trail_condition_reports_trip_id_idx')
+      .on(table.tripId)
+      .where(sql`${table.tripId} IS NOT NULL`),
   }),
 );
 
