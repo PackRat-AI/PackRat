@@ -9,22 +9,89 @@
  */
 
 import type { DuckDBConnection } from '@duckdb/node-api';
+import {
+  anyOf,
+  caseInsensitive,
+  charNotIn,
+  createRegExp,
+  digit,
+  exactly,
+  global as globalFlag,
+  oneOrMore,
+  wordChar,
+} from 'magic-regexp';
 import { SQLFragments } from './query-builder';
+
+// ── Image dedup regexes ──────────────────────────────────────────────────
+//
+// Built with magic-regexp so the patterns compose from typed primitives
+// instead of fragile string literals. The derived `.source` is reused in
+// the DuckDB SQL below — previously the SQL variant was hand-escaped and
+// the `\d`/`\w` classes were silently dropped by the JS string parser
+// (biome surfaced the bug during an unrelated auto-fix).
+
+const digits = oneOrMore(digit);
+const wordChars = oneOrMore(wordChar);
+
+/** CDN sizing/quality query params — e.g. `?w=500`, `&quality=auto`.
+ *  Longest names listed first so alternation matches greedily. */
+const CDN_QUERY_PARAMS = createRegExp(
+  anyOf('?', '&')
+    .and(
+      anyOf(
+        'width',
+        'height',
+        'resize',
+        'quality',
+        'format',
+        'crop',
+        'auto',
+        'size',
+        'wid',
+        'hei',
+        'qlt',
+        'fmt',
+        'scl',
+        'rect',
+        'dpr',
+        'fm',
+        'w',
+        'h',
+        'q',
+      ),
+    )
+    .and('=')
+    .and(oneOrMore(charNotIn('&'))),
+  [globalFlag, caseInsensitive],
+);
+
+/** Path-based CDN transforms — e.g. `/300x400/`, `/w_500/`, `/c_fill/`. */
+const CDN_PATH_TRANSFORMS = createRegExp(
+  exactly('/')
+    .and(
+      anyOf(
+        exactly(digits, 'x', digits),
+        exactly('w_', digits),
+        exactly('h_', digits),
+        exactly('c_', wordChars),
+        exactly('f_', wordChars),
+        exactly('q_', digits),
+      ),
+    )
+    .before('/'),
+  [globalFlag, caseInsensitive],
+);
 
 // ── Image dedup helpers ──────────────────────────────────────────────────
 
 /** Normalize image URL for dedup — strip CDN size/quality params. */
 export function normalizeImageUrl(url: string): string {
   if (!url) return '';
-  // Strip query params related to sizing (fresh regex per call to avoid lastIndex issues)
-  let normalized = url.replace(
-    /[?&](w|h|width|height|size|resize|fit|crop|quality|q|auto|format|fm|dpr|wid|hei|qlt|fmt|scl|rect)=[^&]*/gi,
-    '',
-  );
+  // Fresh regex reference per call to avoid lastIndex issues is unnecessary
+  // because `.replace` on a non-sticky global regex does not depend on lastIndex.
+  let normalized = url.replace(CDN_QUERY_PARAMS, '');
   normalized = normalized.replace(/\?$/, '').replace(/\?&/, '?');
-  // Strip path-based CDN transforms (Cloudinary, Imgix)
-  // Use lookahead for trailing / to avoid consuming the delimiter between consecutive transforms
-  normalized = normalized.replace(/\/(\d+x\d+|w_\d+|h_\d+|c_\w+|f_\w+|q_\d+)(?=\/)/gi, '');
+  normalized = normalized.replace(CDN_PATH_TRANSFORMS, '');
   return normalized.trim();
 }
 
@@ -161,8 +228,8 @@ export class Enrichment {
         g.site,
         g.name,
         REGEXP_REPLACE(
-          REGEXP_REPLACE(g.image_url, '[?&](w|h|width|height|size|quality|q|format|fm|dpr)=[^&]*', '', 'gi'),
-          '/(\d+x\d+|w_\d+|h_\d+|c_\w+|f_\w+|q_\d+)(?=/)', '', 'gi'
+          REGEXP_REPLACE(g.image_url, '${CDN_QUERY_PARAMS.source}', '', 'gi'),
+          '${CDN_PATH_TRANSFORMS.source}', '', 'gi'
         ) as url
       ${joinClause}
       WHERE g.image_url IS NOT NULL
