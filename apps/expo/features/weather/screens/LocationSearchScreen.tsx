@@ -6,7 +6,6 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import debounce from 'lodash.debounce';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -21,6 +20,7 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDebouncedCallback } from 'use-debounce';
 import { useLocationSearch } from '../hooks';
 import type { LocationSearchResult } from '../types';
 
@@ -89,11 +89,9 @@ export default function LocationSearchScreen() {
   };
 
   // Create a debounced search function
-  const debouncedSearch = useRef(
-    debounce((text: string) => {
-      search(text);
-    }, 500),
-  ).current;
+  const debouncedSearch = useDebouncedCallback((text: string) => {
+    search(text);
+  }, 500);
 
   // Handle search input change
   const handleSearchChange = (text: string) => {
