@@ -134,7 +134,7 @@ export const PostDetailScreen = ({ post, currentUserId }: PostDetailScreenProps)
           </TouchableOpacity>
           <View className="flex-row items-center gap-1.5">
             <Icon name="message-outline" size={22} color={colors.grey2} />
-            <Text className="text-sm text-muted-foreground">{comments.length}</Text>
+            <Text className="text-sm text-muted-foreground">{post.commentCount}</Text>
           </View>
         </View>
       </View>

@@ -607,7 +607,9 @@ export const postComments = pgTable('post_comments', {
     .references(() => users.id, { onDelete: 'cascade' })
     .notNull(),
   content: text('content').notNull(),
-  parentCommentId: integer('parent_comment_id'),
+  parentCommentId: integer('parent_comment_id').references(() => postComments.id, {
+    onDelete: 'cascade',
+  }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
