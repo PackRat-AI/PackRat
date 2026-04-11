@@ -1,5 +1,5 @@
 // This file is auto-generated. Do not edit manually.
-import type { Post } from "./types";
+import type { Post } from './types';
 
 export const posts: Post[] = [
   {

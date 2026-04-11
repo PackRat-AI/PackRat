@@ -44,7 +44,11 @@ async function buildContent() {
   // Process each post's content to HTML
   const postContent: Record<string, string> = {};
   for (const post of posts) {
-    const processedContent = await unified().use(markdown).use(remarkGfm).use(remarkHtml).process(post.content);
+    const processedContent = await unified()
+      .use(markdown)
+      .use(remarkGfm)
+      .use(remarkHtml)
+      .process(post.content);
 
     postContent[post.slug] = processedContent.toString();
   }
@@ -54,7 +58,7 @@ async function buildContent() {
 
   // Generate the content file
   const contentFile = `// This file is auto-generated. Do not edit manually.
-import type { Post } from "./types";
+import type { Post } from './types';
 
 export const posts: Post[] = ${JSON.stringify(posts, null, 2)};
 
