@@ -38,7 +38,7 @@ export function SubmitConditionReportForm({
   initialTrailName = '',
 }: SubmitConditionReportFormProps) {
   const { t } = useTranslation();
-  const submitReport = useSubmitTrailConditionReport();
+  const { submit: submitReport, isPending: isSubmitting } = useSubmitTrailConditionReport();
 
   const [trailName, setTrailName] = useState(initialTrailName);
   const [trailRegion, setTrailRegion] = useState('');
@@ -56,25 +56,31 @@ export function SubmitConditionReportForm({
     );
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!trailName.trim()) {
       Alert.alert(t('common.error'), t('trailConditions.trailNameRequired'));
       return;
     }
-    submitReport({
-      trailName: trailName.trim(),
-      trailRegion: trailRegion.trim() || null,
-      surface,
-      overallCondition,
-      hazards: selectedHazards,
-      waterCrossings,
-      waterCrossingDifficulty: waterCrossings > 0 ? waterCrossingDifficulty : null,
-      notes: notes.trim() || null,
-      photos: [],
-      tripId: tripId ?? null,
-    });
-    Alert.alert(t('common.success'), t('trailConditions.reportSubmitted'));
-    onSuccess?.();
+    try {
+      await submitReport({
+        trailName: trailName.trim(),
+        trailRegion: trailRegion.trim() || null,
+        surface,
+        overallCondition,
+        hazards: selectedHazards,
+        waterCrossings,
+        waterCrossingDifficulty: waterCrossings > 0 ? waterCrossingDifficulty : null,
+        notes: notes.trim() || null,
+        photos: [],
+        tripId: tripId ?? null,
+      });
+      Alert.alert(t('common.success'), t('trailConditions.reportSubmitted'));
+      onSuccess?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      Alert.alert(t('common.error'), message);
+    }
   };
 
   return (
@@ -276,12 +282,14 @@ export function SubmitConditionReportForm({
         {/* Submit Button */}
         <Pressable
           onPress={handleSubmit}
+          disabled={isSubmitting}
           accessibilityRole="button"
           accessibilityLabel={t('trailConditions.submitReport')}
-          className="rounded-lg bg-primary px-4 py-3.5"
+          accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }}
+          className={`rounded-lg px-4 py-3.5 ${isSubmitting ? 'bg-primary/60' : 'bg-primary'}`}
         >
           <Text className="text-center text-base font-semibold text-primary-foreground">
-            {t('trailConditions.submitReport')}
+            {isSubmitting ? 'Submitting…' : t('trailConditions.submitReport')}
           </Text>
         </Pressable>
       </ScrollView>
