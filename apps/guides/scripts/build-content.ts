@@ -6,6 +6,7 @@ import fs from 'fs';
 import matter from 'gray-matter';
 import type { Post } from 'guides-app/lib/types';
 import path from 'path';
+import remarkGfm from 'remark-gfm';
 import remarkHtml from 'remark-html';
 import markdown from 'remark-parse';
 import { unified } from 'unified';
@@ -43,7 +44,7 @@ async function buildContent() {
   // Process each post's content to HTML
   const postContent: Record<string, string> = {};
   for (const post of posts) {
-    const processedContent = await unified().use(markdown).use(remarkHtml).process(post.content);
+    const processedContent = await unified().use(markdown).use(remarkGfm).use(remarkHtml).process(post.content);
 
     postContent[post.slug] = processedContent.toString();
   }
