@@ -15,7 +15,7 @@ export const siteConfig = {
   url: 'https://getpackrat.com',
   ogImage: '/og-image.jpg',
   author: 'PackRat Team',
-  twitterHandle: '@getpackrat',
+  twitterHandle: '@packratai',
   keywords: [
     'outdoor',
     'adventure',
@@ -394,17 +394,17 @@ export const siteConfig = {
   social: [
     {
       name: 'Twitter',
-      href: '#',
+      href: 'https://x.com/packratai',
       icon: 'Twitter',
     },
     {
       name: 'Instagram',
-      href: '#',
+      href: 'https://www.instagram.com/packratai',
       icon: 'Instagram',
     },
     {
       name: 'Facebook',
-      href: '#',
+      href: 'https://www.facebook.com/packratai',
       icon: 'Facebook',
     },
   ] as SocialLink[],
