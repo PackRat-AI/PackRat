@@ -22,7 +22,7 @@ export type ClientNotificationType =
 export type NotificationPriority = 'low' | 'medium' | 'high';
 
 /** Variables interpolated into the client-side i18n message template. */
-export type NotificationVariables = Record<string, string | number>;
+export type NotificationVariables = Record<string, string>;
 
 export interface TripNotification {
   tripId: string;

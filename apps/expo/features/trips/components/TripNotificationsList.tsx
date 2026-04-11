@@ -1,6 +1,8 @@
 import { Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon, type MaterialIconName } from '@roninoss/icons';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import i18n from 'expo-app/lib/i18n';
+import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 import type {
@@ -23,7 +25,7 @@ interface TripNotificationsListProps {
  * `notifications.messages.*`.  Returns `null` when no translation exists so
  * the caller can fall back to the English `message` string.
  */
-const NOTIFICATION_TYPE_I18N_KEY: Record<ClientNotificationType, string | null> = {
+const NOTIFICATION_TYPE_I18N_KEY: Record<ClientNotificationType, TranslationKeys | null> = {
   trip_today: 'notifications.messages.tripToday',
   trip_tomorrow: 'notifications.messages.tripTomorrow',
   trip_upcoming: 'notifications.messages.tripUpcoming',
@@ -100,7 +102,10 @@ export function TripNotificationsList({
         // variables.  Fall back to the English `message` string from the API.
         const i18nKey = NOTIFICATION_TYPE_I18N_KEY[notification.notificationType];
         const localizedMessage = i18nKey
-          ? t(i18nKey, notification.variables)
+          ? i18n.t(String(i18nKey), {
+              ...notification.variables,
+              defaultValue: notification.message,
+            })
           : notification.message;
 
         return (
