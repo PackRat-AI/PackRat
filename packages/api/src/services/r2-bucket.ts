@@ -13,7 +13,7 @@ import {
   UploadPartCommand,
 } from '@aws-sdk/client-s3';
 import type { Env } from '@packrat/api/types/env';
-import { isString } from 'radash';
+import { isString } from '@packrat/guards';
 
 // Define our own types to avoid conflicts with Cloudflare Workers types
 interface R2HTTPMetadata {
@@ -333,7 +333,8 @@ export class R2BucketService {
         },
         blob: async () => {
           assertStreamNotConsumed();
-          return new globalThis.Blob([await consumeStream()]);
+          const data = await consumeStream();
+          return new globalThis.Blob([data.buffer as ArrayBuffer]);
         },
       };
 

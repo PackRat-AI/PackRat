@@ -1,6 +1,7 @@
 'use client';
 
-import type { LargeTitleSearchBarRef, ListDataItem } from '@packrat/ui/nativewindui';
+import { assertIsString } from '@packrat/guards';
+import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
   LargeTitleHeader,
   List,
@@ -33,7 +34,6 @@ import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { assertIsString } from 'expo-app/utils/typeAssertions';
 import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
@@ -136,7 +136,7 @@ type TileName = keyof typeof tileInfo;
 function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
-    <Link href="/modal" asChild>
+    <Link href="/settings" asChild>
       <Pressable className="opacity-80">
         {({ pressed }) => (
           <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
@@ -167,7 +167,7 @@ function DemoIcon() {
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const { t } = useTranslation();
 
   const dashboardLayout = useRef([

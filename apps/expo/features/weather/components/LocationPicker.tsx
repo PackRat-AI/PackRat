@@ -1,12 +1,13 @@
+import { assertNonNull } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { assertNonNull } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useActiveLocation, useLocations } from '../hooks';
 import type { WeatherLocation } from '../types';
 
@@ -53,7 +54,7 @@ export function LocationPicker({
   return (
     <>
       <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
-        <View className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 bg-background">
           <View className="px-4 mb-4 py-2 border-b border-border flex-row gap-2 justify-between items-center">
             <View className="flex-row flex-1 items-center gap-2">
               <TouchableOpacity onPress={onClose}>
@@ -110,7 +111,10 @@ export function LocationPicker({
               <View className="flex-1 items-center justify-center p-8 gap-4 mt-8">
                 <View className="h-16 w-16 rounded-full items-center justify-center bg-neutral-300 dark:bg-neutral-600">
                   <Icon
-                    materialIcon={{ name: 'location-searching', type: 'MaterialIcons' }}
+                    materialIcon={{
+                      name: 'location-searching',
+                      type: 'MaterialIcons',
+                    }}
                     ios={{ name: 'location' }}
                     size={32}
                     color={colors.grey}
@@ -128,7 +132,7 @@ export function LocationPicker({
               </View>
             )}
           </ScrollView>
-          <View className="px-4 pb-2 flex-row self-end items-center gap-2 justify-between">
+          <View className="px-4 pb-4 flex-row self-end items-center gap-2 justify-between">
             {onSkip && (
               <Button
                 onPress={() => {
@@ -152,7 +156,7 @@ export function LocationPicker({
               <Text>{displaySelectText}</Text>
             </Button>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </>
   );

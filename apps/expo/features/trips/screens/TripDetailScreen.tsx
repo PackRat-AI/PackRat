@@ -1,18 +1,12 @@
-import {
-  ActivityIndicator,
-  Alert,
-  type AlertRef,
-  Button,
-  Card,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { assertDefined } from '@packrat/guards';
+import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { appAlert } from 'expo-app/app/_layout';
+import { useLocations } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useRef } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, Share, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDetailedPacks } from '../../packs/hooks/useDetailedPacks';
@@ -24,7 +18,10 @@ export function TripDetailScreen() {
   const { id } = useLocalSearchParams();
   const { colors } = useColorScheme();
   const { t } = useTranslation();
-  const alertRef = useRef<AlertRef>(null);
+
+  const { locationsState } = useLocations();
+
+  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
 
   const trip = useTripDetailsFromStore(id as string) as Trip;
   const packs = useDetailedPacks();
@@ -53,8 +50,37 @@ export function TripDetailScreen() {
       }
       if (trip.description) lines.push(`\n${trip.description}`);
       await Share.share({ message: lines.join('\n') });
-    } catch (_e) {
-      // Share cancelled or failed – no action needed
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleWeatherPress = () => {
+    if (!trip.location) return;
+
+    const { latitude, longitude } = trip.location;
+
+    const matchedLocation = locations.find(
+      (loc) => Math.abs(loc.lat - latitude) < 0.05 && Math.abs(loc.lon - longitude) < 0.05,
+    );
+
+    if (matchedLocation) {
+      router.push(`/weather/${matchedLocation.id}`);
+    } else {
+      appAlert.current?.alert({
+        title: 'Location not found',
+        message: 'Please add this location in Weather first.',
+        buttons: [
+          {
+            text: 'Go to Weather',
+            onPress: () => router.push('/weather'),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ],
+      });
     }
   };
 
@@ -64,8 +90,8 @@ export function TripDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        {/* Header Section */}
         <View className="p-4">
+          {/* Header */}
           <View className="mb-3 flex-row items-start justify-between">
             <Text className="flex-1 text-3xl font-bold text-foreground">{trip.name}</Text>
             <Button variant="plain" size="icon" onPress={handleShareTrip}>
@@ -78,7 +104,7 @@ export function TripDetailScreen() {
             </Button>
           </View>
 
-          {/* Trip Dates */}
+          {/* Dates */}
           <View className="mb-6">
             <Text className="text-lg font-semibold text-foreground mb-2">{t('trips.dates')}</Text>
             <View className="rounded-xl bg-card border border-border">
@@ -103,9 +129,7 @@ export function TripDetailScreen() {
           <View className="mb-6">
             <Text className="text-lg font-semibold text-foreground mb-2">{t('trips.details')}</Text>
             {trip.description ? (
-              <Text className="text-sm text-muted-foreground leading-relaxed">
-                {trip.description}
-              </Text>
+              <Text className="text-sm text-muted-foreground">{trip.description}</Text>
             ) : (
               <Text className="text-sm text-muted-foreground italic">
                 {t('trips.noDetailsAvailable')}
@@ -113,30 +137,23 @@ export function TripDetailScreen() {
             )}
           </View>
 
-          {/* Notes */}
-          {trip.notes ? (
-            <View className="mb-6">
-              <Text className="text-lg font-semibold text-foreground mb-2">{t('trips.notes')}</Text>
-              <Text className="text-sm text-muted-foreground leading-relaxed">{trip.notes}</Text>
-            </View>
-          ) : null}
-
           {/* Location */}
-          {trip.location ? (
+          {trip.location && (
             <View className="mb-6">
               <Text className="text-lg font-semibold text-foreground mb-2">
                 {t('trips.location')}
               </Text>
+
               <Card className="rounded-xl bg-card border border-border">
-                <View className="p-3 border-b border-border bg-card">
-                  <Text className="text-base font-semibold text-foreground text-center">
+                <View className="p-3 border-b border-border">
+                  <Text className="text-center font-semibold">
                     {trip.location.name
                       ? trip.location.name.split(',')[0]
                       : `${trip.location.latitude.toFixed(3)}, ${trip.location.longitude.toFixed(3)}`}
                   </Text>
                 </View>
 
-                <View className="w-full h-36 overflow-hidden rounded-b-xl">
+                <View className="h-36">
                   <MapView
                     provider={PROVIDER_GOOGLE}
                     style={{ flex: 1 }}
@@ -147,90 +164,58 @@ export function TripDetailScreen() {
                       longitudeDelta: 0.05,
                     }}
                   >
-                    <Marker
-                      coordinate={{
-                        latitude: trip.location.latitude,
-                        longitude: trip.location.longitude,
-                      }}
-                      title={trip.location.name || t('trips.tripLocation')}
-                    />
+                    <Marker coordinate={trip.location} />
                   </MapView>
                 </View>
 
                 <View className="p-3 flex-row justify-center gap-2">
+                  {/* Open Maps */}
                   <Button
                     variant="secondary"
                     size="sm"
                     onPress={() => {
                       assertDefined(trip.location);
                       const { latitude, longitude } = trip.location;
-                      const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
-                      router.push(url);
+                      router.push(`https://www.google.com/maps?q=${latitude},${longitude}`);
                     }}
-                    className="flex-row items-center gap-2"
                   >
-                    <Icon name="map-marker-outline" size={16} color={colors.primary} />
-                    <Text className="text-sm">{t('trips.openInMaps')}</Text>
+                    <Text>{t('trips.openInMaps')}</Text>
                   </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onPress={() => router.push('/weather')}
-                    className="flex-row items-center gap-2"
-                  >
-                    <Icon
-                      materialIcon={{
-                        type: 'MaterialCommunityIcons',
-                        name: 'weather-partly-cloudy',
-                      }}
-                      ios={{ name: 'cloud.sun' }}
-                      size={16}
-                      color={colors.primary}
-                    />
-                    <Text className="text-sm">{t('trips.viewWeather')}</Text>
+
+                  {/* Weather */}
+                  <Button variant="secondary" size="sm" onPress={handleWeatherPress}>
+                    <Text>{t('trips.viewWeather')}</Text>
                   </Button>
                 </View>
               </Card>
             </View>
-          ) : null}
+          )}
 
           {/* Pack */}
-          {pack ? (
+          {pack && (
             <View className="mb-6">
-              <Text className="text-lg font-semibold text-foreground mb-2">{t('trips.pack')}</Text>
-              <Card className="rounded-xl bg-card border border-border">
-                <View className="p-3 border-b border-border bg-card">
-                  <Text className="text-base font-semibold text-foreground text-center">
-                    {pack.name}
-                  </Text>
-                </View>
+              <Text className="text-lg font-semibold mb-2">{t('trips.pack')}</Text>
+
+              <Card>
                 <View className="p-3">
-                  <Text className="text-sm text-muted-foreground">
-                    {t('trips.items', { count: pack.items.length })}
-                  </Text>
-                  <Text className="text-sm text-muted-foreground">
-                    {t('trips.totalWeight', { weight: pack.totalWeight?.toFixed(2) ?? 0 })}
-                  </Text>
+                  <Text>{pack.name}</Text>
+                  <Text>{t('trips.items', { count: pack.items.length })}</Text>
                 </View>
-                <View className="p-3 flex-row justify-center">
+
+                <View className="p-3">
                   <Button
                     variant="secondary"
                     size="sm"
                     onPress={() => router.push(`/pack/${pack.id}`)}
-                    className="flex-row items-center gap-2"
                   >
-                    <Text className="text-sm">{t('trips.viewPack')}</Text>
+                    <Text>{t('trips.viewPack')}</Text>
                   </Button>
                 </View>
               </Card>
             </View>
-          ) : (
-            <Text className="text-sm text-muted-foreground italic">{t('trips.noPackLinked')}</Text>
           )}
         </View>
       </ScrollView>
-
-      <Alert title="" buttons={[]} ref={alertRef} />
     </SafeAreaView>
   );
 }

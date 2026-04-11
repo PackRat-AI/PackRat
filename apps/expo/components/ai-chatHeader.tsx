@@ -1,5 +1,6 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
+import { AIModeSelector } from 'expo-app/features/ai/components/AIModeSelector';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { BlurView } from 'expo-blur';
@@ -38,9 +39,7 @@ export function AiChatHeader({ onClear }: AiChatHeaderProps) {
           <Text variant="title3" className="text-center">
             {t('ai.packratAI')}
           </Text>
-          <Text variant="caption2" className="text-muted-foreground">
-            {t('ai.hikingAssistant')}
-          </Text>
+          <AIModeSelector />
         </View>
         <Button variant="plain" size="icon" onPress={onClear}>
           <Icon
@@ -79,9 +78,7 @@ export function AiChatHeader({ onClear }: AiChatHeaderProps) {
         </View>
         <View className="flex-1 items-center">
           <Text className="text-lg font-medium">{t('ai.packratAI')}</Text>
-          <Text variant="caption2" className="text-muted-foreground">
-            {t('ai.hikingAssistant')}
-          </Text>
+          <AIModeSelector />
         </View>
         <Button variant="plain" size="icon" onPress={onClear}>
           <Icon
