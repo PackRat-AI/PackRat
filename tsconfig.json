@@ -31,9 +31,6 @@
     "**/.next",
     "**/.expo",
     "**/coverage",
-    "packages/api/container_src",
-    "packages/api/src",
-    "packages/api/test",
-    "packages/api/scripts"
+    "packages/api/**"
   ]
 }
