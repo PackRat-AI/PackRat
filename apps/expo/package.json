@@ -108,6 +108,7 @@
     "expo-updates": "~29.0.16",
     "expo-web-browser": "~15.0.10",
     "google-auth-library": "^10.1.0",
+    "he": "^1.2.0",
     "i": "^0.3.7",
     "i18next": "^25.8.18",
     "jotai": "^2.12.2",
@@ -136,6 +137,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@biomejs/biome": "2.4.6",
+    "@types/he": "^1.2.3",
     "@types/react": "~19.0.10",
     "@types/ungap__structured-clone": "^1.2.0",
     "@typescript-eslint/eslint-plugin": "^7.7.0",

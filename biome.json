@@ -69,12 +69,17 @@
         "apps/expo/utils/weight.ts",
         "packages/api/src/utils/weight.ts",
         "scripts/lint/**",
-        ".github/scripts/**"
+        "scripts/format/**",
+        ".github/scripts/**",
+        ".github/skills/**"
       ],
       "linter": {
         "rules": {
           "complexity": {
             "useMaxParams": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
           }
         }
       }
@@ -92,6 +97,12 @@
         "rules": {
           "suspicious": {
             "noExplicitAny": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
+          },
+          "complexity": {
+            "noForEach": "off"
           }
         }
       }

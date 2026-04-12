@@ -187,6 +187,8 @@ function RightView() {
   );
 }
 
+const RE_WHITESPACE = /\s+/;
+
 const SEARCH_BAR = {
   iosHideWhenScrolling: true,
   content: (
@@ -376,7 +378,7 @@ const renderIosContextMenuPreview = (info: { item: (typeof ITEMS)[number] }) => 
 };
 
 function getInitials(name: string): string {
-  const nameParts = name.trim().split(/\s+/);
+  const nameParts = name.trim().split(RE_WHITESPACE);
   const firstPart = nameParts[0];
   assertDefined(firstPart);
   const firstInitial = firstPart.charAt(0).toUpperCase();
