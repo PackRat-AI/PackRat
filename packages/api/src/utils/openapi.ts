@@ -1,19 +1,19 @@
 import { openapi } from '@elysiajs/openapi';
-import { z } from 'zod';
+import zodToJsonSchema from 'zod-to-json-schema';
 
 /**
  * Shared OpenAPI plugin instance configured for the PackRat API.
  *
- * `mapJsonSchema.zod` tells the OpenAPI plugin how to convert our Zod schemas
- * into JSON Schema so Scalar/Swagger get full request/response documentation.
- * Without this, Zod schemas passed via Standard Schema only validate at
- * runtime — the OpenAPI spec would be missing their structure.
+ * `mapJsonSchema.zod` tells the OpenAPI plugin how to convert our Zod v3
+ * schemas into JSON Schema so Scalar/Swagger get full request/response
+ * documentation. We use the `zod-to-json-schema` package since the native
+ * `z.toJSONSchema()` requires Zod v4.
  */
 export const packratOpenApi = openapi({
   path: '/scalar',
   specPath: '/doc',
   mapJsonSchema: {
-    zod: z.toJSONSchema,
+    zod: zodToJsonSchema,
   },
   documentation: {
     openapi: '3.1.0',
