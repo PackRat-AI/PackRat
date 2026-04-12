@@ -20,7 +20,7 @@ import {
 } from '@packrat/api/schemas/packs';
 import { ImageDetectionService, PackService } from '@packrat/api/services';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
-import { computePackWeights, computePacksWeights } from '@packrat/api/utils/compute-pack';
+import { computePacksWeights, computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -62,10 +62,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
 
       const where = includePublic
-        ? and(
-            or(eq(packs.userId, user.userId), eq(packs.isPublic, true)),
-            eq(packs.deleted, false),
-          )
+        ? and(or(eq(packs.userId, user.userId), eq(packs.isPublic, true)), eq(packs.deleted, false))
         : eq(packs.userId, user.userId);
 
       const result = await db.query.packs.findMany({
@@ -303,9 +300,7 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
 
       if (!pack) return status(404, { error: 'Pack not found' });
 
-      await db
-        .delete(packs)
-        .where(and(eq(packs.id, params.packId), eq(packs.userId, user.userId)));
+      await db.delete(packs).where(and(eq(packs.id, params.packId), eq(packs.userId, user.userId)));
       return { success: true };
     },
     {
@@ -826,7 +821,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         with: { pack: true },
       });
 
-      if (!sourceItem || !sourceItem.embedding) {
+      if (!sourceItem?.embedding) {
         return status(404, { error: 'Pack item not found or has no embedding' });
       }
 

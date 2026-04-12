@@ -127,9 +127,7 @@ export async function enhanceGuideContent(
                 },
               });
               if (!response.ok) {
-                throw new Error(
-                  `Catalog search failed: ${response.status} ${response.statusText}`,
-                );
+                throw new Error(`Catalog search failed: ${response.status} ${response.statusText}`);
               }
 
               const searchResults = (await response.json()) as {

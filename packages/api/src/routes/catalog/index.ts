@@ -327,7 +327,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         where: eq(catalogItems.id, itemId),
       });
 
-      if (!sourceItem || !sourceItem.embedding) {
+      if (!sourceItem?.embedding) {
         return status(404, { error: 'Catalog item not found or has no embedding' });
       }
 

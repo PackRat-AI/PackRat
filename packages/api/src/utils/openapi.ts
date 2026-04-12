@@ -43,8 +43,7 @@ export const packratOpenApi = openapi({
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
-          description:
-            'JWT token obtained from /api/auth/login or /api/auth/refresh endpoints',
+          description: 'JWT token obtained from /api/auth/login or /api/auth/refresh endpoints',
         },
         apiKey: {
           type: 'apiKey',

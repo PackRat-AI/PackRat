@@ -28,10 +28,10 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
   .onError(({ error, code }) => {
     console.error('Error occurred:', error);
     if (code === 'VALIDATION') {
-      return new Response(
-        JSON.stringify({ error: 'Validation failed', details: error.message }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      );
+      return new Response(JSON.stringify({ error: 'Validation failed', details: error.message }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
     if (code === 'NOT_FOUND') {
       return new Response(JSON.stringify({ error: 'Not found' }), {

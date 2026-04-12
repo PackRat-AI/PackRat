@@ -1,3 +1,4 @@
+import { authPlugin } from '@packrat/api/middleware/auth';
 import {
   type WeatherAPICurrentResponse,
   type WeatherAPIForecastResponse,
@@ -6,7 +7,6 @@ import {
   WeatherLocationIdSchema,
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
-import { authPlugin } from '@packrat/api/middleware/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { Elysia, status } from 'elysia';
 

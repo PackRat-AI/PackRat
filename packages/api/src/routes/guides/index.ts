@@ -3,6 +3,10 @@ import { GuideSearchQuerySchema, GuidesQuerySchema } from '@packrat/api/schemas/
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { asNumber, asString, isArray } from '@packrat/guards';
+
+const MDX_EXT_RE = /\.(mdx?|md)$/;
+const DASH_RE = /-/g;
+
 import { Elysia, status } from 'elysia';
 import matter from 'gray-matter';
 import { z } from 'zod';
@@ -39,15 +43,16 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
             }
 
             return {
-              id: obj.key.replace(/\.(mdx?|md)$/, ''),
+              id: obj.key.replace(MDX_EXT_RE, ''),
               key: obj.key,
               title:
                 asString(frontmatter.title) ||
                 obj.customMetadata?.title ||
-                obj.key.replace(/\.(mdx?|md)$/, '').replace(/-/g, ' '),
+                obj.key.replace(MDX_EXT_RE, '').replace(DASH_RE, ' '),
               category: obj.customMetadata?.category || 'general',
               categories: (frontmatter.categories as string[]) || [],
-              description: asString(frontmatter.description) || obj.customMetadata?.description || '',
+              description:
+                asString(frontmatter.description) || obj.customMetadata?.description || '',
               author: asString(frontmatter.author),
               readingTime: asNumber(frontmatter.readingTime),
               difficulty: asString(frontmatter.difficulty),
@@ -126,9 +131,11 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         });
 
         const results = await Promise.all(promises);
-        results.forEach((categories) => {
-          categories.forEach((category) => categoriesSet.add(category));
-        });
+        for (const categories of results) {
+          for (const category of categories) {
+            categoriesSet.add(category);
+          }
+        }
 
         const categories = Array.from(categoriesSet).sort();
         return { categories, count: categories.length };
@@ -168,7 +175,8 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
               const guide = {
                 id: obj.key.replace('.mdx', ''),
                 key: obj.key,
-                title: obj.customMetadata?.title || obj.key.replace('.mdx', '').replace(/-/g, ' '),
+                title:
+                  obj.customMetadata?.title || obj.key.replace('.mdx', '').replace(DASH_RE, ' '),
                 category: obj.customMetadata?.category || 'general',
                 description: obj.customMetadata?.description || '',
                 createdAt: obj.uploaded.toISOString(),
@@ -274,7 +282,7 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
         return {
           id,
           key,
-          title: frontmatter.title || metadata.title || id.replace(/-/g, ' '),
+          title: frontmatter.title || metadata.title || id.replace(DASH_RE, ' '),
           category: metadata.category || 'general',
           categories: frontmatter.categories || [],
           description: frontmatter.description || metadata.description || '',

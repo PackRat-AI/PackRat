@@ -251,10 +251,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       const offset = (page - 1) * limit;
 
       const [totalResult, items] = await Promise.all([
-        db
-          .select({ count: count() })
-          .from(postComments)
-          .where(eq(postComments.postId, postId)),
+        db.select({ count: count() }).from(postComments).where(eq(postComments.postId, postId)),
         db
           .select({
             id: postComments.id,
@@ -293,10 +290,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
           .select({ commentId: commentLikes.commentId })
           .from(commentLikes)
           .where(
-            and(
-              inArray(commentLikes.commentId, commentIds),
-              eq(commentLikes.userId, user.userId),
-            ),
+            and(inArray(commentLikes.commentId, commentIds), eq(commentLikes.userId, user.userId)),
           ),
       ]);
 
@@ -325,7 +319,11 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         limit: z.coerce.number().int().min(1).max(50).optional().default(20),
       }),
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'List comments on a post', security: [{ bearerAuth: [] }] },
+      detail: {
+        tags: ['Feed'],
+        summary: 'List comments on a post',
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 
@@ -375,7 +373,11 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       params: z.object({ postId: z.coerce.number().int() }),
       body: CreateCommentRequestSchema,
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'Add a comment to a post', security: [{ bearerAuth: [] }] },
+      detail: {
+        tags: ['Feed'],
+        summary: 'Add a comment to a post',
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 
@@ -428,9 +430,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
       if (existing) {
         await db
           .delete(commentLikes)
-          .where(
-            and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, user.userId)),
-          );
+          .where(and(eq(commentLikes.commentId, commentId), eq(commentLikes.userId, user.userId)));
       } else {
         await db.insert(commentLikes).values({ commentId, userId: user.userId });
       }
@@ -448,6 +448,10 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         commentId: z.coerce.number().int(),
       }),
       isAuthenticated: true,
-      detail: { tags: ['Feed'], summary: 'Toggle like on a comment', security: [{ bearerAuth: [] }] },
+      detail: {
+        tags: ['Feed'],
+        summary: 'Toggle like on a comment',
+        security: [{ bearerAuth: [] }],
+      },
     },
   );

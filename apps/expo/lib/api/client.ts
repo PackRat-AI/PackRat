@@ -16,8 +16,9 @@
  * Both surfaces share the same base URL, auth-token injection, and
  * transparent 401 refresh-token flow – implemented once in this module.
  */
-import type { App } from '@packrat/api';
+
 import { treaty } from '@elysiajs/eden';
+import type { App } from '@packrat/api';
 import { store } from 'expo-app/atoms/store';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import {
@@ -63,14 +64,12 @@ async function refreshAccessToken(): Promise<string | null> {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
       });
-      const data = (await response.json().catch(() => null)) as
-        | {
-            success?: boolean;
-            accessToken?: string;
-            refreshToken?: string;
-            error?: string;
-          }
-        | null;
+      const data = (await response.json().catch(() => null)) as {
+        success?: boolean;
+        accessToken?: string;
+        refreshToken?: string;
+        error?: string;
+      } | null;
 
       if (response.ok && data?.success && data.accessToken) {
         await store.set(tokenAtom, data.accessToken);
@@ -199,8 +198,7 @@ async function execute<T>(
 
   // Only set Content-Type for JSON bodies. FormData must set its own
   // multipart boundary, so we omit it for those cases.
-  const isFormData =
-    typeof FormData !== 'undefined' && body instanceof FormData;
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   if (!isFormData && body !== undefined && body !== null) {
     headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
   }
@@ -314,7 +312,9 @@ export default apiClient;
 export function isApiError(error: unknown): error is ApiError {
   return (
     error instanceof ApiError ||
-    (typeof error === 'object' && error !== null && (error as { isApiError?: boolean }).isApiError === true)
+    (typeof error === 'object' &&
+      error !== null &&
+      (error as { isApiError?: boolean }).isApiError === true)
   );
 }
 

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import * as bcrypt from 'bcryptjs';
-import { SignJWT, jwtVerify } from 'jose';
+import { jwtVerify, SignJWT } from 'jose';
 
 export type JWTPayload = {
   userId: number;
@@ -45,9 +45,7 @@ export async function generateJWT({
   expiresIn?: string;
 }): Promise<string> {
   const { JWT_SECRET } = getEnv();
-  const jwt = new SignJWT({ ...payload })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt();
+  const jwt = new SignJWT({ ...payload }).setProtectedHeader({ alg: 'HS256' }).setIssuedAt();
 
   if (typeof payload.exp === 'number') {
     jwt.setExpirationTime(payload.exp);
@@ -77,6 +75,11 @@ export function generateVerificationCode(length = 6): string {
 }
 
 // Validate password strength
+const HAS_UPPERCASE = /[A-Z]/;
+const HAS_LOWERCASE = /[a-z]/;
+const HAS_DIGIT = /[0-9]/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function validatePassword(password: string): {
   valid: boolean;
   message?: string;
@@ -84,13 +87,13 @@ export function validatePassword(password: string): {
   if (password.length < 8) {
     return { valid: false, message: 'Password must be at least 8 characters long' };
   }
-  if (!/[A-Z]/.test(password)) {
+  if (!HAS_UPPERCASE.test(password)) {
     return { valid: false, message: 'Password must contain at least one uppercase letter' };
   }
-  if (!/[a-z]/.test(password)) {
+  if (!HAS_LOWERCASE.test(password)) {
     return { valid: false, message: 'Password must contain at least one lowercase letter' };
   }
-  if (!/[0-9]/.test(password)) {
+  if (!HAS_DIGIT.test(password)) {
     return { valid: false, message: 'Password must contain at least one number' };
   }
   return { valid: true };
@@ -98,8 +101,7 @@ export function validatePassword(password: string): {
 
 // Validate email format
 export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return EMAIL_RE.test(email);
 }
 
 /**

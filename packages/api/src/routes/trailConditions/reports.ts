@@ -56,7 +56,10 @@ export const trailConditionRoutes = new Elysia()
         if (trailName) {
           const normalized = trailName.trim();
           if (normalized.length > 0) {
-            const escaped = normalized.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+            const escaped = normalized
+              .replace(/\\/g, '\\\\')
+              .replace(/%/g, '\\%')
+              .replace(/_/g, '\\_');
             conditions.push(ilike(trailConditionReports.trailName, `%${escaped}%`));
           }
         }
@@ -192,7 +195,8 @@ export const trailConditionRoutes = new Elysia()
         const updateData: Partial<NewTrailConditionReport> & { updatedAt: Date } = {
           updatedAt: new Date(),
         };
-        if ('trailName' in data && data.trailName !== undefined) updateData.trailName = data.trailName;
+        if ('trailName' in data && data.trailName !== undefined)
+          updateData.trailName = data.trailName;
         if ('trailRegion' in data) updateData.trailRegion = data.trailRegion ?? null;
         if ('surface' in data && data.surface !== undefined) updateData.surface = data.surface;
         if ('overallCondition' in data && data.overallCondition !== undefined)

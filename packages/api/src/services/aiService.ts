@@ -86,8 +86,10 @@ export class AIService {
    * @param filename
    * @returns
    */
+  private static readonly MDX_EXT_RE = /\.mdx$/;
+
   private filenameToUrl(filename: string): string {
-    const slug = filename.replace(/\.mdx$/, '').trim();
+    const slug = filename.replace(AIService.MDX_EXT_RE, '').trim();
     const baseUrl = this.env.PACKRAT_GUIDES_BASE_URL;
     return new URL(`guide/${slug}`, baseUrl).toString();
   }

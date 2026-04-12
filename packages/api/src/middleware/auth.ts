@@ -63,30 +63,28 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
 /**
  * Macro that additionally enforces ADMIN role.
  */
-export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' })
-  .use(authPlugin)
-  .macro({
-    isAdmin: {
-      resolve: async ({ request }: { request: Request }) => {
-        const authHeader = request.headers.get('authorization');
-        if (!authHeader) return status(401, { error: 'Unauthorized' });
-        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-        if (!token) return status(401, { error: 'Unauthorized' });
-        const payload = await verifyJWT({ token });
-        if (!payload) return status(401, { error: 'Unauthorized' });
-        if (payload.role !== 'ADMIN') {
-          return status(403, { error: 'Forbidden' });
-        }
-        return {
-          user: {
-            userId: Number(payload.userId),
-            role: 'ADMIN' as const,
-            ...payload,
-          } as AuthUser,
-        };
-      },
+export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(authPlugin).macro({
+  isAdmin: {
+    resolve: async ({ request }: { request: Request }) => {
+      const authHeader = request.headers.get('authorization');
+      if (!authHeader) return status(401, { error: 'Unauthorized' });
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+      if (!token) return status(401, { error: 'Unauthorized' });
+      const payload = await verifyJWT({ token });
+      if (!payload) return status(401, { error: 'Unauthorized' });
+      if (payload.role !== 'ADMIN') {
+        return status(403, { error: 'Forbidden' });
+      }
+      return {
+        user: {
+          userId: Number(payload.userId),
+          role: 'ADMIN' as const,
+          ...payload,
+        } as AuthUser,
+      };
     },
-  });
+  },
+});
 
 /**
  * Minimal macro accepting only the `X-API-Key` header for cron/admin routes.

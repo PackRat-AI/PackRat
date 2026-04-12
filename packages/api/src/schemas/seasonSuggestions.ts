@@ -9,27 +9,21 @@ export const PackSuggestionSchema = z.object({
   name: z.string(),
   description: z.string(),
   category: z.string().nullable(),
-  items: z
-    .array(
-      z.object({
-        name: z.string(),
-        description: z.string().nullable(),
-        weight: z.number().int(),
-        weightUnit: z.string(),
-        quantity: z.number().int().min(1),
-        category: z.string().nullable(),
-        consumable: z.boolean(),
-        worn: z.boolean(),
-        image: z
-          .string()
-          .nullable()
-          .optional()
-          ,
-        notes: z.string().nullable(),
-        catalogItemId: z.number().int().nullable(),
-      }),
-    )
-    ,
+  items: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string().nullable(),
+      weight: z.number().int(),
+      weightUnit: z.string(),
+      quantity: z.number().int().min(1),
+      category: z.string().nullable(),
+      consumable: z.boolean(),
+      worn: z.boolean(),
+      image: z.string().nullable().optional(),
+      notes: z.string().nullable(),
+      catalogItemId: z.number().int().nullable(),
+    }),
+  ),
 });
 
 export const SeasonSuggestionsResponseSchema = z.object({

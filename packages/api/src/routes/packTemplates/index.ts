@@ -1,11 +1,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { getContainer } from '@cloudflare/containers';
 import { createDb } from '@packrat/api/db';
-import {
-  type PackTemplate,
-  packTemplateItems,
-  packTemplates,
-} from '@packrat/api/db/schema';
+import { type PackTemplate, packTemplateItems, packTemplates } from '@packrat/api/db/schema';
 import { authPlugin } from '@packrat/api/middleware/auth';
 import {
   CreatePackTemplateItemRequestSchema,
@@ -28,8 +24,10 @@ import { z } from 'zod';
 // Helpers for online-content generation
 // ---------------------------------------------------------------------------
 
+const QUERY_STRIP_RE = /[?&].*$/;
+
 function generateContentIdFromUrl(url: string): string {
-  const normalizedUrl = url.toLowerCase().replace(/[?&].*$/, '');
+  const normalizedUrl = url.toLowerCase().replace(QUERY_STRIP_RE, '');
   let hash = 0;
   for (let i = 0; i < normalizedUrl.length; i++) {
     const char = normalizedUrl.charCodeAt(i);
@@ -316,8 +314,8 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         });
 
         const catalogService = new CatalogService();
-        const searchQueries = analysis.items.map(
-          (item) => `${item.name} ${item.description}`.trim(),
+        const searchQueries = analysis.items.map((item) =>
+          `${item.name} ${item.description}`.trim(),
         );
 
         const batchResult =
@@ -452,10 +450,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         .where(
           item.template.isAppTemplate && user.role === 'ADMIN'
             ? eq(packTemplateItems.id, itemId)
-            : and(
-                eq(packTemplateItems.id, itemId),
-                eq(packTemplateItems.userId, user.userId),
-              ),
+            : and(eq(packTemplateItems.id, itemId), eq(packTemplateItems.userId, user.userId)),
         )
         .returning();
 

@@ -471,7 +471,11 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
     },
     {
       isAuthenticated: true,
-      detail: { tags: ['Authentication'], summary: 'Get current user', security: [{ bearerAuth: [] }] },
+      detail: {
+        tags: ['Authentication'],
+        summary: 'Get current user',
+        security: [{ bearerAuth: [] }],
+      },
     },
   )
 
@@ -531,11 +535,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       if (existingProvider) {
         userId = existingProvider.userId;
       } else {
-        const [existingUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, email))
-          .limit(1);
+        const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
         if (existingUser) {
           userId = existingUser.id;
@@ -598,7 +598,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
       });
 
       const payload = ticket.getPayload();
-      if (!payload || !payload.email || !payload.sub) {
+      if (!payload?.email || !payload?.sub) {
         return status(400, { error: 'Invalid Google token' });
       }
 

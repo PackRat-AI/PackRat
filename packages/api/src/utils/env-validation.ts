@@ -140,8 +140,9 @@ function validate(rawEnv: Record<string, unknown>): ValidatedEnv {
     ETL_QUEUE: (rawEnv.ETL_QUEUE ?? validated.data.ETL_QUEUE) as Queue,
     LOGS_QUEUE: (rawEnv.LOGS_QUEUE ?? validated.data.LOGS_QUEUE) as Queue,
     EMBEDDINGS_QUEUE: (rawEnv.EMBEDDINGS_QUEUE ?? validated.data.EMBEDDINGS_QUEUE) as Queue,
-    APP_CONTAINER: (rawEnv.APP_CONTAINER ??
-      validated.data.APP_CONTAINER) as DurableObjectNamespace<Container<unknown>>,
+    APP_CONTAINER: (rawEnv.APP_CONTAINER ?? validated.data.APP_CONTAINER) as DurableObjectNamespace<
+      Container<unknown>
+    >,
   } as ValidatedEnv;
 }
 

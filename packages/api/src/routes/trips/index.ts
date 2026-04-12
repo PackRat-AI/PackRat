@@ -216,9 +216,7 @@ export const tripsRoutes = new Elysia({ prefix: '/trips' })
           return status(403, { error: 'Trip not found or unauthorized' });
         }
 
-        await db
-          .delete(trips)
-          .where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)));
+        await db.delete(trips).where(and(eq(trips.id, tripId), eq(trips.userId, user.userId)));
 
         return { success: true };
       } catch (error) {

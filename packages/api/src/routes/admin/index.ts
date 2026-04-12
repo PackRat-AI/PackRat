@@ -321,28 +321,26 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     `;
     return htmlResponse(adminLayout('Users', content));
   })
-  .get(
-    '/users-table',
-    async () => {
-      const db = createDb();
-      try {
-        const usersList = await db
-          .select({
-            id: users.id,
-            email: users.email,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            role: users.role,
-            emailVerified: users.emailVerified,
-            createdAt: users.createdAt,
-          })
-          .from(users)
-          .orderBy(desc(users.createdAt))
-          .limit(100);
+  .get('/users-table', async () => {
+    const db = createDb();
+    try {
+      const usersList = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          emailVerified: users.emailVerified,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .orderBy(desc(users.createdAt))
+        .limit(100);
 
-        const rows = usersList
-          .map(
-            (u) => `
+      const rows = usersList
+        .map(
+          (u) => `
           <tr class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${u.id}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.email}</td>
@@ -356,20 +354,19 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium"></td>
           </tr>`,
-          )
-          .join('');
-        return htmlResponse(
-          rows ||
-            '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>',
-        );
-      } catch (error) {
-        console.error('Error fetching users:', error);
-        return htmlResponse(
-          '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error loading users</td></tr>',
-        );
-      }
-    },
-  )
+        )
+        .join('');
+      return htmlResponse(
+        rows ||
+          '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No users found</td></tr>',
+      );
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return htmlResponse(
+        '<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error loading users</td></tr>',
+      );
+    }
+  })
   .get(
     '/users-search',
     async ({ query }) => {
