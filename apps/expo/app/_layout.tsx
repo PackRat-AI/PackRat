@@ -8,6 +8,7 @@ import '../global.css';
 
 import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
 import * as Sentry from '@sentry/react-native';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { userStore } from 'expo-app/features/auth/store';
 import { useColorScheme, useInitialAndroidBarSync } from 'expo-app/lib/hooks/useColorScheme';
 import { Providers } from 'expo-app/providers';
@@ -15,7 +16,7 @@ import { NAV_THEME } from 'expo-app/theme';
 import { useRef } from 'react';
 
 Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,

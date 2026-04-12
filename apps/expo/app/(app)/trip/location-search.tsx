@@ -1,4 +1,5 @@
 import { ActivityIndicator, Button, SearchInput } from '@packrat/ui/nativewindui';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
@@ -9,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
 
 const GOOGLE_MAPS_API_KEY =
-  Constants.expoConfig?.extra?.googleMapsApiKey || process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+  Constants.expoConfig?.extra?.googleMapsApiKey || clientEnvs.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function LocationSearchScreen() {
   const router = useRouter();

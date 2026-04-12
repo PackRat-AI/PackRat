@@ -26,12 +26,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@packrat/web-ui/compon
 import { Textarea } from '@packrat/web-ui/components/textarea';
 import { Toaster } from '@packrat/web-ui/components/toaster';
 import { toast } from '@packrat/web-ui/hooks/use-toast';
+import { guideEnv } from 'guides-app/env';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 // This ensures the page only works in development
-const _isDevelopment = process.env.NODE_ENV === 'development';
+const _isDevelopment = guideEnv.NODE_ENV === 'development';
 
 // Types
 type ContentCategory =

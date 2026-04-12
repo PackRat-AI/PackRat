@@ -2,6 +2,7 @@ import { openai } from '@ai-sdk/openai';
 import { generateText, tool } from 'ai';
 import axios from 'axios';
 import { z } from 'zod';
+import { guideEnv } from '../env';
 
 // System prompt for contextual content enhancement
 const SYSTEM_PROMPT = `You are a content enhancement expert specializing in outdoor adventure guides. 
@@ -44,7 +45,7 @@ export async function enhanceGuideContent(
     temperature = 0.3,
     maxSearchResults = 5,
     apiBaseUrl = 'http://localhost:8787',
-    apiKey = process.env.PACKRAT_API_KEY,
+    apiKey = guideEnv.PACKRAT_API_KEY,
   } = options;
 
   if (!apiKey) {

@@ -32,8 +32,11 @@ const ALLOWED: string[] = [
   '.github/scripts/configure-deps.ts',
   '.github/scripts/env.ts',
   'packages/api/src/utils/env-validation.ts',
+  'packages/api/container_src/server.ts',
+  'packages/analytics/test/core/env.test.ts',
   'apps/expo/env/',
   'apps/expo/app.config.ts',
+  'apps/guides/env.ts',
 ];
 
 // Directories to skip entirely

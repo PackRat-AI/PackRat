@@ -1,10 +1,11 @@
 import { generatePosts } from 'guides-app/scripts/generate-content';
 import { NextResponse } from 'next/server';
+import { guideEnv } from '../../../../env';
 
 export const dynamic = 'force-static';
 
 // Ensure this only works in development
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = guideEnv.NODE_ENV === 'development';
 
 export async function POST(request: Request) {
   // Block in production

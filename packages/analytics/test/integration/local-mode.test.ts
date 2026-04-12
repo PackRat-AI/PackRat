@@ -9,12 +9,13 @@
 
 import { existsSync, rmSync } from 'node:fs';
 import { LocalCacheManager } from '@packrat/analytics/core/local-cache';
+import { nodeEnv } from '@packrat/env/node';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const DEFAULT_CACHE_DIR = 'data/cache';
 const FRESH_CACHE_DIR = 'data/test-integration-cache';
 const hasExistingCache = existsSync(`${DEFAULT_CACHE_DIR}/packrat_cache.duckdb`);
-const hasS3Creds = !!process.env.R2_ACCESS_KEY_ID && !!process.env.R2_SECRET_ACCESS_KEY;
+const hasS3Creds = !!nodeEnv.R2_ACCESS_KEY_ID && !!nodeEnv.R2_SECRET_ACCESS_KEY;
 const canRun = hasExistingCache || hasS3Creds;
 
 describe.skipIf(!canRun)('local mode integration', () => {
