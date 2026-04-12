@@ -1,8 +1,8 @@
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon, type IconProps } from '@roninoss/icons';
+import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { useState } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
 import type { PackCategory } from '../types';
 
@@ -18,64 +18,66 @@ type ActivityPickerProps = {
   defaultActivity?: PackCategory;
 };
 
+type MaterialIconProp = NonNullable<ComponentProps<typeof Icon>['materialIcon']>;
+
 const ACTIVITIES: Array<{
   key: PackCategory;
   label: string;
-  materialIcon: { type: 'MaterialCommunityIcons'; name: IconProps<'material'>['name'] };
+  materialIcon: MaterialIconProp;
   description: string;
 }> = [
   {
     key: 'hiking',
     label: 'Hiking',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'walk' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'walk' as const },
     description: 'Day hikes and trail walking',
   },
   {
     key: 'backpacking',
     label: 'Backpacking',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'bag-personal' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'bag-personal' as const },
     description: 'Multi-day trips with overnight stays',
   },
   {
     key: 'camping',
     label: 'Camping',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'tent' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'tent' as const },
     description: 'Car camping and base camping',
   },
   {
     key: 'climbing',
     label: 'Climbing',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'image-filter-hdr' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'image-filter-hdr' as const },
     description: 'Rock climbing and mountaineering',
   },
   {
     key: 'winter',
     label: 'Winter Sports',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'snowflake' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'snowflake' as const },
     description: 'Snow and cold weather activities',
   },
   {
     key: 'skiing',
     label: 'Skiing',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'ski' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'ski' as const },
     description: 'Alpine and cross-country skiing',
   },
   {
     key: 'water sports',
     label: 'Water Sports',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'waves' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'waves' as const },
     description: 'Kayaking, paddling, and water activities',
   },
   {
     key: 'desert',
     label: 'Desert',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'weather-sunny' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'weather-sunny' as const },
     description: 'Hot and arid environment trips',
   },
   {
     key: 'custom',
     label: 'Custom',
-    materialIcon: { type: 'MaterialCommunityIcons', name: 'cog' },
+    materialIcon: { type: 'MaterialCommunityIcons' as const, name: 'cog' as const },
     description: 'Other outdoor activities',
   },
 ];
@@ -97,8 +99,7 @@ export function ActivityPicker({
   );
 
   return (
-    <>
-      <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
+    <Modal visible={open} animationType="slide" presentationStyle="pageSheet">
         <View className="flex-1 bg-background">
           <View className="px-4 mb-4 py-2 border-b border-border flex-row gap-2 justify-between items-center">
             <View className="flex-row flex-1 items-center gap-2">
@@ -166,6 +167,5 @@ export function ActivityPicker({
           </View>
         </View>
       </Modal>
-    </>
   );
 }
