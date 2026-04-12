@@ -45,7 +45,6 @@ export default function TestimonialsSection() {
               <div className="mt-4 md:mt-6 flex">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <svg
-                    // biome-ignore lint/suspicious/noArrayIndexKey: ignore
                     key={i}
                     className={`w-4 h-4 md:w-5 md:h-5 ${
                       i < testimonial.rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'

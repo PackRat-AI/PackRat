@@ -54,7 +54,6 @@ export default function AppPreview() {
       <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-2 z-10">
         {screens.map((_, index) => (
           <button
-            // biome-ignore lint/suspicious/noArrayIndexKey: ignore
             key={index}
             type="button"
             className={`h-2 w-2 rounded-full transition-all duration-300 ${
