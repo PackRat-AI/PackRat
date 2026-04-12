@@ -3,6 +3,7 @@ import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import * as Burnt from 'burnt';
+import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
@@ -51,7 +52,6 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fetch as expoFetch } from 'expo/fetch';
 
 const HEADER_HEIGHT = Platform.select({ ios: 88, default: 64 });
 const _dimensions = Dimensions.get('window');
