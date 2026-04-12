@@ -19,5 +19,7 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
-      - name: Check Types
+      - name: Check Types (apps + shared packages)
         run: bun check-types
+      - name: Check Types (API — separate tsconfig for Elysia/CF Workers)
+        run: bun run --cwd packages/api check-types
