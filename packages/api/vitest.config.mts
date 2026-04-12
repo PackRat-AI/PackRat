@@ -1,13 +1,7 @@
 import { resolve } from 'node:path';
-import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
-import { defineConfig } from 'vitest/config';
+import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
 
-export default defineConfig({
-  plugins: [
-    cloudflareTest({
-      wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
-    }),
-  ],
+export default defineWorkersConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -24,6 +18,11 @@ export default defineConfig({
     // Also disable parallel execution within test files
     sequence: {
       concurrent: false,
+    },
+    poolOptions: {
+      workers: {
+        wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
+      },
     },
   },
 });
