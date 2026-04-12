@@ -16,7 +16,7 @@
     "update-authors": "bun run scripts/update-authors.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.11",
+    "@ai-sdk/openai": "^3.0.52",
     "@hookform/resolvers": "^3.10.0",
     "@packrat/api": "workspace:*",
     "@packrat/web-ui": "workspace:*",
@@ -58,7 +58,7 @@
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
     "date-fns": "^4.1.0",
-    "embla-carousel-react": "8.5.1",
+    "embla-carousel-react": "8.6.0",
     "fs": "^0.0.1-security",
     "gray-matter": "^4.0.3",
     "input-otp": "1.4.2",
@@ -72,7 +72,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "^7.58.1",
     "react-resizable-panels": "^2.1.9",
-    "recharts": "2.15.0",
+    "recharts": "3.8.1",
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
     "remark-html": "^16.0.1",
@@ -87,7 +87,7 @@
   "devDependencies": {
     "@types/mdx": "^2.0.13",
     "@types/node": "^25.6.0",
-    "@types/react": "~19.0.10",
+    "@types/react": "~19.2.14",
     "@types/react-dom": "^19.1.6",
     "postcss": "^8.5.6",
     "postcss-import": "^15.1.0",

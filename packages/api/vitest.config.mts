@@ -17,7 +17,6 @@ export default defineConfig({
   test: {
     globalSetup: './test/vitest.global-setup.ts',
     setupFiles: ['./test/setup.ts'],
-    pool: '@cloudflare/vitest-pool-workers',
     // Only include integration tests from /test directory
     include: [resolve(__dirname, 'test/**/*.test.ts')],
     // Run tests sequentially to avoid database deadlocks
