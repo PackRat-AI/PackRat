@@ -157,21 +157,31 @@ function collectFiles(): string[] {
 const IMPORT_RE = /(?:import|export)\s+(?:[^'"]*\s+from\s+)?['"]([^'"]+)['"]/g;
 const REQUIRE_RE = /(?:require|import)\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
+// Strip block comments (/* … */) and line comments (// …) so that example
+// import paths in JSDoc comments are not mistaken for real imports.
+const BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g;
+const LINE_COMMENT_RE = /\/\/[^\n]*/g;
+
+function stripComments(source: string): string {
+  return source.replace(BLOCK_COMMENT_RE, '').replace(LINE_COMMENT_RE, '');
+}
+
 function extractImports(source: string): string[] {
   const specifiers: string[] = [];
+  const stripped = stripComments(source);
 
   IMPORT_RE.lastIndex = 0;
-  let importMatch = IMPORT_RE.exec(source);
+  let importMatch = IMPORT_RE.exec(stripped);
   while (importMatch !== null) {
     if (importMatch[1]) specifiers.push(importMatch[1]);
-    importMatch = IMPORT_RE.exec(source);
+    importMatch = IMPORT_RE.exec(stripped);
   }
 
   REQUIRE_RE.lastIndex = 0;
-  let requireMatch = REQUIRE_RE.exec(source);
+  let requireMatch = REQUIRE_RE.exec(stripped);
   while (requireMatch !== null) {
     if (requireMatch[1]) specifiers.push(requireMatch[1]);
-    requireMatch = REQUIRE_RE.exec(source);
+    requireMatch = REQUIRE_RE.exec(stripped);
   }
 
   return specifiers;

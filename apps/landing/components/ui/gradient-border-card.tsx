@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from 'landing-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import { useTheme } from 'next-themes';
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';

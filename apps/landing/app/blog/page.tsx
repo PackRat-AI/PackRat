@@ -1,4 +1,4 @@
-import { Button } from 'landing-app/components/ui/button';
+import { Button } from '@packrat/web-ui/components/button';
 import { ArrowRight, BookOpen, MapPin, PackageOpen } from 'lucide-react';
 import Link from 'next/link';
 

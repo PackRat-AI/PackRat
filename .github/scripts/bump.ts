@@ -44,13 +44,13 @@ const packageFiles = glob.sync('**/package.json', {
   ignore: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'package.json'],
 });
 
-const VERSION_RE = /"version":\s*"[^"]*"/;
+const RE_VERSION_FIELD = /"version":\s*"[^"]*"/;
 
 // Update all package.json files
 for (const file of packageFiles) {
   try {
     const content = readFileSync(file, 'utf-8');
-    const updated = content.replace(VERSION_RE, `"version": "${newVersion}"`);
+    const updated = content.replace(RE_VERSION_FIELD, `"version": "${newVersion}"`);
     writeFileSync(file, updated);
     console.log(`✅ Updated ${file}`);
   } catch (error) {
