@@ -7,7 +7,7 @@ import { isValid, parse, parseISO } from 'date-fns';
  * Returns `null` for missing or invalid input.
  */
 export function parseLocalDate(dateString?: string): Date | null {
-  if (!dateString) return null;
+  if (!dateString || typeof dateString !== 'string') return null;
 
   const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
   if (dateOnlyPattern.test(dateString)) {
@@ -18,7 +18,6 @@ export function parseLocalDate(dateString?: string): Date | null {
   const date = parseISO(dateString);
   return isValid(date) ? date : null;
 }
-
 /**
  * Format a date string for display, returning an em-dash for missing or
  * invalid values. Uses the user's locale via `toLocaleDateString()`.
