@@ -59,7 +59,7 @@
     "recharts": "2.15.0",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
-    "vaul": "^0.9.9",
+    "vaul": "^1.1.2",
     "zod": "catalog:"
   },
   "devDependencies": {
