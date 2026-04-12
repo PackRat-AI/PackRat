@@ -70,7 +70,8 @@
         "packages/api/src/utils/weight.ts",
         "scripts/lint/**",
         "scripts/format/**",
-        ".github/scripts/**"
+        ".github/scripts/**",
+        ".github/skills/**"
       ],
       "linter": {
         "rules": {
