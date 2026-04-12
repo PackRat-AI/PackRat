@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const requestData = await request.json();
 
     // Validate request
-    const count = Number.parseInt(requestData.count) || 5;
+    const count = Number.parseInt(requestData.count, 10) || 5;
 
     if (count <= 0 || count > 20) {
       return NextResponse.json(

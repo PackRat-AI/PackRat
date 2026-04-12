@@ -11,7 +11,12 @@
       "expo-app/*": ["./apps/expo/*"],
       "app/*": ["./packages/app/*"],
       "@packrat/api/*": ["./packages/api/src/*"],
+      "@packrat/guards": ["./packages/guards/src"],
+      "@packrat/guards/*": ["./packages/guards/src/*"],
       "@packrat/ui/*": ["./packages/ui/*"],
+      "@packrat/analytics/*": ["./packages/analytics/src/*"],
+      "@packrat/web-ui": ["./packages/web-ui/src"],
+      "@packrat/web-ui/*": ["./packages/web-ui/src/*"],
       "nativewindui/*": ["./apps/expo/components/ui/*"]
     }
   },

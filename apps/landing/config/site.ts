@@ -15,7 +15,7 @@ export const siteConfig = {
   url: 'https://getpackrat.com',
   ogImage: '/og-image.jpg',
   author: 'PackRat Team',
-  twitterHandle: '@getpackrat',
+  twitterHandle: '@packratai',
   keywords: [
     'outdoor',
     'adventure',
@@ -27,31 +27,6 @@ export const siteConfig = {
     'hiking app',
     'outdoor planning',
   ],
-
-  // Color scheme
-  colors: {
-    primary: '#0F766E', // Teal
-    primaryLight: '#14B8A6', // Light teal
-    primaryDark: '#0D9488', // Dark teal
-    secondary: '#F97316', // Orange
-    secondaryLight: '#FB923C', // Light orange
-    secondaryDark: '#EA580C', // Dark orange
-    tertiary: '#8B5CF6', // Purple
-    tertiaryLight: '#A78BFA', // Light purple
-    dark: '#1E293B', // Slate 800
-    darkAlt: '#0F172A', // Slate 900
-    light: '#F8FAFC', // Slate 50
-    lightAlt: '#F1F5F9', // Slate 100
-    textPrimary: '#0F172A', // Slate 900
-    textSecondary: '#475569', // Slate 600
-    textTertiary: '#94A3B8', // Slate 400
-    gradientPrimary: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-    gradientSecondary: 'linear-gradient(135deg, #F97316 0%, #FB923C 100%)',
-    gradientTertiary: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
-    gradientDark: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
-    gradientMesh:
-      'radial-gradient(at 67% 33%, hsla(162, 77%, 40%, 0.15) 0px, transparent 50%), radial-gradient(at 33% 67%, hsla(23, 100%, 50%, 0.15) 0px, transparent 50%), radial-gradient(at 80% 80%, hsla(242, 100%, 70%, 0.15) 0px, transparent 50%), radial-gradient(at 0% 0%, hsla(343, 100%, 76%, 0.15) 0px, transparent 50%)',
-  },
 
   // Navigation
   mainNav: [
@@ -101,6 +76,8 @@ export const siteConfig = {
   hero: {
     badge: '100% Free · AI-Powered Packing Lists',
     title: 'Stop overpacking. Start adventuring.',
+    titleLine1: 'Stop overpacking.',
+    titleLine2: 'Start adventuring.',
     subtitle:
       "PackRat's AI builds your perfect packing list based on your trip, the weather, and your gear — so you carry exactly what you need and nothing you don't.",
     image: '/hero-app-preview.png',
@@ -148,7 +125,7 @@ export const siteConfig = {
         'Browse practical guides on trip planning, gear selection, and survival strategies for every adventure.',
       icon: 'Book',
       color: '#14B8A6',
-      image: '/feature-guides-ios.png',
+      image: '/images/features/guides-ios.png',
     },
     {
       id: 'trip-planning',
@@ -269,7 +246,7 @@ export const siteConfig = {
         color: '#EF4444',
         features: ['SOS Alerts', 'Contact Sharing', 'GPS Location'],
       },
-    ] as Integration[],
+    ] satisfies Integration[],
   },
 
   // Testimonials section
@@ -326,7 +303,7 @@ export const siteConfig = {
     subtitle: 'Download PackRat today and start planning your outdoor journeys with confidence.',
     appStoreLink: 'https://apps.apple.com/us/app/packrat-ai/id6499243187',
     googlePlayLink: 'https://play.google.com/store/apps/details?id=com.packratai.mobile&pli=1',
-    image: '/download-now-ios-image.png',
+    image: '/images/app/download-ios.png',
     features: [
       'Free — no hidden fees',
       'Works offline',
@@ -382,30 +359,25 @@ export const siteConfig = {
       { title: 'Careers', href: '/about#careers' },
       { title: 'Contact', href: 'mailto:hello@packratai.com' },
     ],
-    legal: [
-      { title: 'Terms', href: '#' },
-      { title: 'Privacy', href: '/privacy-policy' },
-      { title: 'Cookies', href: '#' },
-      { title: 'Licenses', href: '#' },
-    ],
+    legal: [{ title: 'Privacy', href: '/privacy-policy' }],
   },
 
   // Social links
   social: [
     {
       name: 'Twitter',
-      href: '#',
+      href: 'https://x.com/packratai',
       icon: 'Twitter',
     },
     {
       name: 'Instagram',
-      href: '#',
+      href: 'https://www.instagram.com/packratai',
       icon: 'Instagram',
     },
     {
-      name: 'Facebook',
-      href: '#',
-      icon: 'Facebook',
+      name: 'TikTok',
+      href: 'https://www.tiktok.com/@packratai',
+      icon: 'TikTok',
     },
   ] as SocialLink[],
 };

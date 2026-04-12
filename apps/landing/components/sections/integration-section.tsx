@@ -1,26 +1,13 @@
-import GradientBackground from 'landing-app/components/ui/gradient-background';
-import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
-import GradientText from 'landing-app/components/ui/gradient-text';
 import { siteConfig } from 'landing-app/config/site';
 import { LucideIcon } from 'landing-app/lib/icons';
 
 export default function IntegrationSection() {
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section id="integrations" className="py-20 md:py-28 lg:py-36 relative overflow-hidden">
-      {/* Background pattern */}
-      <GradientBackground variant="mesh" />
-
-      <div className="container px-4 md:px-8 lg:px-12">
+      <div className="container">
         <div className="mx-auto max-w-3xl text-center mb-12 md:mb-16">
-          <GradientBorderCard
-            className="inline-block py-1 px-4 text-sm font-medium mb-4"
-            containerClassName="inline-block"
-            gradientClassName="bg-gradient-to-r from-primary via-secondary to-primary"
-          >
-            <GradientText>Powerful Ecosystem</GradientText>
-          </GradientBorderCard>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <div className="apple-badge mb-4">Powerful Ecosystem</div>
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight sm:text-4xl">
             {siteConfig.integrations.title}
           </h2>
           <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -33,25 +20,21 @@ export default function IntegrationSection() {
             const Icon = LucideIcon(integration.icon);
 
             return (
-              <GradientBorderCard
-                key={integration.id}
-                className="h-full bg-card/80 backdrop-blur-sm"
-                gradientClassName={`bg-gradient-to-br from-[${integration.color}] to-transparent`}
-              >
+              <div key={integration.id} className="apple-card h-full">
                 <div className="flex items-center gap-4 mb-4">
                   <div
-                    className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-xl transition-colors duration-200"
+                    className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full"
                     style={{ background: `${integration.color}15` }}
                   >
                     {Icon && (
                       <Icon
-                        className="h-5 w-5 md:h-6 md:w-6 transition-transform duration-300 group-hover:scale-110"
+                        className="h-5 w-5 md:h-6 md:w-6"
                         style={{ color: integration.color }}
                       />
                     )}
                   </div>
                   <div>
-                    <h3 className="text-base md:text-lg font-bold text-foreground">
+                    <h3 className="text-base md:text-lg font-semibold text-foreground">
                       {integration.name}
                     </h3>
                     <p className="text-xs md:text-sm text-muted-foreground">
@@ -64,7 +47,7 @@ export default function IntegrationSection() {
                   {(integration.features ?? []).map((feature) => (
                     <div
                       key={feature}
-                      className="h-6 md:h-8 rounded-full px-2 md:px-3 flex items-center text-xs font-medium"
+                      className="h-6 md:h-7 rounded-full px-2 md:px-3 flex items-center text-xs font-medium"
                       style={{
                         background: `${integration.color}10`,
                         color: integration.color,
@@ -74,18 +57,13 @@ export default function IntegrationSection() {
                     </div>
                   ))}
                 </div>
-              </GradientBorderCard>
+              </div>
             );
           })}
         </div>
 
-        <div className="mt-12 md:mt-16 text-center">
-          <GradientText
-            className="text-base md:text-lg font-medium"
-            gradient="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient"
-          >
-            More integrations on the way — stay tuned!
-          </GradientText>
+        <div className="mt-12 md:mt-16 text-center text-base md:text-lg font-medium text-muted-foreground">
+          More integrations on the way — stay tuned!
         </div>
       </div>
     </section>

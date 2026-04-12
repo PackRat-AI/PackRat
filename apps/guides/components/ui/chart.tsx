@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import { assertDefined } from 'guides-app/lib/assertDefined';
-import { cn } from 'guides-app/lib/utils';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
 
@@ -134,7 +134,7 @@ const ChartTooltipContent = React.forwardRef<
       const [item] = payload;
       assertDefined(item);
       const key = `${labelKey || item.dataKey || item.name || 'value'}`;
-      const itemConfig = getPayloadConfigFromPayload(config, item, key);
+      const itemConfig = getPayloadConfigFromPayload(config, { payload: item, key });
       const value =
         !labelKey && typeof label === 'string'
           ? config[label as keyof typeof config]?.label || label
@@ -171,7 +171,7 @@ const ChartTooltipContent = React.forwardRef<
         <div className="grid gap-1.5">
           {payload.map((item, index) => {
             const key = `${nameKey || item.name || item.dataKey || 'value'}`;
-            const itemConfig = getPayloadConfigFromPayload(config, item, key);
+            const itemConfig = getPayloadConfigFromPayload(config, { payload: item, key });
             const indicatorColor = color || item.payload.fill || item.color;
 
             return (
@@ -267,7 +267,7 @@ const ChartLegendContent = React.forwardRef<
     >
       {payload.map((item) => {
         const key = `${nameKey || item.dataKey || 'value'}`;
-        const itemConfig = getPayloadConfigFromPayload(config, item, key);
+        const itemConfig = getPayloadConfigFromPayload(config, { payload: item, key });
 
         return (
           <div
@@ -296,7 +296,8 @@ const ChartLegendContent = React.forwardRef<
 ChartLegendContent.displayName = 'ChartLegend';
 
 // Helper to extract item config from a payload.
-function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key: string) {
+function getPayloadConfigFromPayload(config: ChartConfig, opts: { payload: unknown; key: string }) {
+  const { payload, key } = opts;
   if (typeof payload !== 'object' || payload === null) {
     return undefined;
   }
