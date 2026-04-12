@@ -1,6 +1,11 @@
 {
   "name": "packrat-monorepo",
   "version": "2.0.18",
+  "packageManager": "bun@1.3.10",
+  "engines": {
+    "bun": ">=1.3.10",
+    "node": ">=22.0.0"
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
