@@ -99,7 +99,7 @@ export default function NotificationsScreen() {
               >
                 <View className="flex-1 flex-row items-center gap-2">
                   <View className="h-8 w-8 items-center justify-center rounded-lg bg-blue-500">
-                    <Icon name="tune-vertical-variant" size={18} color="white" />
+                    <Icon name="wrench" size={18} color="white" />
                   </View>
                   <Text className="font-medium">{t('profile.configureAlertTypes')}</Text>
                 </View>
