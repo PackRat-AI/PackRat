@@ -49,7 +49,7 @@
     "framer-motion": "^12.19.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
-    "next": "^15.3.4",
+    "next": "^15.5.15",
     "next-themes": "^0.4.6",
     "react": "catalog:",
     "react-day-picker": "8.10.1",
