@@ -1,5 +1,5 @@
 import { openapi } from '@elysiajs/openapi';
-import zodToJsonSchema from 'zod-to-json-schema';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 /**
  * Shared OpenAPI plugin instance configured for the PackRat API.
