@@ -11,6 +11,7 @@
       "landing-app/*": ["./apps/landing/*"],
       "expo-app/*": ["./apps/expo/*"],
       "app/*": ["./packages/app/*"],
+      "@packrat/api/*": ["./packages/api/src/*"],
       "@packrat/guards": ["./packages/guards/src"],
       "@packrat/guards/*": ["./packages/guards/src/*"],
       "@packrat/ui/*": ["./packages/ui/*"],
@@ -30,6 +31,6 @@
     "**/.next",
     "**/.expo",
     "**/coverage",
-    "packages/api/**"
+    "packages/api/container_src"
   ]
 }
