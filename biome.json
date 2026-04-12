@@ -38,7 +38,7 @@
         "useMaxParams": {
           "level": "error",
           "options": {
-            "max": 3
+            "max": 2
           }
         },
         "noForEach": "warn"
