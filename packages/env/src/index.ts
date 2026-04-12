@@ -13,4 +13,4 @@
  */
 
 export type { NodeEnv } from './node';
-export { env, nodeEnvSchema } from './node';
+export { nodeEnv, nodeEnvSchema } from './node';

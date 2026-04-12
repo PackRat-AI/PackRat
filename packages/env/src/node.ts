@@ -63,4 +63,4 @@ export type NodeEnv = z.infer<typeof nodeEnvSchema>;
  * Typed env parsed from `process.env` at module load. Throws a Zod
  * validation error if any value fails its schema constraint.
  */
-export const env = nodeEnvSchema.parse(process.env);
+export const nodeEnv = nodeEnvSchema.parse(process.env);
