@@ -10,7 +10,6 @@
       "landing-app/*": ["./apps/landing/*"],
       "expo-app/*": ["./apps/expo/*"],
       "app/*": ["./packages/app/*"],
-      "@packrat/api": ["./packages/api/src/index.ts"],
       "@packrat/api/*": ["./packages/api/src/*"],
       "@packrat/guards": ["./packages/guards/src"],
       "@packrat/guards/*": ["./packages/guards/src/*"],
