@@ -320,9 +320,9 @@
     },
     "packages/ui": {
       "name": "@packrat/ui",
-      "version": "2.0.16",
+      "version": "2.0.17",
       "dependencies": {
-        "@packrat-ai/nativewindui": "^2.0.0",
+        "@packrat-ai/nativewindui": "2.0.1",
       },
     },
     "packages/web-ui": {
