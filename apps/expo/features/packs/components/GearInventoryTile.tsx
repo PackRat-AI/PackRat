@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import { Alert, ListItem, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -11,7 +11,7 @@ import { useUserPackItems } from '../hooks';
 export function GearInventoryTile() {
   const { t } = useTranslation();
   const router = useRouter();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const items = useUserPackItems();
 
   const handlePress = () => {

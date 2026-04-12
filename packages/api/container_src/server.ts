@@ -68,12 +68,12 @@ const TikTokImportSchema = z.object({
  */
 function detectMediaTypeAndExtension(
   response: Response,
-  buffer?: ArrayBuffer,
-  isVideo = false,
+  opts: { buffer?: ArrayBuffer; isVideo?: boolean } = {},
 ): {
   contentType: string;
   extension: string;
 } {
+  const { buffer, isVideo = false } = opts;
   // Try to get content type from headers first
   const headerContentType = response.headers.get('content-type');
 
@@ -169,9 +169,9 @@ function detectMediaTypeAndExtension(
  */
 async function downloadAndRehostImage(
   imageUrl: string,
-  contentId: string,
-  index: number,
+  opts: { contentId: string; index: number },
 ): Promise<string | null> {
+  const { contentId, index } = opts;
   if (!s3Client || !env) {
     console.warn('R2 client not available, skipping image rehosting');
     return null;
@@ -202,7 +202,9 @@ async function downloadAndRehostImage(
     const imageBuffer = await response.arrayBuffer();
 
     // Detect the actual image type and extension
-    const { contentType, extension } = detectMediaTypeAndExtension(response, imageBuffer, false);
+    const { contentType, extension } = detectMediaTypeAndExtension(response, {
+      buffer: imageBuffer,
+    });
 
     const timestamp = Date.now();
     const imageKey = `tiktok-temp/${contentId}/${timestamp}-${index}.${extension}`;
@@ -264,7 +266,7 @@ async function uploadVideoToGoogle(videoUrl: string): Promise<string | null> {
     console.log(`Video uploaded to Google AI. File URI: ${myfile.uri}, name: ${myfile.name}`);
     // Wait for ACTIVE state
     if (!myfile.name) throw new Error('Google AI upload did not return a file name');
-    await waitForFileToBeActiveGoogle(googleAi, myfile.name);
+    await waitForFileToBeActiveGoogle(googleAi, { fileName: myfile.name });
     return myfile.uri || null;
   } catch (error) {
     console.error('Failed to upload video to Google:', error);
@@ -277,9 +279,9 @@ async function uploadVideoToGoogle(videoUrl: string): Promise<string | null> {
  */
 async function waitForFileToBeActiveGoogle(
   ai: GoogleGenAI,
-  fileName: string,
-  maxWaitTimeMs: number = 300000,
+  opts: { fileName: string; maxWaitTimeMs?: number },
 ): Promise<void> {
+  const { fileName, maxWaitTimeMs = 300000 } = opts;
   const startTime = Date.now();
   while (Date.now() - startTime < maxWaitTimeMs) {
     const fileInfo = await ai.files.get({ name: fileName });
@@ -322,7 +324,7 @@ async function downloadAndRehostImages(
 
   // Process all images in parallel with best effort approach
   const results = await Promise.allSettled(
-    imageUrls.map((url, index) => downloadAndRehostImage(url, contentId, index)),
+    imageUrls.map((url, index) => downloadAndRehostImage(url, { contentId, index })),
   );
 
   const rehostedUrls: string[] = [];

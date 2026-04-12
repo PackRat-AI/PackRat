@@ -71,10 +71,7 @@ export default function NotificationsScreen() {
             </FormItem>
           </FormSection>
 
-          <FormSection
-            materialIconProps={{ name: 'weather-cloudy-alert' }}
-            title={t('profile.weatherAlerts')}
-          >
+          <FormSection materialIconProps={{ name: 'weather-cloudy-alert' }}>
             <FormItem className="ios:px-4 ios:pb-2 ios:pt-2 flex-row items-center justify-between px-2 pb-4">
               <View className="flex-1 flex-row items-center gap-2">
                 <View className="h-8 w-8 items-center justify-center rounded-lg bg-amber-500">
@@ -99,7 +96,7 @@ export default function NotificationsScreen() {
               >
                 <View className="flex-1 flex-row items-center gap-2">
                   <View className="h-8 w-8 items-center justify-center rounded-lg bg-blue-500">
-                    <Icon name="tune-vertical-variant" size={18} color="white" />
+                    <Icon name="wrench" size={18} color="white" />
                   </View>
                   <Text className="font-medium">{t('profile.configureAlertTypes')}</Text>
                 </View>

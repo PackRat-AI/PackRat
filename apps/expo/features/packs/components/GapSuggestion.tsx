@@ -1,7 +1,8 @@
-import { Button, Text, useColorScheme } from '@packrat/ui/nativewindui';
+import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useVectorSearch } from 'expo-app/features/catalog/hooks/useVectorSearch';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
+import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useState } from 'react';
 import { View } from 'react-native';
 import type { GapAnalysisItem } from '../hooks';
@@ -26,9 +27,12 @@ export function GapSuggestion({ gap, packId }: GapSuggestionProps) {
   });
 
   const handleAddItem = async (item: CatalogItem) => {
-    await addItemToPack(packId, item, {
-      consumable: gap.consumable,
-      worn: gap.worn,
+    await addItemToPack(packId, {
+      catalogItem: item,
+      data: {
+        consumable: gap.consumable,
+        worn: gap.worn,
+      },
     });
     setCatalogSuggestionsModalVisible(false);
     setIsAddressed(true);

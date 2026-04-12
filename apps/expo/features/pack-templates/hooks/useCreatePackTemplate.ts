@@ -1,3 +1,4 @@
+import { obs } from 'expo-app/lib/store';
 import { nanoid } from 'nanoid/non-secure';
 import { useCallback } from 'react';
 import { packTemplatesStore } from '../store/packTemplates';
@@ -16,8 +17,7 @@ export function useCreatePackTemplate() {
       deleted: false,
     };
 
-    // @ts-ignore: Safe because Legend-State uses Proxy
-    packTemplatesStore[id].set(newTemplate);
+    obs(packTemplatesStore, id).set(newTemplate);
   }, []);
 
   return createPackTemplate;

@@ -7,8 +7,8 @@ import {
 import { R2BucketService } from '@packrat/api/services/r2-bucket';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { asNumber, asString, isArray } from '@packrat/guards';
 import matter from 'gray-matter';
-import { isArray } from 'radash';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -92,15 +92,15 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
           id: obj.key.replace(/\.(mdx?|md)$/, ''), // Remove .mdx or .md extension
           key: obj.key,
           title:
-            (frontmatter.title as string) ||
+            asString(frontmatter.title) ||
             obj.customMetadata?.title ||
             obj.key.replace(/\.(mdx?|md)$/, '').replace(/-/g, ' '),
           category: obj.customMetadata?.category || 'general',
           categories: (frontmatter.categories as string[]) || [],
-          description: (frontmatter.description as string) || obj.customMetadata?.description || '',
-          author: frontmatter.author as string,
-          readingTime: frontmatter.readingTime as number,
-          difficulty: frontmatter.difficulty as string,
+          description: asString(frontmatter.description) || obj.customMetadata?.description || '',
+          author: asString(frontmatter.author),
+          readingTime: asNumber(frontmatter.readingTime),
+          difficulty: asString(frontmatter.difficulty),
           createdAt: obj.uploaded.toISOString(),
           updatedAt: obj.uploaded.toISOString(),
         };

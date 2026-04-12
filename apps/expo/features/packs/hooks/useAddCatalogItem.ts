@@ -11,9 +11,9 @@ export function useAddCatalogItem() {
 
   const addItemToPack = async (
     packId: string,
-    catalogItem: CatalogItem,
-    data?: Partial<PackItem>,
+    opts: { catalogItem: CatalogItem; data?: Partial<PackItem> },
   ) => {
+    const { catalogItem, data } = opts;
     setIsLoading(true);
     const cachedImageFilename = await cacheCatalogItemImage(catalogItem.images?.[0]);
 

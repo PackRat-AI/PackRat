@@ -1,8 +1,9 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { Alert, type AlertRef, Button } from '@packrat/ui/nativewindui';
+import { Alert, type AlertMethods, Button } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import { formatLocalDate } from 'expo-app/lib/utils/dateUtils';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -36,7 +37,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   const deleteTrip = useDeleteTrip();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
-  const alertRef = useRef<AlertRef>(null);
+  const alertRef = useRef<AlertMethods>(null);
   const insets = useSafeAreaInsets();
 
   const durationDays = getTripDurationDays(trip.startDate, trip.endDate);
@@ -116,6 +117,18 @@ export function TripCard({ trip, onPress }: TripCardProps) {
             <Icon name="dots-horizontal" size={20} color={colors.grey2} />
           </Button>
         </View>
+
+        {/* Dates */}
+        {(trip.startDate != null || trip.endDate != null) && (
+          <View className="flex-row items-center mt-1">
+            <Icon name="calendar-month" size={14} color={colors.primary} />
+            <Text className="ml-1 text-sm text-muted-foreground">
+              {trip.startDate != null && trip.endDate != null
+                ? `${formatLocalDate(trip.startDate ?? undefined)}→ ${formatLocalDate(trip.endDate ?? undefined)}`
+                : formatLocalDate(trip.startDate ?? trip.endDate)}
+            </Text>
+          </View>
+        )}
 
         {/* Description */}
         {trip.description && (

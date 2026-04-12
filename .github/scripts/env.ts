@@ -25,6 +25,8 @@ const envFileContent = fs.readFileSync(envFilePath, 'utf8');
  * Generate Expo .env file content
  */
 const expoOutputPath = path.join(__dirname, '..', '..', 'apps', 'expo', outputName);
+const RE_PUBLIC_PREFIX = /^PUBLIC_/;
+
 const expoFileContent = envFileContent
   .split('\n')
   .map((line) => {
@@ -32,10 +34,11 @@ const expoFileContent = envFileContent
     if (line.startsWith('PUBLIC_APP=')) {
       return 'EXPO_PUBLIC_APP=expo';
     } else if (line.startsWith('PUBLIC_')) {
-      return line.replace(/^PUBLIC_/, 'EXPO_PUBLIC_');
+      return line.replace(RE_PUBLIC_PREFIX, 'EXPO_PUBLIC_');
     } else if (line.startsWith('EXPO_PUBLIC_')) {
       return line;
     }
+    return undefined;
   })
   .join('\n');
 const expoNoTelemetry = 'EXPO_NO_TELEMETRY=true';

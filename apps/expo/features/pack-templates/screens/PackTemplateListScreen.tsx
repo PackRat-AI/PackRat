@@ -1,5 +1,5 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
-import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
+import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
@@ -11,8 +11,17 @@ import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FeaturedPacksSection } from '../components/FeaturedPacksSection';
 import { PackTemplateCard } from '../components/PackTemplateCard';
 import TemplateCreationOptions from '../components/TemplateCreationOptions';
 import { usePackTemplates } from '../hooks';
@@ -46,7 +55,7 @@ export function PackTemplateListScreen() {
   const { t } = useTranslation();
   const templateOptionsRef = useRef<BottomSheetModal>(null);
 
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const insets = useSafeAreaInsets();
 
   // Filter options with translations
@@ -111,7 +120,10 @@ export function PackTemplateListScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1 " style={{ paddingTop: insets.top }}>
+    <SafeAreaView
+      className="flex-1 "
+      style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+    >
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}
         searchBar={{
@@ -128,7 +140,10 @@ export function PackTemplateListScreen() {
         )}
       />
 
-      <View className="bg-background gap-2 px-4 pb-2" style={{ paddingTop: insets.top + 22 }}>
+      <View
+        className="bg-background gap-2 px-4 pb-2"
+        style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
+      >
         <SegmentedControl
           enabled={isAuthenticated}
           values={[t('packTemplates.all'), t('packTemplates.app'), t('packTemplates.yours')]}
@@ -153,13 +168,16 @@ export function PackTemplateListScreen() {
         stickyHeaderHiddenOnScroll
         ListHeaderComponent={
           selectedTemplateTypeIndex === 0 ? (
-            <View className="bg-background px-4 pb-2">
-              <Text className="text-muted-foreground">
-                {filteredTemplates.length}{' '}
-                {filteredTemplates.length === 1
-                  ? t('packTemplates.template')
-                  : t('packTemplates.templates')}
-              </Text>
+            <View className="bg-background">
+              <FeaturedPacksSection onTemplatePress={handleTemplatePress} />
+              <View className="px-4 pb-2">
+                <Text className="text-muted-foreground">
+                  {filteredTemplates.length}{' '}
+                  {filteredTemplates.length === 1
+                    ? t('packTemplates.template')
+                    : t('packTemplates.templates')}
+                </Text>
+              </View>
             </View>
           ) : undefined
         }

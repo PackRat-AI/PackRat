@@ -1,4 +1,4 @@
-import type { AlertRef } from '@packrat/ui/nativewindui';
+import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   AlertAnchor,
   Button,
@@ -13,6 +13,7 @@ import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
 import { useAuthActions } from 'expo-app/features/auth/hooks/useAuthActions';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
+import type { TranslationKeys } from 'expo-app/lib/i18n/types';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 import { Alert, Image, Platform, View } from 'react-native';
@@ -26,20 +27,25 @@ import { z } from 'zod';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
+const RE_HAS_UPPERCASE = /[A-Z]/;
+const RE_HAS_LOWERCASE = /[a-z]/;
+const RE_HAS_DIGIT = /[0-9]/;
+const RE_HAS_SPECIAL = /[^A-Za-z0-9]/;
+
 // Enhanced password validation schema
 const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
-  .refine((password) => /[A-Z]/.test(password), {
+  .refine((password) => RE_HAS_UPPERCASE.test(password), {
     message: 'Password must contain at least one uppercase letter',
   })
-  .refine((password) => /[a-z]/.test(password), {
+  .refine((password) => RE_HAS_LOWERCASE.test(password), {
     message: 'Password must contain at least one lowercase letter',
   })
-  .refine((password) => /[0-9]/.test(password), {
+  .refine((password) => RE_HAS_DIGIT.test(password), {
     message: 'Password must contain at least one number',
   })
-  .refine((password) => /[^A-Za-z0-9]/.test(password), {
+  .refine((password) => RE_HAS_SPECIAL.test(password), {
     message: 'Password must contain at least one special character',
   });
 
@@ -64,20 +70,20 @@ const getPasswordStrength = (password: string) => {
   if (password.length >= 8) {
     strength++;
   }
-  if (/[A-Z]/.test(password)) {
+  if (RE_HAS_UPPERCASE.test(password)) {
     strength++;
   }
-  if (/[a-z]/.test(password)) {
+  if (RE_HAS_LOWERCASE.test(password)) {
     strength++;
   }
-  if (/[0-9]/.test(password)) {
+  if (RE_HAS_DIGIT.test(password)) {
     strength++;
   }
-  if (/[^A-Za-z0-9]/.test(password)) {
+  if (RE_HAS_SPECIAL.test(password)) {
     strength++;
   }
 
-  let labelKey = 'auth.veryWeak';
+  let labelKey: TranslationKeys = 'auth.veryWeak';
   let color = 'bg-red-500';
 
   if (strength === 1) {
@@ -109,7 +115,7 @@ export default function CredentialsScreen() {
   const [focusedTextField, setFocusedTextField] = React.useState<
     'email' | 'password' | 'confirm-password' | null
   >(null);
-  const alertRef = React.useRef<AlertRef>(null);
+  const alertRef = React.useRef<AlertMethods>(null);
 
   // Get data from previous screen
   const params = useLocalSearchParams<{
@@ -139,7 +145,12 @@ export default function CredentialsScreen() {
         };
 
         // Call signup function with all user data
-        await signUp(userData.email, userData.password, userData.firstName, userData.lastName);
+        await signUp({
+          email: userData.email,
+          password: userData.password,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+        });
 
         // Navigate to verification code screen
         router.push({
@@ -287,10 +298,16 @@ export default function CredentialsScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[A-Z]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      RE_HAS_UPPERCASE.test(field.state.value)
+                                        ? 'check-circle'
+                                        : 'circle'
                                     }
                                     size={14}
-                                    color={/[A-Z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      RE_HAS_UPPERCASE.test(field.state.value)
+                                        ? '#10B981'
+                                        : '#9CA3AF'
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     {t('auth.atLeast1Uppercase')}
@@ -299,10 +316,16 @@ export default function CredentialsScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[a-z]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      RE_HAS_LOWERCASE.test(field.state.value)
+                                        ? 'check-circle'
+                                        : 'circle'
                                     }
                                     size={14}
-                                    color={/[a-z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      RE_HAS_LOWERCASE.test(field.state.value)
+                                        ? '#10B981'
+                                        : '#9CA3AF'
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     {t('auth.atLeast1Lowercase')}
@@ -311,10 +334,14 @@ export default function CredentialsScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[0-9]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      RE_HAS_DIGIT.test(field.state.value)
+                                        ? 'check-circle'
+                                        : 'circle'
                                     }
                                     size={14}
-                                    color={/[0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      RE_HAS_DIGIT.test(field.state.value) ? '#10B981' : '#9CA3AF'
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     {t('auth.atLeast1Number')}
@@ -323,13 +350,13 @@ export default function CredentialsScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[^A-Za-z0-9]/.test(field.state.value)
+                                      RE_HAS_SPECIAL.test(field.state.value)
                                         ? 'check-circle'
                                         : 'circle'
                                     }
                                     size={14}
                                     color={
-                                      /[^A-Za-z0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'
+                                      RE_HAS_SPECIAL.test(field.state.value) ? '#10B981' : '#9CA3AF'
                                     }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">

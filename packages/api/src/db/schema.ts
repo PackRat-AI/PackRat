@@ -1,5 +1,6 @@
-import { type InferInsertModel, type InferSelectModel, relations } from 'drizzle-orm';
+import { type InferInsertModel, type InferSelectModel, relations, sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -10,10 +11,11 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
   vector,
 } from 'drizzle-orm/pg-core';
-import type { ValidationError } from '../types/etl';
+import type { ValidationError } from '../types/validation';
 
 const availabilityEnum = pgEnum('availability', ['in_stock', 'out_of_stock', 'preorder']);
 
@@ -280,6 +282,45 @@ export const packTemplateItems = pgTable('pack_template_items', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Trail condition reports table
+export const trailConditionReports = pgTable(
+  'trail_condition_reports',
+  {
+    id: text('id').primaryKey(),
+    trailName: text('trail_name').notNull(),
+    trailRegion: text('trail_region'),
+    surface: text('surface').notNull(), // paved | gravel | dirt | rocky | snow | mud
+    overallCondition: text('overall_condition').notNull(), // excellent | good | fair | poor
+    hazards: jsonb('hazards').$type<string[]>().notNull().default([]),
+    waterCrossings: integer('water_crossings').notNull().default(0),
+    waterCrossingDifficulty: text('water_crossing_difficulty'), // easy | moderate | difficult
+    notes: text('notes'),
+    photos: jsonb('photos').$type<string[]>().notNull().default([]),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    tripId: text('trip_id').references(() => trips.id, { onDelete: 'set null' }),
+    deleted: boolean('deleted').notNull().default(false),
+    localCreatedAt: timestamp('local_created_at').notNull(),
+    localUpdatedAt: timestamp('local_updated_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('trail_condition_reports_user_id_idx').on(table.userId),
+    activeCreatedIdx: index('trail_condition_reports_active_created_idx').on(
+      table.deleted,
+      table.createdAt.desc(),
+    ),
+    trailNameIdx: index('trail_condition_reports_trail_name_idx').on(table.trailName),
+    // Partial index used to keep trip deletes (ON DELETE SET NULL) fast by
+    // avoiding a sequential scan on trail_condition_reports.
+    tripIdIdx: index('trail_condition_reports_trip_id_idx')
+      .on(table.tripId)
+      .where(sql`${table.tripId} IS NOT NULL`),
+  }),
+);
+
 export const trips = pgTable('trips', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -504,9 +545,150 @@ export type NewPackTemplate = InferInsertModel<typeof packTemplates>;
 export type PackTemplateItem = InferSelectModel<typeof packTemplateItems>;
 export type NewPackTemplateItem = InferInsertModel<typeof packTemplateItems>;
 
+export const trailConditionReportsRelations = relations(trailConditionReports, ({ one }) => ({
+  user: one(users, {
+    fields: [trailConditionReports.userId],
+    references: [users.id],
+  }),
+  trip: one(trips, {
+    fields: [trailConditionReports.tripId],
+    references: [trips.id],
+  }),
+}));
+
+export type TrailConditionReport = InferSelectModel<typeof trailConditionReports>;
+export type NewTrailConditionReport = InferInsertModel<typeof trailConditionReports>;
+
 export type Trip = InferSelectModel<typeof trips>;
 export type NewTrip = InferInsertModel<typeof trips>;
 
 export type PackTemplateWithItems = PackTemplate & {
   items: PackTemplateItem[];
 };
+
+// Social Feed tables
+
+// Posts table
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  caption: text('caption'),
+  images: jsonb('images').$type<string[]>().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Post likes table
+export const postLikes = pgTable(
+  'post_likes',
+  {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id')
+      .references(() => posts.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniquePostUser: unique('post_likes_post_id_user_id_unique').on(table.postId, table.userId),
+  }),
+);
+
+// Post comments table
+export const postComments = pgTable('post_comments', {
+  id: serial('id').primaryKey(),
+  postId: integer('post_id')
+    .references(() => posts.id, { onDelete: 'cascade' })
+    .notNull(),
+  userId: integer('user_id')
+    .references(() => users.id, { onDelete: 'cascade' })
+    .notNull(),
+  content: text('content').notNull(),
+  parentCommentId: integer('parent_comment_id').references((): AnyPgColumn => postComments.id, {
+    onDelete: 'cascade',
+  }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Comment likes table
+export const commentLikes = pgTable(
+  'comment_likes',
+  {
+    id: serial('id').primaryKey(),
+    commentId: integer('comment_id')
+      .references(() => postComments.id, { onDelete: 'cascade' })
+      .notNull(),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueCommentUser: unique('comment_likes_comment_id_user_id_unique').on(
+      table.commentId,
+      table.userId,
+    ),
+  }),
+);
+
+// Relations
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  user: one(users, {
+    fields: [posts.userId],
+    references: [users.id],
+  }),
+  likes: many(postLikes),
+  comments: many(postComments),
+}));
+
+export const postLikesRelations = relations(postLikes, ({ one }) => ({
+  post: one(posts, {
+    fields: [postLikes.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postCommentsRelations = relations(postComments, ({ one, many }) => ({
+  post: one(posts, {
+    fields: [postComments.postId],
+    references: [posts.id],
+  }),
+  user: one(users, {
+    fields: [postComments.userId],
+    references: [users.id],
+  }),
+  likes: many(commentLikes),
+}));
+
+export const commentLikesRelations = relations(commentLikes, ({ one }) => ({
+  comment: one(postComments, {
+    fields: [commentLikes.commentId],
+    references: [postComments.id],
+  }),
+  user: one(users, {
+    fields: [commentLikes.userId],
+    references: [users.id],
+  }),
+}));
+
+// Infer types for social feed
+export type Post = InferSelectModel<typeof posts>;
+export type NewPost = InferInsertModel<typeof posts>;
+
+export type PostLike = InferSelectModel<typeof postLikes>;
+export type NewPostLike = InferInsertModel<typeof postLikes>;
+
+export type PostComment = InferSelectModel<typeof postComments>;
+export type NewPostComment = InferInsertModel<typeof postComments>;
+
+export type CommentLike = InferSelectModel<typeof commentLikes>;
+export type NewCommentLike = InferInsertModel<typeof commentLikes>;

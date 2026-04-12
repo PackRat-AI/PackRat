@@ -89,6 +89,7 @@ export class ImageDetectionService {
   /**
    * Detect items in an image and find matching catalog items
    */
+
   async detectAndMatchItems(
     imageUrl: string,
     matchLimit: number = 3,
