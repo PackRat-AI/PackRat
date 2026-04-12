@@ -50,7 +50,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
     const { q: query, limit = 10, offset = 0 } = c.req.valid('query');
 
     const catalogService = new CatalogService(c);
-    const result = await catalogService.vectorSearch(query, limit, offset);
+    const result = await catalogService.vectorSearch(query, { limit, offset });
 
     return c.json(result, 200);
   } catch (error) {

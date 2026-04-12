@@ -142,7 +142,7 @@ describe('Generate From TikTok Routes', () => {
     it('requires auth for generate-from-tiktok endpoint', async () => {
       const res = await api(
         '/pack-templates/generate-from-tiktok',
-        httpMethods.post('', {
+        httpMethods.post({
           tiktokUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
@@ -154,7 +154,7 @@ describe('Generate From TikTok Routes', () => {
     it('returns 403 for non-admin users', async () => {
       const res = await apiWithAuth(
         '/pack-templates/generate-from-tiktok',
-        httpMethods.post('', {
+        httpMethods.post({
           tiktokUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
@@ -169,7 +169,7 @@ describe('Generate From TikTok Routes', () => {
     it('requires tiktokUrl field', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-tiktok',
-        httpMethods.post('', {}),
+        httpMethods.post({}),
       );
       expectBadRequest(res);
     });
@@ -177,7 +177,7 @@ describe('Generate From TikTok Routes', () => {
     it('requires valid URL format', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-tiktok',
-        httpMethods.post('', {
+        httpMethods.post({
           tiktokUrl: 'not-a-valid-url',
         }),
       );
@@ -201,7 +201,7 @@ describe('Generate From TikTok Routes', () => {
 
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-tiktok',
-        httpMethods.post('', {
+        httpMethods.post({
           tiktokUrl: 'https://www.tiktok.com/@user/video/1234567890',
         }),
       );
@@ -218,7 +218,7 @@ describe('Generate From TikTok Routes', () => {
     it('successfully generates template from TikTok URL', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-tiktok',
-        httpMethods.post('', {
+        httpMethods.post({
           tiktokUrl: 'https://www.tiktok.com/@user/video/9999999999',
         }),
       );
@@ -246,7 +246,7 @@ describe('Generate From TikTok Routes', () => {
     it('accepts isAppTemplate flag', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-tiktok',
-        httpMethods.post('', {
+        httpMethods.post({
           tiktokUrl: 'https://www.tiktok.com/@user/video/6666666666',
           isAppTemplate: false,
         }),
@@ -260,7 +260,7 @@ describe('Generate From TikTok Routes', () => {
     it('returns items with matched catalog data when available', async () => {
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-tiktok',
-        httpMethods.post('', {
+        httpMethods.post({
           tiktokUrl: 'https://www.tiktok.com/@user/video/5555555555',
         }),
       );

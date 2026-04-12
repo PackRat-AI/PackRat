@@ -46,9 +46,8 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
+      // biome-ignore lint/suspicious/noExplicitAny: expo-sqlite KVStore type incompatibility with legendapp persist plugin
       plugin: observablePersistSqlite(Storage as any),
-      retrySync: true,
-      name: 'packs',
     },
     waitFor: isAuthed,
     waitForSet: isAuthed,
