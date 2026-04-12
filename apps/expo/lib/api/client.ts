@@ -85,7 +85,8 @@ async function refreshAccessToken(): Promise<string | null> {
 // Fetch wrapper with auth + 401 retry
 // ---------------------------------------------------------------------------
 
-type Params = Record<string, string | number | boolean | undefined | null>;
+// biome-ignore lint/suspicious/noExplicitAny: params may contain nested objects (e.g. sort)
+type Params = Record<string, any>;
 type HeaderMap = Record<string, string>;
 
 type RequestConfig = {

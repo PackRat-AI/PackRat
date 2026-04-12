@@ -40,11 +40,12 @@ export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
         if (!payload) {
           return status(401, { error: 'Invalid token' });
         }
+        const { userId: _uid, role: _role, ...rest } = payload;
         return {
           user: {
             userId: Number(payload.userId),
             role: (payload.role as 'USER' | 'ADMIN') ?? 'USER',
-            ...payload,
+            ...rest,
           } as AuthUser,
         };
       }
@@ -75,11 +76,12 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(au
       if (payload.role !== 'ADMIN') {
         return status(403, { error: 'Forbidden' });
       }
+      const { userId: _uid, role: _role, ...rest } = payload;
       return {
         user: {
           userId: Number(payload.userId),
           role: 'ADMIN' as const,
-          ...payload,
+          ...rest,
         } as AuthUser,
       };
     },
@@ -92,7 +94,7 @@ export const adminAuthPlugin = new Elysia({ name: 'packrat-admin-auth' }).use(au
 export const apiKeyAuthPlugin = new Elysia({ name: 'packrat-api-key-auth' }).macro({
   isValidApiKey: {
     resolve: ({ request }: { request: Request }) => {
-      if (isValidApiKey(request.headers)) return true;
+      if (isValidApiKey(request.headers)) return { authorized: true };
       return status(401, { error: 'Unauthorized' });
     },
   },

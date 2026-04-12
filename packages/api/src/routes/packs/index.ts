@@ -90,14 +90,15 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const db = createDb();
       const data = body;
 
-      if (!data.id) return status(400, { error: 'Pack ID is required' });
+      const packId = data.id as string;
+      if (!packId) return status(400, { error: 'Pack ID is required' });
 
       const [newPack] = await db
         .insert(packs)
         .values({
-          id: data.id,
+          id: packId,
           userId: user.userId,
-          name: data.name,
+          name: data.name as string,
           description: data.description,
           category: data.category,
           isPublic: data.isPublic,
