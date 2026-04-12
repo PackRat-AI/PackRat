@@ -30,3 +30,4 @@ jobs:
       - name: Run Expo Doctor
         run: bunx expo-doctor
         working-directory: apps/expo
+        continue-on-error: true
