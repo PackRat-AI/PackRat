@@ -31,15 +31,16 @@ import type { Pack, PackItem } from '../types';
 export function PackDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  const isOwnedByUser = usePackOwnershipCheck(id as string);
+  const isOwnedByUser = usePackOwnershipCheck(id);
 
   const DEFAULT_TAB = 'all';
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
-    obs(packingModeStore, id as string).get() || {},
+    obs(packingModeStore, id).get() || {},
   );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
@@ -56,7 +57,7 @@ export function PackDetailScreen() {
     reset: resetAnalysis,
   } = usePackGapAnalysis();
 
-  const packFromStore = usePackDetailsFromStore(id as string);
+  const packFromStore = usePackDetailsFromStore(id);
   const {
     pack: packFromApi,
     isLoading,
@@ -64,7 +65,7 @@ export function PackDetailScreen() {
     error,
     refetch,
   } = usePackDetailsFromApi({
-    id: id as string,
+    id,
     enabled: !isOwnedByUser,
   });
 
@@ -100,7 +101,7 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    obs(packingModeStore, id as string).set({ ...packedItems });
+    obs(packingModeStore, id).set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
     Burnt.toast({
@@ -113,10 +114,10 @@ export function PackDetailScreen() {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-      setPackedItems(obs(packingModeStore, id as string).get() || {});
+      setPackedItems(obs(packingModeStore, id).get() || {});
     };
 
-    const packingState = obs(packingModeStore, id as string).get() || {};
+    const packingState = obs(packingModeStore, id).get() || {};
 
     if (
       Object.entries(packedItems).every(([key, val]) =>
@@ -218,7 +219,7 @@ export function PackDetailScreen() {
     resetAnalysis();
     setIsGapAnalysisModalVisible(true);
     analyzeGaps({
-      packId: id as string,
+      packId: id,
       context: {
         destination: location?.name,
         tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
@@ -230,7 +231,7 @@ export function PackDetailScreen() {
   const handleRetryAnalysis = () => {
     resetAnalysis();
     analyzeGaps({
-      packId: id as string,
+      packId: id,
       context: {
         destination: location?.name,
         tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
