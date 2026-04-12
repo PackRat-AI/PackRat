@@ -103,19 +103,25 @@ features/{name}/
 
 ## Private Package Auth
 
-`@packrat-ai/nativewindui` is hosted on GitHub Packages. Requires:
+`@packrat-ai/nativewindui` is hosted on GitHub Packages. The `preinstall` script (`configure-deps.ts`) automatically pulls your token from the GitHub CLI:
 
 ```bash
-export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=ghp_...  # GitHub PAT with read:packages scope
+# One-time setup
+gh auth login
+gh auth refresh -h github.com -s read:packages
+
+# Then bun install works — the preinstall script runs `gh auth token` automatically
+bun install
 ```
 
-Configured in `bunfig.toml`:
-```toml
-[install.scopes]
-"@packrat-ai" = { url = "https://npm.pkg.github.com", token = "$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN" }
+`bunfig.toml` references `$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`, which the preinstall script sets from `gh auth token` at install time.
+
+For CI or environments without `gh` CLI (e.g. Claude Code web), set the env var directly:
+```bash
+PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=<token from `gh auth token`>
 ```
 
-If you get 401 errors during `bun install`, this token is missing or expired.
+If you get 401 errors during `bun install`, either `gh` isn't authenticated or the token is missing/expired.
 
 ## Path Aliases
 
