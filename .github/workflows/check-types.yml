@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   check-types:
@@ -20,10 +21,22 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
       - name: Check Types
+        id: tsc
         run: |
-          bun check-types 2>&1 | tee /tmp/tsc-output.txt || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          head -200 /tmp/tsc-output.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          # Now fail if tsc failed
+          bun check-types 2>&1 | head -80 > /tmp/tsc-output.txt || true
+          echo "errors<<TSCEOF" >> $GITHUB_OUTPUT
+          cat /tmp/tsc-output.txt >> $GITHUB_OUTPUT
+          echo "TSCEOF" >> $GITHUB_OUTPUT
           bun check-types
+      - name: Post tsc errors on failure
+        if: failure() && steps.tsc.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errors = `${{ steps.tsc.outputs.errors }}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `### check-types failure\n\`\`\`\n${errors}\n\`\`\``
+            });
