@@ -1,20 +1,15 @@
 import { openapi } from '@elysiajs/openapi';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 /**
  * Shared OpenAPI plugin instance configured for the PackRat API.
  *
- * `mapJsonSchema.zod` tells the OpenAPI plugin how to convert our Zod v3
- * schemas into JSON Schema so Scalar/Swagger get full request/response
- * documentation. We use the `zod-to-json-schema` package since the native
- * `z.toJSONSchema()` requires Zod v4.
+ * Elysia 1.4's OpenAPI plugin generates docs from Zod schemas via Standard
+ * Schema introspection. The `zod-to-json-schema` mapper can be added later
+ * for richer schema detail once we verify the exact type contract.
  */
 export const packratOpenApi = openapi({
   path: '/scalar',
   specPath: '/doc',
-  mapJsonSchema: {
-    zod: zodToJsonSchema,
-  },
   documentation: {
     openapi: '3.1.0',
     info: {
