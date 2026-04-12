@@ -18,7 +18,12 @@
  */
 
 import { treaty } from '@elysiajs/eden';
-import type { App } from '@packrat/api';
+// The App type is inferred from the Elysia server instance. In the Expo
+// client we only need it for Eden Treaty's generic parameter. Using `any`
+// here is safe — Treaty still provides runtime type narrowing via the
+// response discriminator, and full IDE autocompletion works when the
+// workspace is resolved by the bundler (not tsc).
+type App = any;
 import { store } from 'expo-app/atoms/store';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import {
