@@ -90,27 +90,27 @@ describe('Packs Routes', () => {
 
   describe('Authentication', () => {
     it('GET /packs requires auth', async () => {
-      const res = await api('/packs', httpMethods.get(''));
+      const res = await api('/packs', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('GET /packs/:id requires auth', async () => {
-      const res = await api('/packs/1', httpMethods.get(''));
+      const res = await api('/packs/1', httpMethods.get());
       expectUnauthorized(res);
     });
 
     it('POST /packs requires auth', async () => {
-      const res = await api('/packs', httpMethods.post('', {}));
+      const res = await api('/packs', httpMethods.post({}));
       expectUnauthorized(res);
     });
 
     it('PUT /packs/:id requires auth', async () => {
-      const res = await api('/packs/1', httpMethods.put('', {}));
+      const res = await api('/packs/1', httpMethods.put({}));
       expectUnauthorized(res);
     });
 
     it('DELETE /packs/:id requires auth', async () => {
-      const res = await api('/packs/1', httpMethods.delete(''));
+      const res = await api('/packs/1', httpMethods.delete());
       expectUnauthorized(res);
     });
   });
@@ -160,7 +160,7 @@ describe('Packs Routes', () => {
         localUpdatedAt: new Date().toISOString(),
       };
 
-      const res = await apiWithAuth('/packs', httpMethods.post('', newPack));
+      const res = await apiWithAuth('/packs', httpMethods.post(newPack));
 
       expect([200, 201]).toContain(res.status);
       const data = await expectJsonResponse(res, ['id']);
@@ -168,14 +168,14 @@ describe('Packs Routes', () => {
     });
 
     it('validates required fields', async () => {
-      const res = await apiWithAuth('/packs', httpMethods.post('', {}));
+      const res = await apiWithAuth('/packs', httpMethods.post({}));
       expectBadRequest(res);
     });
 
     it('validates name field', async () => {
       const res = await apiWithAuth(
         '/packs',
-        httpMethods.post('', {
+        httpMethods.post({
           id: `pack_test_${Date.now()}`,
           description: 'Pack without name',
           category: 'hiking',
@@ -195,7 +195,7 @@ describe('Packs Routes', () => {
         activity: 'backpacking',
       };
 
-      const res = await apiWithAuth(`/packs/${testPackId}`, httpMethods.put('', updateData));
+      const res = await apiWithAuth(`/packs/${testPackId}`, httpMethods.put(updateData));
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
@@ -205,7 +205,7 @@ describe('Packs Routes', () => {
     it('returns 404 for non-existent pack', async () => {
       const res = await apiWithAuth(
         '/packs/non_existent_pack_id_999',
-        httpMethods.put('', {
+        httpMethods.put({
           name: 'Updated Pack',
         }),
       );
@@ -228,7 +228,7 @@ describe('Packs Routes', () => {
 
       const res = await apiWithAuth(
         `/packs/${otherUserPack.id}`,
-        httpMethods.put('', {
+        httpMethods.put({
           name: 'Attempting to update',
         }),
       );
@@ -247,13 +247,13 @@ describe('Packs Routes', () => {
         category: 'hiking',
       });
 
-      const res = await apiWithAuth(`/packs/${packToDelete.id}`, httpMethods.delete(''));
+      const res = await apiWithAuth(`/packs/${packToDelete.id}`, httpMethods.delete());
 
       expect([200, 204]).toContain(res.status);
     });
 
     it('returns 404 for non-existent pack', async () => {
-      const res = await apiWithAuth('/packs/non_existent_pack_id_999', httpMethods.delete(''));
+      const res = await apiWithAuth('/packs/non_existent_pack_id_999', httpMethods.delete());
       // Soft delete might return 200 even for non-existent packs
       expect([200, 404]).toContain(res.status);
     });
@@ -272,7 +272,7 @@ describe('Packs Routes', () => {
         category: 'hiking',
       });
 
-      const res = await apiWithAuth(`/packs/${otherUserPack.id}`, httpMethods.delete(''));
+      const res = await apiWithAuth(`/packs/${otherUserPack.id}`, httpMethods.delete());
 
       // Should return 404 (not found for this user) or 403 (forbidden)
       expect([403, 404]).toContain(res.status);
@@ -303,7 +303,7 @@ describe('Packs Routes', () => {
           notes: 'Extra item for safety',
         };
 
-        const res = await apiWithAuth(`/packs/${testPackId}/items`, httpMethods.post('', newItem));
+        const res = await apiWithAuth(`/packs/${testPackId}/items`, httpMethods.post(newItem));
 
         expect([200, 201]).toContain(res.status);
         const data = await expectJsonResponse(res, ['id']);
@@ -311,7 +311,7 @@ describe('Packs Routes', () => {
       });
 
       it('validates required fields', async () => {
-        const res = await apiWithAuth(`/packs/${testPackId}/items`, httpMethods.post('', {}));
+        const res = await apiWithAuth(`/packs/${testPackId}/items`, httpMethods.post({}));
         expectBadRequest(res);
       });
     });
@@ -325,7 +325,7 @@ describe('Packs Routes', () => {
 
         const res = await apiWithAuth(
           `/packs/items/${testPackItemId}`,
-          httpMethods.patch('', updateData),
+          httpMethods.patch(updateData),
         );
 
         expect(res.status).toBe(200);
@@ -341,7 +341,7 @@ describe('Packs Routes', () => {
           category: 'gear',
         });
 
-        const res = await apiWithAuth(`/packs/items/${itemToDelete.id}`, httpMethods.delete(''));
+        const res = await apiWithAuth(`/packs/items/${itemToDelete.id}`, httpMethods.delete());
 
         expect([200, 204]).toContain(res.status);
       });
@@ -354,16 +354,13 @@ describe('Packs Routes', () => {
         count: 2,
       };
 
-      const res = await apiWithAdmin(
-        '/packs/generate-packs',
-        httpMethods.post('', generateRequest),
-      );
+      const res = await apiWithAdmin('/packs/generate-packs', httpMethods.post(generateRequest));
 
       expect(res.status).toBe(200);
     });
 
     it('uses default params', async () => {
-      const res = await apiWithAdmin('/packs/generate-packs', httpMethods.post('', {}));
+      const res = await apiWithAdmin('/packs/generate-packs', httpMethods.post({}));
 
       expect(res.status).toBe(200);
     });
@@ -371,7 +368,7 @@ describe('Packs Routes', () => {
     it('requires admin privileges', async () => {
       const res = await apiWithAuth(
         '/packs/generate-packs',
-        httpMethods.post('', {
+        httpMethods.post({
           count: 1,
         }),
       );

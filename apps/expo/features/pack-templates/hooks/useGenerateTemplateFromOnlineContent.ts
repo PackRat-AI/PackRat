@@ -1,8 +1,10 @@
 import { useMutation } from '@tanstack/react-query';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { obs } from 'expo-app/lib/store';
+import { isWeightUnit } from 'expo-app/lib/utils/itemCalculations';
 import { packTemplateItemsStore } from '../store/packTemplateItems';
 import { packTemplatesStore } from '../store/packTemplates';
-import type { PackTemplateInStore } from '../types';
+import type { PackTemplateInStore, PackTemplateItem } from '../types';
 
 export interface GenerateFromOnlineContentInput {
   contentUrl: string;
@@ -83,11 +85,31 @@ export function useGenerateTemplateFromOnlineContent() {
     },
     onSuccess: (data) => {
       const { items, ...template } = data;
-      // @ts-ignore: Safe because Legend-State uses Proxy
-      packTemplatesStore[template.id].set(template);
+      obs(packTemplatesStore, template.id).set(template);
       for (const item of items) {
-        // @ts-ignore: Safe because Legend-State uses Proxy
-        packTemplateItemsStore[item.id].set(item);
+        if (!isWeightUnit(item.weightUnit)) {
+          throw new Error(`Unsupported weightUnit "${item.weightUnit}" for item ${item.id}`);
+        }
+        const storeItem: PackTemplateItem = {
+          id: item.id,
+          packTemplateId: item.packTemplateId,
+          name: item.name,
+          description: item.description ?? undefined,
+          weight: item.weight,
+          weightUnit: item.weightUnit,
+          quantity: item.quantity,
+          category: item.category ?? '',
+          consumable: item.consumable,
+          worn: item.worn,
+          image: item.image ?? undefined,
+          notes: item.notes ?? undefined,
+          catalogItemId: item.catalogItemId ?? undefined,
+          userId: item.userId,
+          deleted: item.deleted,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        };
+        obs(packTemplateItemsStore, item.id).set(storeItem);
       }
     },
   });

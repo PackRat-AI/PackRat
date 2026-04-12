@@ -1,0 +1,33 @@
+appId: ${APP_ID}
+---
+# AI Chat Dashboard Flow: Verifies AI tile exists and documents BUG-8
+# BUG-8: AI chat shows "Login Required" even when logged in AND destroys the session
+# BUG-3: No back button in AI chat (GH issue #1945)
+# NOTE: This test intentionally does NOT tap the AI tile to avoid session destruction
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Dashboard
+- tapOn:
+    text: "Dashboard"
+- waitForAnimationToEnd
+
+# Scroll to find the PackRat AI tile — verifies it renders
+- scrollUntilVisible:
+    element:
+      text: "PackRat AI"
+    direction: DOWN
+
+# Assert the tile is present
+- assertVisible:
+    text: "PackRat AI"
+
+# Do NOT tap — BUG-8 causes "Login Required" which destroys the user session
+# When BUG-8 is fixed, uncomment the following to test AI chat:
+# - tapOn:
+#     text: "PackRat AI"
+# - waitForAnimationToEnd
+# - assertVisible:
+#     text: ".*AI.*"
+# - back
+# - waitForAnimationToEnd

@@ -1,10 +1,7 @@
 import type { NewCatalogItem } from '@packrat/api/db/schema';
+import type { ValidationError } from './validation';
 
-export interface ValidationError {
-  field: string;
-  reason: string;
-  value?: string | number | boolean | null | undefined;
-}
+export type { ValidationError } from './validation';
 
 export interface ValidatedCatalogItem {
   item: Partial<NewCatalogItem>;

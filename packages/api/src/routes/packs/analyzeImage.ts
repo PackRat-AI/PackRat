@@ -89,8 +89,9 @@ analyzeImageRoutes.openapi(analyzeImageRoute, async (c) => {
       Bucket: PACKRAT_BUCKET_R2_BUCKET_NAME,
       Key: image,
     });
-    const imageUrl = await getPresignedUrl(c, command, {
-      expiresIn: 3600,
+    const imageUrl = await getPresignedUrl(c, {
+      command,
+      signOptions: { expiresIn: 3600 },
     });
 
     const imageDetectionService = new ImageDetectionService(c);

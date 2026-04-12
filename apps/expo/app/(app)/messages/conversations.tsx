@@ -1,3 +1,4 @@
+import { assertDefined } from '@packrat/guards';
 import {
   Avatar,
   AvatarFallback,
@@ -17,7 +18,6 @@ import {
 import { Icon } from '@roninoss/icons';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as React from 'react';
@@ -113,19 +113,18 @@ function LeftView({
       createDropdownItem({
         actionKey: 'go-home',
         title: 'Go Home',
-        icon: { name: 'home' },
+        icon: { name: 'house.fill' },
       }),
       createDropdownItem({
         actionKey: 'select-messages',
         title: 'Select messages',
-        icon: { name: 'checkmark.circle', namingScheme: 'sfSymbol' },
+        icon: { name: 'checkmark.circle' },
       }),
       createDropdownItem({
         actionKey: 'toggle-theme',
         title: 'Toggle Theme',
         icon: {
           name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
-          namingScheme: 'sfSymbol',
         },
       }),
     ];
@@ -188,6 +187,8 @@ function RightView() {
   );
 }
 
+const RE_WHITESPACE = /\s+/;
+
 const SEARCH_BAR = {
   iosHideWhenScrolling: true,
   content: (
@@ -220,12 +221,12 @@ const CONTEXT_MENU_ITEMS = [
   createContextItem({
     actionKey: 'hide-alerts',
     title: 'Hide Alerts',
-    icon: { name: 'bell-outline' },
+    icon: { name: 'bell' },
   }),
   createContextItem({
     actionKey: 'delete',
     title: 'Delete',
-    icon: { name: 'trash-can-outline', color: 'red' },
+    icon: { name: 'trash', color: 'red' },
     destructive: true,
   }),
 ];
@@ -377,7 +378,7 @@ const renderIosContextMenuPreview = (info: { item: (typeof ITEMS)[number] }) => 
 };
 
 function getInitials(name: string): string {
-  const nameParts = name.trim().split(/\s+/);
+  const nameParts = name.trim().split(RE_WHITESPACE);
   const firstPart = nameParts[0];
   assertDefined(firstPart);
   const firstInitial = firstPart.charAt(0).toUpperCase();

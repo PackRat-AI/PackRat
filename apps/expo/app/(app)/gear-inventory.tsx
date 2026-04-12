@@ -1,10 +1,10 @@
+import { assertDefined } from '@packrat/guards';
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { useUserPackItems } from 'expo-app/features/packs/hooks/useUserPackItems';
 import type { PackItem } from 'expo-app/features/packs/types';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

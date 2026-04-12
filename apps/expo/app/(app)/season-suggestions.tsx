@@ -1,3 +1,4 @@
+import { assertDefined } from '@packrat/guards';
 import { Button, LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
@@ -8,7 +9,6 @@ import {
 import { LocationPicker } from 'expo-app/features/weather/components';
 import type { WeatherLocation } from 'expo-app/features/weather/types';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { assertDefined } from 'expo-app/utils/typeAssertions';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';

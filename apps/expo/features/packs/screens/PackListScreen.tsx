@@ -1,4 +1,4 @@
-import type { LargeTitleSearchBarRef } from '@packrat/ui/nativewindui';
+import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
   Button,
@@ -66,7 +66,7 @@ export function PackListScreen() {
   );
   const allPacksQuery = useAllPacks(selectedTypeIndex === ALL_PACKS_INDEX);
 
-  const searchBarRef = useRef<LargeTitleSearchBarRef>(null);
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
 
   const { colors } = useColorScheme();
 
@@ -215,7 +215,11 @@ export function PackListScreen() {
         stickyHeaderIndices={[0]}
         renderItem={({ item: pack }) => (
           <View className="px-4 pt-4">
-            <PackCard pack={pack} onPress={handlePackPress} />
+            <PackCard
+              pack={pack}
+              onPress={handlePackPress}
+              showDuplicateButton={selectedTypeIndex === ALL_PACKS_INDEX}
+            />
           </View>
         )}
         refreshControl={

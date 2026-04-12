@@ -132,7 +132,9 @@ export default function WeatherAlertPreferencesScreen() {
                   <View className="flex-1 flex-row items-center gap-3">
                     <View
                       className="h-8 w-8 items-center justify-center rounded-lg"
-                      style={{ backgroundColor: alertTypesDisabled ? colors.grey3 : iconColor }}
+                      style={{
+                        backgroundColor: alertTypesDisabled ? colors.grey3 : iconColor,
+                      }}
                     >
                       <Icon name={iconName as never} size={18} color="white" />
                     </View>

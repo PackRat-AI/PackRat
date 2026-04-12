@@ -1,0 +1,65 @@
+appId: ${APP_ID}
+---
+# Add Item via In-Pack Catalog Flow: Tests BUG-7 — in-pack catalog add doesn't persist
+# Different from add-item-catalog-flow.yaml which uses the main Catalog tab
+- launchApp
+- waitForAnimationToEnd
+
+# Navigate to Packs tab
+- tapOn:
+    text: "Packs"
+- waitForAnimationToEnd
+
+# Tap into Maestro Test Pack
+- tapOn:
+    text: "Maestro Test Pack"
+- waitForAnimationToEnd
+
+# Assert pack detail loaded
+- assertVisible:
+    text: "Pack Details"
+
+# Tap Add Item
+- tapOn:
+    text: "Add Item"
+- waitForAnimationToEnd
+
+# Assert bottom sheet with options
+- assertVisible:
+    text: "Add Manually"
+- assertVisible:
+    text: "Add from Catalog"
+
+# Select Add from Catalog (within pack context)
+- tapOn:
+    text: "Add from Catalog"
+- waitForAnimationToEnd
+
+# Wait for the in-pack catalog browser to load
+- extendedWaitUntil:
+    visible:
+      text: "Browse Catalog"
+    timeout: 10000
+
+# Verify catalog items are shown
+- assertVisible:
+    text: "All"
+
+# Tap a catalog item to toggle it
+- scrollUntilVisible:
+    element:
+      text: ".*Altra.*"
+    direction: DOWN
+
+- tapOn:
+    text: ".*Altra.*"
+- waitForAnimationToEnd
+
+# BUG-7: The item's icon changes (visual toggle) but doesn't persist
+# Go back to pack detail
+- back
+- waitForAnimationToEnd
+
+# Go back to packs list
+- back
+- waitForAnimationToEnd

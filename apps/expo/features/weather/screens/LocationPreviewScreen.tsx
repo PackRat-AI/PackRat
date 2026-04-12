@@ -76,7 +76,6 @@ export default function LocationPreviewScreen() {
   };
 
   // Load weather data on initial render
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need this to only run on initial render hence the empty deps list
   useEffect(() => {
     loadWeatherData();
   }, []);

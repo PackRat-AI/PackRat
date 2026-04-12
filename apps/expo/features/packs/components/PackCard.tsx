@@ -1,13 +1,13 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
+import { isArray } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
-import { isArray } from 'radash';
-import { Alert, Image, Pressable, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useDeletePack, usePackDetailsFromStore } from '../hooks';
+import { useDeletePack, useDuplicatePack, usePackDetailsFromStore } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import type { Pack, PackInStore } from '../types';
 
@@ -15,10 +15,17 @@ type PackCardProps = {
   pack: Pack | PackInStore;
   onPress?: (pack: Pack) => void;
   isGenUI?: boolean; // Used to tweak styling & layout when card is being used in a generative UI context.
+  showDuplicateButton?: boolean;
 };
 
-export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardProps) {
+export function PackCard({
+  pack: packArg,
+  onPress,
+  isGenUI = false,
+  showDuplicateButton = false,
+}: PackCardProps) {
   const deletePack = useDeletePack();
+  const { duplicatePack, isLoading: isDuplicating } = useDuplicatePack();
   const { colors } = useColorScheme();
   const { showActionSheetWithOptions } = useActionSheet();
   const insets = useSafeAreaInsets();
@@ -119,18 +126,64 @@ export function PackCard({ pack: packArg, onPress, isGenUI = false }: PackCardPr
           </Text>
         </View>
 
-        {pack.tags && isArray(pack.tags) && pack.tags.length > 0 && (
-          <View className="mt-3 flex-row flex-wrap">
-            {pack.tags.map((tag) => (
-              <View
-                key={tag}
-                className="mb-1 mr-2 rounded-full bg-neutral-200 px-2 py-1 dark:bg-neutral-700"
+        <View className="flex-row items-baseline justify-between">
+          {pack.tags && isArray(pack.tags) && pack.tags.length > 0 ? (
+            <View className="mt-3 flex-row flex-wrap">
+              {pack.tags.map((tag) => (
+                <View key={tag} className="mb-1 mr-2 rounded-full bg-background px-2 py-1">
+                  <Text className="text-xs text-foreground">#{tag}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          <View className="ml-auto flex-row items-center gap-2">
+            {/* Duplicate button for non-owned packs when showDuplicateButton is true */}
+            {!isOwnedByUser && showDuplicateButton && (
+              <Button
+                variant="plain"
+                size="icon"
+                disabled={isDuplicating}
+                onPress={() =>
+                  Alert.alert(
+                    'Duplicate pack?',
+                    'This will create a copy of this pack in your collection.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Duplicate', onPress: () => duplicatePack(pack.id) },
+                    ],
+                  )
+                }
               >
-                <Text className="text-xs text-foreground">#{tag}</Text>
-              </View>
-            ))}
+                {isDuplicating ? (
+                  <ActivityIndicator size="small" color={colors.grey2} />
+                ) : (
+                  <Icon name="file-copy" size={21} color={colors.grey2} />
+                )}
+              </Button>
+            )}
+
+            {/* Delete button for owned packs */}
+            {!isGenUI && isOwnedByUser && (
+              <Button
+                variant="plain"
+                size="icon"
+                onPress={() =>
+                  Alert.alert(
+                    'Delete pack?',
+                    'Are you sure you want to delete this pack? This action cannot be undone.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'OK', style: 'destructive', onPress: () => deletePack(pack.id) },
+                    ],
+                  )
+                }
+              >
+                <Icon name="trash-can" size={21} color={colors.grey2} />
+              </Button>
+            )}
           </View>
-        )}
+        </View>
       </View>
     </Pressable>
   );

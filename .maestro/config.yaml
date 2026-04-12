@@ -1,46 +1,16 @@
-# Maestro E2E Test Suite Configuration
-# https://maestro.mobile.dev
-
-appId: com.andrewbierman.packrat
+# Maestro Workspace Configuration
+# https://docs.maestro.dev/maestro-flows/workspace-management/project-configuration
 
 flows:
-  - flows/setup/*.yaml
-  - flows/auth/*.yaml
-  - flows/dashboard/*.yaml
-  - flows/packs/*.yaml
-  - flows/trips/*.yaml
-  - flows/catalog/*.yaml
-  - flows/profile/*.yaml
-  - flows/negative/*.yaml
+  - "flows/**/*.yaml"
+  - "master-flow.yaml"  # Root-level iOS master flow (config*.yaml intentionally excluded)
 
-executionOrder:
-  flowsOrder:
-    # Setup & Auth
-    - flows/setup/clear-state.yaml
-    - flows/auth/login-flow.yaml
+# Platform-specific settings
+platform:
+  ios:
+    snapshotKeyHonorModalViews: false
 
-    # Dashboard
-    - flows/dashboard/dashboard-tiles-flow.yaml
-
-    # Packs CRUD
-    - flows/packs/create-pack-flow.yaml
-    - flows/packs/pack-detail-flow.yaml
-    - flows/packs/add-item-actions-flow.yaml
-
-    # Trips CRUD
-    - flows/trips/create-trip-flow.yaml
-    - flows/trips/trip-detail-flow.yaml
-
-    # Catalog
-    - flows/catalog/catalog-browse-flow.yaml
-    - flows/catalog/catalog-item-detail-flow.yaml
-
-    # Profile
-    - flows/profile/profile-view-flow.yaml
-
-    # Negative tests
-    - flows/negative/empty-pack-submit-flow.yaml
-    - flows/negative/empty-trip-submit-flow.yaml
-
-    # Logout (last — destroys session)
-    - flows/auth/logout-flow.yaml
+# Environment variables available to all flows
+env:
+  TRIP_NAME: "E2E-Trip-${GITHUB_RUN_ID:-12345}"
+  PACK_NAME: "E2E-Pack-${GITHUB_RUN_ID:-12345}"

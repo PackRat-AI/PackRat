@@ -62,7 +62,6 @@ function LocationsScreen() {
   }, [setSearchQuery]);
 
   // Load weather data on initial render
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need this effect to just get updated data for locations one time
   useEffect(() => {
     if (locations.length > 0 && !isLoading) {
       refreshAllLocations();
@@ -116,10 +115,9 @@ function LocationsScreen() {
   const showSearchResults = isSearchFocused && searchQuery.length > 0;
   const showNoSearchResults = showSearchResults && filteredLocations.length === 0;
   const showLocationsList = filteredLocations.length > 0;
-  const headerPaddingTop = Platform.OS === 'ios' ? 80 : 24;
 
   return (
-    <SafeAreaView style={{ flex: 1, paddingTop: insets.top }}>
+    <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
       <LargeTitleHeader
         title={t('weather.weather')}
         leftView={() => (
@@ -140,7 +138,7 @@ function LocationsScreen() {
         )}
       />
 
-      <View className="p-4" style={{ paddingTop: insets.top }}>
+      <View className="p-4" style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}>
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchSavedLocations')}

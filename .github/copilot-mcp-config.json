@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "sse",
+      "tools": ["*"],
+      "url": "https://mcp.context7.com/mcp"
+    }
+  }
+}
