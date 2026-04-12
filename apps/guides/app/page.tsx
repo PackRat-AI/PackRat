@@ -1,9 +1,9 @@
 'use client';
 
+import { Button } from '@packrat/web-ui/components/button';
 import CategoryFilter from 'guides-app/components/category-filter';
 import FeaturedGuides from 'guides-app/components/featured-guides';
 import GuideCard from 'guides-app/components/guide-card';
-import { Button } from 'guides-app/components/ui/button';
 import { getAllCategories } from 'guides-app/lib/categories';
 import { featuresConfig } from 'guides-app/lib/config';
 import { getAllPosts } from 'guides-app/lib/mdx-static';
@@ -104,7 +104,6 @@ function HomeContent() {
       )}
 
       {/* All Guides - Apple style */}
-      {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
       <section id="guides" className="py-20">
         <div className="container">
           <h2 className="mb-10 text-3xl font-semibold tracking-tight text-center">{pageTitle}</h2>

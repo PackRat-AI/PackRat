@@ -27,6 +27,7 @@ const envFileContent = fs.readFileSync(envFilePath, 'utf8');
 const expoOutputPath = path.join(__dirname, '..', '..', 'apps', 'expo', outputName);
 const expoFileContent = envFileContent
   .split('\n')
+  // biome-ignore lint/suspicious/useIterableCallbackReturn: non-matching lines intentionally return undefined (filtered out by join)
   .map((line) => {
     // Only keep EXPO_PUBLIC_ variables
     if (line.startsWith('PUBLIC_APP=')) {

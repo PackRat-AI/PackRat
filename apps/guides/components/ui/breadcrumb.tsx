@@ -52,6 +52,7 @@ BreadcrumbLink.displayName = 'BreadcrumbLink';
 
 const BreadcrumbPage = React.forwardRef<HTMLSpanElement, React.ComponentPropsWithoutRef<'span'>>(
   ({ className, ...props }, ref) => (
+    // biome-ignore lint/a11y/useSemanticElements: BreadcrumbPage uses span+role for disabled link semantics (shadcn pattern)
     <span
       ref={ref}
       role="link"

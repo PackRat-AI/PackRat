@@ -1,4 +1,4 @@
-import { Button } from 'landing-app/components/ui/button';
+import { Button } from '@packrat/web-ui/components/button';
 import { Backpack, Heart, Mountain, Users } from 'lucide-react';
 import Link from 'next/link';
 
@@ -99,7 +99,6 @@ export default function AboutPage() {
         </section>
 
         {/* Careers */}
-        {/* biome-ignore lint/nursery/useUniqueElementIds: anchor target for footer link */}
         <section id="careers" className="space-y-4">
           <h2 className="text-2xl font-semibold tracking-tight">Careers</h2>
           <p className="text-muted-foreground leading-relaxed">

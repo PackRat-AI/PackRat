@@ -5,6 +5,7 @@ export function useDeletePack() {
   const deletePack = useCallback((id: string) => {
     // Soft delete by setting deleted flag
     // @ts-ignore: Safe because Legend-State uses Proxy
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: forEach return value is intentionally void
     getPackItems(id).forEach((item) => packItemsStore[item.id].deleted.set(true));
     // @ts-ignore: Safe because Legend-State uses Proxy
     packsStore[id].deleted.set(true);

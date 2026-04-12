@@ -1,53 +1,40 @@
-import { Avatar, AvatarFallback } from 'landing-app/components/ui/avatar';
-import GradientBackground from 'landing-app/components/ui/gradient-background';
-import GradientBorderCard from 'landing-app/components/ui/gradient-border-card';
-import GradientText from 'landing-app/components/ui/gradient-text';
+import { Avatar, AvatarFallback } from '@packrat/web-ui/components/avatar';
 import { siteConfig } from 'landing-app/config/site';
 import { QuoteIcon } from 'lucide-react';
 
 export default function TestimonialsSection() {
   return (
-    // biome-ignore lint/nursery/useUniqueElementIds: ignore
     <section
       id="testimonials"
-      className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-muted/50"
+      className="py-20 md:py-28 lg:py-36 relative overflow-hidden bg-apple-gray-light dark:bg-gray-900/20"
     >
-      {/* Background pattern */}
-      <GradientBackground variant="mesh" />
-
-      <div className="container px-4 md:px-8 lg:px-12">
+      <div className="container">
         <div className="mx-auto max-w-3xl text-center mb-12 md:mb-16">
-          <GradientBorderCard
-            className="inline-block py-1 px-4 text-sm font-medium mb-4"
-            containerClassName="inline-block"
-            gradientClassName="bg-gradient-to-r from-primary via-secondary to-primary"
-          >
-            <GradientText>Customer Stories</GradientText>
-          </GradientBorderCard>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <div className="apple-badge mb-4">Customer Stories</div>
+          <h2 className="text-2xl md:text-3xl font-semibold tracking-tight sm:text-4xl">
             {siteConfig.testimonials.title}
           </h2>
-          <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="mt-6 text-base md:text-lg leading-relaxed text-muted-foreground max-w-2xl mx-auto">
             {siteConfig.testimonials.subtitle}
           </p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {siteConfig.testimonials.items.map((testimonial) => (
-            <GradientBorderCard key={testimonial.id} className="h-full bg-card/80 backdrop-blur-sm">
-              <QuoteIcon className="absolute -top-4 -left-4 h-8 w-8 md:h-10 md:w-10 rotate-180 opacity-10 text-primary" />
+            <div key={testimonial.id} className="apple-card h-full relative overflow-hidden">
+              <QuoteIcon className="absolute top-3 left-3 h-8 w-8 md:h-10 md:w-10 rotate-180 opacity-10 text-apple-blue" />
 
               <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                <Avatar className="h-12 w-12 md:h-14 md:w-14 border-2 border-primary/20">
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm md:text-base">
+                <Avatar className="h-12 w-12 md:h-14 md:w-14 border-2 border-border/20">
+                  <AvatarFallback className="bg-blue-100 dark:bg-blue-900/30 text-apple-blue font-bold text-sm md:text-base">
                     {testimonial.initials}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="font-bold text-foreground text-sm md:text-base">
+                  <h4 className="font-semibold text-foreground text-sm md:text-base">
                     {testimonial.name}
                   </h4>
-                  <GradientText className="text-xs md:text-sm">{testimonial.role}</GradientText>
+                  <p className="text-xs md:text-sm text-muted-foreground">{testimonial.role}</p>
                 </div>
               </div>
 
@@ -58,7 +45,6 @@ export default function TestimonialsSection() {
               <div className="mt-4 md:mt-6 flex">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <svg
-                    // biome-ignore lint/suspicious/noArrayIndexKey: ignore
                     key={i}
                     className={`w-4 h-4 md:w-5 md:h-5 ${
                       i < testimonial.rating ? 'text-amber-400' : 'text-gray-300 dark:text-gray-600'
@@ -72,17 +58,12 @@ export default function TestimonialsSection() {
                   </svg>
                 ))}
               </div>
-            </GradientBorderCard>
+            </div>
           ))}
         </div>
 
-        <div className="mt-12 md:mt-16 text-center">
-          <GradientText
-            className="text-base md:text-lg font-medium"
-            gradient="bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient"
-          >
-            Join thousands of happy users today!
-          </GradientText>
+        <div className="mt-12 md:mt-16 text-center text-base md:text-lg font-medium text-apple-blue">
+          Join thousands of happy users today!
         </div>
       </div>
     </section>
