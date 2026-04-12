@@ -1,15 +1,20 @@
 import { openapi } from '@elysiajs/openapi';
+import { z } from 'zod';
 
 /**
  * Shared OpenAPI plugin instance configured for the PackRat API.
  *
- * Serves the Scalar UI at `/scalar` and the OpenAPI JSON document at
- * `/openapi/json`. Tags, security schemes, and top-level metadata are declared
- * here in one place so every route module just needs to provide `detail.tags`.
+ * `mapJsonSchema.zod` tells the OpenAPI plugin how to convert our Zod schemas
+ * into JSON Schema so Scalar/Swagger get full request/response documentation.
+ * Without this, Zod schemas passed via Standard Schema only validate at
+ * runtime — the OpenAPI spec would be missing their structure.
  */
 export const packratOpenApi = openapi({
   path: '/scalar',
   specPath: '/doc',
+  mapJsonSchema: {
+    zod: z.toJSONSchema,
+  },
   documentation: {
     openapi: '3.1.0',
     info: {
