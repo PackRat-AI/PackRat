@@ -29,6 +29,13 @@ async function configureDeps() {
     if (isCI) {
       // In CI, bunfig.toml will use PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
       if (!process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN) {
+        // Fall back to GITHUB_TOKEN (available in all GitHub Actions runs, including Dependabot)
+        const githubToken = process.env.GITHUB_TOKEN;
+        if (githubToken) {
+          process.env.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN = githubToken;
+          console.log('✓ Using GITHUB_TOKEN as fallback for CI authentication');
+          return;
+        }
         console.error('❌ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN not found in CI');
         console.error('Please ensure PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN is set in your CI secrets');
         process.exit(1);
