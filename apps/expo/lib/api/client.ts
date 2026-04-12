@@ -243,16 +243,17 @@ async function execute<T>(
   };
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: match axios's default generic — callers rely on `any`
 export const apiClient = {
-  get: <T = unknown>(path: string, config?: RequestConfig) =>
+  get: <T = any>(path: string, config?: RequestConfig) =>
     execute<T>('GET', path, undefined, config),
-  post: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
+  post: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('POST', path, body, config),
-  put: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
+  put: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PUT', path, body, config),
-  patch: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
+  patch: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PATCH', path, body, config),
-  delete: <T = unknown>(path: string, config?: RequestConfig) =>
+  delete: <T = any>(path: string, config?: RequestConfig) =>
     execute<T>('DELETE', path, undefined, config),
 };
 
