@@ -264,7 +264,7 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
 
     console.log(`Processing content: ${contentUrl}`);
 
-    let imageUrls: string[];
+    let imageUrls: string[] = [];
     let videoUrl: string | undefined;
     let caption: string | undefined;
     let youtubeVideoTranscript: string | undefined;
@@ -297,7 +297,7 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
       console.error('TikTok service call failed:', apiError);
       c.get('sentry').captureException(apiError, {
         extra: { tiktokUrl: contentUrl, errorType: 'tiktok_service_error' },
-      } as unknown);
+      } as any);
       return c.json(
         {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
