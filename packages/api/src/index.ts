@@ -5,10 +5,6 @@
  * Every route is Elysia-native so Eden Treaty gets full end-to-end type
  * safety and @elysiajs/openapi generates a complete OpenAPI/Scalar UI.
  */
-// Side-effect import that installs a no-op `.openapi()` method on Zod's
-// prototype so legacy schemas can keep their `.openapi(...)` chains.
-import '@packrat/api/utils/zod-shim';
-
 import type { MessageBatch } from '@cloudflare/workers-types';
 import { cors } from '@elysiajs/cors';
 import { AppContainer } from '@packrat/api/containers';

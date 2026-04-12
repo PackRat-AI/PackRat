@@ -334,11 +334,6 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
   };
 });
 
-vi.mock('hono/adapter', async () => {
-  const actual = await vi.importActual<typeof import('hono/adapter')>('hono/adapter');
-  return { ...actual, env: () => testEnv };
-});
-
 // Mock google-auth-library to avoid node:child_process issues in Workers environment
 vi.mock('google-auth-library', () => ({
   OAuth2Client: class MockOAuth2Client {
