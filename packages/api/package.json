@@ -14,6 +14,7 @@
     "test:unit:coverage": "vitest run --config vitest.unit.config.ts --coverage"
   },
   "dependencies": {
+    "@packrat/guards": "workspace:*",
     "@ai-sdk/google": "^2.0.62",
     "@ai-sdk/openai": "^2.0.11",
     "@ai-sdk/perplexity": "^2.0.1",
