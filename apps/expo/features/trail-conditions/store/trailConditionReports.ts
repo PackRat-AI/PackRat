@@ -60,7 +60,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage),
+      plugin: observablePersistSqlite(Storage as any),
       retrySync: true,
       name: 'trail_condition_reports',
     },
