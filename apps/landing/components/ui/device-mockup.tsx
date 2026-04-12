@@ -1,8 +1,7 @@
 'use client';
 
-import { cn } from 'landing-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import Image from 'next/image';
-import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 interface DeviceMockupProps {
@@ -26,7 +25,6 @@ export default function DeviceMockup({
   showGradient = true,
   aspectRatio = 'portrait',
 }: DeviceMockupProps) {
-  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -34,18 +32,14 @@ export default function DeviceMockup({
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
-
-  const notchColor = theme === 'dark' ? '#000000' : '#1E293B';
-
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: ignore
     <div
       className={cn(
         'relative mx-auto w-full transition-all duration-500',
         aspectRatio === 'portrait' ? 'max-w-[280px] md:max-w-[320px]' : 'max-w-[560px] w-full',
+        // Use invisible instead of null — preserves layout space, no CLS
+        !mounted && 'invisible',
         className,
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -65,11 +59,11 @@ export default function DeviceMockup({
       <div
         className={cn(
           'relative w-full overflow-hidden rounded-[40px] border-[14px] bg-black transition-transform duration-500',
-          aspectRatio === 'portrait' ? 'aspect-[9/16]' : 'aspect-[16/9]',
+          aspectRatio === 'portrait' ? 'aspect-[9/19.5]' : 'aspect-[16/9]',
           showShadow && 'shadow-2xl shadow-black/20',
           isHovered && 'scale-[1.02]',
         )}
-        style={{ borderColor: notchColor }}
+        style={{ borderColor: 'var(--device-notch-color)' }}
       >
         {/* Notch */}
         {aspectRatio === 'portrait' && (

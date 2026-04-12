@@ -1,6 +1,5 @@
 'use client';
 
-import { siteConfig } from 'landing-app/config/site';
 import { useEffect, useRef } from 'react';
 
 export default function GridBackground() {
@@ -28,8 +27,8 @@ export default function GridBackground() {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Parse the primary color to get RGB values
-      const primaryColor = siteConfig.colors.primary;
+      // Parse the primary color to get RGB values (PackRat teal)
+      const primaryColor = '#0F766E';
       const r = Number.parseInt(primaryColor.slice(1, 3), 16);
       const g = Number.parseInt(primaryColor.slice(3, 5), 16);
       const b = Number.parseInt(primaryColor.slice(5, 7), 16);

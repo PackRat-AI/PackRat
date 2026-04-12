@@ -1,7 +1,7 @@
 'use client';
 
-import { Badge } from 'guides-app/components/ui/badge';
-import { Button } from 'guides-app/components/ui/button';
+import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import {
   Card,
   CardContent,
@@ -9,23 +9,23 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from 'guides-app/components/ui/card';
-import { Checkbox } from 'guides-app/components/ui/checkbox';
-import { Input } from 'guides-app/components/ui/input';
-import { Label } from 'guides-app/components/ui/label';
+} from '@packrat/web-ui/components/card';
+import { Checkbox } from '@packrat/web-ui/components/checkbox';
+import { Input } from '@packrat/web-ui/components/input';
+import { Label } from '@packrat/web-ui/components/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from 'guides-app/components/ui/select';
-import { Slider } from 'guides-app/components/ui/slider';
-import { Switch } from 'guides-app/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from 'guides-app/components/ui/tabs';
-import { Textarea } from 'guides-app/components/ui/textarea';
-import { Toaster } from 'guides-app/components/ui/toaster';
-import { toast } from 'guides-app/components/ui/use-toast';
+} from '@packrat/web-ui/components/select';
+import { Slider } from '@packrat/web-ui/components/slider';
+import { Switch } from '@packrat/web-ui/components/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@packrat/web-ui/components/tabs';
+import { Textarea } from '@packrat/web-ui/components/textarea';
+import { Toaster } from '@packrat/web-ui/components/toaster';
+import { toast } from '@packrat/web-ui/hooks/use-toast';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -261,7 +261,6 @@ export default function GeneratePage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">Title</Label>
-                  {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
                   <Input
                     id="title"
                     value={title}
@@ -272,7 +271,6 @@ export default function GeneratePage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
-                  {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
                   <Textarea
                     id="description"
                     value={description}
@@ -321,7 +319,6 @@ export default function GeneratePage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="author">Author (optional)</Label>
-                  {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
                   <Input
                     id="author"
                     value={author}
@@ -331,7 +328,6 @@ export default function GeneratePage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
                   <Switch
                     id="generate-full"
                     checked={generateFull}
@@ -404,7 +400,6 @@ export default function GeneratePage() {
                 <div className="flex justify-between">
                   <Label htmlFor="batch-count">Number of Posts: {batchCount}</Label>
                 </div>
-                {/** biome-ignore lint/nursery/useUniqueElementIds: ignore */}
                 <Slider
                   id="batch-count"
                   min={1}

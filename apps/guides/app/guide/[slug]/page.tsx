@@ -1,7 +1,7 @@
+import { Badge } from '@packrat/web-ui/components/badge';
+import { Button } from '@packrat/web-ui/components/button';
 import { format } from 'date-fns';
 import GuideCard from 'guides-app/components/guide-card';
-import { Badge } from 'guides-app/components/ui/badge';
-import { Button } from 'guides-app/components/ui/button';
 import {
   getAllPosts,
   getMdxContent,
@@ -99,7 +99,6 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       {/* Guide Content - Apple style */}
       <div className="container py-12 md:py-16">
         <article className="prose prose-slate dark:prose-invert mx-auto max-w-3xl">
-          {/** biome-ignore lint/security/noDangerouslySetInnerHtml: ignore */}
           <div dangerouslySetInnerHTML={{ __html: content }} />
         </article>
 

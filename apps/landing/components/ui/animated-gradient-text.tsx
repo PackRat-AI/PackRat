@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from 'landing-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import type React from 'react';
 import { useEffect, useRef } from 'react';
 
@@ -40,11 +40,13 @@ export default function AnimatedGradientText({
     element.style.backgroundImage = gradientText;
     element.style.backgroundSize = `${colors.length * 100}% 100%`;
 
-    // Create the animation
-    element.animate([{ backgroundPosition: '0% 0%' }, { backgroundPosition: '100% 0%' }], {
-      duration: duration * 1000,
-      iterations: Number.POSITIVE_INFINITY,
-    });
+    // Create the animation — store return value so we can cancel on cleanup
+    const anim = element.animate(
+      [{ backgroundPosition: '0% 0%' }, { backgroundPosition: '100% 0%' }],
+      { duration: duration * 1000, iterations: Number.POSITIVE_INFINITY, easing: 'linear' },
+    );
+
+    return () => anim.cancel();
   }, [animate, colors, duration]);
 
   return (

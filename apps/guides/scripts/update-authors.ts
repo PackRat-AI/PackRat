@@ -123,7 +123,9 @@ function updatePostBySlug(slug: string, newAuthor: string): void {
   if (!post) {
     console.error(chalk.red(`Error: Post with slug "${slug}" not found.`));
     console.log(chalk.yellow('Available slugs:'));
-    posts.forEach((p) => console.log(`  - ${p.slug}`));
+    posts.forEach((p) => {
+      console.log(`  - ${p.slug}`);
+    });
     return;
   }
 
@@ -170,7 +172,9 @@ function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
     console.error(chalk.red(`No posts found with author: "${currentAuthor}"`));
     console.log(chalk.yellow('Available authors:'));
     const authors = getUniqueAuthors();
-    authors.forEach((author) => console.log(`  - ${author}`));
+    authors.forEach((author) => {
+      console.log(`  - ${author}`);
+    });
     return;
   }
 
@@ -207,7 +211,9 @@ function rebalanceAuthors(): void {
 
   console.log(chalk.blue(`\n=== Rebalancing Authors ===`));
   console.log(chalk.blue(`Using top ${mainAuthors.length} authors for rebalancing:`));
-  mainAuthors.forEach((author) => console.log(`  - ${author}`));
+  mainAuthors.forEach((author) => {
+    console.log(`  - ${author}`);
+  });
   console.log(chalk.blue(`Target per author: ~${targetPerAuthor} posts`));
 
   // Get current distribution for main authors only

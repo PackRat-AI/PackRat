@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from 'guides-app/components/ui/badge';
+import { Badge } from '@packrat/web-ui/components/badge';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export default function CategoryFilter({ categories }: { categories: string[] }) {

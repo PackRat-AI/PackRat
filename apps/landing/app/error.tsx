@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from 'landing-app/components/ui/button';
+import { Button } from '@packrat/web-ui/components/button';
 
 export default function ErrorPage({
   error,
