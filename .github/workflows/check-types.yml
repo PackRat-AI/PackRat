@@ -20,4 +20,6 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
       - name: Check Types
+        run: bun check-types 2>&1 | head -100 || true
+      - name: Check Types (exit code)
         run: bun check-types
