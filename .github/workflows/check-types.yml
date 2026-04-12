@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   check-types:
@@ -20,4 +21,22 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
       - name: Check Types
-        run: bun check-types
+        id: tsc
+        continue-on-error: true
+        run: bun check-types 2>&1 | tee /tmp/tsc.txt; exit ${PIPESTATUS[0]}
+      - name: Post errors
+        if: steps.tsc.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const out = fs.readFileSync('/tmp/tsc.txt', 'utf8').slice(0, 4000);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '### check-types output\n```\n' + out + '\n```'
+            });
+      - name: Fail if tsc failed
+        if: steps.tsc.outcome == 'failure'
+        run: exit 1
