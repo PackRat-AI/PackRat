@@ -1,6 +1,6 @@
 import { SignJWT } from 'jose';
 import { expect } from 'vitest';
-import app from '../../src/index';
+import { app } from '../../src/index';
 
 const secret = new TextEncoder().encode('secret');
 

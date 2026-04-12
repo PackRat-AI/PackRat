@@ -93,20 +93,22 @@ export const packsRoutes = new Elysia({ prefix: '/packs' })
       const packId = data.id as string;
       if (!packId) return status(400, { error: 'Pack ID is required' });
 
+      // Zod validates all fields at runtime; cast through the Standard Schema
+      // inference gap so drizzle's insert accepts the values.
       const [newPack] = await db
         .insert(packs)
         .values({
           id: packId,
           userId: user.userId,
-          name: data.name as string,
+          name: data.name,
           description: data.description,
           category: data.category,
           isPublic: data.isPublic,
           image: data.image,
           tags: data.tags,
-          localCreatedAt: new Date(data.localCreatedAt),
-          localUpdatedAt: new Date(data.localUpdatedAt),
-        })
+          localCreatedAt: new Date(data.localCreatedAt as string),
+          localUpdatedAt: new Date(data.localUpdatedAt as string),
+        } as typeof packs.$inferInsert)
         .returning();
 
       if (!newPack) return status(400, { error: 'Failed to create pack' });
