@@ -157,6 +157,7 @@ const CarouselItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLD
     const { orientation } = useCarousel();
 
     return (
+      // biome-ignore lint/a11y/useSemanticElements: CarouselItem uses div+role="group" for ARIA carousel semantics (shadcn pattern)
       <div
         ref={ref}
         role="group"
