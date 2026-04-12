@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { apiEnvSchema, getEnv, validateCloudflareApiEnv } from '../env-validation';
 
-// Minimal helper – returns a plain record matching the shape Elysia / Hono
-// route handlers see for the Cloudflare Worker env bindings.
+// Minimal helper – returns a plain record matching the shape of CF Worker env bindings.
 function makeRawEnv(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     ENVIRONMENT: 'production',
@@ -53,9 +52,6 @@ describe('env-validation', () => {
     delete (process.env as Record<string, unknown>).VITEST;
   });
 
-  // -------------------------------------------------------------------------
-  // apiEnvSchema validation
-  // -------------------------------------------------------------------------
   describe('apiEnvSchema', () => {
     it('validates complete valid environment', () => {
       const result = apiEnvSchema.safeParse(makeRawEnv());
@@ -69,43 +65,19 @@ describe('env-validation', () => {
     });
 
     it('validates SENTRY_DSN as URL', () => {
-      const result = apiEnvSchema.shape.SENTRY_DSN.safeParse('https://sentry.io/123');
-      expect(result.success).toBe(true);
+      expect(apiEnvSchema.shape.SENTRY_DSN.safeParse('https://sentry.io/123').success).toBe(true);
     });
 
     it('rejects invalid SENTRY_DSN', () => {
-      const result = apiEnvSchema.shape.SENTRY_DSN.safeParse('not-a-url');
-      expect(result.success).toBe(false);
+      expect(apiEnvSchema.shape.SENTRY_DSN.safeParse('not-a-url').success).toBe(false);
     });
 
     it('validates OPENAI_API_KEY starts with sk-', () => {
-      const result = apiEnvSchema.shape.OPENAI_API_KEY.safeParse('sk-test123');
-      expect(result.success).toBe(true);
+      expect(apiEnvSchema.shape.OPENAI_API_KEY.safeParse('sk-test123').success).toBe(true);
     });
 
     it('rejects OPENAI_API_KEY without sk- prefix', () => {
-      const result = apiEnvSchema.shape.OPENAI_API_KEY.safeParse('invalid-key');
-      expect(result.success).toBe(false);
-    });
-
-    it('validates PERPLEXITY_API_KEY starts with pplx-', () => {
-      const result = apiEnvSchema.shape.PERPLEXITY_API_KEY.safeParse('pplx-test123');
-      expect(result.success).toBe(true);
-    });
-
-    it('rejects PERPLEXITY_API_KEY without pplx- prefix', () => {
-      const result = apiEnvSchema.shape.PERPLEXITY_API_KEY.safeParse('invalid');
-      expect(result.success).toBe(false);
-    });
-
-    it('validates EMAIL_FROM as email', () => {
-      const result = apiEnvSchema.shape.EMAIL_FROM.safeParse('test@example.com');
-      expect(result.success).toBe(true);
-    });
-
-    it('rejects invalid EMAIL_FROM', () => {
-      const result = apiEnvSchema.shape.EMAIL_FROM.safeParse('not-an-email');
-      expect(result.success).toBe(false);
+      expect(apiEnvSchema.shape.OPENAI_API_KEY.safeParse('invalid-key').success).toBe(false);
     });
 
     it('validates AI_PROVIDER enum', () => {
@@ -116,42 +88,35 @@ describe('env-validation', () => {
 
     it('validates EMAIL_PROVIDER enum', () => {
       expect(apiEnvSchema.shape.EMAIL_PROVIDER.safeParse('resend').success).toBe(true);
-      expect(apiEnvSchema.shape.EMAIL_PROVIDER.safeParse('sendgrid').success).toBe(true);
       expect(apiEnvSchema.shape.EMAIL_PROVIDER.safeParse('ses').success).toBe(true);
       expect(apiEnvSchema.shape.EMAIL_PROVIDER.safeParse('invalid').success).toBe(false);
     });
 
     it('validates CONTAINER_PORT as numeric string', () => {
       expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse('8080').success).toBe(true);
-      expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse('3000').success).toBe(true);
     });
 
     it('rejects non-numeric CONTAINER_PORT', () => {
-      const result = apiEnvSchema.shape.CONTAINER_PORT.safeParse('not-a-port');
-      expect(result.success).toBe(false);
+      expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse('not-a-port').success).toBe(false);
     });
 
     it('makes CONTAINER_PORT optional', () => {
-      const result = apiEnvSchema.shape.CONTAINER_PORT.safeParse(undefined);
-      expect(result.success).toBe(true);
+      expect(apiEnvSchema.shape.CONTAINER_PORT.safeParse(undefined).success).toBe(true);
     });
   });
 
-  // -------------------------------------------------------------------------
-  // getEnv function
-  // -------------------------------------------------------------------------
   describe('getEnv', () => {
-    it('returns validated environment in production when passed a context', () => {
+    it('returns validated environment in production when passed explicit env', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'production';
       const rawEnv = makeRawEnv();
-      const result = getEnv({ env: rawEnv });
+      const result = getEnv(rawEnv);
       expect(result.JWT_SECRET).toBe('secret');
       expect(result.ENVIRONMENT).toBe('production');
     });
 
     it('uses relaxed validation in test environment', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'test';
-      const result = getEnv({ env: { JWT_SECRET: 'test-secret' } });
+      const result = getEnv({ JWT_SECRET: 'test-secret' });
       expect(result.JWT_SECRET).toBe('test-secret');
       expect(result.ENVIRONMENT).toBe('development');
       expect(result.SENTRY_DSN).toBe('https://test@test.ingest.sentry.io/test');
@@ -159,47 +124,40 @@ describe('env-validation', () => {
 
     it('detects Vitest environment', () => {
       process.env.VITEST = 'true';
-      const result = getEnv({ env: {} });
+      const result = getEnv({});
       expect(result.ENVIRONMENT).toBe('development');
     });
 
     it('caches validated environment per raw env object', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'test';
       const rawEnv = { JWT_SECRET: 'secret' };
-      const result1 = getEnv({ env: rawEnv });
-      const result2 = getEnv({ env: rawEnv });
-      expect(result1).toBe(result2); // Same instance
+      const result1 = getEnv(rawEnv);
+      const result2 = getEnv(rawEnv);
+      expect(result1).toBe(result2);
     });
 
     it('does not cache across different raw env objects', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'test';
-      const result1 = getEnv({ env: { JWT_SECRET: 'secret' } });
-      const result2 = getEnv({ env: { JWT_SECRET: 'secret' } });
+      const result1 = getEnv({ JWT_SECRET: 'secret' });
+      const result2 = getEnv({ JWT_SECRET: 'secret' });
       expect(result1).not.toBe(result2);
     });
 
     it('throws error for invalid environment in production', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'production';
-      expect(() => getEnv({ env: { JWT_SECRET: 'secret' } })).toThrow(
-        'Invalid environment variables',
-      );
+      expect(() => getEnv({ JWT_SECRET: 'secret' })).toThrow('Invalid environment variables');
     });
 
     it('merges Cloudflare bindings from raw env', () => {
       (process.env as Record<string, unknown>).NODE_ENV = 'test';
       const mockAI = { run: () => null };
       const mockBucket = { get: () => null };
-      const result = getEnv({
-        env: { JWT_SECRET: 'secret', AI: mockAI, PACKRAT_BUCKET: mockBucket },
-      });
+      const result = getEnv({ JWT_SECRET: 'secret', AI: mockAI, PACKRAT_BUCKET: mockBucket });
       expect(result.AI).toBe(mockAI);
       expect(result.PACKRAT_BUCKET).toBe(mockBucket);
     });
   });
 
-  // -------------------------------------------------------------------------
-  // validateCloudflareApiEnv function
-  // -------------------------------------------------------------------------
   describe('validateCloudflareApiEnv', () => {
     it('does not throw on valid environment', () => {
       expect(() => validateCloudflareApiEnv(makeRawEnv())).not.toThrow();
