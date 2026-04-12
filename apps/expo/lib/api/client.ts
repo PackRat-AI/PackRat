@@ -1,29 +1,13 @@
 /**
  * PackRat API client.
  *
- * This module replaces the previous axios-based client with an Elysia Eden
- * Treaty client. Two surfaces are exported:
+ * Fetch-based wrapper that exposes `.get / .post / .put / .patch / .delete`
+ * with automatic auth-token injection and transparent 401 refresh-token flow.
  *
- *  1. `api` – the fully type-safe Eden Treaty client that mirrors the Elysia
- *     server's route tree. New code should use this for end-to-end type
- *     safety, auto-completion, and error narrowing.
- *
- *  2. `apiClient` (also the default export) – a minimal fetch-based wrapper
- *     that exposes the same `.get / .post / .put / .patch / .delete` surface
- *     the previous axios instance did, so the many existing hooks can keep
- *     working unchanged during the migration to Treaty.
- *
- * Both surfaces share the same base URL, auth-token injection, and
- * transparent 401 refresh-token flow – implemented once in this module.
+ * All 43+ hook files import the default export (`apiClient`) which preserves
+ * the same surface the previous axios instance had.
  */
 
-import { treaty } from '@elysiajs/eden';
-// The App type is inferred from the Elysia server instance. In the Expo
-// client we only need it for Eden Treaty's generic parameter. Using `any`
-// here is safe — Treaty still provides runtime type narrowing via the
-// response discriminator, and full IDE autocompletion works when the
-// workspace is resolved by the bundler (not tsc).
-type App = any;
 import { store } from 'expo-app/atoms/store';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import {
@@ -36,7 +20,7 @@ import Storage from 'expo-sqlite/kv-store';
 export const API_URL = clientEnvs.EXPO_PUBLIC_API_URL;
 
 // ---------------------------------------------------------------------------
-// Shared auth-token plumbing used by both Treaty and the legacy wrapper.
+// Shared auth-token plumbing
 // ---------------------------------------------------------------------------
 
 async function getAccessToken(): Promise<string | null> {
@@ -98,28 +82,7 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 // ---------------------------------------------------------------------------
-// Treaty client – fully typed via the exported `App` type from @packrat/api.
-// ---------------------------------------------------------------------------
-
-export const api = treaty<App>(API_URL, {
-  fetch: { credentials: 'include' },
-  async headers() {
-    const token = await getAccessToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  },
-  async onResponse(response) {
-    // Automatic 401 handling → refresh the token and let the caller retry.
-    if (response.status === 401 && !response.url.endsWith('/api/auth/refresh')) {
-      await refreshAccessToken();
-    }
-  },
-});
-
-export type Api = typeof api;
-
-// ---------------------------------------------------------------------------
-// Legacy `.get/.post/...` surface backed by fetch, with transparent 401
-// retry + Authorization header injection.
+// Fetch wrapper with auth + 401 retry
 // ---------------------------------------------------------------------------
 
 type Params = Record<string, string | number | boolean | undefined | null>;
@@ -131,7 +94,6 @@ type RequestConfig = {
   timeout?: number;
   signal?: AbortSignal;
   responseType?: 'json' | 'text' | 'blob';
-  /** If true, don't attempt a 401 refresh-retry */
   _retry?: boolean;
 };
 
@@ -145,11 +107,7 @@ type ApiResponse<T> = {
 
 class ApiError<T = unknown> extends Error {
   public readonly isApiError = true;
-  public response?: {
-    data: T;
-    status: number;
-    headers: Record<string, string>;
-  };
+  public response?: { data: T; status: number; headers: HeaderMap };
   public config: RequestConfig;
   public status?: number;
 
@@ -159,11 +117,7 @@ class ApiError<T = unknown> extends Error {
     this.status = status;
     this.config = config;
     if (status !== undefined) {
-      this.response = {
-        data: data as T,
-        status,
-        headers: {},
-      };
+      this.response = { data: data as T, status, headers: {} };
     }
   }
 }
@@ -179,8 +133,8 @@ function buildUrl(path: string, params?: Params): string {
   return url.toString();
 }
 
-function headersToObject(headers: globalThis.Headers): Record<string, string> {
-  const obj: Record<string, string> = {};
+function headersToObject(headers: globalThis.Headers): HeaderMap {
+  const obj: HeaderMap = {};
   headers.forEach((value, key) => {
     obj[key] = value;
   });
@@ -196,13 +150,11 @@ async function execute<T>(
   const token = await getAccessToken();
   const url = buildUrl(path, config.params);
 
-  const headers: Record<string, string> = {
+  const headers: HeaderMap = {
     Accept: 'application/json',
     ...config.headers,
   };
 
-  // Only set Content-Type for JSON bodies. FormData must set its own
-  // multipart boundary, so we omit it for those cases.
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   if (!isFormData && body !== undefined && body !== null) {
     headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
@@ -226,7 +178,6 @@ async function execute<T>(
     ? setTimeout(() => controller.abort(), config.timeout)
     : undefined;
 
-  // Combine external signal with timeout signal.
   const combinedSignal = config.signal ?? controller.signal;
 
   let response: globalThis.Response;
@@ -307,12 +258,11 @@ export const apiClient = {
 
 export type ApiClient = typeof apiClient;
 
-// Legacy alias: existing hooks import the default export as `axiosInstance`.
+// Default export — all 43+ hooks import this as `axiosInstance`
 export default apiClient;
 
 /**
- * Type guard for API errors thrown by the legacy `apiClient` wrapper. Replaces
- * the previous `axios.isAxiosError` check.
+ * Type guard for API errors thrown by the fetch wrapper.
  */
 export function isApiError(error: unknown): error is ApiError {
   return (
