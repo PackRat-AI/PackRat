@@ -12,27 +12,10 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   api-tests:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: pgvector/pgvector:pg15
-        env:
-          POSTGRES_DB: packrat_test
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5433:5432
-        options: >-
-          --health-cmd "pg_isready -U test_user -d packrat_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
 
     steps:
       - uses: actions/checkout@v4
@@ -46,38 +29,5 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
 
-      - name: Run database migrations
-        id: migrate
-        continue-on-error: true
-        run: bun run --cwd packages/api db:migrate 2>&1 | tee /tmp/migrate.txt; exit ${PIPESTATUS[0]}
-
       - name: Run API tests
-        id: tests
-        continue-on-error: true
-        run: bun run --cwd packages/api test 2>&1 | tee /tmp/tests.txt; exit ${PIPESTATUS[0]}
-
-      - name: Post errors on failure
-        if: steps.migrate.outcome == 'failure' || steps.tests.outcome == 'failure'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let body = '### api-tests failure\n';
-            if (fs.existsSync('/tmp/migrate.txt')) {
-              const m = fs.readFileSync('/tmp/migrate.txt', 'utf8').slice(-2000);
-              body += '#### db:migrate\n```\n' + m + '\n```\n';
-            }
-            if (fs.existsSync('/tmp/tests.txt')) {
-              const t = fs.readFileSync('/tmp/tests.txt', 'utf8').slice(-2000);
-              body += '#### test output\n```\n' + t + '\n```\n';
-            }
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: body.slice(0, 4000)
-            });
-
-      - name: Fail if any step failed
-        if: steps.migrate.outcome == 'failure' || steps.tests.outcome == 'failure'
-        run: exit 1
+        run: bun run --cwd packages/api test
