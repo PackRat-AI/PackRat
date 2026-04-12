@@ -25,7 +25,6 @@
         "@expo/vector-icons": "^15.0.3",
         "@gorhom/bottom-sheet": "^5.1.2",
         "@legendapp/state": "^3.0.0-beta.30",
-        "@packrat/guards": "workspace:*",
         "@react-native-ai/apple": "~0.10.0",
         "@react-native-ai/llama": "~0.10.0",
         "@react-native-async-storage/async-storage": "2.2.0",
@@ -278,24 +277,6 @@
         "typescript": "catalog:",
       },
     },
-    "packages/analytics": {
-      "name": "@packrat/analytics",
-      "version": "0.1.0",
-      "dependencies": {
-        "@duckdb/node-api": "1.5.0-r.1",
-        "chalk": "catalog:",
-        "citty": "^0.2.1",
-        "cli-table3": "^0.6.5",
-        "consola": "^3.4.2",
-        "magic-regexp": "^0.11.0",
-        "radash": "catalog:",
-        "zod": "catalog:",
-      },
-      "devDependencies": {
-        "@types/bun": "latest",
-        "vitest": "~3.1.0",
-      },
-    },
     "packages/api": {
       "name": "@packrat/api",
       "dependencies": {
@@ -310,7 +291,6 @@
         "@hono/zod-validator": "^0.4.3",
         "@mozilla/readability": "^0.6.0",
         "@neondatabase/serverless": "^1.0.0",
-        "@packrat/guards": "workspace:*",
         "@scalar/hono-api-reference": "^0.8.0",
         "@types/nodemailer": "^6.4.17",
         "ai": "catalog:",
@@ -345,13 +325,6 @@
         "typed-htmx": "^0.3.1",
         "vitest": "~3.1.0",
         "wrangler": "^4.21.2",
-      },
-    },
-    "packages/guards": {
-      "name": "@packrat/guards",
-      "version": "0.0.1",
-      "dependencies": {
-        "radash": "catalog:",
       },
     },
     "packages/ui": {
@@ -1063,11 +1036,7 @@
 
     "@packrat-ai/nativewindui": ["@packrat-ai/nativewindui@2.0.1", "https://npm.pkg.github.com/download/@packrat-ai/nativewindui/2.0.1/c8f3e4e6113c8d464803f637dbfb6fe5fa9a5e36", { "peerDependencies": { "@expo/vector-icons": ">=15.0.0", "@gorhom/bottom-sheet": "^5.1.2", "@react-native-community/datetimepicker": "^8.4.0", "@react-native-community/slider": "^5.0.0", "@react-native-picker/picker": "^2.11.0", "@react-native-segmented-control/segmented-control": "^2.5.0", "@react-navigation/drawer": "^7.1.1", "@react-navigation/elements": "^2.3.1", "@react-navigation/native": "^7.0.14", "@rn-primitives/alert-dialog": "^1.1.0", "@rn-primitives/avatar": "^1.0.4", "@rn-primitives/checkbox": "^1.1.0", "@rn-primitives/context-menu": "^1.1.0", "@rn-primitives/dropdown-menu": "^1.1.0", "@rn-primitives/hooks": "^1.1.0", "@rn-primitives/portal": "^1.1.0", "@rn-primitives/slot": "^1.1.0", "@shopify/flash-list": "^2.0.0", "class-variance-authority": "^0.7.0", "clsx": "^2.1.0", "expo-blur": "~15.0.8", "expo-device": "~8.0.0", "expo-glass-effect": "*", "expo-haptics": "~15.0.8", "expo-image": "~3.0.11", "expo-linear-gradient": "~15.0.8", "expo-navigation-bar": "~5.0.10", "expo-router": "~6.0.23", "expo-symbols": "~1.0.8", "nativewind": "^4.1.21", "react": ">=19.0.0", "react-native": ">=0.79.0", "react-native-keyboard-controller": "^1.16.7", "react-native-reanimated": ">=3.17.0", "react-native-safe-area-context": ">=5.4.0", "react-native-screens": ">=4.11.0", "react-native-uitextview": "^1.1.4", "rn-icon-mapper": "^0.0.1", "tailwind-merge": "^2.2.1" } }, "sha512-zMzFalxu6MKuBMIIDzeiMj/7wM9qn8kFkAbWm3IxBWTHHSsl/Zic053DCJZS1GQcY0Ke2Om3TmUTuBujERuwvA=="],
 
-    "@packrat/analytics": ["@packrat/analytics@workspace:packages/analytics"],
-
     "@packrat/api": ["@packrat/api@workspace:packages/api"],
-
-    "@packrat/guards": ["@packrat/guards@workspace:packages/guards"],
 
     "@packrat/ui": ["@packrat/ui@workspace:packages/ui"],
 
