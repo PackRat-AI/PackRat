@@ -62,7 +62,6 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   // so that after the user picks a new location via location-search, a
   // re-render of the same trip object does not overwrite their selection in
   // the store.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — see comment above; reseeding on trip?.location would stomp user-picked values
   useEffect(() => {
     // Set location from trip, or null if trip has no location
     setLocation(trip?.location ?? null);

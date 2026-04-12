@@ -55,7 +55,6 @@ export default function LocationDetailScreen() {
   };
 
   // Load weather data on initial render
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need this to only run at initial render
   useEffect(() => {
     if (location) {
       handleRefresh();

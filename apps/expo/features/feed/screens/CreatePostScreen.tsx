@@ -145,7 +145,6 @@ export const CreatePostScreen = ({ onSuccess }: { onSuccess?: () => void }) => {
       {/* Photo grid */}
       <View className="flex-row flex-wrap gap-2 mb-4">
         {photos.map((photo, idx) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: photos have no stable id
           <View key={`${photo.uri}-${idx}`} className="relative">
             <Image
               source={{ uri: photo.uri }}
