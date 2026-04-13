@@ -35,10 +35,12 @@ const mockVectorSearch = vi.fn().mockResolvedValue({ items: [], totalCount: 0 })
 const mockBatchVectorSearch = vi.fn().mockResolvedValue({ items: [[]] });
 
 vi.mock('@packrat/api/services/catalogService', () => ({
-  CatalogService: vi.fn().mockImplementation(() => ({
-    vectorSearch: mockVectorSearch,
-    batchVectorSearch: mockBatchVectorSearch,
-  })),
+  CatalogService: vi.fn().mockImplementation(
+    class {
+      vectorSearch = mockVectorSearch;
+      batchVectorSearch = mockBatchVectorSearch;
+    },
+  ),
 }));
 
 vi.mock('@packrat/api/utils/env-validation', () => ({

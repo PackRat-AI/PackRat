@@ -30,9 +30,11 @@ vi.mock('@packrat/api/utils/ai/models', () => ({
 }));
 
 vi.mock('../catalogService', () => ({
-  CatalogService: vi.fn().mockImplementation(() => ({
-    batchVectorSearch: vi.fn().mockResolvedValue({ items: [] }),
-  })),
+  CatalogService: vi.fn().mockImplementation(
+    class {
+      batchVectorSearch = vi.fn().mockResolvedValue({ items: [] });
+    },
+  ),
 }));
 
 // ---------------------------------------------------------------------------
@@ -185,9 +187,11 @@ describe('ImageDetectionService', () => {
       const mockBatchVectorSearch = vi.fn().mockResolvedValue({
         items: [[{ id: 1, name: 'Tent', score: 0.9 }]],
       });
-      MockCatalogService.mockImplementation(() => ({
-        batchVectorSearch: mockBatchVectorSearch,
-      }));
+      MockCatalogService.mockImplementation(
+        class {
+          batchVectorSearch = mockBatchVectorSearch;
+        },
+      );
 
       mockGenerateObject.mockResolvedValue({
         object: {
@@ -224,9 +228,11 @@ describe('ImageDetectionService', () => {
           [{ id: 2, name: 'Sleeping Bag', score: 0.8 }],
         ],
       });
-      MockCatalogService.mockImplementation(() => ({
-        batchVectorSearch: mockBatchVectorSearch,
-      }));
+      MockCatalogService.mockImplementation(
+        class {
+          batchVectorSearch = mockBatchVectorSearch;
+        },
+      );
 
       mockGenerateObject.mockResolvedValue({
         object: {
@@ -282,9 +288,11 @@ describe('ImageDetectionService', () => {
           [], // no matches
         ],
       });
-      MockCatalogService.mockImplementation(() => ({
-        batchVectorSearch: mockBatchVectorSearch,
-      }));
+      MockCatalogService.mockImplementation(
+        class {
+          batchVectorSearch = mockBatchVectorSearch;
+        },
+      );
 
       mockGenerateObject.mockResolvedValue({
         object: {
@@ -317,9 +325,11 @@ describe('ImageDetectionService', () => {
       const MockCatalogService = CatalogService as ReturnType<typeof vi.fn>;
 
       const mockBatchVectorSearch = vi.fn().mockRejectedValue(new Error('Catalog unavailable'));
-      MockCatalogService.mockImplementation(() => ({
-        batchVectorSearch: mockBatchVectorSearch,
-      }));
+      MockCatalogService.mockImplementation(
+        class {
+          batchVectorSearch = mockBatchVectorSearch;
+        },
+      );
 
       mockGenerateObject.mockResolvedValue({
         object: {
@@ -358,9 +368,11 @@ describe('ImageDetectionService', () => {
       const mockBatchVectorSearch = vi.fn().mockResolvedValue({
         items: [[{ id: 1, name: 'Tent', score: 0.9 }]],
       });
-      MockCatalogService.mockImplementation(() => ({
-        batchVectorSearch: mockBatchVectorSearch,
-      }));
+      MockCatalogService.mockImplementation(
+        class {
+          batchVectorSearch = mockBatchVectorSearch;
+        },
+      );
 
       mockGenerateObject.mockResolvedValue({
         object: {
