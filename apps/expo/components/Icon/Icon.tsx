@@ -12,17 +12,7 @@ function Icon({
   ios,
   materialIcon,
 }: IconProps) {
-  // Auto-detect SF Symbols: if the name contains a dot, it's likely an SF Symbol
-  const effectiveNamingScheme = useMemo(() => {
-    if (namingScheme !== 'material') return namingScheme;
-    if (name && name.includes('.')) return 'sfSymbol';
-    return 'material';
-  }, [namingScheme, name]);
-
-  const iconNames = useMemo(
-    () => getIconNames(effectiveNamingScheme, name),
-    [effectiveNamingScheme, name],
-  );
+  const iconNames = useMemo(() => getIconNames(namingScheme, name), [namingScheme, name]);
 
   // Always use Material icons on Android/Web, or when useMaterialIcon is true
   if (ios?.useMaterialIcon) {
