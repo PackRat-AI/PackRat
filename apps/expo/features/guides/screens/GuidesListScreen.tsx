@@ -4,7 +4,7 @@ import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
@@ -27,6 +27,7 @@ export const GuidesListScreen = () => {
     data: guidesData,
     isLoading: isLoadingGuides,
     isRefetching: isRefetchingGuides,
+    error: guidesError,
     refetch: refetchGuides,
     fetchNextPage: fetchNextPageGuides,
     hasNextPage: hasNextPageGuides,
@@ -75,6 +76,11 @@ export const GuidesListScreen = () => {
     [router],
   );
 
+  const handleRetry = useCallback(() => {
+    refetchCategories();
+    refetchGuides();
+  }, [refetchCategories, refetchGuides]);
+
   const handleSearch = useCallback((text: string) => {
     setSearchQuery(text);
   }, []);
@@ -101,6 +107,17 @@ export const GuidesListScreen = () => {
       <View className="flex-1 items-center justify-center p-8">
         {isLoading ? (
           <ActivityIndicator color={colors.primary} size="large" />
+        ) : guidesError ? (
+          <View className="items-center gap-4">
+            <Text className="text-center text-gray-500 dark:text-gray-400">
+              {t('guides.failedToLoadGuides')}
+            </Text>
+            <TouchableOpacity onPress={handleRetry} className="rounded-lg bg-primary px-4 py-2">
+              <Text className="text-sm font-medium text-primary-foreground">
+                {t('common.retry')}
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <Text className="text-center text-gray-500 dark:text-gray-400">
             {isSearchMode
@@ -128,7 +145,7 @@ export const GuidesListScreen = () => {
         onFilter={handleCategoryChange}
         activeFilter={selectedCategory}
         error={categoriesError}
-        retry={refetchCategories}
+        retry={handleRetry}
         className="px-4 pb-2"
       />
 

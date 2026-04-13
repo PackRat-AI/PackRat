@@ -147,6 +147,19 @@ export const GuideSearchQuerySchema = z
   })
   .openapi('GuideSearchQuery');
 
+export const GuideCategoriesResponseSchema = z
+  .object({
+    categories: z.array(z.string()).openapi({
+      example: ['backpacking', 'camping', 'hiking'],
+      description: 'List of unique guide categories',
+    }),
+    count: z.number().openapi({
+      example: 10,
+      description: 'Total number of unique categories',
+    }),
+  })
+  .openapi('GuideCategoriesResponse');
+
 export const GuideSearchResponseSchema = z
   .object({
     items: z.array(GuideSchema),

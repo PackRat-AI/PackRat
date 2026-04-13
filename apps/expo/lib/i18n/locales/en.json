@@ -978,6 +978,7 @@
     "noGuidesFound": "No guides found for \"{{query}}\"",
     "noGuidesAvailable": "No guides available",
     "failedToLoad": "Failed to load guide",
+    "failedToLoadGuides": "Failed to load guides",
     "viewAll": "View all",
     "browseGuides": "Browse helpful guides and tutorials",
     "by": "By",

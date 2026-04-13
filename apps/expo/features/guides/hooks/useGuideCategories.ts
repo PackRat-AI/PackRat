@@ -26,6 +26,7 @@ export const useGuideCategories = () => {
       ];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: false,
+    retry: 2,
+    refetchOnWindowFocus: false,
   });
 };
