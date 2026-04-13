@@ -1,6 +1,6 @@
 import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { FlashList } from '@shopify/flash-list';
 import { Card } from 'expo-app/components/Card';
 import { ThemeToggle } from 'expo-app/components/ThemeToggle';

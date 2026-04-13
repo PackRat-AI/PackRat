@@ -1,5 +1,5 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon, type IconProps } from '@roninoss/icons';
+import { Icon, type IconProps } from 'expo-app/components/Icon';
 import { userStore } from 'expo-app/features/auth/store';
 import { usePackDetailsFromStore } from 'expo-app/features/packs/hooks/usePackDetailsFromStore';
 import { computeCategorySummaries } from 'expo-app/features/packs/utils';

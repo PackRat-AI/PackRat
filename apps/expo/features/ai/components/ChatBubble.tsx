@@ -1,6 +1,6 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Sheet, Text, useColorScheme, useSheetRef } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import type { ToolUIPart, UIMessage } from 'ai';
 import * as Burnt from 'burnt';
 import { Markdown } from 'expo-app/components/Markdown';

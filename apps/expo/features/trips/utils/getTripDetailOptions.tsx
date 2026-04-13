@@ -1,5 +1,5 @@
 import { Alert, Button, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { t } from 'expo-app/lib/i18n';
 import { useRouter } from 'expo-router';
