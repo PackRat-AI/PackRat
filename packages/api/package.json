@@ -59,7 +59,7 @@
     "concurrently": "^8.2.2",
     "drizzle-orm": "^0.44.4",
     "typed-htmx": "^0.3.1",
-    "vitest": "~3.1.0",
+    "vitest": "~4.1.4",
     "wrangler": "^4.21.2"
   }
 }
