@@ -275,7 +275,7 @@ ${guide.content}`;
 // Mock R2 bucket service
 vi.mock('@packrat/api/services/r2-bucket', () => {
   return {
-    R2BucketService: vi.fn().mockImplementation(() => {
+    R2BucketService: vi.fn(function (this: unknown) {
       return {
         list: vi.fn(async (options?: { prefix?: string; limit?: number }) => {
           let objects = mockGuides.map((guide) => createMockR2Object(guide));

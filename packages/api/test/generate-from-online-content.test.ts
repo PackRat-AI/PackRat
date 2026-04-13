@@ -88,36 +88,38 @@ vi.mock('ai', async () => {
 // and the database has foreign key constraints on catalog_item_id references.
 // In production, the service returns actual catalog IDs when matches are found.
 vi.mock('@packrat/api/services/catalogService', () => ({
-  CatalogService: vi.fn().mockImplementation(() => ({
-    batchVectorSearch: vi.fn(() =>
-      Promise.resolve({
-        items: [
-          // First item match (backpack)
-          [
-            {
-              id: null, // No catalog ID in tests to avoid FK constraint
-              name: 'Trail Backpack 20L',
-              description: 'Lightweight day pack',
-              weight: 480,
-              weightUnit: 'g',
-              images: ['https://example.com/backpack.jpg'],
-            },
+  CatalogService: vi.fn(function (this: unknown) {
+    return {
+      batchVectorSearch: vi.fn(() =>
+        Promise.resolve({
+          items: [
+            // First item match (backpack)
+            [
+              {
+                id: null, // No catalog ID in tests to avoid FK constraint
+                name: 'Trail Backpack 20L',
+                description: 'Lightweight day pack',
+                weight: 480,
+                weightUnit: 'g',
+                images: ['https://example.com/backpack.jpg'],
+              },
+            ],
+            // Second item match (water bottle)
+            [
+              {
+                id: null, // No catalog ID in tests to avoid FK constraint
+                name: 'HydroFlask 32oz',
+                description: 'Insulated water bottle',
+                weight: 180,
+                weightUnit: 'g',
+                images: ['https://example.com/bottle.jpg'],
+              },
+            ],
           ],
-          // Second item match (water bottle)
-          [
-            {
-              id: null, // No catalog ID in tests to avoid FK constraint
-              name: 'HydroFlask 32oz',
-              description: 'Insulated water bottle',
-              weight: 180,
-              weightUnit: 'g',
-              images: ['https://example.com/bottle.jpg'],
-            },
-          ],
-        ],
-      }),
-    ),
-  })),
+        }),
+      ),
+    };
+  }),
 }));
 
 describe('Generate From Online Content Routes', () => {
