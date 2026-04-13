@@ -20,6 +20,9 @@ export enum TestIds {
   CreateTripButton = 'create-trip-button',
   SubmitTripButton = 'submit-trip-button',
 
+  //Trip List rows
+  TripRow = 'trip-row-',
+
   // Trip form
   StartDateInput = 'start-date-input',
   EndDateInput = 'end-date-input',
@@ -45,6 +48,7 @@ export enum TestIds {
   SignOutButton = 'sign-out-button',
 
   // Catalog item detail
+  CatalogItem = 'catalog-item',
   AddToPackButton = 'add-to-pack-button',
   ViewRetailerButton = 'view-retailer-button',
 }

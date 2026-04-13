@@ -24,7 +24,7 @@ export function CatalogItemCard({ item, onPress }: CatalogItemCardProps) {
   const { t } = useTranslation();
 
   return (
-    <TouchableWithoutFeedback onPress={onPress} className="mb-3">
+    <TouchableWithoutFeedback onPress={onPress} className="mb-3" testID="catalog-item">
       <Card className="overflow-hidden">
         <View>
           <CatalogItemImage
