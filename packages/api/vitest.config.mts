@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
-import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
+import { defineConfig } from 'vitest/config';
 
-export default defineWorkersConfig({
+export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

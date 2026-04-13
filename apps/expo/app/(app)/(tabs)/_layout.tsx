@@ -1,6 +1,8 @@
 import { featureFlags } from 'expo-app/config';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
+
+const { Icon, Label } = NativeTabs.Trigger;
 
 export default function TabLayout() {
   const { t } = useTranslation();

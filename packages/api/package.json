@@ -15,9 +15,9 @@
     "validate:cloudflare-env": "bun scripts/validate-cloudflare-api-env.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.62",
+    "@ai-sdk/google": "^2.0.62",
     "@ai-sdk/openai": "^2.0.11",
-    "@ai-sdk/perplexity": "^3.0.29",
+    "@ai-sdk/perplexity": "^2.0.1",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@cloudflare/containers": "^0.0.30",
@@ -51,12 +51,12 @@
     "zod-openapi": "^4.2.4"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.8.61",
+    "@cloudflare/vitest-pool-workers": "0.14.5",
     "@cloudflare/workers-types": "^4.20250405.0",
     "@types/bun": "latest",
     "@types/pg": "^8.11.15",
     "@types/ws": "^8.5.14",
-    "@vitest/coverage-v8": "~3.1.0",
+    "@vitest/coverage-v8": "~4.1.4",
     "concurrently": "^8.2.2",
     "drizzle-orm": "^0.45.2",
     "typed-htmx": "^0.3.1",

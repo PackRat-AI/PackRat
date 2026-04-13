@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import { getAllCategories } from 'guides-app/lib/categories';
 import { footerConfig, siteConfig } from 'guides-app/lib/config';
-import { Backpack, Facebook, Github, Instagram, Twitter } from 'lucide-react';
+import { Backpack, Globe } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Footer() {
@@ -31,28 +31,28 @@ export default function Footer() {
               href={siteConfig.links.twitter}
               className="text-gray-500 hover:text-apple-blue transition-colors"
             >
-              <Twitter className="h-5 w-5" />
+              <Globe className="h-5 w-5" />
               <span className="sr-only">Twitter</span>
             </Link>
             <Link
               href={siteConfig.links.instagram}
               className="text-gray-500 hover:text-apple-blue transition-colors"
             >
-              <Instagram className="h-5 w-5" />
+              <Globe className="h-5 w-5" />
               <span className="sr-only">Instagram</span>
             </Link>
             <Link
               href={siteConfig.links.facebook}
               className="text-gray-500 hover:text-apple-blue transition-colors"
             >
-              <Facebook className="h-5 w-5" />
+              <Globe className="h-5 w-5" />
               <span className="sr-only">Facebook</span>
             </Link>
             <Link
               href={siteConfig.links.github}
               className="text-gray-500 hover:text-apple-blue transition-colors"
             >
-              <Github className="h-5 w-5" />
+              <Globe className="h-5 w-5" />
               <span className="sr-only">GitHub</span>
             </Link>
           </div>
