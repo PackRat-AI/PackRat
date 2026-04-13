@@ -15,7 +15,7 @@ import {
   Text,
   Toolbar,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import * as Haptics from 'expo-haptics';
@@ -113,17 +113,18 @@ function LeftView({
       createDropdownItem({
         actionKey: 'go-home',
         title: 'Go Home',
-        icon: { name: 'house.fill' },
+        icon: { namingScheme: 'sfSymbol', name: 'house.fill' },
       }),
       createDropdownItem({
         actionKey: 'select-messages',
         title: 'Select messages',
-        icon: { name: 'checkmark.circle' },
+        icon: { namingScheme: 'sfSymbol', name: 'checkmark.circle' },
       }),
       createDropdownItem({
         actionKey: 'toggle-theme',
         title: 'Toggle Theme',
         icon: {
+          namingScheme: 'sfSymbol',
           name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
         },
       }),

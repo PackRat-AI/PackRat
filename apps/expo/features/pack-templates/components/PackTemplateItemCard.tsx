@@ -1,6 +1,6 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { appAlert } from 'expo-app/app/_layout';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { cn } from 'expo-app/lib/cn';

@@ -1,6 +1,6 @@
 import { assertDefined } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Burnt from 'burnt';
 import { useCreatePackItem, usePackDetailsFromStore } from 'expo-app/features/packs';
