@@ -1,5 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import type { ComponentProps } from 'react';
 import { useMemo } from 'react';
 import { getIconNames } from './get-icon-names';
 import type { IconProps } from './types';
@@ -13,38 +14,39 @@ function Icon({
 }: IconProps) {
   const iconNames = useMemo(() => getIconNames(namingScheme, name), [namingScheme, name]);
 
-  const materialProps = materialIcon ?? {};
   const prefersMaterialIcons = materialIcon?.type === 'MaterialIcons';
   const prefersMaterialCommunityIcons = materialIcon?.type === 'MaterialCommunityIcons';
-  const materialIconName = materialProps.name ?? iconNames.materialIcon ?? 'help';
-  const materialCommunityIconName = materialProps.name ?? iconNames.materialCommunityIcon ?? 'help';
 
   if (prefersMaterialCommunityIcons) {
-    return (
-      <MaterialCommunityIcons
-        {...materialProps}
-        name={materialCommunityIconName}
-        size={size}
-        color={color}
-      />
-    );
+    const iconName = (materialIcon?.name ??
+      iconNames.materialCommunityIcon ??
+      'help') as ComponentProps<typeof MaterialCommunityIcons>['name'];
+    const { type: _type, name: _name, ...restProps } = materialIcon || {};
+    return <MaterialCommunityIcons {...restProps} name={iconName} size={size} color={color} />;
   }
 
   if (prefersMaterialIcons) {
-    return <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />;
+    const iconName = (materialIcon?.name ?? iconNames.materialIcon ?? 'help') as ComponentProps<
+      typeof MaterialIcons
+    >['name'];
+    const { type: _type, name: _name, ...restProps } = materialIcon || {};
+    return <MaterialIcons {...restProps} name={iconName} size={size} color={color} />;
   }
 
   // Prefer MaterialIcons if available, otherwise use MaterialCommunityIcons
-  return iconNames.materialIcon ? (
-    <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />
-  ) : (
-    <MaterialCommunityIcons
-      {...materialProps}
-      name={materialCommunityIconName}
-      size={size}
-      color={color}
-    />
-  );
+  if (iconNames.materialIcon) {
+    const iconName = (materialIcon?.name ?? iconNames.materialIcon ?? 'help') as ComponentProps<
+      typeof MaterialIcons
+    >['name'];
+    const { type: _type, name: _name, ...restProps } = materialIcon || {};
+    return <MaterialIcons {...restProps} name={iconName} size={size} color={color} />;
+  }
+
+  const iconName = (materialIcon?.name ??
+    iconNames.materialCommunityIcon ??
+    'help') as ComponentProps<typeof MaterialCommunityIcons>['name'];
+  const { type: _type, name: _name, ...restProps } = materialIcon || {};
+  return <MaterialCommunityIcons {...restProps} name={iconName} size={size} color={color} />;
 }
 
 export { Icon };

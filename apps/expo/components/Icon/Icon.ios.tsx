@@ -1,6 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { SymbolView } from 'expo-symbols';
+import type { ComponentProps } from 'react';
 import { useMemo } from 'react';
 import { getIconNames } from './get-icon-names';
 import type { IconProps } from './types';
@@ -18,38 +19,38 @@ function Icon({
 
   // Use Material icons on iOS when useMaterialIcon is true
   if (useMaterialIcon) {
-    const materialProps = materialIcon ?? {};
     const prefersMaterialIcons = materialIcon?.type === 'MaterialIcons';
     const prefersMaterialCommunityIcons = materialIcon?.type === 'MaterialCommunityIcons';
-    const materialIconName = materialProps.name ?? iconNames.materialIcon ?? 'help';
-    const materialCommunityIconName =
-      materialProps.name ?? iconNames.materialCommunityIcon ?? 'help';
 
     if (prefersMaterialCommunityIcons) {
-      return (
-        <MaterialCommunityIcons
-          {...materialProps}
-          name={materialCommunityIconName}
-          size={size}
-          color={color}
-        />
-      );
+      const iconName = (materialIcon?.name ??
+        iconNames.materialCommunityIcon ??
+        'help') as ComponentProps<typeof MaterialCommunityIcons>['name'];
+      const { type: _type, name: _name, ...restProps } = materialIcon || {};
+      return <MaterialCommunityIcons {...restProps} name={iconName} size={size} color={color} />;
     }
 
     if (prefersMaterialIcons) {
-      return <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />;
+      const iconName = (materialIcon?.name ?? iconNames.materialIcon ?? 'help') as ComponentProps<
+        typeof MaterialIcons
+      >['name'];
+      const { type: _type, name: _name, ...restProps } = materialIcon || {};
+      return <MaterialIcons {...restProps} name={iconName} size={size} color={color} />;
     }
 
-    return iconNames.materialIcon ? (
-      <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />
-    ) : (
-      <MaterialCommunityIcons
-        {...materialProps}
-        name={materialCommunityIconName}
-        size={size}
-        color={color}
-      />
-    );
+    if (iconNames.materialIcon) {
+      const iconName = (materialIcon?.name ?? iconNames.materialIcon ?? 'help') as ComponentProps<
+        typeof MaterialIcons
+      >['name'];
+      const { type: _type, name: _name, ...restProps } = materialIcon || {};
+      return <MaterialIcons {...restProps} name={iconName} size={size} color={color} />;
+    }
+
+    const iconName = (materialIcon?.name ??
+      iconNames.materialCommunityIcon ??
+      'help') as ComponentProps<typeof MaterialCommunityIcons>['name'];
+    const { type: _type, name: _name, ...restProps } = materialIcon || {};
+    return <MaterialCommunityIcons {...restProps} name={iconName} size={size} color={color} />;
   }
 
   // Default to SF Symbols on iOS, but fall back to Material icons if no mapping exists
@@ -66,20 +67,19 @@ function Icon({
   }
 
   // Fallback to Material icons when no SF Symbol mapping exists
-  const materialProps = materialIcon ?? {};
-  const materialIconName = materialProps.name ?? iconNames.materialIcon ?? 'help';
-  const materialCommunityIconName = materialProps.name ?? iconNames.materialCommunityIcon ?? 'help';
+  if (iconNames.materialIcon) {
+    const iconName = (materialIcon?.name ?? iconNames.materialIcon ?? 'help') as ComponentProps<
+      typeof MaterialIcons
+    >['name'];
+    const { type: _type, name: _name, ...restProps } = materialIcon || {};
+    return <MaterialIcons {...restProps} name={iconName} size={size} color={color} />;
+  }
 
-  return iconNames.materialIcon ? (
-    <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />
-  ) : (
-    <MaterialCommunityIcons
-      {...materialProps}
-      name={materialCommunityIconName}
-      size={size}
-      color={color}
-    />
-  );
+  const iconName = (materialIcon?.name ??
+    iconNames.materialCommunityIcon ??
+    'help') as ComponentProps<typeof MaterialCommunityIcons>['name'];
+  const { type: _type, name: _name, ...restProps } = materialIcon || {};
+  return <MaterialCommunityIcons {...restProps} name={iconName} size={size} color={color} />;
 }
 
 export { Icon };
