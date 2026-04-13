@@ -13,48 +13,36 @@ function Icon({
 }: IconProps) {
   const iconNames = useMemo(() => getIconNames(namingScheme, name), [namingScheme, name]);
 
-  // Always use Material icons on Android/Web, or when useMaterialIcon is true
-  if (materialIcon?.type === 'MaterialCommunityIcons') {
+  const materialProps = materialIcon ?? {};
+  const prefersMaterialIcons = materialIcon?.type === 'MaterialIcons';
+  const prefersMaterialCommunityIcons = materialIcon?.type === 'MaterialCommunityIcons';
+  const materialIconName = materialProps.name ?? iconNames.materialIcon ?? 'help';
+  const materialCommunityIconName = materialProps.name ?? iconNames.materialCommunityIcon ?? 'help';
+
+  if (prefersMaterialCommunityIcons) {
     return (
       <MaterialCommunityIcons
-        name={materialIcon.name ?? iconNames.materialCommunityIcon ?? 'help'}
+        {...materialProps}
+        name={materialCommunityIconName}
         size={size}
         color={color}
-        {...materialIcon}
-      />
-    );
-  }
-  if (materialIcon?.type === 'MaterialIcons') {
-    return (
-      <MaterialIcons
-        name={materialIcon.name ?? iconNames.materialIcon ?? 'help'}
-        size={size}
-        color={color}
-        {...materialIcon}
       />
     );
   }
 
-  if (!name) return null;
-
-  const materialProps = materialIcon ?? {};
+  if (prefersMaterialIcons) {
+    return <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />;
+  }
 
   // Prefer MaterialIcons if available, otherwise use MaterialCommunityIcons
   return iconNames.materialIcon ? (
-    <MaterialIcons
-      // @ts-expect-error when name is passed by `materialProps`, we want it to replace this icon name
-      name={iconNames.materialIcon ?? 'help'}
-      size={size}
-      color={color}
-      {...materialProps}
-    />
+    <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />
   ) : (
     <MaterialCommunityIcons
-      // @ts-expect-error when name is passed by `materialProps`, we want it to replace this icon name
-      name={iconNames.materialCommunityIcon ?? 'help'}
+      {...materialProps}
+      name={materialCommunityIconName}
       size={size}
       color={color}
-      {...materialProps}
     />
   );
 }

@@ -18,56 +18,66 @@ function Icon({
 
   // Use Material icons on iOS when useMaterialIcon is true
   if (useMaterialIcon) {
-    if (materialIcon?.type === 'MaterialCommunityIcons') {
+    const materialProps = materialIcon ?? {};
+    const prefersMaterialIcons = materialIcon?.type === 'MaterialIcons';
+    const prefersMaterialCommunityIcons = materialIcon?.type === 'MaterialCommunityIcons';
+    const materialIconName = materialProps.name ?? iconNames.materialIcon ?? 'help';
+    const materialCommunityIconName =
+      materialProps.name ?? iconNames.materialCommunityIcon ?? 'help';
+
+    if (prefersMaterialCommunityIcons) {
       return (
         <MaterialCommunityIcons
-          name={materialIcon.name ?? iconNames.materialCommunityIcon ?? 'help'}
+          {...materialProps}
+          name={materialCommunityIconName}
           size={size}
           color={color}
-          {...materialIcon}
         />
       );
     }
-    if (materialIcon?.type === 'MaterialIcons') {
-      return (
-        <MaterialIcons
-          name={materialIcon.name ?? iconNames.materialIcon ?? 'help'}
-          size={size}
-          color={color}
-          {...materialIcon}
-        />
-      );
-    }
-    if (!name) return null;
 
-    const materialProps = materialIcon ?? {};
+    if (prefersMaterialIcons) {
+      return <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />;
+    }
+
     return iconNames.materialIcon ? (
-      <MaterialIcons
-        // @ts-expect-error when name is passed by `materialProps`, we want it to replace this icon name
-        name={iconNames.materialIcon ?? 'help'}
-        size={size}
-        color={color}
-        {...materialProps}
-      />
+      <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />
     ) : (
       <MaterialCommunityIcons
-        // @ts-expect-error when name is passed by `materialProps`, we want it to replace this icon name
-        name={iconNames.materialCommunityIcon ?? 'help'}
+        {...materialProps}
+        name={materialCommunityIconName}
         size={size}
         color={color}
-        {...materialProps}
       />
     );
   }
 
-  // Default to SF Symbols on iOS
-  return (
-    <SymbolView
+  // Default to SF Symbols on iOS, but fall back to Material icons if no mapping exists
+  if (iconNames.sfSymbol) {
+    return (
+      <SymbolView
+        size={size}
+        scale="small"
+        name={iconNames.sfSymbol}
+        tintColor={color}
+        {...sfSymbolProps}
+      />
+    );
+  }
+
+  // Fallback to Material icons when no SF Symbol mapping exists
+  const materialProps = materialIcon ?? {};
+  const materialIconName = materialProps.name ?? iconNames.materialIcon ?? 'help';
+  const materialCommunityIconName = materialProps.name ?? iconNames.materialCommunityIcon ?? 'help';
+
+  return iconNames.materialIcon ? (
+    <MaterialIcons {...materialProps} name={materialIconName} size={size} color={color} />
+  ) : (
+    <MaterialCommunityIcons
+      {...materialProps}
+      name={materialCommunityIconName}
       size={size}
-      scale="small"
-      name={iconNames.sfSymbol ?? 'questionmark'}
-      tintColor={color}
-      {...sfSymbolProps}
+      color={color}
     />
   );
 }
