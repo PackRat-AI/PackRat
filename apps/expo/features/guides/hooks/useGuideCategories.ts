@@ -26,7 +26,7 @@ export const useGuideCategories = () => {
       ];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
+    retry: 2, // retry twice on transient network or server errors before showing failure
     refetchOnWindowFocus: false,
   });
 };

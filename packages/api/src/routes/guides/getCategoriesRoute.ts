@@ -41,7 +41,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
       bucketType: 'guides',
     });
   } catch (error) {
-    console.error('Error initialising R2 bucket for guide categories:', error);
+    console.error('Error initializing R2 bucket for guide categories:', error);
     return c.json({ categories: [], count: 0 }, 200);
   }
 
