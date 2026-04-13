@@ -25,7 +25,7 @@ const requiredEnvVars = [
 ];
 
 for (const envVar of requiredEnvVars) {
-  if (!env[envVar]) {
+  if (!(env as Record<string, string | undefined>)[envVar]) {
     console.error(`❌ Missing required environment variable: ${envVar}`);
     process.exit(1);
   }

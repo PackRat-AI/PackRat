@@ -4,7 +4,7 @@ import { uploadImage } from 'expo-app/features/packs/utils/uploadImage';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import * as ImagePicker from 'expo-image-picker';
-import { nanoid } from 'nanoid/non-secure';
+import { nanoid } from 'nanoid';
 import { useCallback, useState } from 'react';
 import {
   Alert,
