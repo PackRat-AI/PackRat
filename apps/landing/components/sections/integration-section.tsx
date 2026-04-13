@@ -20,7 +20,7 @@ export default function IntegrationSection() {
             const Icon = LucideIcon(integration.icon);
 
             return (
-              <div key={integration.id} className="apple-card h-full">
+              <div key={integration.id} className="apple-card p-5 md:p-6 h-full">
                 <div className="flex items-center gap-4 mb-4">
                   <div
                     className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full"
