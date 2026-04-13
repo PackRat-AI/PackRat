@@ -36,6 +36,7 @@
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
     "test:expo": "vitest run --config apps/expo/vitest.config.ts"
   },
+  "overrides": {},
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
     "@manypkg/cli": "^0.24.0",
@@ -90,7 +91,6 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7"
   },
-  "overrides": {},
   "patchedDependencies": {
     "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch",
     "pg-cloudflare@1.3.0": "patches/pg-cloudflare@1.3.0.patch"
