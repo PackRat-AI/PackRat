@@ -45,7 +45,7 @@ export function getPackTemplateItemDetailOptions(id: string) {
             ]}
           >
             <Button variant="plain" size="icon">
-              <Icon name="trash-can" color={colors.grey2} />
+              <Icon name="trash-can" size={24} color={colors.grey2} />
             </Button>
           </Alert>
           <Button
@@ -58,7 +58,7 @@ export function getPackTemplateItemDetailOptions(id: string) {
               })
             }
           >
-            <Icon name="pencil-box-outline" color={colors.grey2} />
+            <Icon name="pencil-box-outline" size={24} color={colors.grey2} />
           </Button>
         </View>
       );

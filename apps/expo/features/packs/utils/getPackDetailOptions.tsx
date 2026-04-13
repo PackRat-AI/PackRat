@@ -42,7 +42,7 @@ export function getPackDetailOptions(id: string) {
             ]}
           >
             <Button variant="plain" size="icon">
-              <Icon name="trash-can-outline" color={colors.grey2} />
+              <Icon name="trash-can-outline" size={24} color={colors.grey2} />
             </Button>
           </Alert>
           <Button
@@ -50,10 +50,10 @@ export function getPackDetailOptions(id: string) {
             size="icon"
             onPress={() => router.push({ pathname: '/pack/[id]/edit', params: { id } })}
           >
-            <Icon name="pencil-box-outline" color={colors.grey2} />
+            <Icon name="pencil-box-outline" size={24} color={colors.grey2} />
           </Button>
           <Button variant="plain" size="icon" onPress={() => addItemActionsRef.current?.present()}>
-            <Icon name="plus" color={colors.grey2} />
+            <Icon name="plus" size={24} color={colors.grey2} />
           </Button>
           <AddPackItemActions ref={addItemActionsRef} packId={id} />
         </View>

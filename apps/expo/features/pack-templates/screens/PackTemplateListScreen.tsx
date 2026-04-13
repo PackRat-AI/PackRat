@@ -37,8 +37,8 @@ function CreateTemplateIconButton({ onPress }: { onPress: () => void }) {
   const { colors } = useColorScheme();
 
   return (
-    <Pressable onPress={onPress}>
-      <Icon name="plus" color={colors.foreground} />
+    <Pressable onPress={onPress} className="h-9 w-9 items-center justify-center">
+      <Icon name="plus" size={24} color={colors.foreground} />
     </Pressable>
   );
 }

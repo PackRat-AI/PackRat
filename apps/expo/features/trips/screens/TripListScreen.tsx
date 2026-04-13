@@ -40,8 +40,12 @@ function CreateTripIconButton() {
   const { t } = useTranslation();
   return (
     <Link href="/trip/new" asChild>
-      <Pressable testID={TestIds.CreateTripButton} accessibilityLabel={t('trips.createNewTrip')}>
-        <Icon name="plus" color={colors.foreground} />
+      <Pressable
+        testID={TestIds.CreateTripButton}
+        accessibilityLabel={t('trips.createNewTrip')}
+        className="h-9 w-9 items-center justify-center"
+      >
+        <Icon name="plus" size={24} color={colors.foreground} />
       </Pressable>
     </Link>
   );

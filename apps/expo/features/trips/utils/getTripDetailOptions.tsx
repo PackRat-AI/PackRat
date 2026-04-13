@@ -32,7 +32,7 @@ export function getTripDetailOptions(id: string) {
             ]}
           >
             <Button variant="plain" size="icon">
-              <Icon name="trash-can-outline" color={colors.grey2} />
+              <Icon name="trash-can-outline" size={24} color={colors.grey2} />
             </Button>
           </Alert>
 
@@ -41,7 +41,7 @@ export function getTripDetailOptions(id: string) {
             size="icon"
             onPress={() => router.push({ pathname: '/trip/[id]/edit', params: { id } })}
           >
-            <Icon name="pencil-box-outline" color={colors.grey2} />
+            <Icon name="pencil-box-outline" size={24} color={colors.grey2} />
           </Button>
 
           <Button
@@ -49,7 +49,7 @@ export function getTripDetailOptions(id: string) {
             size="icon"
             onPress={() => router.push({ pathname: '/trip/new', params: { copyFromTripId: id } })}
           >
-            <Icon name="plus" color={colors.grey2} />
+            <Icon name="plus" size={24} color={colors.grey2} />
           </Button>
         </View>
       );

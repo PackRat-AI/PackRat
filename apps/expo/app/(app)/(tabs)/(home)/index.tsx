@@ -162,10 +162,10 @@ function SettingsIcon() {
   const { colors } = useColorScheme();
   return (
     <Link href="/settings" asChild>
-      <Pressable className="opacity-80">
+      <Pressable className="h-9 w-9 items-center justify-center opacity-80">
         {({ pressed }) => (
           <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-            <Icon name="cog-outline" color={colors.foreground} />
+            <Icon name="cog-outline" size={24} color={colors.foreground} />
           </View>
         )}
       </Pressable>
@@ -179,10 +179,10 @@ function DemoIcon() {
 
   return (
     <Link href="/demo" asChild>
-      <Pressable className="opacity-80">
+      <Pressable className="h-9 w-9 items-center justify-center opacity-80">
         {({ pressed }) => (
           <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-            <Icon name="tag-outline" color={colors.foreground} />
+            <Icon name="tag-outline" size={24} color={colors.foreground} />
           </View>
         )}
       </Pressable>

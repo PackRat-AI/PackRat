@@ -127,10 +127,10 @@ function LocationsScreen() {
         )}
         rightView={() => (
           <View className="flex-row items-center pr-2">
-            <Pressable className="opacity-80" onPress={handleAddLocation}>
+            <Pressable className="h-9 w-9 items-center justify-center opacity-80" onPress={handleAddLocation}>
               {({ pressed }) => (
                 <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-                  <Icon name="plus" color={colors.foreground} />
+                  <Icon name="plus" size={24} color={colors.foreground} />
                 </View>
               )}
             </Pressable>
