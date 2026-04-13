@@ -407,6 +407,28 @@ vi.mock('@packrat/api/db', () => ({
   createDbClient: vi.fn(() => testDb),
 }));
 
+// Mock youtube-transcript to avoid CJS/ESM incompatibility in workerd
+// (youtube-transcript@1.3.0 has "type": "module" but a CJS main entry,
+// causing "exports is not defined" when workerd evaluates it as ESM)
+vi.mock('youtube-transcript', () => ({
+  fetchTranscript: vi.fn().mockResolvedValue([]),
+}));
+
+// Mock pg-cloudflare to avoid CloudflareSocket API incompatibility in workerd
+// (pg-cloudflare uses new CloudflareSocket() whose constructor API changed in 2026-era workerd)
+vi.mock('pg-cloudflare', () => ({
+  default: class MockCloudflareSocket {
+    connect() {}
+    end() {}
+    destroy() {}
+  },
+  CloudflareSocket: class MockCloudflareSocket {
+    connect() {}
+    end() {}
+    destroy() {}
+  },
+}));
+
 // Setup PostgreSQL connection for tests
 beforeAll(async () => {
   console.log('🔧 Setting up test database connection...');
