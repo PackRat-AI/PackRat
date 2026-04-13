@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-// @ts-expect-error - Type definitions may not be available during type checking
+// @ts-expect-error - Module '@cloudflare/vitest-pool-workers/config' type definitions may not be available during type checking
 import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
 
 export default defineWorkersConfig({
