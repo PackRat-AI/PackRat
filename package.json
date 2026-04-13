@@ -90,6 +90,9 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7"
   },
+  "overrides": {
+    "workerd": "1.20250803.0"
+  },
   "patchedDependencies": {
     "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch"
   },
