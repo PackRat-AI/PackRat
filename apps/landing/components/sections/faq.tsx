@@ -37,7 +37,7 @@ export default function FaqSection() {
         </div>
 
         <div className="mx-auto max-w-3xl">
-          <div className="apple-card">
+          <div className="apple-card p-4 md:p-6">
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
                 <div key={faq.question}>
