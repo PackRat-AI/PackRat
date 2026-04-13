@@ -1,7 +1,7 @@
 import type MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import type { ComponentProps } from 'react';
 import type { SymbolViewProps } from 'expo-symbols';
+import type { ComponentProps } from 'react';
 
 export type MaterialCommunityIconsProps = ComponentProps<typeof MaterialCommunityIcons>;
 export type MaterialIconsProps = ComponentProps<typeof MaterialIcons>;

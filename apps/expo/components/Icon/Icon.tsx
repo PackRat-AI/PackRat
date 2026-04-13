@@ -12,11 +12,10 @@ function Icon({
   ios,
   materialIcon,
 }: IconProps) {
-  const { useMaterialIcon, ...sfSymbolProps } = ios ?? {};
   const iconNames = useMemo(() => getIconNames(namingScheme, name), [namingScheme, name]);
 
   // Always use Material icons on Android/Web, or when useMaterialIcon is true
-  if (useMaterialIcon) {
+  if (ios?.useMaterialIcon) {
     if (materialIcon?.type === 'MaterialCommunityIcons') {
       return (
         <MaterialCommunityIcons
