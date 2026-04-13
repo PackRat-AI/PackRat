@@ -37,12 +37,18 @@ type WeatherApiData = {
     air_quality?: { 'us-epa-index'?: number };
     condition?: { text?: string };
   };
-  forecast?: { forecastday?: Array<{ hour?: WeatherApiHour[] }> };
+  forecast?: {
+    forecastday?: Array<{
+      date?: string;
+      hour?: WeatherApiHour[];
+      day?: { maxtemp_c?: number };
+    }>;
+  };
 };
 
 export function generateAlerts(
   data: WeatherApiData,
-  activeLocation: { name?: string },
+  activeLocation: { name?: string } | null,
 ): WeatherAlert[] {
   const locationName = data?.location?.name || activeLocation?.name || 'Unknown';
   const apiAlerts = data?.alerts?.alert;
@@ -184,12 +190,12 @@ export function generateAlerts(
 
   // 🌡 Tomorrow heat
   const tomorrow = forecastDays[1];
-  if (tomorrow?.day?.maxtemp_c >= 35) {
+  if (tomorrow && (tomorrow.day?.maxtemp_c ?? 0) >= 35) {
     alerts.push({
       id: 'heat-tomorrow',
       type: 'Heat Alert (Tomorrow)',
       location: locationName,
-      dates: tomorrow.date,
+      dates: tomorrow.date ?? 'Tomorrow',
       severity: 'High',
       details: 'High temperature expected tomorrow.',
     });
