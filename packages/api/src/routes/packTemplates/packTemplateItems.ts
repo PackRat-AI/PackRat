@@ -73,7 +73,7 @@ packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
-  const templateId = c.req.param('templateId');
+  const { templateId } = c.req.valid('param');
 
   // Check if the template exists
   const template = await db.query.packTemplates.findFirst({
@@ -170,7 +170,7 @@ packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
-  const templateId = c.req.param('templateId');
+  const { templateId } = c.req.valid('param');
   const data = await c.req.json();
 
   const packTemplate = await db.query.packTemplates.findFirst({
@@ -384,7 +384,7 @@ packTemplateItemsRoutes.openapi(deleteItemRoute, async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
-  const itemId = c.req.param('itemId');
+  const { itemId } = c.req.valid('param');
 
   const item = await db.query.packTemplateItems.findFirst({
     where: eq(packTemplateItems.id, itemId),
