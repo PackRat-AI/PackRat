@@ -1,37 +1,66 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import {
-  SF_SYMBOLS_TO_MATERIAL_COMMUNITY_ICONS,
-  SF_SYMBOLS_TO_MATERIAL_ICONS,
-} from 'rn-icon-mapper';
+import { useMemo } from 'react';
+import { getIconNames } from './get-icon-names';
 import type { IconProps } from './types';
 
 function Icon({
   name,
-  materialCommunityIcon,
+  color = '#000000',
+  namingScheme = 'material',
+  size = 27,
+  ios,
   materialIcon,
-  sfSymbol: _sfSymbol,
-  ...props
 }: IconProps) {
-  if (materialCommunityIcon) {
-    return <MaterialCommunityIcons {...props} {...materialCommunityIcon} />;
+  const { useMaterialIcon, ...sfSymbolProps } = ios ?? {};
+  const iconNames = useMemo(() => getIconNames(namingScheme, name), [namingScheme, name]);
+
+  // Always use Material icons on Android/Web, or when useMaterialIcon is true
+  if (useMaterialIcon) {
+    if (materialIcon?.type === 'MaterialCommunityIcons') {
+      return (
+        <MaterialCommunityIcons
+          name={materialIcon.name ?? iconNames.materialCommunityIcon ?? 'help'}
+          size={size}
+          color={color}
+          {...materialIcon}
+        />
+      );
+    }
+    if (materialIcon?.type === 'MaterialIcons') {
+      return (
+        <MaterialIcons
+          name={materialIcon.name ?? iconNames.materialIcon ?? 'help'}
+          size={size}
+          color={color}
+          {...materialIcon}
+        />
+      );
+    }
   }
-  if (materialIcon) {
-    return <MaterialIcons {...props} {...materialIcon} />;
-  }
-  const materialCommunityIconName =
-    SF_SYMBOLS_TO_MATERIAL_COMMUNITY_ICONS[
-      name as keyof typeof SF_SYMBOLS_TO_MATERIAL_COMMUNITY_ICONS
-    ];
-  if (materialCommunityIconName) {
-    return <MaterialCommunityIcons name={materialCommunityIconName} {...props} />;
-  }
-  const materialIconName =
-    SF_SYMBOLS_TO_MATERIAL_ICONS[name as keyof typeof SF_SYMBOLS_TO_MATERIAL_ICONS];
-  if (materialIconName) {
-    return <MaterialIcons name={materialIconName} {...props} />;
-  }
-  return <MaterialCommunityIcons name="help" {...props} />;
+
+  if (!name) return null;
+
+  const materialProps = materialIcon ?? {};
+
+  // Prefer MaterialIcons if available, otherwise use MaterialCommunityIcons
+  return iconNames.materialIcon ? (
+    <MaterialIcons
+      // @ts-expect-error when name is passed by `materialProps`, we want it to replace this icon name
+      name={iconNames.materialIcon ?? 'help'}
+      size={size}
+      color={color}
+      {...materialProps}
+    />
+  ) : (
+    <MaterialCommunityIcons
+      // @ts-expect-error when name is passed by `materialProps`, we want it to replace this icon name
+      name={iconNames.materialCommunityIcon ?? 'help'}
+      size={size}
+      color={color}
+      {...materialProps}
+    />
+  );
 }
 
 export { Icon };
