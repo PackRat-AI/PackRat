@@ -16,7 +16,6 @@ import { assertDefined } from '@packrat/guards';
 import { generateObject } from 'ai';
 import { sql } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { nanoid } from 'nanoid';
 import { fetchTranscript } from 'youtube-transcript';
 import { z } from 'zod';
 
@@ -391,7 +390,7 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
 
     // Prepare DB records
     const now = new Date();
-    const templateId = `pt_${nanoid()}`;
+    const templateId = `pt_${crypto.randomUUID().replace(/-/g, '')}`;
 
     // Insert the pack template and its items in a single transaction to ensure atomicity
     const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
@@ -418,7 +417,7 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
       const itemRecords = analysis.items.map((detected, index) => {
         const catalogMatches = batchResult.items[index] ?? [];
         const bestMatch = catalogMatches[0];
-        const itemId = `pti_${nanoid()}`;
+        const itemId = `pti_${crypto.randomUUID().replace(/-/g, '')}`;
 
         return {
           id: itemId,
