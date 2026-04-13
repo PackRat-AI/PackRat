@@ -66,7 +66,6 @@ export default function OneTimePasswordScreen() {
     }, 1000);
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need to run this on initial render
   React.useEffect(() => {
     startCountdown();
 
@@ -173,7 +172,6 @@ export default function OneTimePasswordScreen() {
           <View className="flex-row justify-between gap-2 py-3">
             {codeValues.map((value, index) => (
               <OTPField
-                // biome-ignore lint/suspicious/noArrayIndexKey: really no definite id here. code values could repeat.
                 key={index}
                 index={index}
                 value={value}

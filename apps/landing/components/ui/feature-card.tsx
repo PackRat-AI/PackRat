@@ -1,5 +1,5 @@
+import { cn } from '@packrat/web-ui/lib/utils';
 import { LucideIcon } from 'landing-app/lib/icons';
-import { cn } from 'landing-app/lib/utils';
 
 interface FeatureCardProps {
   title: string;

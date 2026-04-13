@@ -57,6 +57,21 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
   const { location, setLocation } = useTripLocation();
   const packs = usePacks();
 
+  // Initialize location store with trip's location when component mounts or
+  // trip ID changes. We intentionally depend only on trip?.id (not trip?.location)
+  // so that after the user picks a new location via location-search, a
+  // re-render of the same trip object does not overwrite their selection in
+  // the store.
+  useEffect(() => {
+    // Set location from trip, or null if trip has no location
+    setLocation(trip?.location ?? null);
+
+    // Cleanup: clear location when component unmounts
+    return () => {
+      setLocation(null);
+    };
+  }, [trip?.id, setLocation]);
+
   const [showPackModal, setShowPackModal] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);

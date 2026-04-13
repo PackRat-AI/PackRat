@@ -27,20 +27,25 @@ import { z } from 'zod';
 
 const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
+const RE_HAS_UPPERCASE = /[A-Z]/;
+const RE_HAS_LOWERCASE = /[a-z]/;
+const RE_HAS_DIGIT = /[0-9]/;
+const RE_HAS_SPECIAL = /[^A-Za-z0-9]/;
+
 // Enhanced password validation schema
 const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
-  .refine((password) => /[A-Z]/.test(password), {
+  .refine((password) => RE_HAS_UPPERCASE.test(password), {
     message: 'Password must contain at least one uppercase letter',
   })
-  .refine((password) => /[a-z]/.test(password), {
+  .refine((password) => RE_HAS_LOWERCASE.test(password), {
     message: 'Password must contain at least one lowercase letter',
   })
-  .refine((password) => /[0-9]/.test(password), {
+  .refine((password) => RE_HAS_DIGIT.test(password), {
     message: 'Password must contain at least one number',
   })
-  .refine((password) => /[^A-Za-z0-9]/.test(password), {
+  .refine((password) => RE_HAS_SPECIAL.test(password), {
     message: 'Password must contain at least one special character',
   });
 
@@ -64,16 +69,16 @@ const getPasswordStrength = (password: string) => {
   if (password.length >= 8) {
     strength++;
   }
-  if (/[A-Z]/.test(password)) {
+  if (RE_HAS_UPPERCASE.test(password)) {
     strength++;
   }
-  if (/[a-z]/.test(password)) {
+  if (RE_HAS_LOWERCASE.test(password)) {
     strength++;
   }
-  if (/[0-9]/.test(password)) {
+  if (RE_HAS_DIGIT.test(password)) {
     strength++;
   }
-  if (/[^A-Za-z0-9]/.test(password)) {
+  if (RE_HAS_SPECIAL.test(password)) {
     strength++;
   }
 
@@ -249,10 +254,16 @@ export default function ResetPasswordScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[A-Z]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      RE_HAS_UPPERCASE.test(field.state.value)
+                                        ? 'check-circle'
+                                        : 'circle'
                                     }
                                     size={14}
-                                    color={/[A-Z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      RE_HAS_UPPERCASE.test(field.state.value)
+                                        ? '#10B981'
+                                        : '#9CA3AF'
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     {t('auth.atLeast1Uppercase')}
@@ -261,10 +272,16 @@ export default function ResetPasswordScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[a-z]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      RE_HAS_LOWERCASE.test(field.state.value)
+                                        ? 'check-circle'
+                                        : 'circle'
                                     }
                                     size={14}
-                                    color={/[a-z]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      RE_HAS_LOWERCASE.test(field.state.value)
+                                        ? '#10B981'
+                                        : '#9CA3AF'
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     {t('auth.atLeast1Lowercase')}
@@ -273,10 +290,14 @@ export default function ResetPasswordScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[0-9]/.test(field.state.value) ? 'check-circle' : 'circle'
+                                      RE_HAS_DIGIT.test(field.state.value)
+                                        ? 'check-circle'
+                                        : 'circle'
                                     }
                                     size={14}
-                                    color={/[0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'}
+                                    color={
+                                      RE_HAS_DIGIT.test(field.state.value) ? '#10B981' : '#9CA3AF'
+                                    }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">
                                     {t('auth.atLeast1Number')}
@@ -285,13 +306,13 @@ export default function ResetPasswordScreen() {
                                 <View className="flex-row items-center">
                                   <Icon
                                     name={
-                                      /[^A-Za-z0-9]/.test(field.state.value)
+                                      RE_HAS_SPECIAL.test(field.state.value)
                                         ? 'check-circle'
                                         : 'circle'
                                     }
                                     size={14}
                                     color={
-                                      /[^A-Za-z0-9]/.test(field.state.value) ? '#10B981' : '#9CA3AF'
+                                      RE_HAS_SPECIAL.test(field.state.value) ? '#10B981' : '#9CA3AF'
                                     }
                                   />
                                   <Text className="ml-1 text-xs text-gray-500">

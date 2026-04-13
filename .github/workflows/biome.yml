@@ -11,7 +11,7 @@ jobs:
   biome:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
@@ -21,3 +21,12 @@ jobs:
         run: bun install
       - name: Run Biome check
         run: bun biome check
+      - name: Check circular dependencies
+        run: bun scripts/lint/no-circular-deps.ts
+      - name: Check for duplicate/catalog dependencies
+        run: bun scripts/lint/no-duplicate-deps.ts
+      - name: Check package.json ordering
+        run: bun scripts/format/sort-package-json.ts --check
+      - name: Run Expo Doctor
+        run: bunx expo-doctor
+        working-directory: apps/expo

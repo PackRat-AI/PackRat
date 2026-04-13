@@ -1,8 +1,8 @@
+import { cn } from '@packrat/web-ui/lib/utils';
 import Footer from 'guides-app/components/footer';
 import Header from 'guides-app/components/header';
 import { QueryProvider } from 'guides-app/components/providers/query-provider';
 import { ThemeProvider } from 'guides-app/components/theme-provider';
-import { cn } from 'guides-app/lib/utils';
 import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
 import './globals.css';
