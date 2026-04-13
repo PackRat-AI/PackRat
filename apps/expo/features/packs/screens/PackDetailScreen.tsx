@@ -513,23 +513,6 @@ export function PackDetailScreen() {
               </Button>
             )}
           </View>
-
-          {/* Start Packing inline button */}
-          {isOwnedByUser && !isPackingMode && (
-            <Button
-              variant="secondary"
-              onPress={handleTogglePackingMode}
-              className="mt-3 w-full flex-row items-center gap-2"
-            >
-              <Icon
-                size={18}
-                materialIcon={{ type: 'MaterialCommunityIcons', name: 'bag-personal-outline' }}
-                ios={{ name: 'backpack' }}
-                color={colors.foreground}
-              />
-              <Text>Start Packing</Text>
-            </Button>
-          )}
         </View>
 
         {/* Tabs */}
