@@ -54,21 +54,6 @@ let testClient: Client;
 let testDb: ReturnType<typeof drizzle>;
 let isConnected = false;
 
-// Mock pg/lib/stream to bypass Cloudflare runtime detection in workerd.
-// In the miniflare environment, pg detects `navigator.userAgent === 'Cloudflare-Workers'`
-// and lazily calls `require('pg-cloudflare')`, which fails because workerd's require()
-// uses the `default` export condition (→ empty.js → {}) instead of the `workerd` condition.
-// By mocking the stream module directly we skip all cloudflare-specific socket logic
-// and give pg plain Node.js net/tls sockets to connect to the local test database.
-vi.mock('pg/lib/stream', async () => {
-  const net = await import('node:net');
-  const tls = await import('node:tls');
-  return {
-    getStream: (_ssl: boolean) => new net.Socket(),
-    getSecureStream: (options: { socket: net.Socket }) => tls.connect({ socket: options.socket }),
-  };
-});
-
 // Mock AWS SDK S3Client to prevent actual network calls
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: vi.fn().mockResolvedValue('https://mock-signed-url.com/test.jpg'),

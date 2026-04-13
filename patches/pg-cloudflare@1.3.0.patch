@@ -1,0 +1,36 @@
+--- a/dist/empty.js
++++ b/dist/empty.js
+@@ -1,6 +1,28 @@
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
+-// This is an empty module that is served up when outside of a workerd environment
+-// See the `exports` field in package.json
+-exports.default = {};
+-//# sourceMappingURL=empty.js.map
+\ No newline at end of file
++exports.CloudflareSocket = exports.default = void 0;
++// Replacement for non-workerd environments (e.g. vitest-pool-workers running in
++// miniflare with nodejs_compat). workerd resolves this file via the "default"
++// export condition. We provide a CloudflareSocket backed by node:net so that
++// pg can connect to a local test PostgreSQL instance.
++const net = require("net");
++class CloudflareSocket extends net.Socket {
++    constructor(ssl) {
++        super();
++        this.ssl = ssl;
++        this.writable = true;
++    }
++    setNoDelay() {
++        return this;
++    }
++    // pg-cloudflare interface: called by pg's getSecureStream for TLS.
++    // No-op for plaintext local test connections.
++    startTls(_options) {
++        return this;
++    }
++    get encrypted() {
++        return false;
++    }
++}
++exports.CloudflareSocket = CloudflareSocket;
++exports.default = { CloudflareSocket };
