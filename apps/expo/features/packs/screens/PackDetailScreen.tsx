@@ -1,6 +1,6 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { ActivityIndicator, Button, Sheet, Text, useSheetRef } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { Chip } from 'expo-app/components/initial/Chip';

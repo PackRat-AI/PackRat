@@ -1,5 +1,5 @@
 import { Button, LargeTitleHeader, SearchInput, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';

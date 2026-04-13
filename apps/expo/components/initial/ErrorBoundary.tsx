@@ -1,4 +1,4 @@
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import * as Sentry from '@sentry/react-native';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
