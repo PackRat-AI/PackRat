@@ -9,33 +9,30 @@ function Icon({
   color = '#000000',
   namingScheme = 'material',
   size = 27,
-  ios,
   materialIcon,
 }: IconProps) {
   const iconNames = useMemo(() => getIconNames(namingScheme, name), [namingScheme, name]);
 
   // Always use Material icons on Android/Web, or when useMaterialIcon is true
-  if (ios?.useMaterialIcon) {
-    if (materialIcon?.type === 'MaterialCommunityIcons') {
-      return (
-        <MaterialCommunityIcons
-          name={materialIcon.name ?? iconNames.materialCommunityIcon ?? 'help'}
-          size={size}
-          color={color}
-          {...materialIcon}
-        />
-      );
-    }
-    if (materialIcon?.type === 'MaterialIcons') {
-      return (
-        <MaterialIcons
-          name={materialIcon.name ?? iconNames.materialIcon ?? 'help'}
-          size={size}
-          color={color}
-          {...materialIcon}
-        />
-      );
-    }
+  if (materialIcon?.type === 'MaterialCommunityIcons') {
+    return (
+      <MaterialCommunityIcons
+        name={materialIcon.name ?? iconNames.materialCommunityIcon ?? 'help'}
+        size={size}
+        color={color}
+        {...materialIcon}
+      />
+    );
+  }
+  if (materialIcon?.type === 'MaterialIcons') {
+    return (
+      <MaterialIcons
+        name={materialIcon.name ?? iconNames.materialIcon ?? 'help'}
+        size={size}
+        color={color}
+        {...materialIcon}
+      />
+    );
   }
 
   if (!name) return null;
