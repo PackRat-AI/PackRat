@@ -185,7 +185,12 @@
           "deleted_classes": ["TikTokContainer"],
           "tag": "v3"
         }
-      ]
+      ],
+      // Replace pg-cloudflare (which uses cloudflare:sockets API that changed in 2026-era
+      // workerd) with a Node.js net.Socket stub so tests can connect to local PostgreSQL.
+      "alias": {
+        "pg-cloudflare": "./src/stubs/pg-cloudflare-stub"
+      }
     }
   }
 }

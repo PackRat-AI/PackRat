@@ -414,21 +414,6 @@ vi.mock('youtube-transcript', () => ({
   fetchTranscript: vi.fn().mockResolvedValue([]),
 }));
 
-// Mock pg-cloudflare to avoid CloudflareSocket API incompatibility in workerd
-// (pg-cloudflare uses new CloudflareSocket() whose constructor API changed in 2026-era workerd)
-vi.mock('pg-cloudflare', () => ({
-  default: class MockCloudflareSocket {
-    connect() {}
-    end() {}
-    destroy() {}
-  },
-  CloudflareSocket: class MockCloudflareSocket {
-    connect() {}
-    end() {}
-    destroy() {}
-  },
-}));
-
 // Setup PostgreSQL connection for tests
 beforeAll(async () => {
   console.log('🔧 Setting up test database connection...');
