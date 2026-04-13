@@ -158,21 +158,6 @@ const tileInfo = {
 
 type TileName = keyof typeof tileInfo;
 
-function SettingsIcon() {
-  const { colors } = useColorScheme();
-  return (
-    <Link href="/settings" asChild>
-      <Pressable className="opacity-80">
-        {({ pressed }) => (
-          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-            <Icon name="cog-outline" color={colors.foreground} />
-          </View>
-        )}
-      </Pressable>
-    </Link>
-  );
-}
-
 function DemoIcon() {
   const { colors } = useColorScheme();
   if (clientEnvs.NODE_ENV !== 'development') return null;
@@ -327,7 +312,6 @@ export default function DashboardScreen() {
         rightView={() => (
           <View className="flex-row items-center gap-2 pr-2">
             <DemoIcon />
-            <SettingsIcon />
           </View>
         )}
       />
