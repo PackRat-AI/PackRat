@@ -244,240 +244,237 @@ const generateFromOnlineContentRoutes = new OpenAPIHono<{
   Variables: Variables;
 }>();
 
-generateFromOnlineContentRoutes.openapi(
-  generateFromOnlineContentRoute,
-  async (c: Context<{ Bindings: Env; Variables: Variables }>) => {
-    let contentUrl: string | undefined;
+generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c) => {
+  let contentUrl: string | undefined;
+  try {
+    const auth = c.get('user');
+
+    if (auth.role !== 'ADMIN') {
+      return c.json({ error: 'Forbidden: Admin access required' }, 403);
+    }
+
+    const body = c.req.valid('json');
+    const { isAppTemplate } = body;
+    contentUrl = body.contentUrl;
+
+    const { GOOGLE_GENERATIVE_AI_API_KEY } = getEnv(c);
+    const google = createGoogleGenerativeAI({
+      apiKey: GOOGLE_GENERATIVE_AI_API_KEY,
+    });
+
+    console.log(`Processing content: ${contentUrl}`);
+
+    let imageUrls: string[] = [];
+    let videoUrl: string | undefined;
+    let caption: string | undefined;
+    let youtubeVideoTranscript: string | undefined;
+    let contentId: string | undefined;
+    let contentSource: string | undefined;
+
     try {
-      const auth = c.get('user');
-
-      if (auth.role !== 'ADMIN') {
-        return c.json({ error: 'Forbidden: Admin access required' }, 403);
-      }
-
-      const body = c.req.valid('json');
-      const { isAppTemplate } = body;
-      contentUrl = body.contentUrl;
-
-      const { GOOGLE_GENERATIVE_AI_API_KEY } = getEnv(c);
-      const google = createGoogleGenerativeAI({
-        apiKey: GOOGLE_GENERATIVE_AI_API_KEY,
-      });
-
-      console.log(`Processing content: ${contentUrl}`);
-
-      let imageUrls: string[] = [];
-      let videoUrl: string | undefined;
-      let caption: string | undefined;
-      let youtubeVideoTranscript: string | undefined;
-      let contentId: string | undefined;
-      let contentSource: string | undefined;
-
-      try {
-        if (isYouTubeUrl(contentUrl)) {
-          const youtubeId = getYouTubeId(contentUrl);
-          if (!youtubeId) {
-            throw new Error('Invalid YouTube URL');
-          }
-
-          contentId = youtubeId;
-
-          youtubeVideoTranscript = (await fetchTranscript(youtubeId))
-            .reduce((acc, curr) => `${acc} ${curr.text}`, '')
-            .trim();
-
-          contentSource = 'youtube';
-        } else {
-          const data = await fetchTikTokPostData(c, contentUrl);
-          imageUrls = data.imageUrls;
-          videoUrl = data.videoUrl;
-          caption = data.caption;
-          contentId = data.contentId;
-          contentSource = 'tiktok';
+      if (isYouTubeUrl(contentUrl)) {
+        const youtubeId = getYouTubeId(contentUrl);
+        if (!youtubeId) {
+          throw new Error('Invalid YouTube URL');
         }
-      } catch (apiError) {
-        console.error('TikTok service call failed:', apiError);
-        c.get('sentry').captureException(apiError, {
-          extra: { tiktokUrl: contentUrl, errorType: 'tiktok_service_error' },
-        } as any);
-        return c.json(
-          {
-            error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
-            code: 'TIKTOK_SERVICE_ERROR',
-          },
-          500,
-        );
-      }
 
-      // Ensure we have a contentId for reliable duplicate detection
-      // Use TikTok service contentId if available, otherwise generate from URL
-      const finalContentId = contentId || generateContentIdFromUrl(contentUrl);
+        contentId = youtubeId;
 
-      // Check for existing template with same content ID to avoid duplication
-      const db = createDb(c);
-      const existingTemplate = await db
-        .select()
-        .from(packTemplates)
-        .where(
-          sql`${packTemplates.contentSource} = ${contentSource} AND ${packTemplates.contentId} = ${finalContentId} AND ${packTemplates.deleted} = false`,
-        )
-        .limit(1);
+        youtubeVideoTranscript = (await fetchTranscript(youtubeId))
+          .reduce((acc, curr) => `${acc} ${curr.text}`, '')
+          .trim();
 
-      if (existingTemplate.length > 0) {
-        const existing = existingTemplate[0];
-        assertDefined(existing, 'existingTemplate[0] must be defined after length check');
-        return c.json(
-          {
-            error: 'Template already exists for this content.',
-            code: 'DUPLICATE_TEMPLATE',
-            existingTemplateId: existing.id,
-          },
-          409,
-        );
-      }
-
-      // Build message content parts for Gemini
-      type TextPart = { type: 'text'; text: string };
-      type ImagePart = { type: 'image'; image: string };
-      type FilePart = { type: 'file'; data: string; mediaType: string };
-      const contentParts: Array<TextPart | ImagePart | FilePart> = [];
-
-      let introText: string;
-      if (youtubeVideoTranscript) {
-        introText =
-          'Please analyze the YouTube video transcript below and identify all packing/gear items:';
-        contentParts.push({ type: 'text', text: introText });
-        contentParts.push({ type: 'text', text: youtubeVideoTranscript });
-      } else if (videoUrl) {
-        introText = caption
-          ? `Retrieved Caption: ${caption}\n\nPlease analyze the following TikTok video and identify all packing/gear items:`
-          : `Please analyze the following TikTok video and identify all packing/gear items:`;
-        contentParts.push({ type: 'text', text: introText });
-        contentParts.push({ type: 'file', data: videoUrl, mediaType: 'video/mp4' });
-      } else if (imageUrls.length > 0) {
-        introText = caption
-          ? `Retrieved Caption: ${caption}\n\nPlease analyze the following slideshow images and identify all packing/gear items:`
-          : `Please analyze the following slideshow images and identify all packing/gear items:`;
-        contentParts.push({ type: 'text', text: introText });
-        for (const imageUrl of imageUrls) {
-          contentParts.push({ type: 'image', image: imageUrl });
-        }
+        contentSource = 'youtube';
       } else {
-        throw new Error('No content found in TikTok post (no images or video)');
+        const data = await fetchTikTokPostData(c, contentUrl);
+        imageUrls = data.imageUrls;
+        videoUrl = data.videoUrl;
+        caption = data.caption;
+        contentId = data.contentId;
+        contentSource = 'tiktok';
       }
-
-      // Analyze content with Gemini-3-Flash-Preview
-      const { object: analysis } = await generateObject({
-        model: google('gemini-3-flash-preview'),
-        schema: analysisSchema,
-        system: SYSTEM_PROMPT,
-        prompt: [
-          {
-            role: 'user',
-            content: contentParts,
-          },
-        ],
-        temperature: 0.2,
-      });
-
-      // Match each detected item to catalog items using vector search
-      const catalogService = new CatalogService(c);
-
-      const searchQueries = analysis.items.map((item) => `${item.name} ${item.description}`.trim());
-
-      const batchResult =
-        searchQueries.length > 0
-          ? await catalogService.batchVectorSearch(searchQueries, 1)
-          : { items: [] as never[] };
-
-      // Prepare DB records
-      const now = new Date();
-      const templateId = `pt_${crypto.randomUUID().replace(/-/g, '')}`;
-
-      // Insert the pack template and its items in a single transaction to ensure atomicity
-      const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
-        const [createdTemplate] = await tx
-          .insert(packTemplates)
-          .values({
-            id: templateId,
-            userId: auth.userId,
-            name: analysis.templateName,
-            description: analysis.templateDescription,
-            category: analysis.templateCategory,
-            image: null,
-            tags: [analysis.templateCategory],
-            isAppTemplate: isAppTemplate ?? true,
-            deleted: false,
-            contentSource,
-            contentId: finalContentId,
-            localCreatedAt: now,
-            localUpdatedAt: now,
-          })
-          .returning();
-
-        // Insert template items — prefer catalog match, fall back to detected item data
-        const itemRecords = analysis.items.map((detected, index) => {
-          const catalogMatches = batchResult.items[index] ?? [];
-          const bestMatch = catalogMatches[0];
-          const itemId = `pti_${crypto.randomUUID().replace(/-/g, '')}`;
-
-          return {
-            id: itemId,
-            packTemplateId: templateId,
-            userId: auth.userId,
-            name: bestMatch?.name ?? detected.name,
-            description: (bestMatch?.description ?? detected.description) || null,
-            weight: bestMatch?.weight ?? detected.weightGrams,
-            weightUnit: bestMatch?.weightUnit ?? 'g',
-            quantity: detected.quantity,
-            category: detected.category,
-            consumable: detected.consumable,
-            worn: detected.worn,
-            image: bestMatch?.images?.[0] ?? null,
-            notes: null,
-            catalogItemId: bestMatch?.id ?? null,
-            deleted: false,
-          };
-        });
-
-        const insertedItemsResult =
-          itemRecords.length > 0
-            ? await tx.insert(packTemplateItems).values(itemRecords).returning()
-            : [];
-
-        return { newTemplate: createdTemplate, insertedItems: insertedItemsResult };
-      });
-
-      return c.json({ ...newTemplate, items: insertedItems }, 201);
-    } catch (error) {
-      console.error('Error generating pack template:', error);
-      c.get('sentry').captureException(error);
-
-      // Determine specific error type based on error context
-      let errorCode = 'UNKNOWN_ERROR';
-      if (error instanceof Error) {
-        if (
-          error.message.includes('Google') ||
-          error.message.includes('Gemini') ||
-          error.message.includes('AI')
-        ) {
-          errorCode = 'AI_ANALYSIS_ERROR';
-        } else if (error.message.includes('catalog') || error.message.includes('search')) {
-          errorCode = 'CATALOG_SEARCH_ERROR';
-        } else if (error.message.includes('database') || error.message.includes('DB')) {
-          errorCode = 'DATABASE_ERROR';
-        }
-      }
-
+    } catch (apiError) {
+      console.error('TikTok service call failed:', apiError);
+      c.get('sentry').captureException(apiError, {
+        extra: { tiktokUrl: contentUrl, errorType: 'tiktok_service_error' },
+      } as any);
       return c.json(
         {
-          error: `Server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          code: errorCode,
+          error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
+          code: 'TIKTOK_SERVICE_ERROR',
         },
         500,
       );
     }
-  },
-);
+
+    // Ensure we have a contentId for reliable duplicate detection
+    // Use TikTok service contentId if available, otherwise generate from URL
+    const finalContentId = contentId || generateContentIdFromUrl(contentUrl);
+
+    // Check for existing template with same content ID to avoid duplication
+    const db = createDb(c);
+    const existingTemplate = await db
+      .select()
+      .from(packTemplates)
+      .where(
+        sql`${packTemplates.contentSource} = ${contentSource} AND ${packTemplates.contentId} = ${finalContentId} AND ${packTemplates.deleted} = false`,
+      )
+      .limit(1);
+
+    if (existingTemplate.length > 0) {
+      const existing = existingTemplate[0];
+      assertDefined(existing, 'existingTemplate[0] must be defined after length check');
+      return c.json(
+        {
+          error: 'Template already exists for this content.',
+          code: 'DUPLICATE_TEMPLATE',
+          existingTemplateId: existing.id,
+        },
+        409,
+      );
+    }
+
+    // Build message content parts for Gemini
+    type TextPart = { type: 'text'; text: string };
+    type ImagePart = { type: 'image'; image: string };
+    type FilePart = { type: 'file'; data: string; mediaType: string };
+    const contentParts: Array<TextPart | ImagePart | FilePart> = [];
+
+    let introText: string;
+    if (youtubeVideoTranscript) {
+      introText =
+        'Please analyze the YouTube video transcript below and identify all packing/gear items:';
+      contentParts.push({ type: 'text', text: introText });
+      contentParts.push({ type: 'text', text: youtubeVideoTranscript });
+    } else if (videoUrl) {
+      introText = caption
+        ? `Retrieved Caption: ${caption}\n\nPlease analyze the following TikTok video and identify all packing/gear items:`
+        : `Please analyze the following TikTok video and identify all packing/gear items:`;
+      contentParts.push({ type: 'text', text: introText });
+      contentParts.push({ type: 'file', data: videoUrl, mediaType: 'video/mp4' });
+    } else if (imageUrls.length > 0) {
+      introText = caption
+        ? `Retrieved Caption: ${caption}\n\nPlease analyze the following slideshow images and identify all packing/gear items:`
+        : `Please analyze the following slideshow images and identify all packing/gear items:`;
+      contentParts.push({ type: 'text', text: introText });
+      for (const imageUrl of imageUrls) {
+        contentParts.push({ type: 'image', image: imageUrl });
+      }
+    } else {
+      throw new Error('No content found in TikTok post (no images or video)');
+    }
+
+    // Analyze content with Gemini-3-Flash-Preview
+    const { object: analysis } = await generateObject({
+      model: google('gemini-3-flash-preview'),
+      schema: analysisSchema,
+      system: SYSTEM_PROMPT,
+      prompt: [
+        {
+          role: 'user',
+          content: contentParts,
+        },
+      ],
+      temperature: 0.2,
+    });
+
+    // Match each detected item to catalog items using vector search
+    const catalogService = new CatalogService(c);
+
+    const searchQueries = analysis.items.map((item) => `${item.name} ${item.description}`.trim());
+
+    const batchResult =
+      searchQueries.length > 0
+        ? await catalogService.batchVectorSearch(searchQueries, 1)
+        : { items: [] as never[] };
+
+    // Prepare DB records
+    const now = new Date();
+    const templateId = `pt_${crypto.randomUUID().replace(/-/g, '')}`;
+
+    // Insert the pack template and its items in a single transaction to ensure atomicity
+    const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
+      const [createdTemplate] = await tx
+        .insert(packTemplates)
+        .values({
+          id: templateId,
+          userId: auth.userId,
+          name: analysis.templateName,
+          description: analysis.templateDescription,
+          category: analysis.templateCategory,
+          image: null,
+          tags: [analysis.templateCategory],
+          isAppTemplate: isAppTemplate ?? true,
+          deleted: false,
+          contentSource,
+          contentId: finalContentId,
+          localCreatedAt: now,
+          localUpdatedAt: now,
+        })
+        .returning();
+
+      // Insert template items — prefer catalog match, fall back to detected item data
+      const itemRecords = analysis.items.map((detected, index) => {
+        const catalogMatches = batchResult.items[index] ?? [];
+        const bestMatch = catalogMatches[0];
+        const itemId = `pti_${crypto.randomUUID().replace(/-/g, '')}`;
+
+        return {
+          id: itemId,
+          packTemplateId: templateId,
+          userId: auth.userId,
+          name: bestMatch?.name ?? detected.name,
+          description: (bestMatch?.description ?? detected.description) || null,
+          weight: bestMatch?.weight ?? detected.weightGrams,
+          weightUnit: bestMatch?.weightUnit ?? 'g',
+          quantity: detected.quantity,
+          category: detected.category,
+          consumable: detected.consumable,
+          worn: detected.worn,
+          image: bestMatch?.images?.[0] ?? null,
+          notes: null,
+          catalogItemId: bestMatch?.id ?? null,
+          deleted: false,
+        };
+      });
+
+      const insertedItemsResult =
+        itemRecords.length > 0
+          ? await tx.insert(packTemplateItems).values(itemRecords).returning()
+          : [];
+
+      return { newTemplate: createdTemplate, insertedItems: insertedItemsResult };
+    });
+
+    return c.json({ ...newTemplate, items: insertedItems }, 201);
+  } catch (error) {
+    console.error('Error generating pack template:', error);
+    c.get('sentry').captureException(error);
+
+    // Determine specific error type based on error context
+    let errorCode = 'UNKNOWN_ERROR';
+    if (error instanceof Error) {
+      if (
+        error.message.includes('Google') ||
+        error.message.includes('Gemini') ||
+        error.message.includes('AI')
+      ) {
+        errorCode = 'AI_ANALYSIS_ERROR';
+      } else if (error.message.includes('catalog') || error.message.includes('search')) {
+        errorCode = 'CATALOG_SEARCH_ERROR';
+      } else if (error.message.includes('database') || error.message.includes('DB')) {
+        errorCode = 'DATABASE_ERROR';
+      }
+    }
+
+    return c.json(
+      {
+        error: `Server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        code: errorCode,
+      },
+      500,
+    );
+  }
+});
 
 export { generateFromOnlineContentRoutes };
