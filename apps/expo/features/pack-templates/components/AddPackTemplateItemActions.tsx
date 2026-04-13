@@ -2,7 +2,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet';
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import { Sheet, Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { isAuthed } from 'expo-app/features/auth/store';

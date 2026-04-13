@@ -1,6 +1,6 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import * as Burnt from 'burnt';
 import { fetch as expoFetch } from 'expo/fetch';

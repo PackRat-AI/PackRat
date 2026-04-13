@@ -1,6 +1,6 @@
 import { assertDefined } from '@packrat/guards';
 import { Alert, Button, useColorScheme } from '@packrat-ai/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { t } from 'expo-app/lib/i18n';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';

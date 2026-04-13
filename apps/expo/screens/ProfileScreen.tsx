@@ -1,4 +1,4 @@
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { UserAvatar } from 'expo-app/components/initial/UserAvatar';
 import type { Pack } from 'expo-app/features/packs';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
