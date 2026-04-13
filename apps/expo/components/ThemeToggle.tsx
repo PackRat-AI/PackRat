@@ -18,12 +18,12 @@ export function ThemeToggle() {
           {colorScheme === 'dark'
             ? ({ pressed }) => (
                 <View className={cn('px-0.5', pressed && 'opacity-50')}>
-                  <Icon namingScheme="sfSymbol" name="moon.stars" color={COLORS.white} />
+                  <Icon name="moon.stars" color={COLORS.white} />
                 </View>
               )
             : ({ pressed }) => (
                 <View className={cn('px-0.5', pressed && 'opacity-50')}>
-                  <Icon namingScheme="sfSymbol" name="sun.min" color={COLORS.black} />
+                  <Icon name="sun.min" color={COLORS.black} />
                 </View>
               )}
         </Pressable>
