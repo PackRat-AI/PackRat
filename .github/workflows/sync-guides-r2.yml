@@ -32,6 +32,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
           
       - name: Authenticate with GitHub for private packages
         run: |

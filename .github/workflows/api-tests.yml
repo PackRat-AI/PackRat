@@ -5,10 +5,16 @@ on:
     branches: ["main", "development"]
     paths:
       - "packages/api/**"
+      - ".github/workflows/api-tests.yml"
   pull_request:
     branches: ["**"]
     paths:
       - "packages/api/**"
+      - ".github/workflows/api-tests.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -19,11 +25,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      
-      - uses: oven-sh/setup-bun@v1
+
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          
+          cache: true
+
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
