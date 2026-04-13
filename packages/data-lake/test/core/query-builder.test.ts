@@ -1,4 +1,4 @@
-import { QueryBuilder, SQLFragments } from '@packrat/analytics/core/query-builder';
+import { QueryBuilder, SQLFragments } from '@packrat/data-lake/core/query-builder';
 import { describe, expect, it } from 'vitest';
 
 describe('SQLFragments', () => {

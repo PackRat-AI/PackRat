@@ -7,7 +7,7 @@ import {
   parseTempRatingF,
   parseWaterproofRating,
   parseWeightGrams,
-} from '@packrat/analytics/core/spec-parser';
+} from '@packrat/data-lake/core/spec-parser';
 import { describe, expect, it } from 'vitest';
 
 describe('parseWeightGrams', () => {

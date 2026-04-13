@@ -6,8 +6,8 @@ import {
   needsUpdate,
   saveMetadata,
   schemaIsCurrent,
-} from '@packrat/analytics/core/cache-metadata';
-import { DBConfig } from '@packrat/analytics/core/constants';
+} from '@packrat/data-lake/core/cache-metadata';
+import { DBConfig } from '@packrat/data-lake/core/constants';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const TEST_DIR = join(import.meta.dirname, '../../.test-cache');

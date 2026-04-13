@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import type { CatalogCacheManager } from '../../core/catalog-cache';
-import { configureS3, createCatalogConnection } from '../../core/connection';
-import { env } from '../../core/env';
+import type { CatalogCacheManager } from '@packrat/data-lake';
+import { configureS3, createCatalogConnection } from '@packrat/data-lake';
+import { env } from '@packrat/data-lake';
 import { ensureCache, getCache, printSummary } from '../shared';
 
 export default defineCommand({

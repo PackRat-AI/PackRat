@@ -14,7 +14,8 @@
       "@packrat/guards": ["./packages/guards/src"],
       "@packrat/guards/*": ["./packages/guards/src/*"],
       "@packrat/ui/*": ["./packages/ui/*"],
-      "@packrat/analytics/*": ["./packages/analytics/src/*"],
+      "@packrat/data-lake/*": ["./packages/data-lake/src/*"],
+      "@packrat/cli/*": ["./packages/cli/src/*"],
       "@packrat/web-ui": ["./packages/web-ui/src"],
       "@packrat/web-ui/*": ["./packages/web-ui/src/*"],
       "nativewindui/*": ["./apps/expo/components/ui/*"]

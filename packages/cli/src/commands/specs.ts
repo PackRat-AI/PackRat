@@ -1,5 +1,5 @@
 import { defineCommand } from 'citty';
-import { SpecParser } from '../../core/spec-parser';
+import { SpecParser } from '@packrat/data-lake';
 import { getCache, printTable } from '../shared';
 
 export default defineCommand({

@@ -8,7 +8,7 @@
  * can run the same queries as LocalCacheManager against catalog tables.
  */
 
-import { CatalogCacheManager } from '@packrat/analytics/core/catalog-cache';
+import { CatalogCacheManager } from '@packrat/data-lake/core/catalog-cache';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const hasCatalogCreds =

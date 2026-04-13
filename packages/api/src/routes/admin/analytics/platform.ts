@@ -14,7 +14,7 @@ import type { Env } from '@packrat/api/types/env';
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-export const analyticsRoutes = new OpenAPIHono<{ Bindings: Env }>();
+export const platformRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 

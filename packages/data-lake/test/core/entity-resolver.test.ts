@@ -99,7 +99,7 @@ describe('levenshtein', () => {
 // Test EntityResolver import works
 describe('EntityResolver', () => {
   it('can be imported', async () => {
-    const { EntityResolver } = await import('@packrat/analytics/core/entity-resolver');
+    const { EntityResolver } = await import('@packrat/data-lake/core/entity-resolver');
     expect(EntityResolver).toBeDefined();
   });
 });
