@@ -10,6 +10,7 @@ import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
 import { z } from 'zod';
+import { analyticsRoutes } from './analytics';
 
 const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -58,6 +59,7 @@ const adminLayout = (title: string, content: unknown) => html`
                 <a href="/api/admin/users" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Users</a>
                 <a href="/api/admin/packs" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Packs</a>
                 <a href="/api/admin/catalog" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Catalog</a>
+                <a href="/api/admin/analytics" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold">Analytics</a>
             </nav>
         </div>
         <div id="main-content" class="bg-white/95 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/20">
@@ -1017,5 +1019,7 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
     return c.json({ error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' }, 500);
   }
 });
+
+adminRoutes.route('/analytics', analyticsRoutes);
 
 export { adminRoutes };
