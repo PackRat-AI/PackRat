@@ -398,7 +398,7 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
 
     // Insert the pack template and its items in a single transaction to ensure atomicity
     const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
-      const [createdTemplate] = await tx
+      const templateRows = await tx
         .insert(packTemplates)
         .values({
           id: templateId,
@@ -416,6 +416,8 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
           localUpdatedAt: now,
         })
         .returning();
+      const createdTemplate = templateRows[0];
+      if (!createdTemplate) throw new Error('Pack template insert returned no rows');
 
       // Insert template items — prefer catalog match, fall back to detected item data
       const itemRecords = analysis.items.map((detected, index) => {
