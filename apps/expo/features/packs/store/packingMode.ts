@@ -7,7 +7,9 @@ export const packingModeStore = observable<Record<string, Record<string, boolean
 
 syncObservable(packingModeStore, {
   persist: {
-    plugin: observablePersistSqlite(Storage as any),
+    plugin: observablePersistSqlite(
+      Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
+    ),
     retrySync: true,
     name: 'packingMode',
   },

@@ -19,13 +19,15 @@ import type { Context } from 'hono';
 import { fetchTranscript } from 'youtube-transcript';
 import { z } from 'zod';
 
+const URL_QUERY_STRIP_RE = /[?&].*$/;
+
 /**
  * Generate a deterministic content ID from a URL for duplicate detection
  * when the TikTok or YouTube service doesn't provide a content ID
  */
 function generateContentIdFromUrl(url: string): string {
   // Normalize the URL by removing query parameters and converting to lowercase
-  const normalizedUrl = url.toLowerCase().replace(/[?&].*$/, '');
+  const normalizedUrl = url.toLowerCase().replace(URL_QUERY_STRIP_RE, '');
 
   // Create a simple hash for deterministic ID generation
   let hash = 0;
@@ -296,8 +298,10 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
     } catch (apiError) {
       console.error('TikTok service call failed:', apiError);
       c.get('sentry').captureException(apiError, {
-        extra: { tiktokUrl: contentUrl, errorType: 'tiktok_service_error' },
-      } as any);
+        captureContext: {
+          extra: { tiktokUrl: contentUrl, errorType: 'tiktok_service_error' },
+        },
+      });
       return c.json(
         {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
@@ -446,7 +450,16 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
       return { newTemplate: createdTemplate, insertedItems: insertedItemsResult };
     });
 
-    return c.json({ ...newTemplate, items: insertedItems }, 201);
+    return c.json(
+      {
+        ...newTemplate,
+        image: newTemplate.image ?? null,
+        contentSource: newTemplate.contentSource ?? null,
+        contentId: newTemplate.contentId ?? null,
+        items: insertedItems,
+      },
+      201,
+    );
   } catch (error) {
     console.error('Error generating pack template:', error);
     c.get('sentry').captureException(error);
