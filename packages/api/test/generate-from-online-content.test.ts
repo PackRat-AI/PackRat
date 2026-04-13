@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { seedPackTemplate, seedTestUser } from './utils/db-helpers';
 import {
   api,
@@ -121,8 +121,8 @@ vi.mock('@packrat/api/services/catalogService', () => ({
 }));
 
 describe('Generate From Online Content Routes', () => {
-  beforeAll(async () => {
-    // Seed both a regular user and an admin user
+  beforeEach(async () => {
+    // Re-seed both users before each test (global beforeEach truncates all tables)
     await seedTestUser();
     await seedTestUser({
       email: 'admin@example.com',
@@ -130,9 +130,6 @@ describe('Generate From Online Content Routes', () => {
       lastName: 'User',
       role: 'ADMIN',
     });
-  });
-
-  beforeEach(() => {
     vi.clearAllMocks();
     // Reset mock to default (unique contentIds)
     mockContainerFetch = createMockContainerFetch();

@@ -61,12 +61,14 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
 
 vi.mock('@aws-sdk/client-s3', () => {
   return {
-    S3Client: vi.fn().mockImplementation(() => ({
-      send: vi.fn(),
-      config: {
-        endpointProvider: vi.fn(),
-      },
-    })),
+    S3Client: vi.fn(function (this: unknown) {
+      return {
+        send: vi.fn(),
+        config: {
+          endpointProvider: vi.fn(),
+        },
+      };
+    }),
     ListObjectsV2Command: vi.fn(),
     GetObjectCommand: vi.fn(),
     HeadObjectCommand: vi.fn(),
@@ -459,14 +461,12 @@ beforeEach(async () => {
   ];
 
   try {
-    // Delete in a single transaction for atomicity
-    await testClient.query('BEGIN');
-    for (const table of tablesToClean) {
-      await testClient.query(`DELETE FROM "${table}"`);
-    }
-    await testClient.query('COMMIT');
+    // TRUNCATE with RESTART IDENTITY resets sequences so auto-increment IDs start at 1 again.
+    // CASCADE handles FK dependencies automatically, making ordering irrelevant.
+    // This ensures test fixtures that hardcode id=1 (e.g. userId=1) always work.
+    const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
+    await testClient.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
   } catch (_error) {
-    await testClient.query('ROLLBACK');
     // Ignore errors - tables might not exist yet
   }
 });
