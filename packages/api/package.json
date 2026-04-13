@@ -61,6 +61,6 @@
     "drizzle-orm": "^0.45.2",
     "typed-htmx": "^0.3.1",
     "vitest": "~4.1.4",
-    "wrangler": "^4.21.2"
+    "wrangler": "4.81.1"
   }
 }
