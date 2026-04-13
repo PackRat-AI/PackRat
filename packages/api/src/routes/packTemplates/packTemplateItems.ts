@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packTemplateItems, packTemplates } from '@packrat/api/db/schema';
 import {
@@ -11,7 +11,6 @@ import {
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { and, eq } from 'drizzle-orm';
-import { z } from 'zod';
 
 const packTemplateItemsRoutes = new OpenAPIHono<{
   Bindings: Env;
