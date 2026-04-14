@@ -6,8 +6,11 @@ import {
   type LanguageModel,
   streamText,
   type ToolSet,
+  type UIDataTypes,
   type UIMessageChunk,
 } from 'ai';
+
+type TypedChunk = UIMessageChunk<unknown, UIDataTypes>;
 
 export class CustomChatTransport implements ChatTransport<UIMessage> {
   private model: LanguageModel | undefined;
@@ -31,14 +34,14 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
       trigger: 'submit-message' | 'regenerate-message';
       messageId: string | undefined;
     } & ChatRequestOptions,
-  ): Promise<ReadableStream<UIMessageChunk>> {
+  ): Promise<ReadableStream<TypedChunk>> {
     if (!this.model) {
       throw new Error('No model set. Call setModel() before sending messages.');
     }
 
     const result = streamText({
       model: this.model,
-      messages: convertToModelMessages(options.messages),
+      messages: await convertToModelMessages(options.messages),
       abortSignal: options.abortSignal,
       ...(this.tools ? { tools: this.tools, toolChoice: 'auto' } : {}),
     });
@@ -63,7 +66,7 @@ export class CustomChatTransport implements ChatTransport<UIMessage> {
     _options: {
       chatId: string;
     } & ChatRequestOptions,
-  ): Promise<ReadableStream<UIMessageChunk> | null> {
+  ): Promise<ReadableStream<TypedChunk> | null> {
     return null;
   }
 }
