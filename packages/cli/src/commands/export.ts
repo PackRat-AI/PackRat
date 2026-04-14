@@ -1,3 +1,4 @@
+import { DataExporter } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { ensureCache, printSummary } from '../shared';
@@ -27,7 +28,6 @@ export default defineCommand({
     const cache = await ensureCache();
     const conn = cache.getConnection();
 
-    const { DataExporter } = await import('../../core/data-export');
     const exporter = new DataExporter(conn);
 
     if (args.schema) {

@@ -1,14 +1,14 @@
-import { defineCommand } from 'citty';
-import consola from 'consola';
 import {
   type CatalogCacheManager,
-  LocalCacheManager,
-  QueryBuilder,
   configureS3,
   createCatalogConnection,
   dbPath,
   env,
+  LocalCacheManager,
+  QueryBuilder,
 } from '@packrat/analytics';
+import { defineCommand } from 'citty';
+import consola from 'consola';
 import { ensureCache, getCache, printSummary } from '../shared';
 
 export default defineCommand({

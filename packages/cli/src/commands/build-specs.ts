@@ -1,6 +1,6 @@
+import { SpecParser } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { SpecParser } from '@packrat/analytics';
 import { getCache } from '../shared';
 
 export default defineCommand({
