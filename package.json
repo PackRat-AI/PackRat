@@ -48,6 +48,9 @@
     "lefthook": "^1.11.14",
     "sort-package-json": "^3.6.1"
   },
+  "overrides": {
+    "expo-sqlite": "~16.0.10"
+  },
   "packageManager": "bun@1.3.10",
   "engines": {
     "bun": ">=1.3.10",

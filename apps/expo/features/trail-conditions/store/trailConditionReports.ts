@@ -16,7 +16,21 @@ const listMyReports = async (_params: unknown, { lastSync }: { lastSync?: number
 };
 
 const createReport = async (reportData: TrailConditionReportInStore) => {
-  const { data, error } = await apiClient['trail-conditions'].post(reportData as never);
+  const { data, error } = await apiClient['trail-conditions'].post({
+    id: reportData.id,
+    trailName: reportData.trailName,
+    surface: reportData.surface,
+    overallCondition: reportData.overallCondition,
+    trailRegion: reportData.trailRegion ?? null,
+    hazards: reportData.hazards,
+    waterCrossings: reportData.waterCrossings,
+    waterCrossingDifficulty: reportData.waterCrossingDifficulty ?? null,
+    notes: reportData.notes ?? null,
+    photos: reportData.photos,
+    tripId: reportData.tripId ?? null,
+    localCreatedAt: reportData.localCreatedAt ?? new Date().toISOString(),
+    localUpdatedAt: reportData.localUpdatedAt ?? new Date().toISOString(),
+  });
   if (error) throw new Error(`Failed to create trail condition report: ${error.value}`);
   return data as object | null;
 };
@@ -27,7 +41,22 @@ const updateReport = async ({
 }: { id: string } & Partial<Omit<TrailConditionReportInStore, 'id'>>) => {
   const { data: result, error } = await apiClient['trail-conditions']({
     reportId: String(id),
-  }).put(data as never);
+  }).put({
+    ...(data.trailName !== undefined ? { trailName: data.trailName } : {}),
+    ...(data.trailRegion !== undefined ? { trailRegion: data.trailRegion } : {}),
+    ...(data.surface !== undefined ? { surface: data.surface } : {}),
+    ...(data.overallCondition !== undefined ? { overallCondition: data.overallCondition } : {}),
+    ...(data.hazards !== undefined ? { hazards: data.hazards } : {}),
+    ...(data.waterCrossings !== undefined ? { waterCrossings: data.waterCrossings } : {}),
+    ...(data.waterCrossingDifficulty !== undefined
+      ? { waterCrossingDifficulty: data.waterCrossingDifficulty }
+      : {}),
+    ...(data.notes !== undefined ? { notes: data.notes } : {}),
+    ...(data.photos !== undefined ? { photos: data.photos } : {}),
+    ...(data.tripId !== undefined ? { tripId: data.tripId } : {}),
+    ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),
+    ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
+  });
   if (error) throw new Error(`Failed to update trail condition report: ${error.value}`);
   return result as object | null;
 };
@@ -46,9 +75,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(
-        Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
-      ),
+      plugin: observablePersistSqlite(Storage),
       retrySync: true,
       name: 'trail_condition_reports',
     },

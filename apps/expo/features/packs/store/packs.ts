@@ -14,13 +14,13 @@ const listPacks = async () => {
 };
 
 const createPack = async (packData: PackInStore) => {
-  const { data, error } = await apiClient.packs.post(packData as never);
+  const { data, error } = await apiClient.packs.post(packData);
   if (error) throw new Error(`Failed to create pack: ${error.value}`);
   return data as object | null;
 };
 
 const updatePack = async ({ id, ...data }: Partial<PackInStore>) => {
-  const { data: result, error } = await apiClient.packs({ packId: String(id) }).put(data as never);
+  const { data: result, error } = await apiClient.packs({ packId: String(id) }).put(data);
   if (error) throw new Error(`Failed to update pack: ${error.value}`);
   return result as object | null;
 };
@@ -35,11 +35,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      // legend-state ships a nested copy of expo-sqlite; the two SQLiteStorage
-      // classes are structurally identical but nominally different (TS2345). The
-      // cast dedupes at the type level until the nested dep is hoisted out.
-      // biome-ignore lint/suspicious/noExplicitAny: duplicate expo-sqlite install — see comment above
-      plugin: observablePersistSqlite(Storage as any),
+      plugin: observablePersistSqlite(Storage),
       retrySync: true,
       name: 'packs',
     },

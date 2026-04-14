@@ -14,15 +14,39 @@ const listPackTemplates = async () => {
 };
 
 const createPackTemplate = async (templateData: PackTemplate) => {
-  const { data, error } = await apiClient['pack-templates'].post(templateData as never);
+  const { data, error } = await apiClient['pack-templates'].post({
+    id: templateData.id,
+    name: templateData.name,
+    category: templateData.category,
+    ...(templateData.description !== undefined ? { description: templateData.description } : {}),
+    ...(templateData.image ? { image: templateData.image } : {}),
+    ...(templateData.tags !== undefined ? { tags: templateData.tags } : {}),
+    ...(templateData.isAppTemplate !== undefined
+      ? { isAppTemplate: templateData.isAppTemplate }
+      : {}),
+    localCreatedAt: templateData.localCreatedAt ?? new Date().toISOString(),
+    localUpdatedAt: templateData.localUpdatedAt ?? new Date().toISOString(),
+  });
   if (error) throw new Error(`Failed to create pack template: ${error.value}`);
   return data as object | null;
 };
 
 const updatePackTemplate = async ({ id, ...data }: Partial<PackTemplate>) => {
+  // Server's UpdatePackTemplateRequestSchema requires `description`, `image`,
+  // `tags` to be present (they're nullable). Forward what we have, defaulting
+  // to null when the field is omitted from the partial update.
   const { data: result, error } = await apiClient['pack-templates']({
     templateId: String(id),
-  }).put(data as never);
+  }).put({
+    ...(data.name !== undefined ? { name: data.name } : {}),
+    description: data.description ?? null,
+    ...(data.category !== undefined ? { category: data.category } : {}),
+    image: data.image ?? null,
+    tags: data.tags ?? null,
+    ...(data.isAppTemplate !== undefined ? { isAppTemplate: data.isAppTemplate } : {}),
+    ...(data.deleted !== undefined ? { deleted: data.deleted } : {}),
+    ...(data.localUpdatedAt ? { localUpdatedAt: data.localUpdatedAt } : {}),
+  });
   if (error) throw new Error(`Failed to update pack template: ${error.value}`);
   return result as object | null;
 };
@@ -37,11 +61,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      // legend-state ships a nested copy of expo-sqlite; the two SQLiteStorage
-      // classes are structurally identical but nominally different (TS2345). The
-      // cast dedupes at the type level until the nested dep is hoisted out.
-      // biome-ignore lint/suspicious/noExplicitAny: duplicate expo-sqlite install — see comment above
-      plugin: observablePersistSqlite(Storage as any),
+      plugin: observablePersistSqlite(Storage),
       retrySync: true,
       name: 'packTemplates',
     },

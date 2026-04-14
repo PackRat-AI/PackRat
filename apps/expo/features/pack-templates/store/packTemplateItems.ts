@@ -13,13 +13,22 @@ const listAllPackTemplateItems = async (): Promise<PackTemplateItem[]> => {
   return ((data as unknown as PackTemplate[]) ?? []).flatMap((template) => template.items);
 };
 
-const createPackTemplateItem = async ({
-  packTemplateId,
-  ...itemData
-}: PackTemplateItem): Promise<PackTemplateItem> => {
+const createPackTemplateItem = async (item: PackTemplateItem): Promise<PackTemplateItem> => {
   const { data, error } = await apiClient['pack-templates']({
-    templateId: String(packTemplateId),
-  }).items.post(itemData as never);
+    templateId: String(item.packTemplateId),
+  }).items.post({
+    id: item.id,
+    name: item.name,
+    weight: item.weight,
+    weightUnit: item.weightUnit,
+    quantity: item.quantity ?? 1,
+    consumable: item.consumable ?? false,
+    worn: item.worn ?? false,
+    description: item.description,
+    category: item.category,
+    image: item.image ?? null,
+    notes: item.notes,
+  });
   if (error) throw new Error(`Failed to create pack template item: ${error.value}`);
   return data as unknown as PackTemplateItem;
 };
@@ -32,7 +41,21 @@ const updatePackTemplateItem = async ({
     .items({
       itemId: String(id),
     })
-    .patch(data as never);
+    .patch({
+      name: data.name,
+      description: data.description,
+      weight: data.weight,
+      weightUnit: data.weightUnit,
+      quantity: data.quantity,
+      category: data.category,
+      consumable: data.consumable,
+      worn: data.worn,
+      // Server's update schema expects `image?: string | undefined` (no null);
+      // coerce nulls to undefined.
+      image: data.image ?? undefined,
+      notes: data.notes,
+      deleted: data.deleted,
+    });
   if (error) throw new Error(`Failed to update pack template item: ${error.value}`);
   return result as unknown as PackTemplateItem;
 };
@@ -50,11 +73,7 @@ syncObservable(
     updatePartial: true,
     mode: 'merge',
     persist: {
-      // legend-state ships a nested copy of expo-sqlite; the two SQLiteStorage
-      // classes are structurally identical but nominally different (TS2345). The
-      // cast dedupes at the type level until the nested dep is hoisted out.
-      // biome-ignore lint/suspicious/noExplicitAny: duplicate expo-sqlite install — see comment above
-      plugin: observablePersistSqlite(Storage as any),
+      plugin: observablePersistSqlite(Storage),
       retrySync: true,
       name: 'packTemplateItems',
     },

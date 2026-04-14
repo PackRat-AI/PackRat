@@ -124,4 +124,24 @@ export function createApiClient(config: ApiClientConfig) {
 
 export type ApiClient = ReturnType<typeof createApiClient>;
 
+/**
+ * Extract the unwrapped response data type from a Treaty endpoint call.
+ *
+ * Example:
+ * ```ts
+ * type Pack = ApiData<ReturnType<ApiClient['packs']['get']>>;
+ * ```
+ */
+export type ApiData<R> = R extends Promise<{ data: infer D | null }> ? NonNullable<D> : never;
+
+/**
+ * Extract the request body type from a Treaty mutation method.
+ *
+ * Example:
+ * ```ts
+ * type CreatePackBody = ApiBody<ApiClient['packs']['post']>;
+ * ```
+ */
+export type ApiBody<F extends (...args: never[]) => unknown> = Parameters<F>[0];
+
 export type { App };

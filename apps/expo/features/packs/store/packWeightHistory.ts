@@ -21,7 +21,7 @@ const listPackWeightHistories = async () => {
 const createPackWeightHistoryEntry = async (packWeightHistoryEntry: PackWeightHistoryEntry) => {
   const { data, error } = await apiClient
     .packs({ packId: String(packWeightHistoryEntry.packId) })
-    ['weight-history'].post(packWeightHistoryEntry as never);
+    ['weight-history'].post(packWeightHistoryEntry);
   if (error) throw new Error(`Failed to create packWeightHistoryEntry: ${error.value}`);
   return data as object | null;
 };
@@ -34,11 +34,7 @@ syncObservable(
     fieldCreatedAt: 'createdAt',
     mode: 'merge',
     persist: {
-      // legend-state ships a nested copy of expo-sqlite; the two SQLiteStorage
-      // classes are structurally identical but nominally different (TS2345). The
-      // cast dedupes at the type level until the nested dep is hoisted out.
-      // biome-ignore lint/suspicious/noExplicitAny: duplicate expo-sqlite install — see comment above
-      plugin: observablePersistSqlite(Storage as any),
+      plugin: observablePersistSqlite(Storage),
       retrySync: true,
       name: 'packWeigthHistory',
     },
