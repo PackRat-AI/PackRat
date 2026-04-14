@@ -437,33 +437,29 @@ beforeEach(async () => {
 
   // Delete from tables in reverse dependency order to avoid foreign key violations
   // This is safer than TRUNCATE CASCADE and less prone to deadlocks
-  // Match schema.ts tables. Delete in reverse FK dependency order.
   const tablesToClean = [
-    'one_time_passwords',
-    'refresh_tokens',
-    'auth_providers',
     'weight_history',
+    'verification_codes',
+    'password_reset_codes',
+    'weather_cache',
     'pack_items',
     'pack_template_items',
     'packs',
     'pack_templates',
-    'catalog_item_etl_jobs',
+    'user_items',
     'catalog_items',
-    'invalid_item_logs',
-    'reported_content',
-    'post_comments',
-    'posts',
-    'trips',
     'users',
   ];
 
   try {
-    // TRUNCATE with RESTART IDENTITY resets auto-increment sequences so each
-    // test sees id=1. CASCADE handles FK dependencies, making order irrelevant.
-    // Tests that hardcode ids (e.g. userId=1) rely on this reset.
-    const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
-    await testClient.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
+    // Delete in a single transaction for atomicity
+    await testClient.query('BEGIN');
+    for (const table of tablesToClean) {
+      await testClient.query(`DELETE FROM "${table}"`);
+    }
+    await testClient.query('COMMIT');
   } catch (_error) {
+    await testClient.query('ROLLBACK');
     // Ignore errors - tables might not exist yet
   }
 });
