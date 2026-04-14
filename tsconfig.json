@@ -1,17 +1,8 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "allowJs": true,
-    "esModuleInterop": true,
-    "lib": ["DOM", "ESNext"],
-    "module": "esnext",
-    "moduleDetection": "force",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "target": "ESNext",
     "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
-    "jsx": "react-native",
     "skipLibCheck": true,
     "noEmit": true,
     "paths": {
@@ -33,6 +24,7 @@
       "nativewindui/*": ["./apps/expo/components/ui/*"]
     }
   },
+  "extends": "expo/tsconfig.base",
   "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"],
   "exclude": [
     "node_modules",
