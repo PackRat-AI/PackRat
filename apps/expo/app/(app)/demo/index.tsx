@@ -40,7 +40,7 @@ export default function Screen() {
         title="Demo"
         backVisible={false}
         searchBar={{ iosHideWhenScrolling: true }}
-        rightView={ThemeToggle}
+        rightView={() => <ThemeToggle />}
       />
       <FlashList
         contentInsetAdjustmentBehavior="automatic"

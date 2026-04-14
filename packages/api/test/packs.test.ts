@@ -1,5 +1,5 @@
 import type { Pack } from '@packrat/api/db/schema';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { seedCatalogItem, seedPack, seedPackItem, seedTestUser } from './utils/db-helpers';
 import {
   api,
@@ -59,8 +59,8 @@ describe('Packs Routes', () => {
   let testPackItemId: string;
   let testCatalogItemId: number;
 
-  // Re-seed test data before each test (global beforeEach truncates all tables)
-  beforeEach(async () => {
+  // Seed test data before all tests
+  beforeAll(async () => {
     await seedTestUser();
 
     // Create a test catalog item for pack items

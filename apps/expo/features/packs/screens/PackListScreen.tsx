@@ -180,7 +180,7 @@ export function PackListScreen() {
   };
 
   return (
-    <TabScreen>
+    <TabScreen useLegacySafeAreaView>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}

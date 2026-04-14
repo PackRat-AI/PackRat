@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "admin": "bun run --cwd apps/admin dev",
     "android": "cd apps/expo && bun android",
     "api": "bun run --cwd packages/api dev",
     "bump": "bun .github/scripts/bump.ts",
@@ -36,9 +37,6 @@
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
     "test:expo": "vitest run --config apps/expo/vitest.config.ts"
   },
-  "overrides": {
-    "workerd": "1.20260310.1"
-  },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
     "@manypkg/cli": "^0.24.0",
@@ -63,7 +61,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.2",
+    "typescript": "~5.9.2",
     "zod": "^3.24.2",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
