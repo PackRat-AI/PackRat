@@ -79,7 +79,9 @@ function UserRow({ user }: { user: AdminUser }) {
         <DeleteButton
           label={user.email}
           description="The user account and all associated data will be permanently deleted."
-          onConfirm={handleDelete}
+          onConfirm={async () => {
+            await handleDelete();
+          }}
         />
       </TableCell>
     </TableRow>

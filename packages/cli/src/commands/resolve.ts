@@ -1,3 +1,4 @@
+import { EntityResolver } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { ensureCache, printSummary, printTable } from '../shared';
@@ -26,7 +27,6 @@ export default defineCommand({
     const cache = await ensureCache();
     const conn = cache.getConnection();
 
-    const { EntityResolver } = await import('../../core/entity-resolver');
     const resolver = new EntityResolver(conn);
 
     if (args.build) {

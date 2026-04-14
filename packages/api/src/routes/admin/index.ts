@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
@@ -6,8 +6,8 @@ import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
-import { z } from 'zod';
 
 const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -15,20 +15,14 @@ adminRoutes.use('*', async (c, next) => {
   // Production: Cloudflare Access injects this header after verifying the user
   const cfEmail = c.req.header('CF-Access-Authenticated-User-Email');
   if (cfEmail) return next();
-  // Local dev / fallback: HTTP Basic Auth. Manual check (vs hono's basicAuth
-  // middleware) so failures return a Response instead of throwing, keeping
-  // vitest-pool-workers from reporting expected 401s as unhandled rejections.
-  const header = c.req.header('Authorization');
-  const [scheme, encoded] = header?.split(' ') ?? [];
-  if (scheme !== 'Basic' || !encoded) {
-    return c.text('Unauthorized', 401, { 'WWW-Authenticate': 'Basic realm="PackRat Admin"' });
-  }
-  const [username, password] = atob(encoded).split(':');
-  const e = getEnv(c);
-  if (username !== e.ADMIN_USERNAME || password !== e.ADMIN_PASSWORD) {
-    return c.text('Unauthorized', 401, { 'WWW-Authenticate': 'Basic realm="PackRat Admin"' });
-  }
-  return next();
+  // Local dev / fallback: HTTP Basic Auth
+  return basicAuth({
+    verifyUser: (username, password, c) => {
+      const e = getEnv(c);
+      return username === e.ADMIN_USERNAME && password === e.ADMIN_PASSWORD;
+    },
+    realm: 'PackRat Admin',
+  })(c, next);
 });
 
 const adminLayout = (title: string, content: unknown) => html`
@@ -1096,7 +1090,7 @@ adminRoutes.openapi(deleteUserRoute, async (c) => {
   const { id } = c.req.valid('param');
 
   try {
-    const deleted = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+    const deleted = await db.delete(users).where(eq(users.id, id)).returning();
     if (!deleted.length) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
     return c.json({ success: true }, 200);
   } catch (error) {
@@ -1141,7 +1135,7 @@ adminRoutes.openapi(deletePackRoute, async (c) => {
       .update(packs)
       .set({ deleted: true })
       .where(and(eq(packs.id, id), eq(packs.deleted, false)))
-      .returning({ id: packs.id });
+      .returning();
     if (!updated.length) return c.json({ error: 'Pack not found', code: 'NOT_FOUND' }, 404);
     return c.json({ success: true }, 200);
   } catch (error) {
@@ -1183,10 +1177,7 @@ adminRoutes.openapi(deleteCatalogItemRoute, async (c) => {
   const { id } = c.req.valid('param');
 
   try {
-    const deleted = await db
-      .delete(catalogItems)
-      .where(eq(catalogItems.id, id))
-      .returning({ id: catalogItems.id });
+    const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning();
     if (!deleted.length) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
     return c.json({ success: true }, 200);
   } catch (error) {
@@ -1202,7 +1193,7 @@ const UpdateCatalogItemSchema = z.object({
   name: z.string().min(1).optional(),
   brand: z.string().nullable().optional(),
   categories: z.array(z.string()).nullable().optional(),
-  weight: z.number().nullable().optional(),
+  weight: z.number().optional(),
   weightUnit: z.string().optional(),
   price: z.number().nullable().optional(),
   description: z.string().nullable().optional(),
@@ -1245,15 +1236,12 @@ adminRoutes.openapi(updateCatalogItemRoute, async (c) => {
   try {
     const updated = await db
       .update(catalogItems)
-      .set({
-        ...Object.fromEntries(Object.entries(body).map(([k, v]) => [k, v ?? undefined])),
-        updatedAt: new Date(),
-      })
+      .set({ ...body, updatedAt: new Date() })
       .where(eq(catalogItems.id, id))
-      .returning({ id: catalogItems.id, name: catalogItems.name });
-    const [item] = updated;
-    if (!item) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
-    return c.json(item, 200);
+      .returning();
+    const first = updated[0];
+    if (!first) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
+    return c.json({ id: first.id, name: first.name }, 200);
   } catch (error) {
     console.error('Error updating catalog item:', error);
     return c.json({ error: 'Failed to update catalog item', code: 'UPDATE_ERROR' }, 500);

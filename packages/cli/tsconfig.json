@@ -9,10 +9,10 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@packrat/analytics": ["src/index.ts"],
-      "@packrat/analytics/*": ["src/*"]
+      "@packrat/analytics": ["../analytics/src"],
+      "@packrat/analytics/*": ["../analytics/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "include": ["src/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

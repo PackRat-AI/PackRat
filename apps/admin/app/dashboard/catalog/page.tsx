@@ -93,7 +93,9 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
           <DeleteButton
             label={item.name}
             description="This catalog item will be permanently deleted."
-            onConfirm={handleDelete}
+            onConfirm={async () => {
+              await handleDelete();
+            }}
           />
         </div>
       </TableCell>

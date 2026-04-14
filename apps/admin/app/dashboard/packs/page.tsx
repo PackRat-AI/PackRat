@@ -79,7 +79,9 @@ function PackRow({ pack }: { pack: AdminPack }) {
         <DeleteButton
           label={pack.name}
           description="The pack will be soft-deleted and hidden from all users."
-          onConfirm={handleDelete}
+          onConfirm={async () => {
+            await handleDelete();
+          }}
         />
       </TableCell>
     </TableRow>
