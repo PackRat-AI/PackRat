@@ -12,8 +12,7 @@ const testEnv = {
   JWT_SECRET: 'secret',
   PASSWORD_RESET_SECRET: 'secret',
   GOOGLE_CLIENT_ID: 'test-client-id',
-  ADMIN_USERNAME: 'admin',
-  ADMIN_PASSWORD: 'admin-password',
+  ADMIN_SERVICE_TOKEN: 'test-admin-service-token',
   PACKRAT_API_KEY: 'test-api-key',
 
   // Email Configuration

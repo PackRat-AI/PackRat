@@ -67,20 +67,24 @@ export const apiWithAuthAs = async (
 export const apiWithAdmin = async (path: string, init?: RequestInit) =>
   fetchWithUser(path, { user: TEST_ADMIN, init });
 
-// Helper for basic auth (admin routes)
-export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
-  const credentials = btoa('admin:admin-password');
+// Helper for admin service-token auth
+export const apiWithServiceToken = (path: string, init?: RequestInit) => {
+  // Matches the token in test/setup.ts
+  const token = 'test-admin-service-token';
   return app.fetch(
     new Request(`http://localhost/api/admin${path}`, {
       ...init,
       headers: {
-        Authorization: `Basic ${credentials}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...init?.headers,
       },
     }),
   );
 };
+
+/** @deprecated use apiWithServiceToken */
+export const apiWithBasicAuth = apiWithServiceToken;
 
 // Common request bodies for testing
 export const createTestRequestBody = (data: unknown) => ({

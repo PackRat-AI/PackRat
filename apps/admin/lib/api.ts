@@ -1,11 +1,11 @@
-import { getAdminApiAuthHeader } from './auth';
+import { getAdminApiBearerHeader } from './auth';
 
 const API_BASE = process.env.ADMIN_API_URL ?? 'http://localhost:8787';
 
 async function adminFetch<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
     headers: {
-      Authorization: getAdminApiAuthHeader(),
+      Authorization: getAdminApiBearerHeader(),
       'Content-Type': 'application/json',
     },
     // No caching — admin data should always be fresh
