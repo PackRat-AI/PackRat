@@ -66,10 +66,10 @@
     "@cloudflare/workers-types": "^4.20250405.0",
     "@types/bun": "latest",
     "@types/pg": "^8.11.15",
-    "@vitest/coverage-v8": "~3.1.0",
+    "@vitest/coverage-v8": "^4.0.0",
     "concurrently": "^8.2.2",
     "drizzle-orm": "^0.44.4",
-    "vitest": "~3.1.0",
+    "vitest": "^4.0.0",
     "wrangler": "^4.21.2"
   }
 }
