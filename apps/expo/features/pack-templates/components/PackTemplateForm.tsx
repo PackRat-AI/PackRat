@@ -7,8 +7,8 @@ import {
   FormSection,
   TextField,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
 import { useForm } from '@tanstack/react-form';
+import { Icon } from 'expo-app/components/Icon';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

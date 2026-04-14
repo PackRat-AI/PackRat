@@ -1,5 +1,5 @@
 import { Button, LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { usePathname, useRouter } from 'expo-router';
 import { View } from 'react-native';

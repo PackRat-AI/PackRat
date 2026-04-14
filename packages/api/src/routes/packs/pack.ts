@@ -618,6 +618,8 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     const { generateObject } = await import('ai');
     const { getEnv } = await import('@packrat/api/utils/env-validation');
     const { DEFAULT_MODELS } = await import('@packrat/api/utils/ai/models');
+    // Import plain zod for AI SDK compatibility (avoids type conflicts with @hono/zod-openapi extensions)
+    const { z: zod } = await import('zod');
 
     const { AI_PROVIDER, OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
       getEnv(c);
@@ -637,17 +639,17 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     const result = await generateObject({
       model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       prompt: gapAnalysisPrompt,
-      schema: z.object({
-        gaps: z.array(
-          z.object({
-            suggestion: z.string(),
-            reason: z.string(),
-            consumable: z.boolean(),
-            worn: z.boolean(),
-            priority: z.enum(['must-have', 'nice-to-have', 'optional']).optional(),
+      schema: zod.object({
+        gaps: zod.array(
+          zod.object({
+            suggestion: zod.string(),
+            reason: zod.string(),
+            consumable: zod.boolean(),
+            worn: zod.boolean(),
+            priority: zod.enum(['must-have', 'nice-to-have', 'optional']).optional(),
           }),
         ),
-        summary: z.string().optional(),
+        summary: zod.string().optional(),
       }),
       temperature: 0.3, // Lower temperature for more consistent analysis
     });

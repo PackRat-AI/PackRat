@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { packTemplateItems, packTemplates } from '@packrat/api/db/schema';
 import {
@@ -11,7 +11,6 @@ import {
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { and, eq } from 'drizzle-orm';
-import { z } from 'zod';
 
 const packTemplateItemsRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -74,7 +73,7 @@ packTemplateItemsRoutes.openapi(getItemsRoute, async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
-  const templateId = c.req.param('templateId');
+  const { templateId } = c.req.valid('param');
 
   // Check if the template exists
   const template = await db.query.packTemplates.findFirst({
@@ -171,7 +170,7 @@ packTemplateItemsRoutes.openapi(addItemRoute, async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
-  const templateId = c.req.param('templateId');
+  const { templateId } = c.req.valid('param');
   const data = await c.req.json();
 
   const packTemplate = await db.query.packTemplates.findFirst({
@@ -385,7 +384,7 @@ packTemplateItemsRoutes.openapi(deleteItemRoute, async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
-  const itemId = c.req.param('itemId');
+  const { itemId } = c.req.valid('param');
 
   const item = await db.query.packTemplateItems.findFirst({
     where: eq(packTemplateItems.id, itemId),
