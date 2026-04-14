@@ -1,11 +1,11 @@
 'use client';
 
-import { SidebarTrigger } from '@packrat/web-ui/components/sidebar';
 import { Separator } from '@packrat/web-ui/components/separator';
-import { Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { usePathname } from 'next/navigation';
+import { SidebarTrigger } from '@packrat/web-ui/components/sidebar';
 import { navItems } from 'admin-app/config/nav';
+import { Moon, Sun } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 
 function getPageTitle(pathname: string): string {
   const item = navItems.find((n) =>

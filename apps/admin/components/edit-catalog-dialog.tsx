@@ -1,6 +1,5 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@packrat/web-ui/components/button';
 import {
   Dialog,
@@ -12,10 +11,11 @@ import {
 } from '@packrat/web-ui/components/dialog';
 import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { AdminCatalogItem } from 'admin-app/lib/api';
+import { updateCatalogItem } from 'admin-app/lib/api';
 import { Pencil } from 'lucide-react';
 import { useState } from 'react';
-import { updateCatalogItem } from 'admin-app/lib/api';
-import type { AdminCatalogItem } from 'admin-app/lib/api';
 
 interface EditCatalogDialogProps {
   item: AdminCatalogItem;
@@ -26,8 +26,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: Parameters<typeof updateCatalogItem>[1]) =>
-      updateCatalogItem(item.id, data),
+    mutationFn: (data: Parameters<typeof updateCatalogItem>[1]) => updateCatalogItem(item.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] });
       setOpen(false);
@@ -82,8 +81,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="categories">
-              Categories{' '}
-              <span className="text-muted-foreground text-xs">(comma-separated)</span>
+              Categories <span className="text-muted-foreground text-xs">(comma-separated)</span>
             </Label>
             <Input
               id="categories"

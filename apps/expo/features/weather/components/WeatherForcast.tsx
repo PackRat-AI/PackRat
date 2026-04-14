@@ -3,7 +3,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { ScrollView, View } from 'react-native';
-import { WeatherIcon } from '../components';
+import { WeatherIcon } from './WeatherIcon';
 
 export interface HourlyForecastItem {
   time: string;

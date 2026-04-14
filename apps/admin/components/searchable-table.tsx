@@ -79,7 +79,6 @@ export function SearchableTable<T>({
               </TableRow>
             ) : (
               filtered.map((row, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: no stable row id in generic table
                 <TableRow key={i} className="hover:bg-muted/20">
                   {columns.map((col) => (
                     <TableCell key={col.key}>{col.render(row)}</TableCell>

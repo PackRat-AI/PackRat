@@ -5,15 +5,11 @@
   "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
-    "packrat": "bun run src/cli/index.ts",
     "test": "vitest run",
     "test:watch": "vitest watch"
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.0-r.1",
-    "chalk": "catalog:",
-    "citty": "^0.2.1",
-    "cli-table3": "^0.6.5",
     "consola": "^3.4.2",
     "magic-regexp": "^0.11.0",
     "radash": "catalog:",

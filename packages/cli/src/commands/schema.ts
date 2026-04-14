@@ -1,3 +1,4 @@
+import { SQLFragments } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { ensureCache, printTable } from '../shared';
@@ -11,7 +12,6 @@ export default defineCommand({
     const cache = await ensureCache();
     const conn = cache.getConnection();
 
-    const { SQLFragments } = await import('../../core/query-builder');
     const siteFilter = args.site ? `WHERE site = '${SQLFragments.escapeSql(args.site)}'` : '';
 
     // Field coverage per site
