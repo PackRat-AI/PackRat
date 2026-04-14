@@ -10,12 +10,12 @@
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
-import * as bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Client } from 'pg';
 import WebSocket from 'ws';
+import { hashPassword } from '../utils/auth';
 import * as schema from './schema';
 
 neonConfig.webSocketConstructor = WebSocket;
@@ -56,7 +56,7 @@ async function seedE2EUser() {
   }
 
   try {
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hashPassword(password);
     const existing = await db
       .select({ id: schema.users.id })
       .from(schema.users)
