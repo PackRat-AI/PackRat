@@ -1,5 +1,5 @@
-import { Icon } from 'expo-app/components/Icon';
 import * as Sentry from '@sentry/react-native';
+import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { router } from 'expo-router';

@@ -1,10 +1,10 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { assertNonNull } from '@packrat/guards';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
 import * as Burnt from 'burnt';
 import { appAlert } from 'expo-app/app/_layout';
 import { ErrorState } from 'expo-app/components/ErrorState';
+import { Icon } from 'expo-app/components/Icon';
 import { type SelectedImage, useImagePicker } from 'expo-app/features/packs/hooks/useImagePicker';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';

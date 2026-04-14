@@ -7,8 +7,8 @@ import {
   FormSection,
   TextField,
 } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
 import { useForm } from '@tanstack/react-form';
+import { Icon } from 'expo-app/components/Icon';
 import { useCreatePackFromTemplate } from 'expo-app/features/pack-templates';
 import { getTemplateItems, packTemplatesStore } from 'expo-app/features/pack-templates/store';
 import { TemplateItemsSection } from 'expo-app/features/packs/components/TemplateItemsSection';
