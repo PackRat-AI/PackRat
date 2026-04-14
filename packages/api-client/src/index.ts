@@ -82,7 +82,8 @@ export function createApiClient(config: ApiClientConfig) {
    * refresh endpoint itself, in which case the user must re-auth).
    */
   const authFetcher = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const url =
+      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
     let pathname = '';
     try {
       pathname = new URL(url, config.baseUrl).pathname;

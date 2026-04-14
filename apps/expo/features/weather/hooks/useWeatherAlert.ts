@@ -183,9 +183,7 @@ export function generateAlerts(
   }
 
   // 💨 Wind coming
-  const highWindComing = todayHours.some(
-    (h: ForecastHour) => (h.wind_kph ?? 0) >= 30,
-  );
+  const highWindComing = todayHours.some((h: ForecastHour) => (h.wind_kph ?? 0) >= 30);
   if (highWindComing) {
     alerts.push({
       id: 'wind-soon',
