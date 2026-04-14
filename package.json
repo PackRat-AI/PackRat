@@ -36,7 +36,9 @@
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
     "test:expo": "vitest run --config apps/expo/vitest.config.ts"
   },
-  "overrides": {},
+  "overrides": {
+    "workerd": "1.20250803.0"
+  },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
     "@manypkg/cli": "^0.24.0",
