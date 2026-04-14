@@ -1,4 +1,4 @@
-import { verifyJWT } from '@packrat/api/utils/auth';
+import { isValidApiKey, verifyJWT } from '@packrat/api/utils/auth';
 import { Elysia, status } from 'elysia';
 
 export type AuthUser = {

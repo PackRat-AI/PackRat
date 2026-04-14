@@ -21,8 +21,14 @@ import {
   VerifyEmailRequestSchema,
 } from '@packrat/api/schemas/auth';
 import {
+  findRefreshToken,
+  issueRefreshToken,
+  revokeRefreshToken,
+  revokeTokenFamily,
+  rotateRefreshToken,
+} from '@packrat/api/services/refreshTokenService';
+import {
   generateJWT,
-  generateRefreshToken,
   generateVerificationCode,
   hashPassword,
   validateEmail,
@@ -72,12 +78,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         return status(403, { error: 'Please verify your email before logging in' });
       }
 
-      const refreshToken = generateRefreshToken();
-      await db.insert(refreshTokens).values({
-        userId: userRecord.id,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      });
+      const refreshToken = await issueRefreshToken(db, { userId: userRecord.id });
 
       const accessToken = await generateJWT({
         payload: { userId: userRecord.id, role: userRecord.role },
@@ -203,12 +204,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
 
       await db.delete(oneTimePasswords).where(eq(oneTimePasswords.userId, userId));
 
-      const refreshToken = generateRefreshToken();
-      await db.insert(refreshTokens).values({
-        userId: userRecord.id,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      });
+      const refreshToken = await issueRefreshToken(db, { userId: userRecord.id });
 
       const accessToken = await generateJWT({
         payload: { userId, role: userRecord.role },
@@ -377,45 +373,40 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         if (!refreshToken) return status(400, { error: 'Refresh token is required' });
 
         const db = createDb();
-        const tokenRecord = await db
-          .select({
-            id: refreshTokens.id,
-            userId: refreshTokens.userId,
-            expiresAt: refreshTokens.expiresAt,
-          })
-          .from(refreshTokens)
-          .where(and(eq(refreshTokens.token, refreshToken), isNull(refreshTokens.revokedAt)))
-          .limit(1);
+        const record = await findRefreshToken(db, refreshToken);
+        if (!record) return status(401, { error: 'Invalid refresh token' });
 
-        if (tokenRecord.length === 0) return status(401, { error: 'Invalid refresh token' });
-        const token = tokenRecord[0];
-        if (!token) return status(401, { error: 'Invalid refresh token' });
-        assertDefined(token);
+        // Replay detection: any submission of a revoked token invalidates the
+        // entire lineage. Forces the real user back through full auth and
+        // renders the leaked token useless going forward.
+        if (record.revokedAt) {
+          await revokeTokenFamily(db, refreshToken);
+          return status(401, { error: 'Refresh token reuse detected' });
+        }
 
-        if (new Date() > token.expiresAt) return status(401, { error: 'Refresh token expired' });
+        if (new Date() > record.expiresAt) {
+          return status(401, { error: 'Refresh token expired' });
+        }
 
-        const newRefreshToken = generateRefreshToken();
-        await db
-          .update(refreshTokens)
-          .set({ revokedAt: new Date(), replacedByToken: newRefreshToken })
-          .where(eq(refreshTokens.id, token.id));
-
-        await db.insert(refreshTokens).values({
-          userId: token.userId,
-          token: newRefreshToken,
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        // Rotate inside a transaction so revoke + new-token insert happen
+        // atomically. Concurrent refreshes from multiple devices see a
+        // serializable view and the loser retries against an already-revoked
+        // token, triggering replay detection above.
+        const newRefreshToken = await rotateRefreshToken(db, {
+          oldId: record.id,
+          userId: record.userId,
         });
 
         const [user] = await db
           .select(userWithoutPassword)
           .from(users)
-          .where(eq(users.id, token.userId))
+          .where(eq(users.id, record.userId))
           .limit(1);
 
         if (!user) return status(401, { error: 'User not found' });
 
         const accessToken = await generateJWT({
-          payload: { userId: token.userId, role: user.role },
+          payload: { userId: record.userId, role: user.role },
         });
 
         return { success: true, accessToken, refreshToken: newRefreshToken, user };
@@ -439,10 +430,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
 
       if (!refreshToken) return status(400, { error: 'Refresh token is required' });
 
-      await db
-        .update(refreshTokens)
-        .set({ revokedAt: new Date() })
-        .where(eq(refreshTokens.token, refreshToken));
+      await revokeRefreshToken(db, refreshToken);
 
       return { success: true, message: 'Logged out successfully' };
     },
@@ -561,12 +549,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         .limit(1);
       assertDefined(user);
 
-      const refreshToken = generateRefreshToken();
-      await db.insert(refreshTokens).values({
-        userId,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + 30 * 86400 * 1000),
-      });
+      const refreshToken = await issueRefreshToken(db, { userId });
 
       const accessToken = await generateJWT({
         payload: { userId, role: user?.role || 'USER' },
@@ -657,12 +640,7 @@ export const authRoutes = new Elysia({ prefix: '/auth' })
         .limit(1);
       assertDefined(user);
 
-      const refreshToken = generateRefreshToken();
-      await db.insert(refreshTokens).values({
-        userId,
-        token: refreshToken,
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      });
+      const refreshToken = await issueRefreshToken(db, { userId });
 
       const accessToken = await generateJWT({
         payload: { userId, role: user.role },
