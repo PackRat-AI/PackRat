@@ -416,6 +416,26 @@ vi.mock('youtube-transcript', () => ({
   fetchTranscript: vi.fn().mockResolvedValue([]),
 }));
 
+// Mock @hono/sentry to avoid CJS/ESM incompatibility in workerd
+// (toucan-js@4.1.1 depends on @sentry/core@8.9.2 which has dual ESM/CJS exports;
+// miniflare incorrectly resolves the ESM condition for CJS require() calls,
+// causing "Cannot read properties of undefined (reading 'defineIntegration')")
+vi.mock('@hono/sentry', () => ({
+  sentry: () => async (c: any, next: any) => {
+    c.set('sentry', {
+      setUser: () => {},
+      captureException: () => {},
+      captureMessage: () => {},
+      addBreadcrumb: () => {},
+      setTag: () => {},
+      setContext: () => {},
+      setExtra: () => {},
+    });
+    await next();
+  },
+  getSentry: (c: any) => c.get('sentry'),
+}));
+
 // Setup PostgreSQL connection for tests
 beforeAll(async () => {
   console.log('🔧 Setting up test database connection...');
