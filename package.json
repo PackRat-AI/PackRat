@@ -37,7 +37,7 @@
     "test:expo": "vitest run --config apps/expo/vitest.config.ts"
   },
   "overrides": {
-    "workerd": "1.20250803.0"
+    "workerd": "1.20260310.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
