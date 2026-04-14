@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type React from 'react';
 import { getStoredCredentials } from 'admin-app/lib/auth';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {

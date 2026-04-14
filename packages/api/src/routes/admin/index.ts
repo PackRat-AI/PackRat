@@ -801,7 +801,9 @@ const getUsersListRoute = createRoute({
   summary: 'List all users',
   description: 'Get a list of all users in the system (Admin only)',
   request: {
-    query: UserSearchQuerySchema.pick({ limit: true, offset: true }).extend({
+    query: z.object({
+      limit: z.coerce.number().int().positive().max(100).default(100).optional(),
+      offset: z.coerce.number().int().min(0).default(0).optional(),
       q: z.string().optional(),
     }),
   },
@@ -840,7 +842,7 @@ adminRoutes.openapi(getUsersListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 100, offset = 0, q } = c.req.query();
+    const { limit = 100, offset = 0, q } = c.req.valid('query');
     const usersList = await db
       .select({
         id: users.id,
@@ -885,8 +887,8 @@ const getPacksListRoute = createRoute({
   description: 'Get a list of all packs in the system (Admin only)',
   request: {
     query: z.object({
-      limit: z.number().int().positive().max(100).default(100).optional(),
-      offset: z.number().int().min(0).default(0).optional(),
+      limit: z.coerce.number().int().positive().max(100).default(100).optional(),
+      offset: z.coerce.number().int().min(0).default(0).optional(),
       q: z.string().optional(),
     }),
   },
@@ -924,7 +926,7 @@ adminRoutes.openapi(getPacksListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 100, offset = 0, q } = c.req.query();
+    const { limit = 100, offset = 0, q } = c.req.valid('query');
     const packsList = await db
       .select({
         id: packs.id,
@@ -974,8 +976,8 @@ const getCatalogListRoute = createRoute({
   description: 'Get a list of catalog items (Admin only)',
   request: {
     query: z.object({
-      limit: z.number().int().positive().max(100).default(25).optional(),
-      offset: z.number().int().min(0).default(0).optional(),
+      limit: z.coerce.number().int().positive().max(100).default(25).optional(),
+      offset: z.coerce.number().int().min(0).default(0).optional(),
       q: z.string().optional(),
     }),
   },
@@ -1014,7 +1016,7 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 25, offset = 0, q } = c.req.query();
+    const { limit = 25, offset = 0, q } = c.req.valid('query');
     const itemsList = await db
       .select({
         id: catalogItems.id,
@@ -1062,22 +1064,29 @@ const deleteUserRoute = createRoute({
   path: '/users/:id',
   tags: ['Admin'],
   summary: 'Delete a user',
+  request: {
+    params: z.object({ id: z.coerce.number().int().positive() }),
+  },
   responses: {
     200: { description: 'User deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
     404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    409: { description: 'Conflict — user has dependent data', content: { 'application/json': { schema: ErrorResponseSchema } } },
     500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
   },
 });
 
 adminRoutes.openapi(deleteUserRoute, async (c) => {
   const db = createDb(c);
-  const id = Number(c.req.param('id'));
+  const { id } = c.req.valid('param');
 
   try {
     const deleted = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
     if (!deleted.length) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
     return c.json({ success: true }, 200);
   } catch (error) {
+    if ((error as { code?: string })?.code === '23503') {
+      return c.json({ error: 'Cannot delete: user has dependent data', code: 'CONFLICT' }, 409);
+    }
     console.error('Error deleting user:', error);
     return c.json({ error: 'Failed to delete user', code: 'DELETE_ERROR' }, 500);
   }
@@ -1088,6 +1097,9 @@ const deletePackRoute = createRoute({
   path: '/packs/:id',
   tags: ['Admin'],
   summary: 'Soft-delete a pack',
+  request: {
+    params: z.object({ id: z.string().min(1) }),
+  },
   responses: {
     200: { description: 'Pack deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
     404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
@@ -1097,7 +1109,7 @@ const deletePackRoute = createRoute({
 
 adminRoutes.openapi(deletePackRoute, async (c) => {
   const db = createDb(c);
-  const id = c.req.param('id');
+  const { id } = c.req.valid('param');
 
   try {
     const updated = await db
@@ -1118,22 +1130,29 @@ const deleteCatalogItemRoute = createRoute({
   path: '/catalog/:id',
   tags: ['Admin'],
   summary: 'Delete a catalog item',
+  request: {
+    params: z.object({ id: z.coerce.number().int().positive() }),
+  },
   responses: {
     200: { description: 'Item deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
     404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    409: { description: 'Conflict — item has dependent data', content: { 'application/json': { schema: ErrorResponseSchema } } },
     500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
   },
 });
 
 adminRoutes.openapi(deleteCatalogItemRoute, async (c) => {
   const db = createDb(c);
-  const id = Number(c.req.param('id'));
+  const { id } = c.req.valid('param');
 
   try {
     const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning({ id: catalogItems.id });
     if (!deleted.length) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
     return c.json({ success: true }, 200);
   } catch (error) {
+    if ((error as { code?: string })?.code === '23503') {
+      return c.json({ error: 'Cannot delete: item has dependent data', code: 'CONFLICT' }, 409);
+    }
     console.error('Error deleting catalog item:', error);
     return c.json({ error: 'Failed to delete catalog item', code: 'DELETE_ERROR' }, 500);
   }
@@ -1155,6 +1174,7 @@ const updateCatalogItemRoute = createRoute({
   tags: ['Admin'],
   summary: 'Update a catalog item',
   request: {
+    params: z.object({ id: z.coerce.number().int().positive() }),
     body: { content: { 'application/json': { schema: UpdateCatalogItemSchema } } },
   },
   responses: {
@@ -1173,7 +1193,7 @@ const updateCatalogItemRoute = createRoute({
 
 adminRoutes.openapi(updateCatalogItemRoute, async (c) => {
   const db = createDb(c);
-  const id = Number(c.req.param('id'));
+  const { id } = c.req.valid('param');
   const body = c.req.valid('json');
 
   try {
