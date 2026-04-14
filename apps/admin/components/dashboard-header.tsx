@@ -23,7 +23,7 @@ export function DashboardHeader() {
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="h-4" />
 
-      <h1 className="text-sm font-medium">{getPageTitle(pathname)}</h1>
+      <h1 className="text-sm font-medium">{getPageTitle(pathname ?? '')}</h1>
 
       <div className="ml-auto flex items-center gap-2">
         <button

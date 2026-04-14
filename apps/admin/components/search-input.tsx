@@ -16,11 +16,11 @@ function SearchInputInner({ placeholder = 'Search…', paramKey = 'q' }: SearchI
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
-  const value = searchParams.get(paramKey) ?? '';
+  const value = searchParams?.get(paramKey) ?? '';
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const next = new URLSearchParams(searchParams.toString());
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
       if (e.target.value) {
         next.set(paramKey, e.target.value);
       } else {
