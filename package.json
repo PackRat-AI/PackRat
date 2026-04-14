@@ -9,6 +9,8 @@
     "admin": "bun run --cwd apps/admin dev",
     "android": "cd apps/expo && bun android",
     "api": "bun run --cwd packages/api dev",
+    "mcp": "bun run --cwd packages/mcp dev",
+    "mcp:deploy": "bun run --cwd packages/mcp deploy",
     "bump": "bun .github/scripts/bump.ts",
     "check": "biome check --no-errors-on-unmatched",
     "check:catalog": "bun scripts/lint/no-duplicate-deps.ts",
