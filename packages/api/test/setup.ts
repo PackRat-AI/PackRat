@@ -5,8 +5,9 @@ import * as schema from '../src/db/schema';
 
 // Route @neondatabase/serverless through the local wsproxy (docker-compose.test.yml),
 // so tests use the same driver as production against Docker Postgres.
-// wsproxy serves WebSocket upgrades at root; target Postgres is set via APPEND_PORT.
-neonConfig.wsProxy = () => 'localhost:5434';
+// wsproxy upgrades on /v1 and reads the target from ?address= (resolved inside the
+// compose network, so `postgres-test:5432` is the service name).
+neonConfig.wsProxy = () => 'localhost:5434/v1?address=postgres-test:5432';
 neonConfig.useSecureWebSocket = false;
 neonConfig.pipelineConnect = false;
 neonConfig.pipelineTLS = false;

@@ -26,9 +26,9 @@ services:
   wsproxy:
     image: ghcr.io/neondatabase/wsproxy:latest
     environment:
-      APPEND_PORT: "postgres-test:5432"
+      APPEND_PORT: ""
       ALLOW_ADDR_REGEX: ".*"
-      LOG_TRAFFIC: "false"
+      LOG_CONN_INFO: "true"
     ports:
       - "5434:80"
     depends_on:
