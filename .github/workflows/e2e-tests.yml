@@ -41,13 +41,15 @@ jobs:
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
-      - name: Verify E2E secrets are configured
+      - name: Check E2E secrets
+        id: secrets-check
         run: |
           if [ -z "${TEST_EMAIL:-}" ] || [ -z "${TEST_PASSWORD:-}" ]; then
-            echo "::error::E2E_TEST_EMAIL and/or E2E_TEST_PASSWORD repository secrets are not set."
-            echo "::error::Set them via: gh secret set E2E_TEST_EMAIL --repo PackRat-AI/PackRat"
-            echo "::error::                gh secret set E2E_TEST_PASSWORD --repo PackRat-AI/PackRat"
-            exit 1
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::E2E_TEST_EMAIL/E2E_TEST_PASSWORD not set — build will run but Maestro step will be skipped."
+            echo "::warning::Set them via: gh secret set E2E_TEST_EMAIL --repo PackRat-AI/PackRat && gh secret set E2E_TEST_PASSWORD --repo PackRat-AI/PackRat"
+          else
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout repository
@@ -123,6 +125,7 @@ jobs:
           echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
 
       - name: Boot iOS Simulator
+        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: |
           # Pick the newest available iOS runtime on this runner. GitHub's
           # macOS images ship different iOS runtimes over time; hard-coding a
@@ -184,10 +187,12 @@ jobs:
           echo "SIMULATOR_UDID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Install app on simulator
+        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: |
           xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
       - name: Run Maestro E2E tests
+        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: |
           mkdir -p test-results
           bun test:e2e:ios --device "$SIMULATOR_UDID" --format junit --output test-results/maestro-results.xml
@@ -215,10 +220,10 @@ jobs:
           retention-days: 7
 
       - name: Shutdown simulator
-        if: always()
+        if: always() && steps.secrets-check.outputs.has_secrets == 'true'
         run: |
-          xcrun simctl shutdown "$SIMULATOR_UDID" || true
-          xcrun simctl delete "$SIMULATOR_UDID" || true
+          xcrun simctl shutdown "${SIMULATOR_UDID:-}" || true
+          xcrun simctl delete "${SIMULATOR_UDID:-}" || true
 
   android-e2e:
     name: Android E2E Tests
@@ -232,13 +237,15 @@ jobs:
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
-      - name: Verify E2E secrets are configured
+      - name: Check E2E secrets
+        id: secrets-check
         run: |
           if [ -z "${TEST_EMAIL:-}" ] || [ -z "${TEST_PASSWORD:-}" ]; then
-            echo "::error::E2E_TEST_EMAIL and/or E2E_TEST_PASSWORD repository secrets are not set."
-            echo "::error::Set them via: gh secret set E2E_TEST_EMAIL --repo PackRat-AI/PackRat"
-            echo "::error::                gh secret set E2E_TEST_PASSWORD --repo PackRat-AI/PackRat"
-            exit 1
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::E2E_TEST_EMAIL/E2E_TEST_PASSWORD not set — build will run but Maestro step will be skipped."
+            echo "::warning::Set them via: gh secret set E2E_TEST_EMAIL --repo PackRat-AI/PackRat && gh secret set E2E_TEST_PASSWORD --repo PackRat-AI/PackRat"
+          else
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Free disk space on runner
@@ -334,6 +341,7 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
       - name: Enable KVM for hardware acceleration
+        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -341,6 +349,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: AVD cache
+        if: steps.secrets-check.outputs.has_secrets == 'true'
         uses: actions/cache@v4
         id: avd-cache
         with:
@@ -350,8 +359,8 @@ jobs:
           key: avd-34-${{ runner.os }}
 
       - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2.34.0
+        if: steps.secrets-check.outputs.has_secrets == 'true' && steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
           api-level: 34
           target: google_apis
@@ -364,6 +373,7 @@ jobs:
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run Maestro E2E tests on Android emulator
+        if: steps.secrets-check.outputs.has_secrets == 'true'
         uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
           api-level: 34
