@@ -21,19 +21,5 @@ services:
       -c log_duration=on
       -c max_connections=100
 
-  # Neon-compatible WebSocket proxy so tests use the same @neondatabase/serverless
-  # driver as production — eliminates pg-cloudflare / cloudflare:sockets workarounds.
-  wsproxy:
-    image: ghcr.io/neondatabase/wsproxy:latest
-    environment:
-      APPEND_PORT: ""
-      ALLOW_ADDR_REGEX: ".*"
-      LOG_CONN_INFO: "true"
-    ports:
-      - "5434:80"
-    depends_on:
-      postgres-test:
-        condition: service_healthy
-
 volumes:
   postgres_test_data:
