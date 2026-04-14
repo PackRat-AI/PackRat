@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "allowJs": true,
     "esModuleInterop": true,
     "lib": ["DOM", "ESNext"],
