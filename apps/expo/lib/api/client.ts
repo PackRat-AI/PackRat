@@ -136,9 +136,9 @@ function buildUrl(path: string, params?: Params): string {
 
 function headersToObject(headers: globalThis.Headers): HeaderMap {
   const obj: HeaderMap = {};
-  headers.forEach((value, key) => {
+  for (const [key, value] of headers.entries()) {
     obj[key] = value;
-  });
+  }
   return obj;
 }
 
@@ -246,16 +246,23 @@ async function execute<T>(
   };
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: match axios's default generic — callers rely on `any`
+// Legacy fetch wrapper. Match axios's default generic (`any`) so the 43+
+// callsites that rely on untyped responses compile unchanged during the
+// sweep to typed Treaty (#2171).
 export const apiClient = {
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
   get: <T = any>(path: string, config?: RequestConfig) =>
     execute<T>('GET', path, undefined, config),
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
   post: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('POST', path, body, config),
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
   put: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PUT', path, body, config),
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
   patch: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PATCH', path, body, config),
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
   delete: <T = any>(path: string, config?: RequestConfig) =>
     execute<T>('DELETE', path, undefined, config),
 };

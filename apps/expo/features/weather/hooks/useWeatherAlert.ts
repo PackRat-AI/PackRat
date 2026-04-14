@@ -145,6 +145,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
   }
 
   // 💨 Wind coming
+  // biome-ignore lint/suspicious/noExplicitAny: see file-level comment on generateAlerts
   const highWindComing = todayHours.some((h: any) => h.wind_kph >= 30);
   if (highWindComing) {
     alerts.push({

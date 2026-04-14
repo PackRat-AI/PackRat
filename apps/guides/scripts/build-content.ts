@@ -13,6 +13,7 @@ import { unified } from 'unified';
 
 const postsDirectory = path.join(process.cwd(), 'content/posts');
 const outputFile = path.join(process.cwd(), 'lib/content.ts');
+const MDX_SUFFIX_PATTERN = /\.mdx$/;
 
 async function buildContent() {
   console.log('Building content...');
@@ -27,7 +28,7 @@ async function buildContent() {
       const { data, content } = matter(fileContents);
 
       return {
-        slug: filename.replace(/\.mdx$/, ''),
+        slug: filename.replace(MDX_SUFFIX_PATTERN, ''),
         title: data.title,
         description: data.description,
         date: data.date,
