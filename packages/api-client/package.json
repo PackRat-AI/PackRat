@@ -12,7 +12,7 @@
     "@elysiajs/eden": "catalog:"
   },
   "peerDependencies": {
-    "elysia": "*"
+    "elysia": "catalog:"
   },
   "peerDependenciesMeta": {
     "elysia": {
