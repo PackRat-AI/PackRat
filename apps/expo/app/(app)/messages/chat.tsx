@@ -548,6 +548,7 @@ function ChatBubble({
                 name="arrow-down"
                 ios={{
                   name: 'arrow.down.square',
+                  type: 'hierarchical',
                 }}
                 color={colors.primary}
                 size={Platform.select({ ios: 27, default: 21 })}

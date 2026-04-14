@@ -4,10 +4,10 @@ import {
   SF_SYMBOLS_TO_MATERIAL_COMMUNITY_ICONS,
   SF_SYMBOLS_TO_MATERIAL_ICONS,
 } from 'rn-icon-mapper';
-import type { MaterialCommunityIconsProps, MaterialIconsProps } from './types';
+import type { MaterialCommunityIconsProps, MaterialIconsProps, SfSymbolName } from './types';
 
 type IconMapping = {
-  sfSymbol: string | null;
+  sfSymbol: SfSymbolName | null;
   materialIcon: MaterialIconsProps['name'] | null;
   materialCommunityIcon: MaterialCommunityIconsProps['name'] | null;
 };
@@ -29,7 +29,7 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
       ];
     if (materialCommunityIcon) {
       return {
-        sfSymbol: name,
+        sfSymbol: name as SfSymbolName,
         materialIcon: null,
         materialCommunityIcon,
       };
@@ -39,7 +39,7 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
       SF_SYMBOLS_TO_MATERIAL_ICONS[name as keyof typeof SF_SYMBOLS_TO_MATERIAL_ICONS];
     if (materialIcon) {
       return {
-        sfSymbol: name,
+        sfSymbol: name as SfSymbolName,
         materialIcon,
         materialCommunityIcon: null,
       };
@@ -47,7 +47,7 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
 
     // No mapping found for SF Symbol
     return {
-      sfSymbol: name,
+      sfSymbol: name as SfSymbolName,
       materialIcon: null,
       materialCommunityIcon: null,
     };
@@ -61,7 +61,7 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
     ];
   if (sfSymbolFromCommunity) {
     return {
-      sfSymbol: sfSymbolFromCommunity,
+      sfSymbol: sfSymbolFromCommunity as SfSymbolName,
       materialIcon: null,
       materialCommunityIcon: name as MaterialCommunityIconsProps['name'],
     };
@@ -71,7 +71,7 @@ export function getIconNames(namingScheme: 'sfSymbol' | 'material', name?: strin
     MATERIAL_ICONS_TO_SF_SYMBOLS[name as keyof typeof MATERIAL_ICONS_TO_SF_SYMBOLS];
   if (sfSymbolFromMaterial) {
     return {
-      sfSymbol: sfSymbolFromMaterial,
+      sfSymbol: sfSymbolFromMaterial as SfSymbolName,
       materialIcon: name as MaterialIconsProps['name'],
       materialCommunityIcon: null,
     };

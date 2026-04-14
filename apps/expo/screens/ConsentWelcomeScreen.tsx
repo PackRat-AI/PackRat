@@ -48,7 +48,12 @@ export function WelcomeConsentScreen() {
           {FEATURES.map((feature) => (
             <View key={feature.title} className="flex-row gap-4">
               <View className="pt-px">
-                <Icon name={feature.icon} size={38} color={colors.primary} />
+                <Icon
+                  name={feature.icon}
+                  size={38}
+                  color={colors.primary}
+                  ios={{ type: 'hierarchical' }}
+                />
               </View>
               <View className="flex-1">
                 <Text className="font-bold">{feature.title}</Text>
@@ -59,7 +64,12 @@ export function WelcomeConsentScreen() {
         </View>
         <View className="gap-4">
           <View className="items-center">
-            <Icon name="account-multiple" size={24} color={colors.primary} />
+            <Icon
+              name="account-multiple"
+              size={24}
+              color={colors.primary}
+              ios={{ type: 'hierarchical' }}
+            />
             <Text variant="caption2" className="pt-1 text-center">
               {t('welcome.byPressingContinue')}{' '}
               <Link href="/">
