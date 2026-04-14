@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "paths": {
+      "admin-app/*": ["./apps/admin/*"],
       "guides-app/*": ["./apps/guides/*"],
       "landing-app/*": ["./apps/landing/*"],
       "expo-app/*": ["./apps/expo/*"],

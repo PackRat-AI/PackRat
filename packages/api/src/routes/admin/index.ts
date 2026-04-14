@@ -2,12 +2,10 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
-import { UserSearchQuerySchema } from '@packrat/api/schemas/users';
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
-import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
 import { z } from 'zod';
 
@@ -17,14 +15,20 @@ adminRoutes.use('*', async (c, next) => {
   // Production: Cloudflare Access injects this header after verifying the user
   const cfEmail = c.req.header('CF-Access-Authenticated-User-Email');
   if (cfEmail) return next();
-  // Local dev / fallback: HTTP Basic Auth
-  return basicAuth({
-    verifyUser: (username, password, c) => {
-      const e = getEnv(c);
-      return username === e.ADMIN_USERNAME && password === e.ADMIN_PASSWORD;
-    },
-    realm: 'PackRat Admin',
-  })(c, next);
+  // Local dev / fallback: HTTP Basic Auth. Manual check (vs hono's basicAuth
+  // middleware) so failures return a Response instead of throwing, keeping
+  // vitest-pool-workers from reporting expected 401s as unhandled rejections.
+  const header = c.req.header('Authorization');
+  const [scheme, encoded] = header?.split(' ') ?? [];
+  if (scheme !== 'Basic' || !encoded) {
+    return c.text('Unauthorized', 401, { 'WWW-Authenticate': 'Basic realm="PackRat Admin"' });
+  }
+  const [username, password] = atob(encoded).split(':');
+  const e = getEnv(c);
+  if (username !== e.ADMIN_USERNAME || password !== e.ADMIN_PASSWORD) {
+    return c.text('Unauthorized', 401, { 'WWW-Authenticate': 'Basic realm="PackRat Admin"' });
+  }
+  return next();
 });
 
 const adminLayout = (title: string, content: unknown) => html`
@@ -1068,10 +1072,22 @@ const deleteUserRoute = createRoute({
     params: z.object({ id: z.coerce.number().int().positive() }),
   },
   responses: {
-    200: { description: 'User deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
-    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    409: { description: 'Conflict — user has dependent data', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    200: {
+      description: 'User deleted',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    409: {
+      description: 'Conflict — user has dependent data',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -1101,9 +1117,18 @@ const deletePackRoute = createRoute({
     params: z.object({ id: z.string().min(1) }),
   },
   responses: {
-    200: { description: 'Pack deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
-    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    200: {
+      description: 'Pack deleted',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -1134,10 +1159,22 @@ const deleteCatalogItemRoute = createRoute({
     params: z.object({ id: z.coerce.number().int().positive() }),
   },
   responses: {
-    200: { description: 'Item deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
-    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    409: { description: 'Conflict — item has dependent data', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    200: {
+      description: 'Item deleted',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    409: {
+      description: 'Conflict — item has dependent data',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -1146,7 +1183,10 @@ adminRoutes.openapi(deleteCatalogItemRoute, async (c) => {
   const { id } = c.req.valid('param');
 
   try {
-    const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning({ id: catalogItems.id });
+    const deleted = await db
+      .delete(catalogItems)
+      .where(eq(catalogItems.id, id))
+      .returning({ id: catalogItems.id });
     if (!deleted.length) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
     return c.json({ success: true }, 200);
   } catch (error) {
@@ -1186,8 +1226,14 @@ const updateCatalogItemRoute = createRoute({
         },
       },
     },
-    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
-    500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
   },
 });
 
@@ -1199,11 +1245,15 @@ adminRoutes.openapi(updateCatalogItemRoute, async (c) => {
   try {
     const updated = await db
       .update(catalogItems)
-      .set({ ...body, updatedAt: new Date() })
+      .set({
+        ...Object.fromEntries(Object.entries(body).map(([k, v]) => [k, v ?? undefined])),
+        updatedAt: new Date(),
+      })
       .where(eq(catalogItems.id, id))
       .returning({ id: catalogItems.id, name: catalogItems.name });
-    if (!updated.length) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
-    return c.json(updated[0]!, 200);
+    const [item] = updated;
+    if (!item) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
+    return c.json(item, 200);
   } catch (error) {
     console.error('Error updating catalog item:', error);
     return c.json({ error: 'Failed to update catalog item', code: 'UPDATE_ERROR' }, 500);

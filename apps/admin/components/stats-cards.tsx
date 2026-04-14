@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@packrat/web-ui/components/card';
-import { Backpack, CheckCircle, Package, Users } from 'lucide-react';
 import type { AdminStats } from 'admin-app/lib/api';
+import { Backpack, CheckCircle, Package, Users } from 'lucide-react';
 
 interface StatsCardsProps {
   stats: AdminStats;

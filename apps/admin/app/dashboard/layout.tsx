@@ -1,8 +1,8 @@
 import { SidebarInset, SidebarProvider } from '@packrat/web-ui/components/sidebar';
-import type React from 'react';
 import { AppSidebar } from 'admin-app/components/app-sidebar';
 import { AuthGuard } from 'admin-app/components/auth-guard';
 import { DashboardHeader } from 'admin-app/components/dashboard-header';
+import type React from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
