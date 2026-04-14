@@ -1,7 +1,7 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -128,7 +128,7 @@ function CatalogItemsScreen() {
   ]);
 
   return (
-    <TabScreen>
+    <TabScreen useLegacySafeAreaView>
       <LargeTitleHeader
         title={t('catalog.title')}
         backVisible={false}
