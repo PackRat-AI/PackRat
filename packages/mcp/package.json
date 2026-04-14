@@ -1,0 +1,23 @@
+{
+  "name": "@packrat/mcp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PackRat MCP Server — outdoor adventure planning via Model Context Protocol",
+  "scripts": {
+    "dev": "wrangler dev -e dev",
+    "deploy": "wrangler deploy --minify",
+    "deploy:dev": "wrangler deploy --minify -e dev",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "agents": "^0.11.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250405.0",
+    "partyserver": "^0.4.1",
+    "typescript": "^5.8.2",
+    "wrangler": "^4.21.2"
+  }
+}
