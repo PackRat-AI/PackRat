@@ -72,7 +72,7 @@
     "@rn-primitives/portal": "^1.1.0",
     "@rn-primitives/slot": "^1.1.0",
     "@ronradtke/react-native-markdown-display": "^8.1.0",
-    "@sentry/react-native": "~8.7.0",
+    "@sentry/react-native": "~7.2.0",
     "@shopify/flash-list": "2.0.2",
     "@stardazed/streams-text-encoding": "^1.0.2",
     "@tanstack/react-form": "^1.0.5",
