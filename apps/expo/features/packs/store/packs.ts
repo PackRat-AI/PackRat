@@ -46,7 +46,15 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-            plugin: observablePersistSqlite(Storage),
+            // legend-state ships a nested copy of expo-sqlite; the two SQLiteStorage
+
+            // classes are structurally identical but nominally different (TS2345). The
+
+            // cast dedupes at the type level until the nested dep is hoisted out.
+
+            // biome-ignore lint/suspicious/noExplicitAny: duplicate expo-sqlite install — see comment above
+
+            plugin: observablePersistSqlite(Storage as any),
       retrySync: true,
       name: 'packs',
     },

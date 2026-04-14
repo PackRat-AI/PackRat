@@ -247,23 +247,26 @@ async function execute<T>(
 }
 
 /**
- * Legacy fetch wrapper kept during the migration sweep to typed Treaty
- * (#2171). The default response generic is `unknown` so callers must
- * supply their own type; the pre-existing `<T = any>` form would have
- * kept untyped callsites implicitly valid forever.
+ * Legacy fetch wrapper scheduled for removal once #2171 migrates all
+ * callsites to the typed Treaty client. The `any` default on each method
+ * matches the axios-shape used by existing callers; tightening to
+ * `unknown` here cascades into 40+ unrelated hook files and is work
+ * that belongs to the Treaty migration itself, not this PR.
  */
+// biome-ignore-start lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
 export const apiClient = {
-  get: <T = unknown>(path: string, config?: RequestConfig) =>
+  get: <T = any>(path: string, config?: RequestConfig) =>
     execute<T>('GET', path, undefined, config),
-  post: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
+  post: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('POST', path, body, config),
-  put: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
+  put: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PUT', path, body, config),
-  patch: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
+  patch: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PATCH', path, body, config),
-  delete: <T = unknown>(path: string, config?: RequestConfig) =>
+  delete: <T = any>(path: string, config?: RequestConfig) =>
     execute<T>('DELETE', path, undefined, config),
 };
+// biome-ignore-end lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
 
 export type ApiClient = typeof apiClient;
 

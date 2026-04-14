@@ -9,6 +9,9 @@ import path from 'path';
 import slugify from 'slugify';
 import { enhanceGuideContent } from '../lib/enhanceGuideContent';
 
+const JSON_CODE_BLOCK_PATTERN = /```json\s*([\s\S]*?)\s*```/;
+const JSON_ARRAY_PATTERN = /\[\s*\{[\s\S]*\}\s*\]/;
+
 // Types
 type ContentCategory =
   | 'gear-essentials'
@@ -110,13 +113,13 @@ function getRandomAuthor(): string {
 // Extract JSON from text that might contain markdown code blocks
 function extractJsonFromText(text: string): string {
   // Look for JSON content between code blocks
-  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonMatch = text.match(JSON_CODE_BLOCK_PATTERN);
   if (jsonMatch?.[1]) {
     return jsonMatch[1].trim();
   }
 
   // If no code blocks, try to find JSON array directly
-  const arrayMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  const arrayMatch = text.match(JSON_ARRAY_PATTERN);
   if (arrayMatch) {
     return arrayMatch[0];
   }
