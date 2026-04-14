@@ -15,9 +15,9 @@
     "validate:cloudflare-env": "bun scripts/validate-cloudflare-api-env.ts"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.62",
-    "@ai-sdk/openai": "^2.0.11",
-    "@ai-sdk/perplexity": "^2.0.1",
+    "@ai-sdk/google": "^3.0.62",
+    "@ai-sdk/openai": "^3.0.52",
+    "@ai-sdk/perplexity": "^3.0.29",
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@cloudflare/containers": "^0.0.30",
@@ -32,8 +32,8 @@
     "ai": "catalog:",
     "bcryptjs": "^3.0.2",
     "csv-parse": "^6.2.1",
-    "drizzle-kit": "^0.30.6",
-    "drizzle-orm": "^0.44.4",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
     "google-auth-library": "^10.1.0",
     "gray-matter": "^4.0.3",
