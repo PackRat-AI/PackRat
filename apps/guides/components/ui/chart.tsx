@@ -1,7 +1,7 @@
 'use client';
 
+import { cn } from '@packrat/web-ui/lib/utils';
 import { assertDefined } from 'guides-app/lib/assertDefined';
-import { cn } from 'guides-app/lib/utils';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
 
@@ -72,7 +72,6 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   return (
     <style
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: ignore
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(

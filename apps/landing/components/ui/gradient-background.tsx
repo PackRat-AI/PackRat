@@ -1,4 +1,4 @@
-import { cn } from 'landing-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 
 interface GradientBackgroundProps {
   className?: string;

@@ -1,16 +1,115 @@
 import type { Config } from 'tailwindcss';
+import { fontFamily as defaultFontFamily } from 'tailwindcss/defaultTheme';
+import tailwindcssAnimate from 'tailwindcss-animate';
 
 /**
- * Shared Tailwind preset for PackRat web apps.
+ * Shared Tailwind preset for PackRat web apps (apps/landing, apps/guides).
  *
- * Stub for the @packrat/web-ui package skeleton. A future PR will populate
- * this with the theme tokens / plugins currently duplicated between
- * apps/landing/tailwind.config.js and apps/guides/tailwind.config.ts, so both
- * apps can just extend this preset.
+ * Holds the theme tokens, container config, keyframes, and plugins that are
+ * common to both apps. Each app's tailwind.config still adds its own
+ * `content` globs and any app-specific `theme.extend`/`plugins` on top of
+ * this preset.
  */
-export const webUiPreset = {
+const preset = {
+  darkMode: ['class'],
   content: [],
-  theme: {},
-} satisfies Partial<Config>;
+  theme: {
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: '1rem',
+        sm: '1.5rem',
+        lg: '2rem',
+      },
+      screens: {
+        '2xl': '1400px',
+      },
+    },
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        // Apple UI colors
+        apple: {
+          blue: '#007AFF',
+          indigo: '#5856D6',
+          purple: '#AF52DE',
+          pink: '#FF2D55',
+          red: '#FF3B30',
+          orange: '#FF9500',
+          yellow: '#FFCC00',
+          green: '#34C759',
+          teal: '#5AC8FA',
+          gray: {
+            light: '#F5F5F7',
+            medium: '#86868B',
+            dark: '#1D1D1F',
+          },
+        },
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+        xl: '1rem',
+        '2xl': '1.25rem',
+      },
+      fontFamily: {
+        sans: ['var(--font-sans)', ...defaultFontFamily.sans],
+      },
+      boxShadow: {
+        'apple-sm': '0 2px 6px rgba(0, 0, 0, 0.05)',
+        apple: '0 4px 12px rgba(0, 0, 0, 0.08)',
+        'apple-lg': '0 12px 24px rgba(0, 0, 0, 0.12)',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+      },
+    },
+  },
+  plugins: [tailwindcssAnimate],
+} satisfies Config;
 
-export default webUiPreset;
+export default preset;

@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
@@ -50,9 +50,10 @@ jobs:
           xcode-version: '26.2'
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
 
       - name: Install dependencies
         env:
@@ -85,11 +86,21 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
+      - name: Cache Maestro CLI
+        id: maestro-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.maestro
+          key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
+
       - name: Install Maestro CLI
+        if: steps.maestro-cache.outputs.cache-hit != 'true'
         run: |
           export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
           curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Add Maestro to PATH
+        run: echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
       - name: Extract iOS simulator build
         run: |
@@ -180,7 +191,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-e2e-results
           path: test-results/
@@ -188,7 +199,7 @@ jobs:
 
       - name: Upload Maestro screenshots and videos on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-e2e-failure-artifacts
           path: ~/.maestro/tests/
@@ -213,12 +224,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
 
       - name: Install dependencies
         env:
@@ -237,11 +249,31 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Cache Maestro CLI
+        id: maestro-cache-android
+        uses: actions/cache@v4
+        with:
+          path: ~/.maestro
+          key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
+
       - name: Install Maestro CLI
+        if: steps.maestro-cache-android.outputs.cache-hit != 'true'
         run: |
           export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
           curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Add Maestro to PATH
+        run: echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
       - name: Build Android APK for emulator
         run: |
@@ -263,6 +295,29 @@ jobs:
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-${{ runner.os }}
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2.34.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          avd-name: PackRat-E2E
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
 
       - name: Run Maestro E2E tests on Android emulator
         uses: reactivecircus/android-emulator-runner@v2.34.0
@@ -298,7 +353,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-e2e-results
           path: test-results/
@@ -306,7 +361,7 @@ jobs:
 
       - name: Upload Maestro screenshots and videos on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-e2e-failure-artifacts
           path: ~/.maestro/tests/

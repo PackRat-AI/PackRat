@@ -1,6 +1,6 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -55,7 +55,6 @@ export default function LocationDetailScreen() {
   };
 
   // Load weather data on initial render
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need this to only run at initial render
   useEffect(() => {
     if (location) {
       handleRefresh();

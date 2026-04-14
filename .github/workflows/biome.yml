@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: ["**"]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -11,10 +15,11 @@ jobs:
   biome:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
@@ -27,3 +32,6 @@ jobs:
         run: bun scripts/lint/no-duplicate-deps.ts
       - name: Check package.json ordering
         run: bun scripts/format/sort-package-json.ts --check
+      - name: Run Expo Doctor
+        run: bunx expo-doctor
+        working-directory: apps/expo

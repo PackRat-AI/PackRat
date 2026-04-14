@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from 'landing-app/lib/utils';
+import { cn } from '@packrat/web-ui/lib/utils';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 

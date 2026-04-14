@@ -29,7 +29,7 @@ const RE_PUBLIC_PREFIX = /^PUBLIC_/;
 
 const expoFileContent = envFileContent
   .split('\n')
-  .map((line) => {
+  .flatMap((line) => {
     // Only keep EXPO_PUBLIC_ variables
     if (line.startsWith('PUBLIC_APP=')) {
       return 'EXPO_PUBLIC_APP=expo';
@@ -38,7 +38,7 @@ const expoFileContent = envFileContent
     } else if (line.startsWith('EXPO_PUBLIC_')) {
       return line;
     }
-    return undefined;
+    return [];
   })
   .join('\n');
 const expoNoTelemetry = 'EXPO_NO_TELEMETRY=true';

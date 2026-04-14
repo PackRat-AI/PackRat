@@ -5,7 +5,7 @@ on:
     branches: ["main", "development"]
     paths:
       - "package.json"
-      - "bun.lockb"
+      - "bun.lock"
       - "packages/api/src/**"
       - "packages/api/package.json"
       - "packages/api/vitest.unit.config.ts"
@@ -19,7 +19,7 @@ on:
     branches: ["**"]
     paths:
       - "package.json"
-      - "bun.lockb"
+      - "bun.lock"
       - "packages/api/src/**"
       - "packages/api/package.json"
       - "packages/api/vitest.unit.config.ts"
@@ -29,6 +29,10 @@ on:
       - "apps/expo/lib/utils/**"
       - "apps/expo/features/**/utils/**"
       - ".github/workflows/unit-tests.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -40,12 +44,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: oven-sh/setup-bun@v1
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          
+          cache: true
+
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
@@ -69,12 +74,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: oven-sh/setup-bun@v1
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-          
+          cache: true
+
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}

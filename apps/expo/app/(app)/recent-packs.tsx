@@ -1,5 +1,5 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import type { Pack } from 'expo-app/features/packs';
 import { useRecentPacks } from 'expo-app/features/packs/hooks/useRecentPacks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
