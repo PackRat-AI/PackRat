@@ -2,13 +2,14 @@ import { getAdminApiAuthHeader } from './auth';
 
 const API_BASE = process.env.ADMIN_API_URL ?? 'http://localhost:8787';
 
-async function adminFetch<T>(path: string): Promise<T> {
+async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
+    ...init,
     headers: {
       Authorization: getAdminApiAuthHeader(),
       'Content-Type': 'application/json',
+      ...init?.headers,
     },
-    // No caching — admin data should always be fresh
     cache: 'no-store',
   });
 
@@ -43,8 +44,14 @@ export interface AdminUser {
   createdAt: string | null;
 }
 
-export function getUsers(limit = 100, offset = 0): Promise<AdminUser[]> {
-  return adminFetch<AdminUser[]>(`/users-list?limit=${limit}&offset=${offset}`);
+export function getUsers(limit = 100, offset = 0, q?: string): Promise<AdminUser[]> {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (q) params.set('q', q);
+  return adminFetch<AdminUser[]>(`/users-list?${params}`);
+}
+
+export function deleteUser(id: number): Promise<{ success: boolean }> {
+  return adminFetch(`/users/${id}`, { method: 'DELETE' });
 }
 
 // ─── Packs ────────────────────────────────────────────────────────────────────
@@ -59,8 +66,14 @@ export interface AdminPack {
   userEmail: string | null;
 }
 
-export function getPacks(limit = 100, offset = 0): Promise<AdminPack[]> {
-  return adminFetch<AdminPack[]>(`/packs-list?limit=${limit}&offset=${offset}`);
+export function getPacks(limit = 100, offset = 0, q?: string): Promise<AdminPack[]> {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (q) params.set('q', q);
+  return adminFetch<AdminPack[]>(`/packs-list?${params}`);
+}
+
+export function deletePack(id: string): Promise<{ success: boolean }> {
+  return adminFetch(`/packs/${id}`, { method: 'DELETE' });
 }
 
 // ─── Catalog Items ────────────────────────────────────────────────────────────
@@ -76,6 +89,32 @@ export interface AdminCatalogItem {
   createdAt: string | null;
 }
 
-export function getCatalogItems(limit = 100, offset = 0): Promise<AdminCatalogItem[]> {
-  return adminFetch<AdminCatalogItem[]>(`/catalog-list?limit=${limit}&offset=${offset}`);
+export interface UpdateCatalogItemInput {
+  name?: string;
+  brand?: string | null;
+  categories?: string[] | null;
+  weight?: number | null;
+  weightUnit?: string;
+  price?: number | null;
+  description?: string | null;
+}
+
+export function getCatalogItems(limit = 100, offset = 0, q?: string): Promise<AdminCatalogItem[]> {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (q) params.set('q', q);
+  return adminFetch<AdminCatalogItem[]>(`/catalog-list?${params}`);
+}
+
+export function deleteCatalogItem(id: number): Promise<{ success: boolean }> {
+  return adminFetch(`/catalog/${id}`, { method: 'DELETE' });
+}
+
+export function updateCatalogItem(
+  id: number,
+  data: UpdateCatalogItemInput,
+): Promise<{ id: number; name: string }> {
+  return adminFetch(`/catalog/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 }

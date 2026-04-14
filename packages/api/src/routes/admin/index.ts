@@ -801,7 +801,9 @@ const getUsersListRoute = createRoute({
   summary: 'List all users',
   description: 'Get a list of all users in the system (Admin only)',
   request: {
-    query: UserSearchQuerySchema.pick({ limit: true, offset: true }),
+    query: UserSearchQuerySchema.pick({ limit: true, offset: true }).extend({
+      q: z.string().optional(),
+    }),
   },
   responses: {
     200: {
@@ -838,7 +840,7 @@ adminRoutes.openapi(getUsersListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 100, offset = 0 } = c.req.query();
+    const { limit = 100, offset = 0, q } = c.req.query();
     const usersList = await db
       .select({
         id: users.id,
@@ -850,6 +852,15 @@ adminRoutes.openapi(getUsersListRoute, async (c) => {
         createdAt: users.createdAt,
       })
       .from(users)
+      .where(
+        q
+          ? or(
+              ilike(users.email, `%${q}%`),
+              ilike(users.firstName, `%${q}%`),
+              ilike(users.lastName, `%${q}%`),
+            )
+          : undefined,
+      )
       .orderBy(desc(users.createdAt))
       .limit(Number(limit))
       .offset(Number(offset));
@@ -876,6 +887,7 @@ const getPacksListRoute = createRoute({
     query: z.object({
       limit: z.number().int().positive().max(100).default(100).optional(),
       offset: z.number().int().min(0).default(0).optional(),
+      q: z.string().optional(),
     }),
   },
   responses: {
@@ -912,7 +924,7 @@ adminRoutes.openapi(getPacksListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 100, offset = 0 } = c.req.query();
+    const { limit = 100, offset = 0, q } = c.req.query();
     const packsList = await db
       .select({
         id: packs.id,
@@ -925,7 +937,19 @@ adminRoutes.openapi(getPacksListRoute, async (c) => {
       })
       .from(packs)
       .leftJoin(users, eq(packs.userId, users.id))
-      .where(eq(packs.deleted, false))
+      .where(
+        and(
+          eq(packs.deleted, false),
+          q
+            ? or(
+                ilike(packs.name, `%${q}%`),
+                ilike(packs.description, `%${q}%`),
+                ilike(packs.category, `%${q}%`),
+                ilike(users.email, `%${q}%`),
+              )
+            : undefined,
+        ),
+      )
       .orderBy(desc(packs.createdAt))
       .limit(Number(limit))
       .offset(Number(offset));
@@ -952,6 +976,7 @@ const getCatalogListRoute = createRoute({
     query: z.object({
       limit: z.number().int().positive().max(100).default(25).optional(),
       offset: z.number().int().min(0).default(0).optional(),
+      q: z.string().optional(),
     }),
   },
   responses: {
@@ -989,7 +1014,7 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 25, offset = 0 } = c.req.query();
+    const { limit = 25, offset = 0, q } = c.req.query();
     const itemsList = await db
       .select({
         id: catalogItems.id,
@@ -1002,6 +1027,18 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
         createdAt: catalogItems.createdAt,
       })
       .from(catalogItems)
+      .where(
+        q
+          ? or(
+              ilike(catalogItems.name, `%${q}%`),
+              ilike(catalogItems.brand, `%${q}%`),
+              sql`EXISTS (
+                SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat
+                WHERE cat ILIKE '%' || ${q} || '%'
+              )`,
+            )
+          : undefined,
+      )
       .orderBy(desc(catalogItems.id))
       .limit(Number(limit))
       .offset(Number(offset));
@@ -1015,6 +1052,141 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
   } catch (error) {
     console.error('Error fetching catalog items:', error);
     return c.json({ error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' }, 500);
+  }
+});
+
+// ─── Action routes ────────────────────────────────────────────────────────────
+
+const deleteUserRoute = createRoute({
+  method: 'delete',
+  path: '/users/:id',
+  tags: ['Admin'],
+  summary: 'Delete a user',
+  responses: {
+    200: { description: 'User deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+  },
+});
+
+adminRoutes.openapi(deleteUserRoute, async (c) => {
+  const db = createDb(c);
+  const id = Number(c.req.param('id'));
+
+  try {
+    const deleted = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+    if (!deleted.length) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
+    return c.json({ success: true }, 200);
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return c.json({ error: 'Failed to delete user', code: 'DELETE_ERROR' }, 500);
+  }
+});
+
+const deletePackRoute = createRoute({
+  method: 'delete',
+  path: '/packs/:id',
+  tags: ['Admin'],
+  summary: 'Soft-delete a pack',
+  responses: {
+    200: { description: 'Pack deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+  },
+});
+
+adminRoutes.openapi(deletePackRoute, async (c) => {
+  const db = createDb(c);
+  const id = c.req.param('id');
+
+  try {
+    const updated = await db
+      .update(packs)
+      .set({ deleted: true })
+      .where(and(eq(packs.id, id), eq(packs.deleted, false)))
+      .returning({ id: packs.id });
+    if (!updated.length) return c.json({ error: 'Pack not found', code: 'NOT_FOUND' }, 404);
+    return c.json({ success: true }, 200);
+  } catch (error) {
+    console.error('Error deleting pack:', error);
+    return c.json({ error: 'Failed to delete pack', code: 'DELETE_ERROR' }, 500);
+  }
+});
+
+const deleteCatalogItemRoute = createRoute({
+  method: 'delete',
+  path: '/catalog/:id',
+  tags: ['Admin'],
+  summary: 'Delete a catalog item',
+  responses: {
+    200: { description: 'Item deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+  },
+});
+
+adminRoutes.openapi(deleteCatalogItemRoute, async (c) => {
+  const db = createDb(c);
+  const id = Number(c.req.param('id'));
+
+  try {
+    const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning({ id: catalogItems.id });
+    if (!deleted.length) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
+    return c.json({ success: true }, 200);
+  } catch (error) {
+    console.error('Error deleting catalog item:', error);
+    return c.json({ error: 'Failed to delete catalog item', code: 'DELETE_ERROR' }, 500);
+  }
+});
+
+const UpdateCatalogItemSchema = z.object({
+  name: z.string().min(1).optional(),
+  brand: z.string().nullable().optional(),
+  categories: z.array(z.string()).nullable().optional(),
+  weight: z.number().nullable().optional(),
+  weightUnit: z.string().optional(),
+  price: z.number().nullable().optional(),
+  description: z.string().nullable().optional(),
+});
+
+const updateCatalogItemRoute = createRoute({
+  method: 'patch',
+  path: '/catalog/:id',
+  tags: ['Admin'],
+  summary: 'Update a catalog item',
+  request: {
+    body: { content: { 'application/json': { schema: UpdateCatalogItemSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Item updated',
+      content: {
+        'application/json': {
+          schema: z.object({ id: z.number(), name: z.string() }),
+        },
+      },
+    },
+    404: { description: 'Not found', content: { 'application/json': { schema: ErrorResponseSchema } } },
+    500: { description: 'Server error', content: { 'application/json': { schema: ErrorResponseSchema } } },
+  },
+});
+
+adminRoutes.openapi(updateCatalogItemRoute, async (c) => {
+  const db = createDb(c);
+  const id = Number(c.req.param('id'));
+  const body = c.req.valid('json');
+
+  try {
+    const updated = await db
+      .update(catalogItems)
+      .set({ ...body, updatedAt: new Date() })
+      .where(eq(catalogItems.id, id))
+      .returning({ id: catalogItems.id, name: catalogItems.name });
+    if (!updated.length) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
+    return c.json(updated[0]!, 200);
+  } catch (error) {
+    console.error('Error updating catalog item:', error);
+    return c.json({ error: 'Failed to update catalog item', code: 'UPDATE_ERROR' }, 500);
   }
 });
 
