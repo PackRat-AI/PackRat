@@ -42,7 +42,8 @@ function htmlToMarkdown(html: string): string {
   // Strip any remaining HTML tags in multiple passes to avoid incomplete
   // multi-character sanitization (e.g. crafted inputs like <<script>>).
   let prev = '';
-  while (result !== prev) {
+  let iterations = 0;
+  while (result !== prev && iterations++ < 10) {
     prev = result;
     result = result.replace(/<[^>]*>/g, '');
   }
