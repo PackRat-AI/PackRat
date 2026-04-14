@@ -56,7 +56,7 @@ export function AppSidebar() {
                 const isActive =
                   item.href === '/dashboard'
                     ? pathname === '/dashboard'
-                    : pathname.startsWith(item.href);
+                    : (pathname?.startsWith(item.href) ?? false);
 
                 return (
                   <SidebarMenuItem key={item.href}>

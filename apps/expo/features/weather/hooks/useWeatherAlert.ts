@@ -12,7 +12,44 @@ export type WeatherAlert = {
   details: string;
 };
 
-export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
+type WeatherApiHour = {
+  condition?: { text?: string };
+  wind_kph?: number;
+};
+
+type WeatherApiAlert = {
+  event?: string;
+  effective?: string;
+  expires?: string;
+  areas?: string;
+  severity?: string;
+  desc?: string;
+  instruction?: string;
+};
+
+type WeatherApiData = {
+  location?: { name?: string };
+  alerts?: { alert?: WeatherApiAlert[] };
+  current?: {
+    temp_c?: number;
+    wind_kph?: number;
+    uv?: number;
+    air_quality?: { 'us-epa-index'?: number };
+    condition?: { text?: string };
+  };
+  forecast?: {
+    forecastday?: Array<{
+      date?: string;
+      hour?: WeatherApiHour[];
+      day?: { maxtemp_c?: number };
+    }>;
+  };
+};
+
+export function generateAlerts(
+  data: WeatherApiData,
+  activeLocation: { name?: string } | null,
+): WeatherAlert[] {
   const locationName = data?.location?.name || activeLocation?.name || 'Unknown';
   const apiAlerts = data?.alerts?.alert;
 
@@ -20,7 +57,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
 
   // If API provides alerts
   if (apiAlerts && apiAlerts.length > 0) {
-    return apiAlerts.map((a: any, index: number) => ({
+    return apiAlerts.map((a, index: number) => ({
       id: `${a.event}-${a.effective}-${index}`,
       type: a.event || 'Weather Alert',
       location: a.areas || locationName,
@@ -126,7 +163,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
   const todayHours = forecastDays[0]?.hour || [];
 
   // 🌧 Rain coming soon
-  const willRain = todayHours.some((h: any) => h.condition?.text?.toLowerCase().includes('rain'));
+  const willRain = todayHours.some((h) => h.condition?.text?.toLowerCase().includes('rain'));
   if (willRain) {
     alerts.push({
       id: 'rain-soon',
@@ -139,7 +176,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
   }
 
   // 💨 Wind coming
-  const highWindComing = todayHours.some((h: any) => h.wind_kph >= 30);
+  const highWindComing = todayHours.some((h) => (h.wind_kph ?? 0) >= 30);
   if (highWindComing) {
     alerts.push({
       id: 'wind-soon',
@@ -153,12 +190,12 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
 
   // 🌡 Tomorrow heat
   const tomorrow = forecastDays[1];
-  if (tomorrow?.day?.maxtemp_c >= 35) {
+  if (tomorrow && (tomorrow.day?.maxtemp_c ?? 0) >= 35) {
     alerts.push({
       id: 'heat-tomorrow',
       type: 'Heat Alert (Tomorrow)',
       location: locationName,
-      dates: tomorrow.date,
+      dates: tomorrow.date ?? 'Tomorrow',
       severity: 'High',
       details: 'High temperature expected tomorrow.',
     });

@@ -18,7 +18,7 @@ import { useTransition } from 'react';
 interface DeleteButtonProps {
   label: string;
   description?: string;
-  onConfirm: () => Promise<void>;
+  onConfirm: () => Promise<unknown>;
 }
 
 export function DeleteButton({
