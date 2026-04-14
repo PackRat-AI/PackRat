@@ -1,8 +1,14 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import type { CatalogCacheManager } from '../../core/catalog-cache';
-import { configureS3, createCatalogConnection } from '../../core/connection';
-import { env } from '../../core/env';
+import {
+  type CatalogCacheManager,
+  LocalCacheManager,
+  QueryBuilder,
+  configureS3,
+  createCatalogConnection,
+  dbPath,
+  env,
+} from '@packrat/analytics';
 import { ensureCache, getCache, printSummary } from '../shared';
 
 export default defineCommand({
@@ -107,10 +113,7 @@ async function publishToCatalog(): Promise<void> {
   const { conn: iceConn } = await createCatalogConnection();
 
   // Attach local DuckDB file as a second database
-  const { LocalCacheManager } = await import('../../core/local-cache');
-  const { dbPath } = await import('../../core/cache-metadata');
   const localDbPath = dbPath(new LocalCacheManager().cacheDir);
-
   await iceConn.run(`ATTACH '${localDbPath}' AS local_gear (READ_ONLY)`);
 
   // Publish gear_data
@@ -166,7 +169,6 @@ async function ingestToCatalog(): Promise<void> {
   await configureS3(iceConn);
 
   // Use the QueryBuilder to generate the same CSV→table SQL as local cache
-  const { QueryBuilder } = await import('../../core/query-builder');
   const qb = new QueryBuilder(`s3://${env().R2_BUCKET_NAME}`);
 
   consola.start('Ingesting gear_data from R2 CSVs → Iceberg...');
