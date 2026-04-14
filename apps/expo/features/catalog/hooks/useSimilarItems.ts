@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
-import type { PackItem } from 'expo-app/types';
 import type { CatalogItem } from '../types';
 
-// Types for similar items response
 export interface SimilarItem extends Omit<CatalogItem, 'embedding'> {
   similarity: number;
+}
+
+export interface SimilarItemsParams {
+  limit?: number;
+  threshold?: number;
 }
 
 export interface SimilarItemsResponse {
@@ -15,51 +18,38 @@ export interface SimilarItemsResponse {
   sourceItem: CatalogItem;
 }
 
-export interface SimilarItemsParams {
-  limit?: number;
-  threshold?: number;
-}
-
-// API function for catalog item similar items
 export const getSimilarCatalogItems = async (
   id: string,
   params?: SimilarItemsParams,
 ): Promise<SimilarItemsResponse> => {
-  try {
-    const queryParams = new URLSearchParams();
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.threshold) queryParams.append('threshold', params.threshold.toString());
-
-    const url = `/api/catalog/${id}/similar${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    const response = await axiosInstance.get(url);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to fetch similar catalog items: ${message}`);
-  }
+  const { data, error } = await apiClient.catalog({ id }).similar.get({
+    query: {
+      ...(params?.limit !== undefined ? { limit: String(params.limit) } : {}),
+      ...(params?.threshold !== undefined ? { threshold: String(params.threshold) } : {}),
+    },
+  });
+  if (error) throw new Error(`Failed to fetch similar catalog items: ${error.value}`);
+  return data as unknown as SimilarItemsResponse;
 };
 
-// API function for pack item similar items
 export const getSimilarPackItems = async (
   packId: string,
   opts: { itemId: string; params?: SimilarItemsParams },
-): Promise<{ items: SimilarItem[]; total: number; sourceItem: PackItem }> => {
+) => {
   const { itemId, params } = opts;
-  try {
-    const queryParams = new URLSearchParams();
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.threshold) queryParams.append('threshold', params.threshold.toString());
-
-    const url = `/api/packs/${packId}/items/${itemId}/similar${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    const response = await axiosInstance.get(url);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to fetch similar pack items: ${message}`);
-  }
+  const { data, error } = await apiClient
+    .packs({ packId })
+    .items({ itemId })
+    .similar.get({
+      query: {
+        ...(params?.limit !== undefined ? { limit: String(params.limit) } : {}),
+        ...(params?.threshold !== undefined ? { threshold: String(params.threshold) } : {}),
+      },
+    });
+  if (error) throw new Error(`Failed to fetch similar pack items: ${error.value}`);
+  return data;
 };
 
-// Hook for catalog item similar items
 export function useSimilarCatalogItems(id: string, params?: SimilarItemsParams) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
@@ -67,11 +57,10 @@ export function useSimilarCatalogItems(id: string, params?: SimilarItemsParams) 
     queryKey: ['similarCatalogItems', id, params],
     queryFn: () => getSimilarCatalogItems(id, params),
     enabled: isQueryEnabledWithAccessToken && !!id,
-    staleTime: 5 * 60 * 1000, // 5 minutes - similar items don't change often
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-// Hook for pack item similar items
 export function useSimilarPackItems(
   packId: string,
   opts: { itemId: string; params?: SimilarItemsParams },
@@ -83,6 +72,6 @@ export function useSimilarPackItems(
     queryKey: ['similarPackItems', packId, itemId, params],
     queryFn: () => getSimilarPackItems(packId, { itemId, params }),
     enabled: isQueryEnabledWithAccessToken && !!packId && !!itemId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 }

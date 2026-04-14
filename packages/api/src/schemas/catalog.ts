@@ -104,7 +104,16 @@ export const CatalogItemsQuerySchema = z.object({
   category: z.string().optional(),
   sort: z
     .object({
-      field: z.enum(['name', 'brand', 'price', 'ratingValue', 'createdAt', 'updatedAt']),
+      field: z.enum([
+        'name',
+        'brand',
+        'category',
+        'price',
+        'ratingValue',
+        'createdAt',
+        'updatedAt',
+        'usage',
+      ]),
       order: z.enum(['asc', 'desc']),
     })
     .optional(),

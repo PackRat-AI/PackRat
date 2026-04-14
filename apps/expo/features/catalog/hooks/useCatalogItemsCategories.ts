@@ -1,16 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 const getCategories = async (): Promise<string[]> => {
-  try {
-    const response = await axiosInstance.get<string[]>(`/api/catalog/categories`);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    console.error(`Failed to fetch catalog categories: ${message}`);
-    throw error;
-  }
+  // Treaty types `limit` as required despite Zod's `.default(10)` — pass it
+  // explicitly. Treaty also infers the response as `{}` when the route
+  // returns a bare `string[]`, so cast through unknown.
+  const { data, error } = await apiClient.catalog.categories.get({ query: { limit: 10 } });
+  if (error) throw new Error(`Failed to fetch catalog categories: ${error.value}`);
+  return (data as unknown as string[]) ?? [];
 };
 
 export function useCatalogItemsCategories() {
@@ -22,8 +20,8 @@ export function useCatalogItemsCategories() {
       const cats = await getCategories();
       return ['All', ...cats];
     },
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
     enabled: isQueryEnabledWithAccessToken,
   });
 }
