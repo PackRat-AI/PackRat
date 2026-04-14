@@ -81,7 +81,7 @@ export function createApiClient(config: ApiClientConfig) {
    * refreshes + retries once on a 401 response (unless the 401 came from the
    * refresh endpoint itself, in which case the user must re-auth).
    */
-  const authFetcher: typeof fetch = async (input, init) => {
+  const authFetcher = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
     let pathname = '';
     try {
