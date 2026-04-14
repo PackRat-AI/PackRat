@@ -437,17 +437,23 @@ beforeEach(async () => {
 
   // Delete from tables in reverse dependency order to avoid foreign key violations
   // This is safer than TRUNCATE CASCADE and less prone to deadlocks
+  // Match schema.ts tables. Delete in reverse FK dependency order.
   const tablesToClean = [
+    'one_time_passwords',
+    'refresh_tokens',
+    'auth_providers',
     'weight_history',
-    'verification_codes',
-    'password_reset_codes',
-    'weather_cache',
     'pack_items',
     'pack_template_items',
     'packs',
     'pack_templates',
-    'user_items',
+    'catalog_item_etl_jobs',
     'catalog_items',
+    'invalid_item_logs',
+    'reported_content',
+    'post_comments',
+    'posts',
+    'trips',
     'users',
   ];
 
