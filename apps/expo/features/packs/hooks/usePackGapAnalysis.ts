@@ -26,9 +26,7 @@ export const analyzePackGaps = async (
   packId: string,
   context?: GapAnalysisRequest,
 ): Promise<GapAnalysisResponse> => {
-  const { data, error } = await apiClient
-    .packs({ packId })
-    ['gap-analysis'].post(context ?? {});
+  const { data, error } = await apiClient.packs({ packId })['gap-analysis'].post(context ?? {});
   if (error) throw new Error(`Failed to analyze pack gaps: ${error.value}`);
   return data as unknown as GapAnalysisResponse;
 };
