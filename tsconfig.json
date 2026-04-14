@@ -16,8 +16,8 @@
       "@packrat/ui/*": ["./packages/ui/*"],
       "@packrat/analytics": ["./packages/analytics/src"],
       "@packrat/analytics/*": ["./packages/analytics/src/*"],
-      "@packrat/analytics-cli": ["./packages/analytics-cli/src"],
-      "@packrat/analytics-cli/*": ["./packages/analytics-cli/src/*"],
+      "@packrat/cli": ["./packages/cli/src"],
+      "@packrat/cli/*": ["./packages/cli/src/*"],
       "@packrat/web-ui": ["./packages/web-ui/src"],
       "@packrat/web-ui/*": ["./packages/web-ui/src/*"],
       "nativewindui/*": ["./apps/expo/components/ui/*"]
