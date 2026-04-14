@@ -105,9 +105,21 @@ export function validateEmail(email: string): boolean {
 }
 
 /**
- * Validate API key from either a `Headers` instance (Elysia path) or a raw
- * header map.
+ * Constant-time string comparison. Compares byte-by-byte after
+ * length-equalizing the two inputs so neither the match result nor the
+ * length difference can be inferred from response timing.
  */
+export function timingSafeEqual(a: string, b: string): boolean {
+  const ab = new TextEncoder().encode(a);
+  const bb = new TextEncoder().encode(b);
+  const len = Math.max(ab.byteLength, bb.byteLength);
+  let diff = ab.byteLength ^ bb.byteLength;
+  for (let i = 0; i < len; i++) {
+    diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0);
+  }
+  return diff === 0;
+}
+
 export function isValidApiKey(headers: Headers | Record<string, string | undefined>): boolean {
   let apiKeyHeader: string | undefined | null;
   if (headers instanceof Headers) {
@@ -118,5 +130,5 @@ export function isValidApiKey(headers: Headers | Record<string, string | undefin
   if (!apiKeyHeader) return false;
   const { PACKRAT_API_KEY } = getEnv();
   if (!PACKRAT_API_KEY) return false;
-  return apiKeyHeader === PACKRAT_API_KEY;
+  return timingSafeEqual(apiKeyHeader, PACKRAT_API_KEY);
 }

@@ -18,6 +18,7 @@ export const apiEnvSchema = z.object({
   ADMIN_USERNAME: z.string(),
   ADMIN_PASSWORD: z.string(),
   PACKRAT_API_KEY: z.string(),
+  REFRESH_TOKEN_PEPPER: z.string().min(32).optional(),
 
   // Email Configuration
   EMAIL_PROVIDER: z.enum(['resend', 'sendgrid', 'ses']),

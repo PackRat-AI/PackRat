@@ -1,9 +1,6 @@
-import { isValidApiKey, verifyJWT } from '@packrat/api/utils/auth';
+import { verifyJWT } from '@packrat/api/utils/auth';
 import { Elysia, status } from 'elysia';
 
-/**
- * User payload injected into protected routes by the auth plugin.
- */
 export type AuthUser = {
   userId: number;
   role: 'USER' | 'ADMIN';
@@ -11,52 +8,31 @@ export type AuthUser = {
 };
 
 /**
- * Elysia macro that enforces authentication on a route.
- *
- * Usage:
- * ```ts
- * import { authPlugin } from '@packrat/api/middleware/auth';
- *
- * new Elysia()
- *   .use(authPlugin)
- *   .get('/me', ({ user }) => user, { isAuthenticated: true });
- * ```
- *
- * The macro accepts either a Bearer JWT (verified via `verifyJWT`) or the
- * server-side `X-API-Key` header. On success, the validated user object is
- * injected into the route context as `user`.
+ * Elysia macro that enforces Bearer-JWT authentication on a route. Routes
+ * that need server-to-server API-key access must use `apiKeyAuthPlugin`
+ * explicitly; this macro does not accept `X-API-Key` to avoid synthesizing
+ * a user identity for a route that expects a real user.
  */
 export const authPlugin = new Elysia({ name: 'packrat-auth' }).macro({
   isAuthenticated: {
     resolve: async ({ request }: { request: Request }) => {
       const authHeader = request.headers.get('authorization');
+      if (!authHeader) return status(401, { error: 'Unauthorized' });
 
-      if (authHeader) {
-        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-        if (!token) {
-          return status(401, { error: 'No token provided' });
-        }
-        const payload = await verifyJWT({ token });
-        if (!payload) {
-          return status(401, { error: 'Invalid token' });
-        }
-        const { userId: _uid, role: _role, ...rest } = payload;
-        return {
-          user: {
-            userId: Number(payload.userId),
-            role: (payload.role as 'USER' | 'ADMIN') ?? 'USER',
-            ...rest,
-          } as AuthUser,
-        };
-      }
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+      if (!token) return status(401, { error: 'No token provided' });
 
-      if (isValidApiKey(request.headers)) {
-        return {
-          user: { userId: 0, role: 'ADMIN' } as AuthUser,
-        };
-      }
+      const payload = await verifyJWT({ token });
+      if (!payload) return status(401, { error: 'Invalid token' });
 
-      return status(401, { error: 'Unauthorized' });
+      const { userId: _uid, role: _role, ...rest } = payload;
+      return {
+        user: {
+          userId: Number(payload.userId),
+          role: (payload.role as 'USER' | 'ADMIN') ?? 'USER',
+          ...rest,
+        } as AuthUser,
+      };
     },
   },
 });

@@ -23,12 +23,22 @@ import type { CatalogETLMessage } from './services/etl/types';
  * surface.
  */
 export const app = new Elysia({ adapter: CloudflareAdapter })
-  .use(cors())
+  .use(
+    cors({
+      // Reflect-origin is intentional: PackRat has many consumer origins
+      // (Expo dev, web, landing, admin panel, preview deploys) and maintaining
+      // an explicit allowlist would be operational overhead. Bearer-token auth
+      // (not cookies) limits the CSRF blast radius; revisit if cookie-auth
+      // is ever added.
+      credentials: false,
+      allowedHeaders: ['Authorization', 'Content-Type', 'X-API-Key'],
+    }),
+  )
   .use(packratOpenApi)
   .onError(({ error, code }) => {
     console.error('Error occurred:', error);
     if (code === 'VALIDATION') {
-      return new Response(JSON.stringify({ error: 'Validation failed', details: error.message }), {
+      return new Response(JSON.stringify({ error: 'Validation failed' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });

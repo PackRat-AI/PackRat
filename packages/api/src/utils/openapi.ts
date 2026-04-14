@@ -3,13 +3,19 @@ import { openapi } from '@elysiajs/openapi';
 /**
  * Shared OpenAPI plugin instance configured for the PackRat API.
  *
- * Elysia 1.4's OpenAPI plugin generates docs from Zod schemas via Standard
- * Schema introspection. The `zod-to-json-schema` mapper can be added later
- * for richer schema detail once we verify the exact type contract.
+ * Admin and API-key-gated paths are excluded from the public schema so
+ * unauthenticated clients cannot enumerate them via /doc or /scalar.
  */
 export const packratOpenApi = openapi({
   path: '/scalar',
   specPath: '/doc',
+  exclude: {
+    paths: [
+      /^\/api\/admin(\/|$)/,
+      /^\/api\/catalog\/etl(\/|$)/,
+      /^\/api\/catalog\/.*\/backfill(\/|$)/i,
+    ],
+  },
   documentation: {
     openapi: '3.1.0',
     info: {

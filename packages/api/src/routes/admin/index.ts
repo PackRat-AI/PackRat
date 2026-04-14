@@ -1,14 +1,11 @@
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
+import { timingSafeEqual } from '@packrat/api/utils/auth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-// ---------------------------------------------------------------------------
-// Basic-auth guard for the admin UI
-// ---------------------------------------------------------------------------
 
 function basicAuthGuard(request: Request): { authorized: true } | { authorized: false } {
   const header = request.headers.get('authorization') ?? '';
@@ -21,9 +18,9 @@ function basicAuthGuard(request: Request): { authorized: true } | { authorized: 
     const username = decoded.slice(0, sep);
     const password = decoded.slice(sep + 1);
     const env = getEnv();
-    if (username === env.ADMIN_USERNAME && password === env.ADMIN_PASSWORD) {
-      return { authorized: true };
-    }
+    const userOk = timingSafeEqual(username, env.ADMIN_USERNAME);
+    const passOk = timingSafeEqual(password, env.ADMIN_PASSWORD);
+    if (userOk && passOk) return { authorized: true };
   } catch {
     return { authorized: false };
   }
