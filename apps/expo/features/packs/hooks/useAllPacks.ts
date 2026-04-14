@@ -1,21 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import type { Pack } from '../types';
 
 export const fetchAllPacks = async (): Promise<Pack[]> => {
-  try {
-    const res = await axiosInstance.get('/api/packs', {
-      params: {
-        includePublic: 1, // 1 for true, 0 false
-      },
-    });
-    return res.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    console.error('Failed to fetch all packs:', error);
-    throw new Error(message);
-  }
+  const { data, error } = await apiClient.packs.get({
+    query: { includePublic: 1 },
+  });
+  if (error) throw new Error(`Failed to fetch all packs: ${error.value}`);
+  return (data ?? []) as unknown as Pack[];
 };
 
 export function useAllPacks(enabled: boolean) {
@@ -25,7 +18,7 @@ export function useAllPacks(enabled: boolean) {
     queryKey: ['allPacks'],
     enabled: isQueryEnabledWithAccessToken && enabled,
     queryFn: fetchAllPacks,
-    staleTime: 1000 * 60 * 5, // 5 min
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
 }

@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import type { CatalogItem } from 'expo-app/features/catalog/types';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { uploadImage } from '../utils';
 import type { SelectedImage } from './useImagePicker';
 
@@ -22,9 +22,6 @@ export interface DetectedItemWithMatches {
 
 export type AnalyzeImageResponse = DetectedItemWithMatches[];
 
-/**
- * Hook to analyze an image and detect gear items
- */
 export function useImageDetection() {
   return useMutation<
     AnalyzeImageResponse,
@@ -36,22 +33,12 @@ export function useImageDetection() {
       if (!image) {
         throw new Error("Couldn't upload image");
       }
-      try {
-        const response = await axiosInstance.post(
-          '/api/packs/analyze-image',
-          {
-            image,
-            matchLimit,
-          },
-          {
-            timeout: 0,
-          },
-        );
-        return response.data;
-      } catch (error) {
-        const { message } = handleApiError(error);
-        throw new Error(`Failed to analyze image: ${message}`);
-      }
+      const { data, error } = await apiClient.packs['analyze-image'].post({
+        image,
+        matchLimit,
+      });
+      if (error) throw new Error(`Failed to analyze image: ${error.value}`);
+      return data as unknown as AnalyzeImageResponse;
     },
   });
 }
