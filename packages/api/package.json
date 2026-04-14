@@ -41,7 +41,7 @@
     "hono-openapi": "^0.4.6",
     "linkedom": "^0.18.11",
     "nodemailer": "^6.10.0",
-    "pg": "^8.16.3",
+    "pg": "~8.16.3",
     "radash": "catalog:",
     "resend": "^6.10.0",
     "workers-ai-provider": "^0.7.2",
@@ -58,7 +58,6 @@
     "@types/ws": "^8.5.14",
     "@vitest/coverage-v8": "~4.1.4",
     "concurrently": "^8.2.2",
-    "drizzle-orm": "^0.45.2",
     "typed-htmx": "^0.3.1",
     "vitest": "~4.1.4",
     "wrangler": "4.81.1"
