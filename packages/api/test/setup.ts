@@ -458,14 +458,12 @@ beforeEach(async () => {
   ];
 
   try {
-    // Delete in a single transaction for atomicity
-    await testClient.query('BEGIN');
-    for (const table of tablesToClean) {
-      await testClient.query(`DELETE FROM "${table}"`);
-    }
-    await testClient.query('COMMIT');
+    // TRUNCATE with RESTART IDENTITY resets auto-increment sequences so each
+    // test sees id=1. CASCADE handles FK dependencies, making order irrelevant.
+    // Tests that hardcode ids (e.g. userId=1) rely on this reset.
+    const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
+    await testClient.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
   } catch (_error) {
-    await testClient.query('ROLLBACK');
     // Ignore errors - tables might not exist yet
   }
 });
