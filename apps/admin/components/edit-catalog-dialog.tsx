@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@packrat/web-ui/components/button';
 import {
   Dialog,
@@ -12,8 +13,8 @@ import {
 import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
 import { Pencil } from 'lucide-react';
-import { useState, useTransition } from 'react';
-import { updateCatalogItemAction } from 'admin-app/lib/actions';
+import { useState } from 'react';
+import { updateCatalogItem } from 'admin-app/lib/api';
 import type { AdminCatalogItem } from 'admin-app/lib/api';
 
 interface EditCatalogDialogProps {
@@ -22,7 +23,16 @@ interface EditCatalogDialogProps {
 
 export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
   const [open, setOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: (data: Parameters<typeof updateCatalogItem>[1]) =>
+      updateCatalogItem(item.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'catalog'] });
+      setOpen(false);
+    },
+  });
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,7 +42,10 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
     const brand = fd.get('brand')?.toString().trim() || null;
     const categoriesRaw = fd.get('categories')?.toString().trim();
     const categories = categoriesRaw
-      ? categoriesRaw.split(',').map((c) => c.trim()).filter(Boolean)
+      ? categoriesRaw
+          .split(',')
+          .map((c) => c.trim())
+          .filter(Boolean)
       : null;
     const weightRaw = fd.get('weight')?.toString().trim();
     const weight = weightRaw ? Number(weightRaw) : null;
@@ -40,10 +53,7 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
     const priceRaw = fd.get('price')?.toString().trim();
     const price = priceRaw ? Number(priceRaw) : null;
 
-    startTransition(async () => {
-      await updateCatalogItemAction(item.id, { name, brand, categories, weight, weightUnit, price });
-      setOpen(false);
-    });
+    mutate({ name, brand, categories, weight, weightUnit, price });
   }
 
   return (
@@ -71,7 +81,10 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
             <Input id="brand" name="brand" defaultValue={item.brand ?? ''} placeholder="Unknown" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="categories">Categories <span className="text-muted-foreground text-xs">(comma-separated)</span></Label>
+            <Label htmlFor="categories">
+              Categories{' '}
+              <span className="text-muted-foreground text-xs">(comma-separated)</span>
+            </Label>
             <Input
               id="categories"
               name="categories"
@@ -93,7 +106,12 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="weightUnit">Unit</Label>
-              <Input id="weightUnit" name="weightUnit" defaultValue={item.weightUnit} placeholder="g" />
+              <Input
+                id="weightUnit"
+                name="weightUnit"
+                defaultValue={item.weightUnit}
+                placeholder="g"
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -108,11 +126,16 @@ export function EditCatalogDialog({ item }: EditCatalogDialogProps) {
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={pending}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Saving…' : 'Save changes'}
+            <Button type="submit" disabled={isPending}>
+              {isPending ? 'Saving…' : 'Save changes'}
             </Button>
           </DialogFooter>
         </form>

@@ -1,101 +1,12 @@
-import { Suspense } from 'react';
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@packrat/web-ui/components/card';
 import { Skeleton } from '@packrat/web-ui/components/skeleton';
 import { getCatalogItems, getPacks, getStats, getUsers } from 'admin-app/lib/api';
 import { StatsCards } from 'admin-app/components/stats-cards';
 import { formatDistanceToNow } from 'admin-app/lib/date';
 import { Backpack, Package, Users } from 'lucide-react';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = { title: 'Overview' };
-
-// ── Overview cards ────────────────────────────────────────────────────────────
-
-async function OverviewContent() {
-  const [stats, users, packs, catalog] = await Promise.all([
-    getStats(),
-    getUsers(5),
-    getPacks(5),
-    getCatalogItems(5),
-  ]);
-
-  return (
-    <>
-      <StatsCards stats={stats} />
-
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
-        {/* Recent Users */}
-        <Card className="border-border/60">
-          <CardHeader className="flex flex-row items-center gap-2 pb-3">
-            <Users className="w-4 h-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Recent Users</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {users.map((u) => (
-              <div key={u.id} className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {u.createdAt ? formatDistanceToNow(new Date(u.createdAt)) : '—'}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Recent Packs */}
-        <Card className="border-border/60">
-          <CardHeader className="flex flex-row items-center gap-2 pb-3">
-            <Backpack className="w-4 h-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Recent Packs</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {packs.map((p) => (
-              <div key={p.id} className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{p.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {p.userEmail ?? 'Unknown user'}
-                  </p>
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {p.createdAt ? formatDistanceToNow(new Date(p.createdAt)) : '—'}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Recent Catalog */}
-        <Card className="border-border/60">
-          <CardHeader className="flex flex-row items-center gap-2 pb-3">
-            <Package className="w-4 h-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">Recent Catalog Items</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {catalog.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{item.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {item.brand ?? 'Unknown brand'}
-                  </p>
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {item.weight ? `${item.weight}${item.weightUnit}` : '—'}
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  );
-}
 
 function OverviewSkeleton() {
   return (
@@ -138,17 +49,113 @@ function OverviewSkeleton() {
 }
 
 export default function DashboardPage() {
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['admin', 'stats'],
+    queryFn: getStats,
+  });
+
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['admin', 'users', 5],
+    queryFn: () => getUsers(5),
+  });
+
+  const { data: packs = [], isLoading: packsLoading } = useQuery({
+    queryKey: ['admin', 'packs', 5],
+    queryFn: () => getPacks(5),
+  });
+
+  const { data: catalog = [], isLoading: catalogLoading } = useQuery({
+    queryKey: ['admin', 'catalog', 5],
+    queryFn: () => getCatalogItems(5),
+  });
+
+  const isLoading = statsLoading || usersLoading || packsLoading || catalogLoading;
+
   return (
     <div className="space-y-0">
       <div className="mb-6">
         <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Your PackRat platform at a glance.
-        </p>
+        <p className="text-muted-foreground text-sm mt-1">Your PackRat platform at a glance.</p>
       </div>
-      <Suspense fallback={<OverviewSkeleton />}>
-        <OverviewContent />
-      </Suspense>
+
+      {isLoading ? (
+        <OverviewSkeleton />
+      ) : (
+        <>
+          {stats && <StatsCards stats={stats} />}
+
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {/* Recent Users */}
+            <Card className="border-border/60">
+              <CardHeader className="flex flex-row items-center gap-2 pb-3">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Recent Users</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {users.map((u) => (
+                  <div key={u.id} className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {u.createdAt ? formatDistanceToNow(new Date(u.createdAt)) : '—'}
+                    </span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Recent Packs */}
+            <Card className="border-border/60">
+              <CardHeader className="flex flex-row items-center gap-2 pb-3">
+                <Backpack className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Recent Packs</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {packs.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{p.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {p.userEmail ?? 'Unknown user'}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {p.createdAt ? formatDistanceToNow(new Date(p.createdAt)) : '—'}
+                    </span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Recent Catalog */}
+            <Card className="border-border/60">
+              <CardHeader className="flex flex-row items-center gap-2 pb-3">
+                <Package className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Recent Catalog Items</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {catalog.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{item.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.brand ?? 'Unknown brand'}
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {item.weight ? `${item.weight}${item.weightUnit}` : '—'}
+                    </span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   );
 }

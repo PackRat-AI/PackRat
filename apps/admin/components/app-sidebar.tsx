@@ -3,10 +3,9 @@
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
+  SidebarHeader,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -14,10 +13,9 @@ import {
   useSidebar,
 } from '@packrat/web-ui/components/sidebar';
 import { cn } from '@packrat/web-ui/lib/utils';
-import { LogOut, Package } from 'lucide-react';
+import { Package } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { logoutAction } from 'admin-app/app/login/actions';
 import { navItems } from 'admin-app/config/nav';
 
 export function AppSidebar() {
@@ -76,26 +74,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <SidebarFooter className="pb-4">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <form action={logoutAction}>
-              <SidebarMenuButton
-                asChild
-                tooltip="Sign out"
-                className="text-muted-foreground hover:text-foreground w-full"
-              >
-                <button type="submit">
-                  <LogOut className="w-4 h-4" />
-                  <span>Sign out</span>
-                </button>
-              </SidebarMenuButton>
-            </form>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>

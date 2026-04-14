@@ -17,8 +17,7 @@ export const apiEnvSchema = z.object({
   JWT_SECRET: z.string(),
   PASSWORD_RESET_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string(),
-  ADMIN_USERNAME: z.string(),
-  ADMIN_PASSWORD: z.string(),
+  ADMIN_BYPASS_AUTH: z.string().optional(),
   PACKRAT_API_KEY: z.string(),
 
   // Email Configuration

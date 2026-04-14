@@ -2,6 +2,7 @@ import { cn } from '@packrat/web-ui/lib/utils';
 import type { Metadata } from 'next';
 import { Mona_Sans as FontSans } from 'next/font/google';
 import type React from 'react';
+import { QueryProvider } from 'admin-app/components/query-provider';
 import { ThemeProvider } from 'admin-app/components/theme-provider';
 import './globals.css';
 
@@ -28,9 +29,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+            {children}
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -1,16 +1,18 @@
-import { getAdminApiAuthHeader } from './auth';
+// Browser-callable API client for the admin app.
+// Auth is handled externally: Cloudflare Access in production, ADMIN_BYPASS_AUTH=true in local dev.
+// No auth headers are set here — CF Access injects its own headers at the edge.
 
-const API_BASE = process.env.ADMIN_API_URL ?? 'http://localhost:8787';
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (typeof window !== 'undefined' ? 'http://localhost:8787' : 'http://localhost:8787');
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
     ...init,
     headers: {
-      Authorization: getAdminApiAuthHeader(),
       'Content-Type': 'application/json',
       ...init?.headers,
     },
-    cache: 'no-store',
   });
 
   if (!res.ok) {
