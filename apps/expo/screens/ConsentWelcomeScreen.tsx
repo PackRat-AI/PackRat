@@ -52,7 +52,7 @@ export function WelcomeConsentScreen() {
                   name={feature.icon}
                   size={38}
                   color={colors.primary}
-                  ios={{ renderingMode: 'hierarchical' }}
+                  ios={{}}
                 />
               </View>
               <View className="flex-1">
@@ -68,7 +68,7 @@ export function WelcomeConsentScreen() {
               name="account-multiple"
               size={24}
               color={colors.primary}
-              ios={{ renderingMode: 'hierarchical' }}
+              ios={{}}
             />
             <Text variant="caption2" className="pt-1 text-center">
               {t('welcome.byPressingContinue')}{' '}
