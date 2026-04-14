@@ -16,7 +16,7 @@ function cleanTextForEmbedding(text: string): string {
 }
 
 function htmlToMarkdown(html: string): string {
-  return html
+  let result = html
     .replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '# $1\n')
     .replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '## $1\n')
     .replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '### $1\n')
@@ -35,10 +35,18 @@ function htmlToMarkdown(html: string): string {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<p[^>]*>/gi, '')
     .replace(/<\/p>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/^[ \t]+/gm, '')
     .trim();
+
+  // Strip any remaining HTML tags in multiple passes to avoid incomplete
+  // multi-character sanitization (e.g. crafted inputs like <<script>>).
+  let prev = '';
+  while (result !== prev) {
+    prev = result;
+    result = result.replace(/<[^>]*>/g, '');
+  }
+  return result;
 }
 
 export const readerRoutes = new Elysia({ prefix: '/reader' }).post(
