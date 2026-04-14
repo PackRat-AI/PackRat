@@ -203,8 +203,10 @@ async function execute<T>(
   }
   if (timeoutId) clearTimeout(timeoutId);
 
-  // Handle 401 by refreshing the token once and retrying.
-  if (response.status === 401 && !config._retry && !path.endsWith('/api/auth/refresh')) {
+  // Handle 401 by refreshing the token once and retrying. Use strict
+  // equality against the path (not endsWith) per #2169 so a future route
+  // like /foo/api/auth/refresh cannot silently disable the retry guard.
+  if (response.status === 401 && !config._retry && path !== '/api/auth/refresh') {
     const newToken = await refreshAccessToken();
     if (newToken) {
       return execute<T>(method, path, body, { ...config, _retry: true });
