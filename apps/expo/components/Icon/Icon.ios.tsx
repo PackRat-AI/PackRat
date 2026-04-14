@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolView } from 'expo-symbols';
+import { type SFSymbols7_0, SymbolView } from 'expo-symbols';
 import type { ComponentProps } from 'react';
 import { useMemo } from 'react';
 import { getIconNames } from './get-icon-names';
@@ -59,7 +59,7 @@ function Icon({
       <SymbolView
         size={size}
         scale="small"
-        name={iconNames.sfSymbol}
+        name={iconNames.sfSymbol as SFSymbols7_0}
         tintColor={color}
         {...sfSymbolProps}
       />

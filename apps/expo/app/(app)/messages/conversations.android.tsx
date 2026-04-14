@@ -114,14 +114,13 @@ function LeftView() {
       createDropdownItem({
         actionKey: 'go-home',
         title: 'Go Home',
-        icon: { namingScheme: 'sfSymbol', name: 'house.fill' },
+        icon: { sfSymbol: { name: 'house.fill' } },
       }),
       createDropdownItem({
         actionKey: 'toggle-theme',
         title: 'Toggle Theme',
         icon: {
-          namingScheme: 'sfSymbol',
-          name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
+          sfSymbol: { name: isDarkColorScheme ? 'moon.stars' : 'sun.min' },
         },
       }),
     ];

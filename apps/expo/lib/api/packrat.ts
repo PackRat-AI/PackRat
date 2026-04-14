@@ -18,11 +18,11 @@ import Storage from 'expo-sqlite/kv-store';
  *
  * Usage:
  * ```ts
- * import { api } from 'expo-app/lib/api/packrat';
- * const { data, error } = await api.catalog.get({ query: { limit: 10 } });
+ * import { apiClient } from 'expo-app/lib/api/packrat';
+ * const { data, error } = await apiClient.catalog.get({ query: { limit: 10 } });
  * ```
  */
-export const api = createApiClient({
+export const apiClient = createApiClient({
   baseUrl: clientEnvs.EXPO_PUBLIC_API_URL,
   auth: {
     getAccessToken: () => Storage.getItem('access_token'),
@@ -39,4 +39,4 @@ export const api = createApiClient({
   },
 });
 
-export type PackRatApi = typeof api;
+export type PackRatApi = typeof apiClient;

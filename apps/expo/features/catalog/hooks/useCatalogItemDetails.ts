@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from 'expo-app/lib/api/packrat';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 
 export const getCatalogItem = async (id: string) => {
-  const { data, error } = await api.api.catalog({ id }).get();
+  const { data, error } = await apiClient.catalog({ id }).get();
   if (error) throw new Error(`Failed to fetch catalog item: ${error.value}`);
   return data;
 };

@@ -27,7 +27,7 @@ const getMonthlyWeightAverages = (data: PackWeightHistoryEntry[]) => {
 
   const monthData: Record<string, { totalWeight: number; count: number }> = {};
 
-  data.forEach((entry) => {
+  for (const entry of data) {
     const date = new Date(entry.localCreatedAt);
     const key = `${date.getFullYear()}-${date.getMonth()}`; // "YYYY-M"
     if (!monthData[key]) {
@@ -37,7 +37,7 @@ const getMonthlyWeightAverages = (data: PackWeightHistoryEntry[]) => {
     monthData[key].totalWeight += entry.weight;
 
     monthData[key].count += 1;
-  });
+  }
 
   const monthlyAverages = Object.entries(monthData).map(([key, { totalWeight, count }]) => {
     const [year, monthIndex] = key.split('-').map(Number);

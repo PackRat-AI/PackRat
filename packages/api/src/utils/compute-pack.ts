@@ -49,19 +49,16 @@ export const computePackWeights = (
   let totalWeightGrams = 0;
 
   // Calculate weights based on items
-  pack.items.forEach((item) => {
-    // Convert item weight to grams for calculation
+  for (const item of pack.items) {
     const itemWeightInGrams =
       convertToGrams(item.weight, item.weightUnit as WeightUnit) * item.quantity;
 
-    // Add to total weight
     totalWeightGrams += itemWeightInGrams;
 
-    // Add to base weight only if not consumable and not worn
     if (!item.consumable && !item.worn) {
       baseWeightGrams += itemWeightInGrams;
     }
-  });
+  }
 
   // Convert back to preferred unit
   const baseWeight = convertFromGrams(baseWeightGrams, preferredUnit);

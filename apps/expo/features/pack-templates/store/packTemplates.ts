@@ -47,6 +47,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
+      // biome-ignore lint/suspicious/noExplicitAny: expo-sqlite/kv-store and legend-state's persistence-plugin types don't align; the cast is load-bearing until both sides converge
       plugin: observablePersistSqlite(Storage as any),
       retrySync: true,
       name: 'packTemplates',

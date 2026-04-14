@@ -12,6 +12,10 @@ export type WeatherAlert = {
   details: string;
 };
 
+// Weather API response is loosely shaped; we only touch a few fields. Keep as
+// `unknown` rather than modeling the whole payload and suppress the specific
+// indexed reads we use.
+// biome-ignore lint/suspicious/noExplicitAny: weather API shape is open; typing is follow-up work
 export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
   const locationName = data?.location?.name || activeLocation?.name || 'Unknown';
   const apiAlerts = data?.alerts?.alert;
@@ -20,6 +24,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
 
   // If API provides alerts
   if (apiAlerts && apiAlerts.length > 0) {
+    // biome-ignore lint/suspicious/noExplicitAny: see file-level comment
     return apiAlerts.map((a: any, index: number) => ({
       id: `${a.event}-${a.effective}-${index}`,
       type: a.event || 'Weather Alert',
@@ -126,6 +131,7 @@ export function generateAlerts(data: any, activeLocation: any): WeatherAlert[] {
   const todayHours = forecastDays[0]?.hour || [];
 
   // 🌧 Rain coming soon
+  // biome-ignore lint/suspicious/noExplicitAny: see file-level comment on generateAlerts
   const willRain = todayHours.some((h: any) => h.condition?.text?.toLowerCase().includes('rain'));
   if (willRain) {
     alerts.push({

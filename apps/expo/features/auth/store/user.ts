@@ -13,6 +13,7 @@ syncObservable(
     persist: {
       name: 'user',
       // biome-ignore lint/suspicious/noExplicitAny: Storage type mismatch with legend-state plugin
+      // biome-ignore lint/suspicious/noExplicitAny: expo-sqlite/kv-store and legend-state's persistence-plugin types don't align; the cast is load-bearing until both sides converge
       plugin: observablePersistSqlite(Storage as any),
     },
   }),
