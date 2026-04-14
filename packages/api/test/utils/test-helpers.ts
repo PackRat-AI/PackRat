@@ -67,7 +67,7 @@ export const apiWithAuthAs = async (
 export const apiWithAdmin = async (path: string, init?: RequestInit) =>
   fetchWithUser(path, { user: TEST_ADMIN, init });
 
-// Helper for basic auth (admin routes)
+// Helper for admin routes (basic auth)
 export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
   const credentials = btoa('admin:admin-password');
   return app.fetch(
