@@ -11,6 +11,10 @@
   "dependencies": {
     "@elysiajs/eden": "catalog:"
   },
+  "devDependencies": {
+    "@packrat/api": "workspace:*",
+    "elysia": "catalog:"
+  },
   "peerDependencies": {
     "elysia": "catalog:"
   },
@@ -18,9 +22,5 @@
     "elysia": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "@packrat/api": "workspace:*",
-    "elysia": "catalog:"
   }
 }
