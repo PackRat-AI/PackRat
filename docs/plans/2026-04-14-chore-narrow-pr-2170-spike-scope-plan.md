@@ -65,8 +65,9 @@ git commit -m "docs: add consolidation plan for #2118"
 # 4. Elysia plan — put where #2083 lives, or propose a tiny PR to development
 # (needs confirmation which PR/branch)
 
-# 5. Push. Force-push the spike ONLY with explicit user approval, using:
-#    git push --force-with-lease --force-if-includes origin spike/align-test-db-with-prod
+# 5. Push — fast-forward, no force needed
+git push origin spike/align-test-db-with-prod
+cd ~/Code/PackRat && git push origin chore/all-dependabot-updates
 ```
 
 ## Out of scope
@@ -91,4 +92,3 @@ Root cause of the original contamination was the absence of a rule about where s
 - bun#6608, bun#14774 — open issues confirming nested override limitation
 - [Pacheco 2025 — stacked PRs on GitHub](https://www.davepacheco.net/blog/2025/stacked-prs-on-github/)
 - [Google eng-practices — small CLs](https://google.github.io/eng-practices/review/developer/small-cls.html)
-- Memory: `feedback_no_force_push.md` — force-push requires explicit user permission

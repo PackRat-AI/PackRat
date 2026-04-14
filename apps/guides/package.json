@@ -56,7 +56,7 @@
     "chalk": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cmdk": "1.0.4",
+    "cmdk": "1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "8.5.1",
     "fs": "^0.0.1-security",
@@ -78,7 +78,7 @@
     "remark-html": "^16.0.1",
     "remark-parse": "^11.0.0",
     "slugify": "^1.6.6",
-    "sonner": "^1.7.4",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^2.5.5",
     "unified": "^11.0.0",
     "vaul": "^1.1.2",
@@ -90,7 +90,7 @@
     "@types/react": "~19.1.10",
     "@types/react-dom": "^19.1.6",
     "postcss": "^8.5.6",
-    "postcss-import": "^15.1.0",
+    "postcss-import": "^16.1.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
   }

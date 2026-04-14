@@ -27,7 +27,7 @@
     "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "^1.0.0",
     "@packrat/guards": "workspace:*",
-    "@scalar/hono-api-reference": "^0.8.0",
+    "@scalar/hono-api-reference": "^0.10.7",
     "@types/nodemailer": "^6.4.17",
     "ai": "catalog:",
     "bcryptjs": "^3.0.2",
