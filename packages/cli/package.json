@@ -1,0 +1,20 @@
+{
+  "name": "@packrat/cli",
+  "version": "2.0.18",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "packrat": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@packrat/analytics": "workspace:*",
+    "chalk": "catalog:",
+    "citty": "^0.2.1",
+    "cli-table3": "^0.6.5",
+    "consola": "^3.4.2"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}

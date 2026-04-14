@@ -53,10 +53,15 @@ export interface AdminUser {
   createdAt: string | null;
 }
 
-export function getUsers(
-  opts: { limit?: number; offset?: number; q?: string } = {},
-): Promise<AdminUser[]> {
-  const { limit = 100, offset = 0, q } = opts;
+export function getUsers({
+  limit = 100,
+  offset = 0,
+  q,
+}: {
+  limit?: number;
+  offset?: number;
+  q?: string;
+} = {}): Promise<AdminUser[]> {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (q) params.set('q', q);
   return adminFetch<AdminUser[]>(`/users-list?${params}`);
@@ -78,10 +83,15 @@ export interface AdminPack {
   userEmail: string | null;
 }
 
-export function getPacks(
-  opts: { limit?: number; offset?: number; q?: string } = {},
-): Promise<AdminPack[]> {
-  const { limit = 100, offset = 0, q } = opts;
+export function getPacks({
+  limit = 100,
+  offset = 0,
+  q,
+}: {
+  limit?: number;
+  offset?: number;
+  q?: string;
+} = {}): Promise<AdminPack[]> {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (q) params.set('q', q);
   return adminFetch<AdminPack[]>(`/packs-list?${params}`);
@@ -114,10 +124,15 @@ export interface UpdateCatalogItemInput {
   description?: string | null;
 }
 
-export function getCatalogItems(
-  opts: { limit?: number; offset?: number; q?: string } = {},
-): Promise<AdminCatalogItem[]> {
-  const { limit = 100, offset = 0, q } = opts;
+export function getCatalogItems({
+  limit = 100,
+  offset = 0,
+  q,
+}: {
+  limit?: number;
+  offset?: number;
+  q?: string;
+} = {}): Promise<AdminCatalogItem[]> {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (q) params.set('q', q);
   return adminFetch<AdminCatalogItem[]>(`/catalog-list?${params}`);
