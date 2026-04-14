@@ -4,6 +4,7 @@
     "allowJs": true,
     "esModuleInterop": true,
     "lib": ["DOM", "ESNext"],
+    "module": "esnext",
     "moduleDetection": "force",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
