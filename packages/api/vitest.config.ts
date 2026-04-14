@@ -1,13 +1,8 @@
 import { resolve } from 'node:path';
-import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
-import { defineConfig } from 'vitest/config';
+// @ts-expect-error - Module '@cloudflare/vitest-pool-workers/config' type definitions may not be available during type checking
+import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
 
-export default defineConfig({
-  plugins: [
-    cloudflareTest({
-      wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
-    }),
-  ],
+export default defineWorkersConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -17,6 +12,12 @@ export default defineConfig({
   test: {
     globalSetup: './test/vitest.global-setup.ts',
     setupFiles: ['./test/setup.ts'],
+    pool: '@cloudflare/vitest-pool-workers',
+    poolOptions: {
+      workers: {
+        wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
+      },
+    },
     // Only include integration tests from /test directory
     include: [resolve(__dirname, 'test/**/*.test.ts')],
     // Run tests sequentially to avoid database deadlocks
