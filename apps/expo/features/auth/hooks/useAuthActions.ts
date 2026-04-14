@@ -4,10 +4,9 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import type { AxiosError } from 'axios';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { userStore } from 'expo-app/features/auth/store';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { t } from 'expo-app/lib/i18n';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -218,7 +217,7 @@ export function useAuthActions() {
         throw new Error(responseData.error || t('auth.registrationFailed'));
       }
     } catch (error) {
-      console.error('Registration error:', (error as AxiosError).message);
+      console.error('Registration error:', error instanceof Error ? error.message : String(error));
       throw error;
     } finally {
       setIsLoading(false);
@@ -367,10 +366,9 @@ export function useAuthActions() {
   const deleteAccount = async () => {
     setIsLoading(true);
     try {
-      const response = await axiosInstance.delete('/api/auth');
-
-      if (response.status !== 200) {
-        throw new Error(response.data?.error || t('auth.failedToDeleteAccount'));
+      const { error } = await apiClient.auth.delete();
+      if (error) {
+        throw new Error(String(error.value ?? t('auth.failedToDeleteAccount')));
       }
 
       // Clear tokens and user data

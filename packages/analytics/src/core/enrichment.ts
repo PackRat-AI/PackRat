@@ -85,12 +85,18 @@ const CDN_PATH_TRANSFORMS = createRegExp(
 // ── Image dedup helpers ──────────────────────────────────────────────────
 
 /** Normalize image URL for dedup — strip CDN size/quality params. */
+const TRAILING_QMARK_PATTERN = /\?$/;
+const QMARK_AMP_PATTERN = /\?&/;
+const PRODUCT_PATH_PATTERN = /\/(product|pdp|main|hero|primary)\//;
+const LIFESTYLE_PATH_PATTERN = /\/(lifestyle|action|model)\//;
+const DETAIL_PATH_PATTERN = /\/(detail|zoom|swatch)\//;
+
 export function normalizeImageUrl(url: string): string {
   if (!url) return '';
   // Fresh regex reference per call to avoid lastIndex issues is unnecessary
   // because `.replace` on a non-sticky global regex does not depend on lastIndex.
   let normalized = url.replace(CDN_QUERY_PARAMS, '');
-  normalized = normalized.replace(/\?$/, '').replace(/\?&/, '?');
+  normalized = normalized.replace(TRAILING_QMARK_PATTERN, '').replace(QMARK_AMP_PATTERN, '?');
   normalized = normalized.replace(CDN_PATH_TRANSFORMS, '');
   return normalized.trim();
 }
@@ -99,9 +105,9 @@ export function normalizeImageUrl(url: string): string {
 export function rankImage(url: string): number {
   const path = url.toLowerCase();
 
-  if (/\/(product|pdp|main|hero|primary)\//.test(path)) return 0;
-  if (/\/(lifestyle|action|model)\//.test(path)) return 1;
-  if (/\/(detail|zoom|swatch)\//.test(path)) return 2;
+  if (PRODUCT_PATH_PATTERN.test(path)) return 0;
+  if (LIFESTYLE_PATH_PATTERN.test(path)) return 1;
+  if (DETAIL_PATH_PATTERN.test(path)) return 2;
   return 3;
 }
 

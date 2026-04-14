@@ -1,5 +1,7 @@
 import { isValid, parse, parseISO } from 'date-fns';
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
  * Parse a date string, handling YYYY-MM-DD strings as local dates
  * instead of UTC (which is the default `new Date('YYYY-MM-DD')` behavior).
@@ -9,8 +11,7 @@ import { isValid, parse, parseISO } from 'date-fns';
 export function parseLocalDate(dateString?: string): Date | null {
   if (!dateString || typeof dateString !== 'string') return null;
 
-  const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
-  if (dateOnlyPattern.test(dateString)) {
+  if (DATE_ONLY_PATTERN.test(dateString)) {
     const date = parse(dateString, 'yyyy-MM-dd', new Date());
     return isValid(date) ? date : null;
   }

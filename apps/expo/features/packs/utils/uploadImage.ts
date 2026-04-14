@@ -1,5 +1,5 @@
 import { userStore } from 'expo-app/features/auth/store';
-import axiosInstance from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import * as FileSystem from 'expo-file-system/legacy';
 
 export const uploadImage = async (fileName: string, uri: string): Promise<string | undefined> => {
@@ -12,10 +12,8 @@ export const uploadImage = async (fileName: string, uri: string): Promise<string
     const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg';
     const type = `image/${fileExtension === 'jpg' ? 'jpeg' : fileExtension}`;
     const remoteFileName = `${userStore.id.peek()}-${fileName}`;
-    // Get presigned URL
     const { url: presignedUrl } = await getPresignedUrl(remoteFileName, type);
 
-    // Upload the image
     const uploadResult = await FileSystem.uploadAsync(presignedUrl, uri, {
       httpMethod: 'PUT',
       uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
@@ -34,22 +32,13 @@ export const uploadImage = async (fileName: string, uri: string): Promise<string
   }
 };
 
-// Function to get a presigned URL for uploading
 const getPresignedUrl = async (
   fileName: string,
   contentType: string,
 ): Promise<{ url: string; publicUrl: string; objectKey: string }> => {
-  try {
-    const response = await axiosInstance.get(
-      `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`,
-    );
-    return {
-      url: response.data.url,
-      publicUrl: response.data.publicUrl,
-      objectKey: response.data.objectKey,
-    };
-  } catch (err) {
-    console.error('Error getting presigned URL:', err);
-    throw new Error('Failed to get upload URL');
-  }
+  const { data, error } = await apiClient.upload.presigned.get({
+    query: { fileName, contentType },
+  });
+  if (error) throw new Error(`Failed to get upload URL: ${error.value}`);
+  return data as unknown as { url: string; publicUrl: string; objectKey: string };
 };

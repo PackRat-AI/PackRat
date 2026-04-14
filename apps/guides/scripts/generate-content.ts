@@ -9,6 +9,9 @@ import path from 'path';
 import slugify from 'slugify';
 import { enhanceGuideContent } from '../lib/enhanceGuideContent';
 
+const JSON_CODE_BLOCK_PATTERN = /```json\s*([\s\S]*?)\s*```/;
+const JSON_ARRAY_PATTERN = /\[\s*\{[\s\S]*\}\s*\]/;
+
 // Types
 type ContentCategory =
   | 'gear-essentials'
@@ -110,13 +113,13 @@ function getRandomAuthor(): string {
 // Extract JSON from text that might contain markdown code blocks
 function extractJsonFromText(text: string): string {
   // Look for JSON content between code blocks
-  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+  const jsonMatch = text.match(JSON_CODE_BLOCK_PATTERN);
   if (jsonMatch?.[1]) {
     return jsonMatch[1].trim();
   }
 
   // If no code blocks, try to find JSON array directly
-  const arrayMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  const arrayMatch = text.match(JSON_ARRAY_PATTERN);
   if (arrayMatch) {
     return arrayMatch[0];
   }
@@ -204,11 +207,11 @@ async function generateTopicIdeas(
       ContentCategory,
       number
     >;
-    existingContent.forEach((content) => {
-      content.categories.forEach((category) => {
+    for (const content of existingContent) {
+      for (const category of content.categories) {
         categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
-      });
-    });
+      }
+    }
 
     // Find underrepresented categories
     const sortedCategories = Object.entries(categoryDistribution)
@@ -477,49 +480,49 @@ function generateContentReport(): void {
 
   // Category distribution
   const categoryDistribution: Record<string, number> = {};
-  existingContent.forEach((content) => {
-    content.categories.forEach((category) => {
+  for (const content of existingContent) {
+    for (const category of content.categories) {
       const displayName = CATEGORY_DISPLAY_NAMES[category];
       categoryDistribution[displayName] = (categoryDistribution[displayName] || 0) + 1;
-    });
-  });
+    }
+  }
 
   console.log(chalk.blue(`\nCategory Distribution:`));
-  Object.entries(categoryDistribution)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .forEach(([category, count]) => {
-      const percentage = ((count / existingContent.length) * 100).toFixed(1);
-      console.log(`${category}: ${count} (${percentage}%)`);
-    });
+  for (const [category, count] of Object.entries(categoryDistribution).sort(
+    ([, countA], [, countB]) => countB - countA,
+  )) {
+    const percentage = ((count / existingContent.length) * 100).toFixed(1);
+    console.log(`${category}: ${count} (${percentage}%)`);
+  }
 
   // Difficulty distribution
   const difficultyDistribution: Record<string, number> = {};
-  existingContent.forEach((content) => {
+  for (const content of existingContent) {
     difficultyDistribution[content.difficulty] =
       (difficultyDistribution[content.difficulty] || 0) + 1;
-  });
+  }
 
   console.log(chalk.blue(`\nDifficulty Distribution:`));
-  Object.entries(difficultyDistribution)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .forEach(([difficulty, count]) => {
-      const percentage = ((count / existingContent.length) * 100).toFixed(1);
-      console.log(`${difficulty}: ${count} (${percentage}%)`);
-    });
+  for (const [difficulty, count] of Object.entries(difficultyDistribution).sort(
+    ([, countA], [, countB]) => countB - countA,
+  )) {
+    const percentage = ((count / existingContent.length) * 100).toFixed(1);
+    console.log(`${difficulty}: ${count} (${percentage}%)`);
+  }
 
   // Author distribution
   const authorDistribution: Record<string, number> = {};
-  existingContent.forEach((content) => {
+  for (const content of existingContent) {
     authorDistribution[content.author] = (authorDistribution[content.author] || 0) + 1;
-  });
+  }
 
   console.log(chalk.blue(`\nAuthor Distribution:`));
-  Object.entries(authorDistribution)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .forEach(([author, count]) => {
-      const percentage = ((count / existingContent.length) * 100).toFixed(1);
-      console.log(`${author}: ${count} (${percentage}%)`);
-    });
+  for (const [author, count] of Object.entries(authorDistribution).sort(
+    ([, countA], [, countB]) => countB - countA,
+  )) {
+    const percentage = ((count / existingContent.length) * 100).toFixed(1);
+    console.log(`${author}: ${count} (${percentage}%)`);
+  }
 }
 
 // Export functions for use in the frontend

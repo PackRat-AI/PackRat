@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import type { PackInput, PackItemInput } from '../types';
 
 export interface SeasonSuggestionsRequest {
@@ -21,15 +21,9 @@ export interface SeasonSuggestionsResponse {
 const generateSeasonSuggestions = async (
   data: SeasonSuggestionsRequest,
 ): Promise<SeasonSuggestionsResponse> => {
-  try {
-    const response = await axiosInstance.post('/api/season-suggestions', data, {
-      timeout: 0,
-    });
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to generate season suggestions: ${message}`);
-  }
+  const { data: result, error } = await apiClient['season-suggestions'].post(data);
+  if (error) throw new Error(`Failed to generate season suggestions: ${error.value}`);
+  return result as unknown as SeasonSuggestionsResponse;
 };
 
 export function useSeasonSuggestions() {

@@ -1,12 +1,8 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { GoogleGenAI } from '@google/genai';
 import Tiktok from '@tobyg74/tiktok-api-dl';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { logger } from 'hono/logger';
+import { Elysia, status } from 'elysia';
 import { z } from 'zod';
-
-const app = new Hono();
 
 // Environment validation
 const EnvSchema = z.object({
@@ -54,10 +50,6 @@ try {
   console.warn('Image rehosting will be disabled');
 }
 
-// Middleware
-app.use('*', cors());
-app.use('*', logger());
-
 // Request validation schema
 const TikTokImportSchema = z.object({
   tiktokUrl: z.string().url('Must be a valid URL'),
@@ -74,69 +66,49 @@ function detectMediaTypeAndExtension(
   extension: string;
 } {
   const { buffer, isVideo = false } = opts;
-  // Try to get content type from headers first
   const headerContentType = response.headers.get('content-type');
 
   if (headerContentType) {
-    // Video content types
     if (isVideo) {
-      if (headerContentType.includes('video/mp4')) {
+      if (headerContentType.includes('video/mp4'))
         return { contentType: 'video/mp4', extension: 'mp4' };
-      }
-      if (headerContentType.includes('video/webm')) {
+      if (headerContentType.includes('video/webm'))
         return { contentType: 'video/webm', extension: 'webm' };
-      }
-      if (headerContentType.includes('video/quicktime')) {
+      if (headerContentType.includes('video/quicktime'))
         return { contentType: 'video/quicktime', extension: 'mov' };
-      }
     } else {
-      // Image content types
-      if (headerContentType.includes('image/jpeg') || headerContentType.includes('image/jpg')) {
+      if (headerContentType.includes('image/jpeg') || headerContentType.includes('image/jpg'))
         return { contentType: 'image/jpeg', extension: 'jpg' };
-      }
-      if (headerContentType.includes('image/png')) {
+      if (headerContentType.includes('image/png'))
         return { contentType: 'image/png', extension: 'png' };
-      }
-      if (headerContentType.includes('image/webp')) {
+      if (headerContentType.includes('image/webp'))
         return { contentType: 'image/webp', extension: 'webp' };
-      }
-      if (headerContentType.includes('image/gif')) {
+      if (headerContentType.includes('image/gif'))
         return { contentType: 'image/gif', extension: 'gif' };
-      }
     }
   }
 
-  // If buffer is provided, try to detect from magic bytes
   if (buffer) {
     const uint8Array = new Uint8Array(buffer.slice(0, 12));
 
     if (isVideo) {
-      // MP4 magic bytes: starts with ftyp box
       if (
         uint8Array[4] === 0x66 &&
         uint8Array[5] === 0x74 &&
         uint8Array[6] === 0x79 &&
         uint8Array[7] === 0x70
-      ) {
+      )
         return { contentType: 'video/mp4', extension: 'mp4' };
-      }
     } else {
-      // JPEG magic bytes: FF D8 FF
-      if (uint8Array[0] === 0xff && uint8Array[1] === 0xd8 && uint8Array[2] === 0xff) {
+      if (uint8Array[0] === 0xff && uint8Array[1] === 0xd8 && uint8Array[2] === 0xff)
         return { contentType: 'image/jpeg', extension: 'jpg' };
-      }
-
-      // PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A
       if (
         uint8Array[0] === 0x89 &&
         uint8Array[1] === 0x50 &&
         uint8Array[2] === 0x4e &&
         uint8Array[3] === 0x47
-      ) {
+      )
         return { contentType: 'image/png', extension: 'png' };
-      }
-
-      // WebP magic bytes: RIFF ... WEBP
       if (
         uint8Array[0] === 0x52 &&
         uint8Array[1] === 0x49 &&
@@ -146,21 +118,14 @@ function detectMediaTypeAndExtension(
         uint8Array[9] === 0x45 &&
         uint8Array[10] === 0x42 &&
         uint8Array[11] === 0x50
-      ) {
+      )
         return { contentType: 'image/webp', extension: 'webp' };
-      }
-
-      // GIF magic bytes: GIF87a or GIF89a
-      if (uint8Array[0] === 0x47 && uint8Array[1] === 0x49 && uint8Array[2] === 0x46) {
+      if (uint8Array[0] === 0x47 && uint8Array[1] === 0x49 && uint8Array[2] === 0x46)
         return { contentType: 'image/gif', extension: 'gif' };
-      }
     }
   }
 
-  // Default fallbacks
-  if (isVideo) {
-    return { contentType: 'video/mp4', extension: 'mp4' };
-  }
+  if (isVideo) return { contentType: 'video/mp4', extension: 'mp4' };
   return { contentType: 'image/webp', extension: 'webp' };
 }
 
@@ -180,7 +145,6 @@ async function downloadAndRehostImage(
   try {
     console.log(`Downloading image ${index + 1}: ${imageUrl}`);
 
-    // Download image with TikTok-compatible headers
     const response = await fetch(imageUrl, {
       headers: {
         'User-Agent':
@@ -192,7 +156,7 @@ async function downloadAndRehostImage(
         Connection: 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
       },
-      signal: AbortSignal.timeout(30000), // 30 second timeout
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
@@ -200,8 +164,6 @@ async function downloadAndRehostImage(
     }
 
     const imageBuffer = await response.arrayBuffer();
-
-    // Detect the actual image type and extension
     const { contentType, extension } = detectMediaTypeAndExtension(response, {
       buffer: imageBuffer,
     });
@@ -211,9 +173,6 @@ async function downloadAndRehostImage(
 
     console.log(`Uploading image ${index + 1} to R2: ${imageKey} (${contentType})`);
 
-    // Upload to R2 with temporary storage
-    // Note: Objects are stored under 'tiktok-temp/' prefix and should be cleaned up
-    // via R2 bucket lifecycle rules (e.g 5-minute expiration).
     await s3Client.send(
       new PutObjectCommand({
         Bucket: env.R2_BUCKET_NAME,
@@ -264,7 +223,6 @@ async function uploadVideoToGoogle(videoUrl: string): Promise<string | null> {
       config: { mimeType: videoBlob.type },
     });
     console.log(`Video uploaded to Google AI. File URI: ${myfile.uri}, name: ${myfile.name}`);
-    // Wait for ACTIVE state
     if (!myfile.name) throw new Error('Google AI upload did not return a file name');
     await waitForFileToBeActiveGoogle(googleAi, { fileName: myfile.name });
     return myfile.uri || null;
@@ -275,7 +233,7 @@ async function uploadVideoToGoogle(videoUrl: string): Promise<string | null> {
 }
 
 /**
- * Wait for uploaded file to become ACTIVE before using it for inference (GoogleGenAI)
+ * Wait for uploaded file to become ACTIVE before using it for inference
  */
 async function waitForFileToBeActiveGoogle(
   ai: GoogleGenAI,
@@ -322,7 +280,6 @@ async function downloadAndRehostImages(
 
   console.log(`Starting rehosting of ${imageUrls.length} images`);
 
-  // Process all images in parallel with best effort approach
   const results = await Promise.allSettled(
     imageUrls.map((url, index) => downloadAndRehostImage(url, { contentId, index })),
   );
@@ -357,9 +314,7 @@ async function fetchTikTokPostData(
   try {
     console.log('Attempting TikTok download for URL:', url);
 
-    const result = await Tiktok.Downloader(url, {
-      version: 'v1',
-    });
+    const result = await Tiktok.Downloader(url, { version: 'v1' });
 
     if (result.status !== 'success') {
       console.error('Response debug:', {
@@ -375,32 +330,19 @@ async function fetchTikTokPostData(
     let caption: string | undefined;
     let contentId: string | undefined;
 
-    // Get caption from description
-    if (result.result?.desc) {
-      caption = result.result.desc;
-    }
+    if (result.result?.desc) caption = result.result.desc;
+    if (result.result?.id) contentId = result.result.id;
 
-    // Get content ID
-    if (result.result?.id) {
-      contentId = result.result.id;
-    }
-
-    // Check content type and extract URLs accordingly
     if (result.result?.type === 'video' && result.result.video?.playAddr) {
-      // Handle video content
       if (Array.isArray(result.result.video.playAddr) && result.result.video.playAddr.length > 0) {
         videoUrl = result.result.video.playAddr[0];
       }
     } else if (result.result?.type === 'image' && result.result.images) {
-      // Handle image slideshow content
       imageUrls.push(...result.result.images);
     }
 
-    // Check if we have any content
     if (imageUrls.length === 0 && !videoUrl) {
-      throw new Error(
-        'No content found in TikTok post - this URL may not contain a slideshow/photo post or video',
-      );
+      throw new Error('No content found in TikTok post');
     }
 
     return {
@@ -417,169 +359,109 @@ async function fetchTikTokPostData(
   }
 }
 
-// Root endpoint
-app.get('/', (c) => {
-  // Container instance ID (provided by Cloudflare Container runtime)
-  const instanceId = process.env.CLOUDFLARE_CONTAINER_ID || 'unknown';
-  return c.json({
-    service: 'tiktok-container',
-    instanceId,
-    timestamp: new Date().toISOString(),
-  });
-});
+// ---------------------------------------------------------------------------
+// Elysia app
+// ---------------------------------------------------------------------------
 
-// Health check endpoint
-app.get('/health', (c) => {
-  return c.json({
+const app = new Elysia()
+  .onError(({ error }) => {
+    console.error('Unhandled error:', error);
+    return status(500, { success: false, error: 'Internal server error' });
+  })
+  .get('/', () => {
+    const instanceId = process.env.CLOUDFLARE_CONTAINER_ID || 'unknown';
+    return {
+      service: 'tiktok-container',
+      instanceId,
+      timestamp: new Date().toISOString(),
+    };
+  })
+  .get('/health', () => ({
     status: 'ok',
     service: 'tiktok-container',
     timestamp: new Date().toISOString(),
-  });
-});
-
-// TikTok content import endpoint (supports both slideshows and videos)
-app.post('/import', async (c) => {
-  try {
-    const body = await c.req.json();
-
-    // Validate request
-    const validation = TikTokImportSchema.safeParse(body);
-    if (!validation.success) {
-      return c.json(
-        {
+  }))
+  .post('/import', async ({ body }) => {
+    try {
+      const validation = TikTokImportSchema.safeParse(body);
+      if (!validation.success) {
+        return status(400, {
           success: false,
           error: `Invalid request: ${validation.error.issues.map((i) => i.message).join(', ')}`,
-        },
-        400,
-      );
-    }
-
-    const { tiktokUrl } = validation.data;
-
-    console.log(`Processing TikTok URL: ${tiktokUrl}`);
-
-    // Fetch TikTok data
-    const fetchedData = await fetchTikTokPostData(tiktokUrl);
-
-    const hasImages = fetchedData.imageUrls.length > 0;
-    const hasVideo = !!fetchedData.videoUrl;
-
-    console.log(
-      `Successfully retrieved TikTok content: ${hasImages ? `${fetchedData.imageUrls.length} images` : 'no images'}${hasVideo ? ', 1 video' : ''}`,
-    );
-
-    let responseData: {
-      imageUrls: string[];
-      videoUrl?: string;
-      caption?: string;
-      contentId?: string;
-      expiresAt?: string;
-      failedImages?: number;
-      failedVideo?: boolean;
-    };
-
-    // Process images and video upload in parallel for efficiency
-    const [imageResult, videoResult] = await Promise.allSettled([
-      hasImages
-        ? downloadAndRehostImages(fetchedData.imageUrls, fetchedData.contentId || 'unknown')
-        : Promise.resolve({ rehostedUrls: [], failedCount: 0, expiresAt: '' }),
-      hasVideo && fetchedData.videoUrl
-        ? uploadVideoToGoogle(fetchedData.videoUrl)
-        : Promise.resolve(null),
-    ]);
-
-    // Process image rehosting results
-    let finalImageUrls = fetchedData.imageUrls;
-    let imageFailedCount = 0;
-    let expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-
-    if (imageResult.status === 'fulfilled' && hasImages) {
-      const { rehostedUrls, failedCount, expiresAt: imgExpiresAt } = imageResult.value;
-      if (rehostedUrls.length > 0) {
-        finalImageUrls = rehostedUrls;
+        });
       }
-      imageFailedCount = failedCount;
-      expiresAt = imgExpiresAt;
-    }
 
-    // Process video upload results
-    let finalVideoUrl = fetchedData.videoUrl;
-    let videoFailed = false;
+      const { tiktokUrl } = validation.data;
 
-    if (hasVideo) {
-      if (videoResult.status === 'fulfilled' && videoResult.value) {
-        finalVideoUrl = videoResult.value;
-      } else {
-        videoFailed = true;
-        if (videoResult.status === 'rejected') {
-          console.error('Video upload to Google failed:', videoResult.reason);
+      console.log(`Processing TikTok URL: ${tiktokUrl}`);
+
+      const fetchedData = await fetchTikTokPostData(tiktokUrl);
+
+      const hasImages = fetchedData.imageUrls.length > 0;
+      const hasVideo = !!fetchedData.videoUrl;
+
+      console.log(
+        `Successfully retrieved TikTok content: ${hasImages ? `${fetchedData.imageUrls.length} images` : 'no images'}${hasVideo ? ', 1 video' : ''}`,
+      );
+
+      const [imageResult, videoResult] = await Promise.allSettled([
+        hasImages
+          ? downloadAndRehostImages(fetchedData.imageUrls, fetchedData.contentId || 'unknown')
+          : Promise.resolve({ rehostedUrls: [], failedCount: 0, expiresAt: '' }),
+        hasVideo && fetchedData.videoUrl
+          ? uploadVideoToGoogle(fetchedData.videoUrl)
+          : Promise.resolve(null),
+      ]);
+
+      let finalImageUrls = fetchedData.imageUrls;
+      let imageFailedCount = 0;
+      let expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+      if (imageResult.status === 'fulfilled' && hasImages) {
+        const { rehostedUrls, failedCount, expiresAt: imgExpiresAt } = imageResult.value;
+        if (rehostedUrls.length > 0) {
+          finalImageUrls = rehostedUrls;
+        }
+        imageFailedCount = failedCount;
+        expiresAt = imgExpiresAt;
+      }
+
+      let finalVideoUrl = fetchedData.videoUrl;
+      let videoFailed = false;
+
+      if (hasVideo) {
+        if (videoResult.status === 'fulfilled' && videoResult.value) {
+          finalVideoUrl = videoResult.value;
+        } else {
+          videoFailed = true;
+          if (videoResult.status === 'rejected') {
+            console.error('Video upload to Google failed:', videoResult.reason);
+          }
         }
       }
-    }
 
-    responseData = {
-      imageUrls: finalImageUrls,
-      ...(finalVideoUrl && { videoUrl: finalVideoUrl }),
-      caption: fetchedData.caption,
-      contentId: fetchedData.contentId,
-    };
+      const responseData: Record<string, unknown> = {
+        imageUrls: finalImageUrls,
+        ...(finalVideoUrl && { videoUrl: finalVideoUrl }),
+        caption: fetchedData.caption,
+        contentId: fetchedData.contentId,
+      };
 
-    // Add metadata if rehosting/upload was attempted
-    if ((s3Client && env && hasImages) || hasVideo) {
-      responseData.expiresAt = expiresAt;
-      if (imageFailedCount > 0) {
-        responseData.failedImages = imageFailedCount;
+      if ((s3Client && env && hasImages) || hasVideo) {
+        responseData.expiresAt = expiresAt;
+        if (imageFailedCount > 0) responseData.failedImages = imageFailedCount;
+        if (videoFailed) responseData.failedVideo = true;
       }
-      if (videoFailed) {
-        responseData.failedVideo = true;
-      }
-    }
 
-    console.log(
-      `Returning ${responseData.imageUrls.length} images${responseData.videoUrl ? ' and 1 video' : ''}${
-        responseData.failedImages ? ` (${responseData.failedImages} images failed)` : ''
-      }${responseData.failedVideo ? ' (video upload failed)' : ''}`,
-    );
-
-    return c.json({
-      success: true,
-      data: responseData,
-    });
-  } catch (error) {
-    console.error('TikTok import error:', error);
-
-    return c.json(
-      {
+      return { success: true, data: responseData };
+    } catch (error) {
+      console.error('TikTok import error:', error);
+      return status(500, {
         success: false,
         error: `Failed to import content: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      },
-      500,
-    );
-  }
-});
-
-// Error handler
-app.onError((err, c) => {
-  console.error('Unhandled error:', err);
-  return c.json(
-    {
-      success: false,
-      error: 'Internal server error',
-    },
-    500,
-  );
-});
-
-// 404 handler
-app.notFound((c) => {
-  return c.json(
-    {
-      success: false,
-      error: 'Endpoint not found',
-    },
-    404,
-  );
-});
+      });
+    }
+  });
 
 const port = process.env.PORT || 8080;
 

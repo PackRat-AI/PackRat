@@ -52,7 +52,6 @@
     "@tanstack/react-query-devtools": "^5.70.0",
     "ai": "catalog:",
     "autoprefixer": "^10.4.21",
-    "axios": "catalog:",
     "chalk": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

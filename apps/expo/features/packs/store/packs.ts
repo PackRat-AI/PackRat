@@ -3,37 +3,26 @@ import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-s
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { isAuthed } from 'expo-app/features/auth/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import Storage from 'expo-sqlite/kv-store';
 import type { PackInStore } from '../types';
 
 const listPacks = async () => {
-  try {
-    const res = await axiosInstance.get('/api/packs');
-    return res.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to list packs: ${message}`);
-  }
+  const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
+  if (error) throw new Error(`Failed to list packs: ${error.value}`);
+  return data as object[] | null;
 };
+
 const createPack = async (packData: PackInStore) => {
-  try {
-    const response = await axiosInstance.post('/api/packs', packData);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to create pack: ${message}`);
-  }
+  const { data, error } = await apiClient.packs.post(packData);
+  if (error) throw new Error(`Failed to create pack: ${error.value}`);
+  return data as object | null;
 };
 
 const updatePack = async ({ id, ...data }: Partial<PackInStore>) => {
-  try {
-    const response = await axiosInstance.put(`/api/packs/${id}`, data);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to update pack: ${message}`);
-  }
+  const { data: result, error } = await apiClient.packs({ packId: String(id) }).put(data);
+  if (error) throw new Error(`Failed to update pack: ${error.value}`);
+  return result as object | null;
 };
 
 export const packsStore = observable<Record<string, PackInStore>>({});
@@ -46,7 +35,7 @@ syncObservable(
     fieldDeleted: 'deleted',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage as any),
+      plugin: observablePersistSqlite(Storage),
       retrySync: true,
       name: 'packs',
     },

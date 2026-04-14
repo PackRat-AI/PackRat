@@ -15,7 +15,7 @@ export async function processValidItemsBatch({
   items: Partial<NewCatalogItem>[];
   env: Env;
 }): Promise<void> {
-  const catalogService = new CatalogService(env, false);
+  const catalogService = new CatalogService(env, true);
 
   // Consolidate items with identical SKUs before upserting to avoid conflicting duplicate upserts.
   const mergedItems = mergeItemsBySku(items as NewCatalogItem[]);

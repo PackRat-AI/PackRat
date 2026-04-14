@@ -9,6 +9,8 @@ type DomainPattern = {
   extension: string | ((url: string) => string);
 };
 
+const CLOUDINARY_EXTENSION_PATTERN = /\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//;
+
 // Update the domainPatterns array to include Cloudinary
 const domainPatterns: DomainPattern[] = [
   // REI product images are typically JPGs
@@ -30,7 +32,7 @@ const domainPatterns: DomainPattern[] = [
   {
     pattern: /cloudinary\.com\/.*\/image\/upload\/.*\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//,
     extension: (url) => {
-      const match = url.match(/\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//);
+      const match = CLOUDINARY_EXTENSION_PATTERN.exec(url);
       return match && match[2] !== undefined ? match[2].toLowerCase() : 'jpg';
     },
   },

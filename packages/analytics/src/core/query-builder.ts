@@ -15,16 +15,19 @@ import {
 
 // ── SQL Fragments ─────────────────────────────────────────────────────
 
-export class SQLFragments {
+// Bundle of SQL fragment helpers. Exported as a const object so members can
+// reference each other without `this`, and so consumers keep the existing
+// `SQLFragments.foo()` call shape.
+export const SQLFragments = {
   /** Escape single quotes for safe SQL string interpolation. */
-  static escapeSql(value: string): string {
+  escapeSql(value: string): string {
     return value.replaceAll("'", "''");
-  }
+  },
 
   /** SQL expression to extract site name from filename. */
-  static siteExtract(alias = 'site'): string {
+  siteExtract(alias = 'site'): string {
     return `regexp_extract(filename, '${SITE_EXTRACT_REGEX}', 1) as ${alias}`;
-  }
+  },
 
   /**
    * Build COALESCE for a logical field across all column name variations.
@@ -34,7 +37,7 @@ export class SQLFragments {
    *            NULLIF(TRIM(TRY_CAST(heading AS VARCHAR)), ''),
    *            'Unknown') as name
    */
-  static safeCoalesce(field: string, defaultValue?: string): string {
+  safeCoalesce(field: string, defaultValue?: string): string {
     const variations = FIELD_MAPPINGS[field] ?? [field];
     let dflt: string;
     if (defaultValue !== undefined) {
@@ -46,10 +49,10 @@ export class SQLFragments {
 
     const parts = variations.map((v) => `NULLIF(TRIM(TRY_CAST(${v} AS VARCHAR)), '')`);
     return `COALESCE(${parts.join(', ')}, ${dflt}) as ${field}`;
-  }
+  },
 
   /** Bulletproof price extraction with fallbacks from FIELD_MAPPINGS. */
-  static safePrice(alias = 'price'): string {
+  safePrice(alias = 'price'): string {
     const maxP = DBConfig.MAX_VALID_PRICE;
     const digits = DBConfig.PRICE_ROUND_DIGITS;
     const priceCols = FIELD_MAPPINGS.price ?? ['price'];
@@ -74,10 +77,10 @@ export class SQLFragments {
     return `CASE${whenClauses.join('')}
             ELSE NULL
         END as ${alias}`;
-  }
+  },
 
   /** Safe float extraction from FIELD_MAPPINGS with optional range check. */
-  static safeFloat(
+  safeFloat(
     field: string,
     opts: { alias?: string; minVal?: number; maxVal?: number } = {},
   ): string {
@@ -107,10 +110,10 @@ export class SQLFragments {
             ${whenClauses.join('\n            ')}
             ELSE NULL
         END as ${a}`;
-  }
+  },
 
   /** Safe integer extraction from FIELD_MAPPINGS. */
-  static safeInt(field: string, alias?: string): string {
+  safeInt(field: string, alias?: string): string {
     const a = alias ?? field;
     const variations = FIELD_MAPPINGS[field] ?? [field];
 
@@ -123,10 +126,10 @@ export class SQLFragments {
             ${whenClauses.join('\n            ')}
             ELSE NULL
         END as ${a}`;
-  }
+  },
 
   /** Normalize availability across all known formats. */
-  static safeAvailability(alias = 'availability'): string {
+  safeAvailability(alias = 'availability'): string {
     return `CASE
             WHEN TRY_CAST(availability AS VARCHAR) IS NULL
                 OR TRIM(TRY_CAST(availability AS VARCHAR)) = '' THEN 'unknown'
@@ -145,10 +148,10 @@ export class SQLFragments {
                 AND TRY_CAST(TRY_CAST(availability AS VARCHAR) AS INTEGER) = 0 THEN 'out_of_stock'
             ELSE 'unknown'
         END as ${alias}`;
-  }
+  },
 
   /** Standard read_csv_auto clause reading from multiple version prefixes. */
-  static readCsvSource(bucketPath: string, globPatterns?: string[]): string {
+  readCsvSource(bucketPath: string, globPatterns?: string[]): string {
     const globs = globPatterns ?? R2_CSV_GLOBS;
     const paths = globs.map((g) => `'${bucketPath}/${g}'`);
     const pathList = `[${paths.join(', ')}]`;
@@ -158,10 +161,10 @@ export class SQLFragments {
             union_by_name=true,
             filename=true,
             sample_size=20480)`;
-  }
+  },
 
   /** Standard SELECT fields for normalized gear data. */
-  static selectFields(): string[] {
+  selectFields(): string[] {
     return [
       SQLFragments.siteExtract(),
       SQLFragments.safeCoalesce('name'),
@@ -185,10 +188,10 @@ export class SQLFragments {
       SQLFragments.safeCoalesce('published_at'),
       SQLFragments.safeCoalesce('updated_at'),
     ];
-  }
+  },
 
   /** Standard WHERE conditions for valid product data. */
-  static baseWhere(): string[] {
+  baseWhere(): string[] {
     const maxP = DBConfig.MAX_VALID_PRICE;
     return [
       'name IS NOT NULL',
@@ -201,10 +204,10 @@ export class SQLFragments {
                 AND TRY_CAST(REGEXP_REPLACE(COALESCE(price, ''), '[^0-9.]', '') AS DOUBLE) < ${maxP})
             )`,
     ];
-  }
+  },
 
   /** WHERE clause for keyword search across text fields using FIELD_MAPPINGS. */
-  static keywordFilter(keyword: string): string {
+  keywordFilter(keyword: string): string {
     const kw = SQLFragments.escapeSql(keyword.toLowerCase());
     const searchFields = ['name', 'brand', 'category', 'description'];
     const clauses: string[] = [];
@@ -215,17 +218,17 @@ export class SQLFragments {
       clauses.push(`LOWER(${coalesce}) LIKE '%${kw}%'`);
     }
     return `(${clauses.join(' OR ')})`;
-  }
+  },
 
   /** WHERE clause filtering to specific sites. */
-  static siteFilter(sites: string[]): string | null {
+  siteFilter(sites: string[]): string | null {
     if (sites.length === 0) return null;
     const siteList = sites.map((s) => `'${SQLFragments.escapeSql(s)}'`).join(', ');
     return `regexp_extract(filename, '${SITE_EXTRACT_REGEX}', 1) IN (${siteList})`;
-  }
+  },
 
   /** WHERE clauses for price range filtering. */
-  static priceRangeFilter(minPrice?: number, maxPrice?: number): string[] {
+  priceRangeFilter(minPrice?: number, maxPrice?: number): string[] {
     const conditions: string[] = [];
     if (minPrice !== undefined) {
       conditions.push(`(
@@ -244,8 +247,8 @@ export class SQLFragments {
             )`);
     }
     return conditions;
-  }
-}
+  },
+};
 
 // ── Query Builder ─────────────────────────────────────────────────────
 

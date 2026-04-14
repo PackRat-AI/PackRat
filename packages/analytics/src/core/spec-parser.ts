@@ -10,6 +10,12 @@ import type { DuckDBConnection } from '@duckdb/node-api';
 import { DBConfig } from './constants';
 import { SQLFragments } from './query-builder';
 
+const COMMAS_PATTERN = /,/g;
+const K_MULTIPLIER_PATTERN = /(\d[\d,]*)\s*k\s*mm\b/i;
+const MEN_PATTERN = /men/;
+const WOMEN_PATTERN = /women/;
+const YOUTH_PATTERN = /kid|youth|boy|girl|junior/;
+
 // ── Types ─────────────────────────────────────────────────────────────
 
 export interface ProductSpecs {
@@ -134,9 +140,9 @@ export function parseFillPower(text: string): number | null {
 export function parseWaterproofRating(text: string): number | null {
   const match = WATERPROOF.exec(text);
   if (match?.[1] !== undefined) {
-    const raw = Number.parseInt(match[1].replace(/,/g, ''), 10);
+    const raw = Number.parseInt(match[1].replace(COMMAS_PATTERN, ''), 10);
     // If "k" or "K" prefix was captured in the regex (e.g., "20k mm"), multiply by 1000
-    const hasKMultiplier = /(\d[\d,]*)\s*k\s*mm\b/i.exec(text);
+    const hasKMultiplier = K_MULTIPLIER_PATTERN.exec(text);
     return hasKMultiplier ? raw * 1000 : raw;
   }
   return null;
@@ -149,9 +155,9 @@ export function parseSeasons(text: string): string | null {
 
 function normalizeGender(raw: string): string {
   const lower = raw.toLowerCase();
-  if (/men/.test(lower) && !/women/.test(lower)) return 'men';
-  if (/women/.test(lower)) return 'women';
-  if (/kid|youth|boy|girl|junior/.test(lower)) return 'youth';
+  if (MEN_PATTERN.test(lower) && !WOMEN_PATTERN.test(lower)) return 'men';
+  if (WOMEN_PATTERN.test(lower)) return 'women';
+  if (YOUTH_PATTERN.test(lower)) return 'youth';
   return 'unisex';
 }
 

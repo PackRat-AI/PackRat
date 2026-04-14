@@ -1,85 +1,90 @@
+/**
+ * Cloudflare Worker entry point.
+ *
+ * Elysia-based Worker using the official `CloudflareAdapter` (Elysia 1.4.x).
+ * Every route is Elysia-native so Eden Treaty gets full end-to-end type
+ * safety and @elysiajs/openapi generates a complete OpenAPI/Scalar UI.
+ */
 import type { MessageBatch } from '@cloudflare/workers-types';
-import { sentry } from '@hono/sentry';
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { cors } from '@elysiajs/cors';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
+import { CatalogService } from '@packrat/api/services';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
-import { getEnv } from '@packrat/api/utils/env-validation';
-import { configureOpenAPI } from '@packrat/api/utils/openapi';
-import { Scalar } from '@scalar/hono-api-reference';
-import { cors } from 'hono/cors';
-import { HTTPException } from 'hono/http-exception';
-import { logger } from 'hono/logger';
-import { CatalogService } from './services';
+import { setWorkerEnv } from '@packrat/api/utils/env-validation';
+import { packratOpenApi } from '@packrat/api/utils/openapi';
+import { Elysia } from 'elysia';
+import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import type { CatalogETLMessage } from './services/etl/types';
-import type { Variables } from './types/variables';
 
-const app = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
-// Apply global middleware
-app
-  .use((c, next) => {
-    return sentry({
-      environment: getEnv(c).ENVIRONMENT,
-      release: getEnv(c).CF_VERSION_METADATA.id,
-      // Adds request headers and IP for users, for more info visit:
-      // https://docs.sentry.io/platforms/javascript/guides/cloudflare/configuration/options/#sendDefaultPii
-      sendDefaultPii: true,
-
-      // Enable logs to be sent to Sentry
-      _experiments: { enableLogs: true },
-    })(c, next);
-  })
-  .use((c, next) => {
-    const sentry = c.get('sentry');
-    const user = c.get('user');
-    if (user) {
-      sentry.setUser(user);
+/**
+ * Root Elysia application – exported so Eden Treaty can infer the full route
+ * surface.
+ */
+export const app = new Elysia({ adapter: CloudflareAdapter })
+  .use(
+    cors({
+      // Reflect-origin is intentional: PackRat has many consumer origins
+      // (Expo dev, web, landing, admin panel, preview deploys) and maintaining
+      // an explicit allowlist would be operational overhead. Bearer-token auth
+      // (not cookies) limits the CSRF blast radius; revisit if cookie-auth
+      // is ever added.
+      credentials: false,
+      allowedHeaders: ['Authorization', 'Content-Type', 'X-API-Key'],
+    }),
+  )
+  .use(packratOpenApi)
+  .onError(({ error, code }) => {
+    console.error('Error occurred:', error);
+    if (code === 'VALIDATION') {
+      return new Response(JSON.stringify({ error: 'Validation failed' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-    return next();
-  })
-  .onError((err, c) => {
-    console.error('Error occurred:', err);
-    if (err instanceof HTTPException) {
-      return err.getResponse();
+    if (code === 'NOT_FOUND') {
+      return new Response(JSON.stringify({ error: 'Not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-    return c.json({ error: 'Internal server error' }, 500);
-  });
-app.use(logger());
-app.use(cors());
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  })
+  .get('/', () => 'PackRat API is running!', {
+    detail: { summary: 'Health check', tags: ['Meta'] },
+  })
+  .get('/health', () => ({ status: 'ok' as const }), {
+    detail: { summary: 'Health status', tags: ['Meta'] },
+  })
+  .use(routes)
+  .compile();
 
-// Mount routes
-app.route('/api', routes);
+/**
+ * End-to-end type exported for the Eden Treaty client (see
+ * `apps/expo/lib/api/client.ts`).
+ */
+export type App = typeof app;
 
-// Configure OpenAPI documentation
-configureOpenAPI(app);
-
-// Scalar UI with enhanced configuration
-app.get(
-  '/scalar',
-  Scalar({
-    url: '/doc',
-    theme: 'purple',
-    pageTitle: 'PackRat API Documentation',
-    defaultHttpClient: {
-      targetKey: 'js',
-      clientKey: 'fetch',
-    },
-  }),
-);
-
-// Health check endpoint
-app.get('/', (c) => {
-  return c.text('PackRat API is running!');
-});
-
-// Export the AppContainer class for Cloudflare Container binding
 export { AppContainer };
 
+type CfFetchFn = (
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+) => Response | Promise<Response>;
+
 export default {
-  fetch: app.fetch,
+  fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
+    setWorkerEnv(env as unknown as Record<string, unknown>);
+    return (app.fetch as unknown as CfFetchFn)(request, env, ctx);
+  },
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    setWorkerEnv(env as unknown as Record<string, unknown>);
+
     if (batch.queue === 'packrat-etl-queue' || batch.queue === 'packrat-etl-queue-dev') {
       if (!env.ETL_QUEUE) {
         throw new Error('ETL_QUEUE is not configured');
@@ -92,9 +97,9 @@ export default {
       if (!env.EMBEDDINGS_QUEUE) {
         throw new Error('EMBEDDINGS_QUEUE is not configured');
       }
-      await new CatalogService(env, false).handleEmbeddingsBatch(batch);
+      await new CatalogService(env, true).handleEmbeddingsBatch(batch);
     } else {
       throw new Error(`Unknown queue: ${batch.queue}`);
     }
   },
-};
+} satisfies ExportedHandler<Env>;

@@ -22,11 +22,11 @@ function getUniqueAuthors(): string[] {
   const posts = getAllPosts();
   const authors = new Set<string>();
 
-  posts.forEach((post) => {
+  for (const post of posts) {
     if (post.author && post.author !== 'Unknown') {
       authors.add(post.author);
     }
-  });
+  }
 
   return Array.from(authors).sort();
 }
@@ -84,9 +84,9 @@ function showAuthorDistribution(): void {
   const posts = getAllPosts();
   const distribution: Record<string, number> = {};
 
-  posts.forEach((post) => {
+  for (const post of posts) {
     distribution[post.author] = (distribution[post.author] || 0) + 1;
-  });
+  }
 
   console.log(chalk.blue('\n=== Current Author Distribution ==='));
   console.log(chalk.blue(`Total posts: ${posts.length}`));
@@ -97,10 +97,10 @@ function showAuthorDistribution(): void {
   );
 
   console.log(chalk.blue('\nAuthor Distribution:'));
-  sortedAuthors.forEach(([author, count]) => {
+  for (const [author, count] of sortedAuthors) {
     const percentage = ((count / posts.length) * 100).toFixed(1);
     console.log(`${chalk.green('✓')} ${author}: ${count} posts (${percentage}%)`);
-  });
+  }
 }
 
 // List all available authors
@@ -110,9 +110,9 @@ function listAvailableAuthors(): void {
   console.log(chalk.blue('\n=== Available Authors ==='));
   console.log(chalk.blue(`Found ${authors.length} authors in existing content:`));
 
-  authors.forEach((author, index) => {
+  for (const [index, author] of authors.entries()) {
     console.log(`  ${index + 1}. ${author}`);
-  });
+  }
 }
 
 // Update a specific post by slug
@@ -123,9 +123,9 @@ function updatePostBySlug(slug: string, newAuthor: string): void {
   if (!post) {
     console.error(chalk.red(`Error: Post with slug "${slug}" not found.`));
     console.log(chalk.yellow('Available slugs:'));
-    posts.forEach((p) => {
+    for (const p of posts) {
       console.log(`  - ${p.slug}`);
-    });
+    }
     return;
   }
 
@@ -151,9 +151,9 @@ function updatePostsByTitle(searchTitle: string, newAuthor: string): void {
 
   if (matchingPosts.length > 1) {
     console.log(chalk.yellow(`Found ${matchingPosts.length} matching posts:`));
-    matchingPosts.forEach((post, index) => {
+    for (const [index, post] of matchingPosts.entries()) {
       console.log(`  ${index + 1}. "${post.title}" (${post.slug}) - Author: ${post.author}`);
-    });
+    }
     console.log(chalk.yellow('Please be more specific or use slug instead.'));
     return;
   }
@@ -172,20 +172,20 @@ function updatePostsByAuthor(currentAuthor: string, newAuthor: string): void {
     console.error(chalk.red(`No posts found with author: "${currentAuthor}"`));
     console.log(chalk.yellow('Available authors:'));
     const authors = getUniqueAuthors();
-    authors.forEach((author) => {
+    for (const author of authors) {
       console.log(`  - ${author}`);
-    });
+    }
     return;
   }
 
   console.log(chalk.blue(`Found ${matchingPosts.length} posts by "${currentAuthor}"`));
 
   let updatedCount = 0;
-  matchingPosts.forEach((post) => {
+  for (const post of matchingPosts) {
     if (updatePostAuthor(post, newAuthor)) {
       updatedCount++;
     }
-  });
+  }
 
   console.log(
     chalk.green(`✓ Updated ${updatedCount} posts from "${currentAuthor}" to "${newAuthor}"`),
@@ -198,9 +198,9 @@ function rebalanceAuthors(): void {
 
   // Use the top 6 most active authors for rebalancing (similar to original logic)
   const distribution: Record<string, number> = {};
-  posts.forEach((post) => {
+  for (const post of posts) {
     distribution[post.author] = (distribution[post.author] || 0) + 1;
-  });
+  }
 
   const mainAuthors = Object.entries(distribution)
     .sort(([, countA], [, countB]) => countB - countA)
@@ -211,35 +211,35 @@ function rebalanceAuthors(): void {
 
   console.log(chalk.blue(`\n=== Rebalancing Authors ===`));
   console.log(chalk.blue(`Using top ${mainAuthors.length} authors for rebalancing:`));
-  mainAuthors.forEach((author) => {
+  for (const author of mainAuthors) {
     console.log(`  - ${author}`);
-  });
+  }
   console.log(chalk.blue(`Target per author: ~${targetPerAuthor} posts`));
 
   // Get current distribution for main authors only
   const currentDistribution: Record<string, PostMetadata[]> = {};
-  mainAuthors.forEach((author) => {
+  for (const author of mainAuthors) {
     currentDistribution[author] = posts.filter((post) => post.author === author);
-  });
+  }
 
   // Pre-compute author counts for efficient tracking during reassignment
   const authorCounts: Record<string, number> = {};
-  mainAuthors.forEach((author) => {
+  for (const author of mainAuthors) {
     authorCounts[author] = currentDistribution[author]?.length || 0;
-  });
+  }
 
   // Find posts that need reassignment (authored by non-main authors or over-represented authors)
   const postsToReassign: PostMetadata[] = [];
 
   // Add posts from non-main authors
-  posts.forEach((post) => {
+  for (const post of posts) {
     if (!mainAuthors.includes(post.author)) {
       postsToReassign.push(post);
     }
-  });
+  }
 
   // Add excess posts from over-represented authors
-  mainAuthors.forEach((author) => {
+  for (const author of mainAuthors) {
     const authorPosts = currentDistribution[author] || [];
     if (authorPosts.length > targetPerAuthor) {
       const excess = authorPosts.slice(targetPerAuthor);
@@ -247,7 +247,7 @@ function rebalanceAuthors(): void {
       // Update the count to reflect posts that will be reassigned
       authorCounts[author] = targetPerAuthor;
     }
-  });
+  }
 
   if (postsToReassign.length === 0) {
     console.log(chalk.green('Authors are already well balanced!'));
@@ -258,7 +258,7 @@ function rebalanceAuthors(): void {
 
   // Assign posts to authors with the fewest posts (O(n log n) instead of O(n²))
   let updatedCount = 0;
-  postsToReassign.forEach((post) => {
+  for (const post of postsToReassign) {
     // Find author with least posts using pre-computed counts
     const authorWithLeast = mainAuthors.reduce((min, author) =>
       (authorCounts[author] ?? 0) < (authorCounts[min] ?? 0) ? author : min,
@@ -270,7 +270,7 @@ function rebalanceAuthors(): void {
         updatedCount++;
       }
     }
-  });
+  }
 
   console.log(chalk.green(`✓ Rebalanced ${updatedCount} posts`));
   console.log(chalk.blue('\nNew distribution:'));
@@ -370,9 +370,9 @@ if (isMainModule()) {
           console.log(chalk.yellow(`No posts found matching: "${args[1]}"`));
         } else {
           console.log(chalk.blue(`Found ${matchingPosts.length} posts matching "${args[1]}":`));
-          matchingPosts.forEach((post, index) => {
+          for (const [index, post] of matchingPosts.entries()) {
             console.log(`  ${index + 1}. "${post.title}" (${post.slug}) - Author: ${post.author}`);
-          });
+          }
         }
         break;
       }

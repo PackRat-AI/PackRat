@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance from 'expo-app/lib/api/client';
-import type { Comment } from '../types';
+import { apiClient } from 'expo-app/lib/api/packrat';
 
 interface AddCommentInput {
   postId: number;
@@ -13,11 +12,12 @@ export const useAddComment = () => {
 
   return useMutation({
     mutationFn: async ({ postId, content, parentCommentId }: AddCommentInput) => {
-      const response = await axiosInstance.post<Comment>(`/api/feed/${postId}/comments`, {
+      const { data, error } = await apiClient.feed({ postId: String(postId) }).comments.post({
         content,
-        parentCommentId,
+        ...(parentCommentId !== undefined ? { parentCommentId } : {}),
       });
-      return response.data;
+      if (error) throw new Error(`Failed to add comment: ${error.value}`);
+      return data;
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['feed', variables.postId, 'comments'] });

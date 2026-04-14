@@ -79,7 +79,7 @@ export function SearchableTable<T>({
               </TableRow>
             ) : (
               filtered.map((row, i) => (
-                <TableRow key={i} className="hover:bg-muted/20">
+                <TableRow key={`skeleton-row-${i}`} className="hover:bg-muted/20">
                   {columns.map((col) => (
                     <TableCell key={col.key}>{col.render(row)}</TableCell>
                   ))}

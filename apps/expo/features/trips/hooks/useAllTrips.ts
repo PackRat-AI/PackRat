@@ -1,21 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import { useAuthenticatedQueryToolkit } from 'expo-app/lib/hooks/useAuthenticatedQueryToolkit';
 import type { Trip } from '../types';
 
-// Fetch all trips for the current user
 export const fetchAllTrips = async (): Promise<Trip[]> => {
-  try {
-    const res = await axiosInstance.get('/api/trips');
-    return res.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    console.error('Failed to fetch all trips:', error);
-    throw new Error(message);
-  }
+  const { data, error } = await apiClient.trips.get({ query: { includePublic: 0 } });
+  if (error) throw new Error(`Failed to fetch trips: ${error.value}`);
+  return (data ?? []) as unknown as Trip[];
 };
 
-// Hook to query trips
 export function useAllTrips(enabled: boolean) {
   const { isQueryEnabledWithAccessToken } = useAuthenticatedQueryToolkit();
 
@@ -23,7 +16,7 @@ export function useAllTrips(enabled: boolean) {
     queryKey: ['allTrips'],
     enabled: isQueryEnabledWithAccessToken && enabled,
     queryFn: fetchAllTrips,
-    staleTime: 1000 * 60 * 5, // 5 min
+    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
 }

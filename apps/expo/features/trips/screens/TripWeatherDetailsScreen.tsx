@@ -1,7 +1,10 @@
 import { Icon } from 'expo-app/components/Icon';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForcast';
-import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
-import axiosInstance from 'expo-app/lib/api/client';
+import {
+  getWeatherBackgroundColors,
+  getWeatherData,
+  searchLocationsByCoordinates,
+} from 'expo-app/features/weather/lib/weatherService';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -34,22 +37,14 @@ export default function TripWeatherDetailsScreen() {
       setLoading(true);
       setError(null);
 
-      const locations = await axiosInstance.get(`/api/weather/search-by-coordinates`, {
-        params: {
-          lat: latitude.toFixed(6),
-          lon: longitude.toFixed(6),
-        },
-      });
-      const { id } = locations.data[0];
-      const weather = await axiosInstance.get(`/api/weather/forecast`, {
-        params: {
-          id,
-        },
-      });
+      const locations = await searchLocationsByCoordinates(latitude, longitude);
+      const first = locations[0];
+      if (!first) throw new Error('No location found for these coordinates');
+      const weather = await getWeatherData(first.id);
 
-      setWeather(weather.data);
-      const weatherCode = weather.data.current?.condition?.code || 1000;
-      const isNight = weather.data.current?.is_day === 0;
+      setWeather(weather);
+      const weatherCode = weather.current?.condition?.code || 1000;
+      const isNight = weather.current?.is_day === 0;
 
       setGradientColors(getWeatherBackgroundColors(weatherCode, isNight));
     } catch (e) {
