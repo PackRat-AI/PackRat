@@ -10,10 +10,10 @@ import {
 } from '@packrat/web-ui/components/card';
 import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
+import { storeCredentials } from 'admin-app/lib/auth';
 import { Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { storeCredentials } from 'admin-app/lib/auth';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
 
@@ -97,9 +97,7 @@ export default function LoginPage() {
                 />
               </div>
 
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
               <Button type="submit" className="w-full" disabled={pending}>
                 {pending ? 'Signing in…' : 'Sign in'}

@@ -14,11 +14,11 @@ import {
   useSidebar,
 } from '@packrat/web-ui/components/sidebar';
 import { cn } from '@packrat/web-ui/lib/utils';
+import { navItems } from 'admin-app/config/nav';
+import { clearCredentials } from 'admin-app/lib/auth';
 import { LogOut, Package } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { clearCredentials } from 'admin-app/lib/auth';
-import { navItems } from 'admin-app/config/nav';
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -66,8 +66,7 @@ export function AppSidebar() {
                       tooltip={item.title}
                       className={cn(
                         'transition-colors',
-                        isActive &&
-                          'bg-sidebar-accent text-sidebar-accent-foreground font-medium',
+                        isActive && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium',
                       )}
                     >
                       <Link href={item.href}>

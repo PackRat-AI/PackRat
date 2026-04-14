@@ -1,4 +1,4 @@
-import { type LucideIcon, LayoutDashboard, Package, Backpack, Users } from 'lucide-react';
+import { Backpack, LayoutDashboard, type LucideIcon, Package, Users } from 'lucide-react';
 
 export interface NavItem {
   title: string;
