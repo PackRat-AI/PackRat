@@ -114,15 +114,12 @@ function LeftView() {
       createDropdownItem({
         actionKey: 'go-home',
         title: 'Go Home',
-        // @ts-expect-error — createDropdownItem's icon type shape shifted in @packrat-ai/nativewindui; runtime behavior is correct, type alignment is follow-up
-        icon: { namingScheme: 'sfSymbol', name: 'house.fill' },
+        icon: { name: 'house.fill' },
       }),
       createDropdownItem({
         actionKey: 'toggle-theme',
         title: 'Toggle Theme',
-        // @ts-expect-error — see above
         icon: {
-          namingScheme: 'sfSymbol',
           name: isDarkColorScheme ? 'moon.stars' : 'sun.min',
         },
       }),

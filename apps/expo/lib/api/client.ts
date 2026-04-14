@@ -246,24 +246,22 @@ async function execute<T>(
   };
 }
 
-// Legacy fetch wrapper. Match axios's default generic (`any`) so the 43+
-// callsites that rely on untyped responses compile unchanged during the
-// sweep to typed Treaty (#2171).
+/**
+ * Legacy fetch wrapper kept during the migration sweep to typed Treaty
+ * (#2171). The default response generic is `unknown` so callers must
+ * supply their own type; the pre-existing `<T = any>` form would have
+ * kept untyped callsites implicitly valid forever.
+ */
 export const apiClient = {
-  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
-  get: <T = any>(path: string, config?: RequestConfig) =>
+  get: <T = unknown>(path: string, config?: RequestConfig) =>
     execute<T>('GET', path, undefined, config),
-  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
-  post: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
+  post: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('POST', path, body, config),
-  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
-  put: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
+  put: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PUT', path, body, config),
-  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
-  patch: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
+  patch: <T = unknown>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PATCH', path, body, config),
-  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape default — see top-of-file note
-  delete: <T = any>(path: string, config?: RequestConfig) =>
+  delete: <T = unknown>(path: string, config?: RequestConfig) =>
     execute<T>('DELETE', path, undefined, config),
 };
 

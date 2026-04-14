@@ -12,8 +12,7 @@ syncObservable(
   syncedCrud({
     persist: {
       name: 'user',
-      // biome-ignore lint/suspicious/noExplicitAny: Storage type mismatch with legend-state plugin
-      plugin: observablePersistSqlite(Storage as any),
+            plugin: observablePersistSqlite(Storage),
     },
   }),
 );
