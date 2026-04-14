@@ -1,14 +1,25 @@
+import { neonConfig, Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
+import * as schema from '../src/db/schema';
+
+// Route @neondatabase/serverless through the local wsproxy (docker-compose.test.yml),
+// so tests use the same driver as production against Docker Postgres.
+// wsproxy upgrades on /v1 and reads the target from ?address= (resolved inside the
+// compose network, so `postgres-test:5432` is the service name).
+neonConfig.wsProxy = () => 'localhost:5434/v1?address=postgres-test:5432';
+neonConfig.useSecureWebSocket = false;
+neonConfig.pipelineConnect = false;
+neonConfig.pipelineTLS = false;
+
 const testEnv = {
-  // Environment & Deployment
   ENVIRONMENT: 'development',
   SENTRY_DSN: 'https://test@test.ingest.sentry.io/test',
   CF_VERSION_METADATA: JSON.stringify({ id: 'test-version' }),
 
-  // Database
-  NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5433/packrat_test',
-  NEON_DATABASE_URL_READONLY: 'postgres://test_user:test_password@localhost:5433/packrat_test',
+  NEON_DATABASE_URL: 'postgres://test_user:test_password@localhost:5432/packrat_test',
+  NEON_DATABASE_URL_READONLY: 'postgres://test_user:test_password@localhost:5432/packrat_test',
 
-  // Authentication & Security
   JWT_SECRET: 'secret',
   PASSWORD_RESET_SECRET: 'secret',
   GOOGLE_CLIENT_ID: 'test-client-id',
@@ -16,22 +27,18 @@ const testEnv = {
   ADMIN_PASSWORD: 'admin-password',
   PACKRAT_API_KEY: 'test-api-key',
 
-  // Email Configuration
   EMAIL_PROVIDER: 'resend',
   RESEND_API_KEY: 'key',
   EMAIL_FROM: 'test@example.com',
 
-  // AI & External APIs
   OPENAI_API_KEY: 'sk-test-key',
   GOOGLE_GENERATIVE_AI_API_KEY: 'test-google-key',
   AI_PROVIDER: 'openai',
   PERPLEXITY_API_KEY: 'pplx-test-key',
 
-  // Weather Services
   OPENWEATHER_KEY: 'test-weather-key',
   WEATHER_API_KEY: 'test-weather-key',
 
-  // Cloudflare R2 Storage
   CLOUDFLARE_ACCOUNT_ID: 'test-account-id',
   CLOUDFLARE_AI_GATEWAY_ID: 'test-gateway-id',
   R2_ACCESS_KEY_ID: 'test-access-key',
@@ -40,17 +47,11 @@ const testEnv = {
   PACKRAT_GUIDES_BUCKET_R2_BUCKET_NAME: 'test-guides-bucket',
   PACKRAT_SCRAPY_BUCKET_R2_BUCKET_NAME: 'test-scrapy-bucket',
 
-  // Content & Guides
   PACKRAT_GUIDES_RAG_NAME: 'test-rag',
   PACKRAT_GUIDES_BASE_URL: 'https://guides.test.com',
 };
 
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Client } from 'pg';
-import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
-import * as schema from '../src/db/schema';
-
-let testClient: Client;
+let testPool: Pool;
 let testDb: ReturnType<typeof drizzle>;
 let isConnected = false;
 
@@ -125,16 +126,13 @@ vi.mock('ai', async () => {
   return {
     ...actual,
     streamText: vi.fn(({ messages }) => {
-      // Create a mock stream response
       const mockResponse = `Mock AI response for: ${messages?.[messages.length - 1]?.content || 'query'}`;
 
       return {
         toUIMessageStreamResponse: () => {
-          // Return a mock Response with streaming
           const encoder = new TextEncoder();
           const stream = new ReadableStream({
             start(controller) {
-              // Send mock streaming data
               controller.enqueue(
                 encoder.encode(
                   `data: ${JSON.stringify({ type: 'text', content: mockResponse })}\n\n`,
@@ -157,10 +155,8 @@ vi.mock('ai', async () => {
   };
 });
 
-// Mock the AI provider module
 vi.mock('@packrat/api/utils/ai/provider', () => ({
   createAIProvider: vi.fn(() => {
-    // Return a mock provider function
     return (modelId: string) => ({
       modelId,
       provider: 'openai',
@@ -169,17 +165,14 @@ vi.mock('@packrat/api/utils/ai/provider', () => ({
   extractCloudflareLogId: vi.fn(() => null),
 }));
 
-// Mock the AI tools module - need to mock before the import happens
 vi.mock('@packrat/api/utils/ai/tools', () => ({
   createTools: vi.fn(() => ({})),
 }));
 
-// Mock schema info utility
 vi.mock('@packrat/api/utils/DbUtils', () => ({
   getSchemaInfo: vi.fn(async () => 'Mock schema info'),
 }));
 
-// Mock guides data
 const mockGuides = [
   {
     key: 'beginner-hiking-guide.md',
@@ -216,7 +209,6 @@ const mockGuides = [
   },
 ];
 
-// Create mock R2 objects with proper metadata
 function createMockR2Object(guide: (typeof mockGuides)[0]) {
   return {
     key: guide.key,
@@ -238,7 +230,6 @@ function createMockR2Object(guide: (typeof mockGuides)[0]) {
   };
 }
 
-// Create mock R2 object body with content
 function createMockR2ObjectBody(guide: (typeof mockGuides)[0]) {
   const frontmatter = `---
 title: ${guide.title}
@@ -272,7 +263,6 @@ ${guide.content}`;
   };
 }
 
-// Mock R2 bucket service
 vi.mock('@packrat/api/services/r2-bucket', () => {
   return {
     R2BucketService: vi.fn(function (this: unknown) {
@@ -280,13 +270,11 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
         list: vi.fn(async (options?: { prefix?: string; limit?: number }) => {
           let objects = mockGuides.map((guide) => createMockR2Object(guide));
 
-          // Apply prefix filter if provided
           if (options?.prefix) {
             const prefix = options.prefix;
             objects = objects.filter((obj) => obj.key.startsWith(prefix));
           }
 
-          // Apply limit if provided
           if (options?.limit) {
             objects = objects.slice(0, options.limit);
           }
@@ -328,9 +316,7 @@ vi.mock('@packrat/api/services/r2-bucket', () => {
           });
         }),
 
-        delete: vi.fn(async (_keys: string | string[]) => {
-          // Mock deletion - no-op
-        }),
+        delete: vi.fn(async (_keys: string | string[]) => {}),
       };
     }),
   };
@@ -341,7 +327,6 @@ vi.mock('hono/adapter', async () => {
   return { ...actual, env: () => testEnv };
 });
 
-// Mock google-auth-library to avoid node:child_process issues in Workers environment
 vi.mock('google-auth-library', () => ({
   OAuth2Client: class MockOAuth2Client {
     async verifyIdToken() {
@@ -357,26 +342,20 @@ vi.mock('google-auth-library', () => ({
   },
 }));
 
-// Mock the embedding service to avoid calling OpenAI API in tests
 vi.mock('@packrat/api/services/embeddingService', () => ({
   generateEmbedding: vi.fn(async () => {
-    // Return a mock embedding (1536 dimensions for OpenAI)
     return Array.from({ length: 1536 }, () => Math.random());
   }),
   generateManyEmbeddings: vi.fn(async (params: { values: string[] }) => {
-    // Return mock embeddings for each value
     return params.values.map(() => Array.from({ length: 1536 }, () => Math.random()));
   }),
 }));
 
-// Mock the ETL queue service to avoid Cloudflare Queue issues in tests
 vi.mock('@packrat/api/services/etl/queue', () => ({
   queueCatalogETL: vi.fn(async ({ jobId }: { jobId: string }) => {
-    // Mock successful queueing
     return jobId;
   }),
   processQueueBatch: vi.fn(async () => {
-    // Mock successful processing
     return;
   }),
 }));
@@ -402,24 +381,18 @@ vi.mock('@packrat/api/utils/env-validation', () => ({
   })),
 }));
 
-// Mock the database module to use our test database (node-postgres version)
 vi.mock('@packrat/api/db', () => ({
   createDb: vi.fn(() => testDb),
   createReadOnlyDb: vi.fn(() => testDb),
   createDbClient: vi.fn(() => testDb),
 }));
 
-// Mock youtube-transcript to avoid CJS/ESM incompatibility in workerd
-// (youtube-transcript@1.3.0 has "type": "module" but a CJS main entry,
-// causing "exports is not defined" when workerd evaluates it as ESM)
 vi.mock('youtube-transcript', () => ({
   fetchTranscript: vi.fn().mockResolvedValue([]),
 }));
 
-// Mock @hono/sentry to avoid CJS/ESM incompatibility in workerd
-// (toucan-js@4.1.1 depends on @sentry/core@8.9.2 which has dual ESM/CJS exports;
-// miniflare incorrectly resolves the ESM condition for CJS require() calls,
-// causing "Cannot read properties of undefined (reading 'defineIntegration')")
+// toucan-js@4.1.1 → @sentry/core@8.9.2 has dual ESM/CJS exports that miniflare mis-resolves;
+// upstream fix lands in @hono/sentry >1.2.2 (not yet released 2026-04).
 vi.mock('@hono/sentry', () => ({
   sentry: () => async (c: any, next: any) => {
     c.set('sentry', {
@@ -436,22 +409,17 @@ vi.mock('@hono/sentry', () => ({
   getSentry: (c: any) => c.get('sentry'),
 }));
 
-// Setup PostgreSQL connection for tests
 beforeAll(async () => {
   console.log('🔧 Setting up test database connection...');
 
-  // Create direct PostgreSQL client connection for manual database operations
-  testClient = new Client({
-    host: 'localhost',
-    port: 5433,
-    database: 'packrat_test',
-    user: 'test_user',
-    password: 'test_password',
+  testPool = new Pool({
+    connectionString: testEnv.NEON_DATABASE_URL,
   });
 
   try {
-    await testClient.connect();
-    testDb = drizzle(testClient, { schema }) as any;
+    testDb = drizzle(testPool, { schema }) as any;
+    // Warm-up query to verify connectivity
+    await testPool.query('SELECT 1');
     isConnected = true;
     console.log('✅ Test database connected successfully');
   } catch (error) {
@@ -460,12 +428,9 @@ beforeAll(async () => {
   }
 });
 
-// Clean up database after each test to ensure isolation
 beforeEach(async () => {
-  if (!testClient) return;
+  if (!testPool) return;
 
-  // All tables that accumulate test data. Using actual table names from schema.ts.
-  // CASCADE handles FK dependencies so ordering doesn't matter.
   const tablesToClean = [
     'one_time_passwords',
     'refresh_tokens',
@@ -486,24 +451,19 @@ beforeEach(async () => {
   ];
 
   try {
-    // TRUNCATE with RESTART IDENTITY resets sequences so auto-increment IDs start at 1 again.
-    // CASCADE handles FK dependencies automatically, making ordering irrelevant.
-    // This ensures test fixtures that hardcode id=1 (e.g. userId=1) always work.
     const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
-    await testClient.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
+    await testPool.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
   } catch (_error) {
     // Ignore errors - tables might not exist yet
   }
 });
 
-// Cleanup after all tests
 afterAll(async () => {
   console.log('🧹 Cleaning up test database connection...');
 
   try {
-    // Close PostgreSQL client connection only if it was successfully connected
-    if (isConnected && testClient) {
-      await testClient.end();
+    if (isConnected && testPool) {
+      await testPool.end();
     }
     console.log('✅ Test database connection closed');
   } catch (error) {
