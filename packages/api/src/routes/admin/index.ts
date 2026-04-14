@@ -7,27 +7,25 @@ import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
 import { z } from 'zod';
 
 const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
-adminRoutes.use('*', (_c, next) => {
-  console.log('adminRoutes');
-  return next();
-});
-
-// Bearer-token guard — expects "Authorization: Bearer <ADMIN_SERVICE_TOKEN>"
-adminRoutes.use('*', (c, next) => {
-  const authHeader = c.req.header('Authorization') ?? '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-  if (!token || token !== getEnv(c).ADMIN_SERVICE_TOKEN) {
-    return c.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, 401);
-  }
-
-  return next();
-});
+adminRoutes.use(
+  '*',
+  (_c, next) => {
+    console.log('adminRoutes');
+    return next();
+  },
+  basicAuth({
+    verifyUser: (username, password, c) => {
+      return username === getEnv(c).ADMIN_USERNAME && password === getEnv(c).ADMIN_PASSWORD;
+    },
+    realm: 'PackRat Admin Panel',
+  }),
+);
 
 const adminLayout = (title: string, content: unknown) => html`
 <!DOCTYPE html>

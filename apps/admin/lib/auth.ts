@@ -2,28 +2,28 @@
  * Admin authentication utilities.
  *
  * Production: Cloudflare Zero Trust (Access) protects the app at the edge.
- *   - Cloudflare injects `CF-Access-Authenticated-User-Email` on every request
- *     that passes through an Access policy. No credentials needed in the app.
+ *   - Cloudflare injects `CF-Access-Authenticated-User-Email` on every request.
  *
  * Development: Session cookie set by the /login page.
- *   - Credentials verified against ADMIN_USERNAME / ADMIN_PASSWORD env vars
- *     (these are local to the admin app — the API uses ADMIN_SERVICE_TOKEN).
+ *   - Credentials verified against ADMIN_USERNAME / ADMIN_PASSWORD env vars.
  *
- * API calls (server → Hono API): use ADMIN_SERVICE_TOKEN as a bearer token.
+ * API calls (server → Hono API): reuse the same ADMIN_USERNAME / ADMIN_PASSWORD
+ * as HTTP Basic auth — no extra env var needed.
  */
 
 /** Authorization header sent by the admin app to the Hono API. */
-export function getAdminApiBearerHeader(): string {
-  const token = process.env.ADMIN_SERVICE_TOKEN ?? '';
-  return `Bearer ${token}`;
+export function getAdminApiAuthHeader(): string {
+  const username = process.env.ADMIN_USERNAME ?? '';
+  const password = process.env.ADMIN_PASSWORD ?? '';
+  return `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
 }
 
-/** Token stored in the dev session cookie (base64 of username:password). */
+/** Token stored in the dev session cookie. */
 export function makeSessionToken(username: string, password: string): string {
   return Buffer.from(`${username}:${password}`).toString('base64');
 }
 
-/** Validates the dev session cookie value against env credentials. */
+/** Validates the dev session cookie against env credentials. */
 export function verifySessionToken(token: string): boolean {
   const username = process.env.ADMIN_USERNAME ?? '';
   const password = process.env.ADMIN_PASSWORD ?? '';
