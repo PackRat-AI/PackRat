@@ -3,48 +3,38 @@ import { observablePersistSqlite } from '@legendapp/state/persist-plugins/expo-s
 import { syncObservable } from '@legendapp/state/sync';
 import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
 import { isAuthed } from 'expo-app/features/auth/store';
-import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import { apiClient } from 'expo-app/lib/api/packrat';
 import ImageCacheManager from 'expo-app/lib/utils/ImageCacheManager';
 import Storage from 'expo-sqlite/kv-store';
 import type { Pack, PackItem } from '../types';
 import { uploadImage } from '../utils';
 
 const listAllPackItems = async () => {
-  try {
-    const res = await axiosInstance.get<Pack[]>('/api/packs');
-    const items = res.data.flatMap((pack: Pack) => pack.items);
-    return items;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to list packitems: ${message}`);
-  }
+  const { data, error } = await apiClient.packs.get({ query: { includePublic: 0 } });
+  if (error) throw new Error(`Failed to list packitems: ${error.value}`);
+  return ((data as unknown as Pack[]) ?? []).flatMap((pack) => pack.items) as object[];
 };
 
 const createPackItem = async ({ packId, ...data }: PackItem) => {
-  try {
-    if (data.image) {
-      await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
-    }
-
-    const response = await axiosInstance.post(`/api/packs/${packId}/items`, data);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to create pack item: ${message}`);
+  if (data.image) {
+    await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
   }
+  const { data: result, error } = await apiClient
+    .packs({ packId: String(packId) })
+    .items.post(data as never);
+  if (error) throw new Error(`Failed to create pack item: ${error.value}`);
+  return result as object | null;
 };
 
 const updatePackItem = async ({ id, ...data }: PackItem) => {
-  try {
-    if (data.image) {
-      await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
-    }
-    const response = await axiosInstance.patch(`/api/packs/items/${id}`, data);
-    return response.data;
-  } catch (error) {
-    const { message } = handleApiError(error);
-    throw new Error(`Failed to update pack: ${message}`);
+  if (data.image) {
+    await uploadImage(data.image, `${ImageCacheManager.cacheDirectory}${data.image}`);
   }
+  const { data: result, error } = await apiClient.packs
+    .items({ itemId: String(id) })
+    .patch(data as never);
+  if (error) throw new Error(`Failed to update pack item: ${error.value}`);
+  return result as object | null;
 };
 
 export const packItemsStore = observable<Record<string, PackItem>>({});

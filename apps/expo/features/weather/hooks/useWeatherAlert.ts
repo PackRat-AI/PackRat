@@ -247,7 +247,7 @@ export function useWeatherAlerts() {
 
       try {
         const data = await getWeatherData(locationId);
-        const formatted = generateAlerts(data, activeLocation);
+        const formatted = generateAlerts(data as unknown as WeatherApiData, activeLocation);
         setAlerts(formatted);
       } catch (err) {
         console.error('Weather alerts error:', err);
