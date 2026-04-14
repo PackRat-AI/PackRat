@@ -34,7 +34,13 @@
       "nativewindui/*": ["./apps/expo/components/ui/*"]
     }
   },
-  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"],
+  "include": [
+    "global.d.ts",
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "packages/**/*.ts",
+    "packages/**/*.tsx"
+  ],
   "exclude": [
     "node_modules",
     "**/node_modules",
