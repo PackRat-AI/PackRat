@@ -188,8 +188,11 @@
       ],
       // Replace pg-cloudflare (which uses cloudflare:sockets API that changed in 2026-era
       // workerd) with a Node.js net.Socket stub so tests can connect to local PostgreSQL.
+      // Force pg-protocol to its CJS dist to avoid miniflare 4.20260409+ resolving the
+      // "import" export condition and loading esm/index.js in a non-module context.
       "alias": {
-        "pg-cloudflare": "./src/stubs/pg-cloudflare-stub"
+        "pg-cloudflare": "./src/stubs/pg-cloudflare-stub",
+        "pg-protocol": "pg-protocol/dist/index.js"
       }
     }
   }
