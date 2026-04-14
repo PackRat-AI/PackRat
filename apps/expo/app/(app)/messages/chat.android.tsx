@@ -8,8 +8,8 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import { Portal } from '@rn-primitives/portal';
-import { Icon } from 'expo-app/components/Icon';
 import { FlashList } from '@shopify/flash-list';
+import { Icon } from 'expo-app/components/Icon';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router, Stack } from 'expo-router';

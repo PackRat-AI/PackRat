@@ -1,7 +1,7 @@
 import { Button, SearchInput, Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import { Icon } from 'expo-app/components/Icon';
 import { HorizontalCatalogItemCard } from 'expo-app/features/packs/components/HorizontalCatalogItemCard';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
