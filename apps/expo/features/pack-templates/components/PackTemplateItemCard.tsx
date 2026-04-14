@@ -1,7 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from 'expo-app/components/Icon';
 import { appAlert } from 'expo-app/app/_layout';
+import { Icon } from 'expo-app/components/Icon';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
