@@ -32,6 +32,12 @@ export default function LocationsLayout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="geo"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
