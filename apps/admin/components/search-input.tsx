@@ -3,14 +3,15 @@
 import { Input } from '@packrat/web-ui/components/input';
 import { Search } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useTransition } from 'react';
+import { Suspense, useCallback, useTransition } from 'react';
 
 interface SearchInputProps {
   placeholder?: string;
   paramKey?: string;
 }
 
-export function SearchInput({ placeholder = 'Search…', paramKey = 'q' }: SearchInputProps) {
+// Inner component — must be inside <Suspense> because it calls useSearchParams()
+function SearchInputInner({ placeholder = 'Search…', paramKey = 'q' }: SearchInputProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
@@ -42,5 +43,23 @@ export function SearchInput({ placeholder = 'Search…', paramKey = 'q' }: Searc
         className="pl-9"
       />
     </div>
+  );
+}
+
+// Fallback shown while the inner component suspends
+function SearchInputFallback({ placeholder }: Pick<SearchInputProps, 'placeholder'>) {
+  return (
+    <div className="relative max-w-sm">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <Input placeholder={placeholder ?? 'Search…'} className="pl-9" disabled />
+    </div>
+  );
+}
+
+export function SearchInput(props: SearchInputProps) {
+  return (
+    <Suspense fallback={<SearchInputFallback placeholder={props.placeholder} />}>
+      <SearchInputInner {...props} />
+    </Suspense>
   );
 }

@@ -106,7 +106,7 @@ export default function CatalogPage() {
   const searchParams = useSearchParams();
   const q = searchParams.get('q') ?? undefined;
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, isError } = useQuery({
     queryKey: ['admin', 'catalog', q],
     queryFn: () => getCatalogItems(100, 0, q),
   });
@@ -121,7 +121,11 @@ export default function CatalogPage() {
       </div>
       <div className="space-y-4">
         <SearchInput placeholder="Search by name, brand, or category…" />
-        {isLoading ? (
+        {isError ? (
+          <p className="text-sm text-destructive py-4">
+            Failed to load catalog. Check that the API is reachable.
+          </p>
+        ) : isLoading ? (
           <TableSkeleton />
         ) : (
           <>

@@ -67,20 +67,20 @@ export const apiWithAuthAs = async (
 export const apiWithAdmin = async (path: string, init?: RequestInit) =>
   fetchWithUser(path, { user: TEST_ADMIN, init });
 
-// Helper for admin routes — in tests ADMIN_BYPASS_AUTH=true is set so no auth header is needed
-export const apiAdmin = (path: string, init?: RequestInit) =>
-  app.fetch(
+// Helper for admin routes (basic auth)
+export const apiWithBasicAuth = (path: string, init?: RequestInit) => {
+  const credentials = btoa('admin:admin-password');
+  return app.fetch(
     new Request(`http://localhost/api/admin${path}`, {
       ...init,
       headers: {
+        Authorization: `Basic ${credentials}`,
         'Content-Type': 'application/json',
         ...init?.headers,
       },
     }),
   );
-
-/** @deprecated Use apiAdmin instead */
-export const apiWithBasicAuth = apiAdmin;
+};
 
 // Common request bodies for testing
 export const createTestRequestBody = (data: unknown) => ({

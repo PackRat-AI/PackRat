@@ -3,9 +3,10 @@
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -13,15 +14,22 @@ import {
   useSidebar,
 } from '@packrat/web-ui/components/sidebar';
 import { cn } from '@packrat/web-ui/lib/utils';
-import { Package } from 'lucide-react';
+import { LogOut, Package } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { clearCredentials } from 'admin-app/lib/auth';
 import { navItems } from 'admin-app/config/nav';
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
+
+  function handleLogout() {
+    clearCredentials();
+    router.replace('/login');
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -74,6 +82,22 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <SidebarFooter className="pb-4">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              tooltip="Sign out"
+              className="text-muted-foreground hover:text-foreground w-full"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>

@@ -12,7 +12,8 @@ const testEnv = {
   JWT_SECRET: 'secret',
   PASSWORD_RESET_SECRET: 'secret',
   GOOGLE_CLIENT_ID: 'test-client-id',
-  ADMIN_BYPASS_AUTH: 'true',
+  ADMIN_USERNAME: 'admin',
+  ADMIN_PASSWORD: 'admin-password',
   PACKRAT_API_KEY: 'test-api-key',
 
   // Email Configuration
@@ -379,7 +380,7 @@ vi.mock('@packrat/api/services/etl/queue', () => ({
 }));
 
 vi.mock('@packrat/api/utils/env-validation', () => ({
-  getEnv: vi.fn((c?: unknown) => ({
+  getEnv: vi.fn(() => ({
     ...testEnv,
     ETL_QUEUE: {
       send: vi.fn().mockResolvedValue(undefined),

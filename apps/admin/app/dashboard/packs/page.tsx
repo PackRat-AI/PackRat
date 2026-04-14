@@ -91,7 +91,7 @@ export default function PacksPage() {
   const searchParams = useSearchParams();
   const q = searchParams.get('q') ?? undefined;
 
-  const { data: packs = [], isLoading } = useQuery({
+  const { data: packs = [], isLoading, isError } = useQuery({
     queryKey: ['admin', 'packs', q],
     queryFn: () => getPacks(100, 0, q),
   });
@@ -106,7 +106,11 @@ export default function PacksPage() {
       </div>
       <div className="space-y-4">
         <SearchInput placeholder="Search by name, owner, or category…" />
-        {isLoading ? (
+        {isError ? (
+          <p className="text-sm text-destructive py-4">
+            Failed to load packs. Check that the API is reachable.
+          </p>
+        ) : isLoading ? (
           <TableSkeleton />
         ) : (
           <>

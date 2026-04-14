@@ -1,19 +1,26 @@
 // Browser-callable API client for the admin app.
-// Auth is handled externally: Cloudflare Access in production, ADMIN_BYPASS_AUTH=true in local dev.
-// No auth headers are set here — CF Access injects its own headers at the edge.
+// In production, CF Access protects the domain; credentials are still sent for the
+// API's basicAuth fallback path. In local dev, enter credentials once at /login.
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ??
-  (typeof window !== 'undefined' ? 'http://localhost:8787' : 'http://localhost:8787');
+import { clearCredentials, getAuthHeader } from './auth';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
 
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeader(),
       ...init?.headers,
     },
   });
+
+  if (res.status === 401) {
+    clearCredentials();
+    if (typeof window !== 'undefined') window.location.replace('/login');
+    throw new Error('Unauthorized');
+  }
 
   if (!res.ok) {
     throw new Error(`Admin API error: ${res.status} ${res.statusText} — ${path}`);

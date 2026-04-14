@@ -70,6 +70,7 @@ export default function DashboardPage() {
   });
 
   const isLoading = statsLoading || usersLoading || packsLoading || catalogLoading;
+  const isError = !isLoading && !stats;
 
   return (
     <div className="space-y-0">
@@ -78,7 +79,11 @@ export default function DashboardPage() {
         <p className="text-muted-foreground text-sm mt-1">Your PackRat platform at a glance.</p>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <p className="text-sm text-destructive">
+          Failed to load dashboard data. Check that the API is reachable.
+        </p>
+      ) : isLoading ? (
         <OverviewSkeleton />
       ) : (
         <>

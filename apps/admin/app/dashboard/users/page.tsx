@@ -91,7 +91,7 @@ export default function UsersPage() {
   const searchParams = useSearchParams();
   const q = searchParams.get('q') ?? undefined;
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, isError } = useQuery({
     queryKey: ['admin', 'users', q],
     queryFn: () => getUsers(100, 0, q),
   });
@@ -106,7 +106,11 @@ export default function UsersPage() {
       </div>
       <div className="space-y-4">
         <SearchInput placeholder="Search by email or name…" />
-        {isLoading ? (
+        {isError ? (
+          <p className="text-sm text-destructive py-4">
+            Failed to load users. Check that the API is reachable.
+          </p>
+        ) : isLoading ? (
           <TableSkeleton />
         ) : (
           <>

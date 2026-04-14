@@ -7,19 +7,24 @@ import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
 import { z } from 'zod';
 
 const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
-adminRoutes.use('*', (c, next) => {
-  const apiEnv = getEnv(c);
-  // Local dev bypass — set ADMIN_BYPASS_AUTH=true to skip auth (never set in production)
-  if (apiEnv.ADMIN_BYPASS_AUTH === 'true') return next();
+adminRoutes.use('*', async (c, next) => {
   // Production: Cloudflare Access injects this header after verifying the user
   const cfEmail = c.req.header('CF-Access-Authenticated-User-Email');
   if (cfEmail) return next();
-  return c.json({ error: 'Unauthorized', code: 'UNAUTHORIZED' }, 401);
+  // Local dev / fallback: HTTP Basic Auth
+  return basicAuth({
+    verifyUser: (username, password, c) => {
+      const e = getEnv(c);
+      return username === e.ADMIN_USERNAME && password === e.ADMIN_PASSWORD;
+    },
+    realm: 'PackRat Admin',
+  })(c, next);
 });
 
 const adminLayout = (title: string, content: unknown) => html`
