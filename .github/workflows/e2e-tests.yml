@@ -37,23 +37,27 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     env:
-      # E2E user lives in the dev/preview DB; the seed step ensures it
-      # exists with the current password before Maestro runs.
-      TEST_EMAIL: admin+e2e-test-automation@packratai.com
+      # The E2E user is upserted into the dev DB by the seed step below,
+      # so both email and password are driven entirely by repo secrets.
+      TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
       - name: Check E2E secrets
         id: secrets-check
         run: |
-          if [ -z "${TEST_PASSWORD:-}" ] || [ -z "${NEON_DEV_DATABASE_URL:-}" ]; then
+          missing=()
+          [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
+          [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
+          [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
             echo "has_secrets=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::E2E_TEST_PASSWORD and/or NEON_DEV_DATABASE_URL not set — build will run but Maestro step will be skipped."
+            echo "::warning::Missing secrets: ${missing[*]} — build will run but Maestro step will be skipped."
           else
             echo "has_secrets=true" >> "$GITHUB_OUTPUT"
           fi
         env:
-          NEON_DEV_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
 
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -244,23 +248,27 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     env:
-      # E2E user lives in the dev/preview DB; the seed step ensures it
-      # exists with the current password before Maestro runs.
-      TEST_EMAIL: admin+e2e-test-automation@packratai.com
+      # The E2E user is upserted into the dev DB by the seed step below,
+      # so both email and password are driven entirely by repo secrets.
+      TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
       - name: Check E2E secrets
         id: secrets-check
         run: |
-          if [ -z "${TEST_PASSWORD:-}" ] || [ -z "${NEON_DEV_DATABASE_URL:-}" ]; then
+          missing=()
+          [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
+          [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
+          [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
             echo "has_secrets=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::E2E_TEST_PASSWORD and/or NEON_DEV_DATABASE_URL not set — build will run but Maestro step will be skipped."
+            echo "::warning::Missing secrets: ${missing[*]} — build will run but Maestro step will be skipped."
           else
             echo "has_secrets=true" >> "$GITHUB_OUTPUT"
           fi
         env:
-          NEON_DEV_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
 
       - name: Free disk space on runner
         # Gradle builds of this RN app fail with OOM / no-space on stock
