@@ -31,6 +31,8 @@ type ForecastHour = {
 
 type ForecastDay = {
   hour?: ForecastHour[];
+  day?: { maxtemp_c?: number };
+  date?: string;
 };
 
 type WeatherCurrent = {
@@ -38,6 +40,7 @@ type WeatherCurrent = {
   wind_kph?: number;
   uv?: number;
   air_quality?: Record<string, number | undefined>;
+  condition?: { text?: string };
 };
 
 export type WeatherApiData = {
@@ -47,11 +50,11 @@ export type WeatherApiData = {
   forecast?: { forecastday?: ForecastDay[] };
 };
 
-type ActiveLocation = { name?: string };
+type ActiveLocation = { name?: string } | null;
 
 export function generateAlerts(
   data: WeatherApiData | undefined,
-  activeLocation: ActiveLocation | undefined,
+  activeLocation: ActiveLocation,
 ): WeatherAlert[] {
   const locationName = data?.location?.name || activeLocation?.name || 'Unknown';
   const apiAlerts = data?.alerts?.alert;
@@ -196,12 +199,13 @@ export function generateAlerts(
 
   // 🌡 Tomorrow heat
   const tomorrow = forecastDays[1];
-  if (tomorrow?.day?.maxtemp_c >= 35) {
+  const tomorrowMax = tomorrow?.day?.maxtemp_c;
+  if (tomorrow && tomorrowMax !== undefined && tomorrowMax >= 35) {
     alerts.push({
       id: 'heat-tomorrow',
       type: 'Heat Alert (Tomorrow)',
       location: locationName,
-      dates: tomorrow.date,
+      dates: tomorrow.date ?? '',
       severity: 'High',
       details: 'High temperature expected tomorrow.',
     });

@@ -251,22 +251,25 @@ async function execute<T>(
  * callsites to the typed Treaty client. The `any` default on each method
  * matches the axios-shape used by existing callers; tightening to
  * `unknown` here cascades into 40+ unrelated hook files and is work
- * that belongs to the Treaty migration itself, not this PR.
+ * that belongs to the Treaty migration itself.
  */
-// biome-ignore-start lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
 export const apiClient = {
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
   get: <T = any>(path: string, config?: RequestConfig) =>
     execute<T>('GET', path, undefined, config),
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
   post: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('POST', path, body, config),
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
   put: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PUT', path, body, config),
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
   patch: <T = any>(path: string, body?: unknown, config?: RequestConfig) =>
     execute<T>('PATCH', path, body, config),
+  // biome-ignore lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
   delete: <T = any>(path: string, config?: RequestConfig) =>
     execute<T>('DELETE', path, undefined, config),
 };
-// biome-ignore-end lint/suspicious/noExplicitAny: legacy axios-shape — removed with #2171
 
 export type ApiClient = typeof apiClient;
 

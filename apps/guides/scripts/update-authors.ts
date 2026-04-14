@@ -97,7 +97,7 @@ function showAuthorDistribution(): void {
   );
 
   console.log(chalk.blue('\nAuthor Distribution:'));
-  for (const [count], [author] of sortedAuthors.entries()) {
+  for (const [author, count] of sortedAuthors) {
     const percentage = ((count / posts.length) * 100).toFixed(1);
     console.log(`${chalk.green('✓')} ${author}: ${count} posts (${percentage}%)`);
   }
