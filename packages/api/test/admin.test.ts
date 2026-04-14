@@ -8,9 +8,8 @@ import {
 
 describe('Admin Routes', () => {
   describe('Authentication', () => {
-    it('requires basic auth for all admin routes', async () => {
-      const routes = ['/', '/stats', '/users-list', '/packs', '/catalog'];
-
+    it('requires auth for all admin routes', async () => {
+      const routes = ['/stats', '/users-list', '/packs-list', '/catalog-list'];
       for (const route of routes) {
         const res = await api(`/admin${route}`);
         expectUnauthorized(res);
@@ -18,23 +17,10 @@ describe('Admin Routes', () => {
     });
 
     it('rejects invalid basic auth credentials', async () => {
-      const invalidAuth = btoa('wrong:credentials');
-      const res = await api('/admin/', {
-        headers: { Authorization: `Basic ${invalidAuth}` },
+      const res = await api('/admin/stats', {
+        headers: { Authorization: `Basic ${btoa('wrong:credentials')}` },
       });
       expectUnauthorized(res);
-    });
-  });
-
-  describe('GET /admin/', () => {
-    it('returns admin dashboard HTML', async () => {
-      const res = await apiWithBasicAuth('');
-      expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('text/html');
-
-      const html = await res.text();
-      expect(html).toContain('PackRat Admin Panel');
-      expect(html).toContain('Dashboard');
     });
   });
 
@@ -52,51 +38,41 @@ describe('Admin Routes', () => {
   describe('GET /admin/users-list', () => {
     it('returns paginated users list', async () => {
       const res = await apiWithBasicAuth('/users-list');
-
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res);
       expect(Array.isArray(data)).toBe(true);
     });
-  });
 
-  describe('GET /admin/packs', () => {
-    it('returns admin packs management interface', async () => {
-      const res = await apiWithBasicAuth('/packs');
-      expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('text/html');
-
-      const html = await res.text();
-      expect(html).toContain('Pack Management');
-    });
-
-    it('accepts search parameter', async () => {
-      const res = await apiWithBasicAuth('/packs?search=hiking');
-      expect(res.status).toBe(200);
-    });
-
-    it('accepts pagination parameters', async () => {
-      const res = await apiWithBasicAuth('/packs?page=1&limit=10');
+    it('accepts search query parameter', async () => {
+      const res = await apiWithBasicAuth('/users-list?q=test');
       expect(res.status).toBe(200);
     });
   });
 
-  describe('GET /admin/catalog', () => {
-    it('returns admin catalog management interface', async () => {
-      const res = await apiWithBasicAuth('/catalog');
+  describe('GET /admin/packs-list', () => {
+    it('returns paginated packs list', async () => {
+      const res = await apiWithBasicAuth('/packs-list');
       expect(res.status).toBe(200);
-      expect(res.headers.get('content-type')).toContain('text/html');
-
-      const html = await res.text();
-      expect(html).toContain('Catalog Management');
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data)).toBe(true);
     });
 
-    it('accepts search parameter', async () => {
-      const res = await apiWithBasicAuth('/catalog?search=tent');
+    it('accepts search query parameter', async () => {
+      const res = await apiWithBasicAuth('/packs-list?q=hiking');
       expect(res.status).toBe(200);
     });
+  });
 
-    it('accepts pagination parameters', async () => {
-      const res = await apiWithBasicAuth('/catalog?page=1&limit=10');
+  describe('GET /admin/catalog-list', () => {
+    it('returns paginated catalog list', async () => {
+      const res = await apiWithBasicAuth('/catalog-list');
+      expect(res.status).toBe(200);
+      const data = await expectJsonResponse(res);
+      expect(Array.isArray(data)).toBe(true);
+    });
+
+    it('accepts search query parameter', async () => {
+      const res = await apiWithBasicAuth('/catalog-list?q=tent');
       expect(res.status).toBe(200);
     });
   });
