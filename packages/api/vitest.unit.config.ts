@@ -24,13 +24,6 @@ export default defineConfig({
     // Restrict to __tests__ directories to avoid accidentally running integration
     // tests that target the Cloudflare Workers pool runner.
     include: [resolve(__dirname, 'src/**/__tests__/**/*.test.ts')],
-    server: {
-      deps: {
-        // Elysia and @sinclair/typebox ship CJS-only with named exports that
-        // Node's ESM loader can't destructure without inlining + transforming.
-        inline: [/^elysia/, /^@sinclair\/typebox/],
-      },
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'json', 'lcov', 'html'],

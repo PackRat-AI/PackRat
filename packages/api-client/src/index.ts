@@ -115,7 +115,7 @@ export function createApiClient(config: ApiClientConfig) {
   // rather than `client.api.catalog.get()`. The server mounts every route
   // group under the `routes` plugin which itself has `prefix: '/api'`, so the
   // `.api` level of the Treaty surface is pure noise.
-  return treaty<App>(config.baseUrl, { fetcher: authFetcher }).api;
+  return treaty<App>(config.baseUrl, { fetcher: authFetcher as typeof fetch }).api;
 }
 
 export type ApiClient = ReturnType<typeof createApiClient>;

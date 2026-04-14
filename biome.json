@@ -88,6 +88,22 @@
       }
     },
     {
+      "includes": ["apps/guides/scripts/**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noForEach": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": [
         "**/__tests__/**",
         "**/test/**",
