@@ -95,7 +95,8 @@
   },
   "patchedDependencies": {
     "@packrat-ai/nativewindui@1.1.0": "patches/@packrat-ai+nativewindui@1.1.0.patch",
-    "pg-cloudflare@1.3.0": "patches/pg-cloudflare@1.3.0.patch"
+    "pg-cloudflare@1.3.0": "patches/pg-cloudflare@1.3.0.patch",
+    "pg-protocol@1.13.0": "patches/pg-protocol@1.13.0.patch"
   },
   "trustedDependencies": [
     "@sentry/cli"

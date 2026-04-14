@@ -1,0 +1,12 @@
+--- a/package.json
++++ b/package.json
+@@ -6,9 +6,8 @@
+   "types": "dist/index.d.ts",
+   "exports": {
+     ".": {
+-      "import": "./esm/index.js",
+       "require": "./dist/index.js",
+       "default": "./dist/index.js"
+     },
+     "./dist/*": "./dist/*.js",
+     "./dist/*.js": "./dist/*.js"
