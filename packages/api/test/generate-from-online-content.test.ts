@@ -123,10 +123,12 @@ vi.mock('@packrat/api/services/catalogService', () => ({
 }));
 
 describe('Generate From Online Content Routes', () => {
+  let testAdmin: Awaited<ReturnType<typeof seedTestUser>>;
+
   beforeEach(async () => {
     // Re-seed both users before each test (global beforeEach truncates all tables)
     await seedTestUser();
-    await seedTestUser({
+    testAdmin = await seedTestUser({
       email: 'admin@example.com',
       firstName: 'Admin',
       lastName: 'User',
@@ -188,8 +190,9 @@ describe('Generate From Online Content Routes', () => {
     it('returns 409 for existing template with same contentId', async () => {
       const duplicateContentId = 'duplicate-content-test-123';
 
-      // Seed an existing template with a TikTok content ID
+      // Seed an existing template with a TikTok content ID (owned by admin)
       await seedPackTemplate({
+        userId: testAdmin.id,
         name: 'Existing TikTok Template',
         contentSource: 'tiktok',
         contentId: duplicateContentId,
