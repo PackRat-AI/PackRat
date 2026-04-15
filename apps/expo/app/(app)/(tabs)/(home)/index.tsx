@@ -8,7 +8,7 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
 import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
@@ -157,21 +157,6 @@ const tileInfo = {
 };
 
 type TileName = keyof typeof tileInfo;
-
-function SettingsIcon() {
-  const { colors } = useColorScheme();
-  return (
-    <Link href="/settings" asChild>
-      <Pressable className="opacity-80">
-        {({ pressed }) => (
-          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-            <Icon name="cog-outline" color={colors.foreground} />
-          </View>
-        )}
-      </Pressable>
-    </Link>
-  );
-}
 
 function DemoIcon() {
   const { colors } = useColorScheme();
@@ -327,7 +312,6 @@ export default function DashboardScreen() {
         rightView={() => (
           <View className="flex-row items-center gap-2 pr-2">
             <DemoIcon />
-            <SettingsIcon />
           </View>
         )}
       />

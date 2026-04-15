@@ -197,9 +197,9 @@ async function enhanceFile(
           `  🔍 [DRY RUN] Would enhance ${fileName} with ${result.productsUsed.length} products:`,
         ),
       );
-      result.productsUsed.forEach((product) => {
+      for (const product of result.productsUsed) {
         console.log(chalk.cyan(`    - ${product.name} (${product.context})`));
-      });
+      }
       return { enhanced: true, productsAdded: result.productsUsed.length };
     }
 
@@ -219,9 +219,9 @@ async function enhanceFile(
     );
 
     if (options.verbose) {
-      result.productsUsed.forEach((product) => {
+      for (const product of result.productsUsed) {
         console.log(chalk.gray(`    - ${product.name}`));
-      });
+      }
     }
 
     return { enhanced: true, productsAdded: result.productsUsed.length };

@@ -30,6 +30,7 @@ import {
   VerifyEmailRequestSchema,
   VerifyEmailResponseSchema,
 } from '@packrat/api/schemas/auth';
+import { UserService } from '@packrat/api/services/userService';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import {
@@ -231,6 +232,7 @@ const registerRoute = createRoute({
 authRoutes.openapi(registerRoute, async (c) => {
   const { email, password, firstName, lastName } = await c.req.json();
   const db = createDb(c);
+  const userService = new UserService(c);
 
   // Validate input
   if (!email || !password) {
@@ -246,35 +248,11 @@ authRoutes.openapi(registerRoute, async (c) => {
     return c.json({ error: passwordValidation.message || 'Invalid password' }, 400);
   }
 
-  // Check if user already exists
-  const existingUser = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()))
-    .limit(1);
-
-  if (existingUser.length > 0) {
+  if (await userService.findByEmail(email)) {
     return c.json({ error: 'Email already in use' }, 409);
   }
 
-  // Hash password
-  const passwordHash = await hashPassword(password);
-
-  // Create user
-  const [newUser] = await db
-    .insert(users)
-    .values({
-      email: email.toLowerCase(),
-      passwordHash,
-      firstName,
-      lastName,
-      emailVerified: false,
-    })
-    .returning();
-
-  if (!newUser) {
-    return c.json({ error: 'Failed to create user' }, 500);
-  }
+  const newUser = await userService.create({ email, password, firstName, lastName });
 
   const code = generateVerificationCode(5);
 

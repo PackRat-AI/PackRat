@@ -6,7 +6,7 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 import { obs } from 'expo-app/lib/store';
 import Storage from 'expo-sqlite/kv-store';
-import { nanoid } from 'nanoid/non-secure';
+import { nanoid } from 'nanoid';
 import type { PackWeightHistoryEntry } from '../types';
 import { computePackWeights } from '../utils';
 import { packItemsStore } from './packItems';
@@ -42,7 +42,9 @@ syncObservable(
     fieldCreatedAt: 'createdAt',
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage as any),
+      plugin: observablePersistSqlite(
+        Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
+      ),
       retrySync: true,
       name: 'packWeigthHistory',
     },

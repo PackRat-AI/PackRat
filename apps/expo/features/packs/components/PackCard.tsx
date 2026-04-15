@@ -1,7 +1,7 @@
 import { useActionSheet } from '@expo/react-native-action-sheet';
 import { isArray } from '@packrat/guards';
 import { Button, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router } from 'expo-router';
@@ -138,9 +138,9 @@ export function PackCard({
             </View>
           ) : null}
 
-          <View className="ml-auto flex-row items-center gap-2">
-            {/* Duplicate button for non-owned packs when showDuplicateButton is true */}
-            {!isOwnedByUser && showDuplicateButton && (
+          {!isOwnedByUser && showDuplicateButton && (
+            <View className="ml-auto flex-row items-center gap-2">
+              {/* Duplicate button for non-owned packs when showDuplicateButton is true */}
               <Button
                 variant="plain"
                 size="icon"
@@ -162,28 +162,8 @@ export function PackCard({
                   <Icon name="file-copy" size={21} color={colors.grey2} />
                 )}
               </Button>
-            )}
-
-            {/* Delete button for owned packs */}
-            {!isGenUI && isOwnedByUser && (
-              <Button
-                variant="plain"
-                size="icon"
-                onPress={() =>
-                  Alert.alert(
-                    'Delete pack?',
-                    'Are you sure you want to delete this pack? This action cannot be undone.',
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'OK', style: 'destructive', onPress: () => deletePack(pack.id) },
-                    ],
-                  )
-                }
-              >
-                <Icon name="trash-can" size={21} color={colors.grey2} />
-              </Button>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>

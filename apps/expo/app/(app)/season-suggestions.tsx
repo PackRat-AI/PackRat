@@ -1,6 +1,6 @@
 import { assertDefined } from '@packrat/guards';
 import { Button, LargeTitleHeader, Text, useColorScheme } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { useCreatePackWithItems } from 'expo-app/features/packs/hooks/useCreatePackWithItems';
 import {
   type PackSuggestion,
