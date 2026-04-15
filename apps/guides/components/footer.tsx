@@ -30,30 +30,30 @@ export default function Footer() {
             <Link
               href={siteConfig.links.twitter}
               className="text-gray-500 hover:text-apple-blue transition-colors"
+              aria-label="Visit PackRat on Twitter"
             >
-              <Globe className="h-5 w-5" />
-              <span className="sr-only">Twitter</span>
+              <Globe className="h-5 w-5" aria-hidden="true" />
             </Link>
             <Link
               href={siteConfig.links.instagram}
               className="text-gray-500 hover:text-apple-blue transition-colors"
+              aria-label="Visit PackRat on Instagram"
             >
-              <Globe className="h-5 w-5" />
-              <span className="sr-only">Instagram</span>
+              <Globe className="h-5 w-5" aria-hidden="true" />
             </Link>
             <Link
               href={siteConfig.links.facebook}
               className="text-gray-500 hover:text-apple-blue transition-colors"
+              aria-label="Visit PackRat on Facebook"
             >
-              <Globe className="h-5 w-5" />
-              <span className="sr-only">Facebook</span>
+              <Globe className="h-5 w-5" aria-hidden="true" />
             </Link>
             <Link
               href={siteConfig.links.github}
               className="text-gray-500 hover:text-apple-blue transition-colors"
+              aria-label="Visit PackRat on GitHub"
             >
-              <Globe className="h-5 w-5" />
-              <span className="sr-only">GitHub</span>
+              <Globe className="h-5 w-5" aria-hidden="true" />
             </Link>
           </div>
         </div>
