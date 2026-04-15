@@ -288,12 +288,16 @@ jobs:
 
       - name: Configure swap for Gradle
         # R8/ProGuard during :app:packageRelease regularly OOMs on 16GB
-        # runners without swap. Add a generous swap file.
+        # runners without swap. Add a generous swap file. ubuntu-latest
+        # ships with /swapfile already active, so use a distinct path
+        # and dd (fallocate errors "Text file busy" on the live one).
         run: |
-          sudo fallocate -l 10G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile-ci
+          sudo dd if=/dev/zero of=/mnt/swapfile-ci bs=1M count=10240 status=none
+          sudo chmod 600 /mnt/swapfile-ci
+          sudo mkswap /mnt/swapfile-ci
+          sudo swapon /mnt/swapfile-ci
           free -h
 
       - name: Checkout repository

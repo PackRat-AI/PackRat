@@ -63,13 +63,13 @@ async function seedE2EUser() {
       .where(eq(schema.users.email, normalizedEmail))
       .limit(1);
 
-    if (existing.length > 0) {
-      const userId = existing[0]!.id;
+    const existingUser = existing[0];
+    if (existingUser) {
       await db
         .update(schema.users)
         .set({ passwordHash, emailVerified: true, updatedAt: new Date() })
-        .where(eq(schema.users.id, userId));
-      console.log(`E2E user refreshed: ${normalizedEmail} (id=${userId})`);
+        .where(eq(schema.users.id, existingUser.id));
+      console.log(`E2E user refreshed: ${normalizedEmail} (id=${existingUser.id})`);
     } else {
       const [inserted] = await db
         .insert(schema.users)
@@ -81,7 +81,7 @@ async function seedE2EUser() {
           lastName: 'Automation',
           role: 'USER',
         })
-        .returning({ id: schema.users.id });
+        .returning();
       console.log(`E2E user created: ${normalizedEmail} (id=${inserted?.id})`);
     }
   } finally {
