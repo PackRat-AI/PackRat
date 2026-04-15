@@ -16,14 +16,36 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Fill in Pack Name
-- tapOn:
-    text: "Pack Name"
-- inputText: ${PACK_NAME}
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "move, Pack Name"
+      - inputText: ${PACK_NAME}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Pack Name"
+      - inputText: ${PACK_NAME}
 
 # Fill in Description
-- tapOn:
-    text: "Description"
-- inputText: "Created by Maestro E2E test"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "newspaper, Description"
+      - inputText: "Created by Maestro E2E test"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Description"
+      - inputText: "Created by Maestro E2E test"
 
 # Dismiss the keyboard before submitting
 - hideKeyboard

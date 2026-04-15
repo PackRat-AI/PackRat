@@ -37,18 +37,50 @@ appId: ${APP_ID}
 - waitForAnimationToEnd
 
 # Assert add item form loaded
-- assertVisible:
-    text: "Item Name"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible:
+          text: "backpack.fill, Item Name"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          text: "Item Name"
 
 # Fill in Item Name
-- tapOn:
-    text: "Item Name"
-- inputText: "Test Headlamp"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "backpack.fill, Item Name"
+      - inputText: "Test Headlamp"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Item Name"
+      - inputText: "Test Headlamp"
 
 # Fill in Description
-- tapOn:
-    text: "Description"
-- inputText: "Lightweight headlamp for hiking"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "info, Description"
+      - inputText: "Lightweight headlamp for hiking"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Description"
+      - inputText: "Lightweight headlamp for hiking"
 
 # Dismiss keyboard
 - hideKeyboard
