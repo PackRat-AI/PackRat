@@ -14,6 +14,7 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
     pool: cloudflarePool({
       wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
+      remoteBindings: false,
     }),
     // Only include integration tests from /test directory
     include: [resolve(__dirname, 'test/**/*.test.ts')],
