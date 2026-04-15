@@ -128,7 +128,7 @@ chatRoutes.openapi(chatRoute, async (c) => {
     const result = streamText({
       model: aiProvider(DEFAULT_MODELS.OPENAI_CHAT),
       system: systemPrompt,
-      messages: await convertToModelMessages(messages || []),
+      messages: convertToModelMessages(messages || []),
       tools,
       maxOutputTokens: 1000,
       temperature: 0.7,
