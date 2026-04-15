@@ -16,7 +16,6 @@ export const createTestPackTemplate = (
     name: overrides.name ?? 'Test Backpacking Template',
     description: overrides.description ?? 'A test template for backpacking trips',
     category: overrides.category ?? 'backpacking',
-    userId: overrides.userId,
     image: overrides.image ?? null,
     tags: overrides.tags ?? ['hiking', 'backpacking'],
     isAppTemplate: overrides.isAppTemplate ?? true,
@@ -53,7 +52,6 @@ export const createTestPackTemplateItem = (
     notes: overrides.notes ?? null,
     packTemplateId,
     catalogItemId: overrides.catalogItemId ?? null,
-    userId: overrides.userId,
     deleted: overrides.deleted ?? false,
     ...overrides,
   };

@@ -15,7 +15,6 @@ export const createTestPack = (overrides: PackOverrides): InferInsertModel<typeo
     name: overrides.name ?? 'Test Backpacking Pack',
     description: overrides.description ?? 'A test pack for backpacking trips',
     category: overrides.category ?? 'backpacking',
-    userId: overrides.userId,
     templateId: overrides.templateId ?? null,
     isPublic: overrides.isPublic ?? false,
     image: overrides.image ?? null,
@@ -46,7 +45,6 @@ export const createTestPackItem = (
     notes: overrides.notes ?? null,
     packId,
     catalogItemId: overrides.catalogItemId ?? null,
-    userId: overrides.userId,
     deleted: overrides.deleted ?? false,
     ...overrides,
   };
