@@ -1,7 +1,8 @@
 import { resolve } from 'node:path';
-import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
+import { cloudflarePool } from '@cloudflare/vitest-pool-workers';
+import { defineConfig } from 'vitest/config';
 
-export default defineWorkersConfig({
+export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -27,7 +28,6 @@ export default defineWorkersConfig({
     include: [resolve(__dirname, 'test/**/*.test.ts')],
     // Run tests sequentially to avoid database deadlocks
     fileParallelism: false,
-    // Also disable parallel execution within test files
     sequence: {
       concurrent: false,
     },
