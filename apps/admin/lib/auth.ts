@@ -12,7 +12,7 @@ export function storeToken(token: string): void {
 }
 
 /** Remove the token (logout). */
-export function clearCredentials(): void {
+export function clearToken(): void {
   if (typeof window !== 'undefined') sessionStorage.removeItem(TOKEN_KEY);
 }
 
