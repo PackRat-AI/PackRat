@@ -1,7 +1,7 @@
 import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import type { LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { LargeTitleHeader, SegmentedControl } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
 import type { PackCategory } from 'expo-app/features/packs/types';
@@ -13,14 +13,13 @@ import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
-  Platform,
   Pressable,
+  SafeAreaView,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FeaturedPacksSection } from '../components/FeaturedPacksSection';
 import { PackTemplateCard } from '../components/PackTemplateCard';
 import TemplateCreationOptions from '../components/TemplateCreationOptions';
@@ -56,7 +55,6 @@ export function PackTemplateListScreen() {
   const templateOptionsRef = useRef<BottomSheetModal>(null);
 
   const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
-  const insets = useSafeAreaInsets();
 
   // Filter options with translations
   const filterOptions: FilterOption[] = [
@@ -120,10 +118,7 @@ export function PackTemplateListScreen() {
   );
 
   return (
-    <SafeAreaView
-      className="flex-1 "
-      style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
-    >
+    <SafeAreaView className="flex-1">
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}
         searchBar={{
@@ -140,10 +135,7 @@ export function PackTemplateListScreen() {
         )}
       />
 
-      <View
-        className="bg-background gap-2 px-4 pb-2"
-        style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}
-      >
+      <View className="bg-background gap-2 px-4 pb-2">
         <SegmentedControl
           enabled={isAuthenticated}
           values={[t('packTemplates.all'), t('packTemplates.app'), t('packTemplates.yours')]}
@@ -192,7 +184,9 @@ export function PackTemplateListScreen() {
             <Text className="mb-6 text-center text-muted-foreground">
               {activeFilter === 'all'
                 ? t('packTemplates.noTemplatesCreated')
-                : t('packTemplates.noTemplatesInCategory', { category: activeFilter })}
+                : t('packTemplates.noTemplatesInCategory', {
+                    category: activeFilter,
+                  })}
             </Text>
             <TouchableOpacity
               className="rounded-lg bg-primary px-4 py-2"

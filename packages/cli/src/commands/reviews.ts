@@ -1,3 +1,4 @@
+import { Enrichment } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { ensureCache, printSummary, printTable } from '../shared';
@@ -13,7 +14,6 @@ export default defineCommand({
     const cache = await ensureCache();
     const conn = cache.getConnection();
 
-    const { Enrichment } = await import('../../core/enrichment');
     const enrichment = new Enrichment(conn);
 
     if (args.build) {

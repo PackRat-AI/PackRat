@@ -302,7 +302,7 @@ export default function GeneratePage() {
                   <Label htmlFor="difficulty">Difficulty</Label>
                   <Select
                     value={difficulty}
-                    onValueChange={(value) => setDifficulty(value as DifficultyLevel)}
+                    onValueChange={(value: string) => setDifficulty(value as DifficultyLevel)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select difficulty" />
@@ -406,7 +406,7 @@ export default function GeneratePage() {
                   max={20}
                   step={1}
                   value={[batchCount]}
-                  onValueChange={(value) => {
+                  onValueChange={(value: number[]) => {
                     const count = value[0];
                     assertDefined(count);
                     setBatchCount(count);
