@@ -16,6 +16,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
+import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
@@ -46,6 +47,23 @@ function SettingsIcon() {
         {({ pressed }) => (
           <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
             <Icon name="cog-outline" color={colors.foreground} />
+          </View>
+        )}
+      </Pressable>
+    </Link>
+  );
+}
+
+function DemoIcon() {
+  const { colors } = useColorScheme();
+  if (clientEnvs.NODE_ENV !== 'development') return null;
+
+  return (
+    <Link href="/demo" asChild>
+      <Pressable className="opacity-80">
+        {({ pressed }) => (
+          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
+            <Icon name="tag-outline" color={colors.foreground} />
           </View>
         )}
       </Pressable>
@@ -95,6 +113,8 @@ function Profile() {
         backVisible={false}
         rightView={() => (
           <View className="flex-row items-center gap-2 pr-2">
+            <DemoIcon />
+
             <SettingsIcon />
           </View>
         )}
