@@ -10,7 +10,6 @@ import {
   expectNotFound,
   expectUnauthorized,
   httpMethods,
-  TEST_USER,
 } from './utils/test-helpers';
 
 // Mock PackService.generatePacks to avoid AI dependencies in tests
@@ -55,32 +54,31 @@ vi.mock('../src/services/packService', async () => {
 });
 
 describe('Packs Routes', () => {
+  let testUser: Awaited<ReturnType<typeof seedTestUser>>;
   let testPackId: string;
   let testPackItemId: string;
   let testCatalogItemId: number;
 
   // Re-seed test data before each test (global beforeEach truncates all tables)
   beforeEach(async () => {
-    await seedTestUser();
+    testUser = await seedTestUser();
+    await seedTestUser({ role: 'ADMIN', email: 'admin@example.com' });
 
-    // Create a test catalog item for pack items
     const catalogItem = await seedCatalogItem({
       name: 'Test Tent',
       categories: ['shelter'],
     });
     testCatalogItemId = catalogItem.id;
 
-    // Create a test pack owned by the test user
     const pack = await seedPack({
-      userId: TEST_USER.id,
+      userId: testUser.id,
       name: 'Test Pack',
       category: 'hiking',
     });
     testPackId = pack.id;
 
-    // Add some items to the pack
     const packItem = await seedPackItem(pack.id, {
-      userId: TEST_USER.id,
+      userId: testUser.id,
       catalogItemId: catalogItem.id,
       name: 'Test Tent Item',
       category: 'shelter',
@@ -242,7 +240,7 @@ describe('Packs Routes', () => {
     it('deletes pack', async () => {
       // Create a new pack just for this test
       const packToDelete = await seedPack({
-        userId: TEST_USER.id,
+        userId: testUser.id,
         name: 'Pack to Delete',
         category: 'hiking',
       });
@@ -336,7 +334,7 @@ describe('Packs Routes', () => {
       it('removes item from pack', async () => {
         // Create a new item to delete
         const itemToDelete = await seedPackItem(testPackId, {
-          userId: TEST_USER.id,
+          userId: testUser.id,
           name: 'Item to Delete',
           category: 'gear',
         });

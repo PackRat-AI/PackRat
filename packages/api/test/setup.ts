@@ -2,6 +2,7 @@ import { neonConfig, Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
+import { clearCurrentTestUsers } from './utils/test-helpers';
 
 // Route @neondatabase/serverless through the local wsproxy (docker-compose.test.yml),
 // so tests use the same driver as production against Docker Postgres.
@@ -430,6 +431,8 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   if (!testPool) return;
+
+  clearCurrentTestUsers();
 
   const tablesToClean = [
     'one_time_passwords',
