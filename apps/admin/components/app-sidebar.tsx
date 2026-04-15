@@ -15,7 +15,7 @@ import {
 } from '@packrat/web-ui/components/sidebar';
 import { cn } from '@packrat/web-ui/lib/utils';
 import { navItems } from 'admin-app/config/nav';
-import { clearCredentials } from 'admin-app/lib/auth';
+import { clearToken } from 'admin-app/lib/auth';
 import { LogOut, Package } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -27,7 +27,7 @@ export function AppSidebar() {
   const isCollapsed = state === 'collapsed';
 
   function handleLogout() {
-    clearCredentials();
+    clearToken();
     router.replace('/login');
   }
 

@@ -1,8 +1,8 @@
 // Browser-callable API client for the admin app.
-// In production, CF Access protects the domain; credentials are still sent for the
-// API's basicAuth fallback path. In local dev, enter credentials once at /login.
+// In production, CF Access protects the domain; a short-lived JWT is sent
+// as a Bearer token. In local dev, authenticate once at /login to obtain a token.
 
-import { clearCredentials, getAuthHeader } from './auth';
+import { clearToken, getAuthHeader } from './auth';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
 
@@ -17,7 +17,7 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (res.status === 401) {
-    clearCredentials();
+    clearToken();
     if (typeof window !== 'undefined') window.location.replace('/login');
     throw new Error('Unauthorized');
   }
