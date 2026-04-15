@@ -94,16 +94,25 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-// recharts v3's Tooltip prop type hides `payload`/`label` behind a content-render
-// callback. We use this component as the tooltip's content renderer, so accept
-// the runtime shape directly via `any` on the two fields.
+type ChartTooltipPayload = Record<string, unknown> & {
+  fill?: string;
+};
+
+type ChartTooltipPayloadItem = Record<string, unknown> & {
+  color?: string;
+  dataKey?: string | number;
+  name?: string | number;
+  payload?: ChartTooltipPayload;
+  value?: number | string;
+};
+
+// recharts v3's Tooltip prop type hides `payload`/`label` behind a content-render callback.
+// We model only the runtime fields this component reads.
 type ChartTooltipContentProps = React.ComponentProps<'div'> & {
   active?: boolean;
-  // biome-ignore lint/suspicious/noExplicitAny: recharts v3 content payload
-  payload?: any[];
-  // biome-ignore lint/suspicious/noExplicitAny: recharts v3 content label
-  label?: any;
-  labelFormatter?: (label: unknown, payload: unknown[]) => React.ReactNode;
+  payload?: ChartTooltipPayloadItem[];
+  label?: unknown;
+  labelFormatter?: (label: unknown, payload: ChartTooltipPayloadItem[]) => React.ReactNode;
   labelClassName?: string;
   formatter?: (
     value: unknown,
@@ -257,11 +266,17 @@ ChartTooltipContent.displayName = 'ChartTooltip';
 
 const ChartLegend = RechartsPrimitive.Legend;
 
+type ChartLegendPayloadItem = Record<string, unknown> & {
+  color?: string;
+  dataKey?: string | number;
+  value?: string | number;
+  payload?: unknown;
+};
+
 // recharts v3 LegendProps no longer exposes `payload`/`verticalAlign` via a
 // simple Pick; Legend takes a `content` render-prop receiving the runtime shape.
 type ChartLegendContentProps = React.ComponentProps<'div'> & {
-  // biome-ignore lint/suspicious/noExplicitAny: recharts v3 legend payload items
-  payload?: any[];
+  payload?: ChartLegendPayloadItem[];
   verticalAlign?: 'top' | 'bottom' | 'middle';
   hideIcon?: boolean;
   nameKey?: string;
