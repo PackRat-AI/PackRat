@@ -10,6 +10,7 @@
     "api": "bun run --cwd packages/api dev",
     "mcp": "bun run --cwd packages/mcp dev",
     "mcp:deploy": "bun run --cwd packages/mcp deploy",
+    "test:mcp": "bun run --cwd packages/mcp test",
     "bump": "bun .github/scripts/bump.ts",
     "check": "biome check --no-errors-on-unmatched",
     "check:catalog": "bun scripts/lint/no-duplicate-deps.ts",

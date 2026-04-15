@@ -7,7 +7,9 @@
     "dev": "wrangler dev -e dev",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e dev",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.0",
@@ -16,8 +18,10 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250405.0",
+    "@vitest/coverage-v8": "^4.1.4",
     "partyserver": "^0.4.1",
     "typescript": "^5.8.2",
+    "vitest": "^4.1.4",
     "wrangler": "^4.21.2"
   }
 }
