@@ -273,14 +273,13 @@ jobs:
       - name: Free disk space on runner
         # Gradle builds of this RN app fail with OOM / no-space on stock
         # ubuntu-latest. Prune large preinstalled toolchains we don't use.
+        # Keep the Android SDK/NDK — the Gradle build links against them.
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android/sdk/ndk \
-            /opt/ghc /opt/hostedtoolcache/CodeQL \
-            "$AGENT_TOOLSDIRECTORY/Ruby" "$AGENT_TOOLSDIRECTORY/Python" \
-            "$AGENT_TOOLSDIRECTORY/PyPy" "$AGENT_TOOLSDIRECTORY/go" || true
+          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL \
+            "$AGENT_TOOLSDIRECTORY/Ruby" "$AGENT_TOOLSDIRECTORY/PyPy" || true
           sudo apt-get -y autoremove --purge '^llvm-.*' '^mongodb-.*' \
             '^mysql-.*' 'azure-cli' 'google-cloud-cli' 'google-chrome-stable' \
-            'firefox' 'powershell' 'temurin-*-jdk' 2>/dev/null || true
+            'firefox' 'powershell' 2>/dev/null || true
           sudo apt-get -y autoremove || true
           sudo apt-get -y clean || true
           docker image prune -af || true
