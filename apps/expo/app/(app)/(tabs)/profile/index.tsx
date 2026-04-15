@@ -112,7 +112,7 @@ function Profile() {
         title={t('profile.profile')}
         backVisible={false}
         rightView={() => (
-          <View className="flex-row items-center gap-2 pr-2">
+          <View className="flex-row items-center gap-2 pr-2 pl-2">
             <DemoIcon />
 
             <SettingsIcon />
