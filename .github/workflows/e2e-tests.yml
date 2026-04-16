@@ -211,6 +211,9 @@ jobs:
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
           APP_ID: com.andrewbierman.packrat
+          # xcuitest driver boot on cold GH runners can exceed the 180s
+          # default. Give it 10 minutes before declaring a timeout.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "600000"
 
       - name: Upload test results
         if: always()
