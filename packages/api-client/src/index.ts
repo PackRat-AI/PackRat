@@ -128,10 +128,7 @@ export class PackRatApiClient {
  * @param baseUrl      - API base URL (e.g. "https://packrat.world")
  * @param getAuthToken - Callback that returns the current JWT (may be empty)
  */
-export function createPackRatClient(
-  baseUrl: string,
-  getAuthToken: () => string,
-): PackRatApiClient {
+export function createPackRatClient(baseUrl: string, getAuthToken: () => string): PackRatApiClient {
   return new PackRatApiClient(baseUrl, getAuthToken);
 }
 
@@ -143,9 +140,7 @@ export function ok(data: unknown): { content: [{ type: 'text'; text: string }] }
 }
 
 /** Format an error MCP tool result */
-export function err(
-  error: unknown,
-): { content: [{ type: 'text'; text: string }]; isError: true } {
+export function err(error: unknown): { content: [{ type: 'text'; text: string }]; isError: true } {
   const message =
     error instanceof ApiError
       ? `API Error (${error.status}): ${error.message}`

@@ -44,7 +44,9 @@ describe('knowledge tools', () => {
     });
 
     it('returns error result on API failure', async () => {
-      vi.mocked(api.get).mockRejectedValue(new ApiError('Service Unavailable', { status: 503, body: {} }));
+      vi.mocked(api.get).mockRejectedValue(
+        new ApiError('Service Unavailable', { status: 503, body: {} }),
+      );
 
       const result = await callTool({
         tools,
@@ -121,7 +123,9 @@ describe('knowledge tools', () => {
     });
 
     it('returns error for failed queries', async () => {
-      vi.mocked(api.post).mockRejectedValue(new ApiError('Syntax error in SQL', { status: 400, body: {} }));
+      vi.mocked(api.post).mockRejectedValue(
+        new ApiError('Syntax error in SQL', { status: 400, body: {} }),
+      );
 
       const result = await callTool({
         tools,

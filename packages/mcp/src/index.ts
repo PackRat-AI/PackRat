@@ -19,8 +19,8 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
-import { createPackRatClient } from './client';
 import type { PackRatApiClient } from './client';
+import { createPackRatClient } from './client';
 import { ServiceMeta, WorkerRoute } from './constants';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';

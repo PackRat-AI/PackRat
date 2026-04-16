@@ -26,14 +26,12 @@ export function registerWeatherTools(agent: AgentContext): void {
     async ({ location }) => {
       try {
         // Step 1: search for the location to get its ID
-        const searchResults = await agent.api.get<Record<string, unknown>>(
-          '/weather/search',
-          { q: location },
-        );
+        const searchResults = await agent.api.get<Record<string, unknown>>('/weather/search', {
+          q: location,
+        });
 
         const locationId =
-          searchResults.id ??
-          (searchResults.results as Array<{ id: string }>)?.[0]?.id;
+          searchResults.id ?? (searchResults.results as Array<{ id: string }>)?.[0]?.id;
 
         if (!locationId) {
           return err(new Error(`No weather location found for: ${location}`));

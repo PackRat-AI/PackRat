@@ -54,7 +54,9 @@ describe('trail condition tools', () => {
     });
 
     it('returns error result on API failure', async () => {
-      vi.mocked(api.get).mockRejectedValue(new ApiError('Internal Server Error', { status: 500, body: {} }));
+      vi.mocked(api.get).mockRejectedValue(
+        new ApiError('Internal Server Error', { status: 500, body: {} }),
+      );
 
       const result = await callTool({ tools, name: 'get_trail_conditions', args: { limit: 10 } });
 
@@ -129,7 +131,9 @@ describe('trail condition tools', () => {
     });
 
     it('returns error when user is not authenticated (401)', async () => {
-      vi.mocked(api.post).mockRejectedValue(new ApiError('Unauthorized', { status: 401, body: {} }));
+      vi.mocked(api.post).mockRejectedValue(
+        new ApiError('Unauthorized', { status: 401, body: {} }),
+      );
 
       const result = await callTool({
         tools,
