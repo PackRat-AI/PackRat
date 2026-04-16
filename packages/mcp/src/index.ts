@@ -19,7 +19,8 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
-import { PackRatApiClient } from './client';
+import { createPackRatClient } from './client';
+import type { PackRatApiClient } from './client';
 import { ServiceMeta, WorkerRoute } from './constants';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
@@ -57,14 +58,14 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   initialState: State = { authToken: '' };
 
   /**
-   * Public API client, accessible from tool registration functions.
-   * Lazily initialized on first use — reads auth token from current state.
+   * Typed API client, lazily initialised on first use.
+   * Reads the current auth token from Durable Object state on every request.
    */
   private _api: PackRatApiClient | null = null;
 
   get api(): PackRatApiClient {
     if (!this._api) {
-      this._api = new PackRatApiClient(this.env.PACKRAT_API_URL, () => this.state.authToken);
+      this._api = createPackRatClient(this.env.PACKRAT_API_URL, () => this.state.authToken);
     }
     return this._api;
   }

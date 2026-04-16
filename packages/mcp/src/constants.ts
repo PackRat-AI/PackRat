@@ -1,20 +1,3 @@
-/** PackRat API endpoint base paths */
-export const ApiRoute = {
-  Packs: '/packs',
-  Trips: '/trips',
-  Catalog: '/catalog',
-  CatalogCategories: '/catalog/categories',
-  CatalogVectorSearch: '/catalog/vector-search',
-  TrailConditions: '/trail-conditions',
-  WeatherSearch: '/weather/search',
-  WeatherForecast: '/weather/forecast',
-  SeasonSuggestions: '/season-suggestions',
-  AiRagSearch: '/ai/rag-search',
-  AiWebSearch: '/ai/web-search',
-  AiExecuteSql: '/ai/execute-sql',
-  AiDbSchema: '/ai/db-schema',
-} as const;
-
 /** Worker HTTP endpoint paths */
 export const WorkerRoute = {
   Root: '/',

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
-import { ApiRoute } from '../constants';
 import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
 
@@ -13,20 +12,15 @@ export function registerPackTools(agent: AgentContext): void {
       description:
         'List all packs belonging to the authenticated user. Returns pack summaries including name, category, item count, and total weight.',
       inputSchema: {
-        limit: z
-          .number()
-          .int()
-          .min(1)
-          .max(100)
-          .default(20)
-          .describe('Maximum number of packs to return (default 20)'),
-        offset: z.number().int().min(0).default(0).describe('Pagination offset (default 0)'),
-        category: z.nativeEnum(PackCategory).optional().describe('Filter by pack category'),
+        include_public: z
+          .boolean()
+          .default(false)
+          .describe('Include public packs from other users'),
       },
     },
-    async ({ limit, offset, category }) => {
+    async ({ include_public }) => {
       try {
-        const data = await agent.api.get(ApiRoute.Packs, { limit, offset, category });
+        const data = await agent.api.get('/packs', { includePublic: include_public ? 1 : 0 });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -47,7 +41,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id }) => {
       try {
-        const data = await agent.api.get(`${ApiRoute.Packs}/${pack_id}`);
+        const data = await agent.api.get(`/packs/${pack_id}`);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -77,7 +71,7 @@ export function registerPackTools(agent: AgentContext): void {
       try {
         const id = `p_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
         const now = new Date().toISOString();
-        const data = await agent.api.post(ApiRoute.Packs, {
+        const data = await agent.api.post('/packs', {
           id,
           name,
           description,
@@ -117,7 +111,7 @@ export function registerPackTools(agent: AgentContext): void {
         if (category !== undefined) body.category = category;
         if (is_public !== undefined) body.isPublic = is_public;
         if (tags !== undefined) body.tags = tags;
-        const data = await agent.api.patch(`${ApiRoute.Packs}/${pack_id}`, body);
+        const data = await agent.api.put(`/packs/${pack_id}`, body);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -137,7 +131,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id }) => {
       try {
-        const data = await agent.api.delete(`${ApiRoute.Packs}/${pack_id}`);
+        const data = await agent.api.delete(`/packs/${pack_id}`);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -185,7 +179,7 @@ export function registerPackTools(agent: AgentContext): void {
       try {
         const id = `i_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
         const now = new Date().toISOString();
-        const data = await agent.api.post(`${ApiRoute.Packs}/${pack_id}/items`, {
+        const data = await agent.api.post(`/packs/${pack_id}/items`, {
           id,
           name,
           category,
@@ -212,13 +206,12 @@ export function registerPackTools(agent: AgentContext): void {
     {
       description: 'Remove an item from a pack (soft-delete).',
       inputSchema: {
-        pack_id: z.string().describe('The pack ID'),
         item_id: z.string().describe('The item ID to remove'),
       },
     },
-    async ({ pack_id, item_id }) => {
+    async ({ item_id }) => {
       try {
-        const data = await agent.api.delete(`${ApiRoute.Packs}/${pack_id}/items/${item_id}`);
+        const data = await agent.api.delete(`/packs/items/${item_id}`);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -239,7 +232,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id }) => {
       try {
-        const pack = (await agent.api.get(`${ApiRoute.Packs}/${pack_id}`)) as {
+        const pack = (await agent.api.get(`/packs/${pack_id}`)) as {
           items?: Array<{
             name: string;
             category: string;
@@ -312,7 +305,7 @@ export function registerPackTools(agent: AgentContext): void {
     },
     async ({ pack_id, activity, duration_days }) => {
       try {
-        const data = await agent.api.post(`${ApiRoute.Packs}/${pack_id}/gap-analysis`, {
+        const data = await agent.api.post(`/packs/${pack_id}/gap-analysis`, {
           activity,
           durationDays: duration_days,
         });

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
-import { ApiRoute } from '../constants';
 import { CrossingDifficulty, TrailCondition, TrailSurface } from '../enums';
 import type { AgentContext } from '../types';
 
@@ -28,10 +27,7 @@ export function registerTrailConditionTools(agent: AgentContext): void {
     },
     async ({ trail_name, limit }) => {
       try {
-        const data = await agent.api.get(ApiRoute.TrailConditions, {
-          trailName: trail_name,
-          limit,
-        });
+        const data = await agent.api.get('/trail-conditions', { trailName: trail_name, limit });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -90,7 +86,7 @@ export function registerTrailConditionTools(agent: AgentContext): void {
       try {
         const id = `tcr_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
         const now = new Date().toISOString();
-        const data = await agent.api.post(ApiRoute.TrailConditions, {
+        const data = await agent.api.post('/trail-conditions', {
           id,
           trailName: trail_name,
           trailRegion: trail_region ?? null,
