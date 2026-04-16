@@ -18,10 +18,12 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-// Mock PackService.generatePacks to avoid AI dependencies in tests
-vi.mock('../src/services/packService', async () => {
-  const actual = await vi.importActual<typeof import('../src/services/packService')>(
-    '../src/services/packService',
+// Mock PackService.generatePacks to avoid AI dependencies in tests.
+// Must use the alias path the route uses ('@packrat/api/services/packService') —
+// vitest treats relative and alias paths as separate modules for mock purposes.
+vi.mock('@packrat/api/services/packService', async () => {
+  const actual = await vi.importActual<typeof import('@packrat/api/services/packService')>(
+    '@packrat/api/services/packService',
   );
   return {
     ...actual,
