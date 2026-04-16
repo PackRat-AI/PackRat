@@ -59,7 +59,7 @@ function Icon({
       <SymbolView
         size={size}
         scale="small"
-        name={iconNames.sfSymbol as ComponentProps<typeof SymbolView>['name']}
+        name={iconNames.sfSymbol}
         tintColor={color}
         {...sfSymbolProps}
       />
