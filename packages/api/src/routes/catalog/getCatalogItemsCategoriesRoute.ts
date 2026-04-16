@@ -1,13 +1,15 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, z } from '@hono/zod-openapi';
 import { CatalogCategoriesResponseSchema } from '@packrat/api/schemas/catalog';
 import { CatalogService } from '@packrat/api/services';
-import type { Env } from '@packrat/api/types/env';
-import type { Variables } from '@packrat/api/types/variables';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 
-export const getCatalogItemsCategoriesRoute = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
+const categoryLimitQueryParam = z
+  .string()
+  .regex(/^\d+$/)
+  .optional()
+  .default('10')
+  .transform((value) => Number(value))
+  .pipe(z.number().int().positive());
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -18,8 +20,8 @@ export const routeDefinition = createRoute({
   security: [{ bearerAuth: [] }],
   request: {
     query: z.object({
-      limit: z.coerce.number().int().positive().optional().default(10).openapi({
-        example: 10,
+      limit: categoryLimitQueryParam.openapi({
+        example: '10',
         description: 'Maximum number of categories to return',
       }),
     }),
@@ -36,9 +38,9 @@ export const routeDefinition = createRoute({
   },
 });
 
-getCatalogItemsCategoriesRoute.openapi(routeDefinition, async (c) => {
+export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const { limit } = c.req.valid('query');
   const categories = await new CatalogService(c).getCategories(limit);
 
   return c.json(categories, 200);
-});
+};
