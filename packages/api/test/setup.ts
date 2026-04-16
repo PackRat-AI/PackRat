@@ -259,7 +259,7 @@ vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
               images: [],
             },
           ]),
-        } as BatchVectorSearchResult;
+        } as unknown as BatchVectorSearchResult;
       }
     },
   };
