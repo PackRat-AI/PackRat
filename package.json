@@ -32,10 +32,13 @@
     "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
+    "mcp": "bun run --cwd packages/mcp dev",
+    "mcp:deploy": "bun run --cwd packages/mcp deploy",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
-    "test:expo": "vitest run --config apps/expo/vitest.config.ts"
+    "test:expo": "vitest run --config apps/expo/vitest.config.ts",
+    "test:mcp": "bun run --cwd packages/mcp test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",

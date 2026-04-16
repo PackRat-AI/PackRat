@@ -115,7 +115,7 @@ export function TripsListScreen() {
           ),
         }}
         rightView={() => (
-          <View className="flex-row items-center">
+          <View className="flex-row items-center mr-2 ml-2">
             <CreateTripIconButton />
           </View>
         )}

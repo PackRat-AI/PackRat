@@ -107,8 +107,11 @@ export default function TripWeatherDetailsScreen() {
 
       <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
         <View className="absolute top-10 left-4 z-10">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Icon name="arrow-left" color="white" size={20} />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+          >
+            <Icon name="arrow-left" color="white" size={24} />
           </TouchableOpacity>
         </View>
 

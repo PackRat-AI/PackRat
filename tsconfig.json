@@ -34,6 +34,7 @@
     "**/.next",
     "**/.expo",
     "**/coverage",
-    "packages/api/container_src"
+    "packages/api/container_src",
+    "packages/mcp"
   ]
 }

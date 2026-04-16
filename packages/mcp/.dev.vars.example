@@ -1,0 +1,7 @@
+# PackRat MCP Server — local development environment variables
+# Copy this file to .dev.vars (never commit .dev.vars)
+
+# Required: URL of the PackRat API
+# Local: http://localhost:8787
+# Production: https://packrat.world
+PACKRAT_API_URL=http://localhost:8787

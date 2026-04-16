@@ -1,10 +1,17 @@
 import type { Pack } from '@packrat/api/db/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { seedCatalogItem, seedPack, seedPackItem, seedTestUser } from './utils/db-helpers';
+import {
+  seedAndLoginTestUser,
+  seedCatalogItem,
+  seedPack,
+  seedPackItem,
+  seedTestUser,
+} from './utils/db-helpers';
 import {
   api,
   apiWithAdmin,
   apiWithAuth,
+  apiWithAuthAs,
   expectBadRequest,
   expectJsonResponse,
   expectNotFound,
@@ -12,10 +19,12 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-// Mock PackService.generatePacks to avoid AI dependencies in tests
-vi.mock('../src/services/packService', async () => {
-  const actual = await vi.importActual<typeof import('../src/services/packService')>(
-    '../src/services/packService',
+// Mock PackService.generatePacks to avoid AI dependencies in tests.
+// Must use the alias path the route uses ('@packrat/api/services/packService') —
+// vitest treats relative and alias paths as separate modules for mock purposes.
+vi.mock('@packrat/api/services/packService', async () => {
+  const actual = await vi.importActual<typeof import('@packrat/api/services/packService')>(
+    '@packrat/api/services/packService',
   );
   return {
     ...actual,
@@ -61,8 +70,8 @@ describe('Packs Routes', () => {
 
   // Re-seed test data before each test (global beforeEach truncates all tables)
   beforeEach(async () => {
-    testUser = await seedTestUser();
-    await seedTestUser({ role: 'ADMIN', email: 'admin@example.com' });
+    testUser = await seedAndLoginTestUser();
+    await seedAndLoginTestUser({ role: 'ADMIN', email: 'admin@example.com' });
 
     const catalogItem = await seedCatalogItem({
       name: 'Test Tent',
@@ -212,6 +221,8 @@ describe('Packs Routes', () => {
 
     it('prevents updating other users packs', async () => {
       // Create a different user and their pack
+      // NOTE: seedTestUser also sets currentTestUser; capture testUser.id before this call
+      const testUserId = testUser.id;
       const otherUser = await seedTestUser({
         email: 'other@example.com',
         firstName: 'Other',
@@ -224,12 +235,11 @@ describe('Packs Routes', () => {
         category: 'hiking',
       });
 
-      const res = await apiWithAuth(
-        `/packs/${otherUserPack.id}`,
-        httpMethods.put({
-          name: 'Attempting to update',
-        }),
-      );
+      // Use apiWithAuthAs to keep the original testUser credentials (not otherUser's)
+      const res = await apiWithAuthAs(`/packs/${otherUserPack.id}`, {
+        user: { id: testUserId, role: 'USER' },
+        init: httpMethods.put({ name: 'Attempting to update' }),
+      });
 
       // Should return 404 (not found for this user) or 403 (forbidden)
       expect([403, 404]).toContain(res.status);
@@ -258,6 +268,8 @@ describe('Packs Routes', () => {
 
     it('prevents deleting other users packs', async () => {
       // Create a different user and their pack
+      // NOTE: seedTestUser also sets currentTestUser; capture testUser.id before this call
+      const testUserId = testUser.id;
       const otherUser = await seedTestUser({
         email: 'another@example.com',
         firstName: 'Another',
@@ -270,7 +282,11 @@ describe('Packs Routes', () => {
         category: 'hiking',
       });
 
-      const res = await apiWithAuth(`/packs/${otherUserPack.id}`, httpMethods.delete());
+      // Use apiWithAuthAs to keep the original testUser credentials (not otherUser's)
+      const res = await apiWithAuthAs(`/packs/${otherUserPack.id}`, {
+        user: { id: testUserId, role: 'USER' },
+        init: httpMethods.delete(),
+      });
 
       // Should return 404 (not found for this user) or 403 (forbidden)
       expect([403, 404]).toContain(res.status);
