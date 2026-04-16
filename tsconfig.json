@@ -1,19 +1,10 @@
 {
   "compilerOptions": {
-    "allowJs": true,
     "baseUrl": ".",
-    "esModuleInterop": true,
-    "jsx": "react-native",
-    "lib": ["DOM", "ESNext"],
-    "module": "preserve",
-    "moduleDetection": "force",
-    "moduleResolution": "bundler",
-    "noEmit": true,
-    "noUncheckedIndexedAccess": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
     "strictNullChecks": true,
-    "target": "ESNext",
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "noEmit": true,
     "paths": {
       "admin-app/*": ["./apps/admin/*"],
       "guides-app/*": ["./apps/guides/*"],
@@ -33,13 +24,8 @@
       "nativewindui/*": ["./apps/expo/components/ui/*"]
     }
   },
-  "include": [
-    "global.d.ts",
-    "apps/**/*.ts",
-    "apps/**/*.tsx",
-    "packages/**/*.ts",
-    "packages/**/*.tsx"
-  ],
+  "extends": "expo/tsconfig.base",
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"],
   "exclude": [
     "node_modules",
     "**/node_modules",
