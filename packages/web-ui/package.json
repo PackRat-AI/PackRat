@@ -67,7 +67,7 @@
   },
   "peerDependencies": {
     "react": "catalog:",
-    "recharts": ">=2.15.0",
+    "recharts": "3.8.1",
     "tailwindcss": "catalog:"
   },
   "peerDependenciesMeta": {
