@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
+import { ApiRoute } from '../constants';
+import { CatalogSortField, SortOrder } from '../enums';
 import type { AgentContext } from '../types';
 
 export function registerCatalogTools(agent: AgentContext): void {
@@ -29,16 +31,13 @@ export function registerCatalogTools(agent: AgentContext): void {
           .default(10)
           .describe('Number of results to return (default 10)'),
         offset: z.number().int().min(0).default(0).describe('Pagination offset'),
-        sort_by: z
-          .enum(['name', 'brand', 'price', 'ratingValue', 'createdAt', 'updatedAt', 'usage'])
-          .optional()
-          .describe('Sort field'),
-        sort_order: z.enum(['asc', 'desc']).default('asc').describe('Sort direction'),
+        sort_by: z.nativeEnum(CatalogSortField).optional().describe('Sort field'),
+        sort_order: z.nativeEnum(SortOrder).default(SortOrder.Asc).describe('Sort direction'),
       },
     },
     async ({ query, category, limit, offset, sort_by, sort_order }) => {
       try {
-        const data = await agent.api.get('/catalog', {
+        const data = await agent.api.get(ApiRoute.Catalog, {
           q: query,
           category,
           limit,
@@ -79,7 +78,7 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async ({ query, limit, offset }) => {
       try {
-        const data = await agent.api.get('/catalog/vector-search', { q: query, limit, offset });
+        const data = await agent.api.get(ApiRoute.CatalogVectorSearch, { q: query, limit, offset });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -103,7 +102,7 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async ({ item_id }) => {
       try {
-        const data = await agent.api.get(`/catalog/${item_id}`);
+        const data = await agent.api.get(`${ApiRoute.Catalog}/${item_id}`);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -122,7 +121,7 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async () => {
       try {
-        const data = await agent.api.get('/catalog/categories');
+        const data = await agent.api.get(ApiRoute.CatalogCategories);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -147,7 +146,9 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async ({ item_ids }) => {
       try {
-        const items = await Promise.all(item_ids.map((id) => agent.api.get(`/catalog/${id}`)));
+        const items = await Promise.all(
+          item_ids.map((id) => agent.api.get(`${ApiRoute.Catalog}/${id}`)),
+        );
         const comparison = items.map((item: unknown) => {
           const it = item as Record<string, unknown>;
           return {

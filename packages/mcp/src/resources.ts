@@ -1,9 +1,14 @@
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ApiError } from './client';
+import { ApiRoute } from './constants';
 import type { AgentContext } from './types';
 
-// biome-ignore lint/complexity/useMaxParams: uri, context, and error are all distinct and necessary
-function resourceError(uri: string, context: string, e: unknown): object {
+interface ResourceErrorInfo {
+  uri: string;
+  context: string;
+}
+
+function resourceError({ uri, context }: ResourceErrorInfo, e: unknown): object {
   if (e instanceof ApiError) {
     return { uri, error: e.message, status: e.status, context };
   }
@@ -24,7 +29,7 @@ export function registerResources(agent: AgentContext): void {
     },
     async (uri, { packId }) => {
       try {
-        const pack = await agent.api.get(`/packs/${String(packId)}`);
+        const pack = await agent.api.get(`${ApiRoute.Packs}/${String(packId)}`);
         return {
           contents: [
             { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(pack, null, 2) },
@@ -36,7 +41,9 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(resourceError(uri.href, `pack:${String(packId)}`, e)),
+              text: JSON.stringify(
+                resourceError({ uri: uri.href, context: `pack:${String(packId)}` }, e),
+              ),
             },
           ],
         };
@@ -56,7 +63,7 @@ export function registerResources(agent: AgentContext): void {
     },
     async (uri, { tripId }) => {
       try {
-        const trip = await agent.api.get(`/trips/${String(tripId)}`);
+        const trip = await agent.api.get(`${ApiRoute.Trips}/${String(tripId)}`);
         return {
           contents: [
             { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(trip, null, 2) },
@@ -68,7 +75,9 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(resourceError(uri.href, `trip:${String(tripId)}`, e)),
+              text: JSON.stringify(
+                resourceError({ uri: uri.href, context: `trip:${String(tripId)}` }, e),
+              ),
             },
           ],
         };
@@ -88,7 +97,7 @@ export function registerResources(agent: AgentContext): void {
     },
     async (uri, { itemId }) => {
       try {
-        const item = await agent.api.get(`/catalog/${String(itemId)}`);
+        const item = await agent.api.get(`${ApiRoute.Catalog}/${String(itemId)}`);
         return {
           contents: [
             { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(item, null, 2) },
@@ -100,7 +109,9 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(resourceError(uri.href, `catalog:${String(itemId)}`, e)),
+              text: JSON.stringify(
+                resourceError({ uri: uri.href, context: `catalog:${String(itemId)}` }, e),
+              ),
             },
           ],
         };
@@ -120,7 +131,7 @@ export function registerResources(agent: AgentContext): void {
     },
     async (uri) => {
       try {
-        const categories = await agent.api.get('/catalog/categories');
+        const categories = await agent.api.get(ApiRoute.CatalogCategories);
         return {
           contents: [
             {
@@ -136,7 +147,9 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(resourceError(uri.href, 'gear_categories', e)),
+              text: JSON.stringify(
+                resourceError({ uri: uri.href, context: 'gear_categories' }, e),
+              ),
             },
           ],
         };

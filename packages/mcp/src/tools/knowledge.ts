@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
+import { ApiRoute } from '../constants';
 import type { AgentContext } from '../types';
 
 export function registerKnowledgeTools(agent: AgentContext): void {
@@ -28,7 +29,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
     },
     async ({ query, limit }) => {
       try {
-        const data = await agent.api.get('/ai/rag-search', { q: query, limit });
+        const data = await agent.api.get(ApiRoute.AiRagSearch, { q: query, limit });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -54,7 +55,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
     },
     async ({ query }) => {
       try {
-        const data = await agent.api.get('/ai/web-search', { q: query });
+        const data = await agent.api.get(ApiRoute.AiWebSearch, { q: query });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -87,7 +88,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
     },
     async ({ query, limit }) => {
       try {
-        const data = await agent.api.post('/ai/execute-sql', { query, limit });
+        const data = await agent.api.post(ApiRoute.AiExecuteSql, { query, limit });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -106,7 +107,7 @@ export function registerKnowledgeTools(agent: AgentContext): void {
     },
     async () => {
       try {
-        const data = await agent.api.get('/ai/db-schema');
+        const data = await agent.api.get(ApiRoute.AiDbSchema);
         return ok(data);
       } catch (e) {
         return err(e);

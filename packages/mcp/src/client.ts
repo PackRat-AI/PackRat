@@ -98,22 +98,26 @@ export class PackRatApiClient {
         typeof body === 'object' && body !== null && 'error' in body
           ? String((body as Record<string, unknown>).error)
           : `HTTP ${response.status}: ${response.statusText}`;
-      throw new ApiError(errorMessage, response.status, body);
+      throw new ApiError(errorMessage, { status: response.status, body });
     }
 
     return body as T;
   }
 }
 
+export interface ApiErrorOptions {
+  status: number;
+  body: unknown;
+}
+
 export class ApiError extends Error {
-  // biome-ignore lint/complexity/useMaxParams: Error subclass needs message, status, and body
-  constructor(
-    message: string,
-    public readonly status: number,
-    public readonly body: unknown,
-  ) {
+  readonly status: number;
+  readonly body: unknown;
+  constructor(message: string, options: ApiErrorOptions) {
     super(message);
     this.name = 'ApiError';
+    this.status = options.status;
+    this.body = options.body;
   }
 }
 

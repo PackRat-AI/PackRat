@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
+import { ApiRoute } from '../constants';
 import type { AgentContext } from '../types';
 
 export function registerTripTools(agent: AgentContext): void {
@@ -23,7 +24,7 @@ export function registerTripTools(agent: AgentContext): void {
     },
     async ({ limit, offset }) => {
       try {
-        const data = await agent.api.get('/trips', { limit, offset });
+        const data = await agent.api.get(ApiRoute.Trips, { limit, offset });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -44,7 +45,7 @@ export function registerTripTools(agent: AgentContext): void {
     },
     async ({ trip_id }) => {
       try {
-        const data = await agent.api.get(`/trips/${trip_id}`);
+        const data = await agent.api.get(`${ApiRoute.Trips}/${trip_id}`);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -94,7 +95,7 @@ export function registerTripTools(agent: AgentContext): void {
       try {
         const id = `t_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
         const now = new Date().toISOString();
-        const data = await agent.api.post('/trips', {
+        const data = await agent.api.post(ApiRoute.Trips, {
           id,
           name,
           description,
@@ -164,7 +165,7 @@ export function registerTripTools(agent: AgentContext): void {
         } else if (location_name !== undefined) {
           body.location = { name: location_name };
         }
-        const data = await agent.api.patch(`/trips/${trip_id}`, body);
+        const data = await agent.api.patch(`${ApiRoute.Trips}/${trip_id}`, body);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -184,7 +185,7 @@ export function registerTripTools(agent: AgentContext): void {
     },
     async ({ trip_id }) => {
       try {
-        const data = await agent.api.delete(`/trips/${trip_id}`);
+        const data = await agent.api.delete(`${ApiRoute.Trips}/${trip_id}`);
         return ok(data);
       } catch (e) {
         return err(e);
