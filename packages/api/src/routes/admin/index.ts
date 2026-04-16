@@ -775,7 +775,16 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       try {
         const updated = await db
           .update(catalogItems)
-          .set({ ...body, updatedAt: new Date() })
+          .set({
+            updatedAt: new Date(),
+            ...(body.name !== undefined && { name: body.name }),
+            ...(body.brand !== undefined && { brand: body.brand }),
+            ...(body.categories !== undefined && { categories: body.categories }),
+            ...(body.weight !== undefined && { weight: body.weight }),
+            ...(body.weightUnit !== undefined && { weightUnit: body.weightUnit }),
+            ...(body.price !== undefined && { price: body.price }),
+            ...(body.description !== undefined && { description: body.description }),
+          })
           .where(eq(catalogItems.id, id))
           .returning();
         const first = updated[0];
