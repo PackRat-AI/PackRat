@@ -50,7 +50,8 @@ function shouldIgnoreLiteral(value: string): boolean {
   if (value.length < MIN_LITERAL_LENGTH || value.length > MAX_LITERAL_LENGTH) return true;
   if (value.includes('${')) return true;
   if (value.startsWith('http://') || value.startsWith('https://')) return true;
-  if (value.includes('/')) return true;
+  if (/^\.{0,2}\//.test(value)) return true;
+  if (/^[\w.-]+(\/[\w.-]+)+$/.test(value)) return true;
   const words = value.trim().split(/\s+/);
   if (words.length > 3) return true;
   if (value.startsWith('#')) return true;
