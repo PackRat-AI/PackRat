@@ -57,7 +57,7 @@ adminRoutes.use('*', async (c, next) => {
   if (authHeader?.startsWith('Bearer ')) {
     try {
       const e = getEnv(c);
-      const payload = await verify(authHeader.slice(7), e.JWT_SECRET);
+      const payload = await verify(authHeader.slice(7), e.JWT_SECRET, 'HS256');
       if (payload.role !== 'admin') {
         return c.json({ error: 'Forbidden' }, 403);
       }
@@ -1146,7 +1146,11 @@ adminRoutes.openapi(deleteUserRoute, async (c) => {
     if (!deleted.length) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
     return c.json({ success: true }, 200);
   } catch (error) {
-    if ((error as { code?: string })?.code === '23503') {
+    // Drizzle wraps the pg error in DrizzleQueryError, so the 23503 code lives
+    // on error.cause, not error itself.
+    const pgCode =
+      (error as { code?: string }).code ?? (error as { cause?: { code?: string } }).cause?.code;
+    if (pgCode === '23503') {
       return c.json({ error: 'Cannot delete: user has dependent data', code: 'CONFLICT' }, 409);
     }
     console.error('Error deleting user:', error);

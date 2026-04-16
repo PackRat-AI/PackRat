@@ -1,0 +1,50 @@
+{
+  "$schema": "https://developers.cloudflare.com/schemas/wrangler.json",
+  "name": "packrat-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "keep_vars": true,
+  "logpush": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  // Durable Objects power each MCP session (stateful per client connection)
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PackRatMCP",
+        "class_name": "PackRatMCP"
+      }
+    ]
+  },
+  // SQLite-backed DO for state persistence and hibernation support
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["PackRatMCP"]
+    }
+  ],
+  // Environment variables are set via Cloudflare dashboard or .dev.vars locally
+  // Required: PACKRAT_API_URL
+  "env": {
+    "dev": {
+      "name": "packrat-mcp-dev",
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "PackRatMCP",
+            "class_name": "PackRatMCP"
+          }
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_sqlite_classes": ["PackRatMCP"]
+        }
+      ]
+    }
+  }
+}
