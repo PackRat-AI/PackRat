@@ -90,10 +90,11 @@ export default function TripWeatherDetailsScreen() {
 
   const location = weather.location;
   const current = weather.current;
+  const todayForecast = weather.forecast.forecastday[0];
 
   const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map(
     (h: WeatherHourlyForecast) => ({
-      time: String(new Date(h.time).getHours()) + ':00',
+      time: `${String(new Date(h.time).getHours())}:00`,
       temp: Math.round(h.temp_c),
       weatherCode: h.condition?.code ?? 1000,
       isDay: h.is_day,
@@ -131,8 +132,9 @@ export default function TripWeatherDetailsScreen() {
             <Text className="text-xl text-white">{current.condition.text}</Text>
 
             <Text className="text-white/80 mt-2">
-              H:{weather.forecast.forecastday[0].day.maxtemp_c}° L:
-              {weather.forecast.forecastday[0].day.mintemp_c}°
+              {todayForecast
+                ? `H:${todayForecast.day.maxtemp_c}° L:${todayForecast.day.mintemp_c}°`
+                : 'H:— L:—'}
             </Text>
           </View>
           <WeatherForecast
