@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   release-ios:
-    name: Create GitHub release
+    name: Release iOS App
     runs-on: ubuntu-latest
 
     steps:
