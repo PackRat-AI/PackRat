@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "clean": "bunx rimraf node_modules .next out .vercel",
+    "clean": "bunx rimraf node_modules .next out",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start"
