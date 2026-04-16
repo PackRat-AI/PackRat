@@ -14,7 +14,7 @@ export const routeDefinition = createRoute({
   security: [{ bearerAuth: [] }],
   request: {
     params: z.object({
-      id: z.coerce.number().int().positive().openapi({
+      id: z.coerce.number().int().positive().max(2_147_483_647).openapi({
         example: 123,
         description: 'Catalog item ID',
       }),
