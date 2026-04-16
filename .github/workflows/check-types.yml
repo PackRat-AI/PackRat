@@ -36,4 +36,9 @@ jobs:
         run: bun install
 
       - name: Check Types
-        run: bunx turbo run check-types --filter=...[origin/${{ github.base_ref }}...HEAD]
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            bunx turbo run check-types --filter=...[origin/${{ github.base_ref }}...HEAD]
+          else
+            bun check-types
+          fi
