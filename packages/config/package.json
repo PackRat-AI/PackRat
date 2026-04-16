@@ -1,5 +1,5 @@
 {
-  "name": "@packrat/app",
+  "name": "@packrat/config",
   "version": "2.0.19",
   "private": true,
   "type": "module",
