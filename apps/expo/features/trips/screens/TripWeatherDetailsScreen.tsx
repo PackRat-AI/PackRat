@@ -94,7 +94,7 @@ export default function TripWeatherDetailsScreen() {
 
   const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map(
     (h: WeatherHourlyForecast) => ({
-      time: `${String(new Date(h.time).getHours())}:00`,
+      time: `${new Date(h.time).getHours()}:00`,
       temp: Math.round(h.temp_c),
       weatherCode: h.condition?.code ?? 1000,
       isDay: h.is_day,
