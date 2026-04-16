@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(import.meta.dir, '..', '..', '..');
-const ROOTS = ['apps', 'packages'];
+const SCAN_ROOTS = ['apps', 'packages'];
 const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.next', '.expo']);
 const TARGET_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts']);
 const EXCLUDED_FILE_PATTERNS = [/\.test\./, /\.spec\./, /\.stories\./, /\.d\.ts$/];
@@ -25,11 +25,11 @@ const ALLOWLIST = new Set([
   'PATCH',
 ]);
 
+// Matches single-quoted and double-quoted string literals (including escaped quotes).
 const STRING_LITERAL_PATTERN = /(['"])((?:\\.|(?!\1).)+)\1/g;
 
 interface LiteralLocation {
   line: number;
-  value: string;
 }
 
 interface FileViolation {
@@ -92,7 +92,7 @@ function collectFileViolations(file: string): FileViolation[] {
       if (!value || shouldIgnoreLiteral(value)) continue;
 
       const current = byLiteral.get(value) ?? [];
-      current.push({ line: index + 1, value });
+      current.push({ line: index + 1 });
       byLiteral.set(value, current);
     }
   }
@@ -142,7 +142,7 @@ function walkDir(dir: string, relDir: string, files: string[]): void {
 }
 
 const targetFiles: string[] = [];
-for (const root of ROOTS) {
+for (const root of SCAN_ROOTS) {
   walkDir(join(ROOT, root), root, targetFiles);
 }
 

@@ -194,14 +194,14 @@ export default function DashboardScreen() {
     ...(featureFlags.enableTrailConditions
       ? [appConfig.dashboard.layout.conditional.trailConditions]
       : []),
-    ...appConfig.dashboard.layout.weatherAndLater.slice(0, 2),
+    ...appConfig.dashboard.layout.weatherSection,
     ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.weatherAlerts] : []),
-    ...appConfig.dashboard.layout.weatherAndLater.slice(2, 4),
+    ...appConfig.dashboard.layout.gearSection,
     ...(featureFlags.enableShoppingList ? [appConfig.dashboard.layout.conditional.shoppingList] : []),
     ...(featureFlags.enableSharedPacks ? [appConfig.dashboard.layout.conditional.sharedPacks] : []),
     ...(featureFlags.enablePackTemplates ? [appConfig.dashboard.layout.conditional.packTemplates] : []),
     ...(featureFlags.enableFeed ? [appConfig.dashboard.layout.conditional.feed] : []),
-    ...appConfig.dashboard.layout.weatherAndLater.slice(4),
+    ...appConfig.dashboard.layout.footerSection,
     ...(featureFlags.enableWildlifeIdentification ? [appConfig.dashboard.layout.conditional.wildlife] : []),
   ]).current;
 

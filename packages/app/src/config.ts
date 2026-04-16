@@ -56,7 +56,7 @@ function deepFreeze<T>(value: T): Readonly<T> {
   return Object.freeze(value);
 }
 
-const APP_CONFIG_RAW = {
+const APP_CONFIG_SOURCE = {
   featureFlags: {
     [FeatureFlag.EnableOAuth]: true,
     [FeatureFlag.EnableTrips]: true,
@@ -89,11 +89,15 @@ const APP_CONFIG_RAW = {
         DashboardTileId.WeightAnalysis,
         DashboardTileId.PackCategories,
       ],
-      weatherAndLater: [
+      weatherSection: [
         DashboardLayoutId.Gap25,
         DashboardTileId.Weather,
+      ],
+      gearSection: [
         DashboardLayoutId.Gap3,
         DashboardTileId.GearInventory,
+      ],
+      footerSection: [
         DashboardLayoutId.Gap4,
         DashboardTileId.Guides,
       ],
@@ -112,6 +116,6 @@ const APP_CONFIG_RAW = {
   },
 } as const;
 
-const APP_CONFIG = deepFreeze(APP_CONFIG_RAW);
+const APP_CONFIG = deepFreeze(APP_CONFIG_SOURCE);
 
 export { APP_CONFIG, DashboardLayoutId, DashboardTileId, FeatureFlag };
