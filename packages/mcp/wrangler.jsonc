@@ -30,6 +30,7 @@
   // Required: PACKRAT_API_URL
   "env": {
     "dev": {
+      "name": "packrat-mcp-dev",
       "durable_objects": {
         "bindings": [
           {
