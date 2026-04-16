@@ -10,6 +10,7 @@
  * directly with a mocked Env and ExecutionContext.
  */
 import { describe, expect, it, vi } from 'vitest';
+import type { Env } from '../index';
 
 // ── minimal Env and ExecutionContext fakes ────────────────────────────────────
 
@@ -22,7 +23,7 @@ const fakeEnv = {
       fetch: vi.fn().mockResolvedValue(new Response('{}', { status: 200 })),
     }),
   },
-};
+} as unknown as Env;
 
 const fakeCtx = {
   waitUntil: vi.fn(),
