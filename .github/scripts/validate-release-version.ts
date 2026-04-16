@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 
 import { readFileSync } from 'node:fs';
+import semver from 'semver';
 
 const releaseTag = process.argv[2];
 
@@ -11,20 +12,27 @@ if (!releaseTag) {
   process.exit(1);
 }
 
-const semverTagPattern =
-  /^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/;
-
-if (!semverTagPattern.test(releaseTag)) {
+if (!releaseTag.startsWith('v')) {
   console.error(`❌ Tag '${releaseTag}' must follow v<semver> format (for example v2.0.20).`);
   process.exit(1);
 }
 
-const releaseVersion = releaseTag.slice(1);
+const releaseVersion = semver.valid(releaseTag.slice(1));
+if (!releaseVersion) {
+  console.error(`❌ Tag '${releaseTag}' must follow v<semver> format (for example v2.0.20).`);
+  process.exit(1);
+}
 
 const readJsonVersion = (path: string): string => {
   const json = JSON.parse(readFileSync(path, 'utf8')) as { version?: unknown };
+  if (json.version === undefined) {
+    throw new Error(`Missing version field in ${path}`);
+  }
   if (typeof json.version !== 'string' || json.version.length === 0) {
-    throw new Error(`Missing or invalid version in ${path}`);
+    throw new Error(`Version must be a non-empty string in ${path}`);
+  }
+  if (!semver.valid(json.version)) {
+    throw new Error(`Version must be valid semver in ${path}, got '${json.version}'`);
   }
   return json.version;
 };
@@ -36,6 +44,9 @@ const readAppConfigVersion = (): string => {
   if (!version) {
     throw new Error('Missing version field in apps/expo/app.config.ts');
   }
+  if (!semver.valid(version)) {
+    throw new Error(`Version must be valid semver in apps/expo/app.config.ts, got '${version}'`);
+  }
   return version;
 };
 
@@ -45,11 +56,11 @@ try {
   const appConfigVersion = readAppConfigVersion();
 
   const mismatches: string[] = [];
-  if (rootVersion !== releaseVersion) mismatches.push(`package.json=${rootVersion}`);
-  if (expoPackageVersion !== releaseVersion) {
+  if (!semver.eq(rootVersion, releaseVersion)) mismatches.push(`package.json=${rootVersion}`);
+  if (!semver.eq(expoPackageVersion, releaseVersion)) {
     mismatches.push(`apps/expo/package.json=${expoPackageVersion}`);
   }
-  if (appConfigVersion !== releaseVersion) {
+  if (!semver.eq(appConfigVersion, releaseVersion)) {
     mismatches.push(`apps/expo/app.config.ts=${appConfigVersion}`);
   }
 
