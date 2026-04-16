@@ -17,7 +17,7 @@ UNIQUE_ID=$(date +%s)
 if [ "$PLATFORM" = "ios" ]; then
   START_DATE=$(date -j -v+7d +"%Y-%m-%d")
   END_DATE=$(date -j -v+14d +"%Y-%m-%d")
-  TODAY_DATE=$(date -j +"%-d %b %Y")   # e.g. "11 Apr 2026"
+  TODAY_DATE=$(date -j +"%b %-d, %Y")   # e.g. "Apr 16, 2026"
   get_month() { date -j -f "%Y-%m-%d" "$1" +"%B"; }
   get_day()   { date -j -f "%Y-%m-%d" "$1" +"%-d"; }
   get_year()  { date -j -f "%Y-%m-%d" "$1" +"%Y"; }

@@ -27,7 +27,7 @@ appId: ${APP_ID}
       platform: iOS
     commands:
       - tapOn:
-          text: "newspaper, Description"
+          text: "Description"
       - inputText: "Created by Maestro E2E test"
 - runFlow:
     when:
