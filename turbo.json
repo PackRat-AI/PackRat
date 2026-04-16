@@ -12,6 +12,12 @@
     "test": {
       "outputs": ["coverage/**"]
     },
+    "test:unit:coverage": {
+      "outputs": ["coverage/**"]
+    },
+    "test:coverage": {
+      "outputs": ["coverage/**"]
+    },
     "lint": {
       "cache": false
     },

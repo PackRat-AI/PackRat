@@ -52,14 +52,22 @@ jobs:
           bun-version: latest
           cache: true
 
+      - name: Cache turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-api-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-api-
+
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
-        
+
       - name: Run API unit tests
-        run: bun run --cwd packages/api test:unit:coverage
-        
+        run: bunx turbo run test:unit:coverage --filter=@packrat/api
+
       - name: Report API coverage
         if: always()
         uses: davelosert/vitest-coverage-report-action@v2
@@ -82,14 +90,22 @@ jobs:
           bun-version: latest
           cache: true
 
+      - name: Cache turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-expo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-expo-
+
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
-        
+
       - name: Run Expo unit tests
-        run: bun run --cwd apps/expo test:coverage
-        
+        run: bunx turbo run test:coverage --filter=packrat-expo-app
+
       - name: Report Expo coverage
         if: always()
         uses: davelosert/vitest-coverage-report-action@v2
