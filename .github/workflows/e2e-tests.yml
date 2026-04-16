@@ -27,6 +27,9 @@ permissions:
 
 env:
   MAESTRO_VERSION: 2.3.0
+  # Suppress the per-invocation "Anonymous analytics enabled" banner and
+  # the network round-trip it implies on every CI run.
+  MAESTRO_CLI_NO_ANALYTICS: "true"
 
 jobs:
   ios-e2e:
@@ -37,22 +40,47 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     env:
+      # The E2E user is upserted into the dev DB by the seed step below,
+      # so both email and password are driven entirely by repo secrets.
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
+      - name: Verify E2E secrets are configured
+        run: |
+          missing=()
+          [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
+          [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
+          [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required E2E secrets missing: ${missing[*]}"
+            echo "::error::Set them via: gh secret set <NAME> --repo PackRat-AI/PackRat"
+            exit 1
+          fi
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+
       - name: Checkout repository
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v6
+
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '26.2'
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - name: Install dependencies
         env:
@@ -66,10 +94,20 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('apps/expo/package.json', 'apps/expo/app.config.ts', 'bun.lock') }}
+          restore-keys: |
+            cocoapods-${{ runner.os }}-
 
       - name: Build iOS app for simulator
         run: |
@@ -85,11 +123,21 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
+      - name: Cache Maestro CLI
+        id: maestro-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.maestro
+          key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
+
       - name: Install Maestro CLI
+        if: steps.maestro-cache.outputs.cache-hit != 'true'
         run: |
           export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
           curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Add Maestro to PATH
+        run: echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
       - name: Extract iOS simulator build
         run: |
@@ -167,20 +215,32 @@ jobs:
         run: |
           xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
+      - name: Seed E2E test user in dev DB
+        run: bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
       - name: Run Maestro E2E tests
         run: |
           mkdir -p test-results
           bun test:e2e:ios --device "$SIMULATOR_UDID" --format junit --output test-results/maestro-results.xml
         env:
-          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          TEST_EMAIL: ${{ env.TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
-          APP_ID: com.andrewbierman.packrat
+          # EAS e2e profile builds the preview variant, whose bundle id is
+          # suffixed with ".preview" via app.config.ts.
+          APP_ID: com.andrewbierman.packrat.preview
+          # xcuitest driver boot on cold GH runners can exceed the 180s
+          # default. Give it 10 minutes before declaring a timeout.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: "600000"
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-e2e-results
           path: test-results/
@@ -188,7 +248,7 @@ jobs:
 
       - name: Upload Maestro screenshots and videos on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ios-e2e-failure-artifacts
           path: ~/.maestro/tests/
@@ -197,8 +257,8 @@ jobs:
       - name: Shutdown simulator
         if: always()
         run: |
-          xcrun simctl shutdown "$SIMULATOR_UDID" || true
-          xcrun simctl delete "$SIMULATOR_UDID" || true
+          xcrun simctl shutdown "${SIMULATOR_UDID:-}" || true
+          xcrun simctl delete "${SIMULATOR_UDID:-}" || true
 
   android-e2e:
     name: Android E2E Tests
@@ -208,17 +268,71 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     env:
+      # The E2E user is upserted into the dev DB by the seed step below,
+      # so both email and password are driven entirely by repo secrets.
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
+      - name: Verify E2E secrets are configured
+        run: |
+          missing=()
+          [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
+          [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
+          [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required E2E secrets missing: ${missing[*]}"
+            echo "::error::Set them via: gh secret set <NAME> --repo PackRat-AI/PackRat"
+            exit 1
+          fi
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+
+      - name: Free disk space on runner
+        # Gradle builds of this RN app fail with OOM / no-space on stock
+        # ubuntu-latest. Prune large preinstalled toolchains we don't use.
+        # Keep the Android SDK/NDK — the Gradle build links against them.
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL \
+            "$AGENT_TOOLSDIRECTORY/Ruby" "$AGENT_TOOLSDIRECTORY/PyPy" || true
+          sudo apt-get -y autoremove --purge '^llvm-.*' '^mongodb-.*' \
+            '^mysql-.*' 'azure-cli' 'google-cloud-cli' 'google-chrome-stable' \
+            'firefox' 'powershell' 2>/dev/null || true
+          sudo apt-get -y autoremove || true
+          sudo apt-get -y clean || true
+          docker image prune -af || true
+          df -h
+
+      - name: Configure swap for Gradle
+        # R8/ProGuard during :app:packageRelease regularly OOMs on 16GB
+        # runners without swap. Add a generous swap file. ubuntu-latest
+        # ships with /swapfile already active, so use a distinct path
+        # and dd (fallocate errors "Text file busy" on the live one).
+        run: |
+          sudo swapoff -a || true
+          sudo rm -f /mnt/swapfile-ci
+          sudo dd if=/dev/zero of=/mnt/swapfile-ci bs=1M count=10240 status=none
+          sudo chmod 600 /mnt/swapfile-ci
+          sudo mkswap /mnt/swapfile-ci
+          sudo swapon /mnt/swapfile-ci
+          free -h
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+          cache: true
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - name: Install dependencies
         env:
@@ -232,16 +346,36 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Cache Maestro CLI
+        id: maestro-cache-android
+        uses: actions/cache@v4
+        with:
+          path: ~/.maestro
+          key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
+
       - name: Install Maestro CLI
+        if: steps.maestro-cache-android.outputs.cache-hit != 'true'
         run: |
           export MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
           curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
+
+      - name: Add Maestro to PATH
+        run: echo "${HOME}/.maestro/bin" >> "${GITHUB_PATH}"
 
       - name: Build Android APK for emulator
         run: |
@@ -264,8 +398,38 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: AVD cache
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-34-${{ runner.os }}
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2.37.0
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          avd-name: PackRat-E2E
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Seed E2E test user in dev DB
+        run: bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
       - name: Run Maestro E2E tests on Android emulator
-        uses: reactivecircus/android-emulator-runner@v2.34.0
+        uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
           api-level: 34
           target: google_apis
@@ -282,23 +446,17 @@ jobs:
             adb shell pm disable-user com.android.launcher3 || true
             adb shell pm disable-user com.google.android.apps.nexuslauncher || true
             adb install apps/expo/build/PackRat.apk
-            cp .maestro/config.yaml .maestro/config.yaml.bak
-            cp .maestro/config-android.yaml .maestro/config.yaml
-            maestro test \
-              --format junit \
-              --output test-results/maestro-results.xml \
-              .maestro/
-            mv .maestro/config.yaml.bak .maestro/config.yaml
+            bash .github/scripts/e2e.sh android --format junit --output test-results/maestro-results.xml
         env:
-          TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          TEST_EMAIL: ${{ env.TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
-          APP_ID: com.packratai.mobile
+          APP_ID: com.packratai.mobile.preview
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-e2e-results
           path: test-results/
@@ -306,7 +464,7 @@ jobs:
 
       - name: Upload Maestro screenshots and videos on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-e2e-failure-artifacts
           path: ~/.maestro/tests/

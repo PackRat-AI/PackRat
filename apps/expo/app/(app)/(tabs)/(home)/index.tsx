@@ -9,7 +9,7 @@ import {
   type ListRenderItemInfo,
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
 import { featureFlags } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
@@ -33,10 +33,8 @@ import { WeatherAlertsTile } from 'expo-app/features/weather/components/WeatherA
 import { WeatherTile } from 'expo-app/features/weather/components/WeatherTile';
 import { WildlifeTile } from 'expo-app/features/wildlife/components/WildlifeTile';
 import { cn } from 'expo-app/lib/cn';
-import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
-import { Link } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 
@@ -157,38 +155,6 @@ const tileInfo = {
 };
 
 type TileName = keyof typeof tileInfo;
-
-function SettingsIcon() {
-  const { colors } = useColorScheme();
-  return (
-    <Link href="/settings" asChild>
-      <Pressable className="opacity-80">
-        {({ pressed }) => (
-          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-            <Icon name="cog-outline" color={colors.foreground} />
-          </View>
-        )}
-      </Pressable>
-    </Link>
-  );
-}
-
-function DemoIcon() {
-  const { colors } = useColorScheme();
-  if (clientEnvs.NODE_ENV !== 'development') return null;
-
-  return (
-    <Link href="/demo" asChild>
-      <Pressable className="opacity-80">
-        {({ pressed }) => (
-          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-            <Icon name="tag-outline" color={colors.foreground} />
-          </View>
-        )}
-      </Pressable>
-    </Link>
-  );
-}
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
@@ -324,12 +290,6 @@ export default function DashboardScreen() {
           ),
         }}
         backVisible={false}
-        rightView={() => (
-          <View className="flex-row items-center gap-2 pr-2">
-            <DemoIcon />
-            <SettingsIcon />
-          </View>
-        )}
       />
 
       <List

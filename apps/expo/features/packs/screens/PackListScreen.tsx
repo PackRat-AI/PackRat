@@ -5,7 +5,7 @@ import {
   LargeTitleHeader,
   SegmentedControl,
 } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { PackCard } from 'expo-app/features/packs/components/PackCard';
@@ -180,7 +180,7 @@ export function PackListScreen() {
   };
 
   return (
-    <TabScreen>
+    <TabScreen useLegacySafeAreaView>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
@@ -203,7 +203,7 @@ export function PackListScreen() {
           ),
         }}
         rightView={() => (
-          <View className="flex-row items-center">
+          <View className="flex-row items-center mr-2 ml-2">
             <CreatePackIconButton />
           </View>
         )}

@@ -1,11 +1,22 @@
 {
   "compilerOptions": {
+    "allowJs": true,
     "baseUrl": ".",
-    "strictNullChecks": true,
-    "noUncheckedIndexedAccess": true,
-    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "ignoreDeprecations": "5.0",
+    "jsx": "react-native",
+    "lib": ["DOM", "ESNext"],
+    "module": "preserve",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
     "noEmit": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "target": "ESNext",
     "paths": {
+      "admin-app/*": ["./apps/admin/*"],
       "guides-app/*": ["./apps/guides/*"],
       "landing-app/*": ["./apps/landing/*"],
       "expo-app/*": ["./apps/expo/*"],
@@ -16,14 +27,22 @@
       "@packrat/guards": ["./packages/guards/src"],
       "@packrat/guards/*": ["./packages/guards/src/*"],
       "@packrat/ui/*": ["./packages/ui/*"],
+      "@packrat/analytics": ["./packages/analytics/src"],
       "@packrat/analytics/*": ["./packages/analytics/src/*"],
+      "@packrat/cli": ["./packages/cli/src"],
+      "@packrat/cli/*": ["./packages/cli/src/*"],
       "@packrat/web-ui": ["./packages/web-ui/src"],
       "@packrat/web-ui/*": ["./packages/web-ui/src/*"],
       "nativewindui/*": ["./apps/expo/components/ui/*"]
     }
   },
-  "extends": "expo/tsconfig.base",
-  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts", "packages/**/*.tsx"],
+  "include": [
+    "global.d.ts",
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "packages/**/*.ts",
+    "packages/**/*.tsx"
+  ],
   "exclude": [
     "node_modules",
     "**/node_modules",
@@ -32,6 +51,7 @@
     "**/.next",
     "**/.expo",
     "**/coverage",
-    "packages/api/container_src"
+    "packages/api/container_src",
+    "packages/mcp"
   ]
 }

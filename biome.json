@@ -20,7 +20,8 @@
       "!**/.wrangler",
       "!**/*.gen.ts",
       "!**/vite.config.ts.timestamp-*.mjs",
-      "!**/src/codegen"
+      "!**/src/codegen",
+      "!**/.claude"
     ]
   },
   "formatter": {
@@ -68,6 +69,7 @@
         "packages/api/test/setup.ts",
         "apps/expo/utils/weight.ts",
         "packages/api/src/utils/weight.ts",
+        "packages/mcp/src/index.ts",
         "scripts/lint/**",
         "scripts/format/**",
         ".github/scripts/**",

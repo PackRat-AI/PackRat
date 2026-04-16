@@ -1,5 +1,5 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -115,7 +115,7 @@ export function TripsListScreen() {
           ),
         }}
         rightView={() => (
-          <View className="flex-row items-center">
+          <View className="flex-row items-center mr-2 ml-2">
             <CreateTripIconButton />
           </View>
         )}

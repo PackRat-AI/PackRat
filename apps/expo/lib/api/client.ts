@@ -38,14 +38,14 @@ let failedQueue: Array<{
 
 // Process the queue of failed requests
 const processQueue = (error: Error | null, token: string | null = null) => {
-  failedQueue.forEach((request) => {
+  for (const request of failedQueue) {
     if (error) {
       request.reject(error);
     } else if (token && request.config.headers) {
       request.config.headers.Authorization = `Bearer ${token}`;
       request.resolve(axios(request.config));
     }
-  });
+  }
 
   failedQueue = [];
 };

@@ -3,6 +3,7 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
 import { CatalogItemSchema, ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { parseIntegerId } from '@packrat/api/utils/routeParams';
 import {
   and,
   cosineDistance,
@@ -81,7 +82,10 @@ export const routeDefinition = createRoute({
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const db = createDb(c);
-  const itemId = Number(c.req.param('id'));
+  const itemId = parseIntegerId(c.req.param('id'));
+  if (itemId === null) {
+    return c.json({ error: 'Catalog item not found or has no embedding' }, 404);
+  }
   const { limit, threshold } = c.req.valid('query');
 
   // Validate limit

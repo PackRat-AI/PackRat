@@ -127,16 +127,18 @@ export async function enhanceGuideContent(
 
               // Track products for reporting
               if (searchResults.items) {
-                searchResults.items.forEach(
-                  (item: { name: string; productUrl: string; similarity?: number }) => {
-                    productsUsed.push({
-                      name: item.name,
-                      url: item.productUrl,
-                      context: query,
-                      similarity: item.similarity,
-                    });
-                  },
-                );
+                for (const item of searchResults.items as {
+                  name: string;
+                  productUrl: string;
+                  similarity?: number;
+                }[]) {
+                  productsUsed.push({
+                    name: item.name,
+                    url: item.productUrl,
+                    context: query,
+                    similarity: item.similarity,
+                  });
+                }
               }
 
               console.log(`✅ Found ${searchResults.items?.length || 0} relevant products`);

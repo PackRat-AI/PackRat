@@ -1,5 +1,5 @@
 import { Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
+import { Icon } from 'expo-app/components/Icon';
 import {
   formatWeatherData,
   getWeatherBackgroundColors,
@@ -76,7 +76,6 @@ export default function LocationPreviewScreen() {
   };
 
   // Load weather data on initial render
-  // biome-ignore lint/correctness/useExhaustiveDependencies: need this to only run on initial render hence the empty deps list
   useEffect(() => {
     loadWeatherData();
   }, []);
