@@ -121,20 +121,24 @@ function LocationsScreen() {
       <LargeTitleHeader
         title={t('weather.weather')}
         leftView={() => (
-          <Pressable onPress={() => router.back()} className="mr-2">
+          <Pressable
+            onPress={() => router.back()}
+            className="mr-2 ml-1.5 items-center justify-center"
+          >
             <Icon name="arrow-left" color={colors.foreground} size={24} />
           </Pressable>
         )}
         rightView={() => (
-          <View className="flex-row items-center pr-2">
-            <Pressable className="opacity-80" onPress={handleAddLocation}>
-              {({ pressed }) => (
-                <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
-                  <Icon name="plus" color={colors.foreground} />
-                </View>
-              )}
-            </Pressable>
-          </View>
+          <Pressable
+            className="opacity-80 mr-2 ml-2 items-center justify-center"
+            onPress={handleAddLocation}
+          >
+            {({ pressed }) => (
+              <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
+                <Icon name="plus" color={colors.foreground} />
+              </View>
+            )}
+          </Pressable>
         )}
       />
 

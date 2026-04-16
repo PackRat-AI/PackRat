@@ -5,7 +5,7 @@
   "scripts": {
     "build": "bun run build-content && next build",
     "build-content": "bun run scripts/build-content.ts",
-    "clean": "bunx rimraf .next node_modules out .vercel",
+    "clean": "bunx rimraf .next node_modules out",
     "demo-enhancement": "bun run scripts/demo-enhancement.ts",
     "dev": "next dev",
     "enhance-content": "bun run scripts/enhance-content.ts",
