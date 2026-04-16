@@ -1,5 +1,5 @@
 import { Icon } from 'expo-app/components/Icon';
-import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForcast';
+import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
 import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
 import axiosInstance from 'expo-app/lib/api/client';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -107,8 +107,11 @@ export default function TripWeatherDetailsScreen() {
 
       <LinearGradient colors={gradientColors} style={{ flex: 1 }}>
         <View className="absolute top-10 left-4 z-10">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Icon name="arrow-left" color="white" size={20} />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+          >
+            <Icon name="arrow-left" color="white" size={24} />
           </TouchableOpacity>
         </View>
 

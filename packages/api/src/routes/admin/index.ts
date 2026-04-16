@@ -8,13 +8,65 @@ import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
+import { sign, verify } from 'hono/jwt';
+
+const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 
 const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
+
+// Token exchange endpoint — must be registered BEFORE the auth middleware so it
+// remains publicly accessible. Accepts HTTP Basic credentials and returns a
+// short-lived JWT that subsequent requests can use via Bearer auth.
+adminRoutes.post('/token', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader?.startsWith('Basic ')) {
+    return c.json({ error: 'Missing credentials' }, 401);
+  }
+  const decoded = atob(authHeader.slice(6));
+  const colonIndex = decoded.indexOf(':');
+  if (colonIndex < 0) {
+    return c.json({ error: 'Invalid credentials format' }, 401);
+  }
+  const username = decoded.slice(0, colonIndex);
+  const password = decoded.slice(colonIndex + 1);
+
+  const e = getEnv(c);
+  if (username !== e.ADMIN_USERNAME || password !== e.ADMIN_PASSWORD) {
+    return c.json({ error: 'Invalid username or password' }, 401);
+  }
+
+  const token = await sign(
+    {
+      sub: username,
+      role: 'admin',
+      exp: Math.floor(Date.now() / 1000) + ADMIN_TOKEN_TTL_SECONDS,
+    },
+    e.JWT_SECRET,
+  );
+
+  return c.json({ token, expiresIn: ADMIN_TOKEN_TTL_SECONDS });
+});
 
 adminRoutes.use('*', async (c, next) => {
   // Production: Cloudflare Access injects this header after verifying the user
   const cfEmail = c.req.header('CF-Access-Authenticated-User-Email');
   if (cfEmail) return next();
+
+  // Bearer JWT token (issued by /api/admin/token)
+  const authHeader = c.req.header('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const e = getEnv(c);
+      const payload = await verify(authHeader.slice(7), e.JWT_SECRET, 'HS256');
+      if (payload.role !== 'admin') {
+        return c.json({ error: 'Forbidden' }, 403);
+      }
+      return next();
+    } catch {
+      return c.json({ error: 'Invalid or expired token' }, 401);
+    }
+  }
+
   // Local dev / fallback: HTTP Basic Auth
   return basicAuth({
     verifyUser: (username, password, c) => {

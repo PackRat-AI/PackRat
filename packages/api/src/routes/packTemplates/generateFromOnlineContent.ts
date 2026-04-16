@@ -297,11 +297,11 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
       }
     } catch (apiError) {
       console.error('TikTok service call failed:', apiError);
-      c.get('sentry').captureException(apiError, {
-        captureContext: {
-          extra: { tiktokUrl: contentUrl, errorType: 'tiktok_service_error' },
-        },
+      c.get('sentry').setContext('tiktok_error', {
+        tiktokUrl: contentUrl,
+        errorType: 'tiktok_service_error',
       });
+      c.get('sentry').captureException(apiError);
       return c.json(
         {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,

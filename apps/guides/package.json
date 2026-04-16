@@ -1,6 +1,6 @@
 {
   "name": "packrat-guides-app",
-  "version": "2.0.18",
+  "version": "2.0.19",
   "private": true,
   "scripts": {
     "build": "bun run build-content && next build",
@@ -71,7 +71,7 @@
     "react-day-picker": "9.14.0",
     "react-dom": "catalog:",
     "react-hook-form": "^7.58.1",
-    "react-resizable-panels": "^2.1.9",
+    "react-resizable-panels": "^4.10.0",
     "recharts": "3.8.1",
     "remark": "^15.0.1",
     "remark-gfm": "^4.0.1",
@@ -87,7 +87,7 @@
   "devDependencies": {
     "@types/mdx": "^2.0.13",
     "@types/node": "^22.15.33",
-    "@types/react": "~19.2.14",
+    "@types/react": "~19.1.10",
     "@types/react-dom": "^19.1.6",
     "postcss": "^8.5.6",
     "postcss-import": "^16.1.1",

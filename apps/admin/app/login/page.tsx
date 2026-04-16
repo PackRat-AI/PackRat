@@ -10,7 +10,7 @@ import {
 } from '@packrat/web-ui/components/card';
 import { Input } from '@packrat/web-ui/components/input';
 import { Label } from '@packrat/web-ui/components/label';
-import { storeCredentials } from 'admin-app/lib/auth';
+import { storeToken } from 'admin-app/lib/auth';
 import { Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -30,7 +30,8 @@ export default function LoginPage() {
     setPending(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/stats`, {
+      const res = await fetch(`${API_BASE}/api/admin/token`, {
+        method: 'POST',
         headers: {
           Authorization: `Basic ${btoa(`${username}:${password}`)}`,
         },
@@ -46,7 +47,8 @@ export default function LoginPage() {
         return;
       }
 
-      storeCredentials(username, password);
+      const { token } = (await res.json()) as { token: string };
+      storeToken(token);
       router.replace('/dashboard');
     } catch {
       setError('Could not reach the API. Check that the server is running.');

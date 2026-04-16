@@ -1,23 +1,23 @@
-const CREDS_KEY = 'packrat_admin_creds';
+const TOKEN_KEY = 'packrat_admin_token';
 
-/** Returns the stored Base64 credential string, or null if not logged in. */
-export function getStoredCredentials(): string | null {
+/** Returns the stored admin JWT, or null if not logged in. */
+export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return sessionStorage.getItem(CREDS_KEY);
+  return sessionStorage.getItem(TOKEN_KEY);
 }
 
-/** Encode and persist credentials for the session. */
-export function storeCredentials(username: string, password: string): void {
-  sessionStorage.setItem(CREDS_KEY, btoa(`${username}:${password}`));
+/** Persist a short-lived admin JWT for the session. */
+export function storeToken(token: string): void {
+  sessionStorage.setItem(TOKEN_KEY, token);
 }
 
-/** Remove credentials (logout). */
-export function clearCredentials(): void {
-  if (typeof window !== 'undefined') sessionStorage.removeItem(CREDS_KEY);
+/** Remove the token (logout). */
+export function clearToken(): void {
+  if (typeof window !== 'undefined') sessionStorage.removeItem(TOKEN_KEY);
 }
 
 /** Returns an Authorization header object, or empty object if not logged in. */
 export function getAuthHeader(): Record<string, string> {
-  const creds = getStoredCredentials();
-  return creds ? { Authorization: `Basic ${creds}` } : {};
+  const token = getStoredToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
