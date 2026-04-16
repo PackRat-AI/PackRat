@@ -1,4 +1,4 @@
-import { SpecParser } from '@packrat/data-lake';
+import { SpecParser } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { getCache } from '../shared';

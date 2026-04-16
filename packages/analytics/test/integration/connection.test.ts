@@ -7,7 +7,7 @@
 
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { DuckDBInstance } from '@duckdb/node-api';
-import { configureS3, createCatalogConnection } from '@packrat/data-lake/core/connection';
+import { configureS3, createCatalogConnection } from '@packrat/analytics/core/connection';
 import { describe, expect, it } from 'vitest';
 
 const hasS3Creds = !!process.env.R2_ACCESS_KEY_ID && !!process.env.R2_SECRET_ACCESS_KEY;

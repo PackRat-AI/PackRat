@@ -9,7 +9,8 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@packrat/data-lake/*": ["src/*"]
+      "@packrat/analytics": ["src/index.ts"],
+      "@packrat/analytics/*": ["src/*"]
     }
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],

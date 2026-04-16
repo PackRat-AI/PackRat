@@ -1,4 +1,4 @@
-import { env, resetEnv } from '@packrat/data-lake/core/env';
+import { env, resetEnv } from '@packrat/analytics/core/env';
 import { afterEach, describe, expect, it } from 'vitest';
 
 afterEach(() => resetEnv());

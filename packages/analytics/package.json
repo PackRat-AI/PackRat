@@ -1,5 +1,5 @@
 {
-  "name": "@packrat/data-lake",
+  "name": "@packrat/analytics",
   "version": "2.0.20",
   "private": true,
   "type": "module",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.0-r.1",
+    "consola": "^3.4.2",
     "magic-regexp": "^0.11.0",
     "radash": "catalog:",
     "zod": "catalog:"

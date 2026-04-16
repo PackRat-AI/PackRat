@@ -8,7 +8,7 @@
  */
 
 import { existsSync, rmSync } from 'node:fs';
-import { LocalCacheManager } from '@packrat/data-lake/core/local-cache';
+import { LocalCacheManager } from '@packrat/analytics/core/local-cache';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const DEFAULT_CACHE_DIR = 'data/cache';

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, rmSync } from 'node:fs';
-import { DataExporter } from '@packrat/data-lake/core/data-export';
+import { DataExporter } from '@packrat/analytics/core/data-export';
 import { afterAll, describe, expect, it } from 'vitest';
 
 const TEST_OUTPUT_DIR = 'data/test-exports';

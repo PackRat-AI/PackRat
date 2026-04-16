@@ -1,4 +1,4 @@
-import { normalizeImageUrl, rankImage } from '@packrat/data-lake/core/enrichment';
+import { normalizeImageUrl, rankImage } from '@packrat/analytics/core/enrichment';
 import { describe, expect, it } from 'vitest';
 
 describe('normalizeImageUrl', () => {
