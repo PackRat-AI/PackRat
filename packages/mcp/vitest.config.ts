@@ -1,5 +1,5 @@
-import { resolve } from 'node:path'
-import { defineConfig } from 'vitest/config'
+import { resolve } from 'node:path';
+import { defineConfig } from 'vitest/config';
 
 /**
  * Vitest configuration for MCP package unit tests.
@@ -17,11 +17,7 @@ export default defineConfig({
       reporter: ['text', 'json-summary', 'json'],
       reportsDirectory: resolve(__dirname, 'coverage'),
       include: ['src/**/*.ts'],
-      exclude: [
-        'src/**/*.test.ts',
-        'src/**/*.spec.ts',
-        'src/index.ts',
-      ],
+      exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/index.ts'],
     },
   },
-})
+});
