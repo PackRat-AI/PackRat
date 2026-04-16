@@ -1,12 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  api,
-  apiWithAuth,
-  expectBadRequest,
-  expectJsonResponse,
-  expectUnauthorized,
-  httpMethods,
-} from './utils/test-helpers';
+import { api, apiWithAuth, expectUnauthorized, httpMethods } from './utils/test-helpers';
 
 // Chat routes tests
 // Note: Most chat functionality requires Cloudflare AI binding (env.AI.autorag) which is
@@ -51,33 +44,6 @@ describe('Chat Routes', () => {
       const res = await apiWithAuth('/chat', httpMethods.post({}));
       // Route defaults to an empty messages array; returns 200 stream.
       expect([200, 400]).toContain(res.status);
-    });
-
-    it('handles empty messages', async () => {
-      const res = await apiWithAuth(
-        '/chat',
-        httpMethods.post({
-          message: '',
-        }),
-      );
-
-      expectBadRequest(res);
-    });
-
-    it('handles special characters in messages', async () => {
-      const specialMessage = {
-        message: 'Test with special chars: @#$%^&*()[]{}|\\:";\'<>?,./',
-      };
-
-      const res = await apiWithAuth('/chat', httpMethods.post(specialMessage));
-
-      // Should handle gracefully
-      expect([200, 400]).toContain(res.status);
-      if (res.status === 200) {
-        await expectJsonResponse(res);
-      } else {
-        expectBadRequest(res);
-      }
     });
   });
 

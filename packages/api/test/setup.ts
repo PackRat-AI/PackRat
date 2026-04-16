@@ -129,6 +129,10 @@ vi.mock('ai', async () => {
   const actual = await vi.importActual<typeof import('ai')>('ai');
   return {
     ...actual,
+    // The real convertToModelMessages reads UIMessage internals that our test
+    // message shapes don't have. Pass-through is safe because mocked streamText
+    // ignores the payload anyway.
+    convertToModelMessages: vi.fn((messages: unknown) => messages ?? []),
     // Branch on the caller's requested output shape: PackService.generatePackConcepts
     // passes `output: 'array'` and expects `object` to be an array of PackConcepts;
     // generateFromOnlineContent passes no `output` and expects the analysisSchema
