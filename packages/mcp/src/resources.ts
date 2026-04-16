@@ -1,5 +1,14 @@
-import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
-import type { PackRatMCP } from './index'
+import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ApiError } from './client';
+import type { PackRatMCP } from './index';
+
+// biome-ignore lint/complexity/useMaxParams: uri, context, and error are all distinct and necessary
+function resourceError(uri: string, context: string, e: unknown): object {
+  if (e instanceof ApiError) {
+    return { uri, error: e.message, status: e.status, context };
+  }
+  return { uri, error: e instanceof Error ? e.message : String(e), context };
+}
 
 export function registerResources(agent: PackRatMCP): void {
   // ── Pack resource (URI template) ──────────────────────────────────────────
@@ -15,29 +24,25 @@ export function registerResources(agent: PackRatMCP): void {
     },
     async (uri, { packId }) => {
       try {
-        const pack = await agent.api.get(`/packs/${String(packId)}`)
+        const pack = await agent.api.get(`/packs/${String(packId)}`);
+        return {
+          contents: [
+            { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(pack, null, 2) },
+          ],
+        };
+      } catch (e) {
         return {
           contents: [
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(pack, null, 2),
+              text: JSON.stringify(resourceError(uri.href, `pack:${String(packId)}`, e)),
             },
           ],
-        }
-      } catch {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify({ error: 'Pack not found', packId }),
-            },
-          ],
-        }
+        };
       }
     },
-  )
+  );
 
   // ── Trip resource ─────────────────────────────────────────────────────────
 
@@ -51,29 +56,25 @@ export function registerResources(agent: PackRatMCP): void {
     },
     async (uri, { tripId }) => {
       try {
-        const trip = await agent.api.get(`/trips/${String(tripId)}`)
+        const trip = await agent.api.get(`/trips/${String(tripId)}`);
+        return {
+          contents: [
+            { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(trip, null, 2) },
+          ],
+        };
+      } catch (e) {
         return {
           contents: [
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(trip, null, 2),
+              text: JSON.stringify(resourceError(uri.href, `trip:${String(tripId)}`, e)),
             },
           ],
-        }
-      } catch {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify({ error: 'Trip not found', tripId }),
-            },
-          ],
-        }
+        };
       }
     },
-  )
+  );
 
   // ── Catalog item resource ─────────────────────────────────────────────────
 
@@ -87,29 +88,25 @@ export function registerResources(agent: PackRatMCP): void {
     },
     async (uri, { itemId }) => {
       try {
-        const item = await agent.api.get(`/catalog/${String(itemId)}`)
+        const item = await agent.api.get(`/catalog/${String(itemId)}`);
+        return {
+          contents: [
+            { uri: uri.href, mimeType: 'application/json', text: JSON.stringify(item, null, 2) },
+          ],
+        };
+      } catch (e) {
         return {
           contents: [
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(item, null, 2),
+              text: JSON.stringify(resourceError(uri.href, `catalog:${String(itemId)}`, e)),
             },
           ],
-        }
-      } catch {
-        return {
-          contents: [
-            {
-              uri: uri.href,
-              mimeType: 'application/json',
-              text: JSON.stringify({ error: 'Catalog item not found', itemId }),
-            },
-          ],
-        }
+        };
       }
     },
-  )
+  );
 
   // ── Gear categories list (static URI) ─────────────────────────────────────
 
@@ -123,7 +120,7 @@ export function registerResources(agent: PackRatMCP): void {
     },
     async (uri) => {
       try {
-        const categories = await agent.api.get('/catalog/categories')
+        const categories = await agent.api.get('/catalog/categories');
         return {
           contents: [
             {
@@ -132,18 +129,18 @@ export function registerResources(agent: PackRatMCP): void {
               text: JSON.stringify(categories, null, 2),
             },
           ],
-        }
-      } catch {
+        };
+      } catch (e) {
         return {
           contents: [
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify({ error: 'Could not load categories' }),
+              text: JSON.stringify(resourceError(uri.href, 'gear_categories', e)),
             },
           ],
-        }
+        };
       }
     },
-  )
+  );
 }

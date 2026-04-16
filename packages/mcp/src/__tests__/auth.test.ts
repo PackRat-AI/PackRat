@@ -9,7 +9,7 @@
  * We test this by importing the default export and calling its fetch() method
  * directly with a mocked Env and ExecutionContext.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest';
 
 // ── minimal Env and ExecutionContext fakes ────────────────────────────────────
 
@@ -22,42 +22,43 @@ const fakeEnv = {
       fetch: vi.fn().mockResolvedValue(new Response('{}', { status: 200 })),
     }),
   },
-}
+};
 
 const fakeCtx = {
   waitUntil: vi.fn(),
   passThroughOnException: vi.fn(),
-} as unknown as ExecutionContext
+} as unknown as ExecutionContext;
 
 // ── stub agents/mcp so we do NOT spin up a real Durable Object ───────────────
 
 vi.mock('agents/mcp', () => {
+  // biome-ignore lint/complexity/noStaticOnlyClass: mock must be a class since PackRatMCP extends McpAgent
   class McpAgent {
     static serve(_path: string) {
       return {
         fetch: vi.fn().mockResolvedValue(new Response('{"jsonrpc":"2.0"}', { status: 200 })),
-      }
+      };
     }
   }
-  return { McpAgent }
-})
+  return { McpAgent };
+});
 
 vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => ({
   McpServer: class {
-    registerTool = vi.fn()
-    registerResource = vi.fn()
-    registerPrompt = vi.fn()
+    registerTool = vi.fn();
+    registerResource = vi.fn();
+    registerPrompt = vi.fn();
   },
-}))
+}));
 
 // ── import the Worker after mocks are in place ────────────────────────────────
 
-const { default: worker } = await import('../index')
+const { default: worker } = await import('../index');
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function makeRequest(url: string, options: RequestInit = {}): Request {
-  return new Request(url, options)
+  return new Request(url, options);
 }
 
 // ── tests ─────────────────────────────────────────────────────────────────────
@@ -65,24 +66,24 @@ function makeRequest(url: string, options: RequestInit = {}): Request {
 describe('Worker fetch handler', () => {
   describe('health check', () => {
     it('returns 200 for GET /', async () => {
-      const res = await worker.fetch(makeRequest('https://worker.example.com/'), fakeEnv, fakeCtx)
-      expect(res.status).toBe(200)
-      const body = await res.json() as Record<string, unknown>
-      expect(body.status).toBe('ok')
-      expect(body.service).toBe('packrat-mcp')
-    })
+      const res = await worker.fetch(makeRequest('https://worker.example.com/'), fakeEnv, fakeCtx);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as Record<string, unknown>;
+      expect(body.status).toBe('ok');
+      expect(body.service).toBe('packrat-mcp');
+    });
 
     it('returns 200 for GET /health', async () => {
       const res = await worker.fetch(
         makeRequest('https://worker.example.com/health'),
         fakeEnv,
         fakeCtx,
-      )
-      expect(res.status).toBe(200)
-      const body = await res.json() as Record<string, unknown>
-      expect(body.status).toBe('ok')
-    })
-  })
+      );
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as Record<string, unknown>;
+      expect(body.status).toBe('ok');
+    });
+  });
 
   describe('/mcp auth guard', () => {
     it('returns 401 when Authorization header is absent', async () => {
@@ -90,12 +91,12 @@ describe('Worker fetch handler', () => {
         makeRequest('https://worker.example.com/mcp'),
         fakeEnv,
         fakeCtx,
-      )
-      expect(res.status).toBe(401)
-      const body = await res.json() as Record<string, unknown>
-      expect(body.error).toBe('Unauthorized')
-      expect(res.headers.get('WWW-Authenticate')).toMatch(/Bearer/)
-    })
+      );
+      expect(res.status).toBe(401);
+      const body = (await res.json()) as Record<string, unknown>;
+      expect(body.error).toBe('Unauthorized');
+      expect(res.headers.get('WWW-Authenticate')).toMatch(/Bearer/);
+    });
 
     it('returns 401 when Authorization is not Bearer scheme', async () => {
       const res = await worker.fetch(
@@ -104,9 +105,9 @@ describe('Worker fetch handler', () => {
         }),
         fakeEnv,
         fakeCtx,
-      )
-      expect(res.status).toBe(401)
-    })
+      );
+      expect(res.status).toBe(401);
+    });
 
     it('returns 401 for empty Bearer token', async () => {
       const res = await worker.fetch(
@@ -115,9 +116,9 @@ describe('Worker fetch handler', () => {
         }),
         fakeEnv,
         fakeCtx,
-      )
-      expect(res.status).toBe(401)
-    })
+      );
+      expect(res.status).toBe(401);
+    });
 
     it('forwards request to McpAgent when valid Bearer token is provided', async () => {
       const res = await worker.fetch(
@@ -131,10 +132,10 @@ describe('Worker fetch handler', () => {
         }),
         fakeEnv,
         fakeCtx,
-      )
+      );
       // The mock McpAgent.serve returns 200 — auth guard passed through
-      expect(res.status).toBe(200)
-    })
+      expect(res.status).toBe(200);
+    });
 
     it('also forwards sub-paths of /mcp with valid auth', async () => {
       const res = await worker.fetch(
@@ -143,10 +144,10 @@ describe('Worker fetch handler', () => {
         }),
         fakeEnv,
         fakeCtx,
-      )
-      expect(res.status).toBe(200)
-    })
-  })
+      );
+      expect(res.status).toBe(200);
+    });
+  });
 
   describe('unknown paths', () => {
     it('returns 404 for unknown paths', async () => {
@@ -154,19 +155,19 @@ describe('Worker fetch handler', () => {
         makeRequest('https://worker.example.com/unknown'),
         fakeEnv,
         fakeCtx,
-      )
-      expect(res.status).toBe(404)
-      const body = await res.json() as Record<string, unknown>
-      expect(body.error).toBe('Not Found')
-    })
+      );
+      expect(res.status).toBe(404);
+      const body = (await res.json()) as Record<string, unknown>;
+      expect(body.error).toBe('Not Found');
+    });
 
     it('returns 404 for /api paths', async () => {
       const res = await worker.fetch(
         makeRequest('https://worker.example.com/api/v1/packs'),
         fakeEnv,
         fakeCtx,
-      )
-      expect(res.status).toBe(404)
-    })
-  })
-})
+      );
+      expect(res.status).toBe(404);
+    });
+  });
+});

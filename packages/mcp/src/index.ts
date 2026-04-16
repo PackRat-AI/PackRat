@@ -17,32 +17,32 @@
  * Connection URL: https://<your-worker>.workers.dev/mcp
  */
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { McpAgent } from 'agents/mcp'
-import { PackRatApiClient } from './client'
-import { registerPrompts } from './prompts'
-import { registerResources } from './resources'
-import { registerCatalogTools } from './tools/catalog'
-import { registerKnowledgeTools } from './tools/knowledge'
-import { registerPackTools } from './tools/packs'
-import { registerTrailConditionTools } from './tools/trail-conditions'
-import { registerTripTools } from './tools/trips'
-import { registerWeatherTools } from './tools/weather'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpAgent } from 'agents/mcp';
+import { PackRatApiClient } from './client';
+import { registerPrompts } from './prompts';
+import { registerResources } from './resources';
+import { registerCatalogTools } from './tools/catalog';
+import { registerKnowledgeTools } from './tools/knowledge';
+import { registerPackTools } from './tools/packs';
+import { registerTrailConditionTools } from './tools/trail-conditions';
+import { registerTripTools } from './tools/trips';
+import { registerWeatherTools } from './tools/weather';
 
 // ── Environment type ──────────────────────────────────────────────────────────
 
 export interface Env {
   /** Durable Object binding for MCP sessions */
-  PackRatMCP: DurableObjectNamespace
+  PackRatMCP: DurableObjectNamespace;
   /** Base URL of the PackRat API (e.g. "https://packrat.world") */
-  PACKRAT_API_URL: string
+  PACKRAT_API_URL: string;
 }
 
 // ── Session state ─────────────────────────────────────────────────────────────
 
 export interface State {
   /** JWT Bearer token extracted from the initial Authorization header */
-  authToken: string
+  authToken: string;
 }
 
 // ── MCP Agent ─────────────────────────────────────────────────────────────────
@@ -51,24 +51,21 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   server = new McpServer({
     name: 'packrat',
     version: '1.0.0',
-  })
+  });
 
-  initialState: State = { authToken: '' }
+  initialState: State = { authToken: '' };
 
   /**
    * Public API client, accessible from tool registration functions.
    * Lazily initialized on first use — reads auth token from current state.
    */
-  private _api: PackRatApiClient | null = null
+  private _api: PackRatApiClient | null = null;
 
   get api(): PackRatApiClient {
     if (!this._api) {
-      this._api = new PackRatApiClient(
-        this.env.PACKRAT_API_URL,
-        () => this.state.authToken,
-      )
+      this._api = new PackRatApiClient(this.env.PACKRAT_API_URL, () => this.state.authToken);
     }
-    return this._api
+    return this._api;
   }
 
   /**
@@ -77,17 +74,18 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
    * This ensures tools always have access to the current session's auth token.
    */
   override async fetch(request: Request): Promise<Response> {
-    const authHeader = request.headers.get('Authorization') ?? request.headers.get('authorization')
-    const token = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? ''
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.match(BEARER_REGEX)?.[1] ?? '';
 
-    // Persist the latest auth token in state so tool handlers can access it.
+    // Persist the latest auth token in state (including clearing stale tokens
+    // when a request arrives without a valid bearer token).
     // setState is synchronous — state is updated before super.fetch processes
     // the MCP protocol message and calls any tool handlers.
-    if (token && token !== this.state.authToken) {
-      this.setState({ ...this.state, authToken: token })
+    if (token !== this.state.authToken) {
+      this.setState({ ...this.state, authToken: token });
     }
 
-    return super.fetch(request)
+    return super.fetch(request);
   }
 
   /**
@@ -95,18 +93,20 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
    * Register all tools, resources, and prompts here.
    */
   async init(): Promise<void> {
-    registerPackTools(this)
-    registerCatalogTools(this)
-    registerTripTools(this)
-    registerWeatherTools(this)
-    registerKnowledgeTools(this)
-    registerTrailConditionTools(this)
-    registerResources(this)
-    registerPrompts(this)
+    registerPackTools(this);
+    registerCatalogTools(this);
+    registerTripTools(this);
+    registerWeatherTools(this);
+    registerKnowledgeTools(this);
+    registerTrailConditionTools(this);
+    registerResources(this);
+    registerPrompts(this);
   }
 }
 
 // ── Worker entry point ────────────────────────────────────────────────────────
+
+const BEARER_REGEX = /^Bearer\s+(\S+)/i;
 
 /**
  * The Cloudflare Worker fetch handler.
@@ -114,11 +114,12 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
  * Validates the Authorization header before routing to the McpAgent Durable Object.
  * The token is forwarded via the request and stored in DO state for tool calls.
  */
-const mcpHandler = PackRatMCP.serve('/mcp')
+const mcpHandler = PackRatMCP.serve('/mcp');
 
 export default {
+  // biome-ignore lint/complexity/useMaxParams: Cloudflare Worker requires (request, env, ctx)
   fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
-    const url = new URL(request.url)
+    const url = new URL(request.url);
 
     // ── Health check ──────────────────────────────────────────────────────
     if (url.pathname === '/' || url.pathname === '/health') {
@@ -129,15 +130,15 @@ export default {
         transport: 'streamable-http',
         endpoint: '/mcp',
         docs: 'https://packrat.world/docs/mcp',
-      })
+      });
     }
 
     // ── MCP endpoint ──────────────────────────────────────────────────────
     if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
-      const authHeader =
-        request.headers.get('Authorization') ?? request.headers.get('authorization')
+      const authHeader = request.headers.get('Authorization');
+      const token = authHeader?.match(BEARER_REGEX)?.[1] ?? '';
 
-      if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+      if (!token) {
         return Response.json(
           {
             error: 'Unauthorized',
@@ -152,10 +153,10 @@ export default {
               'Content-Type': 'application/json',
             },
           },
-        )
+        );
       }
 
-      return mcpHandler.fetch(request, env, ctx)
+      return mcpHandler.fetch(request, env, ctx);
     }
 
     // ── 404 ───────────────────────────────────────────────────────────────
@@ -168,6 +169,6 @@ export default {
         ],
       },
       { status: 404 },
-    )
+    );
   },
-}
+};

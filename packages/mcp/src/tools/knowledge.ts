@@ -1,6 +1,6 @@
-import { z } from 'zod'
-import { err, ok } from '../client'
-import type { PackRatMCP } from '../index'
+import { z } from 'zod';
+import { err, ok } from '../client';
+import type { PackRatMCP } from '../index';
 
 export function registerKnowledgeTools(agent: PackRatMCP): void {
   // ── Outdoor guides RAG search ─────────────────────────────────────────────
@@ -28,13 +28,13 @@ export function registerKnowledgeTools(agent: PackRatMCP): void {
     },
     async ({ query, limit }) => {
       try {
-        const data = await agent.api.get('/ai/rag-search', { query, limit })
-        return ok(data)
+        const data = await agent.api.get('/ai/rag-search', { q: query, limit });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Web search ────────────────────────────────────────────────────────────
 
@@ -54,13 +54,13 @@ export function registerKnowledgeTools(agent: PackRatMCP): void {
     },
     async ({ query }) => {
       try {
-        const data = await agent.api.get('/ai/web-search', { query })
-        return ok(data)
+        const data = await agent.api.get('/ai/web-search', { q: query });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Execute SQL (power user tool) ─────────────────────────────────────────
 
@@ -74,7 +74,7 @@ export function registerKnowledgeTools(agent: PackRatMCP): void {
           .string()
           .min(10)
           .describe(
-            "A valid SQL SELECT statement. Example: \"SELECT name, brand, weight FROM catalog_items WHERE category = 'sleeping bags' AND weight < 500 ORDER BY weight ASC LIMIT 10\"",
+            'A valid SQL SELECT statement. Example: "SELECT name, brand, weight FROM catalog_items WHERE category = \'sleeping bags\' AND weight < 500 ORDER BY weight ASC LIMIT 10"',
           ),
         limit: z
           .number()
@@ -87,13 +87,13 @@ export function registerKnowledgeTools(agent: PackRatMCP): void {
     },
     async ({ query, limit }) => {
       try {
-        const data = await agent.api.post('/ai/execute-sql', { query, limit })
-        return ok(data)
+        const data = await agent.api.post('/ai/execute-sql', { query, limit });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Get DB schema ─────────────────────────────────────────────────────────
 
@@ -106,11 +106,11 @@ export function registerKnowledgeTools(agent: PackRatMCP): void {
     },
     async () => {
       try {
-        const data = await agent.api.get('/ai/db-schema')
-        return ok(data)
+        const data = await agent.api.get('/ai/db-schema');
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 }

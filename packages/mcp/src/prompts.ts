@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import type { PackRatMCP } from './index'
+import { z } from 'zod';
+import type { PackRatMCP } from './index';
 
 export function registerPrompts(agent: PackRatMCP): void {
   // ── Trip planning prompt ──────────────────────────────────────────────────
@@ -28,7 +28,7 @@ export function registerPrompts(agent: PackRatMCP): void {
       },
     },
     ({ destination, duration_days, activity, season, experience_level, pack_style }) => {
-      const seasonStr = season ? ` in ${season}` : ''
+      const seasonStr = season ? ` in ${season}` : '';
       return {
         messages: [
           {
@@ -67,9 +67,9 @@ At the end, provide:
             },
           },
         ],
-      }
+      };
     },
-  )
+  );
 
   // ── Pack optimization prompt ──────────────────────────────────────────────
 
@@ -84,15 +84,14 @@ At the end, provide:
           .string()
           .optional()
           .describe('Target base weight in kg (e.g. "5.0" for 5kg base weight)'),
-        budget_usd: z
-          .string()
-          .optional()
-          .describe('Budget for gear upgrades in USD (e.g. "500")'),
+        budget_usd: z.string().optional().describe('Budget for gear upgrades in USD (e.g. "500")'),
       },
     },
     ({ pack_id, target_weight_kg, budget_usd }) => {
-      const targetStr = target_weight_kg ? ` with a target base weight of ${target_weight_kg}kg` : ''
-      const budgetStr = budget_usd ? ` within a $${budget_usd} upgrade budget` : ''
+      const targetStr = target_weight_kg
+        ? ` with a target base weight of ${target_weight_kg}kg`
+        : '';
+      const budgetStr = budget_usd ? ` within a $${budget_usd} upgrade budget` : '';
       return {
         messages: [
           {
@@ -117,9 +116,9 @@ Prioritize the highest weight-savings-per-dollar swaps. Flag any items that are 
             },
           },
         ],
-      }
+      };
     },
-  )
+  );
 
   // ── Gear recommendations prompt ───────────────────────────────────────────
 
@@ -148,9 +147,9 @@ Prioritize the highest weight-savings-per-dollar swaps. Flag any items that are 
       },
     },
     ({ activity, conditions, category, budget_usd, weight_priority }) => {
-      const condStr = conditions ? ` in conditions: ${conditions}` : ''
-      const catStr = category ? ` specifically looking for ${category}` : ''
-      const budgetStr = budget_usd ? ` Budget: under $${budget_usd}.` : ''
+      const condStr = conditions ? ` in conditions: ${conditions}` : '';
+      const catStr = category ? ` specifically looking for ${category}` : '';
+      const budgetStr = budget_usd ? ` Budget: under $${budget_usd}.` : '';
       return {
         messages: [
           {
@@ -174,9 +173,9 @@ Format the response as:
             },
           },
         ],
-      }
+      };
     },
-  )
+  );
 
   // ── Trail research prompt ─────────────────────────────────────────────────
 
@@ -189,14 +188,11 @@ Format the response as:
         trail_name: z
           .string()
           .describe('Trail or route name (e.g. "Pacific Crest Trail Section A")'),
-        start_date: z
-          .string()
-          .optional()
-          .describe('Planned start date (e.g. "July 15, 2025")'),
+        start_date: z.string().optional().describe('Planned start date (e.g. "July 15, 2025")'),
       },
     },
     ({ trail_name, start_date }) => {
-      const dateStr = start_date ? ` starting ${start_date}` : ''
+      const dateStr = start_date ? ` starting ${start_date}` : '';
       return {
         messages: [
           {
@@ -223,7 +219,7 @@ Summarize:
             },
           },
         ],
-      }
+      };
     },
-  )
+  );
 }

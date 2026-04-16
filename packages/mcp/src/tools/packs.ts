@@ -1,6 +1,6 @@
-import { z } from 'zod'
-import { err, ok } from '../client'
-import type { PackRatMCP } from '../index'
+import { z } from 'zod';
+import { err, ok } from '../client';
+import type { PackRatMCP } from '../index';
 
 export function registerPackTools(agent: PackRatMCP): void {
   // ── List packs ────────────────────────────────────────────────────────────
@@ -29,13 +29,13 @@ export function registerPackTools(agent: PackRatMCP): void {
     },
     async ({ limit, offset, category }) => {
       try {
-        const data = await agent.api.get('/packs', { limit, offset, category })
-        return ok(data)
+        const data = await agent.api.get('/packs', { limit, offset, category });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Get pack details ──────────────────────────────────────────────────────
 
@@ -50,13 +50,13 @@ export function registerPackTools(agent: PackRatMCP): void {
     },
     async ({ pack_id }) => {
       try {
-        const data = await agent.api.get(`/packs/${pack_id}`)
-        return ok(data)
+        const data = await agent.api.get(`/packs/${pack_id}`);
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Create pack ───────────────────────────────────────────────────────────
 
@@ -82,8 +82,8 @@ export function registerPackTools(agent: PackRatMCP): void {
     },
     async ({ name, description, category, is_public, tags }) => {
       try {
-        const id = `p_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`
-        const now = new Date().toISOString()
+        const id = `p_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const now = new Date().toISOString();
         const data = await agent.api.post('/packs', {
           id,
           name,
@@ -93,13 +93,13 @@ export function registerPackTools(agent: PackRatMCP): void {
           tags,
           localCreatedAt: now,
           localUpdatedAt: now,
-        })
-        return ok(data)
+        });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Update pack ───────────────────────────────────────────────────────────
 
@@ -118,19 +118,19 @@ export function registerPackTools(agent: PackRatMCP): void {
     },
     async ({ pack_id, name, description, category, is_public, tags }) => {
       try {
-        const body: Record<string, unknown> = { localUpdatedAt: new Date().toISOString() }
-        if (name !== undefined) body['name'] = name
-        if (description !== undefined) body['description'] = description
-        if (category !== undefined) body['category'] = category
-        if (is_public !== undefined) body['isPublic'] = is_public
-        if (tags !== undefined) body['tags'] = tags
-        const data = await agent.api.patch(`/packs/${pack_id}`, body)
-        return ok(data)
+        const body: Record<string, unknown> = { localUpdatedAt: new Date().toISOString() };
+        if (name !== undefined) body.name = name;
+        if (description !== undefined) body.description = description;
+        if (category !== undefined) body.category = category;
+        if (is_public !== undefined) body.isPublic = is_public;
+        if (tags !== undefined) body.tags = tags;
+        const data = await agent.api.patch(`/packs/${pack_id}`, body);
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Delete pack ───────────────────────────────────────────────────────────
 
@@ -144,13 +144,13 @@ export function registerPackTools(agent: PackRatMCP): void {
     },
     async ({ pack_id }) => {
       try {
-        const data = await agent.api.delete(`/packs/${pack_id}`)
-        return ok(data)
+        const data = await agent.api.delete(`/packs/${pack_id}`);
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Add item to pack ──────────────────────────────────────────────────────
 
@@ -194,8 +194,8 @@ export function registerPackTools(agent: PackRatMCP): void {
       notes,
     }) => {
       try {
-        const id = `i_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`
-        const now = new Date().toISOString()
+        const id = `i_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const now = new Date().toISOString();
         const data = await agent.api.post(`/packs/${pack_id}/items`, {
           id,
           name,
@@ -208,13 +208,13 @@ export function registerPackTools(agent: PackRatMCP): void {
           notes,
           localCreatedAt: now,
           localUpdatedAt: now,
-        })
-        return ok(data)
+        });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Remove item from pack ─────────────────────────────────────────────────
 
@@ -229,49 +229,13 @@ export function registerPackTools(agent: PackRatMCP): void {
     },
     async ({ pack_id, item_id }) => {
       try {
-        const data = await agent.api.delete(`/packs/${pack_id}/items/${item_id}`)
-        return ok(data)
+        const data = await agent.api.delete(`/packs/${pack_id}/items/${item_id}`);
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
-
-  // ── AI pack generation ────────────────────────────────────────────────────
-
-  agent.server.registerTool(
-    'generate_pack',
-    {
-      description:
-        'Use AI to automatically generate a complete packing list for a trip or activity. The AI searches the gear catalog and creates a fully populated pack. Best for quickly bootstrapping a new pack.',
-      inputSchema: {
-        trip_description: z
-          .string()
-          .min(10)
-          .describe(
-            'Describe the trip or activity (e.g. "3-day winter backpacking trip in the Sierra Nevada, temperatures down to 20°F")',
-          ),
-        count: z
-          .number()
-          .int()
-          .min(1)
-          .max(5)
-          .default(1)
-          .describe('Number of pack concepts to generate (default 1)'),
-      },
-    },
-    async ({ trip_description, count }) => {
-      try {
-        const data = await agent.api.post('/packs/generate', {
-          description: trip_description,
-          count,
-        })
-        return ok(data)
-      } catch (e) {
-        return err(e)
-      }
-    },
-  )
+  );
 
   // ── Pack weight analysis ──────────────────────────────────────────────────
 
@@ -288,32 +252,30 @@ export function registerPackTools(agent: PackRatMCP): void {
       try {
         const pack = (await agent.api.get(`/packs/${pack_id}`)) as {
           items?: Array<{
-            name: string
-            category: string
-            weight: number
-            quantity: number
-            worn: boolean
-            consumable: boolean
-          }>
-          totalWeight?: number
-          baseWeight?: number
-          wornWeight?: number
-          consumableWeight?: number
-        }
+            name: string;
+            category: string;
+            weight: number;
+            quantity: number;
+            worn: boolean;
+            consumable: boolean;
+          }>;
+          totalWeight?: number;
+          baseWeight?: number;
+          wornWeight?: number;
+          consumableWeight?: number;
+        };
 
         const byCategory: Record<string, { items: string[]; totalGrams: number; count: number }> =
-          {}
-        const items = pack.items ?? []
+          {};
+        const items = pack.items ?? [];
 
         for (const item of items) {
-          const cat = item.category || 'Uncategorized'
-          if (!byCategory[cat]) {
-            byCategory[cat] = { items: [], totalGrams: 0, count: 0 }
-          }
-          const entry = byCategory[cat]!
-          entry.items.push(`${item.name} (${item.weight * item.quantity}g × ${item.quantity})`)
-          entry.totalGrams += item.weight * item.quantity
-          entry.count += item.quantity
+          const cat = item.category || 'Uncategorized';
+          const entry = byCategory[cat] ?? { items: [], totalGrams: 0, count: 0 };
+          entry.items.push(`${item.name} (${item.weight}g × ${item.quantity})`);
+          entry.totalGrams += item.weight * item.quantity;
+          entry.count += item.quantity;
+          byCategory[cat] = entry;
         }
 
         const analysis = {
@@ -332,14 +294,14 @@ export function registerPackTools(agent: PackRatMCP): void {
               itemCount: stats.count,
               items: stats.items,
             })),
-        }
+        };
 
-        return ok(analysis)
+        return ok(analysis);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Pack gap analysis ─────────────────────────────────────────────────────
 
@@ -368,11 +330,11 @@ export function registerPackTools(agent: PackRatMCP): void {
         const data = await agent.api.post(`/packs/${pack_id}/gap-analysis`, {
           activity,
           durationDays: duration_days,
-        })
-        return ok(data)
+        });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 }

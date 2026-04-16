@@ -1,6 +1,6 @@
-import { z } from 'zod'
-import { err, ok } from '../client'
-import type { PackRatMCP } from '../index'
+import { z } from 'zod';
+import { err, ok } from '../client';
+import type { PackRatMCP } from '../index';
 
 export function registerTripTools(agent: PackRatMCP): void {
   // ── List trips ────────────────────────────────────────────────────────────
@@ -23,13 +23,13 @@ export function registerTripTools(agent: PackRatMCP): void {
     },
     async ({ limit, offset }) => {
       try {
-        const data = await agent.api.get('/trips', { limit, offset })
-        return ok(data)
+        const data = await agent.api.get('/trips', { limit, offset });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Get trip ──────────────────────────────────────────────────────────────
 
@@ -44,13 +44,13 @@ export function registerTripTools(agent: PackRatMCP): void {
     },
     async ({ trip_id }) => {
       try {
-        const data = await agent.api.get(`/trips/${trip_id}`)
-        return ok(data)
+        const data = await agent.api.get(`/trips/${trip_id}`);
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Create trip ───────────────────────────────────────────────────────────
 
@@ -77,10 +77,7 @@ export function registerTripTools(agent: PackRatMCP): void {
           .optional()
           .describe('Trip end date in ISO 8601 format (e.g. "2025-07-22T00:00:00Z")'),
         notes: z.string().optional().describe('Planning notes, permits needed, logistics'),
-        pack_id: z
-          .string()
-          .optional()
-          .describe('Optionally link an existing pack to this trip'),
+        pack_id: z.string().optional().describe('Optionally link an existing pack to this trip'),
       },
     },
     async ({
@@ -95,19 +92,15 @@ export function registerTripTools(agent: PackRatMCP): void {
       pack_id,
     }) => {
       try {
-        const id = `t_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`
-        const now = new Date().toISOString()
+        const id = `t_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const now = new Date().toISOString();
         const data = await agent.api.post('/trips', {
           id,
           name,
           description,
           location:
-            latitude !== undefined || location_name
-              ? {
-                  latitude: latitude ?? 0,
-                  longitude: longitude ?? 0,
-                  name: location_name,
-                }
+            latitude !== undefined && longitude !== undefined
+              ? { latitude, longitude, name: location_name }
               : null,
           startDate: start_date,
           endDate: end_date,
@@ -115,13 +108,13 @@ export function registerTripTools(agent: PackRatMCP): void {
           packId: pack_id,
           localCreatedAt: now,
           localUpdatedAt: now,
-        })
-        return ok(data)
+        });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Update trip ───────────────────────────────────────────────────────────
 
@@ -139,7 +132,11 @@ export function registerTripTools(agent: PackRatMCP): void {
         start_date: z.string().optional().nullable().describe('New start date (ISO 8601)'),
         end_date: z.string().optional().nullable().describe('New end date (ISO 8601)'),
         notes: z.string().optional().nullable().describe('Updated notes'),
-        pack_id: z.string().optional().nullable().describe('New linked pack ID (or null to unlink)'),
+        pack_id: z
+          .string()
+          .optional()
+          .nullable()
+          .describe('New linked pack ID (or null to unlink)'),
       },
     },
     async ({
@@ -155,27 +152,25 @@ export function registerTripTools(agent: PackRatMCP): void {
       pack_id,
     }) => {
       try {
-        const body: Record<string, unknown> = { localUpdatedAt: new Date().toISOString() }
-        if (name !== undefined) body['name'] = name
-        if (description !== undefined) body['description'] = description
-        if (start_date !== undefined) body['startDate'] = start_date
-        if (end_date !== undefined) body['endDate'] = end_date
-        if (notes !== undefined) body['notes'] = notes
-        if (pack_id !== undefined) body['packId'] = pack_id
-        if (latitude !== undefined || longitude !== undefined || location_name !== undefined) {
-          body['location'] = {
-            latitude: latitude ?? 0,
-            longitude: longitude ?? 0,
-            name: location_name,
-          }
+        const body: Record<string, unknown> = { localUpdatedAt: new Date().toISOString() };
+        if (name !== undefined) body.name = name;
+        if (description !== undefined) body.description = description;
+        if (start_date !== undefined) body.startDate = start_date;
+        if (end_date !== undefined) body.endDate = end_date;
+        if (notes !== undefined) body.notes = notes;
+        if (pack_id !== undefined) body.packId = pack_id;
+        if (latitude !== undefined && longitude !== undefined) {
+          body.location = { latitude, longitude, name: location_name };
+        } else if (location_name !== undefined) {
+          body.location = { name: location_name };
         }
-        const data = await agent.api.patch(`/trips/${trip_id}`, body)
-        return ok(data)
+        const data = await agent.api.patch(`/trips/${trip_id}`, body);
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Delete trip ───────────────────────────────────────────────────────────
 
@@ -189,11 +184,11 @@ export function registerTripTools(agent: PackRatMCP): void {
     },
     async ({ trip_id }) => {
       try {
-        const data = await agent.api.delete(`/trips/${trip_id}`)
-        return ok(data)
+        const data = await agent.api.delete(`/trips/${trip_id}`);
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 }

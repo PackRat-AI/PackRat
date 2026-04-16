@@ -1,6 +1,6 @@
-import { z } from 'zod'
-import { err, ok } from '../client'
-import type { PackRatMCP } from '../index'
+import { z } from 'zod';
+import { err, ok } from '../client';
+import type { PackRatMCP } from '../index';
 
 export function registerTrailConditionTools(agent: PackRatMCP): void {
   // ── Get trail conditions ──────────────────────────────────────────────────
@@ -9,44 +9,30 @@ export function registerTrailConditionTools(agent: PackRatMCP): void {
     'get_trail_conditions',
     {
       description:
-        'Get user-submitted trail condition reports for a location or trail. Reports include current conditions (trail quality, snow, mud, obstacles), hazards, water sources, and recent observations. Useful for planning or pre-trip checks.',
+        'Get user-submitted trail condition reports. Filter by trail name to find reports for a specific trail or area. Reports include overall condition, surface type, hazards, water crossings, and notes.',
       inputSchema: {
         trail_name: z
           .string()
           .optional()
           .describe('Trail or area name to search for (e.g. "John Muir Trail", "Half Dome")'),
-        latitude: z.number().min(-90).max(90).optional().describe('Location latitude'),
-        longitude: z.number().min(-180).max(180).optional().describe('Location longitude'),
-        radius_km: z
-          .number()
-          .min(1)
-          .max(100)
-          .default(25)
-          .describe('Search radius in km around coordinates (default 25)'),
         limit: z
           .number()
           .int()
           .min(1)
-          .max(50)
-          .default(10)
-          .describe('Maximum reports to return'),
+          .max(100)
+          .default(20)
+          .describe('Maximum reports to return (default 20)'),
       },
     },
-    async ({ trail_name, latitude, longitude, radius_km, limit }) => {
+    async ({ trail_name, limit }) => {
       try {
-        const data = await agent.api.get('/trail-conditions', {
-          trailName: trail_name,
-          latitude,
-          longitude,
-          radiusKm: radius_km,
-          limit,
-        })
-        return ok(data)
+        const data = await agent.api.get('/trail-conditions', { trailName: trail_name, limit });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Submit trail condition ────────────────────────────────────────────────
 
@@ -54,74 +40,73 @@ export function registerTrailConditionTools(agent: PackRatMCP): void {
     'submit_trail_condition',
     {
       description:
-        'Submit a trail condition report to help the community. Provide your observations about current conditions, hazards, and recommendations. Requires user authentication.',
+        'Submit a trail condition report to help the community. Provide your observations about current trail surface, overall condition, hazards, and water crossings. Requires user authentication.',
       inputSchema: {
-        trail_name: z.string().min(2).describe('Name of the trail or area'),
-        latitude: z.number().min(-90).max(90).describe('Location latitude'),
-        longitude: z.number().min(-180).max(180).describe('Location longitude'),
-        condition: z
-          .enum(['excellent', 'good', 'fair', 'poor', 'impassable'])
-          .describe('Overall trail condition'),
-        report_date: z
+        trail_name: z.string().min(1).describe('Name of the trail or area'),
+        trail_region: z
           .string()
-          .describe('Date of observation in ISO 8601 format (e.g. "2025-07-15T10:00:00Z")'),
+          .optional()
+          .describe('Region or state (e.g. "California", "Maine")'),
+        surface: z
+          .enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud'])
+          .describe('Current trail surface type'),
+        overall_condition: z
+          .enum(['excellent', 'good', 'fair', 'poor'])
+          .describe('Overall trail condition'),
+        hazards: z
+          .array(z.string())
+          .optional()
+          .describe(
+            'List of current hazards (e.g. ["loose rocks", "fallen trees", "slippery surface"])',
+          ),
+        water_crossings: z
+          .number()
+          .int()
+          .min(0)
+          .max(20)
+          .optional()
+          .describe('Number of water crossings on the trail (0–20)'),
+        water_crossing_difficulty: z
+          .enum(['easy', 'moderate', 'difficult'])
+          .optional()
+          .describe('Difficulty of water crossings if present'),
         notes: z
           .string()
           .optional()
           .describe('Detailed observations about conditions, hazards, or recommendations'),
-        hazards: z
-          .array(
-            z.enum([
-              'snow',
-              'ice',
-              'flooding',
-              'fallen_trees',
-              'wildlife',
-              'washed_out',
-              'overgrown',
-              'rockfall',
-            ]),
-          )
-          .optional()
-          .describe('Current hazards on the trail'),
-        water_crossings: z
-          .enum(['dry', 'low', 'moderate', 'high', 'impassable'])
-          .optional()
-          .describe('Water crossing conditions if applicable'),
-        snow_depth_cm: z
-          .number()
-          .min(0)
-          .optional()
-          .describe('Snow depth in centimeters if snow is present'),
       },
     },
     async ({
       trail_name,
-      latitude,
-      longitude,
-      condition,
-      report_date,
-      notes,
+      trail_region,
+      surface,
+      overall_condition,
       hazards,
       water_crossings,
-      snow_depth_cm,
+      water_crossing_difficulty,
+      notes,
     }) => {
       try {
+        const id = `tcr_${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        const now = new Date().toISOString();
         const data = await agent.api.post('/trail-conditions', {
+          id,
           trailName: trail_name,
-          latitude,
-          longitude,
-          condition,
-          reportDate: report_date,
-          notes,
-          hazards,
-          waterCrossings: water_crossings,
-          snowDepthCm: snow_depth_cm,
-        })
-        return ok(data)
+          trailRegion: trail_region ?? null,
+          surface,
+          overallCondition: overall_condition,
+          hazards: hazards ?? [],
+          waterCrossings: water_crossings ?? 0,
+          waterCrossingDifficulty: water_crossing_difficulty ?? null,
+          notes: notes ?? null,
+          photos: [],
+          localCreatedAt: now,
+          localUpdatedAt: now,
+        });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 }

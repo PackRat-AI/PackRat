@@ -3,13 +3,13 @@
  * All requests are authenticated with the user-provided JWT.
  */
 
-export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface ApiResponse<T = unknown> {
-  success: boolean
-  data?: T
-  error?: string
-  message?: string
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }
 
 export class PackRatApiClient {
@@ -19,34 +19,34 @@ export class PackRatApiClient {
   ) {}
 
   private get headers(): Record<string, string> {
-    const token = this.getAuthToken()
+    const token = this.getAuthToken();
     const base: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
-    }
+    };
     if (token) {
-      base['Authorization'] = `Bearer ${token}`
+      base.Authorization = `Bearer ${token}`;
     }
-    return base
+    return base;
   }
 
   async get<T = unknown>(
     path: string,
     params?: Record<string, string | number | boolean | undefined>,
   ): Promise<T> {
-    const url = new URL(`${this.baseUrl}${path}`)
+    const url = new URL(`${this.baseUrl}${path}`);
     if (params) {
       for (const [key, value] of Object.entries(params)) {
         if (value !== undefined) {
-          url.searchParams.set(key, String(value))
+          url.searchParams.set(key, String(value));
         }
       }
     }
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: this.headers,
-    })
-    return this.handleResponse<T>(response)
+    });
+    return this.handleResponse<T>(response);
   }
 
   async post<T = unknown>(path: string, body?: unknown): Promise<T> {
@@ -54,8 +54,8 @@ export class PackRatApiClient {
       method: 'POST',
       headers: this.headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
-    })
-    return this.handleResponse<T>(response)
+    });
+    return this.handleResponse<T>(response);
   }
 
   async put<T = unknown>(path: string, body?: unknown): Promise<T> {
@@ -63,8 +63,8 @@ export class PackRatApiClient {
       method: 'PUT',
       headers: this.headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
-    })
-    return this.handleResponse<T>(response)
+    });
+    return this.handleResponse<T>(response);
   }
 
   async patch<T = unknown>(path: string, body?: unknown): Promise<T> {
@@ -72,47 +72,48 @@ export class PackRatApiClient {
       method: 'PATCH',
       headers: this.headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
-    })
-    return this.handleResponse<T>(response)
+    });
+    return this.handleResponse<T>(response);
   }
 
   async delete<T = unknown>(path: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method: 'DELETE',
       headers: this.headers,
-    })
-    return this.handleResponse<T>(response)
+    });
+    return this.handleResponse<T>(response);
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
-    const text = await response.text()
-    let body: unknown
+    const text = await response.text();
+    let body: unknown;
     try {
-      body = JSON.parse(text)
+      body = JSON.parse(text);
     } catch {
-      body = text
+      body = text;
     }
 
     if (!response.ok) {
       const errorMessage =
         typeof body === 'object' && body !== null && 'error' in body
-          ? String((body as Record<string, unknown>)['error'])
-          : `HTTP ${response.status}: ${response.statusText}`
-      throw new ApiError(errorMessage, response.status, body)
+          ? String((body as Record<string, unknown>).error)
+          : `HTTP ${response.status}: ${response.statusText}`;
+      throw new ApiError(errorMessage, response.status, body);
     }
 
-    return body as T
+    return body as T;
   }
 }
 
 export class ApiError extends Error {
+  // biome-ignore lint/complexity/useMaxParams: Error subclass needs message, status, and body
   constructor(
     message: string,
     public readonly status: number,
     public readonly body: unknown,
   ) {
-    super(message)
-    this.name = 'ApiError'
+    super(message);
+    this.name = 'ApiError';
   }
 }
 
@@ -120,7 +121,7 @@ export class ApiError extends Error {
 export function ok(data: unknown): { content: [{ type: 'text'; text: string }] } {
   return {
     content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
-  }
+  };
 }
 
 /** Format an error tool result */
@@ -130,9 +131,9 @@ export function err(error: unknown): { content: [{ type: 'text'; text: string }]
       ? `API Error (${error.status}): ${error.message}`
       : error instanceof Error
         ? error.message
-        : String(error)
+        : String(error);
   return {
     content: [{ type: 'text', text: `Error: ${message}` }],
     isError: true,
-  }
+  };
 }

@@ -1,6 +1,6 @@
-import { z } from 'zod'
-import { err, ok } from '../client'
-import type { PackRatMCP } from '../index'
+import { z } from 'zod';
+import { err, ok } from '../client';
+import type { PackRatMCP } from '../index';
 
 export function registerCatalogTools(agent: PackRatMCP): void {
   // ── Text search ───────────────────────────────────────────────────────────
@@ -11,7 +11,10 @@ export function registerCatalogTools(agent: PackRatMCP): void {
       description:
         'Search the PackRat gear catalog containing thousands of real outdoor products with specs, weights, prices, and user reviews. Use this to find specific gear, compare products, or browse categories.',
       inputSchema: {
-        query: z.string().optional().describe('Search keywords (e.g. "ultralight sleeping bag 20°F")'),
+        query: z
+          .string()
+          .optional()
+          .describe('Search keywords (e.g. "ultralight sleeping bag 20°F")'),
         category: z
           .string()
           .optional()
@@ -27,7 +30,7 @@ export function registerCatalogTools(agent: PackRatMCP): void {
           .describe('Number of results to return (default 10)'),
         offset: z.number().int().min(0).default(0).describe('Pagination offset'),
         sort_by: z
-          .enum(['name', 'brand', 'price', 'ratingValue', 'createdAt'])
+          .enum(['name', 'brand', 'price', 'ratingValue', 'createdAt', 'updatedAt', 'usage'])
           .optional()
           .describe('Sort field'),
         sort_order: z.enum(['asc', 'desc']).default('asc').describe('Sort direction'),
@@ -40,15 +43,15 @@ export function registerCatalogTools(agent: PackRatMCP): void {
           category,
           limit,
           offset,
-          sortBy: sort_by,
-          sortOrder: sort_order,
-        })
-        return ok(data)
+          'sort[field]': sort_by,
+          'sort[order]': sort_order,
+        });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Semantic/vector search ────────────────────────────────────────────────
 
@@ -76,13 +79,13 @@ export function registerCatalogTools(agent: PackRatMCP): void {
     },
     async ({ query, limit, offset }) => {
       try {
-        const data = await agent.api.get('/catalog/vector-search', { query, limit, offset })
-        return ok(data)
+        const data = await agent.api.get('/catalog/vector-search', { q: query, limit, offset });
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Get single item ───────────────────────────────────────────────────────
 
@@ -100,13 +103,13 @@ export function registerCatalogTools(agent: PackRatMCP): void {
     },
     async ({ item_id }) => {
       try {
-        const data = await agent.api.get(`/catalog/${item_id}`)
-        return ok(data)
+        const data = await agent.api.get(`/catalog/${item_id}`);
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── List categories ───────────────────────────────────────────────────────
 
@@ -119,13 +122,13 @@ export function registerCatalogTools(agent: PackRatMCP): void {
     },
     async () => {
       try {
-        const data = await agent.api.get('/catalog/categories')
-        return ok(data)
+        const data = await agent.api.get('/catalog/categories');
+        return ok(data);
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 
   // ── Compare items ─────────────────────────────────────────────────────────
 
@@ -144,25 +147,25 @@ export function registerCatalogTools(agent: PackRatMCP): void {
     },
     async ({ item_ids }) => {
       try {
-        const items = await Promise.all(item_ids.map((id) => agent.api.get(`/catalog/${id}`)))
+        const items = await Promise.all(item_ids.map((id) => agent.api.get(`/catalog/${id}`)));
         const comparison = items.map((item: unknown) => {
-          const it = item as Record<string, unknown>
+          const it = item as Record<string, unknown>;
           return {
-            id: it['id'],
-            name: it['name'],
-            brand: it['brand'],
-            category: it['category'],
-            weightGrams: it['weight'],
-            priceCents: it['price'],
-            rating: it['ratingValue'],
-            reviewCount: it['ratingCount'],
-            productUrl: it['productUrl'],
-          }
-        })
+            id: it.id,
+            name: it.name,
+            brand: it.brand,
+            category: it.category,
+            weightGrams: it.weight,
+            priceCents: it.price,
+            rating: it.ratingValue,
+            reviewCount: it.ratingCount,
+            productUrl: it.productUrl,
+          };
+        });
 
         comparison.sort(
           (a, b) => (Number(a.weightGrams) || 999999) - (Number(b.weightGrams) || 999999),
-        )
+        );
 
         return ok({
           items: comparison,
@@ -173,10 +176,10 @@ export function registerCatalogTools(agent: PackRatMCP): void {
           highestRated: [...comparison].sort(
             (a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0),
           )[0]?.name,
-        })
+        });
       } catch (e) {
-        return err(e)
+        return err(e);
       }
     },
-  )
+  );
 }
