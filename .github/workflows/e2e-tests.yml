@@ -213,7 +213,9 @@ jobs:
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
-          APP_ID: com.andrewbierman.packrat
+          # EAS e2e profile builds the preview variant, whose bundle id is
+          # suffixed with ".preview" via app.config.ts.
+          APP_ID: com.andrewbierman.packrat.preview
           # xcuitest driver boot on cold GH runners can exceed the 180s
           # default. Give it 10 minutes before declaring a timeout.
           MAESTRO_DRIVER_STARTUP_TIMEOUT: "600000"
@@ -430,7 +432,7 @@ jobs:
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
-          APP_ID: com.packratai.mobile
+          APP_ID: com.packratai.mobile.preview
 
       - name: Upload test results
         if: always()
