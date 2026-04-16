@@ -187,7 +187,7 @@ jobs:
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
-          APP_ID: com.andrewbierman.packrat
+          APP_ID: com.andrewbierman.packrat.preview
 
       - name: Upload test results
         if: always()
@@ -337,19 +337,13 @@ jobs:
             adb shell pm disable-user com.android.launcher3 || true
             adb shell pm disable-user com.google.android.apps.nexuslauncher || true
             adb install apps/expo/build/PackRat.apk
-            cp .maestro/config.yaml .maestro/config.yaml.bak
-            cp .maestro/config-android.yaml .maestro/config.yaml
-            maestro test \
-              --format junit \
-              --output test-results/maestro-results.xml \
-              .maestro/
-            mv .maestro/config.yaml.bak .maestro/config.yaml
+            bun test:e2e:android --format junit --output test-results/maestro-results.xml
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           TRIP_NAME: E2E-Trip-${{ github.run_id }}
           PACK_NAME: E2E-Pack-${{ github.run_id }}
-          APP_ID: com.packratai.mobile
+          APP_ID: com.packratai.mobile.preview
 
       - name: Upload test results
         if: always()
