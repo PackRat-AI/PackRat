@@ -27,6 +27,9 @@ permissions:
 
 env:
   MAESTRO_VERSION: 2.3.0
+  # Suppress the per-invocation "Anonymous analytics enabled" banner and
+  # the network round-trip it implies on every CI run.
+  MAESTRO_CLI_NO_ANALYTICS: "true"
 
 jobs:
   ios-e2e:
