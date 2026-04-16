@@ -131,6 +131,11 @@ describe('Catalog Routes', () => {
       const res = await apiWithAuth('/catalog/9999999999');
       expect(res.status).toBe(404);
     });
+
+    it('returns 404 for ID with leading zero (007 is not a canonical serial id)', async () => {
+      const res = await apiWithAuth('/catalog/007');
+      expect(res.status).toBe(404);
+    });
   });
 
   describe('POST /catalog', () => {
