@@ -34,8 +34,10 @@
     "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run packages/env/scripts/no-raw-process-env.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
+    "build": "turbo run build",
     "mcp": "bun run --cwd packages/mcp dev",
     "mcp:deploy": "bun run --cwd packages/mcp deploy",
+    "test": "turbo run test",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
@@ -44,6 +46,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
+    "turbo": "^2",
     "@manypkg/cli": "^0.24.0",
     "@types/bun": "^1.2.17",
     "@types/fs-extra": "^11.0.4",
