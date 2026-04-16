@@ -57,7 +57,7 @@ adminRoutes.use('*', async (c, next) => {
   if (authHeader?.startsWith('Bearer ')) {
     try {
       const e = getEnv(c);
-      const payload = await verify(authHeader.slice(7), e.JWT_SECRET);
+      const payload = await verify(authHeader.slice(7), e.JWT_SECRET, 'HS256');
       if (payload.role !== 'admin') {
         return c.json({ error: 'Forbidden' }, 403);
       }
