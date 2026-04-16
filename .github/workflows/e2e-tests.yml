@@ -43,18 +43,16 @@ jobs:
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
-      - name: Check E2E secrets
-        id: secrets-check
+      - name: Verify E2E secrets are configured
         run: |
           missing=()
           [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
           [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
           [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Missing secrets: ${missing[*]} — build will run but Maestro step will be skipped."
-          else
-            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+            echo "::error::Required E2E secrets missing: ${missing[*]}"
+            echo "::error::Set them via: gh secret set <NAME> --repo PackRat-AI/PackRat"
+            exit 1
           fi
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
@@ -132,7 +130,6 @@ jobs:
           echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
 
       - name: Boot iOS Simulator
-        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: |
           # Pick the newest available iOS runtime on this runner. GitHub's
           # macOS images ship different iOS runtimes over time; hard-coding a
@@ -194,12 +191,10 @@ jobs:
           echo "SIMULATOR_UDID=$DEVICE_ID" >> "$GITHUB_ENV"
 
       - name: Install app on simulator
-        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: |
           xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
       - name: Seed E2E test user in dev DB
-        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: bun run --filter @packrat/api db:seed:e2e-user
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
@@ -207,7 +202,6 @@ jobs:
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
       - name: Run Maestro E2E tests
-        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: |
           mkdir -p test-results
           bun test:e2e:ios --device "$SIMULATOR_UDID" --format junit --output test-results/maestro-results.xml
@@ -235,7 +229,7 @@ jobs:
           retention-days: 7
 
       - name: Shutdown simulator
-        if: always() && steps.secrets-check.outputs.has_secrets == 'true'
+        if: always()
         run: |
           xcrun simctl shutdown "${SIMULATOR_UDID:-}" || true
           xcrun simctl delete "${SIMULATOR_UDID:-}" || true
@@ -254,18 +248,16 @@ jobs:
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
     steps:
-      - name: Check E2E secrets
-        id: secrets-check
+      - name: Verify E2E secrets are configured
         run: |
           missing=()
           [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
           [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
           [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Missing secrets: ${missing[*]} — build will run but Maestro step will be skipped."
-          else
-            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+            echo "::error::Required E2E secrets missing: ${missing[*]}"
+            echo "::error::Set them via: gh secret set <NAME> --repo PackRat-AI/PackRat"
+            exit 1
           fi
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
@@ -366,7 +358,6 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
 
       - name: Enable KVM for hardware acceleration
-        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -374,7 +365,6 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: AVD cache
-        if: steps.secrets-check.outputs.has_secrets == 'true'
         uses: actions/cache@v4
         id: avd-cache
         with:
@@ -384,7 +374,7 @@ jobs:
           key: avd-34-${{ runner.os }}
 
       - name: Create AVD and generate snapshot for caching
-        if: steps.secrets-check.outputs.has_secrets == 'true' && steps.avd-cache.outputs.cache-hit != 'true'
+        if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
           api-level: 34
@@ -398,7 +388,6 @@ jobs:
           script: echo "Generated AVD snapshot for caching."
 
       - name: Seed E2E test user in dev DB
-        if: steps.secrets-check.outputs.has_secrets == 'true'
         run: bun run --filter @packrat/api db:seed:e2e-user
         env:
           NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
@@ -406,7 +395,6 @@ jobs:
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
       - name: Run Maestro E2E tests on Android emulator
-        if: steps.secrets-check.outputs.has_secrets == 'true'
         uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
           api-level: 34
