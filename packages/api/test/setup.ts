@@ -1,4 +1,5 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
@@ -121,11 +122,68 @@ vi.mock('@packrat/api/services', async (importOriginal) => {
   };
 });
 
-// Mock the AI SDK modules before any imports
+// Mock the AI SDK modules before any imports. generateObject is also stubbed
+// globally (default return is shaped for pack-template extraction) so routes
+// that use it (generateFromOnlineContent, packService) don't hit real OpenAI.
 vi.mock('ai', async () => {
   const actual = await vi.importActual<typeof import('ai')>('ai');
   return {
     ...actual,
+    // Branch on the caller's requested output shape: PackService.generatePackConcepts
+    // passes `output: 'array'` and expects `object` to be an array of PackConcepts;
+    // generateFromOnlineContent passes no `output` and expects the analysisSchema
+    // object (template + items). Both callers share this one global mock.
+    generateObject: vi.fn((opts: { output?: 'array' | 'object' | 'enum' | 'no-schema' }) => {
+      if (opts?.output === 'array') {
+        return Promise.resolve({
+          object: [
+            {
+              name: 'Test Hiking Pack',
+              description: 'Mock-generated pack for a day hike',
+              category: 'hiking',
+              tags: ['test', 'generated'],
+              items: [
+                {
+                  item: 'Test Backpack',
+                  quantity: 1,
+                  category: 'Packs',
+                  consumable: false,
+                  worn: false,
+                  notes: null,
+                },
+              ],
+            },
+          ],
+        });
+      }
+      return Promise.resolve({
+        object: {
+          templateName: 'Hiking Essentials',
+          templateCategory: 'hiking',
+          templateDescription: 'Essential gear for a day hike',
+          items: [
+            {
+              name: 'Backpack',
+              description: 'Day hiking backpack, 20L capacity',
+              quantity: 1,
+              category: 'Packs',
+              weightGrams: 500,
+              consumable: false,
+              worn: false,
+            },
+            {
+              name: 'Water Bottle',
+              description: 'Reusable water bottle, 1L',
+              quantity: 2,
+              category: 'Hydration',
+              weightGrams: 150,
+              consumable: false,
+              worn: false,
+            },
+          ],
+        },
+      });
+    }),
     streamText: vi.fn(({ messages }) => {
       const mockResponse = `Mock AI response for: ${messages?.[messages.length - 1]?.content || 'query'}`;
 
@@ -169,6 +227,33 @@ vi.mock('@packrat/api/utils/ai/provider', () => ({
 vi.mock('@packrat/api/utils/ai/tools', () => ({
   createTools: vi.fn(() => ({})),
 }));
+
+// Global: stub only batchVectorSearch on CatalogService (it would otherwise
+// hit real OpenAI embeddings). Preserve the rest of the class so catalog route
+// tests that exercise real methods still work.
+vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@packrat/api/services/catalogService')>();
+  return {
+    ...actual,
+    CatalogService: class extends actual.CatalogService {
+      // biome-ignore lint/suspicious/noExplicitAny: test mock signature matches real method
+      async batchVectorSearch(queries: string[], _limit?: number): Promise<any> {
+        return {
+          items: queries.map(() => [
+            {
+              id: null,
+              name: 'Mock Catalog Item',
+              description: 'Mock description',
+              weight: 100,
+              weightUnit: 'g',
+              images: [],
+            },
+          ]),
+        };
+      }
+    },
+  };
+});
 
 vi.mock('@packrat/api/utils/DbUtils', () => ({
   getSchemaInfo: vi.fn(async () => 'Mock schema info'),
@@ -392,23 +477,33 @@ vi.mock('youtube-transcript', () => ({
   fetchTranscript: vi.fn().mockResolvedValue([]),
 }));
 
-// @cloudflare/containers mock — must live in setup.ts (not individual test files) so it is
-// registered before the worker module context is established by @cloudflare/vitest-pool-workers.
-// Individual tests can call setMockContainerFetch() to override the default handler.
-type ContainerFetchFn = (request: Request) => Response | Promise<Response>;
-let _mockContainerFetch: ContainerFetchFn = (_request) =>
-  new Response(JSON.stringify({ success: false, error: 'Container not configured' }), {
-    status: 500,
-  });
-
-export const setMockContainerFetch = (fn: ContainerFetchFn) => {
-  _mockContainerFetch = fn;
-};
-
+// Global @cloudflare/containers mock — the real getContainer calls
+// binding.idFromName() which throws on the undefined APP_CONTAINER binding in
+// tests. Test files assign setMockContainerFetch() to override the default
+// response per test (e.g. for duplicate-contentId cases). Must be global
+// because singleWorker: true shares the module cache across test files, so
+// any file that imports @cloudflare/containers before this mock registers
+// would otherwise get the real implementation.
 vi.mock('@cloudflare/containers', () => ({
   Container: class MockContainer {},
   getContainer: vi.fn(() => ({
-    fetch: (request: Request) => _mockContainerFetch(request),
+    fetch: (req: Request) =>
+      (
+        globalThis as unknown as { __mockContainerFetch?: (req: Request) => Promise<Response> }
+      ).__mockContainerFetch?.(req) ??
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              imageUrls: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
+              caption: 'Default test caption',
+              contentId: 'default-test-content-id',
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      ),
   })),
 }));
 
@@ -450,10 +545,13 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  if (!testPool) return;
+  if (!testDb) return;
 
   clearCurrentTestUsers();
 
+  // Route cleanup through testDb (same drizzle handle as inserts) instead of
+  // testPool.query, so cleanup and tests share one path. Surface errors rather
+  // than swallowing them.
   const tablesToClean = [
     'one_time_passwords',
     'refresh_tokens',
@@ -463,22 +561,22 @@ beforeEach(async () => {
     'pack_template_items',
     'packs',
     'pack_templates',
+    'trail_condition_reports',
     'catalog_item_etl_jobs',
+    'etl_jobs',
     'catalog_items',
     'invalid_item_logs',
     'reported_content',
+    'comment_likes',
+    'post_likes',
     'post_comments',
     'posts',
     'trips',
     'users',
   ];
 
-  try {
-    const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
-    await testPool.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
-  } catch (_error) {
-    // Ignore errors - tables might not exist yet
-  }
+  const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
+  await testDb.execute(sql.raw(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`));
 });
 
 afterAll(async () => {

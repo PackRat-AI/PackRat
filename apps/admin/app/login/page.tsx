@@ -15,7 +15,10 @@ import { Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8787';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+if (!API_BASE) {
+  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
+}
 
 export default function LoginPage() {
   const router = useRouter();

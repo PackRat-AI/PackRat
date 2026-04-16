@@ -37,9 +37,10 @@ function generateUniqueSku(): string {
 }
 
 /**
- * Seeds a test user via UserService (same path production register uses) and
- * registers them as the current JWT subject for apiWithAuth / apiWithAdmin.
- * Callers must use the returned `user.id` — it is DB-assigned (#2180).
+ * Seeds a test user via UserService (same path production register uses).
+ * Returns the user with DB-assigned id. Does NOT register as the current JWT
+ * subject — tests that want `apiWithAuth` to authenticate as this user must
+ * also call `loginAs(user)` or use `seedAndLoginTestUser()`.
  */
 export async function seedTestUser(
   overrides?: Partial<InferInsertModel<typeof users>> & { password?: string },
@@ -47,7 +48,7 @@ export async function seedTestUser(
   const userService = new UserService({} as unknown as Context);
   const role = (overrides?.role as 'USER' | 'ADMIN') ?? 'USER';
 
-  const user = await userService.create({
+  return userService.create({
     email:
       overrides?.email ??
       `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
@@ -57,14 +58,21 @@ export async function seedTestUser(
     role,
     emailVerified: overrides?.emailVerified ?? true,
   });
+}
 
+/**
+ * Seeds a user AND registers them as the current JWT subject so apiWithAuth
+ * (or apiWithAdmin, for role: "ADMIN") authenticates as them. Use in
+ * beforeEach for the "primary" test user.
+ */
+export async function seedAndLoginTestUser(
+  overrides?: Partial<InferInsertModel<typeof users>> & { password?: string },
+) {
+  const user = await seedTestUser(overrides);
+  const role = (user.role ?? 'USER') as 'USER' | 'ADMIN';
   const subject = { id: user.id, role };
-  if (role === 'ADMIN') {
-    setCurrentTestAdmin(subject);
-  } else {
-    setCurrentTestUser(subject);
-  }
-
+  if (role === 'ADMIN') setCurrentTestAdmin(subject);
+  else setCurrentTestUser(subject);
   return user;
 }
 

@@ -1,6 +1,12 @@
 import type { Pack } from '@packrat/api/db/schema';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { seedCatalogItem, seedPack, seedPackItem, seedTestUser } from './utils/db-helpers';
+import {
+  seedAndLoginTestUser,
+  seedCatalogItem,
+  seedPack,
+  seedPackItem,
+  seedTestUser,
+} from './utils/db-helpers';
 import {
   api,
   apiWithAdmin,
@@ -13,10 +19,12 @@ import {
   httpMethods,
 } from './utils/test-helpers';
 
-// Mock PackService.generatePacks to avoid AI dependencies in tests
-vi.mock('../src/services/packService', async () => {
-  const actual = await vi.importActual<typeof import('../src/services/packService')>(
-    '../src/services/packService',
+// Mock PackService.generatePacks to avoid AI dependencies in tests.
+// Must use the alias path the route uses ('@packrat/api/services/packService') —
+// vitest treats relative and alias paths as separate modules for mock purposes.
+vi.mock('@packrat/api/services/packService', async () => {
+  const actual = await vi.importActual<typeof import('@packrat/api/services/packService')>(
+    '@packrat/api/services/packService',
   );
   return {
     ...actual,
@@ -62,8 +70,8 @@ describe('Packs Routes', () => {
 
   // Re-seed test data before each test (global beforeEach truncates all tables)
   beforeEach(async () => {
-    testUser = await seedTestUser();
-    await seedTestUser({ role: 'ADMIN', email: 'admin@example.com' });
+    testUser = await seedAndLoginTestUser();
+    await seedAndLoginTestUser({ role: 'ADMIN', email: 'admin@example.com' });
 
     const catalogItem = await seedCatalogItem({
       name: 'Test Tent',
