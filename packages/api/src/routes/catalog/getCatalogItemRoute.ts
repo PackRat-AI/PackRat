@@ -14,8 +14,8 @@ export const routeDefinition = createRoute({
   security: [{ bearerAuth: [] }],
   request: {
     params: z.object({
-      id: z.string().openapi({
-        example: '123',
+      id: z.coerce.number().int().positive().openapi({
+        example: 123,
         description: 'Catalog item ID',
       }),
     }),
@@ -47,7 +47,7 @@ export const routeDefinition = createRoute({
 
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const db = createDb(c);
-  const itemId = Number(c.req.param('id'));
+  const { id: itemId } = c.req.valid('param');
 
   const item = await db.query.catalogItems.findFirst({
     where: eq(catalogItems.id, itemId),

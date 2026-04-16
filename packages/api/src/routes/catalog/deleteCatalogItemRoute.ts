@@ -14,8 +14,8 @@ export const routeDefinition = createRoute({
   security: [{ bearerAuth: [] }],
   request: {
     params: z.object({
-      id: z.string().openapi({
-        example: '123',
+      id: z.coerce.number().int().positive().openapi({
+        example: 123,
         description: 'Catalog item ID',
       }),
     }),
@@ -46,7 +46,7 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // TODO: Only admins should be able to delete catalog items
 
   const db = createDb(c);
-  const itemId = Number(c.req.param('id'));
+  const { id: itemId } = c.req.valid('param');
 
   // Check if the catalog item exists
   const existingItem = await db.query.catalogItems.findFirst({
