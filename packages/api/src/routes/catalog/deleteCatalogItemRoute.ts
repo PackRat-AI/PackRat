@@ -3,6 +3,7 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { parseIntegerId } from '@packrat/api/utils/routeParams';
 import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
@@ -46,7 +47,10 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // TODO: Only admins should be able to delete catalog items
 
   const db = createDb(c);
-  const itemId = Number(c.req.param('id'));
+  const itemId = parseIntegerId(c.req.param('id'));
+  if (itemId === null) {
+    return c.json({ error: 'Catalog item not found' }, 404);
+  }
 
   // Check if the catalog item exists
   const existingItem = await db.query.catalogItems.findFirst({

@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import type * as React from 'react';
 import { DayPicker } from 'react-day-picker';
 import { cn } from '../lib/utils';
@@ -8,8 +8,13 @@ import { buttonVariants } from './button';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-const IconLeft = () => <ChevronLeft className="h-4 w-4" />;
-const IconRight = () => <ChevronRight className="h-4 w-4" />;
+// react-day-picker v9: single Chevron component with orientation prop.
+const Chevron = ({ orientation }: { orientation?: 'left' | 'right' | 'up' | 'down' }) => {
+  if (orientation === 'right') return <ChevronRight className="h-4 w-4" />;
+  if (orientation === 'up') return <ChevronUp className="h-4 w-4" />;
+  if (orientation === 'down') return <ChevronDown className="h-4 w-4" />;
+  return <ChevronLeft className="h-4 w-4" />;
+};
 
 function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   return (
@@ -49,8 +54,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         ...classNames,
       }}
       components={{
-        IconLeft,
-        IconRight,
+        Chevron,
       }}
       {...props}
     />
