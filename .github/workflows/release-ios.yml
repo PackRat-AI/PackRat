@@ -1,4 +1,4 @@
-name: Release iOS App
+name: Release Mobile Apps
 
 on:
   push:
@@ -12,15 +12,15 @@ on:
         type: string
 
 concurrency:
-  group: release-ios-${{ github.ref_name }}
+  group: release-mobile-${{ github.ref_name }}
   cancel-in-progress: false
 
 permissions:
   contents: write
 
 jobs:
-  release-ios:
-    name: Release iOS App
+  release-mobile:
+    name: Release Mobile Apps
     runs-on: ubuntu-latest
 
     steps:
@@ -58,7 +58,8 @@ jobs:
           tag_name: ${{ steps.release_tag.outputs.tag }}
           generate_release_notes: true
           body: |
-            ## PackRat iOS Release
-            Version `${{ steps.release_tag.outputs.version }}` was submitted to App Store Connect.
+            ## PackRat Mobile Release
+            Version `${{ steps.release_tag.outputs.version }}` was submitted to iOS and Android stores.
 
             Download on the App Store: https://apps.apple.com/app/id6499243187
+            Download on Google Play: https://play.google.com/store/apps/details?id=com.packratai.mobile&pli=1
