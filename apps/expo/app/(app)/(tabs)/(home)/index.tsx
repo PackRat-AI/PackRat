@@ -154,6 +154,7 @@ const tileInfo = {
 };
 
 type TileName = keyof typeof tileInfo;
+const DASHBOARD_GAP_PREFIX = appConfig.dashboard.gapPrefix;
 
 export default function DashboardScreen() {
   const [searchValue, setSearchValue] = useState('');
@@ -209,7 +210,7 @@ export default function DashboardScreen() {
 
     const searchLower = searchValue.toLowerCase();
     return dashboardLayout.filter((item) => {
-      if (!item.startsWith(appConfig.dashboard.gapPrefix)) {
+      if (!item.startsWith(DASHBOARD_GAP_PREFIX)) {
         const info = localizedTileInfo[item as TileName];
         return (
           info.title.toLowerCase().includes(searchLower) ||
@@ -236,7 +237,7 @@ export default function DashboardScreen() {
               className="space-y-4 px-4"
               renderItem={({ item }) => {
                 assertIsString(item);
-                if (!item.startsWith(appConfig.dashboard.gapPrefix)) {
+                if (!item.startsWith(DASHBOARD_GAP_PREFIX)) {
                   const Component = tileInfo[item as TileName].component;
                   return (
                     <Pressable
@@ -302,7 +303,7 @@ export default function DashboardScreen() {
 function renderDashboardItem<T extends ListDataItem>(info: ListRenderItemInfo<T>) {
   const item = info.item as string;
 
-  if (item.startsWith(appConfig.dashboard.gapPrefix)) {
+  if (item.startsWith(DASHBOARD_GAP_PREFIX)) {
     return <ListSectionHeader {...info} />;
   }
 
