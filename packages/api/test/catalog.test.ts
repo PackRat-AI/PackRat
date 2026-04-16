@@ -112,10 +112,9 @@ describe('Catalog Routes', () => {
       expectNotFound(res);
     });
 
-    it('validates ID parameter', async () => {
+    it('returns 404 for non-numeric ID (no NaN coercion to SQL)', async () => {
       const res = await apiWithAuth('/catalog/invalid-id');
-      // May return 400, 404, or 500 depending on implementation and error handling
-      expect([400, 404, 500]).toContain(res.status);
+      expect(res.status).toBe(404);
     });
   });
 

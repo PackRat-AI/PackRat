@@ -28,7 +28,7 @@ describe('Chat Routes', () => {
   // - OpenAI API integration
   // - Complex service dependencies
   // These would be better suited for integration tests with actual services
-  describe.skip('POST /chat (requires AI services)', () => {
+  describe('POST /chat (requires AI services)', () => {
     it('accepts chat message', async () => {
       const chatMessage = {
         message: 'What gear do I need for a day hike?',
@@ -157,7 +157,7 @@ describe('Chat Routes', () => {
     });
   });
 
-  describe.skip('Error Handling (requires AI services)', () => {
+  describe('Error Handling (requires AI services)', () => {
     it('handles AI service errors gracefully', async () => {
       // Mock AI service failure
       const res = await apiWithAuth(
@@ -215,7 +215,7 @@ describe('Chat Routes', () => {
     });
   });
 
-  describe.skip('Rate Limiting (requires AI services)', () => {
+  describe('Rate Limiting (requires AI services)', () => {
     it('handles multiple rapid requests', async () => {
       const requests = Array(5)
         .fill(null)
