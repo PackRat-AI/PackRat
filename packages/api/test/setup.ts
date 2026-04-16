@@ -228,14 +228,17 @@ vi.mock('@packrat/api/utils/ai/tools', () => ({
   createTools: vi.fn(() => ({})),
 }));
 
-// Global CatalogService mock so routes that call batchVectorSearch don't hit
-// OpenAI embeddings. Default returns null ids (catalogItemId null) to avoid
-// FK constraints; tests that need specific matches can still override per file.
-vi.mock('@packrat/api/services/catalogService', () => ({
-  CatalogService: vi.fn(function (this: unknown) {
-    return {
-      batchVectorSearch: vi.fn((queries: string[]) =>
-        Promise.resolve({
+// Global: stub only batchVectorSearch on CatalogService (it would otherwise
+// hit real OpenAI embeddings). Preserve the rest of the class so catalog route
+// tests that exercise real methods still work.
+vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@packrat/api/services/catalogService')>();
+  return {
+    ...actual,
+    CatalogService: class extends actual.CatalogService {
+      // biome-ignore lint/suspicious/noExplicitAny: test mock signature matches real method
+      async batchVectorSearch(queries: string[], _limit?: number): Promise<any> {
+        return {
           items: queries.map(() => [
             {
               id: null,
@@ -246,11 +249,11 @@ vi.mock('@packrat/api/services/catalogService', () => ({
               images: [],
             },
           ]),
-        }),
-      ),
-    };
-  }),
-}));
+        };
+      }
+    },
+  };
+});
 
 vi.mock('@packrat/api/utils/DbUtils', () => ({
   getSchemaInfo: vi.fn(async () => 'Mock schema info'),
