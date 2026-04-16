@@ -122,11 +122,42 @@ vi.mock('@packrat/api/services', async (importOriginal) => {
   };
 });
 
-// Mock the AI SDK modules before any imports
+// Mock the AI SDK modules before any imports. generateObject is also stubbed
+// globally (default return is shaped for pack-template extraction) so routes
+// that use it (generateFromOnlineContent, packService) don't hit real OpenAI.
 vi.mock('ai', async () => {
   const actual = await vi.importActual<typeof import('ai')>('ai');
   return {
     ...actual,
+    generateObject: vi.fn(() =>
+      Promise.resolve({
+        object: {
+          templateName: 'Hiking Essentials',
+          templateCategory: 'hiking',
+          templateDescription: 'Essential gear for a day hike',
+          items: [
+            {
+              name: 'Backpack',
+              description: 'Day hiking backpack, 20L capacity',
+              quantity: 1,
+              category: 'Packs',
+              weightGrams: 500,
+              consumable: false,
+              worn: false,
+            },
+            {
+              name: 'Water Bottle',
+              description: 'Reusable water bottle, 1L',
+              quantity: 2,
+              category: 'Hydration',
+              weightGrams: 150,
+              consumable: false,
+              worn: false,
+            },
+          ],
+        },
+      }),
+    ),
     streamText: vi.fn(({ messages }) => {
       const mockResponse = `Mock AI response for: ${messages?.[messages.length - 1]?.content || 'query'}`;
 
@@ -391,6 +422,36 @@ vi.mock('@packrat/api/db', () => ({
 
 vi.mock('youtube-transcript', () => ({
   fetchTranscript: vi.fn().mockResolvedValue([]),
+}));
+
+// Global @cloudflare/containers mock — the real getContainer calls
+// binding.idFromName() which throws on the undefined APP_CONTAINER binding in
+// tests. Test files assign setMockContainerFetch() to override the default
+// response per test (e.g. for duplicate-contentId cases). Must be global
+// because singleWorker: true shares the module cache across test files, so
+// any file that imports @cloudflare/containers before this mock registers
+// would otherwise get the real implementation.
+vi.mock('@cloudflare/containers', () => ({
+  Container: class MockContainer {},
+  getContainer: vi.fn(() => ({
+    fetch: (req: Request) =>
+      (
+        globalThis as unknown as { __mockContainerFetch?: (req: Request) => Promise<Response> }
+      ).__mockContainerFetch?.(req) ??
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              imageUrls: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
+              caption: 'Default test caption',
+              contentId: 'default-test-content-id',
+            },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      ),
+  })),
 }));
 
 // toucan-js@4.1.1 → @sentry/core@8.9.2 has dual ESM/CJS exports that miniflare mis-resolves;
