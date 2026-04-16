@@ -249,8 +249,7 @@ packages/
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `biome.yml` | Pull Requests | Code formatting and linting |
-| `check-types.yml` | Pull Requests | TypeScript type checking |
+| `checks.yml` | Pull Requests + Manual | Lint/format checks, type checking, and optional manual Biome autofix |
 | `api-tests.yml` | Push to main/dev + PRs | Vitest API tests |
 | `migrations.yml` | Push to main/dev | Database schema migrations |
 | `sync-guides-r2.yml` | Push to dev + Manual | Sync guides content to Cloudflare R2 |
