@@ -112,10 +112,29 @@ describe('Catalog Routes', () => {
       expectNotFound(res);
     });
 
-    it('validates ID parameter', async () => {
+    it('returns 404 for non-numeric ID (no NaN coercion to SQL)', async () => {
       const res = await apiWithAuth('/catalog/invalid-id');
-      // May return 400, 404, or 500 depending on implementation and error handling
-      expect([400, 404, 500]).toContain(res.status);
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 404 for hex-shaped ID (0x10, not a valid serial id)', async () => {
+      const res = await apiWithAuth('/catalog/0x10');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 404 for exponent-shaped ID (1e5, not a digits-only id)', async () => {
+      const res = await apiWithAuth('/catalog/1e5');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 404 for ID larger than PG int4 max', async () => {
+      const res = await apiWithAuth('/catalog/9999999999');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 404 for ID with leading zero (007 is not a canonical serial id)', async () => {
+      const res = await apiWithAuth('/catalog/007');
+      expect(res.status).toBe(404);
     });
   });
 

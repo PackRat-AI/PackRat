@@ -10,6 +10,7 @@ import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { parseIntegerId } from '@packrat/api/utils/routeParams';
 import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
@@ -64,7 +65,10 @@ export const routeDefinition = createRoute({
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   // TODO: Only admins should be able to update catalog items
   const db = createDb(c);
-  const itemId = Number(c.req.param('id'));
+  const itemId = parseIntegerId(c.req.param('id'));
+  if (itemId === null) {
+    return c.json({ error: 'Catalog item not found' }, 404);
+  }
   const data = await c.req.json();
   const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
     getEnv(c);
