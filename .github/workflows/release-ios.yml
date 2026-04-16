@@ -20,13 +20,10 @@ permissions:
 
 jobs:
   release-ios:
-    name: Build and submit iOS release
+    name: Create GitHub release
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
       - name: Resolve release tag
         id: release_tag
         run: |
@@ -47,68 +44,6 @@ jobs:
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.10
-          cache: true
-
-      - name: Install dependencies
-        env:
-          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install
-
-      - name: Validate monorepo and app versions
-        env:
-          RELEASE_VERSION: ${{ steps.release_tag.outputs.version }}
-        run: |
-          node <<'NODE'
-          const { readFileSync } = require('node:fs');
-          const releaseVersion = process.env.RELEASE_VERSION;
-          if (!releaseVersion) {
-            throw new Error('Missing RELEASE_VERSION');
-          }
-
-          const readJsonVersion = (path) => JSON.parse(readFileSync(path, 'utf8')).version;
-
-          const rootVersion = readJsonVersion('package.json');
-          const expoPackageVersion = readJsonVersion('apps/expo/package.json');
-          const appConfig = readFileSync('apps/expo/app.config.ts', 'utf8');
-          const appConfigMatch = appConfig.match(/version:\s*['"]([^'"]+)['"]/);
-          const appConfigVersion = appConfigMatch ? appConfigMatch[1] : null;
-
-          const mismatches = [];
-          if (rootVersion !== releaseVersion) {
-            mismatches.push(`package.json=${rootVersion}`);
-          }
-          if (expoPackageVersion !== releaseVersion) {
-            mismatches.push(`apps/expo/package.json=${expoPackageVersion}`);
-          }
-          if (appConfigVersion !== releaseVersion) {
-            mismatches.push(`apps/expo/app.config.ts=${appConfigVersion ?? 'missing'}`);
-          }
-
-          if (mismatches.length > 0) {
-            throw new Error(
-              `Version mismatch for release v${releaseVersion}. ` +
-                `Expected all versions to match ${releaseVersion}, got ${mismatches.join(', ')}`
-            );
-          }
-          NODE
-
-      - name: Setup Expo and EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: 7.6.2
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Build and submit iOS production release
-        working-directory: apps/expo
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          APP_VARIANT: production
-        run: eas build --platform ios --profile production --non-interactive --auto-submit
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
