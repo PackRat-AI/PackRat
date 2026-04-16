@@ -50,7 +50,7 @@
     "@gorhom/bottom-sheet": "^5.1.2",
     "@legendapp/state": "^3.0.0-beta.30",
     "@packrat-ai/nativewindui": "^2.0.2",
-    "@packrat/app": "workspace:*",
+    "@packrat/config": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@react-native-ai/apple": "~0.10.0",
     "@react-native-ai/llama": "~0.10.0",
