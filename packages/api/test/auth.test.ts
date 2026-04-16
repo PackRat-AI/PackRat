@@ -414,9 +414,11 @@ describe('Auth Routes', () => {
       expect(typeof data.accessToken).toBe('string');
     });
 
-    it('rejects a bogus refresh token', async () => {
+    it('rejects a bogus refresh token with 401 Invalid refresh token', async () => {
       const res = await authApi('/refresh', httpMethods.post({ refreshToken: 'not-a-real-token' }));
-      expect(res.status).toBeOneOf([400, 401]);
+      expect(res.status).toBe(401);
+      const data = await res.json();
+      expect(data.error).toBe('Invalid refresh token');
     });
   });
 

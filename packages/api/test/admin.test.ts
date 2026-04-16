@@ -39,13 +39,15 @@ describe('Admin Routes', () => {
     });
 
     it('stats reflect seeded data', async () => {
-      const before = await (await apiWithBasicAuth('/stats')).json();
+      const beforeRes = await apiWithBasicAuth('/stats');
+      const before = await expectJsonResponse(beforeRes, ['users', 'packs', 'items']);
 
       const user = await seedTestUser({ email: 'admin-stats@example.com' });
       await seedPack({ userId: user.id, name: 'Admin stats pack' });
       await seedCatalogItem({ name: 'Admin stats item' });
 
-      const after = await (await apiWithBasicAuth('/stats')).json();
+      const afterRes = await apiWithBasicAuth('/stats');
+      const after = await expectJsonResponse(afterRes, ['users', 'packs', 'items']);
       expect(after.users).toBeGreaterThanOrEqual(before.users + 1);
       expect(after.packs).toBeGreaterThanOrEqual(before.packs + 1);
       expect(after.items).toBeGreaterThanOrEqual(before.items + 1);

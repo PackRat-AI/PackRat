@@ -116,6 +116,21 @@ describe('Catalog Routes', () => {
       const res = await apiWithAuth('/catalog/invalid-id');
       expect(res.status).toBe(404);
     });
+
+    it('returns 404 for hex-shaped ID (0x10, not a valid serial id)', async () => {
+      const res = await apiWithAuth('/catalog/0x10');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 404 for exponent-shaped ID (1e5, not a digits-only id)', async () => {
+      const res = await apiWithAuth('/catalog/1e5');
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 404 for ID larger than PG int4 max', async () => {
+      const res = await apiWithAuth('/catalog/9999999999');
+      expect(res.status).toBe(404);
+    });
   });
 
   describe('POST /catalog', () => {

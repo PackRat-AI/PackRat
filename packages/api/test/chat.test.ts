@@ -40,10 +40,10 @@ describe('Chat Routes', () => {
   });
 
   describe('Error Handling', () => {
-    it('handles an empty body without crashing', async () => {
+    it('returns 200 SSE for an empty body (messages defaults to [])', async () => {
       const res = await apiWithAuth('/chat', httpMethods.post({}));
-      // Route defaults to an empty messages array; returns 200 stream.
-      expect([200, 400]).toContain(res.status);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('Content-Type')).toContain('text/event-stream');
     });
   });
 
