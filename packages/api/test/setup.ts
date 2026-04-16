@@ -1,4 +1,5 @@
 import { neonConfig, Pool } from '@neondatabase/serverless';
+import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { afterAll, beforeAll, beforeEach, vi } from 'vitest';
 import * as schema from '../src/db/schema';
@@ -430,10 +431,13 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  if (!testPool) return;
+  if (!testDb) return;
 
   clearCurrentTestUsers();
 
+  // Route cleanup through testDb (same drizzle handle as inserts) instead of
+  // testPool.query, so cleanup and tests share one path. Surface errors rather
+  // than swallowing them.
   const tablesToClean = [
     'one_time_passwords',
     'refresh_tokens',
@@ -443,22 +447,22 @@ beforeEach(async () => {
     'pack_template_items',
     'packs',
     'pack_templates',
+    'trail_condition_reports',
     'catalog_item_etl_jobs',
+    'etl_jobs',
     'catalog_items',
     'invalid_item_logs',
     'reported_content',
+    'comment_likes',
+    'post_likes',
     'post_comments',
     'posts',
     'trips',
     'users',
   ];
 
-  try {
-    const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
-    await testPool.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
-  } catch (_error) {
-    // Ignore errors - tables might not exist yet
-  }
+  const tableList = tablesToClean.map((t) => `"${t}"`).join(', ');
+  await testDb.execute(sql.raw(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`));
 });
 
 afterAll(async () => {
