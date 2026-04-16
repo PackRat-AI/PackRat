@@ -16,6 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
+  # Required for optional workflow_dispatch autofix commits.
   contents: write
 
 jobs:
@@ -33,7 +34,7 @@ jobs:
         run: bun install
       - name: Run Biome (check mode)
         if: github.event_name != 'workflow_dispatch' || !inputs.fix
-        run: bun check
+        run: bun biome check
       - name: Run Biome (autofix mode)
         if: github.event_name == 'workflow_dispatch' && inputs.fix
         run: bun lint
