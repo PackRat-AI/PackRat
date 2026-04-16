@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.0",
+    "@packrat/api-client": "workspace:*",
     "agents": "^0.11.0",
     "zod": "catalog:"
   },

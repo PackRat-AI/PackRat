@@ -33,7 +33,7 @@ describe('catalog tools', () => {
           query: 'ultralight tent',
           category: 'tents',
           limit: 5,
-          offset: 0,
+          page: 1,
           sort_by: 'price',
           sort_order: 'asc',
         },
@@ -43,23 +43,19 @@ describe('catalog tools', () => {
         q: 'ultralight tent',
         category: 'tents',
         limit: 5,
-        offset: 0,
+        page: 1,
         'sort[field]': 'price',
         'sort[order]': 'asc',
       });
     });
 
     it('returns error result on API failure', async () => {
-      vi.mocked(api.get).mockRejectedValue(new ApiError('Server Error', 500, {}));
+      vi.mocked(api.get).mockRejectedValue(new ApiError('Server Error', { status: 500, body: {} }));
 
       const result = await callTool({
         tools,
         name: 'search_gear_catalog',
-        args: {
-          limit: 10,
-          offset: 0,
-          sort_order: 'asc',
-        },
+        args: { limit: 10, page: 1, sort_order: 'asc' },
       });
 
       expect(result.isError).toBe(true);
@@ -76,17 +72,12 @@ describe('catalog tools', () => {
       await callTool({
         tools,
         name: 'semantic_gear_search',
-        args: {
-          query: 'warm puffy jacket for winter camping',
-          limit: 5,
-          offset: 0,
-        },
+        args: { query: 'warm puffy jacket for winter camping', limit: 5 },
       });
 
       expect(api.get).toHaveBeenCalledWith('/catalog/vector-search', {
         q: 'warm puffy jacket for winter camping',
         limit: 5,
-        offset: 0,
       });
     });
 
@@ -97,11 +88,7 @@ describe('catalog tools', () => {
       const result = await callTool({
         tools,
         name: 'semantic_gear_search',
-        args: {
-          query: 'midlayer fleece',
-          limit: 8,
-          offset: 0,
-        },
+        args: { query: 'midlayer fleece', limit: 8 },
       });
 
       expect(parseToolResult(result)).toEqual({ items });
@@ -122,7 +109,7 @@ describe('catalog tools', () => {
     });
 
     it('propagates 404 as error result', async () => {
-      vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', 404, {}));
+      vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', { status: 404, body: {} }));
 
       const result = await callTool({ tools, name: 'get_catalog_item', args: { item_id: 9999 } });
 
@@ -199,7 +186,7 @@ describe('catalog tools', () => {
     });
 
     it('returns error result if any item fetch fails', async () => {
-      vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', 404, {}));
+      vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', { status: 404, body: {} }));
 
       const result = await callTool({
         tools,

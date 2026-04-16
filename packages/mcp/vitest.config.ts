@@ -7,6 +7,11 @@ import { defineConfig } from 'vitest/config';
  * Runs in standard Node.js environment with Cloudflare/Workers APIs mocked.
  */
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@packrat/api-client': resolve(__dirname, '../api-client/src/index.ts'),
+    },
+  },
   test: {
     name: 'mcp-unit',
     environment: 'node',

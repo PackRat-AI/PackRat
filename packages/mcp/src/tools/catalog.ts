@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
+import { CatalogSortField, SortOrder } from '../enums';
 import type { AgentContext } from '../types';
 
 export function registerCatalogTools(agent: AgentContext): void {
@@ -28,21 +29,18 @@ export function registerCatalogTools(agent: AgentContext): void {
           .max(50)
           .default(10)
           .describe('Number of results to return (default 10)'),
-        offset: z.number().int().min(0).default(0).describe('Pagination offset'),
-        sort_by: z
-          .enum(['name', 'brand', 'price', 'ratingValue', 'createdAt', 'updatedAt', 'usage'])
-          .optional()
-          .describe('Sort field'),
-        sort_order: z.enum(['asc', 'desc']).default('asc').describe('Sort direction'),
+        page: z.number().int().min(1).default(1).describe('Page number (default 1)'),
+        sort_by: z.nativeEnum(CatalogSortField).optional().describe('Sort field'),
+        sort_order: z.nativeEnum(SortOrder).default(SortOrder.Asc).describe('Sort direction'),
       },
     },
-    async ({ query, category, limit, offset, sort_by, sort_order }) => {
+    async ({ query, category, limit, page, sort_by, sort_order }) => {
       try {
         const data = await agent.api.get('/catalog', {
           q: query,
           category,
           limit,
-          offset,
+          page,
           'sort[field]': sort_by,
           'sort[order]': sort_order,
         });
@@ -74,12 +72,11 @@ export function registerCatalogTools(agent: AgentContext): void {
           .max(30)
           .default(8)
           .describe('Number of results to return (default 8)'),
-        offset: z.number().int().min(0).default(0).describe('Pagination offset'),
       },
     },
-    async ({ query, limit, offset }) => {
+    async ({ query, limit }) => {
       try {
-        const data = await agent.api.get('/catalog/vector-search', { q: query, limit, offset });
+        const data = await agent.api.get('/catalog/vector-search', { q: query, limit });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -147,21 +144,20 @@ export function registerCatalogTools(agent: AgentContext): void {
     },
     async ({ item_ids }) => {
       try {
-        const items = await Promise.all(item_ids.map((id) => agent.api.get(`/catalog/${id}`)));
-        const comparison = items.map((item: unknown) => {
-          const it = item as Record<string, unknown>;
-          return {
-            id: it.id,
-            name: it.name,
-            brand: it.brand,
-            category: it.category,
-            weightGrams: it.weight,
-            priceCents: it.price,
-            rating: it.ratingValue,
-            reviewCount: it.ratingCount,
-            productUrl: it.productUrl,
-          };
-        });
+        const items = await Promise.all(
+          item_ids.map((id) => agent.api.get<Record<string, unknown>>(`/catalog/${id}`)),
+        );
+        const comparison = items.map((it) => ({
+          id: it.id,
+          name: it.name,
+          brand: it.brand,
+          category: it.category,
+          weightGrams: it.weight,
+          priceCents: it.price,
+          rating: it.ratingValue,
+          reviewCount: it.ratingCount,
+          productUrl: it.productUrl,
+        }));
 
         comparison.sort(
           (a, b) => (Number(a.weightGrams) || 999999) - (Number(b.weightGrams) || 999999),
