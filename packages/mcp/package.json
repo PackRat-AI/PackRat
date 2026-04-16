@@ -18,10 +18,10 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250405.0",
-    "@vitest/coverage-v8": "~3.1.0",
+    "@vitest/coverage-v8": "~3.1.4",
     "partyserver": "^0.4.1",
     "typescript": "catalog:",
-    "vitest": "~3.1.0",
+    "vitest": "~3.1.4",
     "wrangler": "^4.21.2"
   }
 }
