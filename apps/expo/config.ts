@@ -1,6 +1,6 @@
 export const featureFlags = {
   enableOAuth: true,
-  enableTrips: false,
+  enableTrips: true,
   enablePackInsights: false,
   enableShoppingList: false,
   enableSharedPacks: false,

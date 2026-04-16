@@ -16,9 +16,10 @@ import { assertDefined } from '@packrat/guards';
 import { generateObject } from 'ai';
 import { sql } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { nanoid } from 'nanoid';
 import { fetchTranscript } from 'youtube-transcript';
 import { z } from 'zod';
+
+const URL_QUERY_STRIP_RE = /[?&].*$/;
 
 /**
  * Generate a deterministic content ID from a URL for duplicate detection
@@ -26,7 +27,7 @@ import { z } from 'zod';
  */
 function generateContentIdFromUrl(url: string): string {
   // Normalize the URL by removing query parameters and converting to lowercase
-  const normalizedUrl = url.toLowerCase().replace(/[?&].*$/, '');
+  const normalizedUrl = url.toLowerCase().replace(URL_QUERY_STRIP_RE, '');
 
   // Create a simple hash for deterministic ID generation
   let hash = 0;
@@ -296,9 +297,11 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
       }
     } catch (apiError) {
       console.error('TikTok service call failed:', apiError);
-      c.get('sentry').captureException(apiError, {
-        extra: { tiktokUrl: contentUrl, errorType: 'tiktok_service_error' },
-      } as any);
+      c.get('sentry').setContext('tiktok_error', {
+        tiktokUrl: contentUrl,
+        errorType: 'tiktok_service_error',
+      });
+      c.get('sentry').captureException(apiError);
       return c.json(
         {
           error: `Failed to fetch data from TikTok URL: ${apiError instanceof Error ? apiError.message : 'TikTok service unavailable'}`,
@@ -391,11 +394,11 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
 
     // Prepare DB records
     const now = new Date();
-    const templateId = `pt_${nanoid()}`;
+    const templateId = `pt_${crypto.randomUUID().replace(/-/g, '')}`;
 
     // Insert the pack template and its items in a single transaction to ensure atomicity
     const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
-      const [createdTemplate] = await tx
+      const templateRows = await tx
         .insert(packTemplates)
         .values({
           id: templateId,
@@ -413,12 +416,14 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
           localUpdatedAt: now,
         })
         .returning();
+      const createdTemplate = templateRows[0];
+      if (!createdTemplate) throw new Error('Pack template insert returned no rows');
 
       // Insert template items — prefer catalog match, fall back to detected item data
       const itemRecords = analysis.items.map((detected, index) => {
         const catalogMatches = batchResult.items[index] ?? [];
         const bestMatch = catalogMatches[0];
-        const itemId = `pti_${nanoid()}`;
+        const itemId = `pti_${crypto.randomUUID().replace(/-/g, '')}`;
 
         return {
           id: itemId,
@@ -447,7 +452,16 @@ generateFromOnlineContentRoutes.openapi(generateFromOnlineContentRoute, async (c
       return { newTemplate: createdTemplate, insertedItems: insertedItemsResult };
     });
 
-    return c.json({ ...newTemplate, items: insertedItems }, 201);
+    return c.json(
+      {
+        ...newTemplate,
+        image: newTemplate.image ?? null,
+        contentSource: newTemplate.contentSource ?? null,
+        contentId: newTemplate.contentId ?? null,
+        items: insertedItems,
+      },
+      201,
+    );
   } catch (error) {
     console.error('Error generating pack template:', error);
     c.get('sentry').captureException(error);

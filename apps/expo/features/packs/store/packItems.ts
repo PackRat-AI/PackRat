@@ -58,7 +58,9 @@ syncObservable(
     updatePartial: true,
     mode: 'merge',
     persist: {
-      plugin: observablePersistSqlite(Storage as any),
+      plugin: observablePersistSqlite(
+        Storage as unknown as Parameters<typeof observablePersistSqlite>[0],
+      ),
       retrySync: true,
       name: 'packItems',
     },

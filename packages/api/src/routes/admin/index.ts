@@ -1,31 +1,81 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packs, users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
-import { UserSearchQuerySchema } from '@packrat/api/schemas/users';
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
-import { z } from 'zod';
+import { sign, verify } from 'hono/jwt';
+
+const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 
 const adminRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
-adminRoutes.use(
-  '*',
-  (_c, next) => {
-    console.log('adminRoutes');
-    return next();
-  },
-  basicAuth({
-    verifyUser: (username, password, c) => {
-      return username === getEnv(c).ADMIN_USERNAME && password === getEnv(c).ADMIN_PASSWORD;
+// Token exchange endpoint — must be registered BEFORE the auth middleware so it
+// remains publicly accessible. Accepts HTTP Basic credentials and returns a
+// short-lived JWT that subsequent requests can use via Bearer auth.
+adminRoutes.post('/token', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  if (!authHeader?.startsWith('Basic ')) {
+    return c.json({ error: 'Missing credentials' }, 401);
+  }
+  const decoded = atob(authHeader.slice(6));
+  const colonIndex = decoded.indexOf(':');
+  if (colonIndex < 0) {
+    return c.json({ error: 'Invalid credentials format' }, 401);
+  }
+  const username = decoded.slice(0, colonIndex);
+  const password = decoded.slice(colonIndex + 1);
+
+  const e = getEnv(c);
+  if (username !== e.ADMIN_USERNAME || password !== e.ADMIN_PASSWORD) {
+    return c.json({ error: 'Invalid username or password' }, 401);
+  }
+
+  const token = await sign(
+    {
+      sub: username,
+      role: 'admin',
+      exp: Math.floor(Date.now() / 1000) + ADMIN_TOKEN_TTL_SECONDS,
     },
-    realm: 'PackRat Admin Panel',
-  }),
-);
+    e.JWT_SECRET,
+  );
+
+  return c.json({ token, expiresIn: ADMIN_TOKEN_TTL_SECONDS });
+});
+
+adminRoutes.use('*', async (c, next) => {
+  // Production: Cloudflare Access injects this header after verifying the user
+  const cfEmail = c.req.header('CF-Access-Authenticated-User-Email');
+  if (cfEmail) return next();
+
+  // Bearer JWT token (issued by /api/admin/token)
+  const authHeader = c.req.header('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const e = getEnv(c);
+      const payload = await verify(authHeader.slice(7), e.JWT_SECRET, 'HS256');
+      if (payload.role !== 'admin') {
+        return c.json({ error: 'Forbidden' }, 403);
+      }
+      return next();
+    } catch {
+      return c.json({ error: 'Invalid or expired token' }, 401);
+    }
+  }
+
+  // Local dev / fallback: HTTP Basic Auth
+  return basicAuth({
+    verifyUser: (username, password, c) => {
+      const e = getEnv(c);
+      return username === e.ADMIN_USERNAME && password === e.ADMIN_PASSWORD;
+    },
+    realm: 'PackRat Admin',
+  })(c, next);
+});
 
 const adminLayout = (title: string, content: unknown) => html`
 <!DOCTYPE html>
@@ -801,7 +851,11 @@ const getUsersListRoute = createRoute({
   summary: 'List all users',
   description: 'Get a list of all users in the system (Admin only)',
   request: {
-    query: UserSearchQuerySchema.pick({ limit: true, offset: true }),
+    query: z.object({
+      limit: z.coerce.number().int().positive().max(100).default(100).optional(),
+      offset: z.coerce.number().int().min(0).default(0).optional(),
+      q: z.string().optional(),
+    }),
   },
   responses: {
     200: {
@@ -838,7 +892,7 @@ adminRoutes.openapi(getUsersListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 100, offset = 0 } = c.req.query();
+    const { limit = 100, offset = 0, q } = c.req.valid('query');
     const usersList = await db
       .select({
         id: users.id,
@@ -850,6 +904,15 @@ adminRoutes.openapi(getUsersListRoute, async (c) => {
         createdAt: users.createdAt,
       })
       .from(users)
+      .where(
+        q
+          ? or(
+              ilike(users.email, `%${q}%`),
+              ilike(users.firstName, `%${q}%`),
+              ilike(users.lastName, `%${q}%`),
+            )
+          : undefined,
+      )
       .orderBy(desc(users.createdAt))
       .limit(Number(limit))
       .offset(Number(offset));
@@ -874,8 +937,9 @@ const getPacksListRoute = createRoute({
   description: 'Get a list of all packs in the system (Admin only)',
   request: {
     query: z.object({
-      limit: z.number().int().positive().max(100).default(100).optional(),
-      offset: z.number().int().min(0).default(0).optional(),
+      limit: z.coerce.number().int().positive().max(100).default(100).optional(),
+      offset: z.coerce.number().int().min(0).default(0).optional(),
+      q: z.string().optional(),
     }),
   },
   responses: {
@@ -912,7 +976,7 @@ adminRoutes.openapi(getPacksListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 100, offset = 0 } = c.req.query();
+    const { limit = 100, offset = 0, q } = c.req.valid('query');
     const packsList = await db
       .select({
         id: packs.id,
@@ -925,7 +989,19 @@ adminRoutes.openapi(getPacksListRoute, async (c) => {
       })
       .from(packs)
       .leftJoin(users, eq(packs.userId, users.id))
-      .where(eq(packs.deleted, false))
+      .where(
+        and(
+          eq(packs.deleted, false),
+          q
+            ? or(
+                ilike(packs.name, `%${q}%`),
+                ilike(packs.description, `%${q}%`),
+                ilike(packs.category, `%${q}%`),
+                ilike(users.email, `%${q}%`),
+              )
+            : undefined,
+        ),
+      )
       .orderBy(desc(packs.createdAt))
       .limit(Number(limit))
       .offset(Number(offset));
@@ -950,8 +1026,9 @@ const getCatalogListRoute = createRoute({
   description: 'Get a list of catalog items (Admin only)',
   request: {
     query: z.object({
-      limit: z.number().int().positive().max(100).default(25).optional(),
-      offset: z.number().int().min(0).default(0).optional(),
+      limit: z.coerce.number().int().positive().max(100).default(25).optional(),
+      offset: z.coerce.number().int().min(0).default(0).optional(),
+      q: z.string().optional(),
     }),
   },
   responses: {
@@ -989,7 +1066,7 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const { limit = 25, offset = 0 } = c.req.query();
+    const { limit = 25, offset = 0, q } = c.req.valid('query');
     const itemsList = await db
       .select({
         id: catalogItems.id,
@@ -1002,6 +1079,18 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
         createdAt: catalogItems.createdAt,
       })
       .from(catalogItems)
+      .where(
+        q
+          ? or(
+              ilike(catalogItems.name, `%${q}%`),
+              ilike(catalogItems.brand, `%${q}%`),
+              sql`EXISTS (
+                SELECT 1 FROM jsonb_array_elements_text(${catalogItems.categories}::jsonb) AS cat
+                WHERE cat ILIKE '%' || ${q} || '%'
+              )`,
+            )
+          : undefined,
+      )
       .orderBy(desc(catalogItems.id))
       .limit(Number(limit))
       .offset(Number(offset));
@@ -1015,6 +1104,199 @@ adminRoutes.openapi(getCatalogListRoute, async (c) => {
   } catch (error) {
     console.error('Error fetching catalog items:', error);
     return c.json({ error: 'Failed to fetch catalog items', code: 'CATALOG_FETCH_ERROR' }, 500);
+  }
+});
+
+// ─── Action routes ────────────────────────────────────────────────────────────
+
+const deleteUserRoute = createRoute({
+  method: 'delete',
+  path: '/users/:id',
+  tags: ['Admin'],
+  summary: 'Delete a user',
+  request: {
+    params: z.object({ id: z.coerce.number().int().positive() }),
+  },
+  responses: {
+    200: {
+      description: 'User deleted',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    409: {
+      description: 'Conflict — user has dependent data',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+adminRoutes.openapi(deleteUserRoute, async (c) => {
+  const db = createDb(c);
+  const { id } = c.req.valid('param');
+
+  try {
+    const deleted = await db.delete(users).where(eq(users.id, id)).returning();
+    if (!deleted.length) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
+    return c.json({ success: true }, 200);
+  } catch (error) {
+    if ((error as { code?: string })?.code === '23503') {
+      return c.json({ error: 'Cannot delete: user has dependent data', code: 'CONFLICT' }, 409);
+    }
+    console.error('Error deleting user:', error);
+    return c.json({ error: 'Failed to delete user', code: 'DELETE_ERROR' }, 500);
+  }
+});
+
+const deletePackRoute = createRoute({
+  method: 'delete',
+  path: '/packs/:id',
+  tags: ['Admin'],
+  summary: 'Soft-delete a pack',
+  request: {
+    params: z.object({ id: z.string().min(1) }),
+  },
+  responses: {
+    200: {
+      description: 'Pack deleted',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+adminRoutes.openapi(deletePackRoute, async (c) => {
+  const db = createDb(c);
+  const { id } = c.req.valid('param');
+
+  try {
+    const updated = await db
+      .update(packs)
+      .set({ deleted: true })
+      .where(and(eq(packs.id, id), eq(packs.deleted, false)))
+      .returning();
+    if (!updated.length) return c.json({ error: 'Pack not found', code: 'NOT_FOUND' }, 404);
+    return c.json({ success: true }, 200);
+  } catch (error) {
+    console.error('Error deleting pack:', error);
+    return c.json({ error: 'Failed to delete pack', code: 'DELETE_ERROR' }, 500);
+  }
+});
+
+const deleteCatalogItemRoute = createRoute({
+  method: 'delete',
+  path: '/catalog/:id',
+  tags: ['Admin'],
+  summary: 'Delete a catalog item',
+  request: {
+    params: z.object({ id: z.coerce.number().int().positive() }),
+  },
+  responses: {
+    200: {
+      description: 'Item deleted',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    409: {
+      description: 'Conflict — item has dependent data',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+adminRoutes.openapi(deleteCatalogItemRoute, async (c) => {
+  const db = createDb(c);
+  const { id } = c.req.valid('param');
+
+  try {
+    const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning();
+    if (!deleted.length) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
+    return c.json({ success: true }, 200);
+  } catch (error) {
+    if ((error as { code?: string })?.code === '23503') {
+      return c.json({ error: 'Cannot delete: item has dependent data', code: 'CONFLICT' }, 409);
+    }
+    console.error('Error deleting catalog item:', error);
+    return c.json({ error: 'Failed to delete catalog item', code: 'DELETE_ERROR' }, 500);
+  }
+});
+
+const UpdateCatalogItemSchema = z.object({
+  name: z.string().min(1).optional(),
+  brand: z.string().nullable().optional(),
+  categories: z.array(z.string()).nullable().optional(),
+  weight: z.number().optional(),
+  weightUnit: z.string().optional(),
+  price: z.number().nullable().optional(),
+  description: z.string().nullable().optional(),
+});
+
+const updateCatalogItemRoute = createRoute({
+  method: 'patch',
+  path: '/catalog/:id',
+  tags: ['Admin'],
+  summary: 'Update a catalog item',
+  request: {
+    params: z.object({ id: z.coerce.number().int().positive() }),
+    body: { content: { 'application/json': { schema: UpdateCatalogItemSchema } } },
+  },
+  responses: {
+    200: {
+      description: 'Item updated',
+      content: {
+        'application/json': {
+          schema: z.object({ id: z.number(), name: z.string() }),
+        },
+      },
+    },
+    404: {
+      description: 'Not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    500: {
+      description: 'Server error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+adminRoutes.openapi(updateCatalogItemRoute, async (c) => {
+  const db = createDb(c);
+  const { id } = c.req.valid('param');
+  const body = c.req.valid('json');
+
+  try {
+    const updated = await db
+      .update(catalogItems)
+      .set({ ...body, updatedAt: new Date() })
+      .where(eq(catalogItems.id, id))
+      .returning();
+    const first = updated[0];
+    if (!first) return c.json({ error: 'Catalog item not found', code: 'NOT_FOUND' }, 404);
+    return c.json({ id: first.id, name: first.name }, 200);
+  } catch (error) {
+    console.error('Error updating catalog item:', error);
+    return c.json({ error: 'Failed to update catalog item', code: 'UPDATE_ERROR' }, 500);
   }
 });
 

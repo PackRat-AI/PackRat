@@ -35,9 +35,9 @@ function levenshtein(a: string, b: string): number {
     assertDefined(row);
     assertDefined(prevRow);
     for (let j = 1; j <= n; j++) {
-      const diag = prevRow[j - 1];
-      const up = prevRow[j];
-      const left = row[j - 1];
+      const diag: number | undefined = prevRow[j - 1];
+      const up: number | undefined = prevRow[j];
+      const left: number | undefined = row[j - 1];
       assertDefined(diag);
       assertDefined(up);
       assertDefined(left);
