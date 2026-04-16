@@ -14,6 +14,12 @@ export default defineWorkersConfig({
     pool: '@cloudflare/vitest-pool-workers',
     poolOptions: {
       workers: {
+        // singleWorker: one workerd isolate shared across all test files.
+        // Without this, each file gets a fresh isolate, which tears down at
+        // file end without cleanly closing in-flight Neon Pool websockets →
+        // postgres retains orphaned sessions/locks → next file's TRUNCATE
+        // deadlocks and inserts see stale state. (#2180 follow-up)
+        singleWorker: true,
         wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
       },
     },
