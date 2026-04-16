@@ -35,42 +35,8 @@ const containerFetchWithContentId =
       ),
     );
 
-// Mock the catalog service batch vector search. Returns items with null IDs
-// because in test environment we don't seed catalog items and the database has
-// foreign key constraints on catalog_item_id references. In production, the
-// service returns actual catalog IDs when matches are found.
-vi.mock('@packrat/api/services/catalogService', () => ({
-  CatalogService: vi.fn(function (this: unknown) {
-    return {
-      batchVectorSearch: vi.fn(() =>
-        Promise.resolve({
-          items: [
-            [
-              {
-                id: null,
-                name: 'Trail Backpack 20L',
-                description: 'Lightweight day pack',
-                weight: 480,
-                weightUnit: 'g',
-                images: ['https://example.com/backpack.jpg'],
-              },
-            ],
-            [
-              {
-                id: null,
-                name: 'HydroFlask 32oz',
-                description: 'Insulated water bottle',
-                weight: 180,
-                weightUnit: 'g',
-                images: ['https://example.com/bottle.jpg'],
-              },
-            ],
-          ],
-        }),
-      ),
-    };
-  }),
-}));
+// CatalogService is mocked globally in setup.ts (returns items with null
+// catalogItemId to avoid FK issues with unseeded catalog_items).
 
 describe('Generate From Online Content Routes', () => {
   let testAdmin: Awaited<ReturnType<typeof seedAndLoginTestUser>>;

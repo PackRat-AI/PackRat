@@ -129,8 +129,34 @@ vi.mock('ai', async () => {
   const actual = await vi.importActual<typeof import('ai')>('ai');
   return {
     ...actual,
-    generateObject: vi.fn(() =>
-      Promise.resolve({
+    // Branch on the caller's requested output shape: PackService.generatePackConcepts
+    // passes `output: 'array'` and expects `object` to be an array of PackConcepts;
+    // generateFromOnlineContent passes no `output` and expects the analysisSchema
+    // object (template + items). Both callers share this one global mock.
+    generateObject: vi.fn((opts: { output?: 'array' | 'object' | 'enum' | 'no-schema' }) => {
+      if (opts?.output === 'array') {
+        return Promise.resolve({
+          object: [
+            {
+              name: 'Test Hiking Pack',
+              description: 'Mock-generated pack for a day hike',
+              category: 'hiking',
+              tags: ['test', 'generated'],
+              items: [
+                {
+                  item: 'Test Backpack',
+                  quantity: 1,
+                  category: 'Packs',
+                  consumable: false,
+                  worn: false,
+                  notes: null,
+                },
+              ],
+            },
+          ],
+        });
+      }
+      return Promise.resolve({
         object: {
           templateName: 'Hiking Essentials',
           templateCategory: 'hiking',
@@ -156,8 +182,8 @@ vi.mock('ai', async () => {
             },
           ],
         },
-      }),
-    ),
+      });
+    }),
     streamText: vi.fn(({ messages }) => {
       const mockResponse = `Mock AI response for: ${messages?.[messages.length - 1]?.content || 'query'}`;
 
@@ -200,6 +226,30 @@ vi.mock('@packrat/api/utils/ai/provider', () => ({
 
 vi.mock('@packrat/api/utils/ai/tools', () => ({
   createTools: vi.fn(() => ({})),
+}));
+
+// Global CatalogService mock so routes that call batchVectorSearch don't hit
+// OpenAI embeddings. Default returns null ids (catalogItemId null) to avoid
+// FK constraints; tests that need specific matches can still override per file.
+vi.mock('@packrat/api/services/catalogService', () => ({
+  CatalogService: vi.fn(function (this: unknown) {
+    return {
+      batchVectorSearch: vi.fn((queries: string[]) =>
+        Promise.resolve({
+          items: queries.map(() => [
+            {
+              id: null,
+              name: 'Mock Catalog Item',
+              description: 'Mock description',
+              weight: 100,
+              weightUnit: 'g',
+              images: [],
+            },
+          ]),
+        }),
+      ),
+    };
+  }),
 }));
 
 vi.mock('@packrat/api/utils/DbUtils', () => ({
