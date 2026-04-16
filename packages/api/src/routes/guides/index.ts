@@ -6,11 +6,10 @@ import * as getGuideRoute from './getGuideRoute';
 import * as getGuidesRoute from './getGuidesRoute';
 import * as searchGuidesRoute from './searchGuidesRoute';
 
-const guidesRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
-guidesRoutes.openapi(getGuidesRoute.routeDefinition, getGuidesRoute.handler);
-guidesRoutes.openapi(getCategoriesRoute.routeDefinition, getCategoriesRoute.handler);
-guidesRoutes.openapi(searchGuidesRoute.routeDefinition, searchGuidesRoute.handler);
-guidesRoutes.openapi(getGuideRoute.routeDefinition, getGuideRoute.handler);
+const guidesRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
+  .openapi(getGuidesRoute.routeDefinition, getGuidesRoute.handler)
+  .openapi(getCategoriesRoute.routeDefinition, getCategoriesRoute.handler)
+  .openapi(searchGuidesRoute.routeDefinition, searchGuidesRoute.handler)
+  .openapi(getGuideRoute.routeDefinition, getGuideRoute.handler);
 
 export { guidesRoutes };

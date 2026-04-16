@@ -5,12 +5,11 @@ import { packItemsRoutes } from './items';
 import { packsListRoutes } from './list';
 import { packRoutes } from './pack';
 
-const packsRoutes = new OpenAPIHono();
-
-packsRoutes.route('/', analyzeImageRoutes);
-packsRoutes.route('/', packsListRoutes);
-packsRoutes.route('/', packRoutes);
-packsRoutes.route('/', packItemsRoutes);
-packsRoutes.route('/', generatePacksRoute);
+const packsRoutes = new OpenAPIHono()
+  .route('/', analyzeImageRoutes)
+  .route('/', packsListRoutes)
+  .route('/', packRoutes)
+  .route('/', packItemsRoutes)
+  .route('/', generatePacksRoute);
 
 export { packsRoutes };

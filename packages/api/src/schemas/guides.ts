@@ -1,5 +1,14 @@
 import { z } from '@hono/zod-openapi';
 
+const positiveIntegerQueryParam = (defaultValue: string) =>
+  z
+    .string()
+    .regex(/^\d+$/)
+    .optional()
+    .default(defaultValue)
+    .transform((value) => Number(value))
+    .pipe(z.number().int().positive());
+
 export const ErrorResponseSchema = z
   .object({
     error: z.string().openapi({
@@ -74,12 +83,12 @@ export const GuideDetailSchema = GuideSchema.extend({
 
 export const GuidesQuerySchema = z
   .object({
-    page: z.coerce.number().int().positive().optional().default(1).openapi({
-      example: 1,
+    page: positiveIntegerQueryParam('1').openapi({
+      example: '1',
       description: 'Page number for pagination',
     }),
-    limit: z.coerce.number().int().positive().optional().default(20).openapi({
-      example: 20,
+    limit: positiveIntegerQueryParam('20').openapi({
+      example: '20',
       description: 'Number of guides per page',
     }),
     category: z.string().optional().openapi({

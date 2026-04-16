@@ -1,5 +1,23 @@
 import { z } from '@hono/zod-openapi';
 
+const positiveIntegerQueryParam = (defaultValue: string) =>
+  z
+    .string()
+    .regex(/^\d+$/)
+    .optional()
+    .default(defaultValue)
+    .transform((value) => Number(value))
+    .pipe(z.number().int().positive());
+
+const boundedIntegerQueryParam = (defaultValue: string, max: number) =>
+  z
+    .string()
+    .regex(/^\d+$/)
+    .optional()
+    .default(defaultValue)
+    .transform((value) => Number(value))
+    .pipe(z.number().int().min(1).max(max));
+
 export const ErrorResponseSchema = z
   .object({
     error: z.string().openapi({
@@ -118,12 +136,12 @@ export const CatalogItemSchema = z
 
 export const CatalogItemsQuerySchema = z
   .object({
-    page: z.coerce.number().int().positive().optional().default(1).openapi({
-      example: 1,
+    page: positiveIntegerQueryParam('1').openapi({
+      example: '1',
       description: 'Page number for pagination',
     }),
-    limit: z.coerce.number().int().min(1).max(100).optional().default(20).openapi({
-      example: 20,
+    limit: boundedIntegerQueryParam('20', 100).openapi({
+      example: '20',
       description: 'Number of items per page',
     }),
     q: z.string().optional().openapi({

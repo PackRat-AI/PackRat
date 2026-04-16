@@ -10,6 +10,19 @@ type WeatherData = {
   windSpeed: number;
 };
 
+type OpenWeatherResponse = {
+  main: {
+    temp: number;
+    humidity: number;
+  };
+  weather: Array<{
+    main: string;
+  }>;
+  wind: {
+    speed: number;
+  };
+};
+
 export class WeatherService {
   private env: Env;
 
@@ -28,12 +41,12 @@ export class WeatherService {
       throw new Error('Weather API request failed');
     }
 
-    const data = await response.json();
+    const data: OpenWeatherResponse = await response.json();
 
     return {
       location,
       temperature: Math.round(data.main.temp),
-      conditions: data.weather[0].main,
+      conditions: data.weather[0]?.main ?? 'Unknown',
       humidity: data.main.humidity,
       windSpeed: Math.round(data.wind.speed),
     };

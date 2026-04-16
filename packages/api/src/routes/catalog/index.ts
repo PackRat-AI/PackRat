@@ -12,20 +12,19 @@ import { queueCatalogEtlRoute } from './queueCatalogEtlRoute';
 import * as updateCatalogItemRoute from './updateCatalogItemRoute';
 import * as vectorSearchRoute from './vectorSearchRoute';
 
-const catalogRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
-catalogRoutes.openapi(getCatalogItemsRoute.routeDefinition, getCatalogItemsRoute.handler);
-catalogRoutes.openapi(vectorSearchRoute.routeDefinition, vectorSearchRoute.handler);
-catalogRoutes.openapi(createCatalogItemRoute.routeDefinition, createCatalogItemRoute.handler);
-catalogRoutes.route('/', getCatalogItemsCategoriesRoute);
-catalogRoutes.openapi(getCatalogItemRoute.routeDefinition, getCatalogItemRoute.handler);
-catalogRoutes.openapi(
-  getSimilarCatalogItemsRoute.routeDefinition,
-  getSimilarCatalogItemsRoute.handler,
-);
-catalogRoutes.openapi(deleteCatalogItemRoute.routeDefinition, deleteCatalogItemRoute.handler);
-catalogRoutes.openapi(updateCatalogItemRoute.routeDefinition, updateCatalogItemRoute.handler);
-catalogRoutes.route('/', queueCatalogEtlRoute);
-catalogRoutes.route('/', backfillEmbeddingsRoute);
+const catalogRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
+  .openapi(getCatalogItemsRoute.routeDefinition, getCatalogItemsRoute.handler)
+  .openapi(vectorSearchRoute.routeDefinition, vectorSearchRoute.handler)
+  .openapi(createCatalogItemRoute.routeDefinition, createCatalogItemRoute.handler)
+  .route('/', getCatalogItemsCategoriesRoute)
+  .openapi(getCatalogItemRoute.routeDefinition, getCatalogItemRoute.handler)
+  .openapi(
+    getSimilarCatalogItemsRoute.routeDefinition,
+    getSimilarCatalogItemsRoute.handler,
+  )
+  .openapi(deleteCatalogItemRoute.routeDefinition, deleteCatalogItemRoute.handler)
+  .openapi(updateCatalogItemRoute.routeDefinition, updateCatalogItemRoute.handler)
+  .route('/', queueCatalogEtlRoute)
+  .route('/', backfillEmbeddingsRoute);
 
 export { catalogRoutes };
