@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { seedAndLoginTestUser, seedTestUser } from './utils/db-helpers';
 import {
   api,
   apiWithAuth,
@@ -9,8 +10,11 @@ import {
 } from './utils/test-helpers';
 
 describe('Upload Routes', () => {
-  beforeEach(() => {
+  let testUser: Awaited<ReturnType<typeof seedTestUser>>;
+
+  beforeEach(async () => {
     vi.clearAllMocks();
+    testUser = await seedAndLoginTestUser();
   });
 
   describe('Authentication', () => {
@@ -27,7 +31,9 @@ describe('Upload Routes', () => {
 
   describe('GET /upload/presigned', () => {
     it('generates presigned URL for file upload', async () => {
-      const res = await apiWithAuth('/upload/presigned?fileName=1-test.jpg&contentType=image/jpeg');
+      const res = await apiWithAuth(
+        `/upload/presigned?fileName=${testUser.id}-test.jpg&contentType=image/jpeg`,
+      );
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['url']);
@@ -46,7 +52,7 @@ describe('Upload Routes', () => {
 
     it('validates content type', async () => {
       const res = await apiWithAuth(
-        '/upload/presigned?fileName=1-test.exe&contentType=application/x-executable',
+        `/upload/presigned?fileName=${testUser.id}-test.exe&contentType=application/x-executable`,
       );
       expectBadRequest(res);
 
@@ -59,7 +65,7 @@ describe('Upload Routes', () => {
 
       for (const contentType of imageTypes) {
         const res = await apiWithAuth(
-          `/upload/presigned?fileName=1-test.jpg&contentType=${contentType}`,
+          `/upload/presigned?fileName=${testUser.id}-test.jpg&contentType=${contentType}`,
         );
 
         expect(res.status).toBe(200);
@@ -68,7 +74,9 @@ describe('Upload Routes', () => {
     });
 
     it('validates file extension', async () => {
-      const res = await apiWithAuth('/upload/presigned?fileName=1-test.txt&contentType=text/plain');
+      const res = await apiWithAuth(
+        `/upload/presigned?fileName=${testUser.id}-test.txt&contentType=text/plain`,
+      );
 
       // Should reject non-image files
       if (res.status === 400) {
@@ -87,7 +95,7 @@ describe('Upload Routes', () => {
 
     it('includes file size limits', async () => {
       const res = await apiWithAuth(
-        '/upload/presigned?fileName=1-huge.jpg&contentType=image/jpeg&size=50000000',
+        `/upload/presigned?fileName=${testUser.id}-huge.jpg&contentType=image/jpeg&size=50000000`,
       ); // 50MB
 
       expectBadRequest(res);
@@ -132,7 +140,7 @@ describe('Upload Routes', () => {
 
       for (const contentType of invalidTypes) {
         const res = await apiWithAuth(
-          `/upload/presigned?fileName=1-test.jpg&contentType=${contentType}`,
+          `/upload/presigned?fileName=${testUser.id}-test.jpg&contentType=${contentType}`,
         );
         expectBadRequest(res);
       }
@@ -152,7 +160,9 @@ describe('Upload Routes', () => {
     });
 
     it('accepts fileName with user ID prefix', async () => {
-      const res = await apiWithAuth('/upload/presigned?fileName=1-test.jpg&contentType=image/jpeg');
+      const res = await apiWithAuth(
+        `/upload/presigned?fileName=${testUser.id}-test.jpg&contentType=image/jpeg`,
+      );
 
       expect(res.status).toBe(200);
       const data = await res.json();

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { seedTestUser } from './utils/db-helpers';
+import { seedAndLoginTestUser, seedTestUser } from './utils/db-helpers';
 import {
   api,
   apiWithAuth,
@@ -12,7 +12,7 @@ describe('Image Detection Routes', () => {
   let testUser: Awaited<ReturnType<typeof seedTestUser>>;
 
   beforeEach(async () => {
-    testUser = await seedTestUser();
+    testUser = await seedAndLoginTestUser();
   });
 
   describe('Authentication', () => {
