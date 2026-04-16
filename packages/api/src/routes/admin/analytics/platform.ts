@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import {
   catalogItems,
@@ -12,7 +12,6 @@ import {
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import { and, count, desc, eq, gte, sql } from 'drizzle-orm';
-import { z } from 'zod';
 
 export const platformRoutes = new OpenAPIHono<{ Bindings: Env }>();
 

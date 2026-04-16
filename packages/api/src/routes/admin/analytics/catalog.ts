@@ -1,10 +1,9 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, etlJobs } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { Env } from '@packrat/api/types/env';
 import { and, avg, count, desc, gt, isNotNull, max, min, sql } from 'drizzle-orm';
-import { z } from 'zod';
 
 export const catalogRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
