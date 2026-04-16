@@ -342,7 +342,7 @@ jobs:
             maestro test \
               --format junit \
               --output test-results/maestro-results.xml \
-              .maestro/
+              .maestro
             mv .maestro/config.yaml.bak .maestro/config.yaml
         env:
           TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
