@@ -1,9 +1,9 @@
 'use client';
 
-import { cn } from '@packrat/web-ui/lib/utils';
-import { assertDefined } from 'guides-app/lib/assertDefined';
+import { assertDefined } from '@packrat/guards';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
+import { cn } from '../lib/utils';
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
@@ -94,25 +94,21 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-type ChartTooltipPayload = Record<string, unknown> & {
-  fill?: string;
-};
-
-type ChartTooltipPayloadItem = Record<string, unknown> & {
-  color?: string;
-  dataKey?: string | number;
-  name?: string | number;
-  payload?: ChartTooltipPayload;
-  value?: number | string;
-};
-
-// recharts v3's Tooltip prop type hides `payload`/`label` behind a content-render callback.
-// We model only the runtime fields this component reads.
+// recharts v3: Tooltip hides `payload`/`label` behind a content render-prop.
+// ChartTooltipContent IS the content renderer, so type its props to match the
+// runtime render-prop shape.
 type ChartTooltipContentProps = React.ComponentProps<'div'> & {
   active?: boolean;
-  payload?: ChartTooltipPayloadItem[];
+  payload?: {
+    dataKey?: string | number;
+    name?: string;
+    value?: unknown;
+    color?: string;
+    payload?: { fill?: string; [k: string]: unknown };
+    [k: string]: unknown;
+  }[];
   label?: unknown;
-  labelFormatter?: (label: unknown, payload: ChartTooltipPayloadItem[]) => React.ReactNode;
+  labelFormatter?: (label: unknown, payload: unknown[]) => React.ReactNode;
   labelClassName?: string;
   formatter?: (
     value: unknown,
@@ -246,7 +242,7 @@ const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContent
                           {itemConfig?.label || item.name}
                         </span>
                       </div>
-                      {item.value && (
+                      {typeof item.value === 'number' && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
                           {item.value.toLocaleString()}
                         </span>
@@ -266,17 +262,14 @@ ChartTooltipContent.displayName = 'ChartTooltip';
 
 const ChartLegend = RechartsPrimitive.Legend;
 
-type ChartLegendPayloadItem = Record<string, unknown> & {
-  color?: string;
-  dataKey?: string | number;
-  value?: string | number;
-  payload?: unknown;
-};
-
-// recharts v3 LegendProps no longer exposes `payload`/`verticalAlign` via a
-// simple Pick; Legend takes a `content` render-prop receiving the runtime shape.
+// recharts v3 Legend also takes a content render-prop; type directly.
 type ChartLegendContentProps = React.ComponentProps<'div'> & {
-  payload?: ChartLegendPayloadItem[];
+  payload?: {
+    dataKey?: string | number;
+    value?: unknown;
+    color?: string;
+    [k: string]: unknown;
+  }[];
   verticalAlign?: 'top' | 'bottom' | 'middle';
   hideIcon?: boolean;
   nameKey?: string;
@@ -305,7 +298,7 @@ const ChartLegendContent = React.forwardRef<HTMLDivElement, ChartLegendContentPr
 
           return (
             <div
-              key={item.value}
+              key={String(item.value ?? item.dataKey)}
               className={cn(
                 'flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground',
               )}
