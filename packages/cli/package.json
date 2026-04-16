@@ -1,6 +1,6 @@
 {
   "name": "@packrat/cli",
-  "version": "2.0.18",
+  "version": "2.0.19",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "packrat": "bun run src/index.ts"
   },
   "dependencies": {
+    "@duckdb/node-api": "1.5.0-r.1",
     "@packrat/analytics": "workspace:*",
     "chalk": "catalog:",
     "citty": "^0.2.1",

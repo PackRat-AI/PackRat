@@ -93,7 +93,7 @@ function UserRow({ user }: { user: AdminUser }) {
 
 export default function UsersPage() {
   const searchParams = useSearchParams();
-  const q = searchParams.get('q') ?? undefined;
+  const q = searchParams?.get('q') ?? undefined;
 
   const {
     data: users = [],

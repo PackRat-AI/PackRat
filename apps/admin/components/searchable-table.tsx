@@ -25,6 +25,7 @@ interface SearchableTableProps<T> {
   searchPlaceholder?: string;
   emptyMessage?: string;
   getSearchText: (row: T) => string;
+  getRowKey: (row: T) => string | number;
 }
 
 export function SearchableTable<T>({
@@ -33,6 +34,7 @@ export function SearchableTable<T>({
   searchPlaceholder = 'Search…',
   emptyMessage = 'No results.',
   getSearchText,
+  getRowKey,
 }: SearchableTableProps<T>) {
   const [query, setQuery] = useState('');
 
@@ -78,8 +80,8 @@ export function SearchableTable<T>({
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((row, i) => (
-                <TableRow key={`skeleton-row-${i}`} className="hover:bg-muted/20">
+              filtered.map((row) => (
+                <TableRow key={getRowKey(row)} className="hover:bg-muted/20">
                   {columns.map((col) => (
                     <TableCell key={col.key}>{col.render(row)}</TableCell>
                   ))}

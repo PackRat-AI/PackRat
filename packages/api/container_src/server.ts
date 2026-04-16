@@ -287,7 +287,7 @@ async function downloadAndRehostImages(
   const rehostedUrls: string[] = [];
   let failedCount = 0;
 
-  results.forEach((result, index) => {
+  for (const [index, result] of results.entries()) {
     if (result.status === 'fulfilled' && result.value) {
       rehostedUrls.push(result.value);
     } else {
@@ -296,7 +296,7 @@ async function downloadAndRehostImages(
         console.error(`Image ${index + 1} rehosting failed:`, result.reason);
       }
     }
-  });
+  }
 
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 

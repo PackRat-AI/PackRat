@@ -180,7 +180,7 @@ export function PackListScreen() {
   };
 
   return (
-    <TabScreen>
+    <TabScreen useLegacySafeAreaView>
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
@@ -203,7 +203,7 @@ export function PackListScreen() {
           ),
         }}
         rightView={() => (
-          <View className="flex-row items-center">
+          <View className="flex-row items-center mr-2 ml-2">
             <CreatePackIconButton />
           </View>
         )}

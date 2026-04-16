@@ -93,7 +93,7 @@ function PackRow({ pack }: { pack: AdminPack }) {
 
 export default function PacksPage() {
   const searchParams = useSearchParams();
-  const q = searchParams.get('q') ?? undefined;
+  const q = searchParams?.get('q') ?? undefined;
 
   const {
     data: packs = [],

@@ -8,7 +8,7 @@ import {
   packs,
   packTemplateItems,
   packTemplates,
-  users,
+  type users,
 } from '../../src/db/schema';
 import { createTestCatalogItem } from '../fixtures/catalog-fixtures';
 import { createTestPack, createTestPackItem } from '../fixtures/pack-fixtures';
@@ -16,6 +16,7 @@ import {
   createTestPackTemplate,
   createTestPackTemplateItem,
 } from '../fixtures/pack-template-fixtures';
+import { setCurrentTestAdmin, setCurrentTestUser } from './test-helpers';
 
 /**
  * Generates a mock embedding vector
@@ -35,27 +36,30 @@ function generateUniqueSku(): string {
 }
 
 /**
- * Seeds a test user into the database
- * @returns The created user with id
+ * Seeds a test user via UserService (same path production register uses) and
+ * registers them as the current JWT subject for apiWithAuth / apiWithAdmin.
+ * Callers must use the returned `user.id` — it is DB-assigned (#2180).
  */
 export async function seedTestUser(overrides?: Partial<InferInsertModel<typeof users>>) {
   const db = createDb();
 
-  const userData = {
+  const user = await userService.create({
     email:
       overrides?.email ??
       `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
-    emailVerified: overrides?.emailVerified ?? true,
-    passwordHash: overrides?.passwordHash ?? null,
+    password: overrides?.password,
     firstName: overrides?.firstName ?? 'Test',
     lastName: overrides?.lastName ?? 'User',
-    role: overrides?.role ?? 'USER',
-    ...overrides,
-  };
+    role,
+    emailVerified: overrides?.emailVerified ?? true,
+  });
 
-  const [user] = await db.insert(users).values(userData).returning();
-
-  assertDefined(user);
+  const subject = { id: user.id, role };
+  if (role === 'ADMIN') {
+    setCurrentTestAdmin(subject);
+  } else {
+    setCurrentTestUser(subject);
+  }
 
   return user;
 }
@@ -123,7 +127,7 @@ export async function seedCatalogItems(
  * @returns The created pack template with id
  */
 export async function seedPackTemplate(
-  overrides?: Partial<InferInsertModel<typeof packTemplates>>,
+  overrides: Partial<InferInsertModel<typeof packTemplates>> & { userId: number },
 ) {
   const db = createDb();
 
@@ -143,7 +147,7 @@ export async function seedPackTemplate(
 
 export async function seedPackTemplates(
   count: number,
-  overrides?: Partial<InferInsertModel<typeof packTemplates>>,
+  overrides: Partial<InferInsertModel<typeof packTemplates>> & { userId: number },
 ) {
   const db = createDb();
 
@@ -166,7 +170,7 @@ export async function seedPackTemplates(
 
 export async function seedPackTemplateItem(
   packTemplateId: string,
-  overrides?: Partial<InferInsertModel<typeof packTemplateItems>>,
+  overrides: Partial<InferInsertModel<typeof packTemplateItems>> & { userId: number },
 ) {
   const db = createDb();
 
@@ -186,7 +190,10 @@ export async function seedPackTemplateItem(
 
 export async function seedPackTemplateItems(
   packTemplateId: string,
-  opts: { count: number; overrides?: Partial<InferInsertModel<typeof packTemplateItems>> },
+  opts: {
+    count: number;
+    overrides: Partial<InferInsertModel<typeof packTemplateItems>> & { userId: number };
+  },
 ) {
   const { count, overrides } = opts;
   const db = createDb();
@@ -226,7 +233,7 @@ export async function seedPack(overrides?: Partial<InferInsertModel<typeof packs
 
 export async function seedPacks(
   count: number,
-  overrides?: Partial<InferInsertModel<typeof packs>>,
+  overrides: Partial<InferInsertModel<typeof packs>> & { userId: number },
 ) {
   const db = createDb();
 
@@ -249,7 +256,7 @@ export async function seedPacks(
 
 export async function seedPackItem(
   packId: string,
-  overrides?: Partial<InferInsertModel<typeof packItems>>,
+  overrides: Partial<InferInsertModel<typeof packItems>> & { userId: number },
 ) {
   const db = createDb();
 
@@ -269,7 +276,10 @@ export async function seedPackItem(
 
 export async function seedPackItems(
   packId: string,
-  opts: { count: number; overrides?: Partial<InferInsertModel<typeof packItems>> },
+  opts: {
+    count: number;
+    overrides: Partial<InferInsertModel<typeof packItems>> & { userId: number };
+  },
 ) {
   const { count, overrides } = opts;
   const db = createDb();

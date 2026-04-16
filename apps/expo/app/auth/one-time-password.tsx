@@ -13,7 +13,8 @@ import {
   type NativeSyntheticEvent,
   Platform,
   Pressable,
-  type TextInputFocusEventData,
+  type TargetedEvent,
+  type TextInput,
   type TextInputKeyPressEventData,
   View,
 } from 'react-native';
@@ -249,6 +250,7 @@ function OTPField({
   hasError,
 }: OTPFieldProps) {
   const { colors } = useColorScheme();
+  const inputRef = React.useRef<TextInput>(null);
 
   function onKeyPress({ nativeEvent }: NativeSyntheticEvent<TextInputKeyPressEventData>) {
     if (nativeEvent.key === 'Backspace' && value === '') {
@@ -259,8 +261,8 @@ function OTPField({
     }
   }
 
-  function onFocus(e: NativeSyntheticEvent<TextInputFocusEventData>) {
-    e.currentTarget.setNativeProps({
+  function onFocus(_e: NativeSyntheticEvent<TargetedEvent>) {
+    inputRef.current?.setNativeProps({
       selection: { start: 0, end: value?.toString().length },
     });
   }
@@ -292,6 +294,7 @@ function OTPField({
 
   return (
     <TextField
+      ref={inputRef}
       value={value}
       editable={!isLoading}
       keyboardType="numeric"

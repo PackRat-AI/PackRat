@@ -29,6 +29,7 @@ on:
       - "apps/expo/lib/utils/**"
       - "apps/expo/features/**/utils/**"
       - ".github/workflows/unit-tests.yml"
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

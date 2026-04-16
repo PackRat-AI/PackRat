@@ -6,7 +6,6 @@ import {
   expectBadRequest,
   expectUnauthorized,
   httpMethods,
-  type TEST_USER,
 } from './utils/test-helpers';
 import { createTestUser } from './utils/user-helpers';
 
@@ -259,7 +258,9 @@ describe('Auth Routes', () => {
 
     it('returns user data when authenticated', async () => {
       const testUser = await createTestUser();
-      const res = await apiWithAuthAs('/auth/me', { user: testUser as typeof TEST_USER });
+      const res = await apiWithAuthAs('/auth/me', {
+        user: { id: testUser.id, role: (testUser.role ?? 'USER') as 'USER' | 'ADMIN' },
+      });
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.success).toBe(true);

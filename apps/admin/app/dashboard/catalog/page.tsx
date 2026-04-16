@@ -108,7 +108,7 @@ function CatalogRow({ item }: { item: AdminCatalogItem }) {
 
 export default function CatalogPage() {
   const searchParams = useSearchParams();
-  const q = searchParams.get('q') ?? undefined;
+  const q = searchParams?.get('q') ?? undefined;
 
   const {
     data: items = [],

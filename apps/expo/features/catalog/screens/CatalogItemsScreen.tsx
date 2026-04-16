@@ -128,7 +128,7 @@ function CatalogItemsScreen() {
   ]);
 
   return (
-    <TabScreen>
+    <TabScreen useLegacySafeAreaView>
       <LargeTitleHeader
         title={t('catalog.title')}
         backVisible={false}

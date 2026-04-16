@@ -23,21 +23,23 @@ expect.extend({
   },
 });
 
-// Test user data for consistent testing
-export const TEST_USER = {
-  id: 1,
-  email: 'test@example.com',
-  firstName: 'Test',
-  lastName: 'User',
-  role: 'USER' as const,
+type AuthSubject = { id: number; role: 'USER' | 'ADMIN' };
+
+// Current test user for JWT signing. Set by seedTestUser (#2180) — no hardcoded id.
+let currentTestUser: AuthSubject | null = null;
+let currentTestAdmin: AuthSubject | null = null;
+
+export const setCurrentTestUser = (user: AuthSubject) => {
+  currentTestUser = user;
 };
 
-export const TEST_ADMIN = {
-  id: 2,
-  email: 'admin@example.com',
-  firstName: 'Admin',
-  lastName: 'User',
-  role: 'ADMIN' as const,
+export const setCurrentTestAdmin = (user: AuthSubject) => {
+  currentTestAdmin = user;
+};
+
+export const clearCurrentTestUsers = () => {
+  currentTestUser = null;
+  currentTestAdmin = null;
 };
 
 // Helper to create authenticated API requests
@@ -45,10 +47,7 @@ export const api = (path: string, init?: RequestInit) =>
   app.fetch(new Request(`http://localhost/api${path}`, init));
 
 // Internal: shared fetch with auth token for a specific user
-const fetchWithUser = async (
-  path: string,
-  opts: { user: typeof TEST_USER | typeof TEST_ADMIN; init?: RequestInit },
-) => {
+const fetchWithUser = async (path: string, opts: { user: AuthSubject; init?: RequestInit }) => {
   const { user, init } = opts;
   const token = await sign({ userId: user.id, role: user.role }, 'secret');
   return app.fetch(
@@ -63,19 +62,22 @@ const fetchWithUser = async (
   );
 };
 
-// Helper to create requests with authentication token (as TEST_USER by default)
-export const apiWithAuth = async (path: string, init?: RequestInit) =>
-  fetchWithUser(path, { user: TEST_USER, init });
+// Synthetic JWT subject for tests that sign a JWT but never touch users in DB
+// (e.g. catalog, guides, upload). Tests that need the user to exist in DB must
+// call seedTestUser() in beforeEach, which sets currentTestUser.
+const SYNTHETIC_USER: AuthSubject = { id: 0, role: 'USER' };
+const SYNTHETIC_ADMIN: AuthSubject = { id: 0, role: 'ADMIN' };
 
-// Helper to create requests authenticated as a specific user
+export const apiWithAuth = async (path: string, init?: RequestInit) =>
+  fetchWithUser(path, { user: currentTestUser ?? SYNTHETIC_USER, init });
+
 export const apiWithAuthAs = async (
   path: string,
-  opts: { user: typeof TEST_USER | typeof TEST_ADMIN; init?: RequestInit },
+  opts: { user: AuthSubject; init?: RequestInit },
 ) => fetchWithUser(path, opts);
 
-// Helper to create admin authenticated requests
 export const apiWithAdmin = async (path: string, init?: RequestInit) =>
-  fetchWithUser(path, { user: TEST_ADMIN, init });
+  fetchWithUser(path, { user: currentTestAdmin ?? SYNTHETIC_ADMIN, init });
 
 // Helper for admin routes (basic auth)
 export const apiWithBasicAuth = (path: string, init?: RequestInit) => {

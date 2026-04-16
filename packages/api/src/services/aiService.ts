@@ -12,6 +12,8 @@ interface SearchResult {
 const WEB_SEARCH_SYSTEM_PROMPT =
   'You are a helpful research assistant. Provide accurate, up-to-date information with proper citations. Be concise but comprehensive.';
 
+const MDX_EXTENSION_RE = /\.mdx$/;
+
 export class AIService {
   private env: Env;
   private guidesRAG: AutoRAG | null = null;

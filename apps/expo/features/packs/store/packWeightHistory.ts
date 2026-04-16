@@ -6,7 +6,7 @@ import { isAuthed } from 'expo-app/features/auth/store';
 import { apiClient } from 'expo-app/lib/api/packrat';
 import { obs } from 'expo-app/lib/store';
 import Storage from 'expo-sqlite/kv-store';
-import { nanoid } from 'nanoid/non-secure';
+import { nanoid } from 'nanoid';
 import type { PackWeightHistoryEntry } from '../types';
 import { computePackWeights } from '../utils';
 import { packItemsStore } from './packItems';

@@ -5,7 +5,10 @@ import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
+import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
+
+const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 
 function basicAuthGuard(request: Request): { authorized: true } | { authorized: false } {
   const header = request.headers.get('authorization') ?? '';
@@ -32,6 +35,44 @@ function unauthorizedHtml(): Response {
     status: 401,
     headers: { 'WWW-Authenticate': 'Basic realm="PackRat Admin Panel"' },
   });
+}
+
+async function issueAdminJwt(username: string): Promise<string> {
+  const env = getEnv();
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
+  return new SignJWT({ role: 'admin' })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setSubject(username)
+    .setIssuedAt()
+    .setExpirationTime(`${ADMIN_TOKEN_TTL_SECONDS}s`)
+    .sign(secret);
+}
+
+async function verifyAdminJwt(token: string): Promise<boolean> {
+  try {
+    const env = getEnv();
+    const secret = new TextEncoder().encode(env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return payload.role === 'admin';
+  } catch {
+    return false;
+  }
+}
+
+// Accept: Cloudflare Access header (prod), Bearer JWT (admin SPA), or Basic
+// auth (local dev / htmx UI). Returns true to let the request through.
+async function adminAuthGuard(request: Request): Promise<boolean> {
+  // Production: Cloudflare Access injects this header after verifying the user
+  if (request.headers.get('CF-Access-Authenticated-User-Email')) return true;
+
+  const header = request.headers.get('authorization') ?? '';
+  if (header.startsWith('Bearer ')) {
+    return verifyAdminJwt(header.slice(7));
+  }
+  if (header.startsWith('Basic ')) {
+    return basicAuthGuard(request).authorized;
+  }
+  return false;
 }
 
 function htmlResponse(body: string): Response {
@@ -80,9 +121,38 @@ const adminLayout = (title: string, content: string) => `<!DOCTYPE html>
 // ---------------------------------------------------------------------------
 
 export const adminRoutes = new Elysia({ prefix: '/admin' })
-  .onBeforeHandle(({ request }) => {
-    const auth = basicAuthGuard(request);
-    if (!auth.authorized) return unauthorizedHtml();
+  // Token exchange — must be registered BEFORE the auth guard so the admin
+  // SPA can exchange Basic credentials for a short-lived JWT.
+  .post(
+    '/token',
+    async ({ request }) => {
+      const header = request.headers.get('authorization') ?? '';
+      if (!header.startsWith('Basic ')) {
+        return status(401, { error: 'Missing credentials' });
+      }
+      const auth = basicAuthGuard(request);
+      if (!auth.authorized) return status(401, { error: 'Invalid username or password' });
+
+      // Re-decode to extract the username for the token subject.
+      const decoded = atob(header.slice(6));
+      const sep = decoded.indexOf(':');
+      const username = sep >= 0 ? decoded.slice(0, sep) : 'admin';
+
+      const token = await issueAdminJwt(username);
+      return { token, expiresIn: ADMIN_TOKEN_TTL_SECONDS };
+    },
+    {
+      detail: {
+        tags: ['Admin'],
+        summary: 'Exchange Basic credentials for a short-lived admin JWT',
+      },
+    },
+  )
+  .onBeforeHandle(async ({ request, path }) => {
+    // Public: token exchange is the only unauthenticated admin endpoint.
+    if (path === '/api/admin/token') return;
+    const ok = await adminAuthGuard(request);
+    if (!ok) return unauthorizedHtml();
   })
 
   // Dashboard

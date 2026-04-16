@@ -203,7 +203,7 @@ export function generateAlerts(
       id: 'heat-tomorrow',
       type: 'Heat Alert (Tomorrow)',
       location: locationName,
-      dates: tomorrow.date ?? '',
+      dates: tomorrow.date ?? 'Tomorrow',
       severity: 'High',
       details: 'High temperature expected tomorrow.',
     });
