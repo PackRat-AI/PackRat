@@ -2,9 +2,9 @@ import { Icon } from 'expo-app/components/Icon';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
 import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
 import type {
+  WeatherApiForecastResponse,
   ForecastDay as WeatherForecastDay,
   HourWeather as WeatherHourlyForecast,
-  WeatherApiForecastResponse,
 } from 'expo-app/features/weather/types';
 import axiosInstance from 'expo-app/lib/api/client';
 import { LinearGradient } from 'expo-linear-gradient';

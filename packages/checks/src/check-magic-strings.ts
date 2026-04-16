@@ -8,6 +8,9 @@ const SCAN_ROOTS = ['apps', 'packages'];
 const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.next', '.expo']);
 const TARGET_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts']);
 const EXCLUDED_FILE_PATTERNS = [/\.test\./, /\.spec\./, /\.stories\./, /\.d\.ts$/];
+const RELATIVE_PATH_PATTERN = /^\.{0,2}\//;
+const SLASHED_WORD_PATH_PATTERN = /^[\w.-]+(\/[\w.-]+)+$/;
+const WHITESPACE_PATTERN = /\s+/;
 
 const MIN_LITERAL_LENGTH = 4;
 const MIN_OCCURRENCES_PER_FILE = 3;
@@ -50,9 +53,9 @@ function shouldIgnoreLiteral(value: string): boolean {
   if (value.length < MIN_LITERAL_LENGTH || value.length > MAX_LITERAL_LENGTH) return true;
   if (value.includes('${')) return true;
   if (value.startsWith('http://') || value.startsWith('https://')) return true;
-  if (/^\.{0,2}\//.test(value)) return true;
-  if (/^[\w.-]+(\/[\w.-]+)+$/.test(value)) return true;
-  const words = value.trim().split(/\s+/);
+  if (RELATIVE_PATH_PATTERN.test(value)) return true;
+  if (SLASHED_WORD_PATH_PATTERN.test(value)) return true;
+  const words = value.trim().split(WHITESPACE_PATTERN);
   if (words.length > 3) return true;
   if (value.startsWith('#')) return true;
   if (value.startsWith('--')) return true;
@@ -112,7 +115,9 @@ function collectFileViolations(file: string): FileViolation[] {
   return violations.sort((a, b) => b.count - a.count);
 }
 
-function walkDir(dir: string, relDir: string, files: string[]): void {
+const targetFiles: string[] = [];
+
+function walkDir(dir: string, relDir: string): void {
   let entries: string[] = [];
   try {
     entries = readdirSync(dir);
@@ -134,17 +139,16 @@ function walkDir(dir: string, relDir: string, files: string[]): void {
     }
 
     if (isDirectory) {
-      walkDir(fullPath, relPath, files);
+      walkDir(fullPath, relPath);
       continue;
     }
 
-    if (isTargetFile(relPath)) files.push(relPath);
+    if (isTargetFile(relPath)) targetFiles.push(relPath);
   }
 }
 
-const targetFiles: string[] = [];
 for (const root of SCAN_ROOTS) {
-  walkDir(join(ROOT, root), root, targetFiles);
+  walkDir(join(ROOT, root), root);
 }
 
 const violations = targetFiles.flatMap((file) => collectFileViolations(file));

@@ -197,12 +197,18 @@ export default function DashboardScreen() {
     ...appConfig.dashboard.layout.weatherSection,
     ...(featureFlags.enableTrips ? [appConfig.dashboard.layout.conditional.weatherAlerts] : []),
     ...appConfig.dashboard.layout.gearSection,
-    ...(featureFlags.enableShoppingList ? [appConfig.dashboard.layout.conditional.shoppingList] : []),
+    ...(featureFlags.enableShoppingList
+      ? [appConfig.dashboard.layout.conditional.shoppingList]
+      : []),
     ...(featureFlags.enableSharedPacks ? [appConfig.dashboard.layout.conditional.sharedPacks] : []),
-    ...(featureFlags.enablePackTemplates ? [appConfig.dashboard.layout.conditional.packTemplates] : []),
+    ...(featureFlags.enablePackTemplates
+      ? [appConfig.dashboard.layout.conditional.packTemplates]
+      : []),
     ...(featureFlags.enableFeed ? [appConfig.dashboard.layout.conditional.feed] : []),
     ...appConfig.dashboard.layout.footerSection,
-    ...(featureFlags.enableWildlifeIdentification ? [appConfig.dashboard.layout.conditional.wildlife] : []),
+    ...(featureFlags.enableWildlifeIdentification
+      ? [appConfig.dashboard.layout.conditional.wildlife]
+      : []),
   ]).current;
 
   const filteredTiles = useMemo(() => {

@@ -32,6 +32,11 @@ import { SQLFragments } from './query-builder';
 
 const digits = oneOrMore(digit);
 const wordChars = oneOrMore(wordChar);
+const PRODUCT_PATH_PATTERN = /\/(product|pdp|main|hero|primary)\//;
+const LIFESTYLE_PATH_PATTERN = /\/(lifestyle|action|model)\//;
+const DETAIL_PATH_PATTERN = /\/(detail|zoom|swatch)\//;
+const TRAILING_QUESTION_MARK_PATTERN = /\?$/;
+const QUESTION_MARK_AMP_PATTERN = /\?&/;
 
 /** CDN sizing/quality query params — e.g. `?w=500`, `&quality=auto`.
  *  Longest names listed first so alternation matches greedily. */
@@ -90,7 +95,9 @@ export function normalizeImageUrl(url: string): string {
   // Fresh regex reference per call to avoid lastIndex issues is unnecessary
   // because `.replace` on a non-sticky global regex does not depend on lastIndex.
   let normalized = url.replace(CDN_QUERY_PARAMS, '');
-  normalized = normalized.replace(/\?$/, '').replace(/\?&/, '?');
+  normalized = normalized
+    .replace(TRAILING_QUESTION_MARK_PATTERN, '')
+    .replace(QUESTION_MARK_AMP_PATTERN, '?');
   normalized = normalized.replace(CDN_PATH_TRANSFORMS, '');
   return normalized.trim();
 }
@@ -99,9 +106,9 @@ export function normalizeImageUrl(url: string): string {
 export function rankImage(url: string): number {
   const path = url.toLowerCase();
 
-  if (/\/(product|pdp|main|hero|primary)\//.test(path)) return 0;
-  if (/\/(lifestyle|action|model)\//.test(path)) return 1;
-  if (/\/(detail|zoom|swatch)\//.test(path)) return 2;
+  if (PRODUCT_PATH_PATTERN.test(path)) return 0;
+  if (LIFESTYLE_PATH_PATTERN.test(path)) return 1;
+  if (DETAIL_PATH_PATTERN.test(path)) return 2;
   return 3;
 }
 

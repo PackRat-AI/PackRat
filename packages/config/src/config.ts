@@ -89,18 +89,9 @@ const APP_CONFIG_SOURCE = {
         DashboardTileId.WeightAnalysis,
         DashboardTileId.PackCategories,
       ],
-      weatherSection: [
-        DashboardLayoutId.Gap25,
-        DashboardTileId.Weather,
-      ],
-      gearSection: [
-        DashboardLayoutId.Gap3,
-        DashboardTileId.GearInventory,
-      ],
-      footerSection: [
-        DashboardLayoutId.Gap4,
-        DashboardTileId.Guides,
-      ],
+      weatherSection: [DashboardLayoutId.Gap25, DashboardTileId.Weather],
+      gearSection: [DashboardLayoutId.Gap3, DashboardTileId.GearInventory],
+      footerSection: [DashboardLayoutId.Gap4, DashboardTileId.Guides],
       conditional: {
         tripsOrTrailSpacer: DashboardLayoutId.Gap2,
         trips: DashboardTileId.UpcomingTrips,
