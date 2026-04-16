@@ -1,4 +1,4 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { $, OpenAPIHono } from '@hono/zod-openapi';
 import { authMiddleware } from '@packrat/api/middleware';
 import { adminRoutes } from './admin';
 import { aiRoutes } from './ai';
@@ -17,36 +17,27 @@ import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
 import { wildlifeRoutes } from './wildlife';
 
-const publicRoutes = new OpenAPIHono();
+const publicRoutes = $(new OpenAPIHono().route('/auth', authRoutes).route('/admin', adminRoutes));
 
-// Mount public routes
-publicRoutes.route('/auth', authRoutes);
-publicRoutes.route('/admin', adminRoutes);
+const protectedRoutes = $(
+  new OpenAPIHono()
+    .use(authMiddleware)
+    .route('/catalog', catalogRoutes)
+    .route('/guides', guidesRoutes)
+    .route('/feed', feedRoutes)
+    .route('/packs', packsRoutes)
+    .route('/trips', tripsRoutes)
+    .route('/ai', aiRoutes)
+    .route('/chat', chatRoutes)
+    .route('/weather', weatherRoutes)
+    .route('/pack-templates', packTemplatesRoutes)
+    .route('/season-suggestions', seasonSuggestionsRoutes)
+    .route('/user', userRoutes)
+    .route('/upload', uploadRoutes)
+    .route('/trail-conditions', trailConditionsRoutes)
+    .route('/wildlife', wildlifeRoutes),
+);
 
-const protectedRoutes = new OpenAPIHono();
-
-protectedRoutes.use(authMiddleware);
-
-// Mount protected routes
-protectedRoutes.route('/catalog', catalogRoutes);
-protectedRoutes.route('/guides', guidesRoutes);
-protectedRoutes.route('/feed', feedRoutes);
-protectedRoutes.route('/packs', packsRoutes);
-protectedRoutes.route('/trips', tripsRoutes);
-
-protectedRoutes.route('/ai', aiRoutes);
-protectedRoutes.route('/chat', chatRoutes);
-protectedRoutes.route('/weather', weatherRoutes);
-protectedRoutes.route('/pack-templates', packTemplatesRoutes);
-protectedRoutes.route('/season-suggestions', seasonSuggestionsRoutes);
-protectedRoutes.route('/user', userRoutes);
-protectedRoutes.route('/upload', uploadRoutes);
-protectedRoutes.route('/trail-conditions', trailConditionsRoutes);
-protectedRoutes.route('/wildlife', wildlifeRoutes);
-
-const routes = new OpenAPIHono();
-
-routes.route('/', publicRoutes);
-routes.route('/', protectedRoutes);
+const routes = $(new OpenAPIHono().route('/', publicRoutes).route('/', protectedRoutes));
 
 export { routes };

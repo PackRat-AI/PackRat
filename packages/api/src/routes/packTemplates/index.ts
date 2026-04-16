@@ -3,10 +3,9 @@ import { generateFromOnlineContentRoutes } from './generateFromOnlineContent';
 import { packTemplateItemsRoutes } from './packTemplateItems';
 import { packTemplateRoutes } from './packTemplates';
 
-const packTemplatesRoutes = new OpenAPIHono();
-
-packTemplatesRoutes.route('/', packTemplateRoutes);
-packTemplatesRoutes.route('/', packTemplateItemsRoutes);
-packTemplatesRoutes.route('/', generateFromOnlineContentRoutes);
+const packTemplatesRoutes = new OpenAPIHono()
+  .route('/', packTemplateRoutes)
+  .route('/', packTemplateItemsRoutes)
+  .route('/', generateFromOnlineContentRoutes);
 
 export { packTemplatesRoutes };

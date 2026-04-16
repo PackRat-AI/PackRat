@@ -3,6 +3,8 @@ import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
+import { catalogRoutes } from '@packrat/api/routes/catalog';
+import { guidesRoutes } from '@packrat/api/routes/guides';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -50,6 +52,9 @@ app.use(logger());
 app.use(cors());
 
 // Mount routes
+const rpcRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
+  .route('/api/catalog', catalogRoutes)
+  .route('/api/guides', guidesRoutes);
 app.route('/api', routes);
 
 // Configure OpenAPI documentation
@@ -74,8 +79,10 @@ app.get('/', (c) => {
   return c.text('PackRat API is running!');
 });
 
+export type AppType = typeof rpcRoutes;
+
 // Export the AppContainer class for Cloudflare Container binding
-export { AppContainer };
+export { AppContainer, app, rpcRoutes };
 
 export default {
   fetch: app.fetch,

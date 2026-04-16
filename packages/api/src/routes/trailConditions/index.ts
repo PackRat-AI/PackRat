@@ -6,8 +6,6 @@ import { trailConditionRoutes } from './reports';
 const trailConditionsRoutes = new OpenAPIHono<{
   Bindings: Env;
   Variables: Variables;
-}>();
-
-trailConditionsRoutes.route('/', trailConditionRoutes);
+}>().route('/', trailConditionRoutes);
 
 export { trailConditionsRoutes };
