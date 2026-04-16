@@ -2,7 +2,6 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import {
   catalogItems,
-  packItems,
   packs,
   posts,
   trailConditionReports,
@@ -22,8 +21,6 @@ const PeriodSchema = z.object({
   range: z.coerce.number().int().min(1).max(365).optional().default(12),
 });
 
-const TimeSeriesPoint = z.object({ date: z.string(), count: z.number() });
-const CategoryBreakdown = z.object({ category: z.string().nullable(), count: z.number() });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -356,16 +353,17 @@ const getGrowthRoute = createRoute({
   request: { query: PeriodSchema },
   responses: {
     200: {
-      description: 'Growth time-series data',
+      description: 'Growth time-series data — one entry per period bucket',
       content: {
         'application/json': {
-          schema: z.object({
-            period: z.enum(['day', 'week', 'month']),
-            range: z.number(),
-            users: z.array(TimeSeriesPoint),
-            packs: z.array(TimeSeriesPoint),
-            catalog: z.array(TimeSeriesPoint),
-          }),
+          schema: z.array(
+            z.object({
+              period: z.string(),
+              users: z.number(),
+              packs: z.number(),
+              catalogItems: z.number(),
+            }),
+          ),
         },
       },
     },
@@ -414,8 +412,30 @@ platformRoutes.openapi(getGrowthRoute, async (c) => {
         .orderBy(sql`date_trunc(${period}, ${catalogItems.createdAt})`),
     ]);
 
+    const userMap: Record<string, number> = Object.fromEntries(
+      userGrowth.map((r) => [r.date, r.count]),
+    );
+    const packMap: Record<string, number> = Object.fromEntries(
+      packGrowth.map((r) => [r.date, r.count]),
+    );
+    const catalogMap: Record<string, number> = Object.fromEntries(
+      catalogGrowth.map((r) => [r.date, r.count]),
+    );
+    const allDates = [
+      ...new Set([
+        ...userGrowth.map((r) => r.date),
+        ...packGrowth.map((r) => r.date),
+        ...catalogGrowth.map((r) => r.date),
+      ]),
+    ].sort();
+
     return c.json(
-      { period, range, users: userGrowth, packs: packGrowth, catalog: catalogGrowth },
+      allDates.map((date) => ({
+        period: date,
+        users: userMap[date] ?? 0,
+        packs: packMap[date] ?? 0,
+        catalogItems: catalogMap[date] ?? 0,
+      })),
       200,
     );
   } catch (error) {
@@ -436,16 +456,17 @@ const getActivityRoute = createRoute({
   request: { query: PeriodSchema },
   responses: {
     200: {
-      description: 'Activity time-series data',
+      description: 'Activity time-series data — one entry per period bucket',
       content: {
         'application/json': {
-          schema: z.object({
-            period: z.enum(['day', 'week', 'month']),
-            range: z.number(),
-            trips: z.array(TimeSeriesPoint),
-            trailReports: z.array(TimeSeriesPoint),
-            posts: z.array(TimeSeriesPoint),
-          }),
+          schema: z.array(
+            z.object({
+              period: z.string(),
+              trips: z.number(),
+              trailReports: z.number(),
+              posts: z.number(),
+            }),
+          ),
         },
       },
     },
@@ -499,8 +520,30 @@ platformRoutes.openapi(getActivityRoute, async (c) => {
         .orderBy(sql`date_trunc(${period}, ${posts.createdAt})`),
     ]);
 
+    const tripMap: Record<string, number> = Object.fromEntries(
+      tripActivity.map((r) => [r.date, r.count]),
+    );
+    const trailMap: Record<string, number> = Object.fromEntries(
+      trailActivity.map((r) => [r.date, r.count]),
+    );
+    const postMap: Record<string, number> = Object.fromEntries(
+      postActivity.map((r) => [r.date, r.count]),
+    );
+    const allDates = [
+      ...new Set([
+        ...tripActivity.map((r) => r.date),
+        ...trailActivity.map((r) => r.date),
+        ...postActivity.map((r) => r.date),
+      ]),
+    ].sort();
+
     return c.json(
-      { period, range, trips: tripActivity, trailReports: trailActivity, posts: postActivity },
+      allDates.map((date) => ({
+        period: date,
+        trips: tripMap[date] ?? 0,
+        trailReports: trailMap[date] ?? 0,
+        posts: postMap[date] ?? 0,
+      })),
       200,
     );
   } catch (error) {
@@ -523,13 +566,15 @@ const getBreakdownRoute = createRoute({
     'Breakdown of packs and pack items by category, ordered by count descending (Admin only)',
   responses: {
     200: {
-      description: 'Breakdown data',
+      description: 'Pack category breakdown, ordered by count descending',
       content: {
         'application/json': {
-          schema: z.object({
-            packsByCategory: z.array(CategoryBreakdown),
-            itemsByCategory: z.array(CategoryBreakdown),
-          }),
+          schema: z.array(
+            z.object({
+              category: z.string(),
+              count: z.number(),
+            }),
+          ),
         },
       },
     },
@@ -544,23 +589,20 @@ platformRoutes.openapi(getBreakdownRoute, async (c) => {
   const db = createDb(c);
 
   try {
-    const [packsByCategory, itemsByCategory] = await Promise.all([
-      db
-        .select({ category: packs.category, count: count() })
-        .from(packs)
-        .where(eq(packs.deleted, false))
-        .groupBy(packs.category)
-        .orderBy(desc(count())),
+    const packsByCategory = await db
+      .select({ category: packs.category, count: count() })
+      .from(packs)
+      .where(eq(packs.deleted, false))
+      .groupBy(packs.category)
+      .orderBy(desc(count()));
 
-      db
-        .select({ category: packItems.category, count: count() })
-        .from(packItems)
-        .where(eq(packItems.deleted, false))
-        .groupBy(packItems.category)
-        .orderBy(desc(count())),
-    ]);
-
-    return c.json({ packsByCategory, itemsByCategory }, 200);
+    return c.json(
+      packsByCategory.map((r) => ({
+        category: r.category ?? 'Uncategorized',
+        count: r.count,
+      })),
+      200,
+    );
   } catch (error) {
     console.error('Analytics breakdown error:', error);
     return c.json(
