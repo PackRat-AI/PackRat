@@ -448,10 +448,7 @@ jobs:
             adb install apps/expo/build/PackRat.apk
             cp .maestro/config.yaml .maestro/config.yaml.bak
             cp .maestro/config-android.yaml .maestro/config.yaml
-            maestro test \
-              --format junit \
-              --output test-results/maestro-results.xml \
-              .maestro/
+            maestro test --format junit --output test-results/maestro-results.xml .maestro/
             mv .maestro/config.yaml.bak .maestro/config.yaml
         env:
           TEST_EMAIL: ${{ env.TEST_EMAIL }}
