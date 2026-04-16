@@ -1,6 +1,5 @@
 'use client';
 
-import { clientEnvs } from '@packrat/env/expo-client';
 import { assertIsString } from '@packrat/guards';
 import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
