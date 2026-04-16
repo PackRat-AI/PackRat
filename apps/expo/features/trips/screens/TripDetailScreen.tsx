@@ -3,7 +3,6 @@ import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui'
 import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
-import { useLocations } from 'expo-app/features/weather/hooks';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,9 +20,6 @@ export function TripDetailScreen() {
   const { colors } = useColorScheme();
   const { t } = useTranslation();
 
-  const { locationsState } = useLocations();
-
-  const locations = locationsState.state === 'hasData' ? locationsState.data : [];
   const [showConditionReport, setShowConditionReport] = useState(false);
 
   const trip = useTripDetailsFromStore(id as string) as Trip;

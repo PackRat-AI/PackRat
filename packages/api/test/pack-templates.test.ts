@@ -4,7 +4,7 @@ import {
   seedPackTemplate,
   seedPackTemplateItem,
   seedPackTemplateItems,
-  seedTestUser,
+  type seedTestUser,
 } from './utils/db-helpers';
 import {
   api,

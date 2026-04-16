@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { seedAndLoginTestUser, seedTestUser } from './utils/db-helpers';
+import { seedAndLoginTestUser, type seedTestUser } from './utils/db-helpers';
 import {
   api,
   apiWithAuth,

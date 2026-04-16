@@ -1,6 +1,11 @@
 import { Icon } from 'expo-app/components/Icon';
 import { WeatherForecast } from 'expo-app/features/weather/components/WeatherForecast';
 import { getWeatherBackgroundColors } from 'expo-app/features/weather/lib/weatherService';
+import type {
+  ForecastDay as WeatherForecastDay,
+  HourWeather as WeatherHourlyForecast,
+  WeatherApiForecastResponse,
+} from 'expo-app/features/weather/types';
 import axiosInstance from 'expo-app/lib/api/client';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -20,7 +25,7 @@ export default function TripWeatherDetailsScreen() {
   const latitude = Number(lat);
   const longitude = Number(lon);
 
-  const [weather, setWeather] = useState<any>(null);
+  const [weather, setWeather] = useState<WeatherApiForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gradientColors, setGradientColors] = useState<[string, string, ...string[]]>([
@@ -86,14 +91,16 @@ export default function TripWeatherDetailsScreen() {
   const location = weather.location;
   const current = weather.current;
 
-  const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map((h: any) => ({
-    time: String(new Date(h.time).getHours()) + ':00',
-    temp: Math.round(h.temp_c),
-    weatherCode: h.condition?.code ?? 1000,
-    isDay: h.is_day,
-  }));
+  const hourlyForecast = weather?.forecast?.forecastday?.[0]?.hour?.map(
+    (h: WeatherHourlyForecast) => ({
+      time: String(new Date(h.time).getHours()) + ':00',
+      temp: Math.round(h.temp_c),
+      weatherCode: h.condition?.code ?? 1000,
+      isDay: h.is_day,
+    }),
+  );
 
-  const dailyForecast = weather?.forecast?.forecastday?.map((fd: any) => ({
+  const dailyForecast = weather?.forecast?.forecastday?.map((fd: WeatherForecastDay) => ({
     day: new Intl.DateTimeFormat('en', { weekday: 'short' }).format(new Date(fd.date)),
     icon: 'weather-partly-cloudy',
     low: Math.round(fd.day.mintemp_c),

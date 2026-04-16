@@ -240,7 +240,6 @@ vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
   return {
     ...actual,
     CatalogService: class extends actual.CatalogService {
-      // biome-ignore lint/suspicious/noExplicitAny: test mock signature matches real method
       async batchVectorSearch(queries: string[], _limit?: number): Promise<any> {
         return {
           items: queries.map(() => [
