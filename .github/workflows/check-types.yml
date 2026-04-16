@@ -35,6 +35,10 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
 
+      - name: Fetch PR base branch
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --prune --depth=1 origin ${{ github.base_ref }}
+
       - name: Check Types
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
