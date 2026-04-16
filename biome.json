@@ -103,8 +103,7 @@
             "useTopLevelRegex": "off"
           },
           "complexity": {
-            "noForEach": "off",
-            "useMaxParams": "off"
+            "noForEach": "off"
           }
         }
       }
