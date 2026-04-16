@@ -74,6 +74,14 @@ jobs:
           bun-version: latest
           cache: true
 
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
+
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
@@ -90,6 +98,16 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('apps/expo/package.json', 'apps/expo/app.config.ts', 'bun.lock') }}
+          restore-keys: |
+            cocoapods-${{ runner.os }}-
 
       - name: Build iOS app for simulator
         run: |
@@ -307,6 +325,14 @@ jobs:
         with:
           bun-version: latest
           cache: true
+
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - name: Install dependencies
         env:
