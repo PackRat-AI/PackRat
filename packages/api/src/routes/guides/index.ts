@@ -17,8 +17,28 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
   // -- List guides
   .get(
     '/',
-    async ({ query }) => {
+    async ({ query, request }) => {
       const { page, limit, category } = query;
+
+      // Manually parse `sort[field]` / `sort[order]` from the raw query string.
+      // Elysia's query parser leaves bracketed keys as-is rather than
+      // unflattening them into a nested object, so the schema's `sort` field
+      // is never populated. Match dev's getGuidesRoute behavior.
+      const searchParams = new URL(request.url).searchParams;
+      const sortField = searchParams.get('sort[field]');
+      const sortOrder = searchParams.get('sort[order]');
+      const validSortFields = ['title', 'category', 'createdAt', 'updatedAt'] as const;
+      const validSortOrders = ['asc', 'desc'] as const;
+      const sort =
+        sortField &&
+        sortOrder &&
+        validSortFields.includes(sortField as (typeof validSortFields)[number]) &&
+        validSortOrders.includes(sortOrder as (typeof validSortOrders)[number])
+          ? {
+              field: sortField as (typeof validSortFields)[number],
+              order: sortOrder as (typeof validSortOrders)[number],
+            }
+          : undefined;
 
       try {
         const bucket = new R2BucketService({
@@ -71,7 +91,19 @@ export const guidesRoutes = new Elysia({ prefix: '/guides' })
           );
         }
 
-        filteredGuides.sort((a, b) => String(a.title).localeCompare(String(b.title)));
+        if (sort) {
+          filteredGuides.sort((a, b) => {
+            const aValue = String(a[sort.field as keyof typeof a]);
+            const bValue = String(b[sort.field as keyof typeof b]);
+            if (sort.order === 'asc') {
+              return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+            }
+            return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+          });
+        } else {
+          // Default sort by title
+          filteredGuides.sort((a, b) => String(a.title).localeCompare(String(b.title)));
+        }
 
         const total = filteredGuides.length;
         const offset = (page - 1) * limit;

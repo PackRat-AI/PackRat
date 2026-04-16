@@ -42,7 +42,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
   // -- List items
   .get(
     '/',
-    async ({ query }) => {
+    async ({ query, request }) => {
       const { page, limit, q, category: encodedCategory } = query;
       let category: string | undefined;
       if (typeof encodedCategory === 'string' && encodedCategory.length > 0) {
@@ -53,6 +53,33 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         }
       }
 
+      // Manually parse `sort[field]` / `sort[order]` from raw query.
+      // Matches dev's getCatalogItemsRoute behavior; Elysia does not
+      // unflatten bracketed query keys.
+      const searchParams = new URL(request.url).searchParams;
+      const sortField = searchParams.get('sort[field]');
+      const sortOrder = searchParams.get('sort[order]');
+      const validSortFields = [
+        'name',
+        'brand',
+        'price',
+        'ratingValue',
+        'createdAt',
+        'updatedAt',
+        'usage',
+      ] as const;
+      const validSortOrders = ['asc', 'desc'] as const;
+      const sort =
+        sortField &&
+        sortOrder &&
+        validSortFields.includes(sortField as (typeof validSortFields)[number]) &&
+        validSortOrders.includes(sortOrder as (typeof validSortOrders)[number])
+          ? {
+              field: sortField as (typeof validSortFields)[number],
+              order: sortOrder as (typeof validSortOrders)[number],
+            }
+          : undefined;
+
       const catalogService = new CatalogService();
       const offset = (page - 1) * limit;
 
@@ -61,6 +88,7 @@ export const catalogRoutes = new Elysia({ prefix: '/catalog' })
         limit,
         offset,
         category,
+        sort,
       });
 
       const totalPages = Math.ceil(result.total / limit);

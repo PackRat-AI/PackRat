@@ -30,8 +30,12 @@ export const app = new Elysia({ adapter: CloudflareAdapter })
       // an explicit allowlist would be operational overhead. Bearer-token auth
       // (not cookies) limits the CSRF blast radius; revisit if cookie-auth
       // is ever added.
+      //
+      // Reflect the requested headers rather than hard-coding an allowlist so
+      // clients can send browser/Sentry/feature-flag headers without requiring
+      // a server deploy. Matches dev's bare `cors()` behavior.
       credentials: false,
-      allowedHeaders: ['Authorization', 'Content-Type', 'X-API-Key'],
+      allowedHeaders: '*',
     }),
   )
   .use(packratOpenApi)

@@ -118,7 +118,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         columns: { id: true, firstName: true, lastName: true },
       });
 
-      return {
+      return status(201, {
         id: newPost.id,
         userId: newPost.userId,
         caption: newPost.caption,
@@ -131,7 +131,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         likeCount: 0,
         commentCount: 0,
         likedByMe: false,
-      };
+      });
     },
     {
       body: CreatePostRequestSchema,
@@ -354,7 +354,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
         columns: { id: true, firstName: true, lastName: true },
       });
 
-      return {
+      return status(201, {
         id: newComment.id,
         postId: newComment.postId,
         userId: newComment.userId,
@@ -367,7 +367,7 @@ export const feedRoutes = new Elysia({ prefix: '/feed' })
           : undefined,
         likeCount: 0,
         likedByMe: false,
-      };
+      });
     },
     {
       params: z.object({ postId: z.coerce.number().int() }),

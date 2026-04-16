@@ -194,7 +194,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         with: { items: true },
       });
 
-      return templateWithItems;
+      return status(201, templateWithItems);
     },
     {
       body: CreatePackTemplateRequestSchema,
@@ -702,7 +702,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
         .set({ updatedAt: new Date() })
         .where(eq(packTemplates.id, templateId));
 
-      return newItem;
+      return status(201, newItem);
     },
     {
       params: z.object({ templateId: z.string() }),

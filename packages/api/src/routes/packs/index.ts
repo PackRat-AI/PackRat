@@ -641,7 +641,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
 
       if (!newItem) return status(400, { error: 'Failed to create item' });
 
-      return {
+      return status(201, {
         ...newItem,
         consumable: newItem.consumable ?? false,
         worn: newItem.worn ?? false,
@@ -650,7 +650,7 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
         updatedAt: newItem.updatedAt.toISOString(),
         embedding: undefined,
         templateItemId: newItem.templateItemId ?? null,
-      };
+      });
     },
     {
       params: z.object({ packId: z.string() }),
