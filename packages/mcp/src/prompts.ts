@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { PackRatMCP } from './index';
+import type { AgentContext } from './types';
 
-export function registerPrompts(agent: PackRatMCP): void {
+export function registerPrompts(agent: AgentContext): void {
   // ── Trip planning prompt ──────────────────────────────────────────────────
 
   agent.server.registerPrompt(

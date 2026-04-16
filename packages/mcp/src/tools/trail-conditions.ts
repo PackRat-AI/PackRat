@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
-import type { PackRatMCP } from '../index';
+import type { AgentContext } from '../types';
 
-export function registerTrailConditionTools(agent: PackRatMCP): void {
+export function registerTrailConditionTools(agent: AgentContext): void {
   // ── Get trail conditions ──────────────────────────────────────────────────
 
   agent.server.registerTool(

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
-import type { PackRatMCP } from '../index';
+import type { AgentContext } from '../types';
 
-export function registerPackTools(agent: PackRatMCP): void {
+export function registerPackTools(agent: AgentContext): void {
   // ── List packs ────────────────────────────────────────────────────────────
 
   agent.server.registerTool(

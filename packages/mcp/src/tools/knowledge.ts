@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
-import type { PackRatMCP } from '../index';
+import type { AgentContext } from '../types';
 
-export function registerKnowledgeTools(agent: PackRatMCP): void {
+export function registerKnowledgeTools(agent: AgentContext): void {
   // ── Outdoor guides RAG search ─────────────────────────────────────────────
 
   agent.server.registerTool(

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
-import type { PackRatMCP } from '../index';
+import type { AgentContext } from '../types';
 
-export function registerWeatherTools(agent: PackRatMCP): void {
+export function registerWeatherTools(agent: AgentContext): void {
   // ── Get weather ───────────────────────────────────────────────────────────
   // The PackRat weather API is a two-step flow:
   //   1. GET /weather/search?q=<location> → returns location matches with IDs

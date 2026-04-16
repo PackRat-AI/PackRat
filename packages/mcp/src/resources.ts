@@ -1,6 +1,6 @@
 import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ApiError } from './client';
-import type { PackRatMCP } from './index';
+import type { AgentContext } from './types';
 
 // biome-ignore lint/complexity/useMaxParams: uri, context, and error are all distinct and necessary
 function resourceError(uri: string, context: string, e: unknown): object {
@@ -10,7 +10,7 @@ function resourceError(uri: string, context: string, e: unknown): object {
   return { uri, error: e instanceof Error ? e.message : String(e), context };
 }
 
-export function registerResources(agent: PackRatMCP): void {
+export function registerResources(agent: AgentContext): void {
   // ── Pack resource (URI template) ──────────────────────────────────────────
   // Clients can read: packrat://packs/<packId>
 

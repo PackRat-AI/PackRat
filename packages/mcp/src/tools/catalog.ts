@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
-import type { PackRatMCP } from '../index';
+import type { AgentContext } from '../types';
 
-export function registerCatalogTools(agent: PackRatMCP): void {
+export function registerCatalogTools(agent: AgentContext): void {
   // ── Text search ───────────────────────────────────────────────────────────
 
   agent.server.registerTool(
