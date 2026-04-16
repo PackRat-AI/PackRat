@@ -5,7 +5,9 @@ import { readFileSync } from 'node:fs';
 const releaseTag = process.argv[2];
 
 if (!releaseTag) {
-  console.error("❌ Missing release tag. Usage: bun .github/scripts/validate-release-version.ts vX.Y.Z");
+  console.error(
+    '❌ Missing release tag. Usage: bun .github/scripts/validate-release-version.ts <tag> (e.g., v1.2.3)',
+  );
   process.exit(1);
 }
 
@@ -29,8 +31,8 @@ const readJsonVersion = (path: string): string => {
 
 const readAppConfigVersion = (): string => {
   const appConfig = readFileSync('apps/expo/app.config.ts', 'utf8');
-  const appConfigMatch = appConfig.match(/version:\s*(?:'([^']+)'|"([^"]+)")/);
-  const version = appConfigMatch?.[1] ?? appConfigMatch?.[2];
+  const appConfigMatch = appConfig.match(/version:\s*(?:'([^']+)'|"([^"]+)"|`([^`]+)`)/);
+  const version = appConfigMatch?.[1] ?? appConfigMatch?.[2] ?? appConfigMatch?.[3];
   if (!version) {
     throw new Error('Missing version field in apps/expo/app.config.ts');
   }
