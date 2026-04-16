@@ -1,5 +1,6 @@
 'use client';
 
+import { clientEnvs } from '@packrat/env/expo-client';
 import { assertIsString } from '@packrat/guards';
 import type { LargeTitleSearchBarMethods, ListDataItem } from '@packrat/ui/nativewindui';
 import {
@@ -11,7 +12,6 @@ import {
 import { Icon } from '@roninoss/icons';
 import TabScreen from 'expo-app/components/TabScreen';
 import { featureFlags } from 'expo-app/config';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
 import { ReportedContentTile } from 'expo-app/features/ai/components/ReportedContentTile';
 import { AIPacksTile } from 'expo-app/features/ai-packs/components/AIPacksTile';

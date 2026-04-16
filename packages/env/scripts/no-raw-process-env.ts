@@ -9,10 +9,11 @@
 // Allowed files (intentionally exempt — see packages/env/src/node.ts for rationale):
 //   - packages/env/src/node.ts          — the Node shim itself
 //   - packages/env/src/next.ts          — the Next.js shim itself
+//   - packages/env/src/expo-client.ts   — the Expo client shim itself
+//   - packages/env/src/expo-server.ts   — the Expo server shim itself
 //   - .github/scripts/configure-deps.ts — preinstall hook, runs before node_modules
 //   - .github/scripts/env.ts            — postinstall hook, runs before node_modules
 //   - packages/api/src/utils/env-validation.ts — Cloudflare Worker runtime (uses c.env)
-//   - apps/expo/env/**                  — Expo uses its own T3-style shim
 //   - apps/expo/app.config.ts           — Expo config, build-time only
 //
 // Exit code:
@@ -31,12 +32,13 @@ const SCAN_ROOTS = ['packages', 'apps', '.github/scripts'];
 const ALLOWED: string[] = [
   'packages/env/src/node.ts',
   'packages/env/src/next.ts',
+  'packages/env/src/expo-client.ts',
+  'packages/env/src/expo-server.ts',
   '.github/scripts/configure-deps.ts',
   '.github/scripts/env.ts',
   'packages/api/src/utils/env-validation.ts',
   'packages/api/container_src/server.ts',
   'packages/analytics/test/core/env.test.ts',
-  'apps/expo/env/',
   'apps/expo/app.config.ts',
 ];
 

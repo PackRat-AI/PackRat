@@ -1,3 +1,4 @@
+import { clientEnvs } from '@packrat/env/expo-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   GoogleSignin,
@@ -5,7 +6,6 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import type { AxiosError } from 'axios';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { userStore } from 'expo-app/features/auth/store';
 import axiosInstance from 'expo-app/lib/api/client';
 import { t } from 'expo-app/lib/i18n';

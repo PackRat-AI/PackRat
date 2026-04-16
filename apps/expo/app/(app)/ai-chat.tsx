@@ -1,11 +1,11 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
+import { clientEnvs } from '@packrat/env/expo-client';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { Icon } from '@roninoss/icons';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import * as Burnt from 'burnt';
 import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
   clearChatMessages,
