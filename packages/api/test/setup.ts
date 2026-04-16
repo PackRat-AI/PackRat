@@ -237,10 +237,17 @@ vi.mock('@packrat/api/utils/ai/tools', () => ({
 // tests that exercise real methods still work.
 vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@packrat/api/services/catalogService')>();
+  type BatchVectorSearchResult = Awaited<
+    ReturnType<InstanceType<typeof actual.CatalogService>['batchVectorSearch']>
+  >;
+
   return {
     ...actual,
     CatalogService: class extends actual.CatalogService {
-      async batchVectorSearch(queries: string[], _limit?: number): Promise<any> {
+      async batchVectorSearch(
+        queries: string[],
+        _limit?: number,
+      ): Promise<BatchVectorSearchResult> {
         return {
           items: queries.map(() => [
             {
