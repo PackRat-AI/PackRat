@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { seedAndLoginTestUser, seedTestUser } from './utils/db-helpers';
+import { seedAndLoginTestUser } from './utils/db-helpers';
 import {
   api,
   apiWithAuth,
@@ -10,7 +10,7 @@ import {
 } from './utils/test-helpers';
 
 describe('Upload Routes', () => {
-  let testUser: Awaited<ReturnType<typeof seedTestUser>>;
+  let testUser: Awaited<ReturnType<typeof seedAndLoginTestUser>>;
 
   beforeEach(async () => {
     vi.clearAllMocks();

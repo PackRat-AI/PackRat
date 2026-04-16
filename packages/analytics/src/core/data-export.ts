@@ -10,6 +10,8 @@ import type { DuckDBConnection } from '@duckdb/node-api';
 import { DBConfig, QUALITY_WEIGHTS } from './constants';
 import { SQLFragments } from './query-builder';
 
+const FILE_EXTENSION_PATTERN = /\.\w+$/;
+
 // ── Types ────────────────────────────────────────────────────────────────
 
 export interface ExportOptions {
@@ -204,7 +206,10 @@ export class DataExporter {
       strategy: dedup,
     };
 
-    writeFileSync(filepath.replace(/\.\w+$/, '.summary.json'), JSON.stringify(summary, null, 2));
+    writeFileSync(
+      filepath.replace(FILE_EXTENSION_PATTERN, '.summary.json'),
+      JSON.stringify(summary, null, 2),
+    );
 
     return summary;
   }
