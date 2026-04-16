@@ -30,7 +30,11 @@ describe('weather tools', () => {
         .mockResolvedValueOnce(searchResult) // step 1: search
         .mockResolvedValueOnce(forecast); // step 2: forecast
 
-      const result = await callTool(tools, 'get_weather', { location: 'Yosemite Valley, CA' });
+      const result = await callTool({
+        tools,
+        name: 'get_weather',
+        args: { location: 'Yosemite Valley, CA' },
+      });
 
       expect(api.get).toHaveBeenCalledTimes(2);
       expect(vi.mocked(api.get).mock.calls[0]).toEqual([
@@ -44,7 +48,11 @@ describe('weather tools', () => {
     it('returns error when location search finds nothing', async () => {
       vi.mocked(api.get).mockResolvedValueOnce({}); // no id in response
 
-      const result = await callTool(tools, 'get_weather', { location: 'Nowhere Special' });
+      const result = await callTool({
+        tools,
+        name: 'get_weather',
+        args: { location: 'Nowhere Special' },
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('No weather location found');
@@ -53,7 +61,11 @@ describe('weather tools', () => {
     it('returns error result when search API fails', async () => {
       vi.mocked(api.get).mockRejectedValue(new ApiError('Bad Request', 400, {}));
 
-      const result = await callTool(tools, 'get_weather', { location: 'Bad Location' });
+      const result = await callTool({
+        tools,
+        name: 'get_weather',
+        args: { location: 'Bad Location' },
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('400');
@@ -70,7 +82,11 @@ describe('weather tools', () => {
     it('calls GET /weather/search with q param', async () => {
       vi.mocked(api.get).mockResolvedValue([{ id: 'loc_1', name: 'Seattle' }]);
 
-      const result = await callTool(tools, 'search_weather_location', { query: 'Seattle, WA' });
+      const result = await callTool({
+        tools,
+        name: 'search_weather_location',
+        args: { query: 'Seattle, WA' },
+      });
 
       expect(api.get).toHaveBeenCalledWith('/weather/search', { q: 'Seattle, WA' });
       expect(Array.isArray(parseToolResult(result))).toBe(true);
@@ -91,7 +107,11 @@ describe('weather tools', () => {
       };
       vi.mocked(api.get).mockResolvedValue(suggestions);
 
-      const result = await callTool(tools, 'get_season_suggestions', { destination: 'Patagonia' });
+      const result = await callTool({
+        tools,
+        name: 'get_season_suggestions',
+        args: { destination: 'Patagonia' },
+      });
 
       expect(api.get).toHaveBeenCalledWith('/season-suggestions', { destination: 'Patagonia' });
       expect(parseToolResult(result)).toEqual(suggestions);
@@ -100,7 +120,11 @@ describe('weather tools', () => {
     it('returns error when API fails', async () => {
       vi.mocked(api.get).mockRejectedValue(new Error('Timeout'));
 
-      const result = await callTool(tools, 'get_season_suggestions', { destination: 'Nowhere' });
+      const result = await callTool({
+        tools,
+        name: 'get_season_suggestions',
+        args: { destination: 'Nowhere' },
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Timeout');

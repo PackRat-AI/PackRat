@@ -27,10 +27,14 @@ describe('pack tools', () => {
       const mockData = { items: [], total: 0 };
       vi.mocked(api.get).mockResolvedValue(mockData);
 
-      const result = await callTool(tools, 'list_packs', {
-        limit: 5,
-        offset: 10,
-        category: 'backpacking',
+      const result = await callTool({
+        tools,
+        name: 'list_packs',
+        args: {
+          limit: 5,
+          offset: 10,
+          category: 'backpacking',
+        },
       });
 
       expect(api.get).toHaveBeenCalledWith('/packs', {
@@ -44,7 +48,7 @@ describe('pack tools', () => {
     it('returns error result on API failure', async () => {
       vi.mocked(api.get).mockRejectedValue(new ApiError('Forbidden', 403, {}));
 
-      const result = await callTool(tools, 'list_packs', { limit: 20, offset: 0 });
+      const result = await callTool({ tools, name: 'list_packs', args: { limit: 20, offset: 0 } });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('403');
@@ -58,7 +62,7 @@ describe('pack tools', () => {
       const pack = { id: 'p_abc', name: 'Test Pack', items: [] };
       vi.mocked(api.get).mockResolvedValue(pack);
 
-      const result = await callTool(tools, 'get_pack', { pack_id: 'p_abc' });
+      const result = await callTool({ tools, name: 'get_pack', args: { pack_id: 'p_abc' } });
 
       expect(api.get).toHaveBeenCalledWith('/packs/p_abc');
       expect(parseToolResult(result)).toEqual(pack);
@@ -67,7 +71,7 @@ describe('pack tools', () => {
     it('propagates 404 as error result', async () => {
       vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', 404, {}));
 
-      const result = await callTool(tools, 'get_pack', { pack_id: 'nope' });
+      const result = await callTool({ tools, name: 'get_pack', args: { pack_id: 'nope' } });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('404');
@@ -81,11 +85,15 @@ describe('pack tools', () => {
       const created = { id: 'p_new', name: 'Summer Trek' };
       vi.mocked(api.post).mockResolvedValue(created);
 
-      const result = await callTool(tools, 'create_pack', {
-        name: 'Summer Trek',
-        category: 'backpacking',
-        is_public: true,
-        tags: ['summer', 'california'],
+      const result = await callTool({
+        tools,
+        name: 'create_pack',
+        args: {
+          name: 'Summer Trek',
+          category: 'backpacking',
+          is_public: true,
+          tags: ['summer', 'california'],
+        },
       });
 
       expect(api.post).toHaveBeenCalledOnce();
@@ -107,10 +115,14 @@ describe('pack tools', () => {
     it('calls PATCH /packs/:id with only provided fields', async () => {
       vi.mocked(api.patch).mockResolvedValue({ id: 'p_1' });
 
-      await callTool(tools, 'update_pack', {
-        pack_id: 'p_1',
-        name: 'Renamed Pack',
-        is_public: false,
+      await callTool({
+        tools,
+        name: 'update_pack',
+        args: {
+          pack_id: 'p_1',
+          name: 'Renamed Pack',
+          is_public: false,
+        },
       });
 
       const [path, body] = vi.mocked(api.patch).mock.calls[0] as [string, Record<string, unknown>];
@@ -123,7 +135,7 @@ describe('pack tools', () => {
     it('does not include undefined optional fields', async () => {
       vi.mocked(api.patch).mockResolvedValue({ id: 'p_1' });
 
-      await callTool(tools, 'update_pack', { pack_id: 'p_1', name: 'Only Name' });
+      await callTool({ tools, name: 'update_pack', args: { pack_id: 'p_1', name: 'Only Name' } });
 
       const [, body] = vi.mocked(api.patch).mock.calls[0] as [string, Record<string, unknown>];
       expect(body.description).toBeUndefined();
@@ -137,7 +149,7 @@ describe('pack tools', () => {
     it('calls DELETE /packs/:id', async () => {
       vi.mocked(api.delete).mockResolvedValue({ deleted: true });
 
-      const result = await callTool(tools, 'delete_pack', { pack_id: 'p_del' });
+      const result = await callTool({ tools, name: 'delete_pack', args: { pack_id: 'p_del' } });
 
       expect(api.delete).toHaveBeenCalledWith('/packs/p_del');
       expect(parseToolResult(result)).toEqual({ deleted: true });
@@ -150,14 +162,18 @@ describe('pack tools', () => {
     it('calls POST /packs/:id/items with mapped fields', async () => {
       vi.mocked(api.post).mockResolvedValue({ id: 'i_new' });
 
-      await callTool(tools, 'add_pack_item', {
-        pack_id: 'p_1',
-        name: 'Down Sleeping Bag',
-        category: 'sleep',
-        weight_grams: 900,
-        quantity: 1,
-        is_consumable: false,
-        is_worn: false,
+      await callTool({
+        tools,
+        name: 'add_pack_item',
+        args: {
+          pack_id: 'p_1',
+          name: 'Down Sleeping Bag',
+          category: 'sleep',
+          weight_grams: 900,
+          quantity: 1,
+          is_consumable: false,
+          is_worn: false,
+        },
       });
 
       const [path, body] = vi.mocked(api.post).mock.calls[0] as [string, Record<string, unknown>];
@@ -176,7 +192,11 @@ describe('pack tools', () => {
     it('calls DELETE /packs/:id/items/:itemId', async () => {
       vi.mocked(api.delete).mockResolvedValue({ deleted: true });
 
-      await callTool(tools, 'remove_pack_item', { pack_id: 'p_1', item_id: 'i_99' });
+      await callTool({
+        tools,
+        name: 'remove_pack_item',
+        args: { pack_id: 'p_1', item_id: 'i_99' },
+      });
 
       expect(api.delete).toHaveBeenCalledWith('/packs/p_1/items/i_99');
     });
@@ -227,7 +247,11 @@ describe('pack tools', () => {
         ],
       });
 
-      const result = await callTool(tools, 'analyze_pack_weight', { pack_id: 'p_1' });
+      const result = await callTool({
+        tools,
+        name: 'analyze_pack_weight',
+        args: { pack_id: 'p_1' },
+      });
       const analysis = parseToolResult(result) as Record<string, unknown>;
 
       expect(analysis.packId).toBe('p_1');
@@ -246,7 +270,11 @@ describe('pack tools', () => {
     it('handles empty items array gracefully', async () => {
       vi.mocked(api.get).mockResolvedValue({ items: [] });
 
-      const result = await callTool(tools, 'analyze_pack_weight', { pack_id: 'p_empty' });
+      const result = await callTool({
+        tools,
+        name: 'analyze_pack_weight',
+        args: { pack_id: 'p_empty' },
+      });
       const analysis = parseToolResult(result) as Record<string, unknown>;
 
       expect(analysis.itemCount).toBe(0);
@@ -260,10 +288,14 @@ describe('pack tools', () => {
     it('calls POST /packs/:id/gap-analysis', async () => {
       vi.mocked(api.post).mockResolvedValue({ missing: ['first_aid', 'navigation'] });
 
-      const result = await callTool(tools, 'analyze_pack_gaps', {
-        pack_id: 'p_1',
-        activity: 'backpacking',
-        duration_days: 3,
+      const result = await callTool({
+        tools,
+        name: 'analyze_pack_gaps',
+        args: {
+          pack_id: 'p_1',
+          activity: 'backpacking',
+          duration_days: 3,
+        },
       });
 
       const [path, body] = vi.mocked(api.post).mock.calls[0] as [string, Record<string, unknown>];

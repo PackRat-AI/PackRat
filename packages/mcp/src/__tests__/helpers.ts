@@ -36,16 +36,15 @@ export function buildMockServer() {
 
   const server = {
     registerTool: vi.fn(
+      // biome-ignore lint/complexity/useMaxParams: mirrors MCP SDK's positional registerTool signature
       (name: string, config: RegisteredTool['config'], handler: RegisteredTool['handler']) => {
         tools.set(name, { name, config, handler });
       },
     ),
-    registerResource: vi.fn(
-      (name: string, _uriOrTemplate: unknown, _config: unknown, _handler: unknown) => {
-        resources.set(name, { name });
-      },
-    ),
-    registerPrompt: vi.fn((name: string, _config: unknown, _handler: unknown) => {
+    registerResource: vi.fn((name: string, ..._rest: unknown[]) => {
+      resources.set(name, { name });
+    }),
+    registerPrompt: vi.fn((name: string, ..._rest: unknown[]) => {
       prompts.set(name, { name });
     }),
   };
@@ -90,11 +89,12 @@ export function buildMockAgent(): {
 }
 
 /** Invoke a registered tool by name, returning its result. */
-export async function callTool(
-  tools: Map<string, RegisteredTool>,
-  name: string,
-  args: Record<string, unknown>,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+export async function callTool(options: {
+  tools: Map<string, RegisteredTool>;
+  name: string;
+  args: Record<string, unknown>;
+}): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  const { tools, name, args } = options;
   const tool = tools.get(name);
   if (!tool) throw new Error(`Tool "${name}" not registered`);
   return tool.handler(args) as Promise<{

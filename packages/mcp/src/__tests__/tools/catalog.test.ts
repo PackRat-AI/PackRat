@@ -26,13 +26,17 @@ describe('catalog tools', () => {
     it('calls GET /catalog with all params', async () => {
       vi.mocked(api.get).mockResolvedValue({ items: [] });
 
-      await callTool(tools, 'search_gear_catalog', {
-        query: 'ultralight tent',
-        category: 'tents',
-        limit: 5,
-        offset: 0,
-        sort_by: 'price',
-        sort_order: 'asc',
+      await callTool({
+        tools,
+        name: 'search_gear_catalog',
+        args: {
+          query: 'ultralight tent',
+          category: 'tents',
+          limit: 5,
+          offset: 0,
+          sort_by: 'price',
+          sort_order: 'asc',
+        },
       });
 
       expect(api.get).toHaveBeenCalledWith('/catalog', {
@@ -48,10 +52,14 @@ describe('catalog tools', () => {
     it('returns error result on API failure', async () => {
       vi.mocked(api.get).mockRejectedValue(new ApiError('Server Error', 500, {}));
 
-      const result = await callTool(tools, 'search_gear_catalog', {
-        limit: 10,
-        offset: 0,
-        sort_order: 'asc',
+      const result = await callTool({
+        tools,
+        name: 'search_gear_catalog',
+        args: {
+          limit: 10,
+          offset: 0,
+          sort_order: 'asc',
+        },
       });
 
       expect(result.isError).toBe(true);
@@ -65,10 +73,14 @@ describe('catalog tools', () => {
     it('calls GET /catalog/vector-search', async () => {
       vi.mocked(api.get).mockResolvedValue({ items: [], total: 0 });
 
-      await callTool(tools, 'semantic_gear_search', {
-        query: 'warm puffy jacket for winter camping',
-        limit: 5,
-        offset: 0,
+      await callTool({
+        tools,
+        name: 'semantic_gear_search',
+        args: {
+          query: 'warm puffy jacket for winter camping',
+          limit: 5,
+          offset: 0,
+        },
       });
 
       expect(api.get).toHaveBeenCalledWith('/catalog/vector-search', {
@@ -82,10 +94,14 @@ describe('catalog tools', () => {
       const items = [{ id: 1, name: "Arc'teryx Atom LT" }];
       vi.mocked(api.get).mockResolvedValue({ items });
 
-      const result = await callTool(tools, 'semantic_gear_search', {
-        query: 'midlayer fleece',
-        limit: 8,
-        offset: 0,
+      const result = await callTool({
+        tools,
+        name: 'semantic_gear_search',
+        args: {
+          query: 'midlayer fleece',
+          limit: 8,
+          offset: 0,
+        },
       });
 
       expect(parseToolResult(result)).toEqual({ items });
@@ -99,7 +115,7 @@ describe('catalog tools', () => {
       const item = { id: 42, name: 'Big Agnes Copper Spur' };
       vi.mocked(api.get).mockResolvedValue(item);
 
-      const result = await callTool(tools, 'get_catalog_item', { item_id: 42 });
+      const result = await callTool({ tools, name: 'get_catalog_item', args: { item_id: 42 } });
 
       expect(api.get).toHaveBeenCalledWith('/catalog/42');
       expect(parseToolResult(result)).toEqual(item);
@@ -108,7 +124,7 @@ describe('catalog tools', () => {
     it('propagates 404 as error result', async () => {
       vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', 404, {}));
 
-      const result = await callTool(tools, 'get_catalog_item', { item_id: 9999 });
+      const result = await callTool({ tools, name: 'get_catalog_item', args: { item_id: 9999 } });
 
       expect(result.isError).toBe(true);
     });
@@ -120,7 +136,7 @@ describe('catalog tools', () => {
     it('calls GET /catalog/categories with no params', async () => {
       vi.mocked(api.get).mockResolvedValue([{ name: 'tents', count: 120 }]);
 
-      const result = await callTool(tools, 'list_gear_categories', {});
+      const result = await callTool({ tools, name: 'list_gear_categories', args: {} });
 
       expect(api.get).toHaveBeenCalledWith('/catalog/categories');
       expect(Array.isArray(parseToolResult(result))).toBe(true);
@@ -167,7 +183,11 @@ describe('catalog tools', () => {
           productUrl: 'https://z.com',
         });
 
-      const result = await callTool(tools, 'compare_gear_items', { item_ids: [1, 2, 3] });
+      const result = await callTool({
+        tools,
+        name: 'compare_gear_items',
+        args: { item_ids: [1, 2, 3] },
+      });
       const comparison = parseToolResult(result) as Record<string, unknown>;
 
       expect((comparison.items as unknown[]).length).toBe(3);
@@ -181,7 +201,11 @@ describe('catalog tools', () => {
     it('returns error result if any item fetch fails', async () => {
       vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', 404, {}));
 
-      const result = await callTool(tools, 'compare_gear_items', { item_ids: [1, 2] });
+      const result = await callTool({
+        tools,
+        name: 'compare_gear_items',
+        args: { item_ids: [1, 2] },
+      });
 
       expect(result.isError).toBe(true);
     });

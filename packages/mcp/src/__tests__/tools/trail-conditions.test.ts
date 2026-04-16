@@ -27,9 +27,13 @@ describe('trail condition tools', () => {
       const reports = { items: [{ id: 1, overallCondition: 'good' }] };
       vi.mocked(api.get).mockResolvedValue(reports);
 
-      const result = await callTool(tools, 'get_trail_conditions', {
-        trail_name: 'John Muir Trail',
-        limit: 5,
+      const result = await callTool({
+        tools,
+        name: 'get_trail_conditions',
+        args: {
+          trail_name: 'John Muir Trail',
+          limit: 5,
+        },
       });
 
       expect(api.get).toHaveBeenCalledWith('/trail-conditions', {
@@ -42,7 +46,7 @@ describe('trail condition tools', () => {
     it('works without any params', async () => {
       vi.mocked(api.get).mockResolvedValue({ items: [] });
 
-      await callTool(tools, 'get_trail_conditions', { limit: 20 });
+      await callTool({ tools, name: 'get_trail_conditions', args: { limit: 20 } });
 
       const [, params] = vi.mocked(api.get).mock.calls[0] as [string, Record<string, unknown>];
       expect(params.trailName).toBeUndefined();
@@ -52,7 +56,7 @@ describe('trail condition tools', () => {
     it('returns error result on API failure', async () => {
       vi.mocked(api.get).mockRejectedValue(new ApiError('Internal Server Error', 500, {}));
 
-      const result = await callTool(tools, 'get_trail_conditions', { limit: 10 });
+      const result = await callTool({ tools, name: 'get_trail_conditions', args: { limit: 10 } });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('500');
@@ -69,15 +73,19 @@ describe('trail condition tools', () => {
     it('calls POST /trail-conditions with correctly mapped API fields', async () => {
       vi.mocked(api.post).mockResolvedValue({ id: 'tcr_abc', submitted: true });
 
-      const result = await callTool(tools, 'submit_trail_condition', {
-        trail_name: 'Mt Whitney Trail',
-        trail_region: 'California',
-        surface: 'rocky',
-        overall_condition: 'good',
-        hazards: ['loose rocks', 'snow'],
-        water_crossings: 3,
-        water_crossing_difficulty: 'moderate',
-        notes: 'Trail is clear above 10k, some snow patches near the summit',
+      const result = await callTool({
+        tools,
+        name: 'submit_trail_condition',
+        args: {
+          trail_name: 'Mt Whitney Trail',
+          trail_region: 'California',
+          surface: 'rocky',
+          overall_condition: 'good',
+          hazards: ['loose rocks', 'snow'],
+          water_crossings: 3,
+          water_crossing_difficulty: 'moderate',
+          notes: 'Trail is clear above 10k, some snow patches near the summit',
+        },
       });
 
       const [path, body] = vi.mocked(api.post).mock.calls[0] as [string, Record<string, unknown>];
@@ -101,10 +109,14 @@ describe('trail condition tools', () => {
     it('submits with defaults when optional fields are absent', async () => {
       vi.mocked(api.post).mockResolvedValue({ id: 'tcr_2' });
 
-      await callTool(tools, 'submit_trail_condition', {
-        trail_name: 'Simple Trail',
-        surface: 'dirt',
-        overall_condition: 'excellent',
+      await callTool({
+        tools,
+        name: 'submit_trail_condition',
+        args: {
+          trail_name: 'Simple Trail',
+          surface: 'dirt',
+          overall_condition: 'excellent',
+        },
       });
 
       const [, body] = vi.mocked(api.post).mock.calls[0] as [string, Record<string, unknown>];
@@ -119,10 +131,14 @@ describe('trail condition tools', () => {
     it('returns error when user is not authenticated (401)', async () => {
       vi.mocked(api.post).mockRejectedValue(new ApiError('Unauthorized', 401, {}));
 
-      const result = await callTool(tools, 'submit_trail_condition', {
-        trail_name: 'Test Trail',
-        surface: 'paved',
-        overall_condition: 'fair',
+      const result = await callTool({
+        tools,
+        name: 'submit_trail_condition',
+        args: {
+          trail_name: 'Test Trail',
+          surface: 'paved',
+          overall_condition: 'fair',
+        },
       });
 
       expect(result.isError).toBe(true);

@@ -27,9 +27,13 @@ describe('knowledge tools', () => {
       const guides = { results: [{ title: 'Bear Hang Guide', content: '...' }] };
       vi.mocked(api.get).mockResolvedValue(guides);
 
-      const result = await callTool(tools, 'search_outdoor_guides', {
-        query: 'how to set up a bear hang',
-        limit: 3,
+      const result = await callTool({
+        tools,
+        name: 'search_outdoor_guides',
+        args: {
+          query: 'how to set up a bear hang',
+          limit: 3,
+        },
       });
 
       expect(api.get).toHaveBeenCalledWith('/ai/rag-search', {
@@ -42,9 +46,13 @@ describe('knowledge tools', () => {
     it('returns error result on API failure', async () => {
       vi.mocked(api.get).mockRejectedValue(new ApiError('Service Unavailable', 503, {}));
 
-      const result = await callTool(tools, 'search_outdoor_guides', {
-        query: 'water treatment methods',
-        limit: 5,
+      const result = await callTool({
+        tools,
+        name: 'search_outdoor_guides',
+        args: {
+          query: 'water treatment methods',
+          limit: 5,
+        },
       });
 
       expect(result.isError).toBe(true);
@@ -63,8 +71,12 @@ describe('knowledge tools', () => {
       const webResult = { answer: 'JMT permits are available...', sources: [] };
       vi.mocked(api.get).mockResolvedValue(webResult);
 
-      const result = await callTool(tools, 'web_search', {
-        query: 'John Muir Trail permit availability 2025',
+      const result = await callTool({
+        tools,
+        name: 'web_search',
+        args: {
+          query: 'John Muir Trail permit availability 2025',
+        },
       });
 
       expect(api.get).toHaveBeenCalledWith('/ai/web-search', {
@@ -76,7 +88,7 @@ describe('knowledge tools', () => {
     it('returns error when network fails', async () => {
       vi.mocked(api.get).mockRejectedValue(new Error('fetch failed'));
 
-      const result = await callTool(tools, 'web_search', { query: 'test query' });
+      const result = await callTool({ tools, name: 'web_search', args: { query: 'test query' } });
 
       expect(result.isError).toBe(true);
     });
@@ -95,7 +107,11 @@ describe('knowledge tools', () => {
 
       const sql =
         "SELECT name, weight FROM catalog_items WHERE category = 'tents' ORDER BY weight ASC LIMIT 5";
-      const result = await callTool(tools, 'execute_sql_query', { query: sql, limit: 50 });
+      const result = await callTool({
+        tools,
+        name: 'execute_sql_query',
+        args: { query: sql, limit: 50 },
+      });
 
       const [path, body] = vi.mocked(api.post).mock.calls[0] as [string, Record<string, unknown>];
       expect(path).toBe('/ai/execute-sql');
@@ -107,9 +123,13 @@ describe('knowledge tools', () => {
     it('returns error for failed queries', async () => {
       vi.mocked(api.post).mockRejectedValue(new ApiError('Syntax error in SQL', 400, {}));
 
-      const result = await callTool(tools, 'execute_sql_query', {
-        query: 'SELECT * FROM nonexistent_table',
-        limit: 100,
+      const result = await callTool({
+        tools,
+        name: 'execute_sql_query',
+        args: {
+          query: 'SELECT * FROM nonexistent_table',
+          limit: 100,
+        },
       });
 
       expect(result.isError).toBe(true);
@@ -128,7 +148,7 @@ describe('knowledge tools', () => {
       const schema = { tables: [{ name: 'catalog_items', columns: ['id', 'name', 'weight'] }] };
       vi.mocked(api.get).mockResolvedValue(schema);
 
-      const result = await callTool(tools, 'get_database_schema', {});
+      const result = await callTool({ tools, name: 'get_database_schema', args: {} });
 
       expect(api.get).toHaveBeenCalledWith('/ai/db-schema');
       expect(parseToolResult(result)).toEqual(schema);
