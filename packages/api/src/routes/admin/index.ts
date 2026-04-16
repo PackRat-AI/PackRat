@@ -689,4 +689,114 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     {
       query: z.object({ q: z.string().optional() }),
     },
+  )
+
+  // Delete a user (hard delete — also removes dependent rows where needed)
+  .delete(
+    '/users/:id',
+    async ({ params }) => {
+      const id = Number(params.id);
+      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid user id' });
+      const db = createDb();
+      try {
+        const deleted = await db.delete(users).where(eq(users.id, id)).returning();
+        if (!deleted.length) return status(404, { error: 'User not found' });
+        return { success: true as const };
+      } catch (error) {
+        if ((error as { code?: string })?.code === '23503') {
+          return status(409, { error: 'Cannot delete: user has dependent data' });
+        }
+        console.error('Error deleting user:', error);
+        return status(500, { error: 'Failed to delete user' });
+      }
+    },
+    {
+      params: z.object({ id: z.string() }),
+      detail: { tags: ['Admin'], summary: 'Delete a user' },
+    },
+  )
+
+  // Soft-delete a pack
+  .delete(
+    '/packs/:id',
+    async ({ params }) => {
+      const db = createDb();
+      try {
+        const updated = await db
+          .update(packs)
+          .set({ deleted: true })
+          .where(and(eq(packs.id, params.id), eq(packs.deleted, false)))
+          .returning();
+        if (!updated.length) return status(404, { error: 'Pack not found' });
+        return { success: true as const };
+      } catch (error) {
+        console.error('Error deleting pack:', error);
+        return status(500, { error: 'Failed to delete pack' });
+      }
+    },
+    {
+      params: z.object({ id: z.string() }),
+      detail: { tags: ['Admin'], summary: 'Soft-delete a pack' },
+    },
+  )
+
+  // Hard-delete a catalog item
+  .delete(
+    '/catalog/:id',
+    async ({ params }) => {
+      const id = Number(params.id);
+      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid catalog item id' });
+      const db = createDb();
+      try {
+        const deleted = await db.delete(catalogItems).where(eq(catalogItems.id, id)).returning();
+        if (!deleted.length) return status(404, { error: 'Catalog item not found' });
+        return { success: true as const };
+      } catch (error) {
+        if ((error as { code?: string })?.code === '23503') {
+          return status(409, { error: 'Cannot delete: item has dependent data' });
+        }
+        console.error('Error deleting catalog item:', error);
+        return status(500, { error: 'Failed to delete catalog item' });
+      }
+    },
+    {
+      params: z.object({ id: z.string() }),
+      detail: { tags: ['Admin'], summary: 'Delete a catalog item' },
+    },
+  )
+
+  // Update a catalog item
+  .patch(
+    '/catalog/:id',
+    async ({ params, body }) => {
+      const id = Number(params.id);
+      if (!Number.isFinite(id) || id <= 0) return status(400, { error: 'Invalid catalog item id' });
+      const db = createDb();
+      try {
+        const updated = await db
+          .update(catalogItems)
+          .set({ ...body, updatedAt: new Date() })
+          .where(eq(catalogItems.id, id))
+          .returning();
+        const first = updated[0];
+        if (!first) return status(404, { error: 'Catalog item not found' });
+        return { id: first.id, name: first.name };
+      } catch (error) {
+        console.error('Error updating catalog item:', error);
+        return status(500, { error: 'Failed to update catalog item' });
+      }
+    },
+    {
+      params: z.object({ id: z.string() }),
+      body: z.object({
+        name: z.string().min(1).optional(),
+        brand: z.string().nullable().optional(),
+        categories: z.array(z.string()).nullable().optional(),
+        weight: z.number().optional(),
+        weightUnit: z.string().optional(),
+        price: z.number().nullable().optional(),
+        description: z.string().nullable().optional(),
+      }),
+      detail: { tags: ['Admin'], summary: 'Update a catalog item' },
+    },
   );
