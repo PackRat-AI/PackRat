@@ -40,9 +40,4 @@ jobs:
         run: git fetch --no-tags --prune --depth=1 origin ${{ github.base_ref }}
 
       - name: Check Types
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            bunx turbo run check-types --filter=...[origin/${{ github.base_ref }}...HEAD]
-          else
-            bun check-types
-          fi
+        run: bun check-types:affected

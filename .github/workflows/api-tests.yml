@@ -48,4 +48,4 @@ jobs:
         run: bun install
 
       - name: Run API tests
-        run: bunx turbo run test --filter=@packrat/api
+        run: bun test:api
