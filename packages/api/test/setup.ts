@@ -414,12 +414,8 @@ vi.mock('@hono/sentry', () => ({
 beforeAll(async () => {
   console.log('🔧 Setting up test database connection...');
 
-  // max: 1 serializes every query through a single backend session. Ensures a
-  // seed insert is always visible to the next query's FK check — resolves the
-  // "Key (user_id)=1 not present in users" cascade on api-tests.
   testPool = new Pool({
     connectionString: testEnv.NEON_DATABASE_URL,
-    max: 1,
   });
 
   try {
