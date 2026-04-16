@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { seedPackTemplate, seedTestUser } from './utils/db-helpers';
+import { seedAndLoginTestUser, seedPackTemplate, seedTestUser } from './utils/db-helpers';
 import {
   api,
   apiWithAdmin,
@@ -126,9 +126,10 @@ describe('Generate From Online Content Routes', () => {
   let testAdmin: Awaited<ReturnType<typeof seedTestUser>>;
 
   beforeEach(async () => {
-    // Re-seed both users before each test (global beforeEach truncates all tables)
-    await seedTestUser();
-    testAdmin = await seedTestUser({
+    // Re-seed both users before each test (global beforeEach truncates all tables).
+    // Login both: regular user drives apiWithAuth (403 tests), admin drives apiWithAdmin.
+    await seedAndLoginTestUser();
+    testAdmin = await seedAndLoginTestUser({
       email: 'admin@example.com',
       firstName: 'Admin',
       lastName: 'User',

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  seedAndLoginTestUser,
   seedPackTemplate,
   seedPackTemplateItem,
   seedPackTemplateItems,
@@ -19,7 +20,7 @@ describe('Pack Templates Routes', () => {
 
   // Re-seed user before each test (global beforeEach truncates all tables)
   beforeEach(async () => {
-    testUser = await seedTestUser();
+    testUser = await seedAndLoginTestUser();
   });
   describe('Authentication', () => {
     it('GET /pack-templates requires auth', async () => {
