@@ -1,6 +1,6 @@
+import { guideEnv } from '@packrat/env/next';
 import { generatePost } from 'guides-app/scripts/generate-content';
 import { NextResponse } from 'next/server';
-import { guideEnv } from '../../../../env';
 
 export const dynamic = 'force-static';
 

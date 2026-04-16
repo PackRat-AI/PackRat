@@ -1,8 +1,8 @@
 import { openai } from '@ai-sdk/openai';
+import { guideEnv } from '@packrat/env/next';
 import { generateText, tool } from 'ai';
 import axios from 'axios';
 import { z } from 'zod';
-import { guideEnv } from '../env';
 
 // System prompt for contextual content enhancement
 const SYSTEM_PROMPT = `You are a content enhancement expert specializing in outdoor adventure guides. 

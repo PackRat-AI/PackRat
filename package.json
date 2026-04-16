@@ -28,7 +28,7 @@
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
-    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts",
+    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run packages/env/scripts/no-raw-process-env.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",

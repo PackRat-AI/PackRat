@@ -7,7 +7,8 @@
 // them so they can be migrated.
 //
 // Allowed files (intentionally exempt — see packages/env/src/node.ts for rationale):
-//   - packages/env/src/node.ts          — the shim itself
+//   - packages/env/src/node.ts          — the Node shim itself
+//   - packages/env/src/next.ts          — the Next.js shim itself
 //   - .github/scripts/configure-deps.ts — preinstall hook, runs before node_modules
 //   - .github/scripts/env.ts            — postinstall hook, runs before node_modules
 //   - packages/api/src/utils/env-validation.ts — Cloudflare Worker runtime (uses c.env)
@@ -21,7 +22,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-const ROOT = join(import.meta.dir, '..', '..');
+const ROOT = join(import.meta.dir, '..', '..', '..');
 
 // Directories to scan
 const SCAN_ROOTS = ['packages', 'apps', '.github/scripts'];
@@ -29,6 +30,7 @@ const SCAN_ROOTS = ['packages', 'apps', '.github/scripts'];
 // Files / path prefixes that are explicitly exempt
 const ALLOWED: string[] = [
   'packages/env/src/node.ts',
+  'packages/env/src/next.ts',
   '.github/scripts/configure-deps.ts',
   '.github/scripts/env.ts',
   'packages/api/src/utils/env-validation.ts',
@@ -36,7 +38,6 @@ const ALLOWED: string[] = [
   'packages/analytics/test/core/env.test.ts',
   'apps/expo/env/',
   'apps/expo/app.config.ts',
-  'apps/guides/env.ts',
 ];
 
 // Directories to skip entirely
@@ -45,6 +46,8 @@ const EXCLUDED_DIRS = new Set(['node_modules', 'dist', 'build', '.expo', '.next'
 // Matches process.env.FOO or process.env["FOO"] or bare process.env
 const PROCESS_ENV_RE = /\bprocess\.env\b/;
 
+const TARGET_FILE_RE = /\.(ts|tsx|cts|mts|js|mjs|cjs)$/;
+
 function isAllowed(relPath: string): boolean {
   return ALLOWED.some((allowed) =>
     allowed.endsWith('/') ? relPath.startsWith(allowed) : relPath === allowed,
@@ -52,7 +55,7 @@ function isAllowed(relPath: string): boolean {
 }
 
 function isTargetFile(name: string): boolean {
-  return /\.(ts|tsx|cts|mts|js|mjs|cjs)$/.test(name);
+  return TARGET_FILE_RE.test(name);
 }
 
 interface Violation {
@@ -61,7 +64,9 @@ interface Violation {
   content: string;
 }
 
-function walkDir(dir: string, relPath: string, violations: Violation[]): void {
+const violations: Violation[] = [];
+
+function walkDir(dir: string, relPath: string): void {
   let entries: string[];
   try {
     entries = readdirSync(dir);
@@ -83,7 +88,7 @@ function walkDir(dir: string, relPath: string, violations: Violation[]): void {
     }
 
     if (isDir) {
-      walkDir(entryFull, entryRel, violations);
+      walkDir(entryFull, entryRel);
     } else if (isTargetFile(entry)) {
       if (isAllowed(entryRel)) continue;
 
@@ -104,13 +109,11 @@ function walkDir(dir: string, relPath: string, violations: Violation[]): void {
   }
 }
 
-const violations: Violation[] = [];
-
 for (const root of SCAN_ROOTS) {
   const absRoot = join(ROOT, root);
   // For .github/scripts we use the relative path directly
   const relRoot = relative(ROOT, absRoot);
-  walkDir(absRoot, relRoot, violations);
+  walkDir(absRoot, relRoot);
 }
 
 if (violations.length > 0) {

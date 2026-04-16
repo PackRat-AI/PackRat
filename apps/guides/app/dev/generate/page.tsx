@@ -1,5 +1,6 @@
 'use client';
 
+import { guideEnv } from '@packrat/env/next';
 import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import {
@@ -26,7 +27,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@packrat/web-ui/compon
 import { Textarea } from '@packrat/web-ui/components/textarea';
 import { Toaster } from '@packrat/web-ui/components/toaster';
 import { toast } from '@packrat/web-ui/hooks/use-toast';
-import { guideEnv } from 'guides-app/env';
 import { assertDefined } from 'guides-app/lib/assertDefined';
 import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
