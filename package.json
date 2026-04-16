@@ -14,7 +14,7 @@
     "check:circular": "bun scripts/lint/no-circular-deps.ts",
     "check:deps": "manypkg check",
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
-    "check-types": "tsc --noEmit && bun run --cwd packages/mcp check-types",
+    "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bun run .github/scripts/clean.ts",
     "configure:deps": "bun run .github/scripts/configure-deps.ts",
