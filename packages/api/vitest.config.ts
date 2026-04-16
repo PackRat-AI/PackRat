@@ -1,13 +1,7 @@
 import { resolve } from 'node:path';
-import { cloudflareTest } from '@cloudflare/vitest-pool-workers';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [
-    cloudflareTest({
-      wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
-    }),
-  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -17,6 +11,12 @@ export default defineConfig({
   test: {
     globalSetup: './test/vitest.global-setup.ts',
     setupFiles: ['./test/setup.ts'],
+    pool: '@cloudflare/vitest-pool-workers',
+    poolOptions: {
+      workers: {
+        wrangler: { configPath: './wrangler.jsonc', environment: 'dev' },
+      },
+    },
     // Only include integration tests from /test directory
     include: [resolve(__dirname, 'test/**/*.test.ts')],
     // Run tests sequentially to avoid database deadlocks
