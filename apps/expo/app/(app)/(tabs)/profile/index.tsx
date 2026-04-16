@@ -1,3 +1,4 @@
+import { clientEnvs } from '@packrat/env/expo-client';
 import type { AlertMethods } from '@packrat/ui/nativewindui';
 import {
   ActivityIndicator,
@@ -16,7 +17,6 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
-import { clientEnvs } from '@packrat/env/expo-client';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
 import { useUser } from 'expo-app/features/auth/hooks/useUser';
