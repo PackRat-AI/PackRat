@@ -12,10 +12,6 @@ analyticsRoutes.route('/catalog', catalogRoutes);
 
 // ─── HTML Dashboard ───────────────────────────────────────────────────────────
 
-analyticsRoutes.get('/', (c) => c.html(DASHBOARD_HTML));
-
-// ─────────────────────────────────────────────────────────────────────────────
-
 const DASHBOARD_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -440,3 +436,5 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
   </script>
 </body>
 </html>`;
+
+analyticsRoutes.get('/', (c) => c.html(DASHBOARD_HTML));

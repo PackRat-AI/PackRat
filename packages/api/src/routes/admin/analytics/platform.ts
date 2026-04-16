@@ -343,7 +343,7 @@ const DASHBOARD_HTML = `<!DOCTYPE html>
 
 // ─── HTML Dashboard ──────────────────────────────────────────────────────────
 
-analyticsRoutes.get('/', (c) => c.html(DASHBOARD_HTML));
+platformRoutes.get('/', (c) => c.html(DASHBOARD_HTML));
 
 // ─── GET /growth ─────────────────────────────────────────────────────────────
 
@@ -377,7 +377,7 @@ const getGrowthRoute = createRoute({
   },
 });
 
-analyticsRoutes.openapi(getGrowthRoute, async (c) => {
+platformRoutes.openapi(getGrowthRoute, async (c) => {
   const db = createDb(c);
   const { period = 'month', range = 12 } = c.req.valid('query');
   const startDate = getStartDate(period, range);
@@ -457,7 +457,7 @@ const getActivityRoute = createRoute({
   },
 });
 
-analyticsRoutes.openapi(getActivityRoute, async (c) => {
+platformRoutes.openapi(getActivityRoute, async (c) => {
   const db = createDb(c);
   const { period = 'month', range = 12 } = c.req.valid('query');
   const startDate = getStartDate(period, range);
@@ -541,7 +541,7 @@ const getBreakdownRoute = createRoute({
   },
 });
 
-analyticsRoutes.openapi(getBreakdownRoute, async (c) => {
+platformRoutes.openapi(getBreakdownRoute, async (c) => {
   const db = createDb(c);
 
   try {
