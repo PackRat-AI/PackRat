@@ -1,5 +1,5 @@
-import { SidebarTrigger } from '@packrat/web-ui/components/sidebar';
 import { Separator } from '@packrat/web-ui/components/separator';
+import { SidebarTrigger } from '@packrat/web-ui/components/sidebar';
 
 interface PageHeaderProps {
   title: string;
@@ -13,9 +13,7 @@ export function PageHeader({ title, description }: PageHeaderProps) {
       <Separator orientation="vertical" className="h-6" />
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
     </div>
   );

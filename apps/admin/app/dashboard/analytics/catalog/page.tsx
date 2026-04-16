@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
-import { PageHeader } from 'admin-app/components/page-header';
 import { CatalogAnalytics } from 'admin-app/components/analytics/catalog-analytics';
+import { PageHeader } from 'admin-app/components/page-header';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Gear Catalog Analytics' };
 

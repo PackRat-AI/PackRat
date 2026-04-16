@@ -1,7 +1,13 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@packrat/web-ui/components/card';
-import { Tabs, TabsList, TabsTrigger } from '@packrat/web-ui/components/tabs';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@packrat/web-ui/components/card';
+import type { ChartConfig } from '@packrat/web-ui/components/chart';
 import {
   ChartContainer,
   ChartLegend,
@@ -9,8 +15,12 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@packrat/web-ui/components/chart';
-import type { ChartConfig } from '@packrat/web-ui/components/chart';
-import { usePlatformActivity, usePlatformBreakdown, usePlatformGrowth } from 'admin-app/hooks/use-platform-analytics';
+import { Tabs, TabsList, TabsTrigger } from '@packrat/web-ui/components/tabs';
+import {
+  usePlatformActivity,
+  usePlatformBreakdown,
+  usePlatformGrowth,
+} from 'admin-app/hooks/use-platform-analytics';
 import { useState } from 'react';
 import {
   Bar,
@@ -65,7 +75,10 @@ export function PlatformAnalytics() {
   const breakdownConfig: ChartConfig = Object.fromEntries(
     (breakdown ?? []).map((b, i) => [
       b.category,
-      { label: b.category, color: BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length] ?? 'hsl(var(--primary))' },
+      {
+        label: b.category,
+        color: BREAKDOWN_COLORS[i % BREAKDOWN_COLORS.length] ?? 'hsl(var(--primary))',
+      },
     ]),
   );
 
@@ -107,9 +120,27 @@ export function PlatformAnalytics() {
                 <YAxis tickLine={false} axisLine={false} width={40} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <ChartLegend content={<ChartLegendContent />} />
-                <Line type="monotone" dataKey="users" stroke="var(--color-users)" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="packs" stroke="var(--color-packs)" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="catalogItems" stroke="var(--color-catalogItems)" strokeWidth={2} dot={false} />
+                <Line
+                  type="monotone"
+                  dataKey="users"
+                  stroke="var(--color-users)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="packs"
+                  stroke="var(--color-packs)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="catalogItems"
+                  stroke="var(--color-catalogItems)"
+                  strokeWidth={2}
+                  dot={false}
+                />
               </LineChart>
             </ChartContainer>
           ) : (
@@ -145,7 +176,11 @@ export function PlatformAnalytics() {
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <ChartLegend content={<ChartLegendContent />} />
                 <Bar dataKey="trips" fill="var(--color-trips)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="trailReports" fill="var(--color-trailReports)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="trailReports"
+                  fill="var(--color-trailReports)"
+                  radius={[4, 4, 0, 0]}
+                />
                 <Bar dataKey="posts" fill="var(--color-posts)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ChartContainer>

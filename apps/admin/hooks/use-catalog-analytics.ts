@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   getCatalogBrands,
   getCatalogEmbeddings,
@@ -7,7 +8,6 @@ import {
   getCatalogOverview,
   getCatalogPrices,
 } from 'admin-app/lib/api';
-import { useQuery } from '@tanstack/react-query';
 
 export function useCatalogOverview() {
   return useQuery({

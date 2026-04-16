@@ -1,8 +1,8 @@
 'use client';
 
-import { cn } from '../lib/utils';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
+import { cn } from '../lib/utils';
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
@@ -53,9 +53,7 @@ const ChartContainer = React.forwardRef<
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        <RechartsPrimitive.ResponsiveContainer>{children}</RechartsPrimitive.ResponsiveContainer>
       </div>
     </ChartContext.Provider>
   );
@@ -79,8 +77,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ?? itemConfig.color;
+    const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ?? itemConfig.color;
     return color ? `  --color-${key}: ${color};` : null;
   })
   .join('\n')}
@@ -136,14 +133,12 @@ const ChartTooltipContent = React.forwardRef<
       const itemConfig = getPayloadConfigFromPayload(config, { payload: item, key });
       const value =
         !labelKey && typeof label === 'string'
-          ? config[label as keyof typeof config]?.label ?? label
+          ? (config[label as keyof typeof config]?.label ?? label)
           : itemConfig?.label;
 
       if (labelFormatter) {
         return (
-          <div className={cn('font-medium', labelClassName)}>
-            {labelFormatter(value, payload)}
-          </div>
+          <div className={cn('font-medium', labelClassName)}>{labelFormatter(value, payload)}</div>
         );
       }
 
@@ -298,27 +293,20 @@ const ChartLegendContent = React.forwardRef<
 ChartLegendContent.displayName = 'ChartLegendContent';
 
 // Helper to extract item config from a payload.
-function getPayloadConfigFromPayload(
-  config: ChartConfig,
-  opts: { payload: unknown; key: string },
-) {
+function getPayloadConfigFromPayload(config: ChartConfig, opts: { payload: unknown; key: string }) {
   const { payload, key } = opts;
   if (typeof payload !== 'object' || payload === null) {
     return undefined;
   }
 
   const payloadPayload =
-    'payload' in payload &&
-    typeof payload.payload === 'object' &&
-    payload.payload !== null
+    'payload' in payload && typeof payload.payload === 'object' && payload.payload !== null
       ? payload.payload
       : undefined;
 
   let configLabelKey: string = key;
 
-  if (
-    key in config
-  ) {
+  if (key in config) {
     configLabelKey = key;
   } else if (
     payloadPayload &&
@@ -328,9 +316,7 @@ function getPayloadConfigFromPayload(
     configLabelKey = payloadPayload[key as keyof typeof payloadPayload] as string;
   }
 
-  return configLabelKey in config
-    ? config[configLabelKey]
-    : config[key as keyof typeof config];
+  return configLabelKey in config ? config[configLabelKey] : config[key as keyof typeof config];
 }
 
 export {

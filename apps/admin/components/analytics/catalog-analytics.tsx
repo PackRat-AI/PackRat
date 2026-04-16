@@ -1,7 +1,14 @@
 'use client';
 
 import { Badge } from '@packrat/web-ui/components/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@packrat/web-ui/components/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@packrat/web-ui/components/card';
+import type { ChartConfig } from '@packrat/web-ui/components/chart';
 import {
   ChartContainer,
   ChartLegend,
@@ -9,7 +16,6 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@packrat/web-ui/components/chart';
-import type { ChartConfig } from '@packrat/web-ui/components/chart';
 import {
   useCatalogBrands,
   useCatalogEmbeddings,
@@ -17,16 +23,7 @@ import {
   useCatalogOverview,
   useCatalogPrices,
 } from 'admin-app/hooks/use-catalog-analytics';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 
 const priceConfig: ChartConfig = {
   count: { label: 'Items', color: 'hsl(var(--primary))' },
@@ -61,7 +58,10 @@ export function CatalogAnalytics() {
   const availConfig: ChartConfig = Object.fromEntries(
     (overview?.availability ?? []).map((a, i) => [
       a.status ?? 'unknown',
-      { label: a.status ?? 'Unknown', color: AVAIL_COLORS[i % AVAIL_COLORS.length] ?? 'hsl(var(--primary))' },
+      {
+        label: a.status ?? 'Unknown',
+        color: AVAIL_COLORS[i % AVAIL_COLORS.length] ?? 'hsl(var(--primary))',
+      },
     ]),
   );
 
@@ -81,7 +81,9 @@ export function CatalogAnalytics() {
           ].map((s) => (
             <Card key={s.label}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{s.label}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {s.label}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{s.value}</div>
@@ -101,10 +103,20 @@ export function CatalogAnalytics() {
           <CardContent>
             {prices && prices.length > 0 ? (
               <ChartContainer config={priceConfig} className="h-[260px] w-full">
-                <BarChart data={prices} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 8 }}>
+                <BarChart
+                  data={prices}
+                  layout="vertical"
+                  margin={{ top: 0, right: 16, bottom: 0, left: 8 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis type="number" tickLine={false} axisLine={false} />
-                  <YAxis type="category" dataKey="bucket" tickLine={false} axisLine={false} width={80} />
+                  <YAxis
+                    type="category"
+                    dataKey="bucket"
+                    tickLine={false}
+                    axisLine={false}
+                    width={80}
+                  />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="count" fill="var(--color-count)" radius={[0, 4, 4, 0]} />
                 </BarChart>
@@ -168,10 +180,20 @@ export function CatalogAnalytics() {
         <CardContent>
           {brands && brands.length > 0 ? (
             <ChartContainer config={brandConfig} className="h-[320px] w-full">
-              <BarChart data={brands} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 8 }}>
+              <BarChart
+                data={brands}
+                layout="vertical"
+                margin={{ top: 0, right: 16, bottom: 0, left: 8 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickLine={false} axisLine={false} />
-                <YAxis type="category" dataKey="brand" tickLine={false} axisLine={false} width={100} />
+                <YAxis
+                  type="category"
+                  dataKey="brand"
+                  tickLine={false}
+                  axisLine={false}
+                  width={100}
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="itemCount" fill="var(--color-itemCount)" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -208,11 +230,15 @@ export function CatalogAnalytics() {
                 <div className="text-xs text-muted-foreground">Total Items</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-primary">{embeddings.withEmbedding.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-primary">
+                  {embeddings.withEmbedding.toLocaleString()}
+                </div>
                 <div className="text-xs text-muted-foreground">Embedded</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-muted-foreground">{embeddings.pending.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-muted-foreground">
+                  {embeddings.pending.toLocaleString()}
+                </div>
                 <div className="text-xs text-muted-foreground">Pending</div>
               </div>
             </div>
@@ -227,7 +253,8 @@ export function CatalogAnalytics() {
             <CardTitle>ETL Pipeline</CardTitle>
             <CardDescription>
               {etl.summary.totalRuns} total runs &mdash; {etl.summary.completed} completed,{' '}
-              {etl.summary.failed} failed &mdash; {etl.summary.totalItemsIngested.toLocaleString()} items ingested
+              {etl.summary.failed} failed &mdash; {etl.summary.totalItemsIngested.toLocaleString()}{' '}
+              items ingested
             </CardDescription>
           </CardHeader>
           <CardContent>

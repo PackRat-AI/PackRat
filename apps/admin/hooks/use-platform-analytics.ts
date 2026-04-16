@@ -1,7 +1,7 @@
 'use client';
 
-import { getPlatformActivity, getPlatformBreakdown, getPlatformGrowth } from 'admin-app/lib/api';
 import { useQuery } from '@tanstack/react-query';
+import { getPlatformActivity, getPlatformBreakdown, getPlatformGrowth } from 'admin-app/lib/api';
 
 export function usePlatformGrowth(period: string) {
   return useQuery({

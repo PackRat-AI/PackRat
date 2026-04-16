@@ -8,8 +8,8 @@ import { assertAllDefined } from '@packrat/guards';
 import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
-import { analyticsRoutes } from './analytics';
 import { sign, verify } from 'hono/jwt';
+import { analyticsRoutes } from './analytics';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 

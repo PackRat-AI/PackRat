@@ -1,4 +1,12 @@
-import { Activity, Backpack, BarChart2, LayoutDashboard, type LucideIcon, Package, Users } from 'lucide-react';
+import {
+  Activity,
+  Backpack,
+  BarChart2,
+  LayoutDashboard,
+  type LucideIcon,
+  Package,
+  Users,
+} from 'lucide-react';
 
 export interface NavItem {
   title: string;

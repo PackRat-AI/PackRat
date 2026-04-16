@@ -1,5 +1,5 @@
-import type { Metadata } from 'next';
 import { PageHeader } from 'admin-app/components/page-header';
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Settings' };
 

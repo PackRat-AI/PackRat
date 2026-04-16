@@ -15,7 +15,8 @@ const getOverviewRoute = createRoute({
   path: '/overview',
   tags: ['Admin'],
   summary: 'Catalog data lake overview',
-  description: 'Aggregate statistics across the gear catalog — totals, pricing, availability, and embedding coverage (Admin only)',
+  description:
+    'Aggregate statistics across the gear catalog — totals, pricing, availability, and embedding coverage (Admin only)',
   responses: {
     200: {
       description: 'Catalog overview',
@@ -32,10 +33,12 @@ const getOverviewRoute = createRoute({
               withEmbedding: z.number(),
               pct: z.number(),
             }),
-            availability: z.array(z.object({
-              status: z.string().nullable(),
-              count: z.number(),
-            })),
+            availability: z.array(
+              z.object({
+                status: z.string().nullable(),
+                count: z.number(),
+              }),
+            ),
             addedLast30Days: z.number(),
           }),
         },
@@ -92,7 +95,10 @@ catalogRoutes.openapi(getOverviewRoute, async (c) => {
     const e = embeddingStats[0];
 
     if (!t || !e) {
-      return c.json({ error: 'Failed to fetch catalog overview', code: 'CATALOG_OVERVIEW_ERROR' }, 500);
+      return c.json(
+        { error: 'Failed to fetch catalog overview', code: 'CATALOG_OVERVIEW_ERROR' },
+        500,
+      );
     }
 
     const total = e.total;
@@ -120,7 +126,10 @@ catalogRoutes.openapi(getOverviewRoute, async (c) => {
     );
   } catch (error) {
     console.error('Catalog overview error:', error);
-    return c.json({ error: 'Failed to fetch catalog overview', code: 'CATALOG_OVERVIEW_ERROR' }, 500);
+    return c.json(
+      { error: 'Failed to fetch catalog overview', code: 'CATALOG_OVERVIEW_ERROR' },
+      500,
+    );
   }
 });
 
@@ -142,14 +151,16 @@ const getBrandsRoute = createRoute({
       description: 'Brand list',
       content: {
         'application/json': {
-          schema: z.array(z.object({
-            brand: z.string(),
-            itemCount: z.number(),
-            avgPrice: z.number().nullable(),
-            minPrice: z.number().nullable(),
-            maxPrice: z.number().nullable(),
-            avgRating: z.number().nullable(),
-          })),
+          schema: z.array(
+            z.object({
+              brand: z.string(),
+              itemCount: z.number(),
+              avgPrice: z.number().nullable(),
+              minPrice: z.number().nullable(),
+              maxPrice: z.number().nullable(),
+              avgRating: z.number().nullable(),
+            }),
+          ),
         },
       },
     },
@@ -210,10 +221,12 @@ const getPricesRoute = createRoute({
       description: 'Price distribution buckets',
       content: {
         'application/json': {
-          schema: z.array(z.object({
-            bucket: z.string(),
-            count: z.number(),
-          })),
+          schema: z.array(
+            z.object({
+              bucket: z.string(),
+              count: z.number(),
+            }),
+          ),
         },
       },
     },
@@ -254,7 +267,10 @@ catalogRoutes.openapi(getPricesRoute, async (c) => {
     );
   } catch (error) {
     console.error('Catalog prices error:', error);
-    return c.json({ error: 'Failed to fetch price distribution', code: 'CATALOG_PRICES_ERROR' }, 500);
+    return c.json(
+      { error: 'Failed to fetch price distribution', code: 'CATALOG_PRICES_ERROR' },
+      500,
+    );
   }
 });
 
@@ -277,19 +293,21 @@ const getEtlRoute = createRoute({
       content: {
         'application/json': {
           schema: z.object({
-            jobs: z.array(z.object({
-              id: z.string(),
-              status: z.enum(['running', 'completed', 'failed']),
-              source: z.string(),
-              filename: z.string(),
-              scraperRevision: z.string(),
-              startedAt: z.string(),
-              completedAt: z.string().nullable(),
-              totalProcessed: z.number().nullable(),
-              totalValid: z.number().nullable(),
-              totalInvalid: z.number().nullable(),
-              successRate: z.number().nullable(),
-            })),
+            jobs: z.array(
+              z.object({
+                id: z.string(),
+                status: z.enum(['running', 'completed', 'failed']),
+                source: z.string(),
+                filename: z.string(),
+                scraperRevision: z.string(),
+                startedAt: z.string(),
+                completedAt: z.string().nullable(),
+                totalProcessed: z.number().nullable(),
+                totalValid: z.number().nullable(),
+                totalInvalid: z.number().nullable(),
+                successRate: z.number().nullable(),
+              }),
+            ),
             summary: z.object({
               totalRuns: z.number(),
               completed: z.number(),
@@ -313,11 +331,7 @@ catalogRoutes.openapi(getEtlRoute, async (c) => {
 
   try {
     const [jobs, summary] = await Promise.all([
-      db
-        .select()
-        .from(etlJobs)
-        .orderBy(desc(etlJobs.startedAt))
-        .limit(limit),
+      db.select().from(etlJobs).orderBy(desc(etlJobs.startedAt)).limit(limit),
 
       db
         .select({
@@ -416,6 +430,9 @@ catalogRoutes.openapi(getEmbeddingsRoute, async (c) => {
     );
   } catch (error) {
     console.error('Catalog embeddings error:', error);
-    return c.json({ error: 'Failed to fetch embedding stats', code: 'CATALOG_EMBEDDINGS_ERROR' }, 500);
+    return c.json(
+      { error: 'Failed to fetch embedding stats', code: 'CATALOG_EMBEDDINGS_ERROR' },
+      500,
+    );
   }
 });

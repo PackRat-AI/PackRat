@@ -1,10 +1,20 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@packrat/web-ui/components/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@packrat/web-ui/components/card';
+import type { ChartConfig } from '@packrat/web-ui/components/chart';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@packrat/web-ui/components/chart';
 import { useCatalogOverview } from 'admin-app/hooks/use-catalog-analytics';
 import { usePlatformGrowth } from 'admin-app/hooks/use-platform-analytics';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@packrat/web-ui/components/chart';
-import type { ChartConfig } from '@packrat/web-ui/components/chart';
 import { Box, Database, TrendingUp, Users } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
@@ -125,7 +135,10 @@ export function DashboardContent() {
             <CardContent>
               <div className="space-y-2">
                 {overview.availability.slice(0, 6).map((a) => (
-                  <div key={a.status ?? 'unknown'} className="flex items-center justify-between text-sm">
+                  <div
+                    key={a.status ?? 'unknown'}
+                    className="flex items-center justify-between text-sm"
+                  >
                     <span className="capitalize text-muted-foreground">
                       {a.status ?? 'Unknown'}
                     </span>
@@ -154,7 +167,12 @@ export function DashboardContent() {
               </div>
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{overview.embeddingCoverage.withEmbedding.toLocaleString()} embedded</span>
-                <span>{(overview.embeddingCoverage.total - overview.embeddingCoverage.withEmbedding).toLocaleString()} pending</span>
+                <span>
+                  {(
+                    overview.embeddingCoverage.total - overview.embeddingCoverage.withEmbedding
+                  ).toLocaleString()}{' '}
+                  pending
+                </span>
               </div>
             </CardContent>
           </Card>

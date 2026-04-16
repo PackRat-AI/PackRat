@@ -415,7 +415,10 @@ analyticsRoutes.openapi(getGrowthRoute, async (c) => {
         .orderBy(sql`date_trunc(${period}, ${catalogItems.createdAt})`),
     ]);
 
-    return c.json({ period, range, users: userGrowth, packs: packGrowth, catalog: catalogGrowth }, 200);
+    return c.json(
+      { period, range, users: userGrowth, packs: packGrowth, catalog: catalogGrowth },
+      200,
+    );
   } catch (error) {
     console.error('Analytics growth error:', error);
     return c.json({ error: 'Failed to fetch growth data', code: 'ANALYTICS_GROWTH_ERROR' }, 500);
@@ -503,7 +506,10 @@ analyticsRoutes.openapi(getActivityRoute, async (c) => {
     );
   } catch (error) {
     console.error('Analytics activity error:', error);
-    return c.json({ error: 'Failed to fetch activity data', code: 'ANALYTICS_ACTIVITY_ERROR' }, 500);
+    return c.json(
+      { error: 'Failed to fetch activity data', code: 'ANALYTICS_ACTIVITY_ERROR' },
+      500,
+    );
   }
 });
 
@@ -558,6 +564,9 @@ analyticsRoutes.openapi(getBreakdownRoute, async (c) => {
     return c.json({ packsByCategory, itemsByCategory }, 200);
   } catch (error) {
     console.error('Analytics breakdown error:', error);
-    return c.json({ error: 'Failed to fetch breakdown data', code: 'ANALYTICS_BREAKDOWN_ERROR' }, 500);
+    return c.json(
+      { error: 'Failed to fetch breakdown data', code: 'ANALYTICS_BREAKDOWN_ERROR' },
+      500,
+    );
   }
 });
