@@ -39,7 +39,7 @@ const readJsonVersion = (path: string): string => {
 
 const readWorkspacePackageJsonPaths = (): string[] => {
   const rootPackageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
-    workspaces?: unknown;
+    workspaces?: string[];
   };
 
   const workspacePatterns = Array.isArray(rootPackageJson.workspaces)
@@ -53,6 +53,9 @@ const readWorkspacePackageJsonPaths = (): string[] => {
 
     if (pattern.endsWith('/*')) {
       const basePath = pattern.slice(0, -2);
+      if (!existsSync(basePath)) {
+        throw new Error(`Workspace path does not exist: ${basePath}`);
+      }
       const entries = readdirSync(basePath, { withFileTypes: true });
       for (const entry of entries) {
         if (!entry.isDirectory()) continue;
