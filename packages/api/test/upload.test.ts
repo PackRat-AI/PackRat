@@ -27,7 +27,7 @@ describe('Upload Routes', () => {
 
   describe('GET /upload/presigned', () => {
     it('generates presigned URL for file upload', async () => {
-      const res = await apiWithAuth('/upload/presigned?fileName=1-test.jpg&contentType=image/jpeg');
+      const res = await apiWithAuth('/upload/presigned?fileName=0-test.jpg&contentType=image/jpeg');
 
       expect(res.status).toBe(200);
       const data = await expectJsonResponse(res, ['url']);
@@ -59,7 +59,7 @@ describe('Upload Routes', () => {
 
       for (const contentType of imageTypes) {
         const res = await apiWithAuth(
-          `/upload/presigned?fileName=1-test.jpg&contentType=${contentType}`,
+          `/upload/presigned?fileName=0-test.jpg&contentType=${contentType}`,
         );
 
         expect(res.status).toBe(200);
@@ -152,7 +152,7 @@ describe('Upload Routes', () => {
     });
 
     it('accepts fileName with user ID prefix', async () => {
-      const res = await apiWithAuth('/upload/presigned?fileName=1-test.jpg&contentType=image/jpeg');
+      const res = await apiWithAuth('/upload/presigned?fileName=0-test.jpg&contentType=image/jpeg');
 
       expect(res.status).toBe(200);
       const data = await res.json();

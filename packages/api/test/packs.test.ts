@@ -5,6 +5,7 @@ import {
   api,
   apiWithAdmin,
   apiWithAuth,
+  apiWithAuthAs,
   expectBadRequest,
   expectJsonResponse,
   expectNotFound,
@@ -38,8 +39,8 @@ vi.mock('../src/services/packService', async () => {
             tags: ['test', 'generated'],
             isPublic: true,
             isAIGenerated: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
             image: null,
             templateId: null,
             localCreatedAt: new Date(),
@@ -212,6 +213,8 @@ describe('Packs Routes', () => {
 
     it('prevents updating other users packs', async () => {
       // Create a different user and their pack
+      // NOTE: seedTestUser also sets currentTestUser; capture testUser.id before this call
+      const testUserId = testUser.id;
       const otherUser = await seedTestUser({
         email: 'other@example.com',
         firstName: 'Other',
@@ -224,12 +227,11 @@ describe('Packs Routes', () => {
         category: 'hiking',
       });
 
-      const res = await apiWithAuth(
-        `/packs/${otherUserPack.id}`,
-        httpMethods.put({
-          name: 'Attempting to update',
-        }),
-      );
+      // Use apiWithAuthAs to keep the original testUser credentials (not otherUser's)
+      const res = await apiWithAuthAs(`/packs/${otherUserPack.id}`, {
+        user: { id: testUserId, role: 'USER' },
+        init: httpMethods.put({ name: 'Attempting to update' }),
+      });
 
       // Should return 404 (not found for this user) or 403 (forbidden)
       expect([403, 404]).toContain(res.status);
@@ -258,6 +260,8 @@ describe('Packs Routes', () => {
 
     it('prevents deleting other users packs', async () => {
       // Create a different user and their pack
+      // NOTE: seedTestUser also sets currentTestUser; capture testUser.id before this call
+      const testUserId = testUser.id;
       const otherUser = await seedTestUser({
         email: 'another@example.com',
         firstName: 'Another',
@@ -270,7 +274,11 @@ describe('Packs Routes', () => {
         category: 'hiking',
       });
 
-      const res = await apiWithAuth(`/packs/${otherUserPack.id}`, httpMethods.delete());
+      // Use apiWithAuthAs to keep the original testUser credentials (not otherUser's)
+      const res = await apiWithAuthAs(`/packs/${otherUserPack.id}`, {
+        user: { id: testUserId, role: 'USER' },
+        init: httpMethods.delete(),
+      });
 
       // Should return 404 (not found for this user) or 403 (forbidden)
       expect([403, 404]).toContain(res.status);

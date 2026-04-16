@@ -392,6 +392,26 @@ vi.mock('youtube-transcript', () => ({
   fetchTranscript: vi.fn().mockResolvedValue([]),
 }));
 
+// @cloudflare/containers mock — must live in setup.ts (not individual test files) so it is
+// registered before the worker module context is established by @cloudflare/vitest-pool-workers.
+// Individual tests can call setMockContainerFetch() to override the default handler.
+type ContainerFetchFn = (request: Request) => Response | Promise<Response>;
+let _mockContainerFetch: ContainerFetchFn = (_request) =>
+  new Response(JSON.stringify({ success: false, error: 'Container not configured' }), {
+    status: 500,
+  });
+
+export const setMockContainerFetch = (fn: ContainerFetchFn) => {
+  _mockContainerFetch = fn;
+};
+
+vi.mock('@cloudflare/containers', () => ({
+  Container: class MockContainer {},
+  getContainer: vi.fn(() => ({
+    fetch: (request: Request) => _mockContainerFetch(request),
+  })),
+}));
+
 // toucan-js@4.1.1 → @sentry/core@8.9.2 has dual ESM/CJS exports that miniflare mis-resolves;
 // upstream fix lands in @hono/sentry >1.2.2 (not yet released 2026-04).
 vi.mock('@hono/sentry', () => ({

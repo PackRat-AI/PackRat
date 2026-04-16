@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { setMockContainerFetch } from './setup';
 import { seedPackTemplate, seedTestUser } from './utils/db-helpers';
 import {
   api,
@@ -34,17 +35,6 @@ const createMockContainerFetch = (contentId?: string) =>
       ),
     );
   });
-
-// Store the mock to allow reconfiguring per test
-let mockContainerFetch = createMockContainerFetch();
-
-// Mock the @cloudflare/containers module (needs Container class for AppContainer)
-vi.mock('@cloudflare/containers', () => ({
-  Container: class MockContainer {},
-  getContainer: vi.fn(() => ({
-    fetch: (...args: Parameters<typeof mockContainerFetch>) => mockContainerFetch(...args),
-  })),
-}));
 
 // Mock the AI generateObject function
 vi.mock('ai', async () => {
@@ -135,8 +125,8 @@ describe('Generate From Online Content Routes', () => {
       role: 'ADMIN',
     });
     vi.clearAllMocks();
-    // Reset mock to default (unique contentIds)
-    mockContainerFetch = createMockContainerFetch();
+    // Reset container fetch mock to default (unique contentIds per call)
+    setMockContainerFetch(createMockContainerFetch());
   });
 
   describe('Authentication', () => {
@@ -199,7 +189,7 @@ describe('Generate From Online Content Routes', () => {
       });
 
       // Configure mock to return the same contentId as the seeded template
-      mockContainerFetch = createMockContainerFetch(duplicateContentId);
+      setMockContainerFetch(createMockContainerFetch(duplicateContentId));
 
       const res = await apiWithAdmin(
         '/pack-templates/generate-from-online-content',
