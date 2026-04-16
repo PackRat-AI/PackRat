@@ -1,11 +1,10 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { adminMiddleware } from '@packrat/api/middleware/adminMiddleware';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import { PackSchema } from '@packrat/api/schemas/packs';
 import { PackService } from '@packrat/api/services/packService';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
-import { z } from 'zod';
 
 const generatePacksRoute = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 

@@ -1,4 +1,4 @@
-import { Icon, type MaterialIconName } from '@roninoss/icons';
+import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
 import { View } from 'react-native';
 import { getWeatherIconByCondition, getWeatherIconName } from '../lib/weatherIcons';
 

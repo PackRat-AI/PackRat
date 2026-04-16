@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   seedPackTemplate,
   seedPackTemplateItem,
@@ -15,9 +15,11 @@ import {
 } from './utils/test-helpers';
 
 describe('Pack Templates Routes', () => {
-  // Seed a test user before all tests
-  beforeAll(async () => {
-    await seedTestUser();
+  let testUser: Awaited<ReturnType<typeof seedTestUser>>;
+
+  // Re-seed user before each test (global beforeEach truncates all tables)
+  beforeEach(async () => {
+    testUser = await seedTestUser();
   });
   describe('Authentication', () => {
     it('GET /pack-templates requires auth', async () => {
@@ -39,7 +41,7 @@ describe('Pack Templates Routes', () => {
   describe('GET /pack-templates', () => {
     it('returns pack templates list', async () => {
       // Seed a template first
-      await seedPackTemplate();
+      await seedPackTemplate({ userId: testUser.id });
 
       const res = await apiWithAuth('/pack-templates');
 
@@ -52,7 +54,10 @@ describe('Pack Templates Routes', () => {
   describe('GET /pack-templates/:id', () => {
     it('returns single pack template', async () => {
       // Seed a template first
-      const seededTemplate = await seedPackTemplate({ name: 'Test Template for GET' });
+      const seededTemplate = await seedPackTemplate({
+        userId: testUser.id,
+        name: 'Test Template for GET',
+      });
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}`);
 
@@ -64,7 +69,7 @@ describe('Pack Templates Routes', () => {
 
     it('returns template with metadata', async () => {
       // Seed a template first
-      const seededTemplate = await seedPackTemplate();
+      const seededTemplate = await seedPackTemplate({ userId: testUser.id });
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}`);
 
@@ -83,8 +88,11 @@ describe('Pack Templates Routes', () => {
   describe('GET /pack-templates/:id/items', () => {
     it('returns template items list', async () => {
       // Seed a template with items
-      const seededTemplate = await seedPackTemplate();
-      await seedPackTemplateItems(seededTemplate.id, { count: 3 });
+      const seededTemplate = await seedPackTemplate({ userId: testUser.id });
+      await seedPackTemplateItems(seededTemplate.id, {
+        count: 3,
+        overrides: { userId: testUser.id },
+      });
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}/items`);
 
@@ -95,8 +103,8 @@ describe('Pack Templates Routes', () => {
 
     it('returns items with quantities', async () => {
       // Seed a template with items
-      const seededTemplate = await seedPackTemplate();
-      await seedPackTemplateItem(seededTemplate.id, { quantity: 2 });
+      const seededTemplate = await seedPackTemplate({ userId: testUser.id });
+      await seedPackTemplateItem(seededTemplate.id, { userId: testUser.id, quantity: 2 });
 
       const res = await apiWithAuth(`/pack-templates/${seededTemplate.id}/items`);
 

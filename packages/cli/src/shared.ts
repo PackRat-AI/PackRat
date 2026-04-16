@@ -2,13 +2,10 @@
  * Shared CLI utilities: cache initialization, output formatting.
  */
 
+import { assertDefined, CatalogCacheManager, env, LocalCacheManager } from '@packrat/analytics';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import consola from 'consola';
-import { CatalogCacheManager } from '../core/catalog-cache';
-import { env } from '../core/env';
-import { LocalCacheManager } from '../core/local-cache';
-import { assertDefined } from '../core/type-assertions';
 
 let _cache: LocalCacheManager | null = null;
 

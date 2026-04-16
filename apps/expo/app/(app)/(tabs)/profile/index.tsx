@@ -6,6 +6,7 @@ import {
   AvatarFallback,
   AvatarImage,
   Button,
+  LargeTitleHeader,
   List,
   ListItem,
   type ListRenderItemInfo,
@@ -13,6 +14,7 @@ import {
   Text,
 } from '@packrat/ui/nativewindui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useAuth } from 'expo-app/features/auth/hooks/useAuth';
@@ -28,13 +30,28 @@ import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
 import { buildPackTemplateItemImageUrl } from 'expo-app/lib/utils/buildPackTemplateItemImageUrl';
 import * as FileSystem from 'expo-file-system/legacy';
-import { router, Stack } from 'expo-router';
+import { Link, router, Stack } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { useRef, useState } from 'react';
-import { Alert, Linking, Platform, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+
+function SettingsIcon() {
+  const { colors } = useColorScheme();
+  return (
+    <Link href="/settings" asChild>
+      <Pressable className="opacity-80">
+        {({ pressed }) => (
+          <View className={cn(pressed ? 'opacity-50' : 'opacity-90')}>
+            <Icon name="cog-outline" color={colors.foreground} />
+          </View>
+        )}
+      </Pressable>
+    </Link>
+  );
+}
 
 function Profile() {
   const user = useUser();
@@ -72,6 +89,16 @@ function Profile() {
   return (
     <TabScreen>
       <Stack.Screen options={SCREEN_OPTIONS} />
+
+      <LargeTitleHeader
+        title={t('profile.profile')}
+        backVisible={false}
+        rightView={() => (
+          <View className="flex-row items-center gap-2 pr-2">
+            <SettingsIcon />
+          </View>
+        )}
+      />
 
       <List
         contentContainerClassName="pt-8"
