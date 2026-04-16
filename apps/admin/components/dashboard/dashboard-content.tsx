@@ -3,8 +3,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@packrat/web-ui/components/card';
 import { useCatalogOverview } from 'admin-app/hooks/use-catalog-analytics';
 import { usePlatformGrowth } from 'admin-app/hooks/use-platform-analytics';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from 'admin-app/components/ui/chart';
-import type { ChartConfig } from 'admin-app/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@packrat/web-ui/components/chart';
+import type { ChartConfig } from '@packrat/web-ui/components/chart';
 import { Box, Database, TrendingUp, Users } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 

@@ -18,12 +18,12 @@ export function useCreatePackWithItems() {
       const id = createPack(packInfo);
 
       if (items && items.length > 0) {
-        items.forEach((item) => {
+        for (const item of items) {
           createPackItem({
             packId: id,
             itemData: item,
           });
-        });
+        }
       }
 
       return id;

@@ -3,6 +3,8 @@
  * This helps us avoid network requests for known domains
  */
 
+const CLOUDINARY_FORMAT_RE = /\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//;
+
 // Update the DomainPattern type to support function-based extension resolution
 type DomainPattern = {
   pattern: RegExp;
@@ -30,7 +32,7 @@ const domainPatterns: DomainPattern[] = [
   {
     pattern: /cloudinary\.com\/.*\/image\/upload\/.*\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//,
     extension: (url) => {
-      const match = url.match(/\/([^/]+)\/(jpe?g|png|gif|webp|avif)\//);
+      const match = url.match(CLOUDINARY_FORMAT_RE);
       return match && match[2] !== undefined ? match[2].toLowerCase() : 'jpg';
     },
   },

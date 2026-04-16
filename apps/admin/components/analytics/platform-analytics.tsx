@@ -8,8 +8,8 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from 'admin-app/components/ui/chart';
-import type { ChartConfig } from 'admin-app/components/ui/chart';
+} from '@packrat/web-ui/components/chart';
+import type { ChartConfig } from '@packrat/web-ui/components/chart';
 import { usePlatformActivity, usePlatformBreakdown, usePlatformGrowth } from 'admin-app/hooks/use-platform-analytics';
 import { useState } from 'react';
 import {

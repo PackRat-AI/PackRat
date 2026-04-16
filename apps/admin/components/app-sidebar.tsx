@@ -6,106 +6,93 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from '@packrat/web-ui/components/sidebar';
-import {
-  BarChart3,
-  Box,
-  Database,
-  LayoutDashboard,
-  Package,
-  Settings,
-  Users,
-} from 'lucide-react';
+import { cn } from '@packrat/web-ui/lib/utils';
+import { navItems } from 'admin-app/config/nav';
+import { clearToken } from 'admin-app/lib/auth';
+import { LogOut, Package } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
-const navMain = [
-  {
-    title: 'Overview',
-    items: [
-      { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-    ],
-  },
-  {
-    title: 'Analytics',
-    items: [
-      { title: 'Platform', url: '/analytics/platform', icon: BarChart3 },
-      { title: 'Gear Catalog', url: '/analytics/catalog', icon: Database },
-    ],
-  },
-  {
-    title: 'Data',
-    items: [
-      { title: 'Users', url: '/users', icon: Users },
-      { title: 'Packs', url: '/packs', icon: Package },
-      { title: 'Catalog Items', url: '/catalog', icon: Box },
-    ],
-  },
-];
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { state } = useSidebar();
+  const isCollapsed = state === 'collapsed';
+
+  function handleLogout() {
+    clearToken();
+    router.replace('/login');
+  }
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Package className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">PackRat</span>
-                  <span className="truncate text-xs text-muted-foreground">Admin</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <SidebarHeader className="h-14 flex items-center px-4">
+        <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/15 border border-primary/20 shrink-0">
+            <Package className="w-4 h-4 text-primary" />
+          </div>
+          {!isCollapsed && (
+            <span className="font-semibold text-sm truncate text-sidebar-foreground">
+              PackRat Admin
+            </span>
+          )}
+        </Link>
       </SidebarHeader>
 
+      {/* ── Nav ────────────────────────────────────────────────────────────── */}
       <SidebarContent>
-        {navMain.map((group) => (
-          <SidebarGroup key={group.title}>
-            <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => {
+                const isActive =
+                  item.href === '/dashboard'
+                    ? pathname === '/dashboard'
+                    : (pathname?.startsWith(item.href) ?? false);
+
+                return (
+                  <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
-                      isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}
+                      isActive={isActive}
                       tooltip={item.title}
+                      className={cn(
+                        'transition-colors',
+                        isActive && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium',
+                      )}
                     >
-                      <Link href={item.url}>
-                        <item.icon />
+                      <Link href={item.href}>
+                        <item.icon className="w-4 h-4" />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      {/* ── Footer ─────────────────────────────────────────────────────────── */}
+      <SidebarFooter className="pb-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Settings">
-              <Link href="/settings">
-                <Settings />
-                <span>Settings</span>
-              </Link>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              tooltip="Sign out"
+              className="text-muted-foreground hover:text-foreground w-full"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -16,6 +16,7 @@
       "@packrat/guards/*": ["./packages/guards/src/*"],
       "@packrat/ui/*": ["./packages/ui/*"],
       "@packrat/data-lake/*": ["./packages/data-lake/src/*"],
+      "@packrat/cli": ["./packages/cli/src"],
       "@packrat/cli/*": ["./packages/cli/src/*"],
       "@packrat/web-ui": ["./packages/web-ui/src"],
       "@packrat/web-ui/*": ["./packages/web-ui/src/*"],

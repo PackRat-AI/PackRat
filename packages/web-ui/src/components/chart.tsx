@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@packrat/web-ui/lib/utils';
+import { cn } from '../lib/utils';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
 

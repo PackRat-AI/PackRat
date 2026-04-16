@@ -1,7 +1,6 @@
 import { assertDefined } from '@packrat/guards';
 import { ActivityIndicator, Button, Card, Text } from '@packrat/ui/nativewindui';
-import { Icon } from '@roninoss/icons';
-import { appAlert } from 'expo-app/app/_layout';
+import { Icon } from 'expo-app/components/Icon';
 import { featureFlags } from 'expo-app/config';
 import { SubmitConditionReportForm } from 'expo-app/features/trail-conditions/components/SubmitConditionReportForm';
 import { useLocations } from 'expo-app/features/weather/hooks';
@@ -74,28 +73,7 @@ export function TripDetailScreen() {
 
     const { latitude, longitude } = trip.location;
 
-    const matchedLocation = locations.find(
-      (loc) => Math.abs(loc.lat - latitude) < 0.05 && Math.abs(loc.lon - longitude) < 0.05,
-    );
-
-    if (matchedLocation) {
-      router.push(`/weather/${matchedLocation.id}`);
-    } else {
-      appAlert.current?.alert({
-        title: 'Location not found',
-        message: 'Please add this location in Weather first.',
-        buttons: [
-          {
-            text: 'Go to Weather',
-            onPress: () => router.push('/weather'),
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ],
-      });
-    }
+    router.push(`/weather/geo?lat=${latitude}&lon=${longitude}`);
   };
 
   return (

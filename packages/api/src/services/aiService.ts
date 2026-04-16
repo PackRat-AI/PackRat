@@ -13,6 +13,8 @@ interface SearchResult {
 const WEB_SEARCH_SYSTEM_PROMPT =
   'You are a helpful research assistant. Provide accurate, up-to-date information with proper citations. Be concise but comprehensive.';
 
+const MDX_EXTENSION_RE = /\.mdx$/;
+
 export class AIService {
   private env: Env;
   private guidesRAG: AutoRAG | null = null;
@@ -88,7 +90,7 @@ export class AIService {
    * @returns
    */
   private filenameToUrl(filename: string): string {
-    const slug = filename.replace(/\.mdx$/, '').trim();
+    const slug = filename.replace(MDX_EXTENSION_RE, '').trim();
     const baseUrl = this.env.PACKRAT_GUIDES_BASE_URL;
     return new URL(`guide/${slug}`, baseUrl).toString();
   }
