@@ -8,7 +8,7 @@ const PG_INT4_MAX = 2_147_483_647;
 // Accept only a digits-only string starting with 1-9 so `Number()`-accepted
 // forms like `0x10`, `1e2`, `  42 `, `4.0`, and leading-zero `007` are rejected.
 // Pipe into z.coerce.number for the int range check.
-const integerIdSchema = z
+export const integerIdSchema = z
   .string()
   .regex(/^[1-9]\d*$/)
   .pipe(z.coerce.number().int().positive().max(PG_INT4_MAX));

@@ -112,29 +112,29 @@ describe('Catalog Routes', () => {
       expectNotFound(res);
     });
 
-    it('returns 404 for non-numeric ID (no NaN coercion to SQL)', async () => {
+    it('returns 400 for non-numeric ID (schema rejects before DB query)', async () => {
       const res = await apiWithAuth('/catalog/invalid-id');
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
     });
 
-    it('returns 404 for hex-shaped ID (0x10, not a valid serial id)', async () => {
+    it('returns 400 for hex-shaped ID (0x10 fails digits-only regex)', async () => {
       const res = await apiWithAuth('/catalog/0x10');
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
     });
 
-    it('returns 404 for exponent-shaped ID (1e5, not a digits-only id)', async () => {
+    it('returns 400 for exponent-shaped ID (1e5 fails digits-only regex)', async () => {
       const res = await apiWithAuth('/catalog/1e5');
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
     });
 
-    it('returns 404 for ID larger than PG int4 max', async () => {
+    it('returns 400 for ID larger than PG int4 max', async () => {
       const res = await apiWithAuth('/catalog/9999999999');
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
     });
 
-    it('returns 404 for ID with leading zero (007 is not a canonical serial id)', async () => {
+    it('returns 400 for ID with leading zero (007 fails digits-only regex)', async () => {
       const res = await apiWithAuth('/catalog/007');
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(400);
     });
   });
 

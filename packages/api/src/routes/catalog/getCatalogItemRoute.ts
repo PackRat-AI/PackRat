@@ -3,6 +3,7 @@ import { createDb } from '@packrat/api/db';
 import { catalogItems, packItems } from '@packrat/api/db/schema';
 import { CatalogItemSchema, ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
+import { integerIdSchema } from '@packrat/api/utils/routeParams';
 import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
@@ -14,7 +15,7 @@ export const routeDefinition = createRoute({
   security: [{ bearerAuth: [] }],
   request: {
     params: z.object({
-      id: z.coerce.number().int().positive().max(2_147_483_647).openapi({
+      id: integerIdSchema.openapi({
         example: 123,
         description: 'Catalog item ID',
       }),
