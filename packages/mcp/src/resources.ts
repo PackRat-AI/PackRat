@@ -147,9 +147,7 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(
-                resourceError({ uri: uri.href, context: 'gear_categories' }, e),
-              ),
+              text: JSON.stringify(resourceError({ uri: uri.href, context: 'gear_categories' }, e)),
             },
           ],
         };
