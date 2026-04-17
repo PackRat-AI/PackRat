@@ -56,7 +56,7 @@ jobs:
             --non-interactive \
             --no-wait \
             --json > build-ios.json
-          BUILD_ID=$(cat build-ios.json | bun -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'))[0].id)")
+          BUILD_ID=$(bun -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'))[0].id)" < build-ios.json)
           echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
           echo "iOS build started: $BUILD_ID"
         env:
@@ -72,7 +72,7 @@ jobs:
             --non-interactive \
             --no-wait \
             --json > build-android.json
-          BUILD_ID=$(cat build-android.json | bun -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'))[0].id)")
+          BUILD_ID=$(bun -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'))[0].id)" < build-android.json)
           echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
           echo "Android build started: $BUILD_ID"
         env:
@@ -143,19 +143,21 @@ jobs:
       - name: Report deployment status
         if: always()
         run: |
-          echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Build Status" >> $GITHUB_STEP_SUMMARY
-          echo "- **iOS Build ID:** ${{ steps.build-ios.outputs.build_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Android Build ID:** ${{ steps.build-android.outputs.build_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Submission Status" >> $GITHUB_STEP_SUMMARY
-          echo "- **iOS:** ${{ steps.submit-ios.outcome }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Android:** ${{ steps.submit-android.outcome }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Store Links" >> $GITHUB_STEP_SUMMARY
-          echo "- [App Store](https://apps.apple.com/app/id6499243187)" >> $GITHUB_STEP_SUMMARY
-          echo "- [Google Play](https://play.google.com/store/apps/details?id=com.packratai.mobile)" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Production Deployment Summary"
+            echo ""
+            echo "**Commit:** ${{ github.sha }}"
+            echo "**Author:** ${{ github.actor }}"
+            echo ""
+            echo "### Build Status"
+            echo "- **iOS Build ID:** ${{ steps.build-ios.outputs.build_id }}"
+            echo "- **Android Build ID:** ${{ steps.build-android.outputs.build_id }}"
+            echo ""
+            echo "### Submission Status"
+            echo "- **iOS:** ${{ steps.submit-ios.outcome }}"
+            echo "- **Android:** ${{ steps.submit-android.outcome }}"
+            echo ""
+            echo "### Store Links"
+            echo "- [App Store](https://apps.apple.com/app/id6499243187)"
+            echo "- [Google Play](https://play.google.com/store/apps/details?id=com.packratai.mobile)"
+          } >> "$GITHUB_STEP_SUMMARY"
