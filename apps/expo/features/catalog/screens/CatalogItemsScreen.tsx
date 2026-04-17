@@ -172,7 +172,21 @@ function CatalogItemsScreen() {
 
             {searchResults.length === 0 && (
               <View className="flex-1 items-center justify-center p-8">
-                {/* same empty/error UI */}
+                <Icon
+                  name={vectorError ? 'alert-circle' : 'search'}
+                  size={32}
+                  color="gray"
+                />
+                <Text className="mt-3 text-center text-base text-foreground">
+                  {vectorError
+                    ? 'Something went wrong while searching.'
+                    : 'No results found.'}
+                </Text>
+                <Text className="mt-1 text-center text-sm text-muted-foreground">
+                  {vectorError
+                    ? 'Please try again in a moment.'
+                    : 'Try a different search term.'}
+                </Text>
               </View>
             )}
           </ScrollView>
