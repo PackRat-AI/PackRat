@@ -1,10 +1,11 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
+import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
 import type { Guide } from '../types';
@@ -111,8 +112,23 @@ export const GuidesListScreen = () => {
     );
   };
 
+  const listHeader = () => {
+    return (
+      <TabScreen useLegacySafeAreaView>
+        <CategoriesFilter
+          data={categories}
+          onFilter={handleCategoryChange}
+          activeFilter={selectedCategory}
+          error={categoriesError}
+          retry={refetchCategories}
+          className="px-4 pb-2"
+        />
+      </TabScreen>
+    );
+  };
+
   return (
-    <SafeAreaView>
+    <>
       <LargeTitleHeader
         title={t('guides.guides')}
         searchBar={{
@@ -122,19 +138,11 @@ export const GuidesListScreen = () => {
         }}
       />
 
-      <CategoriesFilter
-        data={categories}
-        onFilter={handleCategoryChange}
-        activeFilter={selectedCategory}
-        error={categoriesError}
-        retry={refetchCategories}
-        className="px-4 pb-2"
-      />
-
       <FlatList
         data={guides}
         keyExtractor={(item) => item.id}
         renderItem={renderGuide}
+        ListHeaderComponent={listHeader}
         contentContainerStyle={{ paddingHorizontal: 16, flexGrow: 1 }}
         refreshControl={
           <RefreshControl
@@ -152,6 +160,6 @@ export const GuidesListScreen = () => {
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
       />
-    </SafeAreaView>
+    </>
   );
 };
