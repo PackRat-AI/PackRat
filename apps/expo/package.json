@@ -26,6 +26,7 @@
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bunx rimraf .expo node_modules ios android",
+    "doctor:react": "bunx expo-doctor",
     "format": "biome format --write",
     "ios": "APP_VARIANT=development expo run:ios",
     "lint": "biome check --write",

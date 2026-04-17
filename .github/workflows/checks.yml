@@ -51,7 +51,6 @@ jobs:
         run: bun scripts/format/sort-package-json.ts --check
       - name: Check types
         run: bun check-types
-      - name: Run Expo Doctor
-        run: bunx expo-doctor
-        working-directory: apps/expo
+      - name: Run React Doctor checks
+        run: bun check:react-doctor
         continue-on-error: true
