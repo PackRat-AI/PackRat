@@ -302,7 +302,7 @@ function ListFooterComponent() {
                   style: 'cancel',
                 },
                 {
-                  text: t('auth.logOut'),
+                  text: t('auth.proceedLogOut'),
                   style: 'destructive',
                   onPress: handleSignOut,
                 },

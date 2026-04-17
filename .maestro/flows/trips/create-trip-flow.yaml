@@ -37,9 +37,13 @@ appId: ${APP_ID}
           text: "Description"
       - inputText: "Created by Maestro E2E test"
 # Tap neutral area to dismiss keyboard on iOS multiline field
-- tapOn:
-    text: "TRIP DETAILS"
-- waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "TRIP DETAILS"
+      - waitForAnimationToEnd
 - hideKeyboard
 - waitForAnimationToEnd
 
