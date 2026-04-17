@@ -7,11 +7,18 @@ const ROOT = join(import.meta.dir, '..', '..');
 const APPS_DIR = join(ROOT, 'apps');
 const PACKAGE_JSON = 'package.json';
 const SCRIPT_NAME = 'doctor:react';
+// Width for the main summary table divider.
 const DIVIDER = '─'.repeat(52);
+// Max line length shown in failed-check row summaries.
 const MAX_SUMMARY_LENGTH = 80;
+// Keep room for a one-character ellipsis when truncating summary lines.
 const SUMMARY_TRUNCATE_LENGTH = 77;
+// Fixed width for app-name column alignment.
 const DISPLAY_NAME_WIDTH = 32;
+// Header always prints two lines: title + divider.
 const HEADER_LINES = 2;
+// Divider used for full failed output sections.
+const FAILURE_OUTPUT_DIVIDER = '─'.repeat(72);
 
 interface AppPackageJson {
   name?: string;
@@ -165,6 +172,8 @@ for (const app of runnableApps) {
 
 const results = await Promise.all(runnableApps.map(runDoctor));
 
+// Move cursor up by "header + app rows" then clear to end of screen.
+// ANSI: \x1b[<n>A => cursor up N lines, \x1b[0J => clear to end.
 process.stdout.write(`\x1b[${getCursorResetLineCount(runnableApps.length)}A\x1b[0J`);
 console.log('\nReact Doctor checks');
 console.log(DIVIDER);
@@ -191,9 +200,9 @@ if (failed.length > 0) {
     const output = `${result.stdout}\n${result.stderr}`.trim();
     if (!output) continue;
 
-    console.log(`\n${'─'.repeat(72)}`);
+    console.log(`\n${FAILURE_OUTPUT_DIVIDER}`);
     console.log(`Output from ${result.displayName}`);
-    console.log(`${'─'.repeat(72)}`);
+    console.log(`${FAILURE_OUTPUT_DIVIDER}`);
     console.log(output);
   }
 }
