@@ -12,7 +12,12 @@ The release workflow (`release-production.yml`) triggers automatically when:
 - A pull request from a `release/*` branch is merged to the `main` branch
 - Changes affect the mobile app (`apps/expo/**`) or shared packages (`packages/**`)
 - The workflow file itself is modified
-- The merge commit message contains "release/" (standard GitHub merge format)
+
+The workflow uses a `pull_request` trigger with type `closed` and checks for:
+- `github.event.pull_request.merged == true` (PR was merged, not just closed)
+- `startsWith(github.event.pull_request.head.ref, 'release/')` (source branch starts with `release/`)
+
+This approach works reliably regardless of merge strategy (merge commit, squash, or rebase).
 
 You can also trigger it manually via GitHub Actions UI using the "Run workflow" button.
 

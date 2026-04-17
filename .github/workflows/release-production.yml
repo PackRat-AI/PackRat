@@ -1,7 +1,8 @@
 name: Release Production Builds
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
     paths:
@@ -11,7 +12,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: release-production-${{ github.ref }}
+  group: release-production
   cancel-in-progress: false
 
 permissions:
@@ -22,13 +23,13 @@ jobs:
     name: Build iOS Production
     runs-on: macos-14
     timeout-minutes: 90
-    # Only run on the main repository (not forks) and when merging from release/* branches
+    # Only run on the main repository (not forks) and when a release/* PR is merged to main
     if: |
       github.repository == 'PackRat-AI/PackRat' &&
       (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'push' &&
-        startsWith(github.event.head_commit.message, 'Merge pull request') &&
-        contains(github.event.head_commit.message, 'release/')))
+       (github.event_name == 'pull_request' &&
+        github.event.pull_request.merged == true &&
+        startsWith(github.event.pull_request.head.ref, 'release/')))
 
     steps:
       - name: Checkout repository
@@ -85,13 +86,13 @@ jobs:
     name: Build Android Production
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    # Only run on the main repository (not forks) and when merging from release/* branches
+    # Only run on the main repository (not forks) and when a release/* PR is merged to main
     if: |
       github.repository == 'PackRat-AI/PackRat' &&
       (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'push' &&
-        startsWith(github.event.head_commit.message, 'Merge pull request') &&
-        contains(github.event.head_commit.message, 'release/')))
+       (github.event_name == 'pull_request' &&
+        github.event.pull_request.merged == true &&
+        startsWith(github.event.pull_request.head.ref, 'release/')))
 
     steps:
       - name: Checkout repository
