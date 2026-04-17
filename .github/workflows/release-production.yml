@@ -57,6 +57,11 @@ jobs:
             --no-wait \
             --json > build-ios.json
           BUILD_ID=$(jq -r '.[0].id' build-ios.json)
+          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
+            echo "::error::Failed to extract iOS build ID from EAS response"
+            cat build-ios.json
+            exit 1
+          fi
           echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
           echo "iOS build started: $BUILD_ID"
         env:
@@ -73,6 +78,11 @@ jobs:
             --no-wait \
             --json > build-android.json
           BUILD_ID=$(jq -r '.[0].id' build-android.json)
+          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
+            echo "::error::Failed to extract Android build ID from EAS response"
+            cat build-android.json
+            exit 1
+          fi
           echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
           echo "Android build started: $BUILD_ID"
         env:
@@ -129,13 +139,25 @@ jobs:
           echo "iOS submission: $IOS_STATUS"
           echo "Android submission: $ANDROID_STATUS"
           
-          if [ "$IOS_STATUS" != "success" ] && [ "$ANDROID_STATUS" != "success" ]; then
-            echo "::error::Both iOS and Android submissions failed"
+          # Count successes
+          SUCCESS_COUNT=0
+          if [ "$IOS_STATUS" = "success" ]; then
+            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+          fi
+          if [ "$ANDROID_STATUS" = "success" ]; then
+            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+          fi
+          
+          # Report based on outcomes
+          if [ $SUCCESS_COUNT -eq 0 ]; then
+            echo "::error::Both iOS and Android submissions failed or were skipped"
             exit 1
-          elif [ "$IOS_STATUS" != "success" ] && [ "$ANDROID_STATUS" = "success" ]; then
-            echo "::warning::iOS submission failed, but Android succeeded"
-          elif [ "$ANDROID_STATUS" != "success" ] && [ "$IOS_STATUS" = "success" ]; then
-            echo "::warning::Android submission failed, but iOS succeeded"
+          elif [ $SUCCESS_COUNT -eq 1 ]; then
+            if [ "$IOS_STATUS" = "success" ]; then
+              echo "::warning::Android submission did not succeed (status: $ANDROID_STATUS), but iOS succeeded"
+            else
+              echo "::warning::iOS submission did not succeed (status: $IOS_STATUS), but Android succeeded"
+            fi
           else
             echo "::notice::Both platforms submitted successfully"
           fi
