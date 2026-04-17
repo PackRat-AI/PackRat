@@ -2,7 +2,7 @@
 
 ## Overview
 
-The PackRat mobile app uses an automated release pipeline that triggers production builds and submissions to the App Store and Google Play Store when merging from `release/*` branches to the `main` branch.
+The PackRat mobile app uses an automated release pipeline that builds apps locally using GitHub Actions runners and submits them to the App Store and Google Play Store when merging from `release/*` branches to the `main` branch.
 
 ## How It Works
 
@@ -16,25 +16,38 @@ The release workflow (`release-production.yml`) triggers automatically when:
 
 You can also trigger it manually via GitHub Actions UI using the "Run workflow" button.
 
+### Build Architecture
+
+The workflow uses **local builds** instead of EAS cloud builds:
+- **iOS builds** run on `macos-14` runners with native tooling
+- **Android builds** run on `ubuntu-latest` runners with Docker
+- Both builds execute in parallel for faster completion
+- Artifacts are uploaded and shared between jobs
+
 ### Workflow Steps
 
-1. **Build Phase** (Parallel)
-   - Starts iOS production build on EAS (Expo Application Services)
-   - Starts Android production build on EAS
-   - Both builds run simultaneously in the cloud
+1. **Build Phase** (Parallel Jobs)
+   - **build-ios**: Runs `eas build --local` on macOS for iOS
+   - **build-android**: Runs `eas build --local` on Linux for Android
+   - Each job uploads the built artifact (.ipa or .aab)
 
-2. **Wait Phase** (Parallel)
-   - Waits for iOS build to complete
-   - Waits for Android build to complete
+2. **Submit Phase** (Sequential, after builds complete)
+   - Downloads both iOS and Android artifacts
+   - Submits iOS build to App Store Connect using `eas submit --path`
+   - Submits Android build to Google Play Console using `eas submit --path`
+   - Reports submission status
 
-3. **Submission Phase** (Sequential)
-   - Submits the iOS build to Apple App Store Connect
-   - Submits the Android build to Google Play Console
-   - Both submissions use the latest successful builds
-
-4. **Reporting**
-   - Creates a deployment summary with build IDs and submission status
+3. **Reporting**
+   - Creates a deployment summary with build and submission status
    - Logs any failures as warnings or errors
+
+### Benefits of Local Builds
+
+- **Cost**: No EAS cloud build credits required
+- **Speed**: Builds run directly on GitHub runners (parallel execution)
+- **Control**: Full visibility into build process and logs
+- **Artifacts**: Builds stored as GitHub artifacts (30-day retention)
+- **Flexibility**: Easy to debug and modify build steps
 
 ## EAS Configuration
 
@@ -123,20 +136,20 @@ If you need to release without merging to `main`:
 
 ### Using EAS CLI Locally
 
+You can also build and submit locally from your development machine:
+
 ```bash
 cd apps/expo
 
-# Build for iOS
-bun run build:production:ios:eas
+# Build locally for iOS (requires macOS with Xcode)
+eas build --platform ios --profile production --local
 
-# Build for Android
-bun run build:production:android:eas
+# Build locally for Android (requires Docker)
+eas build --platform android --profile production --local
 
-# Submit iOS
-bun run submit:ios
-
-# Submit Android
-bun run submit:android
+# Submit with path to local build
+eas submit --platform ios --path ./path/to/build.ipa --profile production
+eas submit --platform android --path ./path/to/build.aab --profile production
 ```
 
 ## Troubleshooting
@@ -145,11 +158,13 @@ bun run submit:android
 
 If a build fails:
 1. Check the workflow run logs in GitHub Actions
-2. Review the EAS build logs at https://expo.dev/accounts/[account]/projects/packrat/builds
+2. Review the build output in the job logs
 3. Common issues:
    - Native dependency mismatches
    - Invalid credentials
    - Code signing issues (iOS)
+   - Insufficient runner disk space
+   - Docker issues (Android on Linux)
 
 ### Submission Failures
 
@@ -158,6 +173,7 @@ If submission fails but build succeeds:
 2. Verify secrets are correctly set
 3. For iOS: Ensure Apple Developer account is in good standing
 4. For Android: Check Play Console service account permissions
+5. Verify artifact was properly downloaded in the submit job
 
 ### Partial Success
 
@@ -172,17 +188,17 @@ The workflow uses `continue-on-error: true` for submissions, so:
 
 - View all releases: Actions → Release Production Builds
 - Each run shows:
-  - Build IDs
+  - Build job status (iOS and Android separately)
+  - Artifact uploads
   - Submission status
   - Links to stores
 
-### EAS Dashboard
+### Build Artifacts
 
-Visit https://expo.dev to:
-- Monitor build progress
-- Download builds
-- View build logs
-- Check submission status
+- Artifacts are stored in GitHub Actions for 30 days
+- Download from the workflow run page
+- iOS: `.ipa` file
+- Android: `.aab` file
 
 ### App Store Connect / Play Console
 
