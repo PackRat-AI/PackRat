@@ -1,0 +1,116 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
+      custom_version:
+        description: 'Custom version (optional, overrides version_type if provided, e.g., 2.1.0)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v6
+        with:
+          ref: development
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+          cache: true
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine version argument
+        id: version_arg
+        run: |
+          if [ -n "${{ inputs.custom_version }}" ]; then
+            echo "arg=${{ inputs.custom_version }}" >> $GITHUB_OUTPUT
+            echo "Using custom version: ${{ inputs.custom_version }}"
+          else
+            echo "arg=${{ inputs.version_type }}" >> $GITHUB_OUTPUT
+            echo "Using version type: ${{ inputs.version_type }}"
+          fi
+
+      - name: Get new version (dry run)
+        id: get_version
+        run: |
+          # Run bun pm version to get what the new version would be
+          NEW_VERSION=$(bun pm version ${{ steps.version_arg.outputs.arg }} --no-git-tag-version | tr -d '\n' | sed 's/^v//')
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "New version will be: ${NEW_VERSION}"
+          # Reset changes from dry run
+          git checkout -- .
+
+      - name: Create release branch
+        run: |
+          BRANCH_NAME="release/${{ steps.get_version.outputs.new_version }}"
+          git checkout -b "${BRANCH_NAME}"
+          echo "Created branch: ${BRANCH_NAME}"
+
+      - name: Bump version
+        run: |
+          bun bump ${{ steps.version_arg.outputs.arg }}
+
+      - name: Push release branch
+        run: |
+          BRANCH_NAME="release/${{ steps.get_version.outputs.new_version }}"
+          git push origin "${BRANCH_NAME}"
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH_NAME="release/${{ steps.get_version.outputs.new_version }}"
+          VERSION="${{ steps.get_version.outputs.new_version }}"
+          
+          gh pr create \
+            --title "chore: release v${VERSION}" \
+            --body "🚀 Automated version bump to v${VERSION}
+
+          ## Changes
+          - Bumped all package versions to ${VERSION}
+          - Updated app.config.ts version
+          
+          ## Version Type
+          ${{ steps.version_arg.outputs.arg }}
+          
+          This PR was created automatically by the version-bump workflow.
+          
+          **Next Steps:**
+          1. Review the version changes
+          2. Merge this PR to main
+          3. The merge will trigger a deployment" \
+            --base main \
+            --head "${BRANCH_NAME}" \
+            --reviewer copilot,mikib0,Isthisanmol,andrew-bierman
