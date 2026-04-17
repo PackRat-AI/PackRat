@@ -66,6 +66,7 @@ jobs:
         id: get_version
         run: |
           # Run bun pm version to get what the new version would be
+          # Note: This modifies package.json, so we reset it after capturing the version
           NEW_VERSION=$(bun pm version ${{ steps.version_arg.outputs.arg }} --no-git-tag-version | tr -d '\n' | sed 's/^v//')
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
           echo "New version will be: ${NEW_VERSION}"
@@ -80,6 +81,8 @@ jobs:
 
       - name: Bump version
         run: |
+          # Uses custom monorepo script defined in package.json "bump" script
+          # This updates all workspace package.json files and app.config.ts
           bun bump ${{ steps.version_arg.outputs.arg }}
 
       - name: Push release branch
@@ -94,6 +97,8 @@ jobs:
           BRANCH_NAME="release/${{ steps.get_version.outputs.new_version }}"
           VERSION="${{ steps.get_version.outputs.new_version }}"
           
+          # Note: Reviewers are specified as per project requirements
+          # Update these usernames if team membership changes
           gh pr create \
             --title "chore: release v${VERSION}" \
             --body "🚀 Automated version bump to v${VERSION}
