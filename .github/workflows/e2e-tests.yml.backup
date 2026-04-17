@@ -3,30 +3,6 @@ name: E2E Tests (Maestro)
 on:
   push:
     branches: [main, development]
-
-      - name: Provision ephemeral E2E database
-        id: provision-db
-        run: bun run --filter @packrat/api e2e:provision-db
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-          NEON_PARENT_BRANCH_ID: ${{ secrets.NEON_PARENT_BRANCH_ID || 'main' }}
-          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-
-      - name: Start isolated E2E API server
-        id: start-api
-        run: |
-          # Start API in background
-          bun run --filter @packrat/api e2e:start-api &
-          API_PID=$!
-          echo "api_pid=$API_PID" >> "$GITHUB_OUTPUT"
-          
-          # Give it time to start
-          sleep 10
-        env:
-          E2E_DATABASE_URL: ${{ steps.provision-db.outputs.connection_uri }}
-          E2E_API_PORT: 8787
     paths:
       - "apps/expo/**"
       - ".maestro/**"
@@ -111,30 +87,6 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
-
-      - name: Provision ephemeral E2E database
-        id: provision-db
-        run: bun run --filter @packrat/api e2e:provision-db
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-          NEON_PARENT_BRANCH_ID: ${{ secrets.NEON_PARENT_BRANCH_ID || 'main' }}
-          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-
-      - name: Start isolated E2E API server
-        id: start-api
-        run: |
-          # Start API in background
-          bun run --filter @packrat/api e2e:start-api &
-          API_PID=$!
-          echo "api_pid=$API_PID" >> "$GITHUB_OUTPUT"
-          
-          # Give it time to start
-          sleep 10
-        env:
-          E2E_DATABASE_URL: ${{ steps.provision-db.outputs.connection_uri }}
-          E2E_API_PORT: 8787
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -264,6 +216,13 @@ jobs:
         run: |
           xcrun simctl install "$SIMULATOR_UDID" "$APP_PATH"
 
+      - name: Seed E2E test user in dev DB
+        run: bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
       - name: Run Maestro E2E tests
         run: |
           mkdir -p test-results
@@ -296,26 +255,6 @@ jobs:
           path: ~/.maestro/tests/
           retention-days: 7
 
-
-      - name: Stop E2E API server
-        if: always()
-        run: |
-          if [ -n "$API_PID" ]; then
-            kill "$API_PID" 2>/dev/null || true
-          fi
-        env:
-          API_PID: ${{ steps.start-api.outputs.api_pid }}
-
-      - name: Cleanup ephemeral E2E database
-        if: always()
-        run: |
-          if [ -n "$BRANCH_INFO_FILE" ]; then
-            bun run --filter @packrat/api e2e:cleanup-db "$BRANCH_INFO_FILE" || true
-          fi
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          BRANCH_INFO_FILE: ${{ steps.provision-db.outputs.branch_info_file }}
-
       - name: Shutdown simulator
         if: always()
         run: |
@@ -330,20 +269,25 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     env:
-      # The E2E user is created in the isolated ephemeral database branch
+      # The E2E user is upserted into the dev DB by the seed step below,
+      # so both email and password are driven entirely by repo secrets.
       TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
     steps:
       - name: Verify E2E secrets are configured
         run: |
           missing=()
           [ -z "${TEST_EMAIL:-}" ]          && missing+=("E2E_TEST_EMAIL")
           [ -z "${TEST_PASSWORD:-}" ]       && missing+=("E2E_TEST_PASSWORD")
-          [ -z "${NEON_API_KEY:-}" ]        && missing+=("NEON_API_KEY")
-          [ -z "${NEON_PROJECT_ID:-}" ]     && missing+=("NEON_PROJECT_ID")
+          [ -z "${NEON_DATABASE_URL:-}" ]   && missing+=("NEON_DEV_DATABASE_URL")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Required E2E secrets missing: ${missing[*]}"
+            echo "::error::Set them via: gh secret set <NAME> --repo PackRat-AI/PackRat"
+            exit 1
+          fi
         env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
 
       - name: Free disk space on runner
         # Gradle builds of this RN app fail with OOM / no-space on stock
@@ -395,30 +339,6 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
-
-      - name: Provision ephemeral E2E database
-        id: provision-db
-        run: bun run --filter @packrat/api e2e:provision-db
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-          NEON_PARENT_BRANCH_ID: ${{ secrets.NEON_PARENT_BRANCH_ID || 'main' }}
-          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-
-      - name: Start isolated E2E API server
-        id: start-api
-        run: |
-          # Start API in background
-          bun run --filter @packrat/api e2e:start-api &
-          API_PID=$!
-          echo "api_pid=$API_PID" >> "$GITHUB_OUTPUT"
-          
-          # Give it time to start
-          sleep 10
-        env:
-          E2E_DATABASE_URL: ${{ steps.provision-db.outputs.connection_uri }}
-          E2E_API_PORT: 8787
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -502,6 +422,13 @@ jobs:
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
+      - name: Seed E2E test user in dev DB
+        run: bun run --filter @packrat/api db:seed:e2e-user
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DEV_DATABASE_URL }}
+          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
       - name: Run Maestro E2E tests on Android emulator
         uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
@@ -543,22 +470,3 @@ jobs:
           name: android-e2e-failure-artifacts
           path: ~/.maestro/tests/
           retention-days: 7
-
-      - name: Stop E2E API server
-        if: always()
-        run: |
-          if [ -n "$API_PID" ]; then
-            kill "$API_PID" 2>/dev/null || true
-          fi
-        env:
-          API_PID: ${{ steps.start-api.outputs.api_pid }}
-
-      - name: Cleanup ephemeral E2E database
-        if: always()
-        run: |
-          if [ -n "$BRANCH_INFO_FILE" ]; then
-            bun run --filter @packrat/api e2e:cleanup-db "$BRANCH_INFO_FILE" || true
-          fi
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          BRANCH_INFO_FILE: ${{ steps.provision-db.outputs.branch_info_file }}
