@@ -1,4 +1,12 @@
-import { Backpack, LayoutDashboard, type LucideIcon, Package, Users } from 'lucide-react';
+import {
+  Activity,
+  Backpack,
+  BarChart2,
+  LayoutDashboard,
+  type LucideIcon,
+  Package,
+  Users,
+} from 'lucide-react';
 
 export interface NavItem {
   title: string;
@@ -27,5 +35,15 @@ export const navItems: NavItem[] = [
     title: 'Catalog',
     href: '/dashboard/catalog',
     icon: Package,
+  },
+  {
+    title: 'Platform Analytics',
+    href: '/dashboard/analytics/platform',
+    icon: Activity,
+  },
+  {
+    title: 'Gear Catalog Analytics',
+    href: '/dashboard/analytics/catalog',
+    icon: BarChart2,
   },
 ];
