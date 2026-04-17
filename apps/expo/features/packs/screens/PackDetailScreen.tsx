@@ -6,6 +6,7 @@ import { Icon } from 'expo-app/components/Icon';
 import { Chip } from 'expo-app/components/initial/Chip';
 import { WeightBadge } from 'expo-app/components/initial/WeightBadge';
 import { isAuthed } from 'expo-app/features/auth/store';
+import { ActivityPicker } from 'expo-app/features/packs/components/ActivityPicker';
 import { GapAnalysisModal } from 'expo-app/features/packs/components/GapAnalysisModal';
 import { PackItemCard } from 'expo-app/features/packs/components/PackItemCard';
 import { LocationPicker } from 'expo-app/features/weather/components';
@@ -24,26 +25,29 @@ import AddPackItemActions from '../components/AddPackItemActions';
 import { usePackDetailsFromApi, usePackDetailsFromStore, usePackGapAnalysis } from '../hooks';
 import { usePackOwnershipCheck } from '../hooks/usePackOwnershipCheck';
 import { packingModeStore } from '../store/packingMode';
-import type { Pack, PackItem } from '../types';
+import type { Pack, PackCategory, PackItem } from '../types';
 
 export function PackDetailScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  const isOwnedByUser = usePackOwnershipCheck(id as string);
+  const isOwnedByUser = usePackOwnershipCheck(id);
 
   const DEFAULT_TAB = 'all';
   const [activeTab, setActiveTab] = useState(DEFAULT_TAB);
   const [isPackingMode, setIsPackingMode] = useState(false);
   const [packedItems, setPackedItems] = useState<Record<string, boolean>>(
-    obs(packingModeStore, id as string).get() || {},
+    obs(packingModeStore, id).get() || {},
   );
 
   const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [isActivityPickerOpen, setIsActivityPickerOpen] = useState(false);
   const [isGapAnalysisModalVisible, setIsGapAnalysisModalVisible] = useState(false);
 
   const [location, setLocation] = useState<WeatherLocation>();
+  const [selectedActivity, setSelectedActivity] = useState<PackCategory>();
 
   const {
     mutate: analyzeGaps,
@@ -52,7 +56,7 @@ export function PackDetailScreen() {
     reset: resetAnalysis,
   } = usePackGapAnalysis();
 
-  const packFromStore = usePackDetailsFromStore(id as string);
+  const packFromStore = usePackDetailsFromStore(id);
   const {
     pack: packFromApi,
     isLoading,
@@ -60,7 +64,7 @@ export function PackDetailScreen() {
     error,
     refetch,
   } = usePackDetailsFromApi({
-    id: id as string,
+    id,
     enabled: !isOwnedByUser,
   });
 
@@ -96,7 +100,7 @@ export function PackDetailScreen() {
   };
 
   const handleSavePackingMode = () => {
-    obs(packingModeStore, id as string).set({ ...packedItems });
+    obs(packingModeStore, id).set({ ...packedItems });
     setIsPackingMode(false);
     setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
     Burnt.toast({
@@ -109,10 +113,10 @@ export function PackDetailScreen() {
     const exitPackingMode = () => {
       setIsPackingMode(!isPackingMode);
       setActiveTab(DEFAULT_TAB); // Reset tab when toggling mode
-      setPackedItems(obs(packingModeStore, id as string).get() || {});
+      setPackedItems(obs(packingModeStore, id).get() || {});
     };
 
-    const packingState = obs(packingModeStore, id as string).get() || {};
+    const packingState = obs(packingModeStore, id).get() || {};
 
     if (
       Object.entries(packedItems).every(([key, val]) =>
@@ -181,19 +185,43 @@ export function PackDetailScreen() {
       });
     }
 
+    // Start with activity selection
+    setSelectedActivity(undefined);
+    setLocation(undefined);
+    setIsActivityPickerOpen(true);
+  };
+
+  const handleActivitySelect = (activity: PackCategory) => {
+    setSelectedActivity(activity);
+    setIsActivityPickerOpen(false);
+    // After activity selection, show location picker
+    setIsLocationPickerOpen(true);
+  };
+
+  const handleActivitySkip = () => {
+    setSelectedActivity(undefined);
+    setIsActivityPickerOpen(false);
+    // If skipping activity, still show location picker (but location becomes required)
     setIsLocationPickerOpen(true);
   };
 
   const handleLocationSelect = (location?: WeatherLocation) => {
     setLocation(location);
     setIsLocationPickerOpen(false);
+
+    // Validation: either activity or location must be selected
+    if (!selectedActivity && !location) {
+      // This shouldn't happen due to UI constraints, but handle gracefully
+      return;
+    }
+
     resetAnalysis();
     setIsGapAnalysisModalVisible(true);
     analyzeGaps({
-      packId: id as string,
+      packId: id,
       context: {
         destination: location?.name,
-        tripType: pack.category,
+        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
         startDate: new Date().toISOString().split('T')[0],
       },
     });
@@ -202,10 +230,10 @@ export function PackDetailScreen() {
   const handleRetryAnalysis = () => {
     resetAnalysis();
     analyzeGaps({
-      packId: id as string,
+      packId: id,
       context: {
         destination: location?.name,
-        tripType: pack.category,
+        tripType: selectedActivity || pack.category, // Use selected activity or fallback to pack category
         startDate: new Date().toISOString().split('T')[0],
       },
     });
@@ -679,13 +707,24 @@ export function PackDetailScreen() {
       <AddPackItemActions ref={addItemActionsRef} packId={pack.id} />
 
       {/* Gap Analysis Flow*/}
+      <ActivityPicker
+        title="Select Activity"
+        subtitle="Choose the activity type for more accurate gear recommendations."
+        open={isActivityPickerOpen}
+        onClose={() => setIsActivityPickerOpen(false)}
+        skipText="Skip"
+        onSkip={handleActivitySkip}
+        selectText="Continue"
+        onSelect={handleActivitySelect}
+        defaultActivity={pack.category}
+      />
       <LocationPicker
         subtitle="Get enhanced analysis with weather and terrain data."
         title="Select Location"
         open={isLocationPickerOpen}
         onClose={() => setIsLocationPickerOpen(false)}
-        skipText="Skip"
-        onSkip={handleLocationSelect}
+        skipText={selectedActivity ? 'Skip' : undefined} // Only allow skip if activity was selected
+        onSkip={selectedActivity ? handleLocationSelect : undefined} // Only allow skip if activity was selected
         selectText="Continue"
         onSelect={handleLocationSelect}
       />
@@ -694,6 +733,7 @@ export function PackDetailScreen() {
         onClose={() => setIsGapAnalysisModalVisible(false)}
         pack={pack}
         location={location?.name}
+        activity={selectedActivity}
         analysis={gapAnalysis || null}
         isLoading={isAnalyzing}
         onRetry={handleRetryAnalysis}
