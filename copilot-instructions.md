@@ -228,9 +228,8 @@ packages/
   api/            Cloudflare Workers API (Hono, Drizzle, OpenAPI)
   ui/             Shared UI components (requires GitHub auth)
 .github/
-  workflows/      CI/CD pipelines
+  workflows/      CI/CD pipelines (incl. copilot-setup-steps.yml)
   scripts/        Build and configuration scripts
-  copilot-setup-steps.yml   Copilot coding agent environment setup
 ```
 
 ### Key Files
@@ -244,6 +243,7 @@ packages/
 | `apps/expo/app.config.js` | Expo configuration |
 | `biome.json` | Formatting and linting rules |
 | `lefthook.yml` | Git hooks (auto-runs `bun format` on pre-push) |
+| `.github/workflows/copilot-setup-steps.yml` | Copilot cloud agent environment bootstrap |
 
 ## CI/CD Workflows
 
@@ -259,6 +259,16 @@ packages/
 - `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` - GitHub PAT with `read:packages` scope
 - Cloudflare API tokens for deployment
 - Database URL and API keys (see `.env.example`)
+
+**Copilot Cloud Agent Environment:**
+
+The Copilot coding agent uses `.github/workflows/copilot-setup-steps.yml` to bootstrap its environment. The setup:
+1. Validates `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` is present (fail-fast, actionable error)
+2. Pins Node.js 24 and Bun 1.3.10 to match `package.json` engine constraints
+3. Installs all workspace dependencies via `bun install --frozen-lockfile`
+4. Smoke-checks Biome, TypeScript, and Wrangler CLIs
+
+To enable Copilot, add `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` (PAT with `read:packages`) as a secret in **Settings → Environments → copilot → Secrets**.
 
 ## Validation
 
