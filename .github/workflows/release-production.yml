@@ -1,0 +1,161 @@
+name: Release Production Builds
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/expo/**'
+      - 'packages/**'
+      - '.github/workflows/release-production.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: release-production-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-submit:
+    name: Build & Submit to Stores
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    # Only run on the main repository (not forks)
+    if: github.repository == 'PackRat-AI/PackRat'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+          cache: true
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS production app
+        id: build-ios
+        run: |
+          cd apps/expo
+          eas build \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --no-wait \
+            --json > build-ios.json
+          BUILD_ID=$(cat build-ios.json | bun -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'))[0].id)")
+          echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "iOS build started: $BUILD_ID"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android production app
+        id: build-android
+        run: |
+          cd apps/expo
+          eas build \
+            --platform android \
+            --profile production \
+            --non-interactive \
+            --no-wait \
+            --json > build-android.json
+          BUILD_ID=$(cat build-android.json | bun -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'))[0].id)")
+          echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "Android build started: $BUILD_ID"
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Wait for iOS build to complete
+        run: |
+          cd apps/expo
+          echo "Waiting for iOS build ${{ steps.build-ios.outputs.build_id }} to complete..."
+          eas build:wait ${{ steps.build-ios.outputs.build_id }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Wait for Android build to complete
+        run: |
+          cd apps/expo
+          echo "Waiting for Android build ${{ steps.build-android.outputs.build_id }} to complete..."
+          eas build:wait ${{ steps.build-android.outputs.build_id }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit iOS to App Store
+        id: submit-ios
+        run: |
+          cd apps/expo
+          eas submit \
+            --platform ios \
+            --latest \
+            --profile production \
+            --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.EXPO_APPLE_APP_SPECIFIC_PASSWORD }}
+        continue-on-error: true
+
+      - name: Submit Android to Play Store
+        id: submit-android
+        run: |
+          cd apps/expo
+          eas submit \
+            --platform android \
+            --latest \
+            --profile production \
+            --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        continue-on-error: true
+
+      - name: Check submission results
+        run: |
+          IOS_STATUS="${{ steps.submit-ios.outcome }}"
+          ANDROID_STATUS="${{ steps.submit-android.outcome }}"
+          
+          echo "iOS submission: $IOS_STATUS"
+          echo "Android submission: $ANDROID_STATUS"
+          
+          if [ "$IOS_STATUS" = "failure" ] && [ "$ANDROID_STATUS" = "failure" ]; then
+            echo "::error::Both iOS and Android submissions failed"
+            exit 1
+          elif [ "$IOS_STATUS" = "failure" ]; then
+            echo "::warning::iOS submission failed, but Android succeeded"
+          elif [ "$ANDROID_STATUS" = "failure" ]; then
+            echo "::warning::Android submission failed, but iOS succeeded"
+          else
+            echo "::notice::Both platforms submitted successfully"
+          fi
+
+      - name: Report deployment status
+        if: always()
+        run: |
+          echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **iOS Build ID:** ${{ steps.build-ios.outputs.build_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Android Build ID:** ${{ steps.build-android.outputs.build_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Submission Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **iOS:** ${{ steps.submit-ios.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Android:** ${{ steps.submit-android.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Store Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [App Store](https://apps.apple.com/app/id6499243187)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Google Play](https://play.google.com/store/apps/details?id=com.packratai.mobile)" >> $GITHUB_STEP_SUMMARY
