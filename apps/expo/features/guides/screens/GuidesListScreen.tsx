@@ -1,20 +1,10 @@
 import { LargeTitleHeader, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
-import { Icon } from 'expo-app/components/Icon';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Keyboard,
-  Pressable,
-  RefreshControl,
-  SafeAreaView,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, View } from 'react-native';
 import { GuideCard } from '../components/GuideCard';
 import { useGuideCategories, useGuides, useSearchGuides } from '../hooks';
 import type { Guide } from '../types';
@@ -123,29 +113,14 @@ export const GuidesListScreen = () => {
 
   return (
     <SafeAreaView>
-      <LargeTitleHeader title={t('guides.guides')} />
-      <View className="px-4 py-2 bg-background">
-        <View className="flex-row items-center bg-card rounded-lg px-3">
-          <TextInput
-            value={searchQuery}
-            onChangeText={handleSearch}
-            placeholder={t('guides.searchPlaceholder')}
-            className="flex-1 py-2 text-foreground"
-          />
-
-          {searchQuery.length > 0 && (
-            <Pressable
-              onPress={() => {
-                setSearchQuery('');
-                Keyboard.dismiss();
-              }}
-              hitSlop={10}
-            >
-              <Icon name="close-circle" size={18} color={colors.grey2} />
-            </Pressable>
-          )}
-        </View>
-      </View>
+      <LargeTitleHeader
+        title={t('guides.guides')}
+        searchBar={{
+          iosHideWhenScrolling: true,
+          onChangeText: handleSearch,
+          placeholder: t('guides.searchPlaceholder'),
+        }}
+      />
 
       <CategoriesFilter
         data={categories}

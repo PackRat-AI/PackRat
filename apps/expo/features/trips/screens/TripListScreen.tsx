@@ -1,12 +1,13 @@
-import { LargeTitleHeader } from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
 import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { TripCard } from '../components/TripCard';
 import { useTrips } from '../hooks';
 import type { Trip } from '../types';
@@ -50,8 +51,8 @@ export function TripsListScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const trips = useTrips();
+  const searchBarRef = useRef<LargeTitleSearchBarMethods>(null);
   const [searchValue, setSearchValue] = useState('');
-  const { colors } = useColorScheme();
 
   const filteredTrips = useMemo(() => {
     const trimmed = searchValue.trim();
@@ -99,32 +100,26 @@ export function TripsListScreen() {
   };
 
   return (
-    <TabScreen useLegacySafeAreaView>
+    <TabScreen>
       <LargeTitleHeader
         title={t('trips.trips')}
         backVisible={false}
+        searchBar={{
+          iosHideWhenScrolling: true,
+          ref: asNonNullableRef(searchBarRef),
+          onChangeText: setSearchValue,
+          content: (
+            <View className="flex-1 items-center justify-center">
+              <Text>{t('trips.searchTrips')}</Text>
+            </View>
+          ),
+        }}
         rightView={() => (
           <View className="flex-row items-center mr-2 ml-2">
             <CreateTripIconButton />
           </View>
         )}
       />
-      <View className="px-4 py-2 bg-background">
-        <View className="flex-row items-center bg-card rounded-lg px-3">
-          <TextInput
-            value={searchValue}
-            onChangeText={setSearchValue}
-            placeholder={t('trips.searchTrips')}
-            className="flex-1 py-2 text-foreground"
-          />
-
-          {searchValue.length > 0 && (
-            <Pressable onPress={() => setSearchValue('')} hitSlop={10}>
-              <Icon name="close-circle" size={18} color={colors.grey} />
-            </Pressable>
-          )}
-        </View>
-      </View>
 
       <FlatList
         data={filteredTrips}

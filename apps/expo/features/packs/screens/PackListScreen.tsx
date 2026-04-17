@@ -15,6 +15,7 @@ import { activeFilterAtom, searchValueAtom } from 'expo-app/features/packs/packL
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
 import { TestIds } from 'expo-app/lib/testIds';
+import { asNonNullableRef } from 'expo-app/lib/utils/asNonNullableRef';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useAtom } from 'jotai';
 import { useCallback, useRef, useState } from 'react';
@@ -24,7 +25,6 @@ import {
   RefreshControl,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -184,117 +184,111 @@ export function PackListScreen() {
       <LargeTitleHeader
         title={t('navigation.packs')}
         backVisible={false}
+        searchBar={{
+          iosHideWhenScrolling: true,
+          ref: asNonNullableRef(searchBarRef),
+          onChangeText(text) {
+            setSearchValue(text);
+          },
+          content: searchValue ? (
+            <SearchResults
+              results={filteredPacks || []}
+              searchValue={searchValue}
+              onResultPress={handleSearchResultPress}
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center">
+              <Text>{t('packs.searchPacks')}</Text>
+            </View>
+          ),
+        }}
         rightView={() => (
           <View className="flex-row items-center mr-2 ml-2">
             <CreatePackIconButton />
           </View>
         )}
       />
-      <View className="px-4 py-2 bg-background">
-        <View className="flex-row items-center bg-card rounded-lg px-3">
-          <TextInput
-            value={searchValue}
-            onChangeText={setSearchValue}
-            placeholder={t('packs.searchPacks')}
-            className="flex-1 py-2 text-foreground"
-          />
 
-          {searchValue.length > 0 && (
-            <Pressable onPress={() => setSearchValue('')} hitSlop={10}>
-              <Icon name="close-circle" size={18} color={colors.grey2} />
-            </Pressable>
-          )}
-        </View>
-      </View>
-
-      {searchValue ? (
-        <SearchResults
-          results={filteredPacks || []}
-          searchValue={searchValue}
-          onResultPress={handleSearchResultPress}
-        />
-      ) : (
-        <FlatList
-          data={filteredPacks}
-          keyExtractor={(pack) => pack.id}
-          stickyHeaderIndices={[0]}
-          renderItem={({ item: pack }) => (
-            <View className="px-4 pt-4">
-              <PackCard
-                pack={pack}
-                onPress={handlePackPress}
-                showDuplicateButton={selectedTypeIndex === ALL_PACKS_INDEX}
-              />
-            </View>
-          )}
-          refreshControl={
-            selectedTypeIndex === ALL_PACKS_INDEX ? (
-              <RefreshControl
-                refreshing={allPacksQuery.isRefetching}
-                onRefresh={allPacksQuery.refetch}
-                tintColor={colors.primary}
-              />
-            ) : undefined
-          }
-          ListHeaderComponent={
-            <View className="bg-background">
-              {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
-              {isAuthenticated && (
-                <View className="px-4">
-                  <SegmentedControl
-                    enabled={isAuthenticated}
-                    values={['My Packs', 'All Packs']}
-                    selectedIndex={selectedTypeIndex}
-                    onIndexChange={(index) => {
-                      setSelectedTypeIndex(index);
-                    }}
-                  />
-                </View>
-              )}
-              <View className="bg-background px-4 py-2">
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
-                  {filterOptions.map(renderFilterChip)}
-                </ScrollView>
+      <FlatList
+        data={filteredPacks}
+        keyExtractor={(pack) => pack.id}
+        stickyHeaderIndices={[0]}
+        renderItem={({ item: pack }) => (
+          <View className="px-4 pt-4">
+            <PackCard
+              pack={pack}
+              onPress={handlePackPress}
+              showDuplicateButton={selectedTypeIndex === ALL_PACKS_INDEX}
+            />
+          </View>
+        )}
+        refreshControl={
+          selectedTypeIndex === ALL_PACKS_INDEX ? (
+            <RefreshControl
+              refreshing={allPacksQuery.isRefetching}
+              onRefresh={allPacksQuery.refetch}
+              tintColor={colors.primary}
+            />
+          ) : undefined
+        }
+        ListHeaderComponent={
+          <View className="bg-background">
+            {!isAuthenticated && <SyncBanner title={t('packs.syncBanner')} />}
+            {isAuthenticated && (
+              <View className="px-4">
+                <SegmentedControl
+                  enabled={isAuthenticated}
+                  values={['My Packs', 'All Packs']}
+                  selectedIndex={selectedTypeIndex}
+                  onIndexChange={(index) => {
+                    setSelectedTypeIndex(index);
+                  }}
+                />
               </View>
-              {selectedTypeIndex === USER_PACKS_INDEX && (
-                <View className="px-6 py-2">
-                  <Text className="flex-1 text-muted-foreground">
-                    {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
-                  </Text>
-                </View>
-              )}
+            )}
+            <View className="bg-background px-4 py-2">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-1">
+                {filterOptions.map(renderFilterChip)}
+              </ScrollView>
             </View>
-          }
-          ListEmptyComponent={
-            selectedTypeIndex === ALL_PACKS_INDEX ? (
-              renderAllPacksEmptyState()
-            ) : (
-              <View className="flex-1 items-center justify-center p-8">
-                <View className="mb-4 rounded-full bg-muted p-4">
-                  <Icon name="cog-outline" size={32} color="text-muted-foreground" />
-                </View>
-                <Text className="mb-1 text-lg font-medium text-foreground">
-                  {t('packs.noPacksFound')}
+            {selectedTypeIndex === USER_PACKS_INDEX && (
+              <View className="px-6 py-2">
+                <Text className="flex-1 text-muted-foreground">
+                  {filteredPacks?.length || 0} {filteredPacks?.length === 1 ? 'pack' : 'packs'}
                 </Text>
-                <Text className="mb-6 text-center text-muted-foreground">
-                  {activeFilter === 'all'
-                    ? "You haven't created or found any public packs yet."
-                    : `You don't have any ${activeFilter} packs.`}
-                </Text>
-                <TouchableOpacity
-                  className="rounded-lg bg-primary px-4 py-2"
-                  onPress={handleCreatePack}
-                >
-                  <Text className="font-medium text-primary-foreground">
-                    {t('packs.createNewPack')}
-                  </Text>
-                </TouchableOpacity>
               </View>
-            )
-          }
-          contentContainerStyle={{ flexGrow: 1 }}
-        />
-      )}
+            )}
+          </View>
+        }
+        ListEmptyComponent={
+          selectedTypeIndex === ALL_PACKS_INDEX ? (
+            renderAllPacksEmptyState()
+          ) : (
+            <View className="flex-1 items-center justify-center p-8">
+              <View className="mb-4 rounded-full bg-muted p-4">
+                <Icon name="cog-outline" size={32} color="text-muted-foreground" />
+              </View>
+              <Text className="mb-1 text-lg font-medium text-foreground">
+                {t('packs.noPacksFound')}
+              </Text>
+              <Text className="mb-6 text-center text-muted-foreground">
+                {activeFilter === 'all'
+                  ? "You haven't created or found any public packs yet."
+                  : `You don't have any ${activeFilter} packs.`}
+              </Text>
+              <TouchableOpacity
+                className="rounded-lg bg-primary px-4 py-2"
+                onPress={handleCreatePack}
+              >
+                <Text className="font-medium text-primary-foreground">
+                  {t('packs.createNewPack')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )
+        }
+        contentContainerStyle={{ flexGrow: 1 }}
+      />
     </TabScreen>
   );
 }
