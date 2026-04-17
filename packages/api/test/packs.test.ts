@@ -220,8 +220,7 @@ describe('Packs Routes', () => {
     });
 
     it('prevents updating other users packs', async () => {
-      // Create a different user and their pack
-      // NOTE: seedTestUser also sets currentTestUser; capture testUser.id before this call
+      // Create a different user and their pack; capture testUser.id before seeding the other user
       const testUserId = testUser.id;
       const otherUser = await seedTestUser({
         email: 'other@example.com',
@@ -267,8 +266,7 @@ describe('Packs Routes', () => {
     });
 
     it('prevents deleting other users packs', async () => {
-      // Create a different user and their pack
-      // NOTE: seedTestUser also sets currentTestUser; capture testUser.id before this call
+      // Create a different user and their pack; capture testUser.id before seeding the other user
       const testUserId = testUser.id;
       const otherUser = await seedTestUser({
         email: 'another@example.com',

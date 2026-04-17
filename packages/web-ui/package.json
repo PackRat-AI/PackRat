@@ -1,6 +1,6 @@
 {
   "name": "@packrat/web-ui",
-  "version": "2.0.19",
+  "version": "2.0.20",
   "private": true,
   "type": "module",
   "exports": {
@@ -64,11 +64,18 @@
   "devDependencies": {
     "@types/react": "~19.1.10",
     "react": "catalog:",
+    "recharts": "3.8.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {
     "react": "catalog:",
+    "recharts": "3.8.1",
     "tailwindcss": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "recharts": {
+      "optional": true
+    }
   }
 }

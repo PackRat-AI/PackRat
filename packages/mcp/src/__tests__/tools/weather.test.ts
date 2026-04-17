@@ -59,7 +59,7 @@ describe('weather tools', () => {
     });
 
     it('returns error result when search API fails', async () => {
-      vi.mocked(api.get).mockRejectedValue(new ApiError('Bad Request', 400, {}));
+      vi.mocked(api.get).mockRejectedValue(new ApiError('Bad Request', { status: 400, body: {} }));
 
       const result = await callTool({
         tools,
@@ -100,12 +100,12 @@ describe('weather tools', () => {
       expect(tools.has('get_season_suggestions')).toBe(true);
     });
 
-    it('calls GET /season-suggestions with destination param', async () => {
+    it('calls POST /season-suggestions with destination', async () => {
       const suggestions = {
         destination: 'Patagonia',
         seasons: [{ name: 'Summer', months: 'Dec-Feb', conditions: 'best' }],
       };
-      vi.mocked(api.get).mockResolvedValue(suggestions);
+      vi.mocked(api.post).mockResolvedValue(suggestions);
 
       const result = await callTool({
         tools,
@@ -113,12 +113,12 @@ describe('weather tools', () => {
         args: { destination: 'Patagonia' },
       });
 
-      expect(api.get).toHaveBeenCalledWith('/season-suggestions', { destination: 'Patagonia' });
+      expect(api.post).toHaveBeenCalledWith('/season-suggestions', { destination: 'Patagonia' });
       expect(parseToolResult(result)).toEqual(suggestions);
     });
 
     it('returns error when API fails', async () => {
-      vi.mocked(api.get).mockRejectedValue(new Error('Timeout'));
+      vi.mocked(api.post).mockRejectedValue(new Error('Timeout'));
 
       const result = await callTool({
         tools,
