@@ -56,7 +56,7 @@ jobs:
             --non-interactive \
             --no-wait \
             --json > build-ios.json
-          BUILD_ID=$(bun -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'))[0].id)" < build-ios.json)
+          BUILD_ID=$(jq -r '.[0].id' build-ios.json)
           echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
           echo "iOS build started: $BUILD_ID"
         env:
@@ -72,7 +72,7 @@ jobs:
             --non-interactive \
             --no-wait \
             --json > build-android.json
-          BUILD_ID=$(bun -e "console.log(JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'))[0].id)" < build-android.json)
+          BUILD_ID=$(jq -r '.[0].id' build-android.json)
           echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
           echo "Android build started: $BUILD_ID"
         env:
@@ -129,12 +129,12 @@ jobs:
           echo "iOS submission: $IOS_STATUS"
           echo "Android submission: $ANDROID_STATUS"
           
-          if [ "$IOS_STATUS" = "failure" ] && [ "$ANDROID_STATUS" = "failure" ]; then
+          if [ "$IOS_STATUS" != "success" ] && [ "$ANDROID_STATUS" != "success" ]; then
             echo "::error::Both iOS and Android submissions failed"
             exit 1
-          elif [ "$IOS_STATUS" = "failure" ]; then
+          elif [ "$IOS_STATUS" != "success" ] && [ "$ANDROID_STATUS" = "success" ]; then
             echo "::warning::iOS submission failed, but Android succeeded"
-          elif [ "$ANDROID_STATUS" = "failure" ]; then
+          elif [ "$ANDROID_STATUS" != "success" ] && [ "$IOS_STATUS" = "success" ]; then
             echo "::warning::Android submission failed, but iOS succeeded"
           else
             echo "::notice::Both platforms submitted successfully"
