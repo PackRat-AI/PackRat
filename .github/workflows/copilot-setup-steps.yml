@@ -14,6 +14,8 @@ jobs:
   # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
   copilot-setup-steps:
     runs-on: ubuntu-latest
+    # Secrets for this repo are stored in the 'copilot' environment.
+    environment: copilot
 
     # Minimum permissions needed. Copilot will be given its own token for its operations.
     permissions:
@@ -48,11 +50,19 @@ jobs:
         with:
           node-version: "24"
 
-      # Pin Bun to the exact version declared in package.json#packageManager (1.3.10).
-      - name: Set up Bun 1.3.10
+      # Read the Bun version from package.json#packageManager to keep a single source of truth.
+      - name: Read Bun version from package.json
+        id: bun-version
+        run: |
+          BUN_VERSION=$(jq -r '.packageManager' package.json | sed 's/bun@//')
+          echo "version=$BUN_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved Bun version: $BUN_VERSION"
+
+      # Pin Bun to the exact version declared in package.json#packageManager.
+      - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.10"
+          bun-version: ${{ steps.bun-version.outputs.version }}
           cache: true
 
       # Sanity-check that the runner satisfies the repo's engine constraints.
