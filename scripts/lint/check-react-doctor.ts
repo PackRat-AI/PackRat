@@ -8,6 +8,10 @@ const APPS_DIR = join(ROOT, 'apps');
 const PACKAGE_JSON = 'package.json';
 const SCRIPT_NAME = 'doctor:react';
 const DIVIDER = '─'.repeat(52);
+const MAX_SUMMARY_LENGTH = 80;
+const SUMMARY_TRUNCATE_LENGTH = 77;
+const DISPLAY_NAME_WIDTH = 32;
+const HEADER_LINES = 2;
 
 interface AppPackageJson {
   name?: string;
@@ -102,7 +106,9 @@ function firstSummaryLine(output: string): string {
     .find((line) => line.length > 0);
 
   if (!trimmed) return '';
-  return trimmed.length > 80 ? `${trimmed.slice(0, 77)}…` : trimmed;
+  return trimmed.length > MAX_SUMMARY_LENGTH
+    ? `${trimmed.slice(0, SUMMARY_TRUNCATE_LENGTH)}…`
+    : trimmed;
 }
 
 async function runDoctor(app: ReactAppConfig): Promise<ReactAppRunResult> {
@@ -155,13 +161,13 @@ for (const app of runnableApps) {
 
 const results = await Promise.all(runnableApps.map(runDoctor));
 
-process.stdout.write(`\x1b[${runnableApps.length + 2}A\x1b[0J`);
+process.stdout.write(`\x1b[${getCursorResetLineCount(runnableApps.length)}A\x1b[0J`);
 console.log('\nReact Doctor checks');
 console.log(DIVIDER);
 
 for (const result of results) {
   const icon = result.passed ? '✅' : '❌';
-  const name = padRight(result.displayName, 32);
+  const name = padRight(result.displayName, DISPLAY_NAME_WIDTH);
   let row = `${icon}  ${name} (${formatDuration(result.durationMs)})`;
 
   if (!result.passed) {
@@ -189,3 +195,6 @@ if (failed.length > 0) {
 }
 
 process.exit(failed.length > 0 ? 1 : 0);
+function getCursorResetLineCount(appCount: number): number {
+  return appCount + HEADER_LINES;
+}
