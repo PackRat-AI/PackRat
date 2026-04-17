@@ -18,8 +18,71 @@ permissions:
   contents: read
 
 jobs:
-  build-and-submit:
-    name: Build & Submit to Stores
+  build-ios:
+    name: Build iOS Production
+    runs-on: macos-14
+    timeout-minutes: 90
+    # Only run on the main repository (not forks) and when merging from release/* branches
+    if: |
+      github.repository == 'PackRat-AI/PackRat' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' &&
+        startsWith(github.event.head_commit.message, 'Merge pull request') &&
+        contains(github.event.head_commit.message, 'release/')))
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+          cache: true
+
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS production app locally
+        id: build-ios
+        run: |
+          cd apps/expo
+          echo "Starting local iOS build..."
+          eas build \
+            --platform ios \
+            --profile production \
+            --local \
+            --non-interactive \
+            --output build-output.ipa
+          
+          # Verify the build output exists
+          if [ ! -f "build-output.ipa" ]; then
+            echo "::error::iOS build artifact not found"
+            exit 1
+          fi
+          
+          echo "iOS build completed successfully"
+          ls -lh build-output.ipa
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-production-build
+          path: apps/expo/build-output.ipa
+          retention-days: 30
+
+  build-android:
+    name: Build Android Production
     runs-on: ubuntu-latest
     timeout-minutes: 90
     # Only run on the main repository (not forks) and when merging from release/* branches
@@ -51,63 +114,74 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Build iOS production app
-        id: build-ios
-        run: |
-          cd apps/expo
-          eas build \
-            --platform ios \
-            --profile production \
-            --non-interactive \
-            --no-wait \
-            --json > build-ios.json
-          BUILD_ID=$(jq -r '.[0].id' build-ios.json)
-          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
-            echo "::error::Failed to extract iOS build ID from EAS response"
-            cat build-ios.json
-            exit 1
-          fi
-          echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
-          echo "iOS build started: $BUILD_ID"
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Build Android production app
+      - name: Build Android production app locally
         id: build-android
         run: |
           cd apps/expo
+          echo "Starting local Android build..."
           eas build \
             --platform android \
             --profile production \
+            --local \
             --non-interactive \
-            --no-wait \
-            --json > build-android.json
-          BUILD_ID=$(jq -r '.[0].id' build-android.json)
-          if [ -z "$BUILD_ID" ] || [ "$BUILD_ID" = "null" ]; then
-            echo "::error::Failed to extract Android build ID from EAS response"
-            cat build-android.json
+            --output build-output.aab
+          
+          # Verify the build output exists
+          if [ ! -f "build-output.aab" ]; then
+            echo "::error::Android build artifact not found"
             exit 1
           fi
-          echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
-          echo "Android build started: $BUILD_ID"
+          
+          echo "Android build completed successfully"
+          ls -lh build-output.aab
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Wait for iOS build to complete
-        run: |
-          cd apps/expo
-          echo "Waiting for iOS build ${{ steps.build-ios.outputs.build_id }} to complete..."
-          eas build:wait ${{ steps.build-ios.outputs.build_id }}
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-production-build
+          path: apps/expo/build-output.aab
+          retention-days: 30
 
-      - name: Wait for Android build to complete
-        run: |
-          cd apps/expo
-          echo "Waiting for Android build ${{ steps.build-android.outputs.build_id }} to complete..."
-          eas build:wait ${{ steps.build-android.outputs.build_id }}
+  submit:
+    name: Submit to Stores
+    runs-on: ubuntu-latest
+    needs: [build-ios, build-android]
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+          cache: true
+
+      - name: Install dependencies
         env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Download iOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-production-build
+          path: ./ios-artifact
+
+      - name: Download Android artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-production-build
+          path: ./android-artifact
 
       - name: Submit iOS to App Store
         id: submit-ios
@@ -115,7 +189,7 @@ jobs:
           cd apps/expo
           eas submit \
             --platform ios \
-            --latest \
+            --path ../../ios-artifact/build-output.ipa \
             --profile production \
             --non-interactive
         env:
@@ -129,7 +203,7 @@ jobs:
           cd apps/expo
           eas submit \
             --platform android \
-            --latest \
+            --path ../../android-artifact/build-output.aab \
             --profile production \
             --non-interactive
         env:
@@ -177,8 +251,8 @@ jobs:
             echo "**Author:** ${{ github.actor }}"
             echo ""
             echo "### Build Status"
-            echo "- **iOS Build ID:** ${{ steps.build-ios.outputs.build_id }}"
-            echo "- **Android Build ID:** ${{ steps.build-android.outputs.build_id }}"
+            echo "- **iOS:** Built locally on macOS runner"
+            echo "- **Android:** Built locally on Linux runner with Docker"
             echo ""
             echo "### Submission Status"
             echo "- **iOS:** ${{ steps.submit-ios.outcome }}"
