@@ -3,30 +3,6 @@ name: E2E Tests (Maestro)
 on:
   push:
     branches: [main, development]
-
-      - name: Provision ephemeral E2E database
-        id: provision-db
-        run: bun run --filter @packrat/api e2e:provision-db
-        env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
-          NEON_PARENT_BRANCH_ID: ${{ secrets.NEON_PARENT_BRANCH_ID || 'main' }}
-          E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
-          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
-
-      - name: Start isolated E2E API server
-        id: start-api
-        run: |
-          # Start API in background
-          bun run --filter @packrat/api e2e:start-api &
-          API_PID=$!
-          echo "api_pid=$API_PID" >> "$GITHUB_OUTPUT"
-          
-          # Give it time to start
-          sleep 10
-        env:
-          E2E_DATABASE_URL: ${{ steps.provision-db.outputs.connection_uri }}
-          E2E_API_PORT: 8787
     paths:
       - "apps/expo/**"
       - ".maestro/**"
@@ -122,19 +98,16 @@ jobs:
           E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
+      - name: Create vars file from secret
+        run: |
+          echo "${{ secrets.DEV_VARS_BASE64 }}" | base64 -d > packages/api/.dev.vars-ci
+
       - name: Start isolated E2E API server
         id: start-api
-        run: |
-          # Start API in background
-          bun run --filter @packrat/api e2e:start-api &
-          API_PID=$!
-          echo "api_pid=$API_PID" >> "$GITHUB_OUTPUT"
-          
-          # Give it time to start
-          sleep 10
+        run: bun run --filter @packrat/api e2e:start-api &
         env:
           E2E_DATABASE_URL: ${{ steps.provision-db.outputs.connection_uri }}
-          E2E_API_PORT: 8787
+          E2E_VARS_FILE: packages/api/.dev.vars-ci
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8
@@ -406,19 +379,16 @@ jobs:
           E2E_TEST_EMAIL: ${{ env.TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
 
+      - name: Create vars file from secret
+        run: |
+          echo "${{ secrets.DEV_VARS_BASE64 }}" | base64 -d > packages/api/.dev.vars-ci
+
       - name: Start isolated E2E API server
         id: start-api
-        run: |
-          # Start API in background
-          bun run --filter @packrat/api e2e:start-api &
-          API_PID=$!
-          echo "api_pid=$API_PID" >> "$GITHUB_OUTPUT"
-          
-          # Give it time to start
-          sleep 10
+        run: bun run --filter @packrat/api e2e:start-api &
         env:
           E2E_DATABASE_URL: ${{ steps.provision-db.outputs.connection_uri }}
-          E2E_API_PORT: 8787
+          E2E_VARS_FILE: packages/api/.dev.vars-ci
 
       - name: Setup Expo
         uses: expo/expo-github-action@v8

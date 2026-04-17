@@ -164,10 +164,14 @@ bun run --filter @packrat/api e2e:expose-api
 Add these secrets to your GitHub repository:
 
 ```bash
+# Core E2E secrets
 gh secret set NEON_API_KEY --repo PackRat-AI/PackRat
 gh secret set NEON_PROJECT_ID --repo PackRat-AI/PackRat
 gh secret set E2E_TEST_EMAIL --repo PackRat-AI/PackRat
 gh secret set E2E_TEST_PASSWORD --repo PackRat-AI/PackRat
+
+# Vars file content (run this from PackRat root)
+base64 -i packages/api/.dev.vars | gh secret set DEV_VARS_BASE64 --repo PackRat-AI/PackRat
 
 # Optional
 gh secret set NEON_PARENT_BRANCH_ID --repo PackRat-AI/PackRat  # Default: main
@@ -203,11 +207,16 @@ The current workflow (`.github/workflows/e2e-tests.yml`) already integrates data
 For full isolation with local API + tunnel:
 
 ```yaml
+- name: Create vars file from secret
+  run: |
+    echo "${{ secrets.DEV_VARS_BASE64 }}" | base64 -d > packages/api/.dev.vars-ci
+
 - name: Start isolated E2E API server
   id: start-api
   run: bun run --filter @packrat/api e2e:start-api &
   env:
     E2E_DATABASE_URL: ${{ steps.provision-db.outputs.connection_uri }}
+    E2E_VARS_FILE: packages/api/.dev.vars-ci
 
 - name: Expose API via tunnel
   id: expose-api
