@@ -111,10 +111,14 @@ function firstSummaryLine(output: string): string {
     : trimmed;
 }
 
+function getCursorResetLineCount(appCount: number): number {
+  return appCount + HEADER_LINES;
+}
+
 async function runDoctor(app: ReactAppConfig): Promise<ReactAppRunResult> {
   const startedAt = performance.now();
-  const proc = Bun.spawn(['bun', 'run', '--cwd', join(APPS_DIR, app.appDirName), SCRIPT_NAME], {
-    cwd: ROOT,
+  const proc = Bun.spawn(['bun', 'run', SCRIPT_NAME], {
+    cwd: join(APPS_DIR, app.appDirName),
     stdout: 'pipe',
     stderr: 'pipe',
   });
@@ -195,6 +199,3 @@ if (failed.length > 0) {
 }
 
 process.exit(failed.length > 0 ? 1 : 0);
-function getCursorResetLineCount(appCount: number): number {
-  return appCount + HEADER_LINES;
-}
