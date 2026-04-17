@@ -22,8 +22,13 @@ jobs:
     name: Build & Submit to Stores
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    # Only run on the main repository (not forks)
-    if: github.repository == 'PackRat-AI/PackRat'
+    # Only run on the main repository (not forks) and when merging from release/* branches
+    if: |
+      github.repository == 'PackRat-AI/PackRat' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' &&
+        startsWith(github.event.head_commit.message, 'Merge pull request') &&
+        contains(github.event.head_commit.message, 'release/')))
 
     steps:
       - name: Checkout repository
