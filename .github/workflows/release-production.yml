@@ -189,7 +189,7 @@ jobs:
           cd apps/expo
           eas submit \
             --platform ios \
-            --path ../../ios-artifact/build-output.ipa \
+            --path ${{ github.workspace }}/ios-artifact/build-output.ipa \
             --profile production \
             --non-interactive
         env:
@@ -203,7 +203,7 @@ jobs:
           cd apps/expo
           eas submit \
             --platform android \
-            --path ../../android-artifact/build-output.aab \
+            --path ${{ github.workspace }}/android-artifact/build-output.aab \
             --profile production \
             --non-interactive
         env:
