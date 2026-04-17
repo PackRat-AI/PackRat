@@ -2,16 +2,17 @@
 
 ## Overview
 
-The PackRat mobile app uses an automated release pipeline that triggers production builds and submissions to the App Store and Google Play Store whenever code is merged to the `main` branch.
+The PackRat mobile app uses an automated release pipeline that triggers production builds and submissions to the App Store and Google Play Store when merging from `release/*` branches to the `main` branch.
 
 ## How It Works
 
 ### Trigger
 
 The release workflow (`release-production.yml`) triggers automatically when:
-- Code is pushed/merged to the `main` branch
+- A pull request from a `release/*` branch is merged to the `main` branch
 - Changes affect the mobile app (`apps/expo/**`) or shared packages (`packages/**`)
 - The workflow file itself is modified
+- The merge commit message contains "release/" (standard GitHub merge format)
 
 You can also trigger it manually via GitHub Actions UI using the "Run workflow" button.
 
@@ -202,9 +203,11 @@ Build numbers are automatically incremented by EAS using the `autoIncrement` set
 
 ### Updating Version
 
-1. Update version in `package.json`
-2. Commit and merge to `main`
-3. Workflow automatically builds with new version
+1. Create a release branch: `git checkout -b release/v2.0.21`
+2. Update version in `package.json`
+3. Commit changes: `git commit -am "Bump version to 2.0.21"`
+4. Push and create PR to `main`
+5. Merge the PR - workflow automatically builds with new version
 
 ## Concurrency Control
 
@@ -222,21 +225,26 @@ This ensures:
 
 ## Best Practices
 
-1. **Test Before Release**
+1. **Use Release Branches**
+   - Always create a `release/*` branch for production releases
+   - Example: `release/v2.0.21` or `release/2024-04-17`
+   - Merges from non-release branches to main will NOT trigger deployment
+
+2. **Test Before Release**
    - Run E2E tests before merging to main
    - Use preview builds for QA
 
-2. **Monitor Submissions**
+3. **Monitor Submissions**
    - Check GitHub Actions for completion
    - Verify builds appear in store dashboards
    - Monitor for rejection notifications
 
-3. **Hotfix Process**
-   - For urgent fixes, create a hotfix branch from main
+4. **Hotfix Process**
+   - For urgent fixes, create a release branch: `release/hotfix-v2.0.22`
    - Make minimal changes
    - Merge to main to trigger release
 
-4. **Version Bumping**
+5. **Version Bumping**
    - Increment version for user-facing changes
    - Follow semantic versioning (MAJOR.MINOR.PATCH)
    - Coordinate with release notes
