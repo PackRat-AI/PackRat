@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -34,10 +36,6 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install
-
-      - name: Fetch PR base branch
-        if: github.event_name == 'pull_request'
-        run: git fetch --no-tags --prune --depth=1 origin ${{ github.base_ref }}
 
       - name: Check Types
         run: bun check-types:affected

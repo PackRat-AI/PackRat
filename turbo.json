@@ -9,9 +9,7 @@
     "check-types": {
       "dependsOn": ["^check-types"]
     },
-    "test": {
-      "outputs": ["coverage/**"]
-    },
+    "test": {},
     "test:unit:coverage": {
       "outputs": ["coverage/**"]
     },

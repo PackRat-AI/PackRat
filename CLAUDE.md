@@ -66,7 +66,7 @@ Task orchestration via `turbo.json`. Handles parallel execution and local cachin
 
 **Defined tasks:** `build`, `check-types`, `test`, `test:unit:coverage`, `test:coverage`, `lint`, `dev`, `deploy`
 
-**Dependency ordering** (`dependsOn: ["^<task>"]`): turbo builds/checks packages before the apps that depend on them. e.g. `@packrat/web-ui` builds before `apps/admin`, `apps/guides`, `apps/landing`.
+**Dependency ordering** (`dependsOn: ["^<task>"]`): turbo runs a dependency's task before the dependent app's task, but only when both workspaces define that task. e.g. `turbo run check-types` orders `@packrat/web-ui` before the Next.js apps because both define `check-types`; `turbo run build` orders builds by dependency but skips packages without a `build` script.
 
 **Filtering** — run tasks for a subset of packages:
 ```bash

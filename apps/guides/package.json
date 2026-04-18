@@ -5,6 +5,7 @@
   "scripts": {
     "build": "bun run build-content && next build",
     "build-content": "bun run scripts/build-content.ts",
+    "check-types": "tsc --noEmit",
     "clean": "bunx rimraf .next node_modules out",
     "demo-enhancement": "bun run scripts/demo-enhancement.ts",
     "dev": "next dev",
