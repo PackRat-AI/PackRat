@@ -55,3 +55,5 @@ jobs:
         run: bunx expo-doctor
         working-directory: apps/expo
         continue-on-error: true
+      - name: Run React Doctor checks
+        run: bun check:react-doctor

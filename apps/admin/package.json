@@ -6,6 +6,7 @@
     "build": "next build",
     "clean": "bunx rimraf node_modules .next out",
     "dev": "next dev --port 3002",
+    "doctor:react": "bunx react-doctor",
     "lint": "next lint",
     "start": "next start"
   },
