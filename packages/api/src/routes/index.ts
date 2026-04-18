@@ -7,6 +7,7 @@ import { catalogRoutes } from './catalog';
 import { chatRoutes } from './chat';
 import { feedRoutes } from './feed';
 import { guidesRoutes } from './guides';
+import { oauthMetadataHandler, oauthRoutes } from './oauth';
 import { packsRoutes } from './packs';
 import { packTemplatesRoutes } from './packTemplates';
 import { seasonSuggestionsRoutes } from './seasonSuggestions';
@@ -22,6 +23,10 @@ const publicRoutes = new OpenAPIHono();
 // Mount public routes
 publicRoutes.route('/auth', authRoutes);
 publicRoutes.route('/admin', adminRoutes);
+publicRoutes.route('/oauth', oauthRoutes);
+
+// RFC 8414 — OAuth Authorization Server Metadata
+publicRoutes.get('/.well-known/oauth-authorization-server', (c) => oauthMetadataHandler(c));
 
 const protectedRoutes = new OpenAPIHono();
 

@@ -14,6 +14,18 @@ const main = defineCommand({
     description: 'Outdoor gear analytics powered by DuckDB',
   },
   subCommands: {
+    // Authentication (OAuth 2.1 Device Code flow)
+    auth: () =>
+      Promise.resolve(
+        defineCommand({
+          meta: { name: 'auth', description: 'Manage PackRat authentication' },
+          subCommands: {
+            login: () => import('./commands/login').then((m) => m.default),
+            logout: () => import('./commands/logout').then((m) => m.default),
+          },
+        }),
+      ),
+
     // Core search & discovery
     search: () => import('./commands/search').then((m) => m.default),
     compare: () => import('./commands/compare').then((m) => m.default),

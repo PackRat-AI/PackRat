@@ -692,3 +692,122 @@ export type NewPostComment = InferInsertModel<typeof postComments>;
 
 export type CommentLike = InferSelectModel<typeof commentLikes>;
 export type NewCommentLike = InferInsertModel<typeof commentLikes>;
+
+// ── OAuth 2.1 Authorization Server tables ─────────────────────────────────────
+
+/** Registered OAuth 2.1 clients (public or confidential). */
+export const oauthClients = pgTable('oauth_clients', {
+  id: text('id').primaryKey(), // slug, e.g. "packrat-cli"
+  name: text('name').notNull(),
+  secret: text('secret'), // null for public clients (CLI, mobile)
+  redirectUris: jsonb('redirect_uris').$type<string[]>().notNull().default([]),
+  grants: jsonb('grants').$type<string[]>().notNull().default([]),
+  scopes: jsonb('scopes').$type<string[]>().notNull().default([]),
+  isPublic: boolean('is_public').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+/** Short-lived PKCE authorization codes (Authorization Code + PKCE flow). */
+export const oauthAuthorizationCodes = pgTable('oauth_authorization_codes', {
+  id: serial('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  clientId: text('client_id')
+    .notNull()
+    .references(() => oauthClients.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  redirectUri: text('redirect_uri').notNull(),
+  scope: text('scope').notNull().default(''),
+  codeChallenge: text('code_challenge').notNull(),
+  codeChallengeMethod: text('code_challenge_method').notNull().default('S256'),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+/** Long-lived opaque OAuth access tokens (prefixed `oa_`). */
+export const oauthAccessTokens = pgTable('oauth_access_tokens', {
+  id: serial('id').primaryKey(),
+  token: text('token').notNull().unique(),
+  clientId: text('client_id')
+    .notNull()
+    .references(() => oauthClients.id, { onDelete: 'cascade' }),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  scope: text('scope').notNull().default(''),
+  expiresAt: timestamp('expires_at').notNull(),
+  revokedAt: timestamp('revoked_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+/** Device Authorization Grant codes (CLI / MCP flow). */
+export const oauthDeviceCodes = pgTable('oauth_device_codes', {
+  id: serial('id').primaryKey(),
+  deviceCode: text('device_code').notNull().unique(),
+  userCode: text('user_code').notNull().unique(),
+  clientId: text('client_id')
+    .notNull()
+    .references(() => oauthClients.id, { onDelete: 'cascade' }),
+  scope: text('scope').notNull().default(''),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at').notNull(),
+  verifiedAt: timestamp('verified_at'),
+  interval: integer('interval').notNull().default(5),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// OAuth relations
+export const oauthClientsRelations = relations(oauthClients, ({ many }) => ({
+  authorizationCodes: many(oauthAuthorizationCodes),
+  accessTokens: many(oauthAccessTokens),
+  deviceCodes: many(oauthDeviceCodes),
+}));
+
+export const oauthAuthorizationCodesRelations = relations(oauthAuthorizationCodes, ({ one }) => ({
+  client: one(oauthClients, {
+    fields: [oauthAuthorizationCodes.clientId],
+    references: [oauthClients.id],
+  }),
+  user: one(users, {
+    fields: [oauthAuthorizationCodes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const oauthAccessTokensRelations = relations(oauthAccessTokens, ({ one }) => ({
+  client: one(oauthClients, {
+    fields: [oauthAccessTokens.clientId],
+    references: [oauthClients.id],
+  }),
+  user: one(users, {
+    fields: [oauthAccessTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export const oauthDeviceCodesRelations = relations(oauthDeviceCodes, ({ one }) => ({
+  client: one(oauthClients, {
+    fields: [oauthDeviceCodes.clientId],
+    references: [oauthClients.id],
+  }),
+  user: one(users, {
+    fields: [oauthDeviceCodes.userId],
+    references: [users.id],
+  }),
+}));
+
+// OAuth type exports
+export type OAuthClient = InferSelectModel<typeof oauthClients>;
+export type NewOAuthClient = InferInsertModel<typeof oauthClients>;
+
+export type OAuthAuthorizationCode = InferSelectModel<typeof oauthAuthorizationCodes>;
+export type NewOAuthAuthorizationCode = InferInsertModel<typeof oauthAuthorizationCodes>;
+
+export type OAuthAccessToken = InferSelectModel<typeof oauthAccessTokens>;
+export type NewOAuthAccessToken = InferInsertModel<typeof oauthAccessTokens>;
+
+export type OAuthDeviceCode = InferSelectModel<typeof oauthDeviceCodes>;
+export type NewOAuthDeviceCode = InferInsertModel<typeof oauthDeviceCodes>;

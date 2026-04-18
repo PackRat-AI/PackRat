@@ -63,6 +63,7 @@
         "apps/expo/atoms/atomWith*.ts",
         "apps/expo/features/weather/atoms/locationsAtoms.ts",
         "packages/api/src/routes/admin/index.ts",
+        "packages/api/src/routes/oauth/index.ts",
         "packages/api/src/services/r2-bucket.ts",
         "packages/api/src/services/etl/processCatalogEtl.ts",
         "packages/api/test/guides.test.ts",
