@@ -63,6 +63,7 @@
     "concurrently": "^8.2.2",
     "drizzle-orm": "^0.45.2",
     "typed-htmx": "^0.3.1",
+    "typescript": "catalog:",
     "vitest": "~3.1.4",
     "wrangler": "^4.21.2"
   }
