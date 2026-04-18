@@ -14,6 +14,9 @@ jobs:
   # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
   copilot-setup-steps:
     runs-on: ubuntu-latest
+    # Skip on fork PRs: environment secrets are not available to forked repositories,
+    # so the secret-validation step would always fail for external contributors.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
     # Secrets for this repo are stored in the 'copilot' environment.
     environment: copilot
 
