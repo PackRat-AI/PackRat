@@ -6,6 +6,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import '../global.css';
 
+import { clientEnvs } from '@packrat/env/expo-client';
 import { Alert, type AlertMethods } from '@packrat-ai/nativewindui';
 import * as Sentry from '@sentry/react-native';
 import { userStore } from 'expo-app/features/auth/store';
@@ -15,7 +16,7 @@ import { NAV_THEME } from 'expo-app/theme';
 import { useRef } from 'react';
 
 Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
   // Adds more context data to events (IP address, cookies, user, etc.)
   // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
   sendDefaultPii: true,

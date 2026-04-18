@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ExperienceLevel, PackCategory, PackStyle, WeightPriority } from './enums';
 import type { AgentContext } from './types';
 
 export function registerPrompts(agent: AgentContext): void {
@@ -13,17 +14,17 @@ export function registerPrompts(agent: AgentContext): void {
         destination: z.string().describe('Trip destination (e.g. "John Muir Trail, CA")'),
         duration_days: z.string().describe('Number of days (e.g. "7")'),
         activity: z
-          .string()
-          .default('backpacking')
-          .describe('Primary activity: backpacking, camping, hiking, climbing, skiing'),
+          .nativeEnum(PackCategory)
+          .default(PackCategory.Backpacking)
+          .describe('Primary activity type'),
         season: z.string().optional().describe('Season or month (e.g. "July", "winter")'),
         experience_level: z
-          .enum(['beginner', 'intermediate', 'advanced'])
-          .default('intermediate')
+          .nativeEnum(ExperienceLevel)
+          .default(ExperienceLevel.Intermediate)
           .describe('User experience level'),
         pack_style: z
-          .enum(['ultralight', 'lightweight', 'traditional'])
-          .default('lightweight')
+          .nativeEnum(PackStyle)
+          .default(PackStyle.Lightweight)
           .describe('Preferred gear weight philosophy'),
       },
     },
@@ -141,8 +142,8 @@ Prioritize the highest weight-savings-per-dollar swaps. Flag any items that are 
           .describe('Specific gear category (e.g. "sleeping bag", "shell jacket")'),
         budget_usd: z.string().optional().describe('Maximum budget in USD'),
         weight_priority: z
-          .enum(['ultralight', 'weight-conscious', 'durability-first'])
-          .default('weight-conscious')
+          .nativeEnum(WeightPriority)
+          .default(WeightPriority.WeightConscious)
           .describe('Weight vs durability tradeoff preference'),
       },
     },

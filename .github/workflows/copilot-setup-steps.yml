@@ -1,0 +1,109 @@
+name: "Copilot Setup Steps"
+
+# Run automatically when this file changes to validate it, and allow manual testing.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    # Skip on fork PRs: environment secrets are not available to forked repositories,
+    # so the secret-validation step would always fail for external contributors.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+    # Secrets for this repo are stored in the 'copilot' environment.
+    environment: copilot
+
+    # Minimum permissions needed. Copilot will be given its own token for its operations.
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # Validate the private-package token before attempting install, so failures are
+      # actionable rather than opaque 401s buried in bun install output.
+      - name: Validate required secrets
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN" ]; then
+            echo "❌ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN is not set."
+            echo ""
+            echo "This secret is required to install the private @packrat-ai/nativewindui"
+            echo "package from GitHub Package Registry (npm.pkg.github.com)."
+            echo ""
+            echo "Fix: Add PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN as a secret in the 'copilot'"
+            echo "GitHub Actions environment (Settings → Environments → copilot → Secrets)."
+            echo "The token needs the 'read:packages' scope."
+            exit 1
+          fi
+          echo "✓ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN is present"
+
+      # Pin Node to the exact major required by package.json engines (>=24).
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # Read the Bun version from package.json#packageManager to keep a single source of truth.
+      - name: Read Bun version from package.json
+        id: bun-version
+        run: |
+          BUN_VERSION=$(jq -r '.packageManager' package.json | sed 's/bun@//')
+          echo "version=$BUN_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved Bun version: $BUN_VERSION"
+
+      # Pin Bun to the exact version declared in package.json#packageManager.
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ steps.bun-version.outputs.version }}
+          cache: true
+
+      # Sanity-check that the runner satisfies the repo's engine constraints.
+      - name: Verify runtime versions
+        run: |
+          echo "Bun:  $(bun --version)"
+          echo "Node: $(node --version)"
+
+          NODE_MAJOR=$(node --version | sed 's/v\([0-9]*\).*/\1/')
+          if [ "$NODE_MAJOR" -lt 24 ]; then
+            echo "❌ Node.js $NODE_MAJOR is below the required minimum of 24."
+            exit 1
+          fi
+          echo "✓ Runtime versions satisfy repo constraints"
+
+      # Install all workspace dependencies.
+      # The preinstall hook (configure-deps.ts) checks PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
+      # automatically, so no extra wrangling is needed here.
+      - name: Install dependencies
+        env:
+          PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
+        run: bun install
+
+      # Confirm the key CLI tools installed by the workspace are usable.
+      # Scoped to cloud-agent-safe tasks (lint/typecheck/tests); no mobile simulator tooling.
+      - name: Smoke check — verify toolchain
+        run: |
+          echo "=== Biome ==="
+          bunx biome --version
+
+          echo ""
+          echo "=== TypeScript ==="
+          bunx tsc --version
+
+          echo ""
+          echo "=== Wrangler (Cloudflare Workers CLI) ==="
+          bunx wrangler --version
+
+          echo ""
+          echo "✓ Copilot environment is ready"
+          echo "  Available tasks: bun lint · bun check-types · bun test:api:unit · bun test:expo · bun api"

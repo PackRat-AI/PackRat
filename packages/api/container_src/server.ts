@@ -16,6 +16,8 @@ const EnvSchema = z.object({
   R2_BUCKET_NAME: z.string(),
   R2_PUBLIC_URL: z.string().url(),
   GOOGLE_GENAI_API_KEY: z.string(),
+  CLOUDFLARE_CONTAINER_ID: z.string().optional(),
+  PORT: z.string().regex(/^\d+$/).optional(),
 });
 
 type Env = z.infer<typeof EnvSchema>;
@@ -32,14 +34,13 @@ function validateEnv(): Env {
 // Initialize R2 client
 let s3Client: S3Client | null = null;
 let env: Env | null = null;
-
-// GoogleGenAI client (for video upload)
-const googleAi = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_GENAI_API_KEY,
-});
+let googleAi: GoogleGenAI | null = null;
 
 try {
   env = validateEnv();
+  googleAi = new GoogleGenAI({
+    apiKey: env.GOOGLE_GENAI_API_KEY,
+  });
   s3Client = new S3Client({
     region: 'auto',
     endpoint: `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -259,6 +260,7 @@ async function uploadVideoToGoogle(videoUrl: string): Promise<string | null> {
     const contentType = response.headers.get('content-type') || 'video/mp4';
     const videoBlob = new Blob([videoBuffer], { type: contentType });
     console.log('Uploading video to Google AI...');
+    if (!googleAi) throw new Error('Google AI client not initialized — check GOOGLE_GENAI_API_KEY');
     const myfile = await googleAi.files.upload({
       file: videoBlob,
       config: { mimeType: videoBlob.type },
@@ -420,7 +422,7 @@ async function fetchTikTokPostData(
 // Root endpoint
 app.get('/', (c) => {
   // Container instance ID (provided by Cloudflare Container runtime)
-  const instanceId = process.env.CLOUDFLARE_CONTAINER_ID || 'unknown';
+  const instanceId = env?.CLOUDFLARE_CONTAINER_ID ?? 'unknown';
   return c.json({
     service: 'tiktok-container',
     instanceId,
@@ -581,7 +583,7 @@ app.notFound((c) => {
   );
 });
 
-const port = process.env.PORT || 8080;
+const port = env?.PORT ?? '8080';
 
 console.log(`TikTok container service starting on port ${port}`);
 

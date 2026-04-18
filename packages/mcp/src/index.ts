@@ -19,7 +19,9 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpAgent } from 'agents/mcp';
-import { PackRatApiClient } from './client';
+import type { PackRatApiClient } from './client';
+import { createPackRatClient } from './client';
+import { ServiceMeta, WorkerRoute } from './constants';
 import { registerPrompts } from './prompts';
 import { registerResources } from './resources';
 import { registerCatalogTools } from './tools/catalog';
@@ -56,14 +58,14 @@ export class PackRatMCP extends McpAgent<Env, State, Record<string, never>> {
   initialState: State = { authToken: '' };
 
   /**
-   * Public API client, accessible from tool registration functions.
-   * Lazily initialized on first use — reads auth token from current state.
+   * Typed API client, lazily initialised on first use.
+   * Reads the current auth token from Durable Object state on every request.
    */
   private _api: PackRatApiClient | null = null;
 
   get api(): PackRatApiClient {
     if (!this._api) {
-      this._api = new PackRatApiClient(this.env.PACKRAT_API_URL, () => this.state.authToken);
+      this._api = createPackRatClient(this.env.PACKRAT_API_URL, () => this.state.authToken);
     }
     return this._api;
   }
@@ -117,24 +119,23 @@ const BEARER_REGEX = /^Bearer\s+(\S+)/i;
 const mcpHandler = PackRatMCP.serve('/mcp');
 
 export default {
-  // biome-ignore lint/complexity/useMaxParams: Cloudflare Worker requires (request, env, ctx)
   fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
     const url = new URL(request.url);
 
     // ── Health check ──────────────────────────────────────────────────────
-    if (url.pathname === '/' || url.pathname === '/health') {
+    if (url.pathname === WorkerRoute.Root || url.pathname === WorkerRoute.Health) {
       return Response.json({
         status: 'ok',
-        service: 'packrat-mcp',
-        version: '1.0.0',
-        transport: 'streamable-http',
-        endpoint: '/mcp',
+        service: ServiceMeta.Name,
+        version: ServiceMeta.Version,
+        transport: ServiceMeta.Transport,
+        endpoint: WorkerRoute.Mcp,
         docs: 'https://packrat.world/docs/mcp',
       });
     }
 
     // ── MCP endpoint ──────────────────────────────────────────────────────
-    if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
+    if (url.pathname === WorkerRoute.Mcp || url.pathname.startsWith(`${WorkerRoute.Mcp}/`)) {
       const authHeader = request.headers.get('Authorization');
       const token = authHeader?.match(BEARER_REGEX)?.[1] ?? '';
 
@@ -164,8 +165,8 @@ export default {
       {
         error: 'Not Found',
         availableEndpoints: [
-          { method: 'GET', path: '/', description: 'Health check' },
-          { method: '*', path: '/mcp', description: 'MCP endpoint (Streamable HTTP)' },
+          { method: 'GET', path: WorkerRoute.Root, description: 'Health check' },
+          { method: '*', path: WorkerRoute.Mcp, description: 'MCP endpoint (Streamable HTTP)' },
         ],
       },
       { status: 404 },

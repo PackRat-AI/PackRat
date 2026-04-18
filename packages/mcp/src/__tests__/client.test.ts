@@ -24,7 +24,7 @@ describe('ok()', () => {
 
 describe('err()', () => {
   it('formats an ApiError with status code', () => {
-    const result = err(new ApiError('Not Found', 404, { error: 'Not Found' }));
+    const result = err(new ApiError('Not Found', { status: 404, body: { error: 'Not Found' } }));
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toBe('Error: API Error (404): Not Found');
   });
@@ -47,7 +47,7 @@ describe('err()', () => {
 describe('ApiError', () => {
   it('sets name, status, and body', () => {
     const body = { error: 'Unauthorized' };
-    const e = new ApiError('Unauthorized', 401, body);
+    const e = new ApiError('Unauthorized', { status: 401, body });
     expect(e.name).toBe('ApiError');
     expect(e.message).toBe('Unauthorized');
     expect(e.status).toBe(401);

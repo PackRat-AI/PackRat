@@ -25,8 +25,10 @@
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease -x lintVitalAnalyzeRelease",
         "env": {
-          "GRADLE_OPTS": "-Xmx6144m -XX:MaxMetaspaceSize=1536m",
-          "JAVA_OPTS": "-Xmx6144m"
+          "GRADLE_OPTS": "-Xmx7168m -XX:MaxMetaspaceSize=1536m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2",
+          "JAVA_OPTS": "-Xmx7168m",
+          "_JAVA_OPTIONS": "-Xmx7168m",
+          "ORG_GRADLE_PROJECT_org_gradle_jvmargs": "-Xmx7168m -XX:MaxMetaspaceSize=1536m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
         }
       }
     },
