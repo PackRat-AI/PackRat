@@ -391,6 +391,17 @@
         "wrangler": "^4.21.2",
       },
     },
+    "packages/api-client": {
+      "name": "@packrat/api-client",
+      "version": "1.0.0",
+      "devDependencies": {
+        "typescript": "catalog:",
+      },
+    },
+    "packages/checks": {
+      "name": "@packrat/checks",
+      "version": "2.0.19",
+    },
     "packages/cli": {
       "name": "@packrat/cli",
       "version": "2.0.20",
@@ -406,6 +417,10 @@
       "devDependencies": {
         "@types/bun": "latest",
       },
+    },
+    "packages/config": {
+      "name": "@packrat/config",
+      "version": "2.0.19",
     },
     "packages/env": {
       "name": "@packrat/env",
