@@ -1,0 +1,87 @@
+import { observable, syncState } from '@legendapp/state';
+import { syncObservable } from '@legendapp/state/sync';
+import { syncedCrud } from '@legendapp/state/sync-plugins/crud';
+import { isAuthed } from 'expo-app/features/auth/store';
+import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
+import type { Pack, PackItem } from '../types';
+import { uploadImage } from '../utils';
+
+/**
+ * Web version of packItems store.
+ * Removes expo-sqlite persistence — data is fetched from the API and kept in memory.
+ * Metro automatically picks this file over packItems.ts for web builds.
+ */
+
+const listAllPackItems = async () => {
+  try {
+    const res = await axiosInstance.get<Pack[]>('/api/packs');
+    const items = res.data.flatMap((pack: Pack) => pack.items);
+    return items;
+  } catch (error) {
+    const { message } = handleApiError(error);
+    throw new Error(`Failed to list packitems: ${message}`);
+  }
+};
+
+const createPackItem = async ({ packId, ...data }: PackItem) => {
+  try {
+    if (data.image) {
+      await uploadImage(data.image, data.image);
+    }
+    const response = await axiosInstance.post(`/api/packs/${packId}/items`, data);
+    return response.data;
+  } catch (error) {
+    const { message } = handleApiError(error);
+    throw new Error(`Failed to create pack item: ${message}`);
+  }
+};
+
+const updatePackItem = async ({ id, ...data }: PackItem) => {
+  try {
+    if (data.image) {
+      await uploadImage(data.image, data.image);
+    }
+    const response = await axiosInstance.patch(`/api/packs/items/${id}`, data);
+    return response.data;
+  } catch (error) {
+    const { message } = handleApiError(error);
+    throw new Error(`Failed to update pack: ${message}`);
+  }
+};
+
+export const packItemsStore = observable<Record<string, PackItem>>({});
+
+syncObservable(
+  packItemsStore,
+  syncedCrud({
+    fieldUpdatedAt: 'updatedAt',
+    fieldCreatedAt: 'createdAt',
+    fieldDeleted: 'deleted',
+    updatePartial: true,
+    mode: 'merge',
+    waitFor: isAuthed,
+    waitForSet: isAuthed,
+    retry: {
+      infinite: true,
+      backoff: 'exponential',
+      maxDelay: 30000,
+    },
+    list: listAllPackItems,
+    create: createPackItem,
+    update: updatePackItem,
+    subscribe: ({ refresh }) => {
+      const intervalId = setInterval(() => {
+        refresh();
+      }, 30000);
+      return () => clearInterval(intervalId);
+    },
+  }),
+);
+
+export function getPackItems(id: string) {
+  return Object.values(packItemsStore.get()).filter((item) => item.packId === id && !item.deleted);
+}
+
+export const packItemsSyncState = syncState(packItemsStore);
+
+export type PackItemsStore = typeof packItemsStore;
