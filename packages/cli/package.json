@@ -3,6 +3,9 @@
   "version": "2.0.20",
   "private": true,
   "type": "module",
+  "bin": {
+    "packrat": "./src/index.ts"
+  },
   "scripts": {
     "check-types": "tsc --noEmit",
     "packrat": "bun run src/index.ts"
@@ -14,7 +17,8 @@
     "chalk": "catalog:",
     "citty": "^0.2.1",
     "cli-table3": "^0.6.5",
-    "consola": "^3.4.2"
+    "consola": "^3.4.2",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/bun": "latest"
