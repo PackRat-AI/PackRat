@@ -1,14 +1,15 @@
 #!/usr/bin/env bun
+
 /**
  * PackRat Analytics CLI — outdoor gear market intelligence.
  *
  * Built with citty (UnJS) for modern CLI ergonomics.
  */
 
-import { defineCommand, runMain } from 'citty';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { defineCommand, runMain } from 'citty';
 import consola from 'consola';
 import { z } from 'zod';
 

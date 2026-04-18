@@ -14,7 +14,10 @@ export default defineCommand({
     const conn = cache.getConnection();
 
     const parser = new SpecParser(conn);
-    const rows = await parser.getProductSpecs(args.product, parsePositiveIntArg(args.limit, '--limit'));
+    const rows = await parser.getProductSpecs(
+      args.product,
+      parsePositiveIntArg(args.limit, '--limit'),
+    );
     printTable(
       rows.map(
         ({

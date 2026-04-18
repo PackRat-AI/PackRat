@@ -1,10 +1,6 @@
 import { SpecParser } from '@packrat/analytics';
 import { defineCommand } from 'citty';
-import {
-  parseNonNegativeNumberArg,
-  parseOptionalNumberArg,
-  parsePositiveIntArg,
-} from '../args';
+import { parseNonNegativeNumberArg, parseOptionalNumberArg, parsePositiveIntArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({

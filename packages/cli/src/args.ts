@@ -1,45 +1,84 @@
 import { z } from 'zod';
 
-function parseWithMessage<T>(
-  schema: z.ZodType<T>,
-  value: unknown,
-  argName: string,
-  expected: string,
-): T {
-  const parsed = schema.safeParse(value);
+const preprocessRequiredNumber = (value: unknown) =>
+  typeof value === 'string' && value.trim() === '' ? Number.NaN : value;
+
+function parseWithMessage<T>(options: {
+  schema: z.ZodType<T>;
+  value: unknown;
+  argName: string;
+  expected: string;
+}): T {
+  const parsed = options.schema.safeParse(options.value);
   if (!parsed.success) {
-    throw new Error(`Invalid ${argName}: "${String(value)}". Expected ${expected}.`);
+    throw new Error(
+      `Invalid ${options.argName}: "${String(options.value)}". Expected ${options.expected}.`,
+    );
   }
   return parsed.data;
 }
 
-const positiveInteger = z.coerce.number().int().positive();
-const nonNegativeNumber = z.coerce.number().nonnegative();
-const percentage = z.coerce.number().min(0).max(100);
-const confidence = z.coerce.number().min(0).max(1);
-const optionalNumber = z.preprocess(
+const positiveInteger = z.preprocess(
+  preprocessRequiredNumber,
+  z.coerce.number().finite().int().positive(),
+);
+const nonNegativeNumber = z.preprocess(
+  preprocessRequiredNumber,
+  z.coerce.number().finite().nonnegative(),
+);
+const percentage = z.preprocess(
+  preprocessRequiredNumber,
+  z.coerce.number().finite().min(0).max(100),
+);
+const confidence = z.preprocess(preprocessRequiredNumber, z.coerce.number().finite().min(0).max(1));
+const optionalNumber: z.ZodType<number | undefined> = z.preprocess(
   (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
   z.coerce.number().finite().optional(),
 );
 
 export function parsePositiveIntArg(value: unknown, argName: string): number {
-  return parseWithMessage(positiveInteger, value, argName, 'a positive integer');
+  return parseWithMessage({
+    schema: positiveInteger,
+    value,
+    argName,
+    expected: 'a positive integer',
+  });
 }
 
 export function parseNonNegativeNumberArg(value: unknown, argName: string): number {
-  return parseWithMessage(nonNegativeNumber, value, argName, 'a non-negative number');
+  return parseWithMessage({
+    schema: nonNegativeNumber,
+    value,
+    argName,
+    expected: 'a non-negative number',
+  });
 }
 
 export function parseOptionalNumberArg(value: unknown, argName: string): number | undefined {
-  return parseWithMessage(optionalNumber, value, argName, 'a valid number');
+  return parseWithMessage({
+    schema: optionalNumber,
+    value,
+    argName,
+    expected: 'a valid number',
+  });
 }
 
 export function parsePercentageArg(value: unknown, argName: string): number {
-  return parseWithMessage(percentage, value, argName, 'a percentage between 0 and 100');
+  return parseWithMessage({
+    schema: percentage,
+    value,
+    argName,
+    expected: 'a percentage between 0 and 100',
+  });
 }
 
 export function parseConfidenceArg(value: unknown, argName: string): number {
-  return parseWithMessage(confidence, value, argName, 'a value between 0 and 1');
+  return parseWithMessage({
+    schema: confidence,
+    value,
+    argName,
+    expected: 'a value between 0 and 1',
+  });
 }
 
 export function parseCsvArg(value: string | undefined): string[] | undefined {
