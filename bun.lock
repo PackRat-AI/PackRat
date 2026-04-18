@@ -418,6 +418,7 @@
         "citty": "^0.2.1",
         "cli-table3": "^0.6.5",
         "consola": "^3.4.2",
+        "zod": "catalog:",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -564,6 +565,7 @@
     "radash": "^12.1.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "semver": "^7.7.4",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.9.2",
     "zod": "^3.24.2",
