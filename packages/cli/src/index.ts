@@ -17,7 +17,8 @@ function getCliVersion(): string {
     const packageJsonPath = resolve(currentDir, '../package.json');
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version?: string };
     return packageJson.version ?? '0.0.0';
-  } catch {
+  } catch (error) {
+    consola.warn(`Unable to determine CLI version from package.json: ${String(error)}`);
     return '0.0.0';
   }
 }
