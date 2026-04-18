@@ -18,7 +18,7 @@ const nonNegativeNumber = z.coerce.number().nonnegative();
 const percentage = z.coerce.number().min(0).max(100);
 const confidence = z.coerce.number().min(0).max(1);
 const optionalNumber = z.preprocess(
-  (value) => (value === '' ? undefined : value),
+  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
   z.coerce.number().finite().optional(),
 );
 

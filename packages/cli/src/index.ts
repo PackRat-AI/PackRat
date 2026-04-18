@@ -10,13 +10,23 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import consola from 'consola';
+import { z } from 'zod';
+
+const packageVersionSchema = z.object({
+  version: z.string().min(1),
+});
 
 function getCliVersion(): string {
   try {
     const currentDir = dirname(fileURLToPath(import.meta.url));
     const packageJsonPath = resolve(currentDir, '../package.json');
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version?: string };
-    return packageJson.version ?? '0.0.0';
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as unknown;
+    const parsed = packageVersionSchema.safeParse(packageJson);
+    if (!parsed.success) {
+      consola.warn('package.json is missing a valid string "version" field.');
+      return '0.0.0';
+    }
+    return parsed.data.version;
   } catch (error) {
     consola.warn(`Unable to determine CLI version from package.json: ${String(error)}`);
     return '0.0.0';
