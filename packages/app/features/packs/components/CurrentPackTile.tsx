@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { Platform, View } from 'react-native';
 import { useCurrentPack } from '../hooks';
 
-const _LOGO_SOURCE = require('../../../assets/packrat-app-icon-gradient.png');
+const _LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
 
 export function CurrentPackTile() {
   const { t } = useTranslation();
