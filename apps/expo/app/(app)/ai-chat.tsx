@@ -5,6 +5,7 @@ import * as Burnt from 'burnt';
 import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { Icon } from 'expo-app/components/Icon';
+import { featureFlags } from 'expo-app/config';
 import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
@@ -109,7 +110,7 @@ export default function AIChat() {
 
   // Kick off model init check on mount (prepares already-downloaded models)
   React.useEffect(() => {
-    initLocalModel();
+    if (featureFlags.enableLocalAI) initLocalModel();
   }, []);
 
   // Keep a ref for context body values so the transport closure stays fresh
@@ -122,7 +123,7 @@ export default function AIChat() {
   const tools = React.useMemo(() => createLocalTools(), []);
 
   const transport = React.useMemo(() => {
-    if (aiMode === 'local' && isLocalReady) {
+    if (featureFlags.enableLocalAI && aiMode === 'local' && isLocalReady) {
       const model = getLocalModel();
       if (model) {
         return new CustomChatTransport(model, tools);
@@ -201,7 +202,7 @@ export default function AIChat() {
     const messageText = text || input;
 
     // Guard: local mode but model not ready
-    if (aiMode === 'local' && modelStatus !== 'ready') {
+    if (featureFlags.enableLocalAI && aiMode === 'local' && modelStatus !== 'ready') {
       Burnt.toast({
         title: t('ai.modelNotReady'),
         preset: 'error',
