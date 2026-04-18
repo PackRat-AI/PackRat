@@ -221,7 +221,7 @@ export async function createAccessToken(
 
 export interface ValidatedToken {
   userId: number;
-  role: string;
+  role: 'USER' | 'ADMIN';
   scope: string;
   clientId: string;
 }
@@ -253,7 +253,7 @@ export async function validateAccessToken(db: Db, token: string): Promise<Valida
 
   return {
     userId: row.userId,
-    role: row.role ?? 'USER',
+    role: (row.role === 'ADMIN' ? 'ADMIN' : 'USER') as 'USER' | 'ADMIN',
     scope: row.scope,
     clientId: row.clientId,
   };

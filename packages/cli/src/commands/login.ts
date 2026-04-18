@@ -68,7 +68,7 @@ export default defineCommand({
     },
   },
   async run({ args }) {
-    const apiUrl = String(args['api-url'] ?? DEFAULT_API_URL).replace(/\/$/, '');
+    const apiUrl = (args['api-url'] ?? DEFAULT_API_URL).replace(/\/$/, '');
 
     // Step 1: Request device + user codes
     consola.start('Requesting device authorization from PackRat…');

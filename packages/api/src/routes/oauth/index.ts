@@ -508,6 +508,11 @@ oauthRoutes.post('/device/activate', async (c) => {
     return showError('Device code, email, and password are all required.');
   }
 
+  // Validate user_code format before querying the database
+  if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(userCode)) {
+    return showError('Invalid device code format. Expected XXXX-XXXX.');
+  }
+
   const db = createDb(c);
 
   const [user] = await db

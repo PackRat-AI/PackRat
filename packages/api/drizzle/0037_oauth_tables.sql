@@ -82,3 +82,8 @@ VALUES
     true
   )
 ON CONFLICT ("id") DO NOTHING;
+
+-- Performance index: token lookup is the hot path for every authenticated request
+CREATE INDEX IF NOT EXISTS "oauth_access_tokens_token_idx"
+  ON "oauth_access_tokens" ("token")
+  WHERE "revoked_at" IS NULL;
