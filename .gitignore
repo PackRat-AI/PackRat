@@ -36,4 +36,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Claude Code
 .claude/settings.json
+.claude/settings.local.json
+.claude/worktrees/
 .dev.vars
+
+# Git worktrees
+.worktrees/
