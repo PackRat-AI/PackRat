@@ -24,6 +24,8 @@
       "@packrat/api/*": ["./packages/api/src/*"],
       "@packrat/config": ["./packages/config/src"],
       "@packrat/config/*": ["./packages/config/src/*"],
+      "@packrat/env": ["./packages/env/src"],
+      "@packrat/env/*": ["./packages/env/src/*"],
       "@packrat/guards": ["./packages/guards/src"],
       "@packrat/guards/*": ["./packages/guards/src/*"],
       "@packrat/ui/*": ["./packages/ui/*"],
