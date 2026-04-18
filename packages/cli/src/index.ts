@@ -1,16 +1,43 @@
 #!/usr/bin/env bun
+
 /**
  * PackRat Analytics CLI — outdoor gear market intelligence.
  *
  * Built with citty (UnJS) for modern CLI ergonomics.
  */
 
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineCommand, runMain } from 'citty';
+import consola from 'consola';
+import { z } from 'zod';
+
+const packageVersionSchema = z.object({
+  version: z.string().min(1),
+});
+
+function getCliVersion(): string {
+  try {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const packageJsonPath = resolve(currentDir, '../package.json');
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as unknown;
+    const parsed = packageVersionSchema.safeParse(packageJson);
+    if (!parsed.success) {
+      consola.warn('package.json is missing a valid string "version" field.');
+      return '0.0.0';
+    }
+    return parsed.data.version;
+  } catch (error) {
+    consola.warn(`Unable to determine CLI version from package.json: ${String(error)}`);
+    return '0.0.0';
+  }
+}
 
 const main = defineCommand({
   meta: {
     name: 'packrat',
-    version: '0.1.0',
+    version: getCliVersion(),
     description: 'Outdoor gear analytics powered by DuckDB',
   },
   subCommands: {
@@ -57,4 +84,14 @@ const main = defineCommand({
   },
 });
 
-runMain(main);
+runMain(main).catch((error: unknown) => {
+  if (error instanceof Error) {
+    consola.error(error.message);
+    if (process.env.DEBUG) {
+      consola.error(error.stack ?? '(no stack trace)');
+    }
+  } else {
+    consola.error(String(error));
+  }
+  process.exitCode = 1;
+});

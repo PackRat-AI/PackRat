@@ -1,6 +1,7 @@
 import { Enrichment } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
+import { parsePositiveIntArg } from '../args';
 import { ensureCache, printSummary, printTable } from '../shared';
 
 export default defineCommand({
@@ -13,6 +14,7 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const conn = cache.getConnection();
+    const limit = parsePositiveIntArg(args.limit, '--limit');
 
     const enrichment = new Enrichment(conn);
 
@@ -36,7 +38,7 @@ export default defineCommand({
       return;
     }
 
-    const reviews = await enrichment.getProductReviews(args.product, Number(args.limit));
+    const reviews = await enrichment.getProductReviews(args.product, limit);
     if (reviews.length === 0) {
       consola.warn('No reviews found. Run `packrat reviews --build` first.');
       return;

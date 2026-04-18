@@ -1,5 +1,6 @@
 {
   "name": "@packrat/api",
+  "version": "2.0.20",
   "scripts": {
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
@@ -27,6 +28,7 @@
     "@hono/zod-validator": "^0.7.6",
     "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "^1.0.0",
+    "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@scalar/hono-api-reference": "^0.10.7",
     "@types/nodemailer": "^6.4.17",

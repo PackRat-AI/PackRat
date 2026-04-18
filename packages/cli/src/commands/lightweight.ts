@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { parseCsvArg, parseNonNegativeNumberArg, parsePositiveIntArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
@@ -16,11 +17,12 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
+    const maxWeight = parseNonNegativeNumberArg(args['max-weight'], '--max-weight');
     const rows = await cache.findLightweight({
       category: args.category,
-      maxWeightG: Number(args['max-weight']),
-      sites: args.sites?.split(','),
-      limit: Number(args.limit),
+      maxWeightG: maxWeight,
+      sites: parseCsvArg(args.sites),
+      limit: parsePositiveIntArg(args.limit, '--limit'),
     });
     printTable(
       rows.map(({ site, name, brand, weight_g, price, weight_per_dollar }) => ({
@@ -31,7 +33,7 @@ export default defineCommand({
         price,
         'g/$': weight_per_dollar,
       })),
-      { title: `Lightweight Gear (≤${args['max-weight']}g)` },
+      { title: `Lightweight Gear (≤${maxWeight}g)` },
     );
   },
 });

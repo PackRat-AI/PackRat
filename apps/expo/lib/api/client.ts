@@ -1,3 +1,4 @@
+import { clientEnvs } from '@packrat/env/expo-client';
 import axios, {
   type AxiosError,
   type AxiosInstance,
@@ -6,7 +7,6 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import { store } from 'expo-app/atoms/store';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import {
   needsReauthAtom,
   refreshTokenAtom,
