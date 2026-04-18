@@ -41,6 +41,7 @@ import {
   revokeAccessToken,
 } from '@packrat/api/services/oauthService';
 import { verifyPassword } from '@packrat/api/utils/auth';
+import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Env } from '@packrat/api/types/env';
 import { eq } from 'drizzle-orm';
 
@@ -466,7 +467,7 @@ oauthRoutes.openapi(deviceCodeRoute, async (c) => {
     );
   }
 
-  const origin = new URL(c.req.url).origin;
+  const origin = getEnv(c).API_ORIGIN ?? new URL(c.req.url).origin;
   const { deviceCode, userCode, expiresIn, interval } = await createDeviceCode(db, {
     clientId: client_id,
     scope: scope ?? '*',
@@ -487,7 +488,8 @@ oauthRoutes.openapi(deviceCodeRoute, async (c) => {
 // ── GET /oauth/device/activate ────────────────────────────────────────────────
 
 oauthRoutes.get('/device/activate', async (c) => {
-  const userCode = c.req.query('user_code');
+  const rawUserCode = c.req.query('user_code');
+  const userCode = rawUserCode ? rawUserCode.toUpperCase() : undefined;
   return c.html(activatePageHtml({ userCode }));
 });
 
@@ -584,8 +586,12 @@ oauthRoutes.openapi(revokeRoute, async (c) => {
 
 // ── AS Metadata (RFC 8414) — exported for mounting at /.well-known ─────────────
 
-export async function oauthMetadataHandler(c: { req: { url: string } }): Promise<Response> {
-  const origin = new URL(c.req.url).origin;
+export async function oauthMetadataHandler(c: {
+  req: { url: string };
+  env?: Env;
+}): Promise<Response> {
+  const rawOrigin = new URL(c.req.url).origin;
+  const origin = (c.env as Env | undefined)?.API_ORIGIN ?? rawOrigin;
   const issuer = `${origin}/api`;
   return Response.json({
     issuer,

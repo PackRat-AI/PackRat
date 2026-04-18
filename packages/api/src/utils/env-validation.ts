@@ -53,6 +53,11 @@ export const apiEnvSchema = z.object({
   PACKRAT_GUIDES_RAG_NAME: z.string(),
   PACKRAT_GUIDES_BASE_URL: z.string().url(),
 
+  // OAuth 2.1 Authorization Server
+  // Optional: the canonical public origin of the API (e.g. https://packrat.world).
+  // Used to construct absolute OAuth endpoint URLs; falls back to the request origin.
+  API_ORIGIN: z.string().url().optional(),
+
   // Cloudflare bindings - validated as any, typed properly below
   CF_VERSION_METADATA: z.unknown(),
   AI: z.unknown(),

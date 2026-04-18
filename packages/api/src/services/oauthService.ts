@@ -38,13 +38,26 @@ export function generateDeviceCode(): string {
 
 /**
  * Short human-readable user_code: `XXXX-XXXX` using uppercase letters and
- * digits that are hard to confuse (no O/0/1/I/L).
+ * digits that are hard to confuse (no O/0/1/I/L). Uses rejection sampling to
+ * eliminate modulo bias.
  */
 export function generateUserCode(): string {
-  const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const bytes = Array.from(randomBytes(8));
-  const chars = bytes.map((b) => CHARS[b % CHARS.length] ?? CHARS[0]);
-  return `${chars.slice(0, 4).join('')}-${chars.slice(4).join('')}`;
+  const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 unambiguous chars
+  const len = CHARS.length;
+  // Rejection-sample threshold: discard values >= maxValid to eliminate bias.
+  // For len=32: maxValid = 256 (256 % 32 === 0), so no rejections occur in practice.
+  const maxValid = 256 - (256 % len);
+  const result: string[] = [];
+  while (result.length < 8) {
+    const buf = Array.from(randomBytes(16));
+    for (const b of buf) {
+      if (result.length >= 8) break;
+      if (b < maxValid) {
+        result.push(CHARS[b % len] ?? CHARS[0]);
+      }
+    }
+  }
+  return `${result.slice(0, 4).join('')}-${result.slice(4).join('')}`;
 }
 
 /** Random authorization code (40 hex chars). */

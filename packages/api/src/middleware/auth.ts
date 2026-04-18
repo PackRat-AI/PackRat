@@ -24,8 +24,11 @@ export const authMiddleware: MiddlewareHandler = async (c, next) => {
       if (!result) {
         return c.json({ error: 'Invalid or expired token' }, 401);
       }
-      const role = result.role === 'ADMIN' ? ('ADMIN' as const) : ('USER' as const);
-      c.set('user', { userId: result.userId, role, scope: result.scope });
+      c.set('user', {
+        userId: result.userId,
+        role: result.role as 'USER' | 'ADMIN',
+        scope: result.scope,
+      });
       return next();
     }
 
