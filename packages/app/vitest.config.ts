@@ -7,12 +7,12 @@ import { defineConfig } from 'vitest/config';
  * Runs pure utility and logic tests in a Node.js environment.
  * Does not require React Native, Expo, or any native modules.
  *
- * Run with: bun run test (from apps/expo) or bun test:expo (from monorepo root)
+ * Run with: bun run --cwd packages/app test or bun test:expo (from monorepo root)
  */
 export default defineConfig({
   resolve: {
     alias: {
-      // Mirror the tsconfig.json paths for the expo app
+      // Mirror the tsconfig.json paths for the shared app package
       'expo-app': resolve(__dirname, '.'),
     },
   },

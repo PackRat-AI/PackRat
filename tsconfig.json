@@ -19,7 +19,7 @@
       "admin-app/*": ["./apps/admin/*"],
       "guides-app/*": ["./apps/guides/*"],
       "landing-app/*": ["./apps/landing/*"],
-      "expo-app/*": ["./apps/expo/*"],
+      "expo-app/*": ["./packages/app/*"],
       "config/*": ["./packages/config/*"],
       "@packrat/api/*": ["./packages/api/src/*"],
       "@packrat/config": ["./packages/config/src"],
@@ -33,7 +33,9 @@
       "@packrat/cli/*": ["./packages/cli/src/*"],
       "@packrat/web-ui": ["./packages/web-ui/src"],
       "@packrat/web-ui/*": ["./packages/web-ui/src/*"],
-      "nativewindui/*": ["./apps/expo/components/ui/*"]
+      "nativewindui/*": ["./packages/app/components/ui/*"],
+      "@packrat/app/*": ["./packages/app/*"],
+      "@packrat/app": ["./packages/app"]
     }
   },
   "include": [

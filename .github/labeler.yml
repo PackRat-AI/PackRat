@@ -3,7 +3,9 @@
 
 mobile:
   - changed-files:
-    - any-glob-to-any-file: 'apps/expo/**'
+    - any-glob-to-any-file:
+      - 'apps/expo/**'
+      - 'packages/app/**'
 
 web:
   - changed-files:

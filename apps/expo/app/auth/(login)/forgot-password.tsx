@@ -20,7 +20,7 @@ import { KeyboardAwareScrollView, KeyboardStickyView } from 'react-native-keyboa
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('../../../assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for email validation
 const emailSchema = z.object({

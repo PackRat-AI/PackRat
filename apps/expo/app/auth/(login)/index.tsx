@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { z } from 'zod';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('../../../assets/packrat-app-icon-gradient.png');
 
 // Define Zod schema for login validation
 const loginFormSchema = z.object({

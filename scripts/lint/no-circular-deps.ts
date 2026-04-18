@@ -3,7 +3,7 @@
 // no-circular-deps.ts — detects circular import dependencies across the monorepo.
 //
 // Scans TypeScript/JavaScript source files in:
-//   - apps/expo/  (skipping node_modules, .expo, dist)
+//   - packages/app/ (skipping node_modules, .expo, dist)
 //   - packages/*/src/
 //
 // Builds an import graph via static analysis (regex-based import/require parsing),
@@ -134,8 +134,8 @@ function walkDir(dir: string, collected: string[]): void {
 function collectFiles(): string[] {
   const files: string[] = [];
 
-  // apps/expo — all source files, skip SKIP_DIRS
-  walkDir(join(ROOT, 'apps', 'expo'), files);
+  // packages/app — all source files, skip SKIP_DIRS
+  walkDir(join(ROOT, 'packages', 'app'), files);
 
   // packages/*/src — each package's src tree
   for (const pkg of safeReaddir(join(ROOT, 'packages'))) {
@@ -353,7 +353,7 @@ console.log('Scanning for circular dependencies…\n');
 
 const aliases = buildAliasMap();
 const files = collectFiles();
-console.log(`Found ${files.length} source files across apps/expo and packages/*/src\n`);
+console.log(`Found ${files.length} source files across packages/app and packages/*/src\n`);
 
 const graph = buildGraph(files, aliases);
 const cycles = findCycles(graph);
