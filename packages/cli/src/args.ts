@@ -4,7 +4,7 @@ const preprocessRequiredNumber = (value: unknown) =>
   typeof value === 'string' && value.trim() === '' ? Number.NaN : value;
 
 function parseWithMessage<T>(options: {
-  schema: z.ZodType<T>;
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>;
   value: unknown;
   argName: string;
   expected: string;
@@ -31,7 +31,7 @@ const percentage = z.preprocess(
   z.coerce.number().finite().min(0).max(100),
 );
 const confidence = z.preprocess(preprocessRequiredNumber, z.coerce.number().finite().min(0).max(1));
-const optionalNumber: z.ZodType<number | undefined> = z.preprocess(
+const optionalNumber = z.preprocess(
   (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
   z.coerce.number().finite().optional(),
 );
