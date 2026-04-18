@@ -21,6 +21,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "typescript": "catalog:"
   }
 }

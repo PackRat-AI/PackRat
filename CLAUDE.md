@@ -41,11 +41,15 @@ cd apps/landing && bun dev  # Landing dev server
 bun lint              # Biome check --write (auto-fix)
 bun format            # Biome format --write
 bun check             # Biome check (no auto-fix, CI mode)
-bun check-types       # tsc --noEmit
+bun check-types       # tsc --noEmit (root — comprehensive, single pass)
 
 # Testing
-bun test:api:unit     # API unit tests (Vitest + Cloudflare pool)
-bun test:expo         # Expo tests (Vitest)
+bun test              # turbo run test — all unit tests in parallel
+bun test:api:unit     # API unit tests only (Vitest + Cloudflare pool)
+bun test:expo         # Expo tests only (Vitest)
+
+# Build
+bun build             # turbo run build — all Next.js apps in dep order
 
 # Dependencies
 bun install           # Install all workspaces (takes 120s+, never cancel)
@@ -55,6 +59,27 @@ bun fix:deps          # manypkg auto-fix dependency issues
 # Versioning
 bun bump              # Bump monorepo version
 ```
+
+## Turborepo
+
+Task orchestration via `turbo.json`. Handles parallel execution and local caching — no remote cache configured.
+
+**Defined tasks:** `build`, `check-types`, `test`, `test:unit:coverage`, `test:coverage`, `lint`, `dev`, `deploy`
+
+**Dependency ordering** (`dependsOn: ["^<task>"]`): turbo runs a dependency's task before the dependent app's task, but only when both workspaces define that task. e.g. `turbo run check-types` orders `@packrat/web-ui` before the Next.js apps because both define `check-types`; `turbo run build` orders builds by dependency but skips packages without a `build` script.
+
+**Filtering** — run tasks for a subset of packages:
+```bash
+bun turbo run test --filter=@packrat/api          # one package
+bun turbo run test --filter=@packrat/api...       # package + its dependents
+bun turbo run check-types --filter=...[HEAD^]     # packages changed in last commit
+bun turbo run check-types --filter=...[origin/development...HEAD]  # PR-affected only
+```
+
+**What runs through turbo vs direct:**
+- `expo start`, `eas build`, EAS submit — run directly (EAS handles its own orchestration)
+- `wrangler dev` / `wrangler deploy` — run directly or via `turbo run deploy --filter=@packrat/api`
+- Biome (`lint`, `format`, `check`) — root-level, run directly (single config, no per-package scripts)
 
 ## Code Style
 

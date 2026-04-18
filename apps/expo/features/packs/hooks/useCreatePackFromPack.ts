@@ -23,8 +23,8 @@ export function useCreatePackFromPack() {
       deleted: false,
     };
 
-    // @ts-expect-error: Safe because Legend-State uses Proxy
-    packsStore[newPackId].set(newPack);
+    // biome-ignore lint/style/noNonNullAssertion: legend-state proxy guarantees a node at this key
+    packsStore[newPackId]!.set(newPack);
 
     // Copy each item from the source pack
     if (sourcePack.items) {
@@ -40,8 +40,8 @@ export function useCreatePackFromPack() {
             updatedAt: undefined,
           };
 
-          // @ts-expect-error: Safe because Legend-State uses Proxy
-          packItemsStore[newItemId].set(newItem);
+          // biome-ignore lint/style/noNonNullAssertion: legend-state proxy guarantees a node at this key
+          packItemsStore[newItemId]!.set(newItem);
         }
       }
     }

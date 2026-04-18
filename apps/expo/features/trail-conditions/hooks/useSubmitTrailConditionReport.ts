@@ -134,8 +134,8 @@ export function useSubmitTrailConditionReport(): SubmitResult {
       if (cancelRef.current) cancelRef.current.cancelled = true;
       cancelRef.current = signal;
 
-      // @ts-expect-error: Safe because Legend-State uses Proxy
-      trailConditionReportsStore[id].set(newReport);
+      // biome-ignore lint/style/noNonNullAssertion: legend-state proxy guarantees a node at this key
+      trailConditionReportsStore[id]!.set(newReport);
 
       // Yield a microtask so Legend-State finishes marking this change as a
       // pending set before we sample the sync state. Without this, the

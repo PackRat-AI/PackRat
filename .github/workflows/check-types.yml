@@ -1,18 +1,8 @@
-name: API Tests
+name: Check Types
 
 on:
-  push:
-    branches: ["main", "development"]
-    paths:
-      - "packages/api/**"
-      - "packages/guards/**"
-      - ".github/workflows/api-tests.yml"
   pull_request:
     branches: ["**"]
-    paths:
-      - "packages/api/**"
-      - "packages/guards/**"
-      - ".github/workflows/api-tests.yml"
   workflow_dispatch:
 
 concurrency:
@@ -23,12 +13,12 @@ permissions:
   contents: read
 
 jobs:
-  api-tests:
+  check-types:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v6
-
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -47,5 +37,5 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
 
-      - name: Run API tests
-        run: bun test:api
+      - name: Check Types
+        run: bun check-types:affected
