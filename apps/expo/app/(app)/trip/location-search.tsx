@@ -6,7 +6,7 @@ import { useRef, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTripLocation } from '../../../features/trips/store/tripLocationStore';
+import { useTripLocation } from 'expo-app/features/trips/store/tripLocationStore';
 
 const GOOGLE_MAPS_API_KEY =
   Constants.expoConfig?.extra?.googleMapsApiKey || process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;

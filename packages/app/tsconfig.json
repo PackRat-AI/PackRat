@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "expo-app/*": ["./*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "coverage"]
+}

@@ -9,27 +9,27 @@ export default function TabLayout() {
     <NativeTabs>
       <NativeTabs.Trigger name="(home)">
         <Label>{t('navigation.dashboard')}</Label>
-        <Icon sf="house.fill" src={require('../../../assets/tab-icons/home.png')} />
+        <Icon sf="house.fill" src={require('expo-app/assets/tab-icons/home.png')} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="packs">
         <Label>{t('navigation.packs')}</Label>
-        <Icon sf="backpack" src={require('../../../assets/tab-icons/backpack.png')} />
+        <Icon sf="backpack" src={require('expo-app/assets/tab-icons/backpack.png')} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="feed" hidden={!featureFlags.enableFeed}>
         <Label>{t('navigation.feed')}</Label>
-        <Icon sf="photo.on.rectangle.angled" src={require('../../../assets/tab-icons/home.png')} />
+        <Icon sf="photo.on.rectangle.angled" src={require('expo-app/assets/tab-icons/home.png')} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="trips" hidden={!featureFlags.enableTrips}>
         <Label>{t('navigation.trips')}</Label>
-        <Icon sf="map.fill" src={require('../../../assets/tab-icons/map.png')} />
+        <Icon sf="map.fill" src={require('expo-app/assets/tab-icons/map.png')} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="catalog">
         <Label>{t('navigation.catalog')}</Label>
-        <Icon sf="clipboard.fill" src={require('../../../assets/tab-icons/catalog.png')} />
+        <Icon sf="clipboard.fill" src={require('expo-app/assets/tab-icons/catalog.png')} />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Label>{t('navigation.profile')}</Label>
-        <Icon sf="person.circle.fill" src={require('../../../assets/tab-icons/profile.png')} />
+        <Icon sf="person.circle.fill" src={require('expo-app/assets/tab-icons/profile.png')} />
       </NativeTabs.Trigger>
     </NativeTabs>
   );

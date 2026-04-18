@@ -8,7 +8,7 @@ import type { TranslationFunction } from 'expo-app/lib/i18n/types';
 import { Redirect } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useDetailedPacks } from '../../features/packs/hooks/useDetailedPacks';
+import { useDetailedPacks } from 'expo-app/features/packs/hooks/useDetailedPacks';
 
 function formatDate(dateString?: string) {
   if (!dateString) return '—';
