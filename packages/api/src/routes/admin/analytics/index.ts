@@ -21,8 +21,11 @@ analyticsRoutes.get('/', (c) =>
         breakdown: '/api/admin/analytics/platform/breakdown',
       },
       catalog: {
-        dashboard: '/api/admin/analytics/catalog',
-        health: '/api/admin/analytics/catalog/health',
+        overview: '/api/admin/analytics/catalog/overview',
+        brands: '/api/admin/analytics/catalog/brands',
+        prices: '/api/admin/analytics/catalog/prices',
+        etl: '/api/admin/analytics/catalog/etl',
+        embeddings: '/api/admin/analytics/catalog/embeddings',
       },
     },
   }),

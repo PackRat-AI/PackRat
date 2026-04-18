@@ -9,6 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { nodeEnv } from '@packrat/env/node';
 import { defineCommand, runMain } from 'citty';
 import consola from 'consola';
 import { z } from 'zod';
@@ -87,7 +88,7 @@ const main = defineCommand({
 runMain(main).catch((error: unknown) => {
   if (error instanceof Error) {
     consola.error(error.message);
-    if (process.env.DEBUG) {
+    if (nodeEnv.DEBUG) {
       consola.error(error.stack ?? '(no stack trace)');
     }
   } else {

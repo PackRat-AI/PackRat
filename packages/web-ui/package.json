@@ -71,10 +71,5 @@
     "react": "catalog:",
     "recharts": "3.8.1",
     "tailwindcss": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "recharts": {
-      "optional": true
-    }
   }
 }

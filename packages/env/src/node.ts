@@ -55,6 +55,13 @@ export const nodeEnvSchema = z.object({
 
   // ── Test runner flags ─────────────────────────────────────────────
   VITEST: z.string().optional(),
+
+  // ── Debug / verbose ───────────────────────────────────────────────
+  DEBUG: z.string().optional(),
+
+  // ── E2E test credentials ──────────────────────────────────────────
+  E2E_TEST_EMAIL: z.string().email().optional(),
+  E2E_TEST_PASSWORD: z.string().min(1).optional(),
 });
 
 export type NodeEnv = z.infer<typeof nodeEnvSchema>;
