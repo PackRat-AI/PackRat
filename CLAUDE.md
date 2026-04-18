@@ -103,25 +103,47 @@ features/{name}/
 
 ## Private Package Auth
 
-`@packrat-ai/nativewindui` is hosted on GitHub Packages. The `preinstall` script (`configure-deps.ts`) automatically pulls your token from the GitHub CLI:
+`@packrat-ai/nativewindui` is hosted on GitHub Packages. `bunfig.toml` resolves the scope using `$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`, so that variable MUST be set in the shell **before** `bun install` runs — Bun reads `bunfig.toml` at process startup, so exports inside the `preinstall` hook are too late.
+
+### One-time GitHub CLI setup
 
 ```bash
-# One-time setup
 gh auth login
-gh auth refresh -h github.com -s read:packages
+gh auth refresh -h github.com -s read:packages   # write:packages also works
+```
 
-# Then bun install works — the preinstall script runs `gh auth token` automatically
+### Every install
+
+Pick one of:
+
+```bash
+# Inline (per-install)
+export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token)
 bun install
 ```
 
-`bunfig.toml` references `$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`, which the preinstall script sets from `gh auth token` at install time.
-
-For CI or environments without `gh` CLI (e.g. Claude Code web), set the env var directly:
 ```bash
-PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=<token from `gh auth token`>
+# One-liner
+PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token) bun install
 ```
 
-If you get 401 errors during `bun install`, either `gh` isn't authenticated or the token is missing/expired.
+```bash
+# Persist across shells — add to ~/.zshrc or ~/.bashrc
+export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token 2>/dev/null)
+```
+
+### CI / environments without `gh`
+
+Set the env var directly from secrets:
+
+```bash
+PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=<personal access token with read:packages>
+```
+
+### Troubleshooting
+
+- **401 on `@packrat-ai/nativewindui`**: `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` isn't exported in the parent shell, or the token lacks `read:packages`. Confirm with `echo ${PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN:+set}` — it must print `set`.
+- The `preinstall` hook (`bun run configure:deps`) only *validates* auth. It cannot inject env vars into the parent `bun install` process.
 
 ## Path Aliases
 
