@@ -1,0 +1,12 @@
+{
+  "name": "@packrat/config",
+  "version": "2.0.19",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}

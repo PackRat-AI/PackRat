@@ -23,32 +23,20 @@ describe('pack tools', () => {
       expect(tools.has('list_packs')).toBe(true);
     });
 
-    it('calls GET /packs with limit, offset, category', async () => {
+    it('calls GET /packs with includePublic param', async () => {
       const mockData = { items: [], total: 0 };
       vi.mocked(api.get).mockResolvedValue(mockData);
 
-      const result = await callTool({
-        tools,
-        name: 'list_packs',
-        args: {
-          limit: 5,
-          offset: 10,
-          category: 'backpacking',
-        },
-      });
+      const result = await callTool({ tools, name: 'list_packs', args: { include_public: true } });
 
-      expect(api.get).toHaveBeenCalledWith('/packs', {
-        limit: 5,
-        offset: 10,
-        category: 'backpacking',
-      });
+      expect(api.get).toHaveBeenCalledWith('/packs', { includePublic: 1 });
       expect(parseToolResult(result)).toEqual(mockData);
     });
 
     it('returns error result on API failure', async () => {
-      vi.mocked(api.get).mockRejectedValue(new ApiError('Forbidden', 403, {}));
+      vi.mocked(api.get).mockRejectedValue(new ApiError('Forbidden', { status: 403, body: {} }));
 
-      const result = await callTool({ tools, name: 'list_packs', args: { limit: 20, offset: 0 } });
+      const result = await callTool({ tools, name: 'list_packs', args: {} });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('403');
@@ -69,7 +57,7 @@ describe('pack tools', () => {
     });
 
     it('propagates 404 as error result', async () => {
-      vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', 404, {}));
+      vi.mocked(api.get).mockRejectedValue(new ApiError('Not Found', { status: 404, body: {} }));
 
       const result = await callTool({ tools, name: 'get_pack', args: { pack_id: 'nope' } });
 
@@ -112,8 +100,8 @@ describe('pack tools', () => {
   // ── update_pack ─────────────────────────────────────────────────────────────
 
   describe('update_pack', () => {
-    it('calls PATCH /packs/:id with only provided fields', async () => {
-      vi.mocked(api.patch).mockResolvedValue({ id: 'p_1' });
+    it('calls PUT /packs/:id with only provided fields', async () => {
+      vi.mocked(api.put).mockResolvedValue({ id: 'p_1' });
 
       await callTool({
         tools,
@@ -125,7 +113,7 @@ describe('pack tools', () => {
         },
       });
 
-      const [path, body] = vi.mocked(api.patch).mock.calls[0] as [string, Record<string, unknown>];
+      const [path, body] = vi.mocked(api.put).mock.calls[0] as [string, Record<string, unknown>];
       expect(path).toBe('/packs/p_1');
       expect(body.name).toBe('Renamed Pack');
       expect(body.isPublic).toBe(false);
@@ -133,11 +121,11 @@ describe('pack tools', () => {
     });
 
     it('does not include undefined optional fields', async () => {
-      vi.mocked(api.patch).mockResolvedValue({ id: 'p_1' });
+      vi.mocked(api.put).mockResolvedValue({ id: 'p_1' });
 
       await callTool({ tools, name: 'update_pack', args: { pack_id: 'p_1', name: 'Only Name' } });
 
-      const [, body] = vi.mocked(api.patch).mock.calls[0] as [string, Record<string, unknown>];
+      const [, body] = vi.mocked(api.put).mock.calls[0] as [string, Record<string, unknown>];
       expect(body.description).toBeUndefined();
       expect(body.tags).toBeUndefined();
     });
@@ -189,16 +177,12 @@ describe('pack tools', () => {
   // ── remove_pack_item ────────────────────────────────────────────────────────
 
   describe('remove_pack_item', () => {
-    it('calls DELETE /packs/:id/items/:itemId', async () => {
+    it('calls DELETE /packs/items/:itemId', async () => {
       vi.mocked(api.delete).mockResolvedValue({ deleted: true });
 
-      await callTool({
-        tools,
-        name: 'remove_pack_item',
-        args: { pack_id: 'p_1', item_id: 'i_99' },
-      });
+      await callTool({ tools, name: 'remove_pack_item', args: { item_id: 'i_99' } });
 
-      expect(api.delete).toHaveBeenCalledWith('/packs/p_1/items/i_99');
+      expect(api.delete).toHaveBeenCalledWith('/packs/items/i_99');
     });
   });
 

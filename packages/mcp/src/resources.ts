@@ -2,12 +2,12 @@ import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ApiError } from './client';
 import type { AgentContext } from './types';
 
-// biome-ignore lint/complexity/useMaxParams: uri, context, and error are all distinct and necessary
-function resourceError(uri: string, context: string, e: unknown): object {
-  if (e instanceof ApiError) {
-    return { uri, error: e.message, status: e.status, context };
+function resourceError(opts: { uri: string; context: string; error: unknown }): object {
+  const { uri, context, error } = opts;
+  if (error instanceof ApiError) {
+    return { uri, error: error.message, status: error.status, context };
   }
-  return { uri, error: e instanceof Error ? e.message : String(e), context };
+  return { uri, error: error instanceof Error ? error.message : String(error), context };
 }
 
 export function registerResources(agent: AgentContext): void {
@@ -36,7 +36,9 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(resourceError(uri.href, `pack:${String(packId)}`, e)),
+              text: JSON.stringify(
+                resourceError({ uri: uri.href, context: `pack:${String(packId)}`, error: e }),
+              ),
             },
           ],
         };
@@ -68,7 +70,9 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(resourceError(uri.href, `trip:${String(tripId)}`, e)),
+              text: JSON.stringify(
+                resourceError({ uri: uri.href, context: `trip:${String(tripId)}`, error: e }),
+              ),
             },
           ],
         };
@@ -100,7 +104,9 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(resourceError(uri.href, `catalog:${String(itemId)}`, e)),
+              text: JSON.stringify(
+                resourceError({ uri: uri.href, context: `catalog:${String(itemId)}`, error: e }),
+              ),
             },
           ],
         };
@@ -136,7 +142,9 @@ export function registerResources(agent: AgentContext): void {
             {
               uri: uri.href,
               mimeType: 'application/json',
-              text: JSON.stringify(resourceError(uri.href, 'gear_categories', e)),
+              text: JSON.stringify(
+                resourceError({ uri: uri.href, context: 'gear_categories', error: e }),
+              ),
             },
           ],
         };

@@ -50,3 +50,6 @@ routes.route('/', publicRoutes);
 routes.route('/', protectedRoutes);
 
 export { routes };
+
+/** Full type of the PackRat Hono app — used by `hc<AppRoutes>()` in api-client. */
+export type AppRoutes = typeof routes;

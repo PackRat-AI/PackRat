@@ -7,6 +7,7 @@
     "db:generate": "drizzle-kit generate --dialect=postgresql --schema=src/db/schema.ts --out=./drizzle",
     "db:migrate": "bun run ./migrate.ts",
     "db:seed": "bun run ./src/db/seed.ts",
+    "db:seed:e2e-user": "bun run ./src/db/seed-e2e-user.ts",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
     "dev": "wrangler dev -e=dev",

@@ -26,20 +26,21 @@ export function registerWeatherTools(agent: AgentContext): void {
     async ({ location }) => {
       try {
         // Step 1: search for the location to get its ID
-        const searchResults = await agent.api.get<{ id?: string; results?: Array<{ id: string }> }>(
-          '/weather/search',
-          { q: location },
-        );
+        const searchResults = await agent.api.get<Record<string, unknown>>('/weather/search', {
+          q: location,
+        });
+
         const locationId =
-          (searchResults as Record<string, unknown>).id ??
-          ((searchResults as Record<string, unknown>).results as Array<{ id: string }>)?.[0]?.id;
+          searchResults.id ?? (searchResults.results as Array<{ id: string }>)?.[0]?.id;
 
         if (!locationId) {
           return err(new Error(`No weather location found for: ${location}`));
         }
 
         // Step 2: fetch the forecast for that location
-        const forecast = await agent.api.get('/weather/forecast', { id: String(locationId) });
+        const forecast = await agent.api.get('/weather/forecast', {
+          id: String(locationId),
+        });
         return ok(forecast);
       } catch (e) {
         return err(e);
@@ -86,7 +87,7 @@ export function registerWeatherTools(agent: AgentContext): void {
     },
     async ({ destination }) => {
       try {
-        const data = await agent.api.get('/season-suggestions', { destination });
+        const data = await agent.api.post('/season-suggestions', { destination });
         return ok(data);
       } catch (e) {
         return err(e);

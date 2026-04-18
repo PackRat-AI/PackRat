@@ -237,11 +237,17 @@ vi.mock('@packrat/api/utils/ai/tools', () => ({
 // tests that exercise real methods still work.
 vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@packrat/api/services/catalogService')>();
+  type BatchVectorSearchResult = Awaited<
+    ReturnType<InstanceType<typeof actual.CatalogService>['batchVectorSearch']>
+  >;
+
   return {
     ...actual,
     CatalogService: class extends actual.CatalogService {
-      // biome-ignore lint/suspicious/noExplicitAny: test mock signature matches real method
-      async batchVectorSearch(queries: string[], _limit?: number): Promise<any> {
+      async batchVectorSearch(
+        queries: string[],
+        _limit?: number,
+      ): Promise<BatchVectorSearchResult> {
         return {
           items: queries.map(() => [
             {
@@ -253,7 +259,7 @@ vi.mock('@packrat/api/services/catalogService', async (importOriginal) => {
               images: [],
             },
           ]),
-        };
+        } as unknown as BatchVectorSearchResult;
       }
     },
   };

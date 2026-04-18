@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
+import { CrossingDifficulty, TrailCondition, TrailSurface } from '../enums';
 import type { AgentContext } from '../types';
 
 export function registerTrailConditionTools(agent: AgentContext): void {
@@ -47,12 +48,8 @@ export function registerTrailConditionTools(agent: AgentContext): void {
           .string()
           .optional()
           .describe('Region or state (e.g. "California", "Maine")'),
-        surface: z
-          .enum(['paved', 'gravel', 'dirt', 'rocky', 'snow', 'mud'])
-          .describe('Current trail surface type'),
-        overall_condition: z
-          .enum(['excellent', 'good', 'fair', 'poor'])
-          .describe('Overall trail condition'),
+        surface: z.nativeEnum(TrailSurface).describe('Current trail surface type'),
+        overall_condition: z.nativeEnum(TrailCondition).describe('Overall trail condition'),
         hazards: z
           .array(z.string())
           .optional()
@@ -67,7 +64,7 @@ export function registerTrailConditionTools(agent: AgentContext): void {
           .optional()
           .describe('Number of water crossings on the trail (0–20)'),
         water_crossing_difficulty: z
-          .enum(['easy', 'moderate', 'difficult'])
+          .nativeEnum(CrossingDifficulty)
           .optional()
           .describe('Difficulty of water crossings if present'),
         notes: z

@@ -23,18 +23,18 @@ describe('trip tools', () => {
       expect(tools.has('list_trips')).toBe(true);
     });
 
-    it('calls GET /trips with limit and offset', async () => {
+    it('calls GET /trips with includePublic param', async () => {
       vi.mocked(api.get).mockResolvedValue({ items: [] });
 
-      await callTool({ tools, name: 'list_trips', args: { limit: 10, offset: 20 } });
+      await callTool({ tools, name: 'list_trips', args: { include_public: true } });
 
-      expect(api.get).toHaveBeenCalledWith('/trips', { limit: 10, offset: 20 });
+      expect(api.get).toHaveBeenCalledWith('/trips', { includePublic: 1 });
     });
 
     it('returns error result on API failure', async () => {
       vi.mocked(api.get).mockRejectedValue(new Error('Network error'));
 
-      const result = await callTool({ tools, name: 'list_trips', args: { limit: 20, offset: 0 } });
+      const result = await callTool({ tools, name: 'list_trips', args: {} });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Network error');
@@ -171,7 +171,7 @@ describe('trip tools', () => {
     });
 
     it('returns error when API fails', async () => {
-      vi.mocked(api.delete).mockRejectedValue(new ApiError('Forbidden', 403, {}));
+      vi.mocked(api.delete).mockRejectedValue(new ApiError('Forbidden', { status: 403, body: {} }));
 
       const result = await callTool({ tools, name: 'delete_trip', args: { trip_id: 't_x' } });
 

@@ -1,19 +1,26 @@
-name: Biome Check
+name: Checks
 
 on:
   pull_request:
-    branches: ["**"]
+    branches: ['**']
   workflow_dispatch:
+    inputs:
+      fix:
+        description: 'Apply Biome autofixes (runs bun lint and commits changes)'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  # Required for optional workflow_dispatch autofix commits.
+  contents: write
 
 jobs:
-  biome:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -25,15 +32,28 @@ jobs:
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
-      - name: Run Biome check
+      - name: Run Biome (check mode)
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.fix == true) }}
         run: bun biome check
+      - name: Run Biome (autofix mode)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.fix == true }}
+        run: bun lint
+      - name: Commit Biome autofixes
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.fix == true }}
+        uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: 'chore: apply biome autofixes via checks workflow'
       - name: Check circular dependencies
         run: bun scripts/lint/no-circular-deps.ts
       - name: Check for duplicate/catalog dependencies
         run: bun scripts/lint/no-duplicate-deps.ts
       - name: Check package.json ordering
         run: bun scripts/format/sort-package-json.ts --check
+      - name: Check types
+        run: bun check-types
       - name: Run Expo Doctor
         run: bunx expo-doctor
         working-directory: apps/expo
         continue-on-error: true
+      - name: Run React Doctor checks
+        run: bun check:react-doctor

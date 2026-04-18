@@ -33,8 +33,11 @@ const fakeCtx = {
 // ── stub agents/mcp so we do NOT spin up a real Durable Object ───────────────
 
 vi.mock('agents/mcp', () => {
-  // biome-ignore lint/complexity/noStaticOnlyClass: mock must be a class since PackRatMCP extends McpAgent
   class McpAgent {
+    // Instance fetch stub mirrors the real McpAgent shape (Durable Object)
+    fetch(_request: Request): Promise<Response> {
+      return Promise.resolve(new Response('{}', { status: 200 }));
+    }
     static serve(_path: string) {
       return {
         fetch: vi.fn().mockResolvedValue(new Response('{"jsonrpc":"2.0"}', { status: 200 })),
