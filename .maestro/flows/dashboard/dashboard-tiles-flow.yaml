@@ -5,16 +5,16 @@ appId: ${APP_ID}
 
 # Navigate to Dashboard (home tab)
 - tapOn:
-    text: "Home"
+    text: "Dashboard"
 - waitForAnimationToEnd
 
 # Verify key dashboard tiles are present
 - scrollUntilVisible:
     element:
-      text: "PackRat AI"
+      id: "dashboard-tile-packrat-ai"
     direction: DOWN
 - assertVisible:
-    text: "PackRat AI"
+    id: "dashboard-tile-packrat-ai"
 
 # Scroll to check more tiles
 - scrollUntilVisible:

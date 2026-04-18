@@ -38,6 +38,7 @@ export function AIChatTile() {
           <ChevronRight />
         </View>
       }
+      testID="dashboard-tile-packrat-ai" // add this
       item={{
         title: t('ai.packratAI'),
       }}

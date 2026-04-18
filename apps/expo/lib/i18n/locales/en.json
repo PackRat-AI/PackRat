@@ -49,6 +49,7 @@
     "signUp": "Sign Up",
     "signOut": "Sign Out",
     "logOut": "Log Out",
+    "proceedLogOut": "Proceed",
     "loggedOut": "You're now logged out!",
     "loggedOutMessage": "What would you like to do?",
     "stayLoggedOut": "Stay logged out",

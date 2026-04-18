@@ -1,85 +1,112 @@
 appId: ${APP_ID}
 ---
-# Create Trip Flow: Navigate to trips tab and create a new trip
+# Create Trip Flow
 - waitForAnimationToEnd
-
-# Navigate to the Trips tab
 - tapOn:
     text: "Trips"
-
 - waitForAnimationToEnd
-
-# Tap the header "+" button (testID: create-trip-button) to open the trip creation form
 - tapOn:
     id: "create-trip-button"
-
 - waitForAnimationToEnd
-
-# Fill in the Trip Name field
-- tapOn:
-    text: "Trip Name"
-- inputText: ${TRIP_NAME}
-
-# Fill in the Description field
-- tapOn:
-    text: "Description"
-- inputText: "Created by Maestro E2E test"
-
-# Dismiss the keyboard before submitting
-- hideKeyboard
-
-# --- Start Date ---
-- tapOn:
-    text: "Start Date"
-- waitForAnimationToEnd
-
-- repeat:
-    times: ${START_TAPS}
-    commands:
-      - tapOn: "Next Month"
-
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - tapOn: "${START_DAY} ${START_MONTH} ${START_YEAR}"
-      - tapOn: "OK"
-
 - runFlow:
     when:
       platform: iOS
     commands:
-      - tapOn: "${START_MONTH} ${START_DAY}"
       - tapOn:
-          point: "5%,5%"
+          text: "show map, Trip Name"
+      - inputText: ${TRIP_NAME}
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Trip Name"
+      - inputText: ${TRIP_NAME}
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Description"
+      - inputText: "Created by Maestro E2E test"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Description"
+      - inputText: "Created by Maestro E2E test"
+# Tap neutral area to dismiss keyboard on iOS multiline field
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "TRIP DETAILS"
+      - waitForAnimationToEnd
+- hideKeyboard
+- waitForAnimationToEnd
 
+# --- Start Date ---
+- tapOn:
+    id: "start-date-input"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - repeat:
+          times: ${START_TAPS}
+          commands:
+            - tapOn:
+                text: "Next Month"
+      - tapOn:
+          text: "${START_DAY} ${START_MONTH} ${START_YEAR}"
+      - tapOn:
+          text: "OK"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "${TODAY_DATE}"
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "${START_DAY}"
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "50%,90%"
 - waitForAnimationToEnd
 
 # --- End Date ---
 - tapOn:
-    text: "End Date"
+    id: "end-date-input"
 - waitForAnimationToEnd
-
-- repeat:
-    times: ${END_TAPS}
-    commands:
-      - tapOn: "Next Month"
-
 - runFlow:
     when:
       platform: Android
     commands:
-      - tapOn: "${END_DAY} ${END_MONTH} ${END_YEAR}"
-      - tapOn: "OK"
-
+      - repeat:
+          times: ${END_TAPS}
+          commands:
+            - tapOn:
+                text: "Next Month"
+      - tapOn:
+          text: "${END_DAY} ${END_MONTH} ${END_YEAR}"
+      - tapOn:
+          text: "OK"
 - runFlow:
     when:
       platform: iOS
     commands:
-      - tapOn: "${END_MONTH} ${END_DAY}"
       - tapOn:
-          point: "5%,5%"
-
+          text: "${TODAY_DATE}"
+      - waitForAnimationToEnd
+      - tapOn:
+          text: "${END_DAY}"
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "50%,90%"
 - waitForAnimationToEnd
 
 # --- Submit ---
@@ -100,10 +127,10 @@ appId: ${APP_ID}
     id: "create-trip-button"
 - scrollUntilVisible:
     element:
-      text: ${TRIP_NAME}
+      id: "trip-row-${TRIP_NAME}"
     direction: DOWN
     timeout: 60000
     speed: 99
 - assertVisible:
-    text: ${TRIP_NAME}
+      id: "trip-row-${TRIP_NAME}"
 

@@ -91,6 +91,7 @@ export function TripCard({ trip, onPress }: TripCardProps) {
   return (
     <Pressable
       className="mb-4 overflow-hidden rounded-xl bg-card border border-border"
+      testID={`trip-row-${trip.name}`}
       onPress={() => onPress?.(trip)}
     >
       <View className="p-4">
