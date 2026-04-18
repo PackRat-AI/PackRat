@@ -1,7 +1,7 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
-import { appAlert } from 'expo-app/app/_layout';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
+import { appAlert } from '../../_layout';
 import {
   localModelFileAvailableAtom,
   localModelProgressAtom,

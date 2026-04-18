@@ -5,19 +5,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "expo-app/*": [
-        "../../packages/app/*"
-      ]
+      "expo-app/*": ["../../packages/app/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts",
-    "nativewind-env.d.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"],
+  "exclude": ["node_modules"]
 }
