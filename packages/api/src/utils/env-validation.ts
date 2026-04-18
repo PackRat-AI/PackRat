@@ -17,6 +17,8 @@ export const apiEnvSchema = z.object({
   JWT_SECRET: z.string(),
   PASSWORD_RESET_SECRET: z.string(),
   GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(), // Required for web OAuth PKCE flow
+  APPLE_APP_ID: z.string().optional(), // Bundle ID / Service ID for Apple audience validation
   ADMIN_USERNAME: z.string(),
   ADMIN_PASSWORD: z.string(),
   PACKRAT_API_KEY: z.string(),

@@ -34,14 +34,30 @@ export const users = pgTable('users', {
 });
 
 // Authentication providers table
-export const authProviders = pgTable('auth_providers', {
+export const authProviders = pgTable(
+  'auth_providers',
+  {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id')
+      .references(() => users.id)
+      .notNull(),
+    provider: text('provider').notNull(), // 'email', 'google', 'apple'
+    providerId: text('provider_id'), // ID from the provider
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (t) => [unique('auth_providers_provider_provider_id_unique').on(t.provider, t.providerId)],
+);
+
+// OAuth state table for PKCE web flows
+export const oauthStates = pgTable('oauth_states', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id')
-    .references(() => users.id)
-    .notNull(),
-  provider: text('provider').notNull(), // 'email', 'google', 'apple'
-  providerId: text('provider_id'), // ID from the provider
-  createdAt: timestamp('created_at').defaultNow(),
+  state: text('state').notNull().unique(),
+  codeVerifier: text('code_verifier').notNull(),
+  provider: text('provider').notNull(),
+  // Where to send the user after successful auth (may be null for pure API mode)
+  finalRedirect: text('final_redirect'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
 });
 
 // Refresh tokens table
@@ -510,6 +526,9 @@ export const catalogItemEtlJobsRelations = relations(catalogItemEtlJobs, ({ one 
     references: [etlJobs.id],
   }),
 }));
+
+export type OAuthState = InferSelectModel<typeof oauthStates>;
+export type NewOAuthState = InferInsertModel<typeof oauthStates>;
 
 // Infer models from tables
 export type User = InferSelectModel<typeof users>;

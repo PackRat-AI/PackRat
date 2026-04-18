@@ -468,6 +468,42 @@ describe('Auth Routes', () => {
       );
       expectBadRequest(res);
     });
+
+    it('authenticates a valid Apple token and returns session', async () => {
+      // Mock returns a valid payload for any 3-part JWT
+      const mockToken = 'header.payload.signature';
+      const res = await authApi(
+        '/apple',
+        httpMethods.post({
+          identityToken: mockToken,
+          authorizationCode: 'auth-code',
+        }),
+      );
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.accessToken).toBeDefined();
+      expect(data.refreshToken).toBeDefined();
+      expect(data.user.email).toBe('test@apple.com');
+      expect(data.isNewUser).toBe(true);
+    });
+
+    it('logs in an existing Apple user', async () => {
+      const mockToken = 'header.payload.signature';
+      // First login creates the user
+      await authApi(
+        '/apple',
+        httpMethods.post({ identityToken: mockToken, authorizationCode: 'auth-code' }),
+      );
+      // Second login should return isNewUser=false
+      const res = await authApi(
+        '/apple',
+        httpMethods.post({ identityToken: mockToken, authorizationCode: 'auth-code' }),
+      );
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.isNewUser).toBe(false);
+    });
   });
 
   describe('POST /auth/google', () => {
@@ -515,6 +551,49 @@ describe('Auth Routes', () => {
       const data = await res.json();
       expect(data.success).toBe(true);
       expect(data.isNewUser).toBe(false);
+    });
+  });
+
+  describe('GET /auth/oauth/authorize', () => {
+    it('returns 400 for missing provider', async () => {
+      const res = await authApi('/oauth/authorize', httpMethods.get());
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when GOOGLE_CLIENT_SECRET is not configured', async () => {
+      // The test env mock does not set GOOGLE_CLIENT_SECRET, so the route
+      // should return a 400 explaining that Google OAuth is not configured.
+      const res = await authApi('/oauth/authorize?provider=google', httpMethods.get());
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toMatch(/not configured/i);
+    });
+  });
+
+  describe('GET /auth/oauth/callback', () => {
+    it('returns 400 for missing state', async () => {
+      const res = await authApi('/oauth/callback?code=some-code', httpMethods.get());
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 for invalid or expired state', async () => {
+      const res = await authApi(
+        '/oauth/callback?code=some-code&state=invalid-state',
+        httpMethods.get(),
+      );
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toMatch(/invalid or expired/i);
+    });
+
+    it('returns 400 when provider sends an error', async () => {
+      const res = await authApi(
+        '/oauth/callback?error=access_denied&error_description=User+denied',
+        httpMethods.get(),
+      );
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toMatch(/denied/i);
     });
   });
 });

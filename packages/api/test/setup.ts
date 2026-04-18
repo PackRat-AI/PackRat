@@ -438,6 +438,27 @@ vi.mock('google-auth-library', () => ({
   },
 }));
 
+// Mock Apple JWKS fetch and token verification so Apple auth tests don't hit
+// the real appleid.apple.com endpoint and don't need a real RS256 key pair.
+vi.mock('@packrat/api/utils/appleAuth', () => ({
+  verifyAppleToken: vi.fn(async (identityToken: string) => {
+    // Accept any token that looks like a 3-part JWT (header.payload.signature)
+    const parts = identityToken.split('.');
+    if (parts.length !== 3) throw new Error('Invalid JWT structure');
+    // For the test token, return a fixed payload
+    return {
+      iss: 'https://appleid.apple.com',
+      aud: 'com.packrat.app',
+      sub: 'mock-apple-user-id',
+      email: 'test@apple.com',
+      email_verified: true,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      iat: Math.floor(Date.now() / 1000),
+    };
+  }),
+  clearAppleKeyCache: vi.fn(),
+}));
+
 vi.mock('@packrat/api/services/embeddingService', () => ({
   generateEmbedding: vi.fn(async () => {
     return Array.from({ length: 1536 }, () => Math.random());
@@ -563,6 +584,7 @@ beforeEach(async () => {
   // testPool.query, so cleanup and tests share one path. Surface errors rather
   // than swallowing them.
   const tablesToClean = [
+    'oauth_states',
     'one_time_passwords',
     'refresh_tokens',
     'auth_providers',

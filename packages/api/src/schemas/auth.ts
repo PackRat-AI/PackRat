@@ -177,8 +177,8 @@ export const AppleAuthRequestSchema = z
     identityToken: z.string().openapi({
       description: 'Apple identity token from Sign in with Apple',
     }),
-    authorizationCode: z.string().openapi({
-      description: 'Apple authorization code',
+    authorizationCode: z.string().optional().openapi({
+      description: 'Apple authorization code (only provided on first sign-in)',
     }),
   })
   .openapi('AppleAuthRequest');
@@ -240,3 +240,44 @@ export const ErrorResponseSchema = z
     }),
   })
   .openapi('ErrorResponse');
+
+export const OAuthAuthorizeRequestSchema = z
+  .object({
+    provider: z.enum(['google']).openapi({
+      description: 'OAuth provider to authenticate with',
+      example: 'google',
+    }),
+    finalRedirect: z.string().url().optional().openapi({
+      description: 'URL to redirect the user to after successful authentication',
+      example: 'https://packrat.world/auth/callback',
+    }),
+  })
+  .openapi('OAuthAuthorizeRequest');
+
+export const OAuthAuthorizeResponseSchema = z
+  .object({
+    authorizationUrl: z.string().url().openapi({
+      description: 'URL to redirect the user to for OAuth authorization',
+    }),
+    state: z.string().openapi({
+      description: 'CSRF state token',
+    }),
+  })
+  .openapi('OAuthAuthorizeResponse');
+
+export const OAuthTokenResponseSchema = z
+  .object({
+    success: z.boolean(),
+    accessToken: z.string(),
+    refreshToken: z.string(),
+    user: z.object({
+      id: z.number(),
+      email: z.string().email(),
+      firstName: z.string().nullable(),
+      lastName: z.string().nullable(),
+      emailVerified: z.boolean().nullable(),
+      role: z.string().nullable(),
+    }),
+    isNewUser: z.boolean().optional(),
+  })
+  .openapi('OAuthTokenResponse');

@@ -43,11 +43,13 @@ import {
   verifyJWT,
   verifyPassword,
 } from '@packrat/api/utils/auth';
+import { verifyAppleToken } from '@packrat/api/utils/appleAuth';
 import { sendPasswordResetEmail, sendVerificationCodeEmail } from '@packrat/api/utils/email';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { assertDefined } from '@packrat/guards';
 import { and, eq, getTableColumns, gt, isNull } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
+import { oauthRoutes } from './oauth';
 
 const authRoutes = new OpenAPIHono<{
   Bindings: Env;
@@ -1101,17 +1103,19 @@ authRoutes.openapi(appleRoute, async (c) => {
   const { identityToken } = await c.req.json();
   const db = createDb(c);
 
-  // Decode the identity token (JWT)
-  let payload: { sub: string; email: string; email_verified: boolean };
+  // Verify Apple identity token using Apple's published JWKS (RS256 signature check)
+  const { APPLE_APP_ID } = getEnv(c);
+  let payload: { sub: string; email?: string; email_verified?: boolean | string };
   try {
-    payload = JSON.parse(Buffer.from(identityToken.split('.')[1], 'base64').toString());
-  } catch {
+    payload = await verifyAppleToken(identityToken, APPLE_APP_ID);
+  } catch (err) {
+    console.error('Apple token verification failed:', err);
     return c.json({ error: 'Invalid Apple token' }, 400);
   }
 
   const { sub, email, email_verified } = payload;
-  if (!sub || !email) {
-    return c.json({ error: 'Invalid Apple token' }, 400);
+  if (!sub) {
+    return c.json({ error: 'Invalid Apple token: missing sub claim' }, 400);
   }
 
   // Check if user exists with this Apple ID
@@ -1122,9 +1126,19 @@ authRoutes.openapi(appleRoute, async (c) => {
     .limit(1);
 
   let userId: number;
+  let isNewUser = false;
   if (existingProvider) {
+    // Returning user — email is not required (Apple only sends it on first sign-in)
     userId = existingProvider.userId;
   } else {
+    // First sign-in or new device: Apple must supply the email to create/link the account
+    if (!email) {
+      return c.json(
+        { error: 'Email is required for first sign-in with Apple' },
+        400,
+      );
+    }
+
     // Check if user exists with this email
     const [existingUser] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
@@ -1135,17 +1149,19 @@ authRoutes.openapi(appleRoute, async (c) => {
         .insert(users)
         .values({
           email,
-          emailVerified: email_verified || false,
+          emailVerified: email_verified === true || email_verified === 'true',
         })
+        .onConflictDoUpdate({ target: users.email, set: { updatedAt: new Date() } })
         .returning();
-      userId = newUser?.id || 0;
+      assertDefined(newUser);
+      userId = newUser.id;
+      isNewUser = true;
     }
 
-    await db.insert(authProviders).values({
-      userId,
-      provider: 'apple',
-      providerId: sub,
-    });
+    await db
+      .insert(authProviders)
+      .values({ userId, provider: 'apple', providerId: sub })
+      .onConflictDoNothing();
   }
 
   const [user] = await db
@@ -1174,6 +1190,7 @@ authRoutes.openapi(appleRoute, async (c) => {
       accessToken,
       refreshToken,
       user,
+      isNewUser,
     },
     200,
   );
@@ -1264,11 +1281,10 @@ authRoutes.openapi(googleRoute, async (c) => {
       // User exists with this email, link Google account
       userId = existingUser.id;
 
-      await db.insert(authProviders).values({
-        userId,
-        provider: 'google',
-        providerId: payload.sub,
-      });
+      await db
+        .insert(authProviders)
+        .values({ userId, provider: 'google', providerId: payload.sub })
+        .onConflictDoNothing();
     } else {
       // Create new user
       const [newUser] = await db
@@ -1279,6 +1295,7 @@ authRoutes.openapi(googleRoute, async (c) => {
           lastName: payload.family_name,
           emailVerified: payload.email_verified || false,
         })
+        .onConflictDoUpdate({ target: users.email, set: { updatedAt: new Date() } })
         .returning();
       assertDefined(newUser);
 
@@ -1286,11 +1303,10 @@ authRoutes.openapi(googleRoute, async (c) => {
       isNewUser = true;
 
       // Link Google account
-      await db.insert(authProviders).values({
-        userId,
-        provider: 'google',
-        providerId: payload.sub,
-      });
+      await db
+        .insert(authProviders)
+        .values({ userId, provider: 'google', providerId: payload.sub })
+        .onConflictDoNothing();
     }
   }
 
@@ -1329,5 +1345,7 @@ authRoutes.openapi(googleRoute, async (c) => {
     200,
   );
 });
+
+authRoutes.route('/oauth', oauthRoutes);
 
 export { authRoutes };
