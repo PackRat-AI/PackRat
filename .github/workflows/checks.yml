@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install
+        run: bun install --frozen-lockfile
       - name: Run Biome (check mode)
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.fix == true) }}
         run: bun biome check
