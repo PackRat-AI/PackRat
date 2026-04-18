@@ -9,5 +9,7 @@ export type ApiClient = ReturnType<typeof import('./client').createApiClient>;
 type ApiEndpointFn = (...args: never[]) => Promise<unknown>;
 
 export type ApiRequestOf<T extends ApiEndpointFn> = InferRequestType<T>;
-export type ApiResponseOf<T extends ApiEndpointFn, TStatus extends StatusCode = 200> =
-  InferResponseType<T, TStatus>;
+export type ApiResponseOf<
+  T extends ApiEndpointFn,
+  TStatus extends StatusCode = 200,
+> = InferResponseType<T, TStatus>;

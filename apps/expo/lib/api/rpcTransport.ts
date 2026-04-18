@@ -32,7 +32,10 @@ const cloneInit = (init?: RequestInit): RequestInit | undefined => {
   };
 };
 
-const withAuthHeaders = async (init?: RequestInit, tokenOverride?: string | null): Promise<RequestInit> => {
+const withAuthHeaders = async (
+  init?: RequestInit,
+  tokenOverride?: string | null,
+): Promise<RequestInit> => {
   const headers = new Headers(init?.headers);
 
   if (!headers.has('Accept')) {
@@ -51,8 +54,7 @@ const withAuthHeaders = async (init?: RequestInit, tokenOverride?: string | null
 };
 
 const processQueue = async (
-  error: Error | null,
-  token: string | null,
+  { error, token }: { error: Error | null; token: string | null },
   fetchImpl: FetchLike,
 ) => {
   const pending = failedQueue;
@@ -101,12 +103,7 @@ const refreshAccessToken = async (fetchImpl: FetchLike, baseUrl: string) => {
   return data.accessToken;
 };
 
-export const createRpcFetch = (
-  options: {
-    baseUrl?: string;
-    fetchImpl?: FetchLike;
-  } = {},
-) => {
+export const createRpcFetch = (options: { baseUrl?: string; fetchImpl?: FetchLike } = {}) => {
   const baseUrl = options.baseUrl ?? defaultBaseUrl;
   const fetchImpl = options.fetchImpl ?? fetch;
 
@@ -139,7 +136,7 @@ export const createRpcFetch = (
 
       try {
         const nextToken = await refreshAccessToken(fetchImpl, baseUrl);
-        await processQueue(null, nextToken, fetchImpl);
+        await processQueue({ error: null, token: nextToken }, fetchImpl);
 
         const retryHeaders = new Headers(init?.headers);
         retryHeaders.set('x-packrat-rpc-retry', 'true');
@@ -156,7 +153,7 @@ export const createRpcFetch = (
         );
       } catch (error) {
         await store.set(needsReauthAtom, true);
-        await processQueue(error as Error, null, fetchImpl);
+        await processQueue({ error: error as Error, token: null }, fetchImpl);
         throw error;
       } finally {
         isRefreshing = false;

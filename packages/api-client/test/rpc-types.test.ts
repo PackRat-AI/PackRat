@@ -1,5 +1,5 @@
 import { expectTypeOf, test } from 'vitest';
-import { createApiClient, type ApiRequestOf, type ApiResponseOf } from '../src';
+import { type ApiRequestOf, type ApiResponseOf, createApiClient } from '../src';
 
 const client = createApiClient('https://packrat.test');
 const catalogGetById = client.api.catalog[':id'].$get;

@@ -1,5 +1,5 @@
-import { hc, type ClientRequestOptions } from 'hono/client';
 import type { AppType } from '@packrat/api';
+import { type ClientRequestOptions, hc } from 'hono/client';
 
 export type ApiClientOptions = ClientRequestOptions;
 

@@ -1,5 +1,5 @@
+import { type ApiRequestOf, type ApiResponseOf, createApiClient } from '@packrat/api-client';
 import { expectTypeOf, test } from 'vitest';
-import { createApiClient, type ApiRequestOf, type ApiResponseOf } from '@packrat/api-client';
 
 const client = createApiClient('https://packrat.test');
 const guideGetById = client.api.guides[':id'].$get;
