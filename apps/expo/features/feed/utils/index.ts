@@ -1,4 +1,4 @@
-import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { clientEnvs } from '@packrat/env/expo-client';
 import { getRelativeTime } from 'expo-app/lib/utils/getRelativeTime';
 import type { Comment, Post } from '../types';
 

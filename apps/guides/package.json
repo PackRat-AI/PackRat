@@ -20,6 +20,7 @@
     "@ai-sdk/openai": "^2.0.11",
     "@hookform/resolvers": "^3.10.0",
     "@packrat/api": "workspace:*",
+    "@packrat/env": "workspace:*",
     "@packrat/web-ui": "workspace:*",
     "@radix-ui/react-accordion": "catalog:",
     "@radix-ui/react-alert-dialog": "catalog:",

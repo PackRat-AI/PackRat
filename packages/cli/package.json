@@ -10,6 +10,7 @@
   "dependencies": {
     "@duckdb/node-api": "1.5.0-r.1",
     "@packrat/analytics": "workspace:*",
+    "@packrat/env": "workspace:*",
     "chalk": "catalog:",
     "citty": "^0.2.1",
     "cli-table3": "^0.6.5",

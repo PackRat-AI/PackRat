@@ -327,6 +327,7 @@
       "version": "2.0.20",
       "dependencies": {
         "@duckdb/node-api": "1.5.0-r.1",
+        "@packrat/env": "workspace:*",
         "consola": "^3.4.2",
         "magic-regexp": "^0.11.0",
         "radash": "catalog:",
@@ -351,6 +352,7 @@
         "@hono/zod-validator": "^0.7.6",
         "@mozilla/readability": "^0.6.0",
         "@neondatabase/serverless": "^1.0.0",
+        "@packrat/env": "workspace:*",
         "@packrat/guards": "workspace:*",
         "@scalar/hono-api-reference": "^0.10.7",
         "@types/nodemailer": "^6.4.17",
@@ -395,6 +397,7 @@
       "dependencies": {
         "@duckdb/node-api": "1.5.0-r.1",
         "@packrat/analytics": "workspace:*",
+        "@packrat/env": "workspace:*",
         "chalk": "catalog:",
         "citty": "^0.2.1",
         "cli-table3": "^0.6.5",
@@ -402,6 +405,13 @@
       },
       "devDependencies": {
         "@types/bun": "latest",
+      },
+    },
+    "packages/env": {
+      "name": "@packrat/env",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^3.24.2",
       },
     },
     "packages/guards": {
@@ -1210,6 +1220,8 @@
     "@packrat/api": ["@packrat/api@workspace:packages/api"],
 
     "@packrat/cli": ["@packrat/cli@workspace:packages/cli"],
+
+    "@packrat/env": ["@packrat/env@workspace:packages/env"],
 
     "@packrat/guards": ["@packrat/guards@workspace:packages/guards"],
 
