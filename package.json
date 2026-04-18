@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
-    "turbo": "^2",
+    "turbo": "^2.9.6",
     "@manypkg/cli": "^0.24.0",
     "@types/bun": "^1.2.17",
     "@types/fs-extra": "^11.0.4",
