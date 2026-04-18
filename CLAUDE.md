@@ -103,7 +103,7 @@ features/{name}/
 
 ## Private Package Auth
 
-`@packrat-ai/nativewindui` is hosted on GitHub Packages. `bunfig.toml` resolves the scope using `$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`, so that variable MUST be set in the shell **before** `bun install` runs — Bun reads `bunfig.toml` at process startup, so exports inside the `preinstall` hook are too late.
+`@packrat-ai/nativewindui` is hosted on GitHub Packages. `bunfig.toml` resolves the scope using `$PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN`. Bun auto-loads `.env.local` before running `install`, so the simplest setup is to put the token there alongside your other secrets.
 
 ### One-time GitHub CLI setup
 
@@ -112,25 +112,30 @@ gh auth login
 gh auth refresh -h github.com -s read:packages   # write:packages also works
 ```
 
-### Every install
+### Preferred: add the token to `.env.local`
 
-Pick one of:
+Append to the repo-root `.env.local` (gitignored):
 
 ```bash
-# Inline (per-install)
-export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token)
-bun install
+PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=<token from `gh auth token`>
 ```
 
+Then `bun install` just works — Bun picks it up automatically.
+
+### Alternative: export in shell
+
+Useful in ephemeral shells or when you don't keep a `.env.local`:
+
 ```bash
+# Inline
+export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token)
+bun install
+
 # One-liner
 PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token) bun install
 ```
 
-```bash
-# Persist across shells — add to ~/.zshrc or ~/.bashrc
-export PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=$(gh auth token 2>/dev/null)
-```
+The `preinstall` hook cannot inject env vars into the parent `bun install` process (Bun has already parsed `bunfig.toml`), so if neither `.env.local` nor a shell export has the token, install will 401.
 
 ### CI / environments without `gh`
 
@@ -142,8 +147,8 @@ PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN=<personal access token with read:packages>
 
 ### Troubleshooting
 
-- **401 on `@packrat-ai/nativewindui`**: `PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN` isn't exported in the parent shell, or the token lacks `read:packages`. Confirm with `echo ${PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN:+set}` — it must print `set`.
-- The `preinstall` hook (`bun run configure:deps`) only *validates* auth. It cannot inject env vars into the parent `bun install` process.
+- **401 on `@packrat-ai/nativewindui`**: Token is missing from both `.env.local` and your shell, or lacks `read:packages`. Check `.env.local` first.
+- The `preinstall` hook (`bun run configure:deps`) only *validates* that the token is visible to the install process — it doesn't inject it.
 
 ## Path Aliases
 
