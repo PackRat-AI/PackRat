@@ -70,10 +70,10 @@ Task orchestration via `turbo.json`. Handles parallel execution and local cachin
 
 **Filtering** — run tasks for a subset of packages:
 ```bash
-bunx turbo run test --filter=@packrat/api          # one package
-bunx turbo run test --filter=@packrat/api...       # package + its dependents
-bunx turbo run check-types --filter=...[HEAD^]     # packages changed in last commit
-bunx turbo run check-types --filter=...[origin/development...HEAD]  # PR-affected only
+bun turbo run test --filter=@packrat/api          # one package
+bun turbo run test --filter=@packrat/api...       # package + its dependents
+bun turbo run check-types --filter=...[HEAD^]     # packages changed in last commit
+bun turbo run check-types --filter=...[origin/development...HEAD]  # PR-affected only
 ```
 
 **What runs through turbo vs direct:**
