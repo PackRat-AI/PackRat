@@ -81,13 +81,13 @@ jobs:
           fi
           echo "✓ Runtime versions satisfy repo constraints"
 
-      # Install all workspace dependencies deterministically.
+      # Install all workspace dependencies.
       # The preinstall hook (configure-deps.ts) checks PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN
       # automatically, so no extra wrangling is needed here.
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install --frozen-lockfile
+        run: bun install
 
       # Confirm the key CLI tools installed by the workspace are usable.
       # Scoped to cloud-agent-safe tasks (lint/typecheck/tests); no mobile simulator tooling.
