@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { parsePositiveIntArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
@@ -9,10 +10,7 @@ export default defineCommand({
     site: { type: 'string', alias: 's', description: 'Filter to specific site' },
   },
   async run({ args }) {
-    const days = Number.parseInt(String(args.days), 10);
-    if (!Number.isFinite(days) || days <= 0) {
-      throw new Error(`Invalid --days value: "${args.days}". Must be a positive integer.`);
-    }
+    const days = parsePositiveIntArg(args.days, '--days');
     const cache = await ensureCache();
     const rows = await cache.searchTrends(args.keyword, {
       site: args.site,

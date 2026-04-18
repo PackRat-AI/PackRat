@@ -6,11 +6,26 @@
  */
 
 import { defineCommand, runMain } from 'citty';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import consola from 'consola';
+
+function getCliVersion(): string {
+  try {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    const packageJsonPath = resolve(currentDir, '../package.json');
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version?: string };
+    return packageJson.version ?? '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
 
 const main = defineCommand({
   meta: {
     name: 'packrat',
-    version: '0.1.0',
+    version: getCliVersion(),
     description: 'Outdoor gear analytics powered by DuckDB',
   },
   subCommands: {
@@ -57,4 +72,14 @@ const main = defineCommand({
   },
 });
 
-runMain(main);
+runMain(main).catch((error: unknown) => {
+  if (error instanceof Error) {
+    consola.error(error.message);
+    if (process.env.DEBUG) {
+      consola.error(error.stack ?? '(no stack trace)');
+    }
+  } else {
+    consola.error(String(error));
+  }
+  process.exitCode = 1;
+});

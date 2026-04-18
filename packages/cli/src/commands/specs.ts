@@ -1,6 +1,7 @@
 import { SpecParser } from '@packrat/analytics';
 import { defineCommand } from 'citty';
-import { getCache, printTable } from '../shared';
+import { parsePositiveIntArg } from '../args';
+import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
   meta: { name: 'specs', description: 'View parsed specs for a product' },
@@ -9,11 +10,11 @@ export default defineCommand({
     limit: { type: 'string', alias: 'l', description: 'Result limit', default: '10' },
   },
   async run({ args }) {
-    const cache = await getCache();
+    const cache = await ensureCache();
     const conn = cache.getConnection();
 
     const parser = new SpecParser(conn);
-    const rows = await parser.getProductSpecs(args.product, Number(args.limit));
+    const rows = await parser.getProductSpecs(args.product, parsePositiveIntArg(args.limit, '--limit'));
     printTable(
       rows.map(
         ({

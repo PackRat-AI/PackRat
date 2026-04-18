@@ -1,6 +1,7 @@
 import { Enrichment } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
+import { parsePositiveIntArg } from '../args';
 import { ensureCache, printSummary, printTable } from '../shared';
 
 export default defineCommand({
@@ -13,6 +14,7 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const conn = cache.getConnection();
+    const limit = parsePositiveIntArg(args.limit, '--limit');
 
     const enrichment = new Enrichment(conn);
 
@@ -35,7 +37,7 @@ export default defineCommand({
       return;
     }
 
-    const images = await enrichment.getProductImages(args.product, Number(args.limit));
+    const images = await enrichment.getProductImages(args.product, limit);
     if (images.length === 0) {
       consola.warn('No images found. Run `packrat images --build` first.');
       return;

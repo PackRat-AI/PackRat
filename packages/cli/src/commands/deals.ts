@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { parseCsvArg, parseNonNegativeNumberArg, parsePositiveIntArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
@@ -11,10 +12,11 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
-    const rows = await cache.findDeals(Number(args['max-price']), {
+    const maxPrice = parseNonNegativeNumberArg(args['max-price'], '--max-price');
+    const rows = await cache.findDeals(maxPrice, {
       category: args.category,
-      sites: args.sites?.split(','),
-      limit: Number(args.limit),
+      sites: parseCsvArg(args.sites),
+      limit: parsePositiveIntArg(args.limit, '--limit'),
     });
     printTable(
       rows.map(({ site, name, brand, price, category }) => ({
@@ -25,7 +27,7 @@ export default defineCommand({
         category,
       })),
       {
-        title: `Deals under $${args['max-price']}`,
+        title: `Deals under $${maxPrice}`,
       },
     );
   },
