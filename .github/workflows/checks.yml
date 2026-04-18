@@ -53,4 +53,3 @@ jobs:
         run: bun check-types
       - name: Run React Doctor checks
         run: bun check:react-doctor
-        continue-on-error: true

@@ -31,7 +31,6 @@ interface AppPackageJson {
 interface ReactAppConfig {
   appDirName: string;
   displayName: string;
-  script: string;
 }
 
 interface ReactAppRunResult {
@@ -81,9 +80,7 @@ function loadReactApps(): {
     if (!hasReactDependency(packageData)) continue;
 
     const displayName = packageData.name ?? entry;
-    const script = packageData.scripts?.[SCRIPT_NAME];
-
-    if (!script) {
+    if (!packageData.scripts?.[SCRIPT_NAME]) {
       missingScriptApps.push({ appDirName: entry, displayName });
       continue;
     }
@@ -91,7 +88,6 @@ function loadReactApps(): {
     runnableApps.push({
       appDirName: entry,
       displayName,
-      script,
     });
   }
 
@@ -164,17 +160,23 @@ if (missingScriptApps.length > 0) {
   process.exit(1);
 }
 
-console.log('\nReact Doctor checks');
-console.log(DIVIDER);
-for (const app of runnableApps) {
-  console.log(`⏳  ${app.displayName}…`);
+const isTTY = Boolean(process.stdout.isTTY);
+
+if (isTTY) {
+  console.log('React Doctor checks');
+  console.log(DIVIDER);
+  for (const app of runnableApps) {
+    console.log(`⏳  ${app.displayName}…`);
+  }
 }
 
 const results = await Promise.all(runnableApps.map(runDoctor));
 
-// Move cursor up by "header + app rows" then clear to end of screen.
-// ANSI: \x1b[<n>A => cursor up N lines, \x1b[0J => clear to end.
-process.stdout.write(`\x1b[${getCursorResetLineCount(runnableApps.length)}A\x1b[0J`);
+if (isTTY) {
+  // Move cursor up by "header + app rows" then clear to end of screen.
+  // ANSI: \x1b[<n>A => cursor up N lines, \x1b[0J => clear to end.
+  process.stdout.write(`\x1b[${getCursorResetLineCount(runnableApps.length)}A\x1b[0J`);
+}
 console.log('\nReact Doctor checks');
 console.log(DIVIDER);
 
