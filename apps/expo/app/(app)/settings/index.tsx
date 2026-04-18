@@ -1,7 +1,6 @@
 import { ActivityIndicator, Text } from '@packrat/ui/nativewindui';
 import * as Burnt from 'burnt';
 import { Icon, type MaterialIconName } from 'expo-app/components/Icon';
-import { appAlert } from '../../_layout';
 import {
   localModelFileAvailableAtom,
   localModelProgressAtom,
@@ -22,6 +21,7 @@ import Constants from 'expo-constants';
 import { StatusBar } from 'expo-status-bar';
 import { useAtomValue } from 'jotai';
 import { Platform, ScrollView, TouchableOpacity, View } from 'react-native';
+import { appAlert } from '../../_layout';
 
 export default function SettingsScreen() {
   const { colorScheme, colors } = useColorScheme();

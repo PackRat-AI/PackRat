@@ -12,7 +12,7 @@ import * as React from 'react';
 import { Image, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('../../assets/packrat-app-icon-gradient.png');
 
 const GOOGLE_SOURCE = {
   uri: 'https://www.pngall.com/wp-content/uploads/13/Google-Logo.png',

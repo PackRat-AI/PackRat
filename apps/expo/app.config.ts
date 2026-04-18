@@ -23,13 +23,13 @@ const getAndroidPackage = () => {
 };
 
 const getIcon = () => {
-  if (IS_DEV) return '../../packages/app/assets/packrat-app-icon-gradient-dev.png';
-  return '../../packages/app/assets/packrat-app-icon-gradient.png';
+  if (IS_DEV) return './assets/packrat-app-icon-gradient-dev.png';
+  return './assets/packrat-app-icon-gradient.png';
 };
 
 const getAdaptiveIcon = () => {
-  if (IS_DEV) return '../../packages/app/assets/adaptive-icon-dev.png';
-  return '../../packages/app/assets/adaptive-icon.png';
+  if (IS_DEV) return './assets/adaptive-icon-dev.png';
+  return './assets/adaptive-icon.png';
 };
 
 export default (): ExpoConfig =>
@@ -42,7 +42,7 @@ export default (): ExpoConfig =>
       web: {
         bundler: 'metro',
         output: 'static',
-        favicon: '../../packages/app/assets/favicon.png',
+        favicon: './assets/favicon.png',
       },
       plugins: [
         'expo-router',
@@ -77,7 +77,7 @@ export default (): ExpoConfig =>
       icon: getIcon(),
       userInterfaceStyle: 'automatic',
       splash: {
-        image: '../../packages/app/assets/splash.png',
+        image: './assets/splash.png',
       },
       assetBundlePatterns: ['**/*'],
       ios: {

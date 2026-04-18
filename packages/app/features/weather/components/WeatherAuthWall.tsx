@@ -5,7 +5,7 @@ import { Stack, usePathname, useRouter } from 'expo-router';
 import { Image, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('../../../assets/packrat-app-icon-gradient.png');
 
 export function WeatherAuthWall() {
   const router = useRouter();

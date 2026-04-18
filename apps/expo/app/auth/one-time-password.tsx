@@ -22,7 +22,7 @@ import { KeyboardAwareScrollView, KeyboardController } from 'react-native-keyboa
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const LOGO_SOURCE = require('expo-app/assets/packrat-app-icon-gradient.png');
+const LOGO_SOURCE = require('../../assets/packrat-app-icon-gradient.png');
 
 const COUNTDOWN_SECONDS_TO_RESEND_CODE = 60;
 const NUM_OF_CODE_CHARACTERS = 5;
