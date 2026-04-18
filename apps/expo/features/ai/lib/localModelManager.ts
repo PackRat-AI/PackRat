@@ -20,7 +20,6 @@ import {
 } from '../atoms/aiModeAtoms';
 
 import { LLAMA_MODEL_ID, LLAMA_MODEL_SIZE_BYTES } from './constants';
-import { createLocalTools } from './tools';
 
 const LLAMA_MODEL_FILENAME = 'SmolLM3-Q4_K_M.gguf';
 const LLAMA_MODELS_DIR = `${RNBlobUtil.fs.dirs.DocumentDir}/llama-models`;
@@ -57,9 +56,12 @@ function getAppleModule() {
   if (appleModule) return appleModule;
 
   try {
-    appleModule = import('@react-native-ai/apple');
+    // require() is synchronous — import() returns a Promise, which breaks
+    // the synchronous callers (isAppleIntelligenceAvailable, etc.)
+    appleModule = require('@react-native-ai/apple');
     return appleModule;
-  } catch {
+  } catch (err) {
+    console.error('Failed to load Apple module:', err);
     return null;
   }
 }
@@ -246,7 +248,7 @@ async function _initAppleModel(): Promise<void> {
     if (!mod) throw new Error('Apple module not available');
 
     appleModel = mod.apple();
-    appleModel.updateTools(createLocalTools());
+    // appleModel.updateTools(createLocalTools());
     store.set(localModelStatusAtom, 'ready');
   } catch {
     store.set(localModelStatusAtom, 'error');
