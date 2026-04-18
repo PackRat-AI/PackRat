@@ -15,7 +15,6 @@
         "lefthook": "^1.11.14",
         "semver": "catalog:",
         "sort-package-json": "^3.6.1",
-        "turbo": "^2.9.6",
       },
     },
     "apps/admin": {
