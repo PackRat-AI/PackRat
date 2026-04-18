@@ -1,12 +1,13 @@
 {
   "name": "@packrat/api",
-  "version": "2.0.20",
+  "version": "2.0.21",
   "scripts": {
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
     "db:generate": "drizzle-kit generate --dialect=postgresql --schema=src/db/schema.ts --out=./drizzle",
     "db:migrate": "bun run ./migrate.ts",
     "db:seed": "bun run ./src/db/seed.ts",
+    "db:seed:e2e-user": "bun run ./src/db/seed-e2e-user.ts",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e=dev",
     "dev": "wrangler dev -e=dev",
@@ -27,6 +28,7 @@
     "@hono/zod-validator": "^0.7.6",
     "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "^1.0.0",
+    "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@scalar/hono-api-reference": "^0.10.7",
     "@types/nodemailer": "^6.4.17",

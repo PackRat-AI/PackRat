@@ -11,19 +11,15 @@ export function registerTripTools(agent: AgentContext): void {
       description:
         "List all of the user's planned trips. Returns trip summaries including name, destination, dates, and linked pack.",
       inputSchema: {
-        limit: z
-          .number()
-          .int()
-          .min(1)
-          .max(100)
-          .default(20)
-          .describe('Maximum number of trips to return'),
-        offset: z.number().int().min(0).default(0).describe('Pagination offset'),
+        include_public: z
+          .boolean()
+          .default(false)
+          .describe('Include public trips from other users'),
       },
     },
-    async ({ limit, offset }) => {
+    async ({ include_public }) => {
       try {
-        const data = await agent.api.get('/trips', { limit, offset });
+        const data = await agent.api.get('/trips', { includePublic: include_public ? 1 : 0 });
         return ok(data);
       } catch (e) {
         return err(e);

@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { parsePositiveIntArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
@@ -11,7 +12,7 @@ export default defineCommand({
     const cache = await ensureCache();
     const rows = await cache.getMarketShare({
       category: args.category,
-      topN: Number(args.top),
+      topN: parsePositiveIntArg(args.top, '--top'),
     });
     printTable(rows as unknown as Record<string, unknown>[], { title: 'Market Share' });
   },

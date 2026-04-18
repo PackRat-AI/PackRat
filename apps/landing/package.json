@@ -1,11 +1,12 @@
 {
   "name": "packrat-landing-app",
-  "version": "2.0.20",
+  "version": "2.0.21",
   "private": true,
   "scripts": {
     "build": "next build",
     "clean": "bunx rimraf node_modules .next out",
     "dev": "next dev",
+    "doctor:react": "bunx react-doctor",
     "lint": "next lint",
     "start": "next start"
   },

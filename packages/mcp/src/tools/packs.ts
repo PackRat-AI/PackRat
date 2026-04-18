@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { err, ok } from '../client';
+import { ItemCategory, PackCategory } from '../enums';
 import type { AgentContext } from '../types';
 
 export function registerPackTools(agent: AgentContext): void {
@@ -11,25 +12,15 @@ export function registerPackTools(agent: AgentContext): void {
       description:
         'List all packs belonging to the authenticated user. Returns pack summaries including name, category, item count, and total weight.',
       inputSchema: {
-        limit: z
-          .number()
-          .int()
-          .min(1)
-          .max(100)
-          .default(20)
-          .describe('Maximum number of packs to return (default 20)'),
-        offset: z.number().int().min(0).default(0).describe('Pagination offset (default 0)'),
-        category: z
-          .string()
-          .optional()
-          .describe(
-            'Filter by pack category (e.g. "backpacking", "camping", "climbing", "cycling")',
-          ),
+        include_public: z
+          .boolean()
+          .default(false)
+          .describe('Include public packs from other users'),
       },
     },
-    async ({ limit, offset, category }) => {
+    async ({ include_public }) => {
       try {
-        const data = await agent.api.get('/packs', { limit, offset, category });
+        const data = await agent.api.get('/packs', { includePublic: include_public ? 1 : 0 });
         return ok(data);
       } catch (e) {
         return err(e);
@@ -68,11 +59,7 @@ export function registerPackTools(agent: AgentContext): void {
       inputSchema: {
         name: z.string().min(1).describe('Pack name (e.g. "3-Day Yosemite Trip")'),
         description: z.string().optional().describe('Optional longer description of the pack'),
-        category: z
-          .string()
-          .describe(
-            'Pack category — one of: backpacking, camping, climbing, cycling, hiking, skiing, travel, general',
-          ),
+        category: z.nativeEnum(PackCategory).describe('Pack category'),
         is_public: z
           .boolean()
           .default(false)
@@ -111,7 +98,7 @@ export function registerPackTools(agent: AgentContext): void {
         pack_id: z.string().describe('The unique pack ID to update'),
         name: z.string().min(1).optional().describe('New pack name'),
         description: z.string().optional().nullable().describe('New description'),
-        category: z.string().optional().describe('New category'),
+        category: z.nativeEnum(PackCategory).optional().describe('New category'),
         is_public: z.boolean().optional().describe('Update public visibility'),
         tags: z.array(z.string()).optional().describe('New tags (replaces existing tags)'),
       },
@@ -124,7 +111,7 @@ export function registerPackTools(agent: AgentContext): void {
         if (category !== undefined) body.category = category;
         if (is_public !== undefined) body.isPublic = is_public;
         if (tags !== undefined) body.tags = tags;
-        const data = await agent.api.patch(`/packs/${pack_id}`, body);
+        const data = await agent.api.put(`/packs/${pack_id}`, body);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -162,11 +149,7 @@ export function registerPackTools(agent: AgentContext): void {
       inputSchema: {
         pack_id: z.string().describe('The pack ID to add the item to'),
         name: z.string().min(1).describe('Item name'),
-        category: z
-          .string()
-          .describe(
-            'Item category (e.g. "shelter", "sleep", "clothing", "footwear", "navigation", "safety", "food", "water", "hygiene", "tools")',
-          ),
+        category: z.nativeEnum(ItemCategory).describe('Item category'),
         weight_grams: z.number().min(0).describe('Item weight in grams'),
         quantity: z.number().int().min(1).default(1).describe('Number of this item'),
         catalog_item_id: z
@@ -223,13 +206,12 @@ export function registerPackTools(agent: AgentContext): void {
     {
       description: 'Remove an item from a pack (soft-delete).',
       inputSchema: {
-        pack_id: z.string().describe('The pack ID'),
         item_id: z.string().describe('The item ID to remove'),
       },
     },
-    async ({ pack_id, item_id }) => {
+    async ({ item_id }) => {
       try {
-        const data = await agent.api.delete(`/packs/${pack_id}/items/${item_id}`);
+        const data = await agent.api.delete(`/packs/items/${item_id}`);
         return ok(data);
       } catch (e) {
         return err(e);
@@ -312,11 +294,7 @@ export function registerPackTools(agent: AgentContext): void {
         "Identify missing essential gear categories for a specific activity type. Compares the pack's current categories against recommended essentials and returns what's missing.",
       inputSchema: {
         pack_id: z.string().describe('The pack ID to analyze'),
-        activity: z
-          .string()
-          .describe(
-            'Activity type: backpacking, camping, climbing, hiking, skiing, cycling, or travel',
-          ),
+        activity: z.nativeEnum(PackCategory).describe('Activity type to check gear gaps for'),
         duration_days: z
           .number()
           .int()

@@ -1,6 +1,6 @@
 {
   "name": "@packrat/mcp",
-  "version": "2.0.20",
+  "version": "2.0.21",
   "private": true,
   "description": "PackRat MCP Server — outdoor adventure planning via Model Context Protocol",
   "scripts": {
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.0",
+    "@packrat/api-client": "workspace:*",
     "agents": "^0.11.0",
     "zod": "catalog:"
   },
