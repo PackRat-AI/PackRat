@@ -178,7 +178,9 @@ export const AppleAuthRequestSchema = z
       description: 'Apple identity token from Sign in with Apple',
     }),
     authorizationCode: z.string().optional().openapi({
-      description: 'Apple authorization code (only provided on first sign-in)',
+      description:
+        'Apple authorization code. Apple only includes this on the very first authorization. ' +
+        'Returning users (re-authenticating on the same or a new device) will not receive it.',
     }),
   })
   .openapi('AppleAuthRequest');

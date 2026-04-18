@@ -22,6 +22,7 @@ import {
 } from '@packrat/api/schemas/auth';
 import type { Env } from '@packrat/api/types/env';
 import { generateJWT, generateRefreshToken } from '@packrat/api/utils/auth';
+import { decodeBase64urlJson } from '@packrat/api/utils/appleAuth';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { generateCodeChallenge, generateCodeVerifier, generateOAuthState } from '@packrat/api/utils/pkce';
 import { assertDefined } from '@packrat/guards';
@@ -156,12 +157,10 @@ interface GoogleIdTokenPayload {
 
 function decodeJwtPayload<T>(token: string): T {
   const parts = token.split('.');
-  if (parts.length < 2 || !parts[1]) {
+  if (parts.length < 2) {
     throw new Error('Invalid JWT');
   }
-  const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-  return JSON.parse(atob(padded)) as T;
+  return decodeBase64urlJson<T>(parts[1] ?? '');
 }
 
 const callbackRoute = createRoute({
@@ -267,9 +266,10 @@ oauthRoutes.openapi(callbackRoute, async (c) => {
   }
 
   // Decode the id_token (Google's token endpoint returns a standard JWT; for
-  // a web PKCE flow the token was already bound to our client_id, so decoding
-  // the payload is sufficient — the token was not presented to us by the user
-  // and cannot be replayed from another client.)
+  // a web PKCE flow the token was already bound to our client_id during the
+  // server-to-server code exchange with client_secret, so there is no vector
+  // for a third party to replay a forged token. Signature verification against
+  // Google's JWKS would add defence-in-depth but is omitted here for simplicity.)
   let googlePayload: GoogleIdTokenPayload;
   try {
     googlePayload = decodeJwtPayload<GoogleIdTokenPayload>(tokenData.id_token);

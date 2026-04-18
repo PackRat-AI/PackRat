@@ -1,5 +1,6 @@
 -- Remove duplicate auth_provider rows to allow the unique index below.
--- Keep the earliest row per (provider, provider_id) pair.
+-- Keep the row inserted first (lowest id) per (provider, provider_id) pair,
+-- which matches the original insert order and avoids removing the canonical record.
 DELETE FROM "auth_providers" a
 WHERE a.id NOT IN (
   SELECT MIN(id)

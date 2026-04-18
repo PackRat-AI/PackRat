@@ -66,7 +66,8 @@ function base64urlToBuffer(base64url: string): ArrayBuffer {
   return buffer.buffer;
 }
 
-function decodeBase64urlJson<T>(base64url: string): T {
+/** @internal Exported for use in other auth utilities. */
+export function decodeBase64urlJson<T>(base64url: string): T {
   const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
   return JSON.parse(atob(padded)) as T;

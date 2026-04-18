@@ -1134,7 +1134,10 @@ authRoutes.openapi(appleRoute, async (c) => {
     // First sign-in or new device: Apple must supply the email to create/link the account
     if (!email) {
       return c.json(
-        { error: 'Email is required for first sign-in with Apple' },
+        {
+          error:
+            'Apple did not provide an email address. Please sign in again or contact support.',
+        },
         400,
       );
     }
@@ -1149,6 +1152,8 @@ authRoutes.openapi(appleRoute, async (c) => {
         .insert(users)
         .values({
           email,
+          // Apple returns email_verified as a boolean or the string "true"/"false"
+          // depending on the SDK version. Handle both forms.
           emailVerified: email_verified === true || email_verified === 'true',
         })
         .onConflictDoUpdate({ target: users.email, set: { updatedAt: new Date() } })
