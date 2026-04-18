@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { parseCsvArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
@@ -9,7 +10,7 @@ export default defineCommand({
   },
   async run({ args }) {
     const cache = await ensureCache();
-    const rows = await cache.comparePrices(args.keyword, args.sites?.split(','));
+    const rows = await cache.comparePrices(args.keyword, parseCsvArg(args.sites));
     printTable(rows as unknown as Record<string, unknown>[], {
       title: `Price Comparison: "${args.keyword}"`,
     });

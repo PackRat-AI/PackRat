@@ -1,6 +1,7 @@
 import { DataExporter } from '@packrat/analytics';
 import { defineCommand } from 'citty';
 import consola from 'consola';
+import { parseOptionalNumberArg } from '../args';
 import { ensureCache, printSummary } from '../shared';
 
 export default defineCommand({
@@ -44,7 +45,7 @@ export default defineCommand({
     const summary = await exporter.export({
       format,
       outputDir: args['output-dir'],
-      sample: args.sample ? Number(args.sample) : undefined,
+      sample: parseOptionalNumberArg(args.sample, '--sample'),
       dedup,
       includeQuality: args.quality ?? dedup !== 'none',
       skuFilter: args.sku,

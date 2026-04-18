@@ -1,4 +1,5 @@
 import { defineCommand } from 'citty';
+import { parseCsvArg, parsePercentageArg, parsePositiveIntArg } from '../args';
 import { ensureCache, printTable } from '../shared';
 
 export default defineCommand({
@@ -12,10 +13,10 @@ export default defineCommand({
   async run({ args }) {
     const cache = await ensureCache();
     const rows = await cache.findSales({
-      minDiscountPct: Number(args['min-discount']),
+      minDiscountPct: parsePercentageArg(args['min-discount'], '--min-discount'),
       category: args.category,
-      sites: args.sites?.split(','),
-      limit: Number(args.limit),
+      sites: parseCsvArg(args.sites),
+      limit: parsePositiveIntArg(args.limit, '--limit'),
     });
     printTable(
       rows.map(({ site, name, price, compare_at_price, discount_pct }) => ({
