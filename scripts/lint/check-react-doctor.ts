@@ -170,7 +170,13 @@ if (isTTY) {
   }
 }
 
-const results = await Promise.all(runnableApps.map(runDoctor));
+// Run sequentially so each `bunx` call fully extracts to its cache before the
+// next one reads from it — parallel extraction to the same temp path causes
+// race-condition module-not-found errors in CI.
+const results: ReactAppRunResult[] = [];
+for (const app of runnableApps) {
+  results.push(await runDoctor(app));
+}
 
 if (isTTY) {
   // Move cursor up by "header + app rows" then clear to end of screen.
