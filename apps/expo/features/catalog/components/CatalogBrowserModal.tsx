@@ -322,9 +322,9 @@ export function CatalogBrowserModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <SafeAreaView className="flex-1 bg-background">
+      <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
         {/* Header */}
-        <View className="flex-row items-center justify-between border-b border-border p-4">
+        <View className="flex-row items-center justify-between border-b border-border bg-background p-4">
           <View className="flex-row items-center">
             <Text>{t('catalog.browseCatalog')}</Text>
           </View>
@@ -334,13 +334,14 @@ export function CatalogBrowserModal({
         </View>
 
         {/* Search and Filter */}
-        <View className="p-4">
+        <View className="bg-background p-4">
           <SearchInput
             textContentType="none"
             autoComplete="off"
             value={searchValue}
             onChangeText={setSearchValue}
             placeholder={t('catalog.searchEllipsis')}
+            containerClassName="bg-background"
           />
 
           {!isSearching && categories && (
@@ -355,7 +356,7 @@ export function CatalogBrowserModal({
         </View>
 
         {/* Items List */}
-        <View className="flex-1">
+        <View className="flex-1 bg-background">
           {isLoading && items.length === 0 ? (
             <View className="flex-1 items-center justify-center">
               <ActivityIndicator size="large" color={colors.primary} />

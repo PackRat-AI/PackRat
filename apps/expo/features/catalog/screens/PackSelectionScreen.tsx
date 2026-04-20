@@ -47,7 +47,7 @@ export function PackSelectionScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       {catalogItem && (
         <View className="border-b border-border bg-card px-4 py-3">
           <View className="flex-row items-center">
@@ -78,13 +78,14 @@ export function PackSelectionScreen() {
         </View>
       )}
 
-      <View className="p-4">
+      <View className="bg-background p-4">
         <View className="mb-4">
           <SearchInput
             textContentType="none"
             autoComplete="off"
             value={searchQuery}
             onChangeText={setSearchQuery}
+            containerClassName="bg-background"
           />
         </View>
 
