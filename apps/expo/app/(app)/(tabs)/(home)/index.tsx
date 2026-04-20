@@ -9,6 +9,7 @@ import {
   ListSectionHeader,
 } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import TabScreen from 'expo-app/components/TabScreen';
 import { appConfig, featureFlags } from 'expo-app/config';
 import { AIChatTile } from 'expo-app/features/ai/components/AIChatTile';
@@ -235,57 +236,61 @@ export default function DashboardScreen() {
           ref: asNonNullableRef(searchBarRef),
           onChangeText: setSearchValue,
           placeholder: appConfig.dashboard.strings.searchPlaceholder,
-          content: searchValue ? (
-            <FlatList
-              data={filteredTiles}
-              keyExtractor={keyExtractor}
-              className="space-y-4 px-4"
-              renderItem={({ item }) => {
-                assertIsString(item);
-                if (!item.startsWith(DASHBOARD_GAP_PREFIX)) {
-                  const Component = tileInfo[item as TileName].component;
-                  return (
-                    <Pressable
-                      key={item}
-                      className="rounded-2xl overflow-hidden "
-                      onPress={() => {
-                        setSearchValue('');
-                        searchBarRef.current?.clearText();
-                      }}
-                    >
-                      <Component />
-                    </Pressable>
-                  );
-                }
-                return null;
-              }}
-              ListHeaderComponent={() =>
-                filteredTiles.length > 0 ? (
-                  <Text className="px-4 py-2 text-sm text-muted-foreground">
-                    {filteredTiles.length}{' '}
-                    {filteredTiles.length === 1
-                      ? appConfig.dashboard.strings.resultSingular
-                      : appConfig.dashboard.strings.resultPlural}
-                  </Text>
-                ) : null
-              }
-              ListEmptyComponent={() => (
-                <View className="items-center justify-center p-6">
-                  <Icon name="file-search-outline" size={48} color="#9ca3af" />
-                  <View className="h-4" />
-                  <Text className="text-lg font-medium text-muted-foreground">
-                    {t('dashboard.noResults')}
-                  </Text>
-                  <Text className="mt-1 text-center text-sm text-muted-foreground">
-                    {t('dashboard.tryDifferent')}
-                  </Text>
+          content: (
+            <LargeTitleHeaderSearchContentContainer>
+              {searchValue ? (
+                <FlatList
+                  data={filteredTiles}
+                  keyExtractor={keyExtractor}
+                  contentContainerClassName="gap-4 px-4 pb-4"
+                  renderItem={({ item }) => {
+                    assertIsString(item);
+                    if (!item.startsWith(DASHBOARD_GAP_PREFIX)) {
+                      const Component = tileInfo[item as TileName].component;
+                      return (
+                        <Pressable
+                          key={item}
+                          className="rounded-2xl overflow-hidden "
+                          onPress={() => {
+                            setSearchValue('');
+                            searchBarRef.current?.clearText();
+                          }}
+                        >
+                          <Component />
+                        </Pressable>
+                      );
+                    }
+                    return null;
+                  }}
+                  ListHeaderComponent={() =>
+                    filteredTiles.length > 0 ? (
+                      <Text className="px-4 py-2 text-sm text-muted-foreground">
+                        {filteredTiles.length}{' '}
+                        {filteredTiles.length === 1
+                          ? appConfig.dashboard.strings.resultSingular
+                          : appConfig.dashboard.strings.resultPlural}
+                      </Text>
+                    ) : null
+                  }
+                  ListEmptyComponent={() => (
+                    <View className="items-center justify-center p-6">
+                      <Icon name="file-search-outline" size={48} color="#9ca3af" />
+                      <View className="h-4" />
+                      <Text className="text-lg font-medium text-muted-foreground">
+                        {t('dashboard.noResults')}
+                      </Text>
+                      <Text className="mt-1 text-center text-sm text-muted-foreground">
+                        {t('dashboard.tryDifferent')}
+                      </Text>
+                    </View>
+                  )}
+                />
+              ) : (
+                <View className="flex-1 items-center justify-center p-4">
+                  <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
                 </View>
               )}
-            />
-          ) : (
-            <View className="flex-1 items-center justify-center p-4">
-              <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
-            </View>
+            </LargeTitleHeaderSearchContentContainer>
           ),
         }}
         backVisible={false}

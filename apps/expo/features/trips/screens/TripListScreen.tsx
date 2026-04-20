@@ -1,5 +1,6 @@
 import { LargeTitleHeader, type LargeTitleSearchBarMethods } from '@packrat/ui/nativewindui';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import TabScreen from 'expo-app/components/TabScreen';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { useTranslation } from 'expo-app/lib/hooks/useTranslation';
@@ -108,9 +109,11 @@ export function TripsListScreen() {
           ref: asNonNullableRef(searchBarRef),
           onChangeText: setSearchValue,
           content: (
-            <View className="flex-1 items-center justify-center">
-              <Text>{t('trips.searchTrips')}</Text>
-            </View>
+            <LargeTitleHeaderSearchContentContainer>
+              <View className="flex-1 items-center justify-center">
+                <Text>{t('trips.searchTrips')}</Text>
+              </View>
+            </LargeTitleHeaderSearchContentContainer>
           ),
         }}
         rightView={() => (
