@@ -283,11 +283,7 @@ export default function DashboardScreen() {
                 </View>
               )}
             />
-          ) : (
-            <View className="flex-1 items-center justify-center p-4">
-              <Text className="text-muted-foreground">{t('dashboard.searchPlaceholder')}</Text>
-            </View>
-          ),
+          ) : undefined,
         }}
         backVisible={false}
       />
