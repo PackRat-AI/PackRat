@@ -10,6 +10,7 @@
  */
 
 import { neon, neonConfig } from '@neondatabase/serverless';
+import { nodeEnv } from '@packrat/env/node';
 import { eq } from 'drizzle-orm';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import { drizzle as drizzlePg, type NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -33,9 +34,9 @@ const isStandardPostgresUrl = (url: string) => {
 };
 
 async function seedE2EUser() {
-  const dbUrl = process.env.NEON_DATABASE_URL;
-  const email = process.env.E2E_TEST_EMAIL;
-  const password = process.env.E2E_TEST_PASSWORD;
+  const dbUrl = nodeEnv.NEON_DATABASE_URL;
+  const email = nodeEnv.E2E_TEST_EMAIL;
+  const password = nodeEnv.E2E_TEST_PASSWORD;
 
   if (!dbUrl) throw new Error('NEON_DATABASE_URL is required');
   if (!email) throw new Error('E2E_TEST_EMAIL is required');
