@@ -185,7 +185,6 @@ export function PackListScreen() {
         title={t('navigation.packs')}
         backVisible={false}
         searchBar={{
-          iosHideWhenScrolling: true,
           ref: asNonNullableRef(searchBarRef),
           onChangeText(text) {
             setSearchValue(text);

@@ -233,7 +233,6 @@ export default function DashboardScreen() {
         title={t('dashboard.title')}
         searchBar={{
           ref: asNonNullableRef(searchBarRef),
-          iosHideWhenScrolling: true,
           onChangeText: setSearchValue,
           placeholder: appConfig.dashboard.strings.searchPlaceholder,
           content: searchValue ? (

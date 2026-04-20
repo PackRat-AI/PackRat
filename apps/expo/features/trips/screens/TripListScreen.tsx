@@ -105,7 +105,6 @@ export function TripsListScreen() {
         title={t('trips.trips')}
         backVisible={false}
         searchBar={{
-          iosHideWhenScrolling: true,
           ref: asNonNullableRef(searchBarRef),
           onChangeText: setSearchValue,
           content: (
