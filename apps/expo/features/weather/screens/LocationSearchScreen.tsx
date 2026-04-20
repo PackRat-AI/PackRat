@@ -386,15 +386,15 @@ export default function LocationSearchScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
       {/* Search Input */}
-      <View className="px-4">
+      <View className="bg-background px-4 pb-4 pt-2">
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchForCity')}
           value={query}
           onChangeText={handleSearchChange}
-          containerClassName="border border-border"
+          containerClassName="border border-border bg-background"
           clearButtonMode="while-editing"
         />
       </View>
@@ -404,7 +404,7 @@ export default function LocationSearchScreen() {
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(200)}
-          className="flex-1 items-center justify-center"
+          className="flex-1 items-center justify-center bg-background"
         >
           <ActivityIndicator size="large" color={colors.primary} />
           <Text className="mt-4 text-muted-foreground">{t('weather.searchingForLocations')}</Text>
@@ -417,6 +417,7 @@ export default function LocationSearchScreen() {
           ListEmptyComponent={renderEmptyList}
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
+          className="bg-background"
         />
       )}
     </SafeAreaView>

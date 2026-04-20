@@ -117,7 +117,7 @@ function LocationsScreen() {
   const showLocationsList = filteredLocations.length > 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, paddingTop: Platform.OS === 'ios' ? insets.top : 0 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
       <LargeTitleHeader
         title={t('weather.weather')}
         leftView={() => (
@@ -142,13 +142,13 @@ function LocationsScreen() {
         )}
       />
 
-      <View className="p-4" style={{ paddingTop: Platform.OS === 'ios' ? insets.top + 22 : 0 }}>
+      <View className="bg-background px-4 pb-4 pt-2">
         <SearchInput
           ref={searchInputRef}
           placeholder={t('weather.searchSavedLocations')}
           value={searchQuery}
           onChangeText={handleSearchChange}
-          containerClassName="border border-border"
+          containerClassName="border border-border bg-background"
           onFocus={() => setIsSearchFocused(true)}
           onBlur={() => {
             // Only unfocus if search is empty

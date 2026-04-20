@@ -87,14 +87,15 @@ export default function LocationSearchScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="p-4 border-b border-border bg-background flex-row items-center space-x-2">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right']}>
+      <View className="border-b border-border bg-background p-4 flex-row items-center space-x-2">
         <View className="flex-1">
           <SearchInput
             placeholder={t('location.searchForPlace')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
+            containerClassName="bg-background"
           />
         </View>
         <Button onPress={handleSearch} variant="secondary" size="sm">
@@ -102,7 +103,7 @@ export default function LocationSearchScreen() {
         </Button>
       </View>
 
-      <View className="flex-1">
+      <View className="flex-1 bg-background">
         <MapView
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
@@ -126,7 +127,7 @@ export default function LocationSearchScreen() {
         </MapView>
       </View>
 
-      <View className="p-4 space-y-2">
+      <View className="bg-background p-4 space-y-2">
         {isLoading && <ActivityIndicator />}
         {selectedLocation && (
           <Button onPress={handleConfirm}>
