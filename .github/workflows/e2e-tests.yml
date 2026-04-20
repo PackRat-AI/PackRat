@@ -75,7 +75,7 @@ jobs:
           cache: true
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
@@ -100,7 +100,7 @@ jobs:
           java-version: "17"
 
       - name: Cache CocoaPods
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/Library/Caches/CocoaPods
@@ -125,7 +125,7 @@ jobs:
 
       - name: Cache Maestro CLI
         id: maestro-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.maestro
           key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
@@ -327,7 +327,7 @@ jobs:
           cache: true
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
@@ -352,7 +352,7 @@ jobs:
           java-version: "17"
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.gradle/caches
@@ -363,7 +363,7 @@ jobs:
 
       - name: Cache Maestro CLI
         id: maestro-cache-android
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.maestro
           key: maestro-${{ env.MAESTRO_VERSION }}-${{ runner.os }}
@@ -399,7 +399,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: AVD cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: avd-cache
         with:
           path: |
