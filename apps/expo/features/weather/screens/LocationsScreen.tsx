@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
