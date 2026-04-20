@@ -2,6 +2,7 @@ import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packra
 import { searchValueAtom } from 'expo-app/atoms/itemListAtoms';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { Icon } from 'expo-app/components/Icon';
+import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import TabScreen from 'expo-app/components/TabScreen';
 import { withAuthWall } from 'expo-app/features/auth/hocs';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
@@ -141,7 +142,7 @@ function CatalogItemsScreen() {
 
           placeholder: t('catalog.searchPlaceholder'),
           content: (
-            <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <LargeTitleHeaderSearchContentContainer>
               {isSearching ? (
                 isVectorLoading || !isQueryReady ? (
                   <View className="flex-1 items-center justify-center p-6">
@@ -199,7 +200,7 @@ function CatalogItemsScreen() {
                   <Text className="text-muted-foreground">{t('catalog.searchCatalog')}</Text>
                 </View>
               )}
-            </View>
+            </LargeTitleHeaderSearchContentContainer>
           ),
         }}
       />
