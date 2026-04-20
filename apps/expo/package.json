@@ -132,7 +132,7 @@
     "react-native-ios-utilities": "^5.2.0",
     "react-native-keyboard-controller": "1.18.5",
     "react-native-maps": "1.20.1",
-    "react-native-pager-view": "6.9.1",
+    "react-native-pager-view": "8.0.1",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
