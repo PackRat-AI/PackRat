@@ -1,8 +1,4 @@
-import {
-  LargeTitleHeader,
-  type LargeTitleSearchBarMethods,
-  Text,
-} from '@packrat/ui/nativewindui';
+import { LargeTitleHeader, type LargeTitleSearchBarMethods, Text } from '@packrat/ui/nativewindui';
 import { CategoriesFilter } from 'expo-app/components/CategoriesFilter';
 import { LargeTitleHeaderSearchContentContainer } from 'expo-app/components/LargeTitleHeaderSearchContentContainer';
 import TabScreen from 'expo-app/components/TabScreen';
@@ -165,7 +161,7 @@ export const GuidesListScreen = () => {
 
   const listHeader = () => {
     if (isSearchMode) return null;
-    
+
     return (
       <TabScreen useLegacySafeAreaView>
         <CategoriesFilter
