@@ -1,5 +1,6 @@
 import { use$ } from '@legendapp/state/react';
 import { useMutation } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import type { Pack } from 'expo-app/features/packs';
 import { packsStore } from 'expo-app/features/packs/store';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
@@ -22,6 +23,9 @@ export function useGeneratePacks() {
   const mutation = useMutation({
     mutationFn: generatePacks,
     mutationKey: ['generatePacks'],
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { feature: 'generatePacks' } });
+    },
   });
 
   const generatedPacksFromStore = use$(() => {

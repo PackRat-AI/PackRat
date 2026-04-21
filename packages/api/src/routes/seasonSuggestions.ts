@@ -81,30 +81,29 @@ const seasonSuggestionsRoute = createRoute({
 seasonSuggestionsRoutes.openapi(seasonSuggestionsRoute, async (c) => {
   const auth = c.get('user');
   const { location, date } = await c.req.json();
-  const db = createDb(c);
 
-  // Get user's inventory items (all pack items across all packs owned by user)
-  // We're getting all pack items to represent the user's total inventory
-  const items = await db.query.packItems.findMany({
-    where: and(eq(packItems.userId, auth.userId), eq(packItems.deleted, false)),
-    columns: {
-      embedding: false,
-    },
-  });
+  try {
+    const db = createDb(c);
 
-  if (items.length < 20) {
-    return c.json(
-      {
-        error: `Insufficient inventory items. You have ${items.length} items, but need at least 20 items to generate seasonal suggestions.`,
+    const items = await db.query.packItems.findMany({
+      where: and(eq(packItems.userId, auth.userId), eq(packItems.deleted, false)),
+      columns: {
+        embedding: false,
       },
-      400,
-    );
-  }
+    });
 
-  const inventoryFormatted = formatInventoryForAI(items);
+    if (items.length < 20) {
+      return c.json(
+        {
+          error: `Insufficient inventory items. You have ${items.length} items, but need at least 20 items to generate seasonal suggestions.`,
+        },
+        400,
+      );
+    }
 
-  // Build AI prompt for seasonal pack suggestions
-  const systemPrompt = `
+    const inventoryFormatted = formatInventoryForAI(items);
+
+    const systemPrompt = `
 You are a specialized assistant for creating seasonal advencture pack recommendations.
 
 Based on the user's available inventory items, current location, and date, provide 2-3 optimal pack configurations suitable for the current season.
@@ -114,73 +113,81 @@ Date: ${date}
 Available Inventory Items:
 ${inventoryFormatted}`;
 
-  // Generate suggestions using AI
-  const { OPENAI_API_KEY } = getEnv(c);
-  const openai = createOpenAI({
-    apiKey: OPENAI_API_KEY,
-  });
-  const { object } = await generateObject({
-    model: openai(DEFAULT_MODELS.OPENAI_CHAT),
-    schema: z.object({
-      season: z.string(),
-      suggestions: z.array(
-        z.object({
-          name: z.string(),
-          description: z.string(),
-          category: z.string(),
-          tags: z.array(z.string()).optional(),
-          items: z.array(
-            z.object({
-              id: z.string().describe('Inventory item ID'),
-              name: z.string(),
-              quantity: z.number().min(1),
-              reason: z.string(),
-            }),
-          ),
-        }),
-      ),
-    }),
-    system: systemPrompt,
-    prompt: 'Generate',
-    temperature: 0.8,
-  });
+    const { OPENAI_API_KEY } = getEnv(c);
+    const openai = createOpenAI({
+      apiKey: OPENAI_API_KEY,
+    });
+    const { object } = await generateObject({
+      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+      schema: z.object({
+        season: z.string(),
+        suggestions: z.array(
+          z.object({
+            name: z.string(),
+            description: z.string(),
+            category: z.string(),
+            tags: z.array(z.string()).optional(),
+            items: z.array(
+              z.object({
+                id: z.string().describe('Inventory item ID'),
+                name: z.string(),
+                quantity: z.number().min(1),
+                reason: z.string(),
+              }),
+            ),
+          }),
+        ),
+      }),
+      system: systemPrompt,
+      prompt: 'Generate',
+      temperature: 0.8,
+    });
 
-  const suggestions = object.suggestions.map((suggestion) => ({
-    ...suggestion,
-    items: suggestion.items
-      .map((item) => {
-        const invItem = items.find((invItem) => invItem.id === item.id);
+    const suggestions = object.suggestions.map((suggestion) => ({
+      ...suggestion,
+      items: suggestion.items
+        .map((item) => {
+          const invItem = items.find((invItem) => invItem.id === item.id);
 
-        if (!invItem) {
-          return undefined;
-        }
+          if (!invItem) {
+            return undefined;
+          }
 
-        return {
-          name: invItem.name,
-          description: invItem.description ?? null,
-          weight: invItem.weight,
-          weightUnit: invItem.weightUnit,
-          quantity: item.quantity,
-          category: invItem.category,
-          consumable: invItem.consumable,
-          worn: invItem.worn,
-          image: invItem.image,
-          notes: item.reason,
-          catalogItemId: invItem.catalogItemId,
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => !!item),
-  }));
+          return {
+            name: invItem.name,
+            description: invItem.description ?? null,
+            weight: invItem.weight,
+            weightUnit: invItem.weightUnit,
+            quantity: item.quantity,
+            category: invItem.category,
+            consumable: invItem.consumable,
+            worn: invItem.worn,
+            image: invItem.image,
+            notes: item.reason,
+            catalogItemId: invItem.catalogItemId,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => !!item),
+    }));
 
-  return c.json(
-    {
-      suggestions,
-      totalInventoryItems: items.length,
-      location,
-      season: object.season,
-    },
-    200,
-  );
+    return c.json(
+      {
+        suggestions,
+        totalInventoryItems: items.length,
+        location,
+        season: object.season,
+      },
+      200,
+    );
+  } catch (error) {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'seasonSuggestions');
+    sentry.setUser({ id: auth.userId });
+    sentry.setContext('params', { location, date });
+    sentry.captureException(error);
+    console.error('Season suggestions error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
 });
 
 export { seasonSuggestionsRoutes };

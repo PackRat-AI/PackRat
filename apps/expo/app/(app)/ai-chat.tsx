@@ -1,5 +1,6 @@
 import { type UIMessage, useChat } from '@ai-sdk/react';
 import { clientEnvs } from '@packrat/env/expo-client';
+import * as Sentry from '@sentry/react-native';
 import { ActivityIndicator, Button, Text } from '@packrat/ui/nativewindui';
 import { DefaultChatTransport, type TextUIPart } from 'ai';
 import * as Burnt from 'burnt';
@@ -147,7 +148,10 @@ export default function AIChat() {
 
   const { messages, setMessages, error, sendMessage, stop, status } = useChat({
     transport,
-    onError: (error: Error) => console.log(error, 'ERROR'),
+    onError: (error: Error) => {
+      Sentry.captureException(error, { tags: { feature: 'ai-chat' } });
+      console.error('AI chat error:', error);
+    },
     experimental_throttle: 200,
     messages: initialMessages,
   });
@@ -164,6 +168,7 @@ export default function AIChat() {
         }
       })
       .catch((error) => {
+        Sentry.captureException(error, { tags: { feature: 'ai-chat', operation: 'loadPersistedMessages' } });
         console.error('Failed to load persisted messages:', error);
       })
       .finally(() => {

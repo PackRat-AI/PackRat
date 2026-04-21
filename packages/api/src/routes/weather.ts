@@ -92,12 +92,15 @@ weatherRoutes.openapi(searchRoute, async (c) => {
 
     return c.json(locations, 200);
   } catch (error) {
-    console.error('Error searching weather locations:', error);
-    c.get('sentry').setContext('params', {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'weather.search');
+    sentry.setContext('params', {
       query,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
+    sentry.captureException(error);
+    console.error('Error searching weather locations:', error);
     return c.json({ error: 'Internal server error', code: 'WEATHER_SEARCH_ERROR' }, 500);
   }
 });
@@ -208,13 +211,16 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
 
     return c.json(locations, 200);
   } catch (error) {
-    console.error('Error searching weather locations by coordinates:', error);
-    c.get('sentry').setContext('params', {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'weather.searchByCoord');
+    sentry.setContext('params', {
       latitude,
       longitude,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
+    sentry.captureException(error);
+    console.error('Error searching weather locations by coordinates:', error);
     return c.json({ error: 'Internal server error', code: 'WEATHER_COORD_SEARCH_ERROR' }, 500);
   }
 });
@@ -292,12 +298,15 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
 
     return c.json(result, 200);
   } catch (error) {
-    console.error('Error fetching weather forecast:', error);
-    c.get('sentry').setContext('params', {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'weather.forecast');
+    sentry.setContext('params', {
       id,
       weatherApiUrl: WEATHER_API_BASE_URL,
       weatherApiKey: !!WEATHER_API_KEY,
     });
+    sentry.captureException(error);
+    console.error('Error fetching weather forecast:', error);
     return c.json({ error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' }, 500);
   }
 });

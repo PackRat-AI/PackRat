@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import axiosInstance, { handleApiError } from 'expo-app/lib/api/client';
 
 export interface GapAnalysisRequest {
@@ -42,5 +43,8 @@ export function usePackGapAnalysis() {
   return useMutation({
     mutationFn: ({ packId, context }: { packId: string; context?: GapAnalysisRequest }) =>
       analyzePackGaps(packId, context),
+    onError: (error) => {
+      Sentry.captureException(error, { tags: { feature: 'packGapAnalysis' } });
+    },
   });
 }

@@ -36,6 +36,6 @@ export class AppContainer extends Container<Env> {
   }
 
   override onError(error: unknown) {
-    console.log('TikTok container error:', error);
+    console.error('TikTok container error:', error instanceof Error ? error.stack : error);
   }
 }

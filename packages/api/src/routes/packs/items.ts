@@ -263,7 +263,6 @@ const addItemRoute = createRoute({
 packItemsRoutes.openapi(addItemRoute, async (c) => {
   const auth = c.get('user');
 
-  const db = createDb(c);
   const packId = c.req.param('packId');
   const data = await c.req.json();
   const { OPENAI_API_KEY, AI_PROVIDER, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_AI_GATEWAY_ID, AI } =
@@ -281,57 +280,67 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
     return c.json({ error: 'Item ID is required' }, 400);
   }
 
-  // Generate embedding
-  const embeddingText = getEmbeddingText(data);
-  const embedding = await generateEmbedding({
-    openAiApiKey: OPENAI_API_KEY,
-    value: embeddingText,
-    provider: AI_PROVIDER,
-    cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
-    cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
-    cloudflareAiBinding: AI,
-  });
+  try {
+    const db = createDb(c);
 
-  const [newItem] = await db
-    .insert(packItems)
-    .values({
-      id: data.id,
-      packId: packId,
-      catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
-      name: data.name,
-      description: data.description,
-      weight: data.weight,
-      weightUnit: data.weightUnit,
-      quantity: data.quantity || 1,
-      category: data.category,
-      consumable: data.consumable || false,
-      worn: data.worn || false,
-      image: data.image,
-      notes: data.notes,
-      userId: auth.userId,
-      embedding: embedding,
-    })
-    .returning();
+    const embeddingText = getEmbeddingText(data);
+    const embedding = await generateEmbedding({
+      openAiApiKey: OPENAI_API_KEY,
+      value: embeddingText,
+      provider: AI_PROVIDER,
+      cloudflareAccountId: CLOUDFLARE_ACCOUNT_ID,
+      cloudflareGatewayId: CLOUDFLARE_AI_GATEWAY_ID,
+      cloudflareAiBinding: AI,
+    });
 
-  await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+    const [newItem] = await db
+      .insert(packItems)
+      .values({
+        id: data.id,
+        packId: packId,
+        catalogItemId: data.catalogItemId ? Number(data.catalogItemId) : null,
+        name: data.name,
+        description: data.description,
+        weight: data.weight,
+        weightUnit: data.weightUnit,
+        quantity: data.quantity || 1,
+        category: data.category,
+        consumable: data.consumable || false,
+        worn: data.worn || false,
+        image: data.image,
+        notes: data.notes,
+        userId: auth.userId,
+        embedding: embedding,
+      })
+      .returning();
 
-  if (!newItem) {
-    return c.json({ error: 'Failed to create item' }, 400);
+    await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+
+    if (!newItem) {
+      return c.json({ error: 'Failed to create item' }, 400);
+    }
+
+    const mappedNewItem = {
+      ...newItem,
+      consumable: newItem.consumable ?? false,
+      worn: newItem.worn ?? false,
+      deleted: newItem.deleted ?? false,
+      createdAt: newItem.createdAt.toISOString(),
+      updatedAt: newItem.updatedAt.toISOString(),
+      embedding: undefined,
+      templateItemId: newItem.templateItemId ?? null,
+    };
+
+    return c.json(mappedNewItem, 201);
+  } catch (error) {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'packItems.addItem');
+    sentry.setUser({ id: auth.userId });
+    sentry.setContext('params', { packId, itemId: data.id, itemName: data.name });
+    sentry.captureException(error);
+    console.error('Add pack item error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
   }
-
-  // Map the new item to ensure proper format
-  const mappedNewItem = {
-    ...newItem,
-    consumable: newItem.consumable ?? false,
-    worn: newItem.worn ?? false,
-    deleted: newItem.deleted ?? false,
-    createdAt: newItem.createdAt.toISOString(),
-    updatedAt: newItem.updatedAt.toISOString(),
-    embedding: undefined, // Don't send embedding in response
-    templateItemId: newItem.templateItemId ?? null,
-  };
-
-  return c.json(mappedNewItem, 201);
 });
 
 // Update a pack item
@@ -533,26 +542,34 @@ const deleteItemRoute = createRoute({
 
 packItemsRoutes.openapi(deleteItemRoute, async (c) => {
   const auth = c.get('user');
-
-  const db = createDb(c);
-
   const itemId = c.req.param('itemId');
 
-  const item = await db.query.packItems.findFirst({
-    where: and(eq(packItems.id, itemId), eq(packItems.userId, auth.userId)),
-  });
+  try {
+    const db = createDb(c);
 
-  if (!item) {
-    return c.json({ error: 'Pack item not found' }, 404);
+    const item = await db.query.packItems.findFirst({
+      where: and(eq(packItems.id, itemId), eq(packItems.userId, auth.userId)),
+    });
+
+    if (!item) {
+      return c.json({ error: 'Pack item not found' }, 404);
+    }
+
+    const packId = item.packId;
+
+    await db.delete(packItems).where(eq(packItems.id, itemId));
+    await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
+
+    return c.json({ success: true, itemId: itemId }, 200);
+  } catch (error) {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'packItems.deleteItem');
+    sentry.setUser({ id: auth.userId });
+    sentry.setContext('params', { itemId });
+    sentry.captureException(error);
+    console.error('Delete pack item error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
   }
-
-  const packId = item.packId;
-
-  await db.delete(packItems).where(eq(packItems.id, itemId));
-
-  await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
-
-  return c.json({ success: true, itemId: itemId }, 200);
 });
 
 // Get similar items to a pack item
@@ -641,56 +658,61 @@ const getSimilarItemsRoute = createRoute({
 });
 
 packItemsRoutes.openapi(getSimilarItemsRoute, async (c) => {
-  const db = createDb(c);
   const auth = c.get('user');
   const { itemId } = c.req.param();
   const { limit, threshold } = c.req.valid('query');
 
-  // Validate limit
-  const validLimit = Math.min(Math.max(limit, 1), 20);
+  try {
+    const db = createDb(c);
+    const validLimit = Math.min(Math.max(limit, 1), 20);
 
-  // First, get the source pack item with its embedding
-  const sourceItem = await db.query.packItems.findFirst({
-    where: eq(packItems.id, itemId),
-    with: {
-      pack: true,
-    },
-  });
+    const sourceItem = await db.query.packItems.findFirst({
+      where: eq(packItems.id, itemId),
+      with: {
+        pack: true,
+      },
+    });
 
-  if (!sourceItem || !sourceItem.embedding) {
-    return c.json({ error: 'Pack item not found or has no embedding' }, 404);
+    if (!sourceItem || !sourceItem.embedding) {
+      return c.json({ error: 'Pack item not found or has no embedding' }, 404);
+    }
+
+    if (sourceItem.pack.userId !== auth.userId && !sourceItem.pack.isPublic) {
+      return c.json({ error: 'Access denied to private pack' }, 403);
+    }
+
+    const catalogSimilarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
+    const { embedding: _catalogEmbedding, ...catalogColumns } = getTableColumns(catalogItems);
+
+    const similarCatalogItems = await db
+      .select({
+        ...catalogColumns,
+        similarity: catalogSimilarity,
+      })
+      .from(catalogItems)
+      .where(and(gt(catalogSimilarity, threshold), isNotNull(catalogItems.embedding)))
+      .orderBy(desc(catalogSimilarity))
+      .limit(validLimit);
+
+    const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;
+
+    return c.json(
+      {
+        items: similarCatalogItems,
+        total: similarCatalogItems.length,
+        sourceItem: sourceItemData,
+      },
+      200,
+    );
+  } catch (error) {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'packItems.getSimilarItems');
+    sentry.setUser({ id: auth.userId });
+    sentry.setContext('params', { itemId, limit, threshold });
+    sentry.captureException(error);
+    console.error('Get similar items error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
   }
-
-  // Check if user has access to the pack
-  if (sourceItem.pack.userId !== auth.userId && !sourceItem.pack.isPublic) {
-    return c.json({ error: 'Access denied to private pack' }, 403);
-  }
-
-  // Find similar catalog items
-  const catalogSimilarity = sql<number>`1 - (${cosineDistance(catalogItems.embedding, sourceItem.embedding)})`;
-  const { embedding: _catalogEmbedding, ...catalogColumns } = getTableColumns(catalogItems);
-
-  const similarCatalogItems = await db
-    .select({
-      ...catalogColumns,
-      similarity: catalogSimilarity,
-    })
-    .from(catalogItems)
-    .where(and(gt(catalogSimilarity, threshold), isNotNull(catalogItems.embedding)))
-    .orderBy(desc(catalogSimilarity))
-    .limit(validLimit);
-
-  // Remove embedding from source item for response
-  const { embedding: _sourceEmbedding, ...sourceItemData } = sourceItem;
-
-  return c.json(
-    {
-      items: similarCatalogItems,
-      total: similarCatalogItems.length,
-      sourceItem: sourceItemData,
-    },
-    200,
-  );
 });
 
 export { packItemsRoutes };

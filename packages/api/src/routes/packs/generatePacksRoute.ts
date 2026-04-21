@@ -64,10 +64,20 @@ generatePacksRoute.use('*', adminMiddleware);
 generatePacksRoute.openapi(route, async (c) => {
   const { count } = c.req.valid('json');
   const user = c.get('user');
-  const packService = new PackService(c, user.userId);
-  const generatedPacks = await packService.generatePacks(count);
 
-  return c.json(generatedPacks, 200);
+  try {
+    const packService = new PackService(c, user.userId);
+    const generatedPacks = await packService.generatePacks(count);
+    return c.json(generatedPacks, 200);
+  } catch (error) {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'packs.generatePacks');
+    sentry.setUser({ id: user.userId });
+    sentry.setContext('params', { count });
+    sentry.captureException(error);
+    console.error('Generate packs error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
 });
 
 export { generatePacksRoute };

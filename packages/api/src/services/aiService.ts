@@ -66,23 +66,31 @@ export class AIService {
       };
     }
 
-    const response = await this.guidesRAG.search({
-      query,
-      max_num_results: limit,
-      ranking_options: {
-        score_threshold: 0.3,
-      },
-    });
+    try {
+      const response = await this.guidesRAG.search({
+        query,
+        max_num_results: limit,
+        ranking_options: {
+          score_threshold: 0.3,
+        },
+      });
 
-    const data = response.data.map((item) => ({
-      ...item,
-      url: this.filenameToUrl(item.filename),
-    }));
+      const data = response.data.map((item) => ({
+        ...item,
+        url: this.filenameToUrl(item.filename),
+      }));
 
-    return {
-      ...response,
-      data,
-    };
+      return {
+        ...response,
+        data,
+      };
+    } catch (error) {
+      console.error('AutoRAG search error:', error);
+      throw new Error(
+        `RAG search failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error },
+      );
+    }
   }
   /**
    * Maps filename in response to URL e.g budget-friendly-family-camping-packing-smart-for-a-memorable-trip.mdx maps to https://guides.packratai.com/guide/budget-friendly-family-camping-packing-smart-for-a-memorable-trip

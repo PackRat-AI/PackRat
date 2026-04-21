@@ -61,29 +61,37 @@ export class ImageDetectionService {
       apiKey: OPENAI_API_KEY,
     });
 
-    const { object } = await generateObject({
-      model: openai(DEFAULT_MODELS.OPENAI_CHAT),
-      schema: imageAnalysisSchema,
-      system: ITEM_DETECTION_SYSTEM_PROMPT,
-      prompt: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Please identify all the outdoor gear and equipment items visible in this image.',
-            },
-            {
-              type: 'image',
-              image: imageUrl,
-            },
-          ],
-        },
-      ],
-      temperature: 0.3, // Lower temperature for more consistent results
-    });
+    try {
+      const { object } = await generateObject({
+        model: openai(DEFAULT_MODELS.OPENAI_CHAT),
+        schema: imageAnalysisSchema,
+        system: ITEM_DETECTION_SYSTEM_PROMPT,
+        prompt: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Please identify all the outdoor gear and equipment items visible in this image.',
+              },
+              {
+                type: 'image',
+                image: imageUrl,
+              },
+            ],
+          },
+        ],
+        temperature: 0.3,
+      });
 
-    return object;
+      return object;
+    } catch (error) {
+      console.error('Image analysis error:', error);
+      throw new Error(
+        `Image analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error },
+      );
+    }
   }
 
   /**
@@ -130,6 +138,7 @@ export class ImageDetectionService {
       console.error('Error in detectAndMatchItems:', error);
       throw new Error(
         `Failed to analyze image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error },
       );
     }
   }

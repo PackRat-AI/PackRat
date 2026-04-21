@@ -15,6 +15,10 @@ import { Providers } from 'expo-app/providers';
 import { NAV_THEME } from 'expo-app/theme';
 import { useRef } from 'react';
 
+if (!clientEnvs.EXPO_PUBLIC_SENTRY_DSN) {
+  console.warn('[Sentry] EXPO_PUBLIC_SENTRY_DSN is not set — error reporting is disabled');
+}
+
 Sentry.init({
   dsn: clientEnvs.EXPO_PUBLIC_SENTRY_DSN,
   // Adds more context data to events (IP address, cookies, user, etc.)

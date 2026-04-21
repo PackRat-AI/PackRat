@@ -46,6 +46,11 @@ aiRoutes.openapi(ragSearchRoute, async (c) => {
     const response = RagSearchResponseSchema.parse(result);
     return c.json(response, 200);
   } catch (error) {
+    const { q: query } = c.req.valid('query');
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'ai.ragSearch');
+    sentry.setContext('params', { query });
+    sentry.captureException(error);
     console.error('RAG search error:', error);
     return c.json({ error: 'Failed to search outdoor guides' }, 500);
   }
@@ -82,6 +87,11 @@ aiRoutes.openapi(webSearchRoute, async (c) => {
     const result = await aiService.perplexitySearch(query);
     return c.json(result, 200);
   } catch (error) {
+    const { q: query } = c.req.valid('query');
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'ai.webSearch');
+    sentry.setContext('params', { query });
+    sentry.captureException(error);
     console.error('Web search error:', error);
     return c.json({ error: 'Search failed' }, 500);
   }
@@ -165,6 +175,11 @@ aiRoutes.openapi(executeSqlRoute, async (c) => {
       200,
     );
   } catch (error) {
+    const { query } = c.req.valid('json');
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'ai.executeSql');
+    sentry.setContext('params', { query });
+    sentry.captureException(error);
     console.error('Execute SQL error:', error);
     return c.json({ error: 'Failed to execute query' }, 500);
   }
@@ -203,6 +218,9 @@ aiRoutes.openapi(dbSchemaRoute, async (c) => {
     }
     return c.json({ schema: result }, 200);
   } catch (error) {
+    const sentry = c.get('sentry');
+    sentry.setTag('route', 'ai.dbSchema');
+    sentry.captureException(error);
     console.error('DB schema error:', error);
     return c.json({ error: 'Failed to retrieve database schema' }, 500);
   }
