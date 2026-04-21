@@ -50,7 +50,9 @@ jobs:
       - name: Check package.json ordering
         run: bun scripts/format/sort-package-json.ts --check
       - name: Check types
-        run: bun check-types
+        run: |
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          bun check-types
       - name: Run Expo Doctor
         run: bunx expo-doctor
         working-directory: apps/expo

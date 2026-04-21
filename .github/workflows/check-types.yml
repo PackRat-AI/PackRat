@@ -38,4 +38,6 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Check Types
-        run: bun check-types:affected
+        run: |
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          bun check-types:affected
