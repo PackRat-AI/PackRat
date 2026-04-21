@@ -537,9 +537,6 @@
         "recharts": "3.8.1",
         "tailwindcss": "catalog:",
       },
-      "optionalPeers": [
-        "recharts",
-      ],
     },
   },
   "trustedDependencies": [
