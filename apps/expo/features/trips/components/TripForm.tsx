@@ -33,7 +33,7 @@ const tripFormSchema = z
       .optional(),
     startDate: z.string().min(1, 'Start date is required'),
     endDate: z.string().min(1, 'End date is required'),
-    packId: z.string().optional(),
+    packId: z.string().nullable().optional(),
   })
   .refine(
     ({ startDate, endDate }) => !startDate || !endDate || new Date(endDate) >= new Date(startDate),
