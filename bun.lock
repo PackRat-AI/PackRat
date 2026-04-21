@@ -16,6 +16,7 @@
         "semver": "catalog:",
         "sort-package-json": "^3.6.1",
         "turbo": "^2.9.6",
+        "typescript": "catalog:",
       },
     },
     "apps/admin": {
