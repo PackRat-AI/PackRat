@@ -33,9 +33,11 @@
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
+    "test:api-client:types": "vitest run --config packages/api-client/vitest.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
-    "test:expo": "vitest run --config apps/expo/vitest.config.ts"
+    "test:expo": "vitest run --config apps/expo/vitest.config.ts",
+    "test:expo:rpc-types": "vitest run --config apps/expo/vitest.types.config.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",

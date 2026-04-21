@@ -4,6 +4,10 @@ import { type ApiRequestOf, type ApiResponseOf, createApiClient } from '../src';
 const client = createApiClient('https://packrat.test');
 const catalogGetById = client.api.catalog[':id'].$get;
 type CatalogGetById = typeof catalogGetById;
+const tripGetById = client.api.trips[':tripId'].$get;
+type TripGetById = typeof tripGetById;
+const tripDeleteById = client.api.trips[':tripId'].$delete;
+type TripDeleteById = typeof tripDeleteById;
 
 test('catalog RPC requests stay inferred', () => {
   const listRequest: ApiRequestOf<typeof client.api.catalog.$get> = {
@@ -55,5 +59,43 @@ test('catalog RPC responses stay inferred by status code', () => {
 
   expectTypeOf<MissingItemResponse>().toMatchTypeOf<{
     error: string;
+  }>();
+});
+
+test('trips RPC requests stay inferred', () => {
+  const createRequest: ApiRequestOf<typeof client.api.trips.$post> = {
+    json: {
+      id: 't_123',
+      name: 'Summer Trip',
+      localCreatedAt: new Date().toISOString(),
+      localUpdatedAt: new Date().toISOString(),
+    },
+  };
+
+  const byIdRequest: ApiRequestOf<TripGetById> = {
+    param: { tripId: 't_123' },
+  };
+
+  expectTypeOf(createRequest.json.name).toEqualTypeOf<string>();
+  expectTypeOf(byIdRequest.param.tripId).toEqualTypeOf<string>();
+});
+
+test('trips RPC responses stay inferred by status code', () => {
+  type TripResponse = ApiResponseOf<TripGetById>;
+  type MissingTripResponse = ApiResponseOf<TripGetById, 404>;
+  type DeleteResponse = ApiResponseOf<TripDeleteById>;
+
+  expectTypeOf<TripResponse>().toMatchTypeOf<{
+    id: string;
+    name: string;
+    userId: number;
+  }>();
+
+  expectTypeOf<MissingTripResponse>().toMatchTypeOf<{
+    error: string;
+  }>();
+
+  expectTypeOf<DeleteResponse>().toMatchTypeOf<{
+    success: boolean;
   }>();
 });

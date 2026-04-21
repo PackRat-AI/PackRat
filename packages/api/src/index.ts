@@ -5,6 +5,7 @@ import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
 import { catalogRoutes } from '@packrat/api/routes/catalog';
 import { guidesRoutes } from '@packrat/api/routes/guides';
+import { tripsRoutes } from '@packrat/api/routes/trips';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -51,10 +52,12 @@ app
 app.use(logger());
 app.use(cors());
 
-// Mount routes
+// Mount routes — explicit openapiRoutes slices for hc<> type inference
+// (full routes mount exceeds TS depth limit; each domain must use openapiRoutes for RPC typing)
 const rpcRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
   .route('/api/catalog', catalogRoutes)
-  .route('/api/guides', guidesRoutes);
+  .route('/api/guides', guidesRoutes)
+  .route('/api/trips', tripsRoutes);
 app.route('/api', routes);
 
 // Configure OpenAPI documentation
