@@ -12,7 +12,6 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
       "@packrat/web-ui": ["./src"],

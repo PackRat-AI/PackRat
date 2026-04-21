@@ -7,7 +7,6 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
       "@packrat/analytics": ["../analytics/src"],

@@ -4,7 +4,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "esModuleInterop": true,
-    "ignoreDeprecations": "5.0",
     "baseUrl": ".",
     "paths": {
       "@packrat/api/*": ["src/*"]
