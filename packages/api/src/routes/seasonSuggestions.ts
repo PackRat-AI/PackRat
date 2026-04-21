@@ -44,7 +44,7 @@ export const seasonSuggestionsRoutes = new Elysia({ prefix: '/season-suggestions
       const inventoryFormatted = formatInventoryForAI(items);
 
       const systemPrompt = `
-You are a specialized assistant for creating seasonal advencture pack recommendations.
+You are a specialized assistant for creating seasonal adventure pack recommendations.
 
 Based on the user's available inventory items, current location, and date, provide 2-3 optimal pack configurations suitable for the current season.
 
