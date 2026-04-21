@@ -10,6 +10,7 @@ const FeatureFlag = Object.freeze({
   EnableTrailConditions: 'enableTrailConditions',
   EnableFeed: 'enableFeed',
   EnableWildlifeIdentification: 'enableWildlifeIdentification',
+  EnableLocalAI: 'enableLocalAI',
 });
 
 const DashboardTileId = Object.freeze({
@@ -67,6 +68,7 @@ const APP_CONFIG_SOURCE = {
     [FeatureFlag.EnableTrailConditions]: false,
     [FeatureFlag.EnableFeed]: false,
     [FeatureFlag.EnableWildlifeIdentification]: false,
+    [FeatureFlag.EnableLocalAI]: false,
   },
   dashboard: {
     gapPrefix: GAP_PREFIX,

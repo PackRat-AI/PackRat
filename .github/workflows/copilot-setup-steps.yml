@@ -87,7 +87,7 @@ jobs:
       - name: Install dependencies
         env:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
-        run: bun install
+        run: bun install --frozen-lockfile
 
       # Confirm the key CLI tools installed by the workspace are usable.
       # Scoped to cloud-agent-safe tasks (lint/typecheck/tests); no mobile simulator tooling.
