@@ -407,6 +407,9 @@
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
     "searchTrips": "Search trips",
+    "searchPlaceholder": "Search trips...",
+    "result": "result",
+    "results": "results",
     "dates": "Dates",
     "startDate": "Start Date",
     "endDate": "End Date",
@@ -929,6 +932,11 @@
     "useTemplate": "Use Template",
     "addItem": "Add Item",
     "allItems": "All Items",
+    "searchPlaceholder": "Search templates...",
+    "searchTemplates": "Search for templates",
+    "tryDifferentSearch": "Try a different search term",
+    "result": "result",
+    "results": "results",
     "worn": "Worn",
     "consumable": "Consumable",
     "noItemsFound": "No items found",
@@ -975,6 +983,7 @@
   "guides": {
     "guides": "Guides",
     "searchPlaceholder": "Search guides...",
+    "searchGuides": "Search for guides",
     "noGuidesFound": "No guides found for \"{{query}}\"",
     "noGuidesAvailable": "No guides available",
     "failedToLoad": "Failed to load guide",
@@ -982,7 +991,9 @@
     "browseGuides": "Browse helpful guides and tutorials",
     "by": "By",
     "updated": "Updated",
-    "all": "All"
+    "all": "All",
+    "result": "result",
+    "results": "results"
   },
   "permissions": {
     "photoLibraryTitle": "Photo Library Access Required",
