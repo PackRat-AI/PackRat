@@ -112,7 +112,11 @@ export const TripForm = ({ trip }: { trip?: Trip }) => {
     } as TripFormValues,
     validators: { onChange: tripFormSchema },
     onSubmit: async ({ value }) => {
-      const submitData = { ...value, location: location ?? value.location };
+      const submitData = {
+        ...value,
+        location: location ?? value.location,
+        packId: value.packId ?? undefined,
+      };
       try {
         if (isEditingExistingTrip) {
           await updateTrip({ ...trip, ...submitData });
