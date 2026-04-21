@@ -6,3 +6,6 @@ pre-commit:
     lint:
       run: bun check {staged_files}
       fail_text: "Linting failed! \nRun `bun lint` to fix. \nCommit with `--no-verify` to bypass check."
+    android-textinput-check:
+      run: ./scripts/check-android-textinput.sh
+      fail_text: "Android TextInput issues detected! \nSee docs/android-textinput-checklist.md \nCommit with `--no-verify` to bypass check."

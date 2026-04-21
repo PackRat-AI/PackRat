@@ -6,6 +6,7 @@ import * as Burnt from 'burnt';
 import { fetch as expoFetch } from 'expo/fetch';
 import { AiChatHeader } from 'expo-app/components/ai-chatHeader';
 import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { featureFlags } from 'expo-app/config';
 import { aiModeAtom, localModelStatusAtom } from 'expo-app/features/ai/atoms/aiModeAtoms';
 import {
@@ -34,7 +35,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   ScrollView,
-  TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
   TouchableOpacity,
