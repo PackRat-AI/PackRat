@@ -180,7 +180,6 @@ export const GuidesListScreen = () => {
     <>
       <LargeTitleHeader
         title={t('guides.guides')}
-        backVisible={false}
         searchBar={{
           iosHideWhenScrolling: false,
           ref: asNonNullableRef(searchBarRef),

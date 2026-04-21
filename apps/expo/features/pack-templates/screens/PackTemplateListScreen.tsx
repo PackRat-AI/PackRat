@@ -188,7 +188,6 @@ export function PackTemplateListScreen() {
     <SafeAreaView className="flex-1">
       <LargeTitleHeader
         title={t('packTemplates.packTemplates')}
-        backVisible={false}
         searchBar={{
           iosHideWhenScrolling: false,
           ref: asNonNullableRef(searchBarRef),
