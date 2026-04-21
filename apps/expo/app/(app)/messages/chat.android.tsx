@@ -10,6 +10,7 @@ import {
 import { Portal } from '@rn-primitives/portal';
 import { FlashList } from '@shopify/flash-list';
 import { Icon } from 'expo-app/components/Icon';
+import { TextInput } from 'expo-app/components/TextInput';
 import { cn } from 'expo-app/lib/cn';
 import { useColorScheme } from 'expo-app/lib/hooks/useColorScheme';
 import { router, Stack } from 'expo-router';
@@ -19,7 +20,6 @@ import {
   type NativeSyntheticEvent,
   Platform,
   Pressable,
-  TextInput,
   type TextInputContentSizeChangeEventData,
   type TextStyle,
   View,
