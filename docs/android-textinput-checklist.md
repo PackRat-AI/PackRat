@@ -115,9 +115,6 @@ If keyboard issues are discovered in production:
 ## Tools and Commands
 
 ```bash
-# Run pre-commit checks
-./scripts/check-android-textinput.sh
-
 # Run unit tests
 bun test:expo 
 

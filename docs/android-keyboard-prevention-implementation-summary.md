@@ -35,18 +35,12 @@ Use the [Android TextInput Checklist](./android-textinput-checklist.md) for any 
 - `docs/android-textinput-checklist.md` - Developer and reviewer checklist
 
 ### Automation
-- `scripts/check-android-textinput.sh` - Pre-commit hook script
-- `lefthook.yml` - Updated with Android TextInput checks
+- `lefthook.yml` - Pre-commit linting via Biome
 
 ## 🔧 Setup Instructions
 
-### 1. Enable Pre-commit Checks
-The lefthook configuration has been updated. The checks will run automatically on commit.
-
-To test the checks manually:
-```bash
-./scripts/check-android-textinput.sh
-```
+### 1. Pre-commit Checks
+The lefthook configuration runs Biome linting automatically on commit. No additional setup is required.
 
 ## ⚠️ Migration Notes
 
@@ -68,7 +62,6 @@ All new files are additions - no existing code needs to change.
 - Third-party component wrapping guidelines
 
 ### Process Prevention
-- Pre-commit hooks to catch issues early
 - Code review checklist for input-related PRs
 
 ### Testing Prevention
@@ -102,10 +95,10 @@ All new files are additions - no existing code needs to change.
 
 ## 🚨 Troubleshooting
 
-### If Pre-commit Check Fails
+### If Linting Fails on Commit
 1. Check the error message for specific issues
-2. Use the checklist in `docs/android-textinput-checklist.md`
-3. Fix issues or use `--no-verify` for emergencies
+2. Run `bun lint` to auto-fix where possible
+3. Commit with `--no-verify` to bypass for emergencies
 
 ### If New Keyboard Issues Appear
 1. Verify the component uses enhanced TextInput or has `useKeyboardHideBlur`
@@ -137,7 +130,6 @@ Use the checklist in `docs/android-textinput-checklist.md` for efficient reviews
 ### Immediate (This Sprint)
 - [ ] Share this summary with the team
 - [ ] Review the documentation together
-- [ ] Test the pre-commit hooks work correctly
 - [ ] Start using checklist for input-related PRs
 
 ### Short-term (Next Month)

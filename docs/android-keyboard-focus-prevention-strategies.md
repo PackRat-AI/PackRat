@@ -65,25 +65,7 @@ export const WrappedThirdPartyInput = forwardRef((props, ref) => {
 - [ ] Has the component been tested on Android with keyboard dismiss scenarios?
 - [ ] Does the component handle ref forwarding correctly?
 
-#### 2.2 Pre-commit Hooks Enhancement
-Add to `.githooks/pre-commit` or lefthook:
-```bash
-# Check for forbidden TextInput imports
-if grep -r "import.*TextInput.*from 'react-native'" apps/expo/; then
-  echo "❌ Error: Direct TextInput import from react-native detected"
-  echo "Use: import { TextInput } from 'expo-app/components/TextInput' instead"
-  exit 1
-fi
-
-# Check for new input components without useKeyboardHideBlur
-if git diff --cached --name-only | grep -E '\.(tsx?)$' | xargs grep -l "forwardRef.*Input" | 
-   xargs grep -L "useKeyboardHideBlur"; then
-  echo "⚠️  Warning: New input component detected without useKeyboardHideBlur hook"
-  echo "Consider adding the hook for Android compatibility"
-fi
-```
-
-#### 2.3 ESLint Custom Rules
+#### 2.2 ESLint Custom Rules
 Add to ESLint config:
 ```json
 {
@@ -341,7 +323,6 @@ export function trackKeyboardIssue(component: string, action: string) {
 ## Implementation Roadmap
 
 ### Phase 1: Immediate (Next Sprint)
-- [ ] Add pre-commit hooks for TextInput import checking
 - [ ] Create ESLint rule for direct react-native TextInput imports
 - [ ] Update team documentation with these guidelines
 - [ ] Add code review checklist to PR template
