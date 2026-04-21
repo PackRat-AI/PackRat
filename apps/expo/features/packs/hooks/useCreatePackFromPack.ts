@@ -23,7 +23,7 @@ export function useCreatePackFromPack() {
       deleted: false,
     };
 
-    // @ts-expect-error: Safe because Legend-State uses Proxy
+    // @ts-ignore: Safe because Legend-State uses Proxy
     packsStore[newPackId].set(newPack);
 
     // Copy each item from the source pack
@@ -40,7 +40,7 @@ export function useCreatePackFromPack() {
             updatedAt: undefined,
           };
 
-          // @ts-expect-error: Safe because Legend-State uses Proxy
+          // @ts-ignore: Safe because Legend-State uses Proxy
           packItemsStore[newItemId].set(newItem);
         }
       }
