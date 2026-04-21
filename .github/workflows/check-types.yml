@@ -37,7 +37,8 @@ jobs:
           PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN: ${{ secrets.PACKRAT_NATIVEWIND_UI_GITHUB_TOKEN }}
         run: bun install --frozen-lockfile
 
+      - name: Add workspace bins to PATH
+        run: echo "$(pwd)/node_modules/.bin" >> $GITHUB_PATH
+
       - name: Check Types
-        run: |
-          export PATH="$(pwd)/node_modules/.bin:$PATH"
-          bun check-types:affected
+        run: bun check-types:affected
