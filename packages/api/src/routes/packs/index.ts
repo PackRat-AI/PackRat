@@ -1,15 +1,21 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { analyzeImageRoutes } from './analyzeImage';
+import type { Env } from '@packrat/api/types/env';
+import type { Variables } from '@packrat/api/types/variables';
+import { analyzeImageRouteEntries } from './analyzeImage';
 import { generatePacksRoute } from './generatePacksRoute';
-import { packItemsRoutes } from './items';
-import { packsListRoutes } from './list';
-import { packRoutes } from './pack';
+import { packItemsRouteEntries } from './items';
+import { packsListRouteEntries } from './list';
+import { packRouteEntries } from './pack';
 
-const packsRoutes = new OpenAPIHono()
-  .route('/', analyzeImageRoutes)
-  .route('/', packsListRoutes)
-  .route('/', packRoutes)
-  .route('/', packItemsRoutes)
+const packsOpenApiRoutes = [
+  ...analyzeImageRouteEntries,
+  ...packsListRouteEntries,
+  ...packRouteEntries,
+  ...packItemsRouteEntries,
+] as const;
+
+const packsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
+  .openapiRoutes(packsOpenApiRoutes)
   .route('/', generatePacksRoute);
 
 export { packsRoutes };

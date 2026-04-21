@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import {
   authProviders,
@@ -32,6 +32,7 @@ import {
 } from '@packrat/api/schemas/auth';
 import { UserService } from '@packrat/api/services/userService';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import {
   generateJWT,
@@ -49,15 +50,10 @@ import { assertDefined } from '@packrat/guards';
 import { and, eq, getTableColumns, gt, isNull } from 'drizzle-orm';
 import { OAuth2Client } from 'google-auth-library';
 
-const authRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
-
 const { passwordHash: _, ...userWithoutPassword } = getTableColumns(users);
 
 // Login route
-const loginRoute = createRoute({
+export const loginRoute = createRoute({
   method: 'post',
   path: '/login',
   tags: ['Authentication'],
@@ -109,7 +105,7 @@ const loginRoute = createRoute({
   },
 });
 
-authRoutes.openapi(loginRoute, async (c) => {
+export const loginHandler: RouteHandler<typeof loginRoute> = async (c) => {
   const { email, password } = await c.req.json();
   const db = createDb(c);
 
@@ -174,10 +170,10 @@ authRoutes.openapi(loginRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // Register route
-const registerRoute = createRoute({
+export const registerRoute = createRoute({
   method: 'post',
   path: '/register',
   tags: ['Authentication'],
@@ -229,7 +225,7 @@ const registerRoute = createRoute({
   },
 });
 
-authRoutes.openapi(registerRoute, async (c) => {
+export const registerHandler: RouteHandler<typeof registerRoute> = async (c) => {
   const { email, password, firstName, lastName } = await c.req.json();
   const db = createDb(c);
   const userService = new UserService(c);
@@ -274,10 +270,10 @@ authRoutes.openapi(registerRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // Verify email route
-const verifyEmailRoute = createRoute({
+export const verifyEmailRoute = createRoute({
   method: 'post',
   path: '/verify-email',
   tags: ['Authentication'],
@@ -321,7 +317,7 @@ const verifyEmailRoute = createRoute({
   },
 });
 
-authRoutes.openapi(verifyEmailRoute, async (c) => {
+export const verifyEmailHandler: RouteHandler<typeof verifyEmailRoute> = async (c) => {
   const { email, code } = await c.req.json();
   const db = createDb(c);
 
@@ -403,10 +399,10 @@ authRoutes.openapi(verifyEmailRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // Resend verification route
-const resendVerificationRoute = createRoute({
+export const resendVerificationRoute = createRoute({
   method: 'post',
   path: '/resend-verification',
   tags: ['Authentication'],
@@ -455,7 +451,9 @@ const resendVerificationRoute = createRoute({
   },
 });
 
-authRoutes.openapi(resendVerificationRoute, async (c) => {
+export const resendVerificationHandler: RouteHandler<typeof resendVerificationRoute> = async (
+  c,
+) => {
   const { email } = await c.req.json();
 
   if (!email) {
@@ -506,10 +504,10 @@ authRoutes.openapi(resendVerificationRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // Forgot password route
-const forgotPasswordRoute = createRoute({
+export const forgotPasswordRoute = createRoute({
   method: 'post',
   path: '/forgot-password',
   tags: ['Authentication'],
@@ -545,7 +543,7 @@ const forgotPasswordRoute = createRoute({
   },
 });
 
-authRoutes.openapi(forgotPasswordRoute, async (c) => {
+export const forgotPasswordHandler: RouteHandler<typeof forgotPasswordRoute> = async (c) => {
   const { email } = await c.req.json();
 
   const db = createDb(c);
@@ -602,10 +600,10 @@ authRoutes.openapi(forgotPasswordRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // Reset password route
-const resetPasswordRoute = createRoute({
+export const resetPasswordRoute = createRoute({
   method: 'post',
   path: '/reset-password',
   tags: ['Authentication'],
@@ -649,7 +647,7 @@ const resetPasswordRoute = createRoute({
   },
 });
 
-authRoutes.openapi(resetPasswordRoute, async (c) => {
+export const resetPasswordHandler: RouteHandler<typeof resetPasswordRoute> = async (c) => {
   const { email, code, newPassword } = await c.req.json();
 
   const db = createDb(c);
@@ -717,10 +715,10 @@ authRoutes.openapi(resetPasswordRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // Refresh token route
-const refreshTokenRoute = createRoute({
+export const refreshTokenRoute = createRoute({
   method: 'post',
   path: '/refresh',
   tags: ['Authentication'],
@@ -764,7 +762,7 @@ const refreshTokenRoute = createRoute({
   },
 });
 
-authRoutes.openapi(refreshTokenRoute, async (c) => {
+export const refreshTokenHandler: RouteHandler<typeof refreshTokenRoute> = async (c) => {
   try {
     const { refreshToken } = await c.req.json();
 
@@ -852,10 +850,10 @@ authRoutes.openapi(refreshTokenRoute, async (c) => {
     console.error('Token refresh error:', error);
     return c.json({ error: 'An error occurred during token refresh' }, 401);
   }
-});
+};
 
 // Logout route
-const logoutRoute = createRoute({
+export const logoutRoute = createRoute({
   method: 'post',
   path: '/logout',
   tags: ['Authentication'],
@@ -891,7 +889,7 @@ const logoutRoute = createRoute({
   },
 });
 
-authRoutes.openapi(logoutRoute, async (c) => {
+export const logoutHandler: RouteHandler<typeof logoutRoute> = async (c) => {
   const db = createDb(c);
 
   // Get refresh token from request body
@@ -914,10 +912,10 @@ authRoutes.openapi(logoutRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // Me route
-const meRoute = createRoute({
+export const meRoute = createRoute({
   method: 'get',
   path: '/me',
   tags: ['Authentication'],
@@ -952,7 +950,7 @@ const meRoute = createRoute({
   },
 });
 
-authRoutes.openapi(meRoute, async (c) => {
+export const meHandler: RouteHandler<typeof meRoute> = async (c) => {
   const authHeader = c.req.header('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return c.json({ error: 'Unauthorized' }, 401);
@@ -990,10 +988,10 @@ authRoutes.openapi(meRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // Delete account route
-const deleteAccountRoute = createRoute({
+export const deleteAccountRoute = createRoute({
   method: 'delete',
   path: '/',
   tags: ['Authentication'],
@@ -1019,7 +1017,8 @@ const deleteAccountRoute = createRoute({
     },
   },
 });
-authRoutes.openapi(deleteAccountRoute, async (c) => {
+
+export const deleteAccountHandler: RouteHandler<typeof deleteAccountRoute> = async (c) => {
   // Extract JWT from Authorization header
   const authHeader = c.req.header('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -1059,9 +1058,9 @@ authRoutes.openapi(deleteAccountRoute, async (c) => {
   await db.delete(users).where(eq(users.id, userId));
 
   return c.json({ success: true }, 200);
-});
+};
 
-const appleRoute = createRoute({
+export const appleRoute = createRoute({
   method: 'post',
   path: '/apple',
   tags: ['Authentication'],
@@ -1097,7 +1096,7 @@ const appleRoute = createRoute({
   },
 });
 
-authRoutes.openapi(appleRoute, async (c) => {
+export const appleHandler: RouteHandler<typeof appleRoute> = async (c) => {
   const { identityToken } = await c.req.json();
   const db = createDb(c);
 
@@ -1177,9 +1176,9 @@ authRoutes.openapi(appleRoute, async (c) => {
     },
     200,
   );
-});
+};
 
-const googleRoute = createRoute({
+export const googleRoute = createRoute({
   method: 'post',
   path: '/google',
   tags: ['Authentication'],
@@ -1215,7 +1214,7 @@ const googleRoute = createRoute({
   },
 });
 
-authRoutes.openapi(googleRoute, async (c) => {
+export const googleHandler: RouteHandler<typeof googleRoute> = async (c) => {
   const { GOOGLE_CLIENT_ID } = getEnv(c);
   const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -1328,6 +1327,25 @@ authRoutes.openapi(googleRoute, async (c) => {
     },
     200,
   );
-});
+};
+
+const authOpenApiRoutes = [
+  defineOpenAPIRoute({ route: loginRoute, handler: loginHandler }),
+  defineOpenAPIRoute({ route: registerRoute, handler: registerHandler }),
+  defineOpenAPIRoute({ route: verifyEmailRoute, handler: verifyEmailHandler }),
+  defineOpenAPIRoute({ route: resendVerificationRoute, handler: resendVerificationHandler }),
+  defineOpenAPIRoute({ route: forgotPasswordRoute, handler: forgotPasswordHandler }),
+  defineOpenAPIRoute({ route: resetPasswordRoute, handler: resetPasswordHandler }),
+  defineOpenAPIRoute({ route: refreshTokenRoute, handler: refreshTokenHandler }),
+  defineOpenAPIRoute({ route: logoutRoute, handler: logoutHandler }),
+  defineOpenAPIRoute({ route: meRoute, handler: meHandler }),
+  defineOpenAPIRoute({ route: deleteAccountRoute, handler: deleteAccountHandler }),
+  defineOpenAPIRoute({ route: appleRoute, handler: appleHandler }),
+  defineOpenAPIRoute({ route: googleRoute, handler: googleHandler }),
+] as const;
+
+const authRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  authOpenApiRoutes,
+);
 
 export { authRoutes };

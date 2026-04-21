@@ -1,13 +1,12 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { ErrorResponseSchema } from '@packrat/api/schemas/upload';
 import { WildlifeIdentificationService } from '@packrat/api/services/wildlifeIdentificationService';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { getPresignedUrl } from '@packrat/api/utils/getPresignedUrl';
-
-const wildlifeRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
 
 const IdentifyRequestSchema = z
   .object({
@@ -47,7 +46,7 @@ const IdentifyResponseSchema = z
   })
   .openapi('IdentifyResponse');
 
-const identifyRoute = createRoute({
+export const identifyRoute = createRoute({
   method: 'post',
   path: '/identify',
   tags: ['Wildlife'],
@@ -91,7 +90,7 @@ const identifyRoute = createRoute({
   },
 });
 
-wildlifeRoutes.openapi(identifyRoute, async (c) => {
+export const identifyHandler: RouteHandler<typeof identifyRoute> = async (c) => {
   const auth = c.get('user');
   const { image } = c.req.valid('json');
 
@@ -172,6 +171,14 @@ wildlifeRoutes.openapi(identifyRoute, async (c) => {
   });
 
   return c.json({ results }, 200);
-});
+};
+
+const wildlifeOpenApiRoutes = [
+  defineOpenAPIRoute({ route: identifyRoute, handler: identifyHandler }),
+] as const;
+
+const wildlifeRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  wildlifeOpenApiRoutes,
+);
 
 export { wildlifeRoutes };

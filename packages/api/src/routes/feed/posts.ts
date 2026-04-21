@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { postComments, postLikes, posts, users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
@@ -9,6 +9,7 @@ import {
   PostSchema,
 } from '@packrat/api/schemas/feed';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
 
@@ -17,10 +18,8 @@ function parseImages(raw: unknown): string[] {
   return [];
 }
 
-const postsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
 // GET /feed - list paginated posts
-const listPostsRoute = createRoute({
+export const listPostsRoute = createRoute({
   method: 'get',
   path: '/',
   tags: ['Feed'],
@@ -41,7 +40,7 @@ const listPostsRoute = createRoute({
   },
 });
 
-postsRoutes.openapi(listPostsRoute, async (c) => {
+export const listPostsHandler: RouteHandler<typeof listPostsRoute> = async (c) => {
   const auth = c.get('user');
   const { page, limit } = c.req.valid('query');
   const db = createDb(c);
@@ -110,10 +109,10 @@ postsRoutes.openapi(listPostsRoute, async (c) => {
   }));
 
   return c.json({ items: result, page, limit, total, totalPages: Math.ceil(total / limit) }, 200);
-});
+};
 
 // POST /feed - create a post
-const createPostRoute = createRoute({
+export const createPostRoute = createRoute({
   method: 'post',
   path: '/',
   tags: ['Feed'],
@@ -138,7 +137,7 @@ const createPostRoute = createRoute({
   },
 });
 
-postsRoutes.openapi(createPostRoute, async (c) => {
+export const createPostHandler: RouteHandler<typeof createPostRoute> = async (c) => {
   const auth = c.get('user');
   const body = c.req.valid('json');
   const db = createDb(c);
@@ -178,10 +177,10 @@ postsRoutes.openapi(createPostRoute, async (c) => {
     },
     201,
   );
-});
+};
 
 // GET /feed/:postId - get single post
-const getPostRoute = createRoute({
+export const getPostRoute = createRoute({
   method: 'get',
   path: '/:postId',
   tags: ['Feed'],
@@ -202,7 +201,7 @@ const getPostRoute = createRoute({
   },
 });
 
-postsRoutes.openapi(getPostRoute, async (c) => {
+export const getPostHandler: RouteHandler<typeof getPostRoute> = async (c) => {
   const auth = c.get('user');
   const { postId } = c.req.valid('param');
   const db = createDb(c);
@@ -237,10 +236,10 @@ postsRoutes.openapi(getPostRoute, async (c) => {
     },
     200,
   );
-});
+};
 
 // DELETE /feed/:postId - delete post
-const deletePostRoute = createRoute({
+export const deletePostRoute = createRoute({
   method: 'delete',
   path: '/:postId',
   tags: ['Feed'],
@@ -265,7 +264,7 @@ const deletePostRoute = createRoute({
   },
 });
 
-postsRoutes.openapi(deletePostRoute, async (c) => {
+export const deletePostHandler: RouteHandler<typeof deletePostRoute> = async (c) => {
   const auth = c.get('user');
   const { postId } = c.req.valid('param');
   const db = createDb(c);
@@ -283,10 +282,10 @@ postsRoutes.openapi(deletePostRoute, async (c) => {
   await db.delete(posts).where(eq(posts.id, postId));
 
   return c.json({ success: true }, 200);
-});
+};
 
 // POST /feed/:postId/like - toggle like on post
-const togglePostLikeRoute = createRoute({
+export const togglePostLikeRoute = createRoute({
   method: 'post',
   path: '/:postId/like',
   tags: ['Feed'],
@@ -307,7 +306,7 @@ const togglePostLikeRoute = createRoute({
   },
 });
 
-postsRoutes.openapi(togglePostLikeRoute, async (c) => {
+export const togglePostLikeHandler: RouteHandler<typeof togglePostLikeRoute> = async (c) => {
   const auth = c.get('user');
   const { postId } = c.req.valid('param');
   const db = createDb(c);
@@ -335,6 +334,17 @@ postsRoutes.openapi(togglePostLikeRoute, async (c) => {
     .where(eq(postLikes.postId, postId));
 
   return c.json({ liked: !existing, likeCount: likeCountResult?.cnt ?? 0 }, 200);
-});
+};
 
+const postsOpenApiRoutes = [
+  defineOpenAPIRoute({ route: listPostsRoute, handler: listPostsHandler }),
+  defineOpenAPIRoute({ route: createPostRoute, handler: createPostHandler }),
+  defineOpenAPIRoute({ route: getPostRoute, handler: getPostHandler }),
+  defineOpenAPIRoute({ route: deletePostRoute, handler: deletePostHandler }),
+  defineOpenAPIRoute({ route: togglePostLikeRoute, handler: togglePostLikeHandler }),
+] as const;
+
+const postsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  postsOpenApiRoutes,
+);
 export { postsRoutes };

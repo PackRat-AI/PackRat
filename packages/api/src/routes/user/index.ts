@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { users } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
@@ -8,16 +8,12 @@ import {
   UserProfileSchema,
 } from '@packrat/api/schemas/users';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { eq } from 'drizzle-orm';
 
-const userRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
-
 // Get user profile
-const getUserProfileRoute = createRoute({
+export const getUserProfileRoute = createRoute({
   method: 'get',
   path: '/profile',
   tags: ['Users'],
@@ -52,7 +48,7 @@ const getUserProfileRoute = createRoute({
   },
 });
 
-userRoutes.openapi(getUserProfileRoute, async (c) => {
+export const getUserProfileHandler: RouteHandler<typeof getUserProfileRoute> = async (c) => {
   try {
     const auth = c.get('user');
 
@@ -98,10 +94,10 @@ userRoutes.openapi(getUserProfileRoute, async (c) => {
       500,
     );
   }
-});
+};
 
 // Update user profile
-const updateUserProfileRoute = createRoute({
+export const updateUserProfileRoute = createRoute({
   method: 'put',
   path: '/profile',
   tags: ['Users'],
@@ -162,7 +158,7 @@ const updateUserProfileRoute = createRoute({
   },
 });
 
-userRoutes.openapi(updateUserProfileRoute, async (c) => {
+export const updateUserProfileHandler: RouteHandler<typeof updateUserProfileRoute> = async (c) => {
   try {
     const auth = c.get('user');
 
@@ -241,6 +237,15 @@ userRoutes.openapi(updateUserProfileRoute, async (c) => {
       500,
     );
   }
-});
+};
+
+const userOpenApiRoutes = [
+  defineOpenAPIRoute({ route: getUserProfileRoute, handler: getUserProfileHandler }),
+  defineOpenAPIRoute({ route: updateUserProfileRoute, handler: updateUserProfileHandler }),
+] as const;
+
+const userRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  userOpenApiRoutes,
+);
 
 export { userRoutes };
