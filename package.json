@@ -19,7 +19,7 @@
     "check:magic-strings": "bun run --cwd packages/checks check:magic-strings",
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
     "check:react-doctor": "bun scripts/lint/check-react-doctor.ts",
-    "check-types": "tsc --noEmit",
+    "check-types": "node node_modules/typescript/lib/tsc.js --noEmit",
     "check-types:affected": "turbo run check-types --affected",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bun run .github/scripts/clean.ts",

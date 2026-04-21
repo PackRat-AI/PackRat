@@ -4,7 +4,7 @@
   "private": true,
   "description": "PackRat MCP Server — outdoor adventure planning via Model Context Protocol",
   "scripts": {
-    "check-types": "tsc --noEmit",
+    "check-types": "node ../../node_modules/typescript/lib/tsc.js --noEmit",
     "deploy": "wrangler deploy --minify",
     "deploy:dev": "wrangler deploy --minify -e dev",
     "dev": "wrangler dev -e dev",
