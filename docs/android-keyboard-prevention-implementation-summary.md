@@ -34,14 +34,8 @@ Use the [Android TextInput Checklist](./android-textinput-checklist.md) for any 
 - `docs/android-keyboard-focus-prevention-strategies.md` - Comprehensive prevention strategies
 - `docs/android-textinput-checklist.md` - Developer and reviewer checklist
 
-### Testing
-- `apps/expo/lib/hooks/__tests__/useKeyboardHideBlur.test.ts` - Unit tests for the hook
-- `apps/expo/components/__tests__/TextInput.test.tsx` - Component tests
-- `apps/expo/__tests__/e2e/android-keyboard-behavior.e2e.ts` - E2E test examples
-
 ### Automation
 - `scripts/check-android-textinput.sh` - Pre-commit hook script
-- `scripts/eslint-android-textinput-rules.js` - ESLint rules for prevention
 - `lefthook.yml` - Updated with Android TextInput checks
 
 ## 🔧 Setup Instructions
@@ -52,33 +46,6 @@ The lefthook configuration has been updated. The checks will run automatically o
 To test the checks manually:
 ```bash
 ./scripts/check-android-textinput.sh
-```
-
-### 2. Optional: Add ESLint Rules
-Add to your `.eslintrc.js`:
-```javascript
-module.exports = {
-  plugins: [
-    './scripts/eslint-android-textinput-rules',
-  ],
-  rules: {
-    'no-direct-textinput-import': 'error',
-    'input-component-keyboard-hook': 'warn',
-    'textinput-requires-ref': 'warn',
-  },
-};
-```
-
-### 3. Run Tests
-```bash
-# Test the hook
-cd apps/expo && bun test useKeyboardHideBlur
-
-# Test enhanced component
-cd apps/expo && bun test TextInput.test.tsx
-
-# Run all expo tests
-bun test:expo
 ```
 
 ## ⚠️ Migration Notes
@@ -103,12 +70,11 @@ All new files are additions - no existing code needs to change.
 ### Process Prevention
 - Pre-commit hooks to catch issues early
 - Code review checklist for input-related PRs
-- ESLint rules to prevent problematic imports
 
 ### Testing Prevention
-- Unit tests for hook behavior
-- Integration tests for component behavior
-- E2E tests for real-world keyboard scenarios
+- Add unit tests for new hook behavior following patterns in `docs/android-keyboard-focus-prevention-strategies.md`
+- Add integration tests for new component behavior
+- Verify keyboard behavior manually on Android device/emulator
 
 ## 📊 Impact Assessment
 
@@ -127,7 +93,6 @@ All new files are additions - no existing code needs to change.
 ### Regular Tasks
 - Review new input components monthly
 - Update prevention strategies based on lessons learned
-- Keep E2E tests updated with new screens/features
 
 ### When Adding New Input Libraries
 1. Create wrapper component with `useKeyboardHideBlur`

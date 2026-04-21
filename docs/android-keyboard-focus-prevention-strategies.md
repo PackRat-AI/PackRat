@@ -176,23 +176,34 @@ describe('useKeyboardHideBlur', () => {
   it('should blur input when keyboard hides', () => {
     const mockBlur = jest.fn();
     const mockRef = { current: { blur: mockBlur } };
-    
+    let capturedCallback: (() => void) | undefined;
+
+    jest.spyOn(Keyboard, 'addListener').mockImplementation((event, callback) => {
+      expect(event).toBe('keyboardDidHide');
+      capturedCallback = callback;
+      return { remove: jest.fn() };
+    });
+
     renderHook(() => useKeyboardHideBlur(mockRef));
-    
-    // Simulate keyboard hide event
-    Keyboard.emit('keyboardDidHide');
-    
+
+    // Invoke the captured callback to simulate keyboard hide
+    capturedCallback?.();
+
     expect(mockBlur).toHaveBeenCalled();
   });
   
   it('should clean up listener on unmount', () => {
     const mockRef = { current: { blur: jest.fn() } };
+    const mockRemove = jest.fn();
+
+    jest.spyOn(Keyboard, 'addListener').mockImplementation(() => ({
+      remove: mockRemove,
+    }));
+
     const { unmount } = renderHook(() => useKeyboardHideBlur(mockRef));
-    
-    const removeSpy = jest.spyOn(Keyboard, 'removeAllListeners');
     unmount();
-    
-    expect(removeSpy).toHaveBeenCalled();
+
+    expect(mockRemove).toHaveBeenCalled();
   });
 });
 ```
@@ -206,6 +217,13 @@ import { TextInput } from '../components/TextInput';
 
 describe('Enhanced TextInput', () => {
   it('should automatically blur on keyboard dismiss', async () => {
+    let capturedCallback: (() => void) | undefined;
+    jest.spyOn(Keyboard, 'addListener').mockImplementation((event, callback) => {
+      expect(event).toBe('keyboardDidHide');
+      capturedCallback = callback;
+      return { remove: jest.fn() };
+    });
+
     const { getByTestId } = render(
       <TextInput testID="input" placeholder="Test input" />
     );
@@ -215,8 +233,8 @@ describe('Enhanced TextInput', () => {
     // Focus the input
     fireEvent(input, 'focus');
     
-    // Simulate keyboard dismissal
-    Keyboard.emit('keyboardDidHide');
+    // Simulate keyboard dismissal by invoking the captured listener callback
+    capturedCallback?.();
     
     // Verify blur was called (you may need to mock the blur method)
     expect(input.props.onBlur).toHaveBeenCalled();
