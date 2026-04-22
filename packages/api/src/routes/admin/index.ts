@@ -7,6 +7,7 @@ import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
+import { analyticsRoutes } from './analytics';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 
@@ -879,4 +880,5 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       }),
       detail: { tags: ['Admin'], summary: 'Update a catalog item' },
     },
-  );
+  )
+  .use(analyticsRoutes);
