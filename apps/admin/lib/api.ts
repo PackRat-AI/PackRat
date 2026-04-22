@@ -4,12 +4,11 @@
 
 import { clearToken, getAuthHeader } from './auth';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
-}
-
 async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+  if (!API_BASE) {
+    throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
+  }
   const res = await fetch(`${API_BASE}/api/admin${path}`, {
     ...init,
     headers: {

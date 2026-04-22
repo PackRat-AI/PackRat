@@ -15,11 +15,6 @@ import { Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-if (!API_BASE) {
-  throw new Error('NEXT_PUBLIC_API_URL must be set (root .env.local → PUBLIC_API_URL)');
-}
-
 export default function LoginPage() {
   const router = useRouter();
   const [username, setUsername] = useState('');
@@ -31,6 +26,13 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setPending(true);
+
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+    if (!API_BASE) {
+      setError('API URL is not configured. Set NEXT_PUBLIC_API_URL.');
+      setPending(false);
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE}/api/admin/token`, {
