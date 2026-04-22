@@ -1,4 +1,5 @@
 import { z } from '@hono/zod-openapi';
+import { PackSchema } from '@packrat/api/schemas/packs';
 
 export const LocationSchema = z
   .object({
@@ -28,15 +29,17 @@ export const TripSchema = z
   })
   .openapi('Trip');
 
-export const TripWithPackSchema = TripSchema.openapi('TripWithPack');
+export const TripWithPackSchema = TripSchema.extend({
+  pack: PackSchema.nullable().optional(),
+}).openapi('TripWithPack');
 
 export const CreateTripRequestSchema = z.object({
   id: z.string().openapi({ example: 't_123456', description: 'Client-generated trip ID' }),
   name: z.string().min(1),
   description: z.string().nullable().optional(),
   location: LocationSchema,
-  startDate: z.string().optional().nullable(),
-  endDate: z.string().optional().nullable(),
+  startDate: z.string().datetime().optional().nullable(),
+  endDate: z.string().datetime().optional().nullable(),
   notes: z.string().optional().nullable(),
   packId: z.string().optional().nullable(),
   localCreatedAt: z.string().datetime(),

@@ -67,7 +67,9 @@ const processQueue = async (
     }
 
     try {
-      const retryInit = await withAuthHeaders(request.init, token);
+      const retryHeaders = new Headers(request.init?.headers);
+      retryHeaders.set('x-packrat-rpc-retry', 'true');
+      const retryInit = await withAuthHeaders({ ...request.init, headers: retryHeaders }, token);
       request.resolve(fetchImpl(request.input, retryInit));
     } catch (retryError) {
       request.reject(retryError);

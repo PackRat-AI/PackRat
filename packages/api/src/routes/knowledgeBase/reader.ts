@@ -52,7 +52,7 @@ function cleanTextForEmbedding(text: string): string {
     .replace(/\s{2,}/g, ' ') // Collapse multiple spaces
     .replace(/\n{2,}/g, '\n') // Collapse multiple newlines
     .replace(/\t/g, ' ') // Replace tabs with space
-    .replace(/ /g, ' ') // Replace non-breaking spaces
+    .replace(/\u00a0/g, ' ') // Replace non-breaking spaces
     .replace(/^\s+|\s+$/g, '') // Trim
     .replace(/(We appreciate the time and effort.*|Steve)$/gim, '') // Remove boilerplate signature
     .trim();

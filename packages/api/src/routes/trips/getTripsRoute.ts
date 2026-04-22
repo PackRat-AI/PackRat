@@ -11,16 +11,10 @@ export const routeDefinition = createRoute({
   path: '/',
   tags: ['Trips'],
   summary: 'List user trips',
-  description:
-    'Get all trips belonging to the authenticated user, optionally including public trips.',
+  description: 'Get all trips belonging to the authenticated user.',
   security: [{ bearerAuth: [] }],
   request: {
-    query: z.object({
-      includePublic: z.coerce.number().int().min(0).max(1).optional().default(0).openapi({
-        example: 0,
-        description: 'Include public trips from other users (0 = false, 1 = true)',
-      }),
-    }),
+    query: z.object({}),
   },
   responses: {
     200: {
@@ -37,15 +31,10 @@ export const routeDefinition = createRoute({
 export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
-  const { includePublic } = c.req.valid('query');
 
   try {
-    const where = includePublic
-      ? and(eq(trips.deleted, false))
-      : and(eq(trips.userId, auth.userId), eq(trips.deleted, false));
-
     const allTrips = await db.query.trips.findMany({
-      where,
+      where: and(eq(trips.userId, auth.userId), eq(trips.deleted, false)),
       with: { pack: true },
       orderBy: (t) => t.createdAt,
     });

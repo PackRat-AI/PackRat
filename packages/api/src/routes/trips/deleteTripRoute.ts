@@ -3,7 +3,7 @@ import { createDb } from '@packrat/api/db';
 import { trips } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export const routeDefinition = createRoute({
   method: 'delete',
@@ -42,12 +42,13 @@ export const handler: RouteHandler<typeof routeDefinition> = async (c) => {
 
   try {
     const trip = await db.query.trips.findFirst({
-      where: and(eq(trips.id, tripId), eq(trips.userId, auth.userId)),
+      where: eq(trips.id, tripId),
     });
 
-    if (!trip) return c.json({ error: 'Trip not found or unauthorized' }, 403);
+    if (!trip) return c.json({ error: 'Trip not found' }, 404);
+    if (trip.userId !== auth.userId) return c.json({ error: 'Forbidden' }, 403);
 
-    await db.delete(trips).where(and(eq(trips.id, tripId), eq(trips.userId, auth.userId)));
+    await db.delete(trips).where(eq(trips.id, tripId));
 
     return c.json({ success: true }, 200);
   } catch (error) {

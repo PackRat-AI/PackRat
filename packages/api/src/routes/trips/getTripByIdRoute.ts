@@ -4,7 +4,7 @@ import { trips } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
 import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { and, eq } from 'drizzle-orm';
-import { TripSchema } from './schemas';
+import { TripWithPackSchema } from './schemas';
 
 export const routeDefinition = createRoute({
   method: 'get',
@@ -18,7 +18,7 @@ export const routeDefinition = createRoute({
   responses: {
     200: {
       description: 'Trip retrieved successfully',
-      content: { 'application/json': { schema: TripSchema } },
+      content: { 'application/json': { schema: TripWithPackSchema } },
     },
     404: {
       description: 'Trip not found',
