@@ -3,9 +3,11 @@ import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
+import type { adminRpcRoutes } from '@packrat/api/routes/admin';
 import { aiRoutes } from '@packrat/api/routes/ai';
 import { authRoutes } from '@packrat/api/routes/auth';
 import { catalogRoutes } from '@packrat/api/routes/catalog';
+import { chatRoutes } from '@packrat/api/routes/chat';
 import { feedRoutes } from '@packrat/api/routes/feed';
 import { guidesRoutes } from '@packrat/api/routes/guides';
 import { packsRoutes } from '@packrat/api/routes/packs';
@@ -73,6 +75,7 @@ const rpcRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
   .route('/api/packs', packsRoutes)
   .route('/api/feed', feedRoutes)
   .route('/api/ai', aiRoutes)
+  .route('/api/chat', chatRoutes)
   .route('/api/weather', weatherRoutes)
   .route('/api/pack-templates', packTemplatesRoutes)
   .route('/api/season-suggestions', seasonSuggestionsRoutes)
@@ -105,6 +108,7 @@ app.get('/', (c) => {
 });
 
 export type AppType = typeof rpcRoutes;
+export type AdminAppType = typeof adminRpcRoutes;
 
 // Export the AppContainer class for Cloudflare Container binding
 export { AppContainer, app, rpcRoutes };
