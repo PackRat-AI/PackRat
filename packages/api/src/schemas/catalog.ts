@@ -1,10 +1,12 @@
 import { z } from '@hono/zod-openapi';
 import { positiveIntegerQueryParam } from './queryParams';
 
+const DIGITS_REGEX = /^\d+$/;
+
 const boundedIntegerQueryParam = (defaultValue: string, max: number) =>
   z
     .string()
-    .regex(/^\d+$/)
+    .regex(DIGITS_REGEX)
     .optional()
     .default(defaultValue)
     .transform((value) => Number(value))
