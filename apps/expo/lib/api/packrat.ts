@@ -1,6 +1,6 @@
 import { createApiClient } from '@packrat/api-client';
+import { clientEnvs } from '@packrat/env/expo-client';
 import { store } from 'expo-app/atoms/store';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import {
   needsReauthAtom,
   refreshTokenAtom,

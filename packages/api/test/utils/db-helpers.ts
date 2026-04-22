@@ -232,7 +232,9 @@ export async function seedPackTemplateItems(
  * Seeds a pack into the test database
  * @returns The created pack with id
  */
-export async function seedPack(overrides?: Partial<InferInsertModel<typeof packs>>) {
+export async function seedPack(
+  overrides: Partial<InferInsertModel<typeof packs>> & { userId: number },
+) {
   const db = createDb();
 
   const packData = createTestPack(overrides);

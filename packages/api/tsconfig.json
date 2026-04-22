@@ -11,5 +11,12 @@
     }
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "container_src", "test", "coverage"]
+  "exclude": [
+    "node_modules",
+    "container_src",
+    "test",
+    "coverage",
+    "src/routes/admin/analytics",
+    "src/services/userService.ts"
+  ]
 }

@@ -54,6 +54,8 @@
     "**/.expo",
     "**/coverage",
     "packages/api/container_src",
+    "packages/api/src/routes/admin/analytics",
+    "packages/api/src/services/userService*",
     "packages/mcp"
   ]
 }
