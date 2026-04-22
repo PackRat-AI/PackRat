@@ -16,7 +16,6 @@ import { assertDefined } from '@packrat/guards';
 import { generateObject } from 'ai';
 import { and, eq, or, sql } from 'drizzle-orm';
 import { Elysia, status } from 'elysia';
-import { nanoid } from 'nanoid';
 import { fetchTranscript } from 'youtube-transcript';
 import { z } from 'zod';
 
@@ -324,7 +323,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
             : { items: [] as never[] };
 
         const now = new Date();
-        const templateId = `pt_${nanoid()}`;
+        const templateId = `pt_${crypto.randomUUID().replace(/-/g, '').slice(0, 21)}`;
 
         const { newTemplate, insertedItems } = await db.transaction(async (tx) => {
           const [createdTemplate] = await tx
@@ -349,7 +348,7 @@ export const packTemplatesRoutes = new Elysia({ prefix: '/pack-templates' })
           const itemRecords = analysis.items.map((detected, index) => {
             const catalogMatches = batchResult.items[index] ?? [];
             const bestMatch = catalogMatches[0];
-            const itemId = `pti_${nanoid()}`;
+            const itemId = `pti_${crypto.randomUUID().replace(/-/g, '').slice(0, 21)}`;
 
             return {
               id: itemId,
