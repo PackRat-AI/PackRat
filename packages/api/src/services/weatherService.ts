@@ -28,7 +28,11 @@ export class WeatherService {
       throw new Error('Weather API request failed');
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      main: { temp: number; humidity: number };
+      weather: Array<{ main: string }>;
+      wind: { speed: number };
+    };
 
     return {
       location,
