@@ -39,6 +39,7 @@
     "@elysiajs/openapi": "catalog:",
     "@mozilla/readability": "^0.6.0",
     "@neondatabase/serverless": "^1.0.0",
+    "@sinclair/typebox": "^0.34.15",
     "@packrat/env": "workspace:*",
     "@packrat/guards": "workspace:*",
     "@sentry/cloudflare": "^8.45.0",
