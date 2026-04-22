@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { catalogItems, packItems, packs } from '@packrat/api/db/schema';
 import { ErrorResponseSchema } from '@packrat/api/schemas/catalog';
@@ -9,18 +9,14 @@ import {
 } from '@packrat/api/schemas/packs';
 import { generateEmbedding } from '@packrat/api/services/embeddingService';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEmbeddingText } from '@packrat/api/utils/embeddingHelper';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import { and, cosineDistance, desc, eq, getTableColumns, gt, isNotNull, sql } from 'drizzle-orm';
 
-const packItemsRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
-
 // Get all items for a pack
-const getItemsRoute = createRoute({
+export const getItemsRoute = createRoute({
   method: 'get',
   path: '/{packId}/items',
   tags: ['Pack Items'],
@@ -61,7 +57,7 @@ const getItemsRoute = createRoute({
   },
 });
 
-packItemsRoutes.openapi(getItemsRoute, async (c) => {
+export const getItemsRouteHandler: RouteHandler<typeof getItemsRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -114,10 +110,10 @@ packItemsRoutes.openapi(getItemsRoute, async (c) => {
   }));
 
   return c.json(mappedItems, 200);
-});
+};
 
 // Get pack item by ID
-const getItemRoute = createRoute({
+export const getItemRoute = createRoute({
   method: 'get',
   path: '/items/{itemId}',
   tags: ['Pack Items'],
@@ -178,7 +174,7 @@ const getItemRoute = createRoute({
   },
 });
 
-packItemsRoutes.openapi(getItemRoute, async (c) => {
+export const getItemRouteHandler: RouteHandler<typeof getItemRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -205,10 +201,10 @@ packItemsRoutes.openapi(getItemRoute, async (c) => {
   }
 
   return c.json(item, 200);
-});
+};
 
 // Add an item to a pack
-const addItemRoute = createRoute({
+export const addItemRoute = createRoute({
   method: 'post',
   path: '/{packId}/items',
   tags: ['Pack Items'],
@@ -260,7 +256,7 @@ const addItemRoute = createRoute({
   },
 });
 
-packItemsRoutes.openapi(addItemRoute, async (c) => {
+export const addItemRouteHandler: RouteHandler<typeof addItemRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -332,10 +328,10 @@ packItemsRoutes.openapi(addItemRoute, async (c) => {
   };
 
   return c.json(mappedNewItem, 201);
-});
+};
 
 // Update a pack item
-const updateItemRoute = createRoute({
+export const updateItemRoute = createRoute({
   method: 'patch',
   path: '/items/{itemId}',
   tags: ['Pack Items'],
@@ -396,7 +392,7 @@ const updateItemRoute = createRoute({
   },
 });
 
-packItemsRoutes.openapi(updateItemRoute, async (c) => {
+export const updateItemRouteHandler: RouteHandler<typeof updateItemRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -493,10 +489,10 @@ packItemsRoutes.openapi(updateItemRoute, async (c) => {
 
   updatedItem.embedding = null; // Don't send embedding in response
   return c.json(updatedItem, 200);
-});
+};
 
 // Delete a pack item
-const deleteItemRoute = createRoute({
+export const deleteItemRoute = createRoute({
   method: 'delete',
   path: '/items/{itemId}',
   tags: ['Pack Items'],
@@ -531,7 +527,7 @@ const deleteItemRoute = createRoute({
   },
 });
 
-packItemsRoutes.openapi(deleteItemRoute, async (c) => {
+export const deleteItemRouteHandler: RouteHandler<typeof deleteItemRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -553,10 +549,10 @@ packItemsRoutes.openapi(deleteItemRoute, async (c) => {
   await db.update(packs).set({ updatedAt: new Date() }).where(eq(packs.id, packId));
 
   return c.json({ success: true, itemId: itemId }, 200);
-});
+};
 
 // Get similar items to a pack item
-const getSimilarItemsRoute = createRoute({
+export const getSimilarItemsRoute = createRoute({
   method: 'get',
   path: '/{packId}/items/{itemId}/similar',
   tags: ['Pack Items'],
@@ -640,7 +636,7 @@ const getSimilarItemsRoute = createRoute({
   },
 });
 
-packItemsRoutes.openapi(getSimilarItemsRoute, async (c) => {
+export const getSimilarItemsRouteHandler: RouteHandler<typeof getSimilarItemsRoute> = async (c) => {
   const db = createDb(c);
   const auth = c.get('user');
   const { itemId } = c.req.param();
@@ -691,6 +687,19 @@ packItemsRoutes.openapi(getSimilarItemsRoute, async (c) => {
     },
     200,
   );
-});
+};
 
-export { packItemsRoutes };
+const packItemsRouteEntries = [
+  defineOpenAPIRoute({ route: getItemsRoute, handler: getItemsRouteHandler }),
+  defineOpenAPIRoute({ route: getItemRoute, handler: getItemRouteHandler }),
+  defineOpenAPIRoute({ route: addItemRoute, handler: addItemRouteHandler }),
+  defineOpenAPIRoute({ route: updateItemRoute, handler: updateItemRouteHandler }),
+  defineOpenAPIRoute({ route: deleteItemRoute, handler: deleteItemRouteHandler }),
+  defineOpenAPIRoute({ route: getSimilarItemsRoute, handler: getSimilarItemsRouteHandler }),
+] as const;
+
+const packItemsRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  packItemsRouteEntries,
+);
+
+export { packItemsRoutes, packItemsRouteEntries };

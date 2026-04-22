@@ -1,31 +1,55 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { defineOpenAPIRoute, OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '@packrat/api/types/env';
 import type { Variables } from '@packrat/api/types/variables';
 import { backfillEmbeddingsRoute } from './backfillEmbeddingsRoute';
 import * as createCatalogItemRoute from './createCatalogItemRoute';
 import * as deleteCatalogItemRoute from './deleteCatalogItemRoute';
 import * as getCatalogItemRoute from './getCatalogItemRoute';
-import { getCatalogItemsCategoriesRoute } from './getCatalogItemsCategoriesRoute';
+import * as getCatalogItemsCategoriesRoute from './getCatalogItemsCategoriesRoute';
 import * as getCatalogItemsRoute from './getCatalogItemsRoute';
 import * as getSimilarCatalogItemsRoute from './getSimilarCatalogItemsRoute';
 import { queueCatalogEtlRoute } from './queueCatalogEtlRoute';
 import * as updateCatalogItemRoute from './updateCatalogItemRoute';
 import * as vectorSearchRoute from './vectorSearchRoute';
 
-const catalogRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
+const catalogOpenApiRoutes = [
+  defineOpenAPIRoute({
+    route: getCatalogItemsRoute.routeDefinition,
+    handler: getCatalogItemsRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: vectorSearchRoute.routeDefinition,
+    handler: vectorSearchRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: createCatalogItemRoute.routeDefinition,
+    handler: createCatalogItemRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: getCatalogItemsCategoriesRoute.routeDefinition,
+    handler: getCatalogItemsCategoriesRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: getCatalogItemRoute.routeDefinition,
+    handler: getCatalogItemRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: getSimilarCatalogItemsRoute.routeDefinition,
+    handler: getSimilarCatalogItemsRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: deleteCatalogItemRoute.routeDefinition,
+    handler: deleteCatalogItemRoute.handler,
+  }),
+  defineOpenAPIRoute({
+    route: updateCatalogItemRoute.routeDefinition,
+    handler: updateCatalogItemRoute.handler,
+  }),
+] as const;
 
-catalogRoutes.openapi(getCatalogItemsRoute.routeDefinition, getCatalogItemsRoute.handler);
-catalogRoutes.openapi(vectorSearchRoute.routeDefinition, vectorSearchRoute.handler);
-catalogRoutes.openapi(createCatalogItemRoute.routeDefinition, createCatalogItemRoute.handler);
-catalogRoutes.route('/', getCatalogItemsCategoriesRoute);
-catalogRoutes.openapi(getCatalogItemRoute.routeDefinition, getCatalogItemRoute.handler);
-catalogRoutes.openapi(
-  getSimilarCatalogItemsRoute.routeDefinition,
-  getSimilarCatalogItemsRoute.handler,
-);
-catalogRoutes.openapi(deleteCatalogItemRoute.routeDefinition, deleteCatalogItemRoute.handler);
-catalogRoutes.openapi(updateCatalogItemRoute.routeDefinition, updateCatalogItemRoute.handler);
-catalogRoutes.route('/', queueCatalogEtlRoute);
-catalogRoutes.route('/', backfillEmbeddingsRoute);
+const catalogRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
+  .openapiRoutes(catalogOpenApiRoutes)
+  .route('/', queueCatalogEtlRoute)
+  .route('/', backfillEmbeddingsRoute);
 
 export { catalogRoutes };

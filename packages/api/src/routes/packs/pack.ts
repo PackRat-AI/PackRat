@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import {
   catalogItems,
@@ -16,18 +16,14 @@ import {
   UpdatePackRequestSchema,
 } from '@packrat/api/schemas/packs';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { computePackWeights } from '@packrat/api/utils/compute-pack';
 import { getPackDetails } from '@packrat/api/utils/DbUtils';
 import { and, cosineDistance, desc, eq, gt, notInArray, sql } from 'drizzle-orm';
 
-const packRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
-
 // Get a specific pack
-const getPackRoute = createRoute({
+export const getPackRoute = createRoute({
   method: 'get',
   path: '/{packId}',
   tags: ['Packs'],
@@ -67,7 +63,7 @@ const getPackRoute = createRoute({
   },
 });
 
-packRoutes.openapi(getPackRoute, async (c) => {
+export const getPackRouteHandler: RouteHandler<typeof getPackRoute> = async (c) => {
   const db = createDb(c);
   try {
     const packId = c.req.param('packId');
@@ -88,10 +84,10 @@ packRoutes.openapi(getPackRoute, async (c) => {
     console.error('Error fetching pack:', error);
     return c.json({ error: 'Failed to fetch pack' }, 500);
   }
-});
+};
 
 // Update a pack
-const updatePackRoute = createRoute({
+export const updatePackRoute = createRoute({
   method: 'put',
   path: '/{packId}',
   tags: ['Packs'],
@@ -139,7 +135,7 @@ const updatePackRoute = createRoute({
   },
 });
 
-packRoutes.openapi(updatePackRoute, async (c) => {
+export const updatePackRouteHandler: RouteHandler<typeof updatePackRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -183,10 +179,10 @@ packRoutes.openapi(updatePackRoute, async (c) => {
     console.error('Error updating pack:', error);
     return c.json({ error: 'Failed to update pack' }, 500);
   }
-});
+};
 
 // Delete a pack
-const deletePackRoute = createRoute({
+export const deletePackRoute = createRoute({
   method: 'delete',
   path: '/{packId}',
   tags: ['Packs'],
@@ -228,7 +224,7 @@ const deletePackRoute = createRoute({
   },
 });
 
-packRoutes.openapi(deletePackRoute, async (c) => {
+export const deletePackRouteHandler: RouteHandler<typeof deletePackRoute> = async (c) => {
   const db = createDb(c);
   const auth = c.get('user');
   const packId = c.req.param('packId');
@@ -243,9 +239,9 @@ packRoutes.openapi(deletePackRoute, async (c) => {
 
   await db.delete(packs).where(and(eq(packs.id, packId), eq(packs.userId, auth.userId)));
   return c.json({ success: true }, 200);
-});
+};
 
-const itemSuggestionsRoute = createRoute({
+export const itemSuggestionsRoute = createRoute({
   method: 'post',
   path: '/{packId}/item-suggestions',
   tags: ['Packs'],
@@ -309,7 +305,7 @@ const itemSuggestionsRoute = createRoute({
   },
 });
 
-packRoutes.openapi(itemSuggestionsRoute, async (c) => {
+export const itemSuggestionsRouteHandler: RouteHandler<typeof itemSuggestionsRoute> = async (c) => {
   const db = createDb(c);
   const packId = c.req.param('packId');
   const { existingCatalogItemIds } = await c.req.json();
@@ -361,9 +357,9 @@ packRoutes.openapi(itemSuggestionsRoute, async (c) => {
     .limit(5);
 
   return c.json(similarItems, 200);
-});
+};
 
-const weightHistoryRoute = createRoute({
+export const weightHistoryRoute = createRoute({
   method: 'post',
   path: '/{packId}/weight-history',
   tags: ['Packs'],
@@ -417,7 +413,7 @@ const weightHistoryRoute = createRoute({
   },
 });
 
-packRoutes.openapi(weightHistoryRoute, async (c) => {
+export const weightHistoryRouteHandler: RouteHandler<typeof weightHistoryRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -447,11 +443,9 @@ packRoutes.openapi(weightHistoryRoute, async (c) => {
     console.error('Pack weight history API error:', error);
     return c.json({ error: 'Failed to create weight history entry' }, 500);
   }
-});
+};
 
-export { packRoutes };
-
-const gapAnalysisRoute = createRoute({
+export const gapAnalysisRoute = createRoute({
   method: 'post',
   path: '/{packId}/gap-analysis',
   tags: ['Packs'],
@@ -516,7 +510,7 @@ const gapAnalysisRoute = createRoute({
   },
 });
 
-packRoutes.openapi(gapAnalysisRoute, async (c) => {
+export const gapAnalysisRouteHandler: RouteHandler<typeof gapAnalysisRoute> = async (c) => {
   const auth = c.get('user');
   const packId = c.req.param('packId');
   const { WeatherService } = await import('@packrat/api/services/weatherService');
@@ -572,7 +566,7 @@ Pack Details:
 - Item Count: ${pack.items.length}
 
 Trip Context:
-- Destination: ${destination || 'Not specified'} 
+- Destination: ${destination || 'Not specified'}
 - Trip Type: ${tripType || 'Not specified'}
 - Duration: ${duration || 'Not specified'}
 - Start Date: ${startDate || 'Not specified'}
@@ -606,9 +600,9 @@ Analyze this pack and return a JSON response with the following structure:
 
 Focus on:
 1. Safety essentials (first aid, navigation, emergency shelter)
-2. Weather protection appropriate for the conditions and season 
+2. Weather protection appropriate for the conditions and season
 3. Basic comfort items for the trip duration
-4. Food and water considerations 
+4. Food and water considerations
 5. Trip-specific gear based on destination and activity type
 
 Limit to maximum 6 recommendations, prioritizing the most important gaps. Only suggest items that are truly missing or inadequate for the described conditions.`;
@@ -662,4 +656,19 @@ Limit to maximum 6 recommendations, prioritizing the most important gaps. Only s
     c.get('sentry')?.captureException(error);
     throw error;
   }
-});
+};
+
+const packRouteEntries = [
+  defineOpenAPIRoute({ route: getPackRoute, handler: getPackRouteHandler }),
+  defineOpenAPIRoute({ route: updatePackRoute, handler: updatePackRouteHandler }),
+  defineOpenAPIRoute({ route: deletePackRoute, handler: deletePackRouteHandler }),
+  defineOpenAPIRoute({ route: itemSuggestionsRoute, handler: itemSuggestionsRouteHandler }),
+  defineOpenAPIRoute({ route: weightHistoryRoute, handler: weightHistoryRouteHandler }),
+  defineOpenAPIRoute({ route: gapAnalysisRoute, handler: gapAnalysisRouteHandler }),
+] as const;
+
+const packRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  packRouteEntries,
+);
+
+export { packRoutes, packRouteEntries };

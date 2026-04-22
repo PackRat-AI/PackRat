@@ -12,6 +12,10 @@
   "scripts": {
     "check-types": "tsc --noEmit"
   },
+  "dependencies": {
+    "@packrat/api": "workspace:*",
+    "hono": "catalog:"
+  },
   "devDependencies": {
     "typescript": "catalog:"
   }

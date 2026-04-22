@@ -3,6 +3,22 @@ import { sentry } from '@hono/sentry';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { AppContainer } from '@packrat/api/containers';
 import { routes } from '@packrat/api/routes';
+import type { adminRpcRoutes } from '@packrat/api/routes/admin';
+import { aiRoutes } from '@packrat/api/routes/ai';
+import { authRoutes } from '@packrat/api/routes/auth';
+import { catalogRoutes } from '@packrat/api/routes/catalog';
+import { chatRoutes } from '@packrat/api/routes/chat';
+import { feedRoutes } from '@packrat/api/routes/feed';
+import { guidesRoutes } from '@packrat/api/routes/guides';
+import { packsRoutes } from '@packrat/api/routes/packs';
+import { packTemplatesRoutes } from '@packrat/api/routes/packTemplates';
+import { seasonSuggestionsRoutes } from '@packrat/api/routes/seasonSuggestions';
+import { trailConditionsRoutes } from '@packrat/api/routes/trailConditions';
+import { tripsRoutes } from '@packrat/api/routes/trips';
+import { uploadRoutes } from '@packrat/api/routes/upload';
+import { userRoutes } from '@packrat/api/routes/user';
+import { weatherRoutes } from '@packrat/api/routes/weather';
+import { wildlifeRoutes } from '@packrat/api/routes/wildlife';
 import { processQueueBatch } from '@packrat/api/services/etl/queue';
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
@@ -49,7 +65,24 @@ app
 app.use(logger());
 app.use(cors());
 
-// Mount routes
+// Mount routes — explicit openapiRoutes slices for hc<> type inference
+// (full routes mount exceeds TS depth limit; each domain must use openapiRoutes for RPC typing)
+const rpcRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
+  .route('/api/auth', authRoutes)
+  .route('/api/catalog', catalogRoutes)
+  .route('/api/guides', guidesRoutes)
+  .route('/api/trips', tripsRoutes)
+  .route('/api/packs', packsRoutes)
+  .route('/api/feed', feedRoutes)
+  .route('/api/ai', aiRoutes)
+  .route('/api/chat', chatRoutes)
+  .route('/api/weather', weatherRoutes)
+  .route('/api/pack-templates', packTemplatesRoutes)
+  .route('/api/season-suggestions', seasonSuggestionsRoutes)
+  .route('/api/user', userRoutes)
+  .route('/api/upload', uploadRoutes)
+  .route('/api/trail-conditions', trailConditionsRoutes)
+  .route('/api/wildlife', wildlifeRoutes);
 app.route('/api', routes);
 
 // Configure OpenAPI documentation
@@ -74,8 +107,11 @@ app.get('/', (c) => {
   return c.text('PackRat API is running!');
 });
 
+export type AppType = typeof rpcRoutes;
+export type AdminAppType = typeof adminRpcRoutes;
+
 // Export the AppContainer class for Cloudflare Container binding
-export { AppContainer };
+export { AppContainer, app };
 
 export default {
   fetch: app.fetch,

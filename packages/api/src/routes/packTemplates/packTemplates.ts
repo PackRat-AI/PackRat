@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, z } from '@hono/zod-openapi';
 import { createDb } from '@packrat/api/db';
 import { type PackTemplate, packTemplates } from '@packrat/api/db/schema';
 import {
@@ -8,18 +8,12 @@ import {
   SuccessResponseSchema,
   UpdatePackTemplateRequestSchema,
 } from '@packrat/api/schemas/packTemplates';
-import type { Env } from '@packrat/api/types/env';
-import type { Variables } from '@packrat/api/types/variables';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { assertDefined } from '@packrat/guards';
 import { and, eq, or } from 'drizzle-orm';
 
-const packTemplateRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
-
 // Get all templates
-const getTemplatesRoute = createRoute({
+export const getTemplatesRoute = createRoute({
   method: 'get',
   path: '/',
   tags: ['Pack Templates'],
@@ -47,7 +41,7 @@ const getTemplatesRoute = createRoute({
   },
 });
 
-packTemplateRoutes.openapi(getTemplatesRoute, async (c) => {
+export const getTemplatesHandler: RouteHandler<typeof getTemplatesRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -60,10 +54,10 @@ packTemplateRoutes.openapi(getTemplatesRoute, async (c) => {
   });
 
   return c.json(templates, 200);
-});
+};
 
 // Create a new template
-const createTemplateRoute = createRoute({
+export const createTemplateRoute = createRoute({
   method: 'post',
   path: '/',
   tags: ['Pack Templates'],
@@ -108,7 +102,7 @@ const createTemplateRoute = createRoute({
   },
 });
 
-packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
+export const createTemplateHandler: RouteHandler<typeof createTemplateRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -141,10 +135,10 @@ packTemplateRoutes.openapi(createTemplateRoute, async (c) => {
   });
 
   return c.json(templateWithItems, 201);
-});
+};
 
 // Get a specific pack template
-const getTemplateRoute = createRoute({
+export const getTemplateRoute = createRoute({
   method: 'get',
   path: '/{templateId}',
   tags: ['Pack Templates'],
@@ -195,7 +189,7 @@ const getTemplateRoute = createRoute({
   },
 });
 
-packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
+export const getTemplateHandler: RouteHandler<typeof getTemplateRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -215,10 +209,10 @@ packTemplateRoutes.openapi(getTemplateRoute, async (c) => {
 
   if (!template) return c.json({ error: 'Template not found' }, 404);
   return c.json(template, 200);
-});
+};
 
 // Update a pack template
-const updateTemplateRoute = createRoute({
+export const updateTemplateRoute = createRoute({
   method: 'put',
   path: '/{templateId}',
   tags: ['Pack Templates'],
@@ -285,7 +279,7 @@ const updateTemplateRoute = createRoute({
   },
 });
 
-packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
+export const updateTemplateHandler: RouteHandler<typeof updateTemplateRoute> = async (c) => {
   const auth = c.get('user');
   const db = createDb(c);
   const templateId = c.req.param('templateId');
@@ -322,10 +316,10 @@ packTemplateRoutes.openapi(updateTemplateRoute, async (c) => {
 
   if (!updated) return c.json({ error: 'Template not found' }, 404);
   return c.json(updated, 200);
-});
+};
 
 // Delete a pack template
-const deleteTemplateRoute = createRoute({
+export const deleteTemplateRoute = createRoute({
   method: 'delete',
   path: '/{templateId}',
   tags: ['Pack Templates'],
@@ -376,7 +370,7 @@ const deleteTemplateRoute = createRoute({
   },
 });
 
-packTemplateRoutes.openapi(deleteTemplateRoute, async (c) => {
+export const deleteTemplateHandler: RouteHandler<typeof deleteTemplateRoute> = async (c) => {
   const auth = c.get('user');
 
   const db = createDb(c);
@@ -399,6 +393,4 @@ packTemplateRoutes.openapi(deleteTemplateRoute, async (c) => {
   );
 
   return c.json({ success: true }, 200);
-});
-
-export { packTemplateRoutes };
+};

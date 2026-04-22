@@ -1,11 +1,12 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono } from '@hono/zod-openapi';
 import {
   ErrorResponseSchema,
   PresignedUploadQuerySchema,
   PresignedUploadResponseSchema,
 } from '@packrat/api/schemas/upload';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Variables } from '../types/variables';
 import { getPresignedUrl } from '../utils/getPresignedUrl';
@@ -21,10 +22,8 @@ const ALLOWED_IMAGE_TYPES = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 
-const uploadRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>();
-
 // Generate a presigned URL for uploading to R2
-const presignedRoute = createRoute({
+export const presignedRoute = createRoute({
   method: 'get',
   path: '/presigned',
   tags: ['Upload'],
@@ -70,7 +69,7 @@ const presignedRoute = createRoute({
   },
 });
 
-uploadRoutes.openapi(presignedRoute, async (c) => {
+export const presignedHandler: RouteHandler<typeof presignedRoute> = async (c) => {
   const auth = c.get('user');
 
   const {
@@ -136,6 +135,14 @@ uploadRoutes.openapi(presignedRoute, async (c) => {
     });
     throw error;
   }
-});
+};
+
+const uploadOpenApiRoutes = [
+  defineOpenAPIRoute({ route: presignedRoute, handler: presignedHandler }),
+] as const;
+
+const uploadRoutes = new OpenAPIHono<{ Bindings: Env; Variables: Variables }>().openapiRoutes(
+  uploadOpenApiRoutes,
+);
 
 export { uploadRoutes };

@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
+import { createRoute, defineOpenAPIRoute, OpenAPIHono } from '@hono/zod-openapi';
 import {
   ErrorResponseSchema,
   LocationSearchResponseSchema,
@@ -11,18 +11,14 @@ import {
   WeatherSearchQuerySchema,
 } from '@packrat/api/schemas/weather';
 import type { Env } from '@packrat/api/types/env';
+import type { RouteHandler } from '@packrat/api/types/routeHandler';
 import type { Variables } from '@packrat/api/types/variables';
 import { getEnv } from '@packrat/api/utils/env-validation';
-
-const weatherRoutes = new OpenAPIHono<{
-  Bindings: Env;
-  Variables: Variables;
-}>();
 
 const WEATHER_API_BASE_URL = 'https://api.weatherapi.com/v1';
 
 // Search locations endpoint
-const searchRoute = createRoute({
+export const searchRoute = createRoute({
   method: 'get',
   path: '/search',
   tags: ['Weather'],
@@ -60,7 +56,7 @@ const searchRoute = createRoute({
   },
 });
 
-weatherRoutes.openapi(searchRoute, async (c) => {
+export const searchHandler: RouteHandler<typeof searchRoute> = async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
   const query = c.req.query('q');
@@ -100,10 +96,10 @@ weatherRoutes.openapi(searchRoute, async (c) => {
     });
     return c.json({ error: 'Internal server error', code: 'WEATHER_SEARCH_ERROR' }, 500);
   }
-});
+};
 
 // Search locations by coordinates endpoint
-const searchByCoordRoute = createRoute({
+export const searchByCoordRoute = createRoute({
   method: 'get',
   path: '/search-by-coordinates',
   tags: ['Weather'],
@@ -141,7 +137,7 @@ const searchByCoordRoute = createRoute({
   },
 });
 
-weatherRoutes.openapi(searchByCoordRoute, async (c) => {
+export const searchByCoordHandler: RouteHandler<typeof searchByCoordRoute> = async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
   const latitude = Number.parseFloat(c.req.query('lat') || '');
@@ -217,10 +213,10 @@ weatherRoutes.openapi(searchByCoordRoute, async (c) => {
     });
     return c.json({ error: 'Internal server error', code: 'WEATHER_COORD_SEARCH_ERROR' }, 500);
   }
-});
+};
 
 // Get weather data endpoint
-const forecastRoute = createRoute({
+export const forecastRoute = createRoute({
   method: 'get',
   path: '/forecast',
   tags: ['Weather'],
@@ -259,7 +255,7 @@ const forecastRoute = createRoute({
   },
 });
 
-weatherRoutes.openapi(forecastRoute, async (c) => {
+export const forecastHandler: RouteHandler<typeof forecastRoute> = async (c) => {
   const { WEATHER_API_KEY } = getEnv(c);
 
   const idParam = c.req.query('id');
@@ -300,6 +296,17 @@ weatherRoutes.openapi(forecastRoute, async (c) => {
     });
     return c.json({ error: 'Internal server error', code: 'WEATHER_FORECAST_ERROR' }, 500);
   }
-});
+};
+
+const weatherOpenApiRoutes = [
+  defineOpenAPIRoute({ route: searchRoute, handler: searchHandler }),
+  defineOpenAPIRoute({ route: searchByCoordRoute, handler: searchByCoordHandler }),
+  defineOpenAPIRoute({ route: forecastRoute, handler: forecastHandler }),
+] as const;
+
+const weatherRoutes = new OpenAPIHono<{
+  Bindings: Env;
+  Variables: Variables;
+}>().openapiRoutes(weatherOpenApiRoutes);
 
 export { weatherRoutes };
