@@ -1,6 +1,13 @@
 import type { Env } from '@packrat/api/types/env';
 import { getEnv } from '@packrat/api/utils/env-validation';
 import type { Context } from 'hono';
+import { z } from 'zod';
+
+const WeatherApiResponse = z.object({
+  main: z.object({ temp: z.number(), humidity: z.number() }),
+  weather: z.array(z.object({ main: z.string() })),
+  wind: z.object({ speed: z.number() }),
+});
 
 type WeatherData = {
   location: string;
@@ -28,11 +35,7 @@ export class WeatherService {
       throw new Error('Weather API request failed');
     }
 
-    const data = (await response.json()) as {
-      main: { temp: number; humidity: number };
-      weather: Array<{ main: string }>;
-      wind: { speed: number };
-    };
+    const data = WeatherApiResponse.parse(await response.json());
 
     return {
       location,
