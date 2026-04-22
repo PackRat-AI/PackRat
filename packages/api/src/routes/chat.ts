@@ -15,6 +15,7 @@ import type { Variables } from '@packrat/api/types/variables';
 import { createAIProvider } from '@packrat/api/utils/ai/provider';
 import { createTools } from '@packrat/api/utils/ai/tools';
 import { getEnv } from '@packrat/api/utils/env-validation';
+import { parseIntegerId } from '@packrat/api/utils/routeParams';
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { eq } from 'drizzle-orm';
 import { DEFAULT_MODELS } from '../utils/ai/models';
@@ -352,7 +353,10 @@ export const updateReportHandler: RouteHandler<typeof updateReportRoute> = async
     return c.json({ error: 'Unauthorized' }, 403);
   }
 
-  const id = Number.parseInt(c.req.param('id'), 10);
+  const id = parseIntegerId(c.req.param('id'));
+  if (id === null) {
+    return c.json({ error: 'Report not found' }, 404);
+  }
   const { status } = await c.req.json();
 
   await db

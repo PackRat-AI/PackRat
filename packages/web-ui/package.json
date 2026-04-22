@@ -1,6 +1,6 @@
 {
   "name": "@packrat/web-ui",
-  "version": "2.0.19",
+  "version": "2.0.21",
   "private": true,
   "type": "module",
   "exports": {
@@ -17,6 +17,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@packrat/guards": "workspace:*",
     "@radix-ui/react-accordion": "catalog:",
     "@radix-ui/react-alert-dialog": "catalog:",
     "@radix-ui/react-aspect-ratio": "catalog:",
@@ -62,11 +63,13 @@
   "devDependencies": {
     "@types/react": "~19.1.10",
     "react": "catalog:",
+    "recharts": "3.8.1",
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {
     "react": "catalog:",
+    "recharts": "3.8.1",
     "tailwindcss": "catalog:"
   }
 }

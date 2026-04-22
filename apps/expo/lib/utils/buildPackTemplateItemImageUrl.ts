@@ -1,4 +1,4 @@
-import { clientEnvs } from 'expo-app/env/clientEnvs';
+import { clientEnvs } from '@packrat/env/expo-client';
 
 export function buildPackTemplateItemImageUrl(image?: string | null): string | null {
   if (!image) return null;

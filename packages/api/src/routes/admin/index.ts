@@ -11,6 +11,7 @@ import { and, count, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { basicAuth } from 'hono/basic-auth';
 import { html, raw } from 'hono/html';
 import { sign, verify } from 'hono/jwt';
+import { analyticsRoutes } from './analytics';
 
 const ADMIN_TOKEN_TTL_SECONDS = 3600; // 1 hour
 
@@ -110,6 +111,7 @@ const adminLayout = (title: string, content: unknown) => html`
                 <a href="/api/admin/users" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Users</a>
                 <a href="/api/admin/packs" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Packs</a>
                 <a href="/api/admin/catalog" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Catalog</a>
+                <a href="/api/admin/analytics" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold">Analytics</a>
             </nav>
         </div>
         <div id="main-content" class="bg-white/95 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/20">
@@ -1117,6 +1119,8 @@ export const getCatalogListHandler: RouteHandler<typeof getCatalogListRoute> = a
 
 adminRoutes.openapi(getCatalogListRoute, getCatalogListHandler);
 
+adminRoutes.route('/analytics', analyticsRoutes);
+
 // ─── Action routes ────────────────────────────────────────────────────────────
 
 export const deleteUserRoute = createRoute({
@@ -1156,7 +1160,11 @@ export const deleteUserHandler: RouteHandler<typeof deleteUserRoute> = async (c)
     if (!deleted.length) return c.json({ error: 'User not found', code: 'NOT_FOUND' }, 404);
     return c.json({ success: true }, 200);
   } catch (error) {
-    if ((error as { code?: string })?.code === '23503') {
+    // Drizzle wraps the pg error in DrizzleQueryError, so the 23503 code lives
+    // on error.cause, not error itself.
+    const pgCode =
+      (error as { code?: string }).code ?? (error as { cause?: { code?: string } }).cause?.code;
+    if (pgCode === '23503') {
       return c.json({ error: 'Cannot delete: user has dependent data', code: 'CONFLICT' }, 409);
     }
     console.error('Error deleting user:', error);

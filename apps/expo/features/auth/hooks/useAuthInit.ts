@@ -1,6 +1,6 @@
+import { clientEnvs } from '@packrat/env/expo-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { clientEnvs } from 'expo-app/env/clientEnvs';
 import { router } from 'expo-router';
 import Storage from 'expo-sqlite/kv-store';
 import { useEffect, useState } from 'react';

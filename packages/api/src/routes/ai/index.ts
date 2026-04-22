@@ -42,7 +42,8 @@ export const ragSearchHandler: RouteHandler<typeof ragSearchRoute> = async (c) =
     const { q: query, limit } = c.req.valid('query');
     const aiService = new AIService(c);
     const result = await aiService.searchPackratOutdoorGuidesRAG(query, limit);
-    return c.json(result as z.infer<typeof RagSearchResponseSchema>, 200);
+    const response = RagSearchResponseSchema.parse(result);
+    return c.json(response, 200);
   } catch (error) {
     console.error('RAG search error:', error);
     return c.json({ error: 'Failed to search outdoor guides' }, 500);

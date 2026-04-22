@@ -1,6 +1,6 @@
 {
   "name": "packrat-monorepo",
-  "version": "2.0.19",
+  "version": "2.0.21",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -14,7 +14,9 @@
     "check:catalog": "bun scripts/lint/no-duplicate-deps.ts",
     "check:circular": "bun scripts/lint/no-circular-deps.ts",
     "check:deps": "manypkg check",
+    "check:magic-strings": "bun run --cwd packages/checks check:magic-strings",
     "check:package-json": "bun scripts/format/sort-package-json.ts --check",
+    "check:react-doctor": "bun scripts/lint/check-react-doctor.ts",
     "check-types": "tsc --noEmit",
     "check-types-watch": "tsc --noEmit --watch",
     "clean": "bun run .github/scripts/clean.ts",
@@ -29,15 +31,18 @@
     "ios": "cd apps/expo && bun ios",
     "lefthook": "lefthook install",
     "lint": "biome check --write",
-    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts",
+    "lint:custom": "bun run scripts/lint/no-raw-typeof.ts && bun run scripts/lint/no-raw-regex.ts && bun run packages/env/scripts/no-raw-process-env.ts",
     "lint:strict": "biome check && bun run lint:custom",
     "lint-unsafe": "biome check --write --unsafe",
+    "mcp": "bun run --cwd packages/mcp dev",
+    "mcp:deploy": "bun run --cwd packages/mcp deploy",
     "test:api:unit": "vitest run --config packages/api/vitest.unit.config.ts",
     "test:api-client:types": "vitest run --config packages/api-client/vitest.config.ts",
     "test:e2e:android": "bash .github/scripts/e2e.sh android",
     "test:e2e:ios": "bash .github/scripts/e2e.sh ios",
     "test:expo": "vitest run --config apps/expo/vitest.config.ts",
-    "test:expo:rpc-types": "vitest run --config apps/expo/vitest.types.config.ts"
+    "test:expo:rpc-types": "vitest run --config apps/expo/vitest.types.config.ts",
+    "test:mcp": "bun run --cwd packages/mcp test"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
@@ -48,6 +53,7 @@
     "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
     "lefthook": "^1.11.14",
+    "semver": "catalog:",
     "sort-package-json": "^3.6.1"
   },
   "packageManager": "bun@1.3.10",
@@ -63,6 +69,7 @@
     "radash": "^12.1.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "semver": "^7.7.4",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.9.2",
     "zod": "^3.24.2",

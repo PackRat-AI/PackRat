@@ -1,5 +1,6 @@
 'use client';
 
+import { guideEnv } from '@packrat/env/next';
 import { Badge } from '@packrat/web-ui/components/badge';
 import { Button } from '@packrat/web-ui/components/button';
 import {
@@ -31,7 +32,7 @@ import { FileText, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 // This ensures the page only works in development
-const _isDevelopment = process.env.NODE_ENV === 'development';
+const _isDevelopment = guideEnv.NODE_ENV === 'development';
 
 // Types
 type ContentCategory =

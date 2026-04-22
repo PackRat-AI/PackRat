@@ -7,6 +7,8 @@
 //   - scripts/lint/no-raw-typeof.ts
 //   - scripts/lint/no-circular-deps.ts
 //   - scripts/lint/no-duplicate-deps.ts  (skipped if file doesn't exist)
+//   - packages/checks/src/check-magic-strings.ts
+//   - scripts/lint/check-react-doctor.ts
 //   - scripts/format/sort-package-json.ts --check
 //
 // Output example:
@@ -63,6 +65,14 @@ const ALL_CHECKS: CheckDef[] = [
   {
     name: 'no-duplicate-deps',
     script: join(ROOT, 'scripts', 'lint', 'no-duplicate-deps.ts'),
+  },
+  {
+    name: 'check-magic-strings',
+    script: join(ROOT, 'packages', 'checks', 'src', 'check-magic-strings.ts'),
+  },
+  {
+    name: 'check-react-doctor',
+    script: join(ROOT, 'scripts', 'lint', 'check-react-doctor.ts'),
   },
   {
     name: 'sort-package-json',
