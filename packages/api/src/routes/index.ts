@@ -1,7 +1,5 @@
 import { $, OpenAPIHono } from '@hono/zod-openapi';
 import { authMiddleware } from '@packrat/api/middleware';
-import type { Env } from '@packrat/api/types/env';
-import type { Variables } from '@packrat/api/types/variables';
 import { adminRoutes } from './admin';
 import { aiRoutes } from './ai';
 import { authRoutes } from './auth';
@@ -19,14 +17,10 @@ import { userRoutes } from './user';
 import { weatherRoutes } from './weather';
 import { wildlifeRoutes } from './wildlife';
 
-const publicRoutes = $(
-  new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
-    .route('/auth', authRoutes)
-    .route('/admin', adminRoutes),
-);
+const publicRoutes = $(new OpenAPIHono().route('/auth', authRoutes).route('/admin', adminRoutes));
 
 const protectedRoutes = $(
-  new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
+  new OpenAPIHono()
     .use(authMiddleware)
     .route('/catalog', catalogRoutes)
     .route('/guides', guidesRoutes)
@@ -44,11 +38,7 @@ const protectedRoutes = $(
     .route('/wildlife', wildlifeRoutes),
 );
 
-const routes = $(
-  new OpenAPIHono<{ Bindings: Env; Variables: Variables }>()
-    .route('/', publicRoutes)
-    .route('/', protectedRoutes),
-);
+const routes = $(new OpenAPIHono().route('/', publicRoutes).route('/', protectedRoutes));
 
 export { routes };
 
